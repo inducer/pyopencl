@@ -16,7 +16,7 @@ def get_config_schema():
 
         IncludeDir("CL", []),
         LibraryDir("CL", []),
-        Libraries("CL", ["cl"]),
+        Libraries("CL", []),
 
         StringListOption("CXXFLAGS", [], 
             help="Any extra C++ compiler options to include"),

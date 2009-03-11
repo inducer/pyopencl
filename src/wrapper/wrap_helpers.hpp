@@ -19,10 +19,10 @@
   value(#NAME, NAME)
 
 #define DEF_SIMPLE_METHOD(NAME) \
-  def(#NAME, &cl::NAME)
+  def(#NAME, &cls::NAME)
 
 #define DEF_SIMPLE_METHOD_WITH_ARGS(NAME, ARGS) \
-  def(#NAME, &cl::NAME, boost::python::args ARGS)
+  def(#NAME, &cls::NAME, boost::python::args ARGS)
 
 #define DEF_SIMPLE_FUNCTION(NAME) \
   boost::python::def(#NAME, &NAME)
@@ -31,10 +31,10 @@
   boost::python::def(#NAME, &NAME, boost::python::args ARGS)
 
 #define DEF_SIMPLE_RO_MEMBER(NAME) \
-  def_readonly(#NAME, &cl::m_##NAME)
+  def_readonly(#NAME, &cls::m_##NAME)
 
 #define DEF_SIMPLE_RW_MEMBER(NAME) \
-  def_readwrite(#NAME, &cl::m_##NAME)
+  def_readwrite(#NAME, &cls::m_##NAME)
 
 
 
