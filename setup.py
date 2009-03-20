@@ -85,6 +85,8 @@ def main():
               above are virtually free.
 
             * Helpful `Documentation <http://documen.tician.de/pyopencl>`_.
+
+            For, now the best next stop is the `source tree <http://git.tiker.net/pyopencl.git/>`_.
             """,
             author=u"Andreas Kloeckner",
             author_email="inform@tiker.net",
