@@ -115,7 +115,6 @@ def main():
                 "pytools>=7",
                 ],
 
-            package_dir={"pyopencl": "src/python"},
             ext_package="pyopencl",
             ext_modules=[
                 NumpyExtension("_cl", 
