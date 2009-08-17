@@ -4,7 +4,23 @@
 
 
 
+#include <boost/version.hpp>
 #include <boost/python.hpp>
+#include <boost/python/stl_iterator.hpp>
+
+
+
+
+namespace py = boost::python;
+
+
+
+
+#if (BOOST_VERSION/100) < 1035
+#warning *******************************************************************
+#warning **** Your version of Boost C++ is likely too old for PyOpenCL. ****
+#warning *******************************************************************
+#endif
 
 
 
@@ -36,6 +52,11 @@
 #define DEF_SIMPLE_RW_MEMBER(NAME) \
   def_readwrite(#NAME, &cls::m_##NAME)
 
+#define PYTHON_FOREACH(NAME, ITERABLE) \
+  BOOST_FOREACH(boost::python::object NAME, \
+      std::make_pair( \
+        boost::python::stl_input_iterator<boost::python::object>(ITERABLE), \
+        boost::python::stl_input_iterator<boost::python::object>()))
 
 
 

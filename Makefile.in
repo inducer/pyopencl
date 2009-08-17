@@ -1,0 +1,21 @@
+.PHONY	: all install clean tags dist userdoc devdoc
+
+all: tags
+	${PYTHON_EXE} setup.py build
+
+dist:
+	${PYTHON_EXE} setup.py sdist
+
+install: tags
+	${PYTHON_EXE} setup.py install
+
+clean:
+	rm -Rf build
+	rm -f tags
+
+tags:
+	ctags -R src || true
+
+tests:
+	echo "running tests"
+	find ./test -type f -name "*.py" -exec python {} \;

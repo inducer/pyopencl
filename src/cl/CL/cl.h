@@ -21,6 +21,8 @@
  * MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
  ******************************************************************************/
 
+/* $Revision: 8406 $ on $Date: 2009-06-12 10:56:01 -0700 (Fri, 12 Jun 2009) $ */
+
 #ifndef __OPENCL_CL_H
 #define __OPENCL_CL_H
 
@@ -36,6 +38,7 @@ extern "C" {
 
 /******************************************************************************/
 
+typedef struct _cl_platform_id *    cl_platform_id;
 typedef struct _cl_device_id *      cl_device_id;
 typedef struct _cl_context *        cl_context;
 typedef struct _cl_command_queue *  cl_command_queue;
@@ -84,13 +87,56 @@ typedef struct _cl_image_format {
     cl_channel_type         image_channel_data_type;
 } cl_image_format;
 
+
+/******************************************************************************/
+
+// Macro names and corresponding values defined by OpenCL
+
+#define CL_CHAR_BIT         8
+#define CL_SCHAR_MAX        127
+#define CL_SCHAR_MIN        (-127-1)
+#define CL_CHAR_MAX         CL_SCHAR_MAX
+#define CL_CHAR_MIN         CL_SCHAR_MIN
+#define CL_UCHAR_MAX        255
+#define CL_SHRT_MAX         32767
+#define CL_SHRT_MIN         (-32767-1)
+#define CL_USHRT_MAX        65535
+#define CL_INT_MAX          2147483647
+#define CL_INT_MIN          (-2147483647-1)
+#define CL_UINT_MAX         0xffffffffU
+#define CL_LONG_MAX         ((cl_long) 0x7FFFFFFFFFFFFFFFLL)
+#define CL_LONG_MIN         ((cl_long) -0x7FFFFFFFFFFFFFFFLL - 1LL)
+#define CL_ULONG_MAX        ((cl_ulong) 0xFFFFFFFFFFFFFFFFULL)
+
+#define CL_FLT_DIG          6
+#define CL_FLT_MANT_DIG     24
+#define CL_FLT_MAX_10_EXP   +38
+#define CL_FLT_MAX_EXP      +128
+#define CL_FLT_MIN_10_EXP   -37
+#define CL_FLT_MIN_EXP      -125
+#define CL_FLT_RADIX        2
+#define CL_FLT_MAX          0x1.fffffep127f
+#define CL_FLT_MIN          0x1.0p-126f
+#define CL_FLT_EPSILON      0x1.0p-23f
+
+#define CL_DBL_DIG          15
+#define CL_DBL_MANT_DIG     53
+#define CL_DBL_MAX_10_EXP   +308
+#define CL_DBL_MAX_EXP      +1024
+#define CL_DBL_MIN_10_EXP   -307
+#define CL_DBL_MIN_EXP      -1021
+#define CL_DBL_RADIX        2
+#define CL_DBL_MAX          0x1.fffffffffffffp1023
+#define CL_DBL_MIN          0x1.0p-1022
+#define CL_DBL_EPSILON      0x1.0p-52
+
 /******************************************************************************/
 
 // Error Codes
 #define CL_SUCCESS                                  0
 #define CL_DEVICE_NOT_FOUND                         -1
 #define CL_DEVICE_NOT_AVAILABLE                     -2
-#define CL_DEVICE_COMPILER_NOT_AVAILABLE            -3
+#define CL_COMPILER_NOT_AVAILABLE                   -3
 #define CL_MEM_OBJECT_ALLOCATION_FAILURE            -4
 #define CL_OUT_OF_RESOURCES                         -5
 #define CL_OUT_OF_HOST_MEMORY                       -6
@@ -98,10 +144,12 @@ typedef struct _cl_image_format {
 #define CL_MEM_COPY_OVERLAP                         -8
 #define CL_IMAGE_FORMAT_MISMATCH                    -9
 #define CL_IMAGE_FORMAT_NOT_SUPPORTED               -10
+#define CL_BUILD_PROGRAM_FAILURE                    -11
+#define CL_MAP_FAILURE                              -12
 
 #define CL_INVALID_VALUE                            -30
 #define CL_INVALID_DEVICE_TYPE                      -31
-#define CL_INVALID_DEVICE_LIST                      -32
+#define CL_INVALID_PLATFORM                         -32
 #define CL_INVALID_DEVICE                           -33
 #define CL_INVALID_CONTEXT                          -34
 #define CL_INVALID_QUEUE_PROPERTIES                 -35
@@ -143,6 +191,9 @@ typedef struct _cl_image_format {
 // cl_platform_info
 #define CL_PLATFORM_PROFILE                         0x0900
 #define CL_PLATFORM_VERSION                         0x0901
+#define CL_PLATFORM_NAME                            0x0902
+#define CL_PLATFORM_VENDOR                          0x0903
+#define CL_PLATFORM_EXTENSIONS                      0x0904
 
 // cl_device_type - bitfield
 #define CL_DEVICE_TYPE_DEFAULT                      (1 << 0)
@@ -201,11 +252,8 @@ typedef struct _cl_image_format {
 #define CL_DEVICE_PROFILE                           0x102E
 #define CL_DEVICE_VERSION                           0x102F
 #define CL_DEVICE_EXTENSIONS                        0x1030
+#define CL_DEVICE_PLATFORM                          0x1031
 	
-// cl_device_address_info - bitfield
-#define CL_DEVICE_ADDRESS_32_BITS                   (1 << 0)
-#define CL_DEVICE_ADDRESS_64_BITS                   (1 << 1)
-
 // cl_device_fp_config - bitfield
 #define CL_FP_DENORM                                (1 << 0)
 #define CL_FP_INF_NAN                               (1 << 1)
@@ -233,9 +281,11 @@ typedef struct _cl_image_format {
 
 // cl_context_info
 #define CL_CONTEXT_REFERENCE_COUNT                  0x1080
-#define CL_CONTEXT_NUM_DEVICES                      0x1081
-#define CL_CONTEXT_DEVICES                          0x1082
-#define CL_CONTEXT_PROPERTIES                       0x1083
+#define CL_CONTEXT_DEVICES                          0x1081
+#define CL_CONTEXT_PROPERTIES                       0x1082
+
+// cl_context_properties
+#define CL_CONTEXT_PLATFORM                         0x1084
 
 // cl_command_queue_info
 #define CL_QUEUE_CONTEXT                            0x1090
@@ -260,6 +310,8 @@ typedef struct _cl_image_format {
 #define CL_RGBA                                     0x10B5
 #define CL_BGRA                                     0x10B6
 #define CL_ARGB                                     0x10B7
+#define CL_INTENSITY                                0x10B8
+#define CL_LUMINANCE                                0x10B9
 
 // cl_channel_type
 #define CL_SNORM_INT8                               0x10D0
@@ -352,6 +404,7 @@ typedef struct _cl_image_format {
 // cl_kernel_work_group_info
 #define CL_KERNEL_WORK_GROUP_SIZE                   0x11B0
 #define CL_KERNEL_COMPILE_WORK_GROUP_SIZE           0x11B1
+#define CL_KERNEL_LOCAL_MEM_SIZE                    0x11B2
 
 // cl_event_info
 #define CL_EVENT_COMMAND_QUEUE                      0x11D0
@@ -375,10 +428,8 @@ typedef struct _cl_image_format {
 #define CL_COMMAND_MAP_IMAGE                        0x11FC
 #define CL_COMMAND_UNMAP_MEM_OBJECT                 0x11FD
 #define CL_COMMAND_MARKER                           0x11FE
-#define CL_COMMAND_WAIT_FOR_EVENTS                  0x11FF
-#define CL_COMMAND_BARRIER                          0x1200
-#define CL_COMMAND_ACQUIRE_GL_OBJECTS               0x1201
-#define CL_COMMAND_RELEASE_GL_OBJECTS               0x1202
+#define CL_COMMAND_ACQUIRE_GL_OBJECTS               0x11FF
+#define CL_COMMAND_RELEASE_GL_OBJECTS               0x1200
 
 // command execution status
 #define CL_COMPLETE                                 0x0
@@ -396,14 +447,21 @@ typedef struct _cl_image_format {
 
 // Platform API
 extern CL_API_ENTRY cl_int CL_API_CALL
-clGetPlatformInfo(cl_platform_info /* param_name */,
+clGetPlatformIDs(cl_uint          /* num_entries */,
+                 cl_platform_id * /* platforms */,
+                 cl_uint *        /* num_platforms */) CL_API_SUFFIX__VERSION_1_0;
+
+extern CL_API_ENTRY cl_int CL_API_CALL 
+clGetPlatformInfo(cl_platform_id   /* platform */, 
+                  cl_platform_info /* param_name */,
                   size_t           /* param_value_size */, 
                   void *           /* param_value */,
                   size_t *         /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
 
 // Device APIs
 extern CL_API_ENTRY cl_int CL_API_CALL
-clGetDeviceIDs(cl_device_type   /* device_type */, 
+clGetDeviceIDs(cl_platform_id   /* platform */,
+               cl_device_type   /* device_type */, 
                cl_uint          /* num_entries */, 
                cl_device_id *   /* devices */, 
                cl_uint *        /* num_devices */) CL_API_SUFFIX__VERSION_1_0;
@@ -415,21 +473,19 @@ clGetDeviceInfo(cl_device_id    /* device */,
                 void *          /* param_value */,
                 size_t *        /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
 
-// Context APIs
-typedef void (*logging_fn)(const char *, const void *, size_t, const void *);
-  
+// Context APIs  
 extern CL_API_ENTRY cl_context CL_API_CALL
 clCreateContext(cl_context_properties * /* properties */,
                 cl_uint                 /* num_devices */,
                 const cl_device_id *    /* devices */,
-                logging_fn              /* pfn_notify */,
+                void (*pfn_notify)(const char *, const void *, size_t, void *) /* pfn_notify */,
                 void *                  /* user_data */,
                 cl_int *                /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
 
 extern CL_API_ENTRY cl_context CL_API_CALL
 clCreateContextFromType(cl_context_properties * /* properties */,
                         cl_device_type          /* device_type */,
-                        logging_fn              /* pfn_notify */,
+                        void (*pfn_notify)(const char *, const void *, size_t, void *) /* pfn_notify */,
                         void *                  /* user_data */,
                         cl_int *                /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
 
@@ -560,13 +616,13 @@ clCreateProgramWithSource(cl_context        /* context */,
                           cl_int *          /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
 
 extern CL_API_ENTRY cl_program CL_API_CALL
-clCreateProgramWithBinary(cl_context            /* context */,
-                          cl_uint               /* num_devices */,
-                          const cl_device_id *  /* device_list */,
-                          const size_t *        /* lengths */,
-                          const void **         /* binaries */,
-                          cl_int *              /* binary_status */,
-                          cl_int *              /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
+clCreateProgramWithBinary(cl_context                     /* context */,
+                          cl_uint                        /* num_devices */,
+                          const cl_device_id *           /* device_list */,
+                          const size_t *                 /* lengths */,
+                          const unsigned char **         /* binaries */,
+                          cl_int *                       /* binary_status */,
+                          cl_int *                       /* errcode_ret */) CL_API_SUFFIX__VERSION_1_0;
 
 extern CL_API_ENTRY cl_int CL_API_CALL
 clRetainProgram(cl_program /* program */) CL_API_SUFFIX__VERSION_1_0;
@@ -840,6 +896,15 @@ clEnqueueWaitForEvents(cl_command_queue /* command_queue */,
 
 extern CL_API_ENTRY cl_int CL_API_CALL
 clEnqueueBarrier(cl_command_queue /* command_queue */) CL_API_SUFFIX__VERSION_1_0;
+
+// Extension function access
+//
+// Returns the extension function address for the given function name,
+// or NULL if a valid function can not be found.  The client must
+// check to make sure the address is not NULL, before using or 
+// calling the returned function address.
+//
+void *clGetExtensionFunctionAddress(const char * /* func_name */) CL_API_SUFFIX__VERSION_1_0;
 
 #ifdef __cplusplus
 }
