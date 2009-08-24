@@ -70,7 +70,7 @@ namespace py = boost::python;
     size_t my_len = len(py_##NAME); \
     if (my_len > 3) \
       throw error("image copy", CL_INVALID_VALUE, #NAME "has too many components"); \
-    for (int i = 0; i < std::min(size_t(3), my_len); ++i) \
+    for (size_t i = 0; i < std::min(size_t(3), my_len); ++i) \
       NAME[i] = py::extract<size_t>(py_##NAME[i])(); \
   }
 
@@ -80,7 +80,7 @@ namespace py = boost::python;
     size_t my_len = len(py_##NAME); \
     if (my_len > 3) \
       throw error("image copy", CL_INVALID_VALUE, #NAME "has too many components"); \
-    for (int i = 0; i < std::min(size_t(3), my_len); ++i) \
+    for (size_t i = 0; i < std::min(size_t(3), my_len); ++i) \
       NAME[i] = py::extract<size_t>(py_##NAME[i])(); \
   }
 

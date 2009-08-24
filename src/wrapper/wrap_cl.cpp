@@ -421,7 +421,7 @@ BOOST_PYTHON_MODULE(_cl)
   {
     typedef context cls;
     py::class_<cls, boost::noncopyable>("Context", 
-        py::init<py::list, py::list>())
+        py::init<py::list, py::optional<py::list> >())
       .DEF_SIMPLE_METHOD(get_info)
       .def(py::self == py::self)
       .def(py::self != py::self)
@@ -445,6 +445,7 @@ BOOST_PYTHON_MODULE(_cl)
     typedef event cls;
     py::class_<cls, boost::noncopyable>("Event", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
+      .DEF_SIMPLE_METHOD(get_profiling_info)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -471,13 +472,13 @@ BOOST_PYTHON_MODULE(_cl)
       py::return_value_policy<py::manage_new_object>());
 
   py::def("enqueue_read_buffer", enqueue_read_buffer,
-      (py::args("cq", "mem", "buffer"), 
+      (py::args("queue", "mem", "host_buffer"), 
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_write_buffer", enqueue_write_buffer,
-      (py::args("cq", "mem", "buffer"), 
+      (py::args("queue", "mem", "host_buffer"), 
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false),
@@ -494,38 +495,38 @@ BOOST_PYTHON_MODULE(_cl)
 
   DEF_SIMPLE_FUNCTION(get_supported_image_formats);
   py::def("create_image_2d", create_image_2D,
-      (py::args("ctx", "flags", "format", "width", "height", "pitch"), 
-       py::arg("buffer")=py::object()),
+      (py::args("context", "flags", "format", "width", "height", "pitch"), 
+       py::arg("host_buffer")=py::object()),
       py::return_value_policy<py::manage_new_object>());
   py::def("create_image_3d", create_image_3D,
-      (py::args("ctx", "flags", "format", "width", "height", "depth", 
+      (py::args("context", "flags", "format", "width", "height", "depth", 
                 "row_pitch", "slice_pitch"), 
-       py::arg("buffer")=py::object()),
+       py::arg("host_buffer")=py::object()),
       py::return_value_policy<py::manage_new_object>());
 
   py::def("enqueue_read_image", enqueue_read_image,
-      (py::args("cq", "mem", "origin", "region", 
-                "row_pitch", "slice_pitch", "buffer"), 
+      (py::args("queue", "mem", "origin", "region", 
+                "row_pitch", "slice_pitch", "host_buffer"), 
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_write_image", enqueue_write_image,
-      (py::args("cq", "mem", "origin", "region", 
-                "row_pitch", "slice_pitch", "buffer"), 
+      (py::args("queue", "mem", "origin", "region", 
+                "row_pitch", "slice_pitch", "host_buffer"), 
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false),
       py::return_value_policy<py::manage_new_object>());
 
   py::def("enqueue_copy_image", enqueue_copy_image,
-      (py::args("cq", "src", "dest", "src_origin", "dest_origin", "region"), 
+      (py::args("queue", "src", "dest", "src_origin", "dest_origin", "region"), 
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_copy_image_to_buffer", enqueue_copy_image_to_buffer,
-      (py::args("cq", "src", "dest", "origin", "region", "offset"), 
+      (py::args("queue", "src", "dest", "origin", "region", "offset"), 
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_copy_buffer_to_image", enqueue_copy_image_to_buffer,
-      (py::args("cq", "src", "dest", "offset", "origin", "region"), 
+      (py::args("queue", "src", "dest", "offset", "origin", "region"), 
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
 
@@ -534,19 +535,19 @@ BOOST_PYTHON_MODULE(_cl)
     typedef memory_map cls;
     py::class_<cls, boost::noncopyable>("MemoryMap", py::no_init)
       .def("release", &cls::release,
-          (py::arg("cq")=0, py::arg("wait_for")=py::object()),
+          (py::arg("queue")=0, py::arg("wait_for")=py::object()),
           py::return_value_policy<py::manage_new_object>())
       ;
   }
 
   py::def("enqueue_map_buffer", enqueue_map_buffer,
-      (py::args("cq", "buf", "flags", 
+      (py::args("queue", "buf", "flags", 
                 "offset", 
                 "shape", "dtype", "order"), 
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false));
   py::def("enqueue_map_image", enqueue_map_image,
-      (py::args("cq", "buf", "flags", 
+      (py::args("queue", "img", "flags", 
                 "origin", "region",
                 "shape", "dtype", "order"), 
        py::arg("wait_for")=py::object(),
@@ -570,7 +571,8 @@ BOOST_PYTHON_MODULE(_cl)
     py::class_<cls, boost::noncopyable>("Program", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_build_info)
-      .DEF_SIMPLE_METHOD(build)
+      .def("build", &cls::build,
+          (py::arg("options"), py::arg("devices")=py::object()))
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -579,10 +581,10 @@ BOOST_PYTHON_MODULE(_cl)
   py::def("unload_compiler", clUnloadCompiler);
 
   py::def("create_program_with_source", create_program_with_source,
-      py::args("ctx", "src"), 
+      py::args("context", "src"), 
       py::return_value_policy<py::manage_new_object>());
   py::def("create_program_with_binary", create_program_with_binary,
-      py::args("ctx", "devices", "binaries"), 
+      py::args("context", "devices", "binaries"), 
       py::return_value_policy<py::manage_new_object>());
 
   {
@@ -599,7 +601,7 @@ BOOST_PYTHON_MODULE(_cl)
 
   DEF_SIMPLE_FUNCTION(create_kernels_in_program);
   py::def("enqueue_nd_range_kernel", enqueue_nd_range_kernel,
-      (py::args("cmd_queue", "kernel"),
+      (py::args("queue", "kernel"),
       py::arg("global_work_size"),
       py::arg("local_work_size"),
       py::arg("global_work_offset")=py::object(),
@@ -607,7 +609,7 @@ BOOST_PYTHON_MODULE(_cl)
       ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_task", enqueue_task,
-      (py::args("cmd_queue", "kernel"),
+      (py::args("queue", "kernel"),
       py::arg("wait_for")=py::object()
       ),
       py::return_value_policy<py::manage_new_object>());

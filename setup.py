@@ -13,6 +13,7 @@ def get_config_schema():
         BoostLibraries("thread"),
 
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
+        Switch("SHIPPED_CL_HEADERS", False, "Use shipped OpenCL headers"),
 
         IncludeDir("CL", []),
         LibraryDir("CL", []),
@@ -48,7 +49,10 @@ def main():
     if conf["CL_TRACE"]:
         EXTRA_DEFINES["CLPP_TRACE_CL"] = 1
 
-    INCLUDE_DIRS = ['src/cpp', 'src/cl'] + conf["BOOST_INC_DIR"] + conf["CL_INC_DIR"]
+    INCLUDE_DIRS = ['src/cpp'] + conf["BOOST_INC_DIR"] + conf["CL_INC_DIR"]
+
+    if conf["SHIPPED_CL_HEADERS"]:
+        INCLUDE_DIRS.append('src/cl')
 
     import sys
 
