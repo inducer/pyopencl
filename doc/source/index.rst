@@ -14,7 +14,8 @@ What makes PyOpenCL special?
   freed.
 
 * Completeness. PyOpenCL puts the full power of OpenCL's API at your
-  disposal, if you wish.
+  disposal, if you wish. Every obscure `get_info()` query and 
+  all CL calls are accessible.
 
 * Automatic Error Checking. All errors are automatically translated
   into Python exceptions.

@@ -76,7 +76,8 @@ def main():
               allocated in it is also freed.
 
             * Completeness. PyOpenCL puts the full power of OpenCL's API at
-              your disposal, if you wish.
+              your disposal, if you wish.  Every obscure `get_info()` query and 
+              all CL calls are accessible.
 
             * Automatic Error Checking. All CL errors are automatically
               translated into Python exceptions.
