@@ -161,15 +161,14 @@
 // event helpers --------------------------------------------------------------
 #define PYOPENCL_PARSE_WAIT_FOR \
     cl_uint num_events_in_wait_list = 0; \
-    std::vector<cl_event> event_wait_list(len(py_wait_for)); \
+    std::vector<cl_event> event_wait_list; \
     \
+    if (py_wait_for.ptr() != Py_None) \
     { \
-      if (py_wait_for.ptr() != Py_None) \
-      { \
-        PYTHON_FOREACH(evt, py_wait_for) \
-          event_wait_list[num_events_in_wait_list++] = \
-          py::extract<event &>(evt)().data(); \
-      } \
+      event_wait_list.resize(len(py_wait_for)); \
+      PYTHON_FOREACH(evt, py_wait_for) \
+        event_wait_list[num_events_in_wait_list++] = \
+        py::extract<event &>(evt)().data(); \
     }
 
 #define PYOPENCL_RETURN_NEW_EVENT(EVT) \
@@ -484,6 +483,31 @@ namespace pyopencl
 
 
   // context ------------------------------------------------------------------
+#define PYOPENCL_PARSE_CONTEXT_PROPERTIES \
+  std::vector<cl_context_properties> props; \
+ \
+  PYTHON_FOREACH(prop_tuple, py_properties) \
+  { \
+    if (len(prop_tuple) != 2) \
+      throw error("Context", CL_INVALID_VALUE, "property tuple must have length 2"); \
+    cl_context_properties prop = \
+        py::extract<cl_context_properties>(prop_tuple[0]); \
+    props.push_back(prop); \
+ \
+    if (prop == CL_CONTEXT_PLATFORM) \
+    { \
+      py::extract<const platform &> value(prop_tuple[1]); \
+      props.push_back( \
+          reinterpret_cast<cl_context_properties>(value().data())); \
+    } \
+    else \
+      throw error("Context", CL_INVALID_VALUE, "invalid context property"); \
+  } \
+  props.push_back(0); \
+
+
+
+
   class context : public boost::noncopyable
   {
     private:
@@ -501,26 +525,7 @@ namespace pyopencl
           py::list py_devices,
           py::list py_properties=py::list())
       {
-        std::vector<cl_context_properties> props;
-
-        PYTHON_FOREACH(prop_tuple, py_properties)
-        {
-          if (len(prop_tuple) != 2)
-            throw error("Context", CL_INVALID_VALUE, "property tuple must have length 2");
-          cl_context_properties prop =
-              py::extract<cl_context_properties>(prop_tuple[0]);
-          props.push_back(prop);
-
-          if (prop == CL_CONTEXT_PLATFORM)
-          {
-            py::extract<const platform &> value(prop_tuple[1]);
-            props.push_back(
-                reinterpret_cast<cl_context_properties>(value().data()));
-          }
-          else
-            throw error("Context", CL_INVALID_VALUE, "invalid context property");
-        }
-        props.push_back(0);
+        PYOPENCL_PARSE_CONTEXT_PROPERTIES;
 
         std::vector<cl_device_id> devices;
         PYTHON_FOREACH(py_dev, py_devices)
@@ -574,7 +579,33 @@ namespace pyopencl
               return py_result;
             }
 
-          case CL_CONTEXT_PROPERTIES: // FIXME: complicated
+          case CL_CONTEXT_PROPERTIES:
+            {
+              std::vector<cl_context_properties> result;
+              PYOPENCL_GET_VEC_INFO(Context, m_context, param_name, result);
+
+              py::list py_result;
+              for (size_t i = 0; i < result.size(); i+=2)
+              {
+                cl_context_properties key = result[i];
+                py::object value;
+                switch (key)
+                {
+                  case CL_CONTEXT_PLATFORM:
+                    {
+                      value = py::object(
+                          handle_from_new_ptr(new platform(
+                            reinterpret_cast<cl_platform_id>(result[i+1]))));
+                    }
+                  default:
+                    throw error("Context.get_info", CL_INVALID_VALUE,
+                        "unkown context_property key encountered");
+                }
+
+                py_result.append(py::make_tuple(result[i], value));
+              }
+              return py_result;
+            }
 
           default:
             throw error("Context.get_info", CL_INVALID_VALUE);
@@ -582,6 +613,34 @@ namespace pyopencl
       }
   };
 
+
+
+  context *create_context_from_type(
+      cl_device_type dev_type,
+      py::list py_properties)
+  {
+    PYOPENCL_PARSE_CONTEXT_PROPERTIES;
+
+    cl_int status_code;
+    cl_context ctx = clCreateContextFromType(
+        &props.front(),
+        dev_type,
+        0, 0, &status_code);
+
+    PYOPENCL_PRINT_CALL_TRACE("clCreateContextFromType");
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("Context", status_code);
+
+    try
+    {
+      return new context(ctx, false);
+    }
+    catch (...)
+    {
+      PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseContext, (ctx));
+      throw;
+    }
+  }
 
 
 
@@ -607,15 +666,25 @@ namespace pyopencl
 
       command_queue(
           const context &ctx,
-          const device &dev,
+          const device *py_dev=0,
           cl_command_queue_properties props=0)
       {
+        cl_device_id dev;
+        if (py_dev)
+          dev = py_dev->data();
+        else
+        {
+          std::vector<cl_device_id> devs;
+          PYOPENCL_GET_VEC_INFO(Context, ctx.data(), CL_CONTEXT_DEVICES, devs);
+          if (devs.size() == 0)
+            throw pyopencl::error("CommandQueue", CL_INVALID_VALUE,
+                "context doesn't have any devices? -- don't know which one to default to");
+          dev = devs[0];
+        }
+
         cl_int status_code;
         m_queue = clCreateCommandQueue(
-            ctx.data(),
-            dev.data(),
-            props,
-            &status_code);
+            ctx.data(), dev, props, &status_code);
 
         PYOPENCL_PRINT_CALL_TRACE("clCreateCommandQueue");
         if (status_code != CL_SUCCESS)
@@ -1600,7 +1669,7 @@ namespace pyopencl
         }
       }
 
-      void build(std::string options, py::object py_devices)
+      program &build(std::string options, py::object py_devices)
       {
         if (py_devices.ptr() == Py_None)
         {
@@ -1618,6 +1687,7 @@ namespace pyopencl
                options.c_str(), 0 ,0));
         }
 
+        return *this;
       }
   };
 
@@ -1744,14 +1814,16 @@ namespace pyopencl
 
       void set_arg_mem(cl_uint arg_index, memory_object &mo)
       {
+        cl_mem m = mo.data();
         PYOPENCL_CALL_GUARDED(clSetKernelArg,
-            (m_kernel, arg_index, sizeof(cl_mem), mo.data()));
+            (m_kernel, arg_index, sizeof(cl_mem), &m));
       }
 
       void set_arg_sampler(cl_uint arg_index, sampler &smp)
       {
+        cl_sampler s = smp.data();
         PYOPENCL_CALL_GUARDED(clSetKernelArg,
-            (m_kernel, arg_index, sizeof(cl_sampler), smp.data()));
+            (m_kernel, arg_index, sizeof(cl_sampler), &s));
       }
 
       void set_arg_buf(cl_uint arg_index, py::object py_buffer)

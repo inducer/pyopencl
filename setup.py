@@ -17,7 +17,7 @@ def get_config_schema():
 
         IncludeDir("CL", []),
         LibraryDir("CL", []),
-        Libraries("CL", []),
+        Libraries("CL", ["OpenCL"]),
 
         StringListOption("CXXFLAGS", [], 
             help="Any extra C++ compiler options to include"),
@@ -84,7 +84,8 @@ def main():
             * Speed. PyOpenCL's base layer is written in C++, so all the niceties
               above are virtually free.
 
-            * Helpful `Documentation <http://documen.tician.de/pyopencl>`_.
+            * Helpful and complete `Documentation <http://documen.tician.de/pyopencl>`_
+              as well as a `Wiki <http://wiki.tiker.net/PyOpenCL>`_.
 
             * Liberal license. PyOpenCL is open-source and 
               free for commercial, academic, and private use.
