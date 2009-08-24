@@ -9,9 +9,7 @@ What makes PyOpenCL special?
   often called 
   `RAII <http://en.wikipedia.org/wiki/Resource_Acquisition_Is_Initialization>`_
   in C++, makes it much easier to write correct, leak- and
-  crash-free code. PyOpenCL knows about dependencies, too, so (for example)
-  it won't detach from a context before all memory allocated in it is also
-  freed.
+  crash-free code.
 
 * Completeness. PyOpenCL puts the full power of OpenCL's API at your
   disposal, if you wish. Every obscure `get_info()` query and 
@@ -76,7 +74,8 @@ Contents
     reference
 
 Note that this guide does not explain OpenCL programming and technology. Please 
-refer to generic OpenCL tutorials for that.
+refer to the official `Khronos OpenCL documentation <http://khronos.org/opencl>`_
+for that.
 
 PyOpenCL also has its own `web site <http://mathema.tician.de/software/pyopencl>`_,
 where you can find updates, new versions, documentation, and support.

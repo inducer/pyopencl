@@ -71,9 +71,7 @@ def main():
               called
               `RAII <http://en.wikipedia.org/wiki/Resource_Acquisition_Is_Initialization>`_
               in C++, makes it much easier to write correct, leak- and
-              crash-free code. PyOpenCL knows about dependencies, too, so (for
-              example) it won't detach from a context before all memory
-              allocated in it is also freed.
+              crash-free code.
 
             * Completeness. PyOpenCL puts the full power of OpenCL's API at
               your disposal, if you wish.  Every obscure `get_info()` query and 
