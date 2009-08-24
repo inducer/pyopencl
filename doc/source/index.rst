@@ -24,6 +24,9 @@ What makes PyOpenCL special?
 
 * Helpful Documentation. You're looking at it. ;)
 
+* Liberal license. PyOpenCL is open-source and free for commercial, 
+  academic, and private use.
+
 Here's an example, to given you an impression::
 
     import pyopencl as cl
@@ -83,4 +86,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

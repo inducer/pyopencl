@@ -75,10 +75,6 @@ def main():
               example) it won't detach from a context before all memory
               allocated in it is also freed.
 
-            * Convenience. Abstractions like pyopencl.SourceModule and
-              pycuda.gpuarray.GPUArray make OpenCL programming much more
-              convenient than the default C API.
-
             * Completeness. PyOpenCL puts the full power of OpenCL's API at
               your disposal, if you wish.
 
@@ -91,7 +87,8 @@ def main():
             * Helpful and complete `Documentation <http://documen.tician.de/pyopencl>`_
               as well as a `Wiki <http://wiki.tiker.net/PyOpenCL>`_.
 
-            For, now the best next stop is the `source tree <http://git.tiker.net/pyopencl.git/>`_.
+            * Liberal license. PyOpenCL is open-source and 
+              free for commercial, academic, and private use.
             """,
             author=u"Andreas Kloeckner",
             author_email="inform@tiker.net",
@@ -124,7 +121,6 @@ def main():
             ext_modules=[
                 NumpyExtension("_cl", 
                     [
-                        #"src/cpp/cl.cpp", 
                         "src/wrapper/wrap_cl.cpp", 
                         ], 
                     include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
