@@ -241,7 +241,9 @@ namespace pyopencl
           case CL_SUCCESS: return "success";
           case CL_DEVICE_NOT_FOUND: return "device not found";
           case CL_DEVICE_NOT_AVAILABLE: return "device not available";
+#if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
           case CL_COMPILER_NOT_AVAILABLE: return "device compiler not available";
+#endif
           case CL_MEM_OBJECT_ALLOCATION_FAILURE: return "mem object allocation failure";
           case CL_OUT_OF_RESOURCES: return "out of resources";
           case CL_OUT_OF_HOST_MEMORY: return "out of host memory";
@@ -324,8 +326,10 @@ namespace pyopencl
           case CL_PLATFORM_VERSION:
           case CL_PLATFORM_NAME:
           case CL_PLATFORM_VENDOR:
+#if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
           case CL_PLATFORM_EXTENSIONS:
             PYOPENCL_GET_STR_INFO(Platform, m_platform, param_name);
+#endif
 
           default:
             throw error("Platform.get_info", CL_INVALID_VALUE);
