@@ -63,6 +63,12 @@ Platforms, Devices and Contexts
 
         See :class:`platform_info` for values of *param*.
 
+    .. attribute:: info
+
+        Lower case versions of the :class:`platform_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
+
     .. method:: get_devices(device_type)
 
         Return a list of devices matching *device_type*.
@@ -76,6 +82,12 @@ Platforms, Devices and Contexts
 
         See :class:`device_info` for values of *param*.
 
+    .. attribute:: info
+
+        Lower case versions of the :class:`device_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
+
     Two instances of this class may be compared using *=="* and *"!="*.
 
 .. class:: Context(devices, properties=[])
@@ -87,19 +99,36 @@ Platforms, Devices and Contexts
 
         See :class:`context_info` for values of *param*.
 
+    .. attribute:: info
+
+        Lower case versions of the :class:`context_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
+
     |comparable|
+
+.. function:: create_context_from_type(dev_type, properties=[])
 
 Command Queues and Events
 -------------------------
 
-.. class:: CommandQueue(context, device, properties=[])
+.. class:: CommandQueue(context, device=None, properties=[])
 
     Create a new command queue. *properties* is a list of key-value
     tuples, where each key must be one of :class:`command_queue_properties`.
 
+    if *device* is None, one of the devices in *context* is chosen
+    in an implementation-defined manner.
+
     .. method:: get_info(param)
 
         See :class:`command_queue_info` for values of *param*.
+
+    .. attribute:: info
+
+        Lower case versions of the :class:`command_queue_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
 
     .. method:: set_property(prop, enable)
 
@@ -116,9 +145,17 @@ Command Queues and Events
 
         See :class:`event_info` for values of *param*.
 
+    .. attribute:: info
+
+        Lower case versions of the :class:`event_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
+
     .. method:: get_profiling_info(param)
 
         See :class:`profiling_info` for values of *param*.
+
+    .. method:: wait()
 
     |comparable|
 
@@ -139,6 +176,12 @@ Memory
     .. method:: get_info(param)
 
         See :class:`mem_info` for values of *param*.
+
+    .. attribute:: info
+
+        Lower case versions of the :class:`mem_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
 
     .. method:: get_image_info(param)
 
@@ -254,6 +297,12 @@ Samplers
 
         See :class:`sampler_info` for values of *param*.
 
+    .. attribute:: info
+
+        Lower case versions of the :class:`sampler_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
+
     |comparable|
 
 Programs and Kernels
@@ -265,13 +314,31 @@ Programs and Kernels
 
         See :class:`program_info` for values of *param*.
 
+    .. attribute:: info
+
+        Lower case versions of the :class:`program_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
+
     .. method:: get_build_info(param, device)
 
         See :class:`program_build_info` for values of *param*.
 
-    .. method:: build(options, devices=None)
+    .. method:: build(options="", devices=None)
 
-        *options* is a string of compiler flags.
+        *options* is a string of compiler flags.  
+        Returns *self*.
+
+    .. attribute:: kernel_name
+
+        :class:`Kernel` objects can be produced from a built 
+        (see :meth:`build`) program simply by attribute lookup.
+
+        .. note::
+
+            The :class:`program_info` attributes live
+            in the same name space and take precedence over
+            :class:`Kernel` names.
 
     |comparable|
 
@@ -287,9 +354,21 @@ Programs and Kernels
 
         See :class:`kernel_info` for values of *param*.
 
+    .. attribute:: info
+
+        Lower case versions of the :class:`kernel_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
+
+
     .. method:: get_work_group_info(param, device)
 
         See :class:`kernel_work_group_info` for values of *param*.
+
+    .. method:: __call__(queue, global_size, *args, global_offset=None, local_size=None, wait_for=None)
+
+        |enqueue-waitfor|
+
 
     |comparable|
 
@@ -297,6 +376,6 @@ Programs and Kernels
 
     |enqueue-waitfor|
 
-.. function:: enqueue_task(queue, kernel, global_work_offset, wait_for=None)
+.. function:: enqueue_task(queue, kernel, wait_for=None)
 
     |enqueue-waitfor|

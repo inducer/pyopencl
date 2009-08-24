@@ -17,7 +17,7 @@ def get_config_schema():
 
         IncludeDir("CL", []),
         LibraryDir("CL", []),
-        Libraries("CL", []),
+        Libraries("CL", ["OpenCL"]),
 
         StringListOption("CXXFLAGS", [], 
             help="Any extra C++ compiler options to include"),
@@ -88,7 +88,8 @@ def main():
             * Speed. PyOpenCL's base layer is written in C++, so all the niceties
               above are virtually free.
 
-            * Helpful `Documentation <http://documen.tician.de/pyopencl>`_.
+            * Helpful and complete `Documentation <http://documen.tician.de/pyopencl>`_
+              as well as a `Wiki <http://wiki.tiker.net/PyOpenCL>`_.
 
             For, now the best next stop is the `source tree <http://git.tiker.net/pyopencl.git/>`_.
             """,

@@ -74,7 +74,7 @@ namespace
 BOOST_PYTHON_MODULE(_cl)
 {
 #define DECLARE_EXC(NAME, BASE) \
-  CL##NAME = py::handle<>(PyErr_NewException("pyopencl._cl." #NAME, BASE, NULL)); \
+  CL##NAME = py::handle<>(PyErr_NewException("pyopencl." #NAME, BASE, NULL)); \
   py::scope().attr(#NAME) = CL##NAME;
 
   {
@@ -428,11 +428,15 @@ BOOST_PYTHON_MODULE(_cl)
       ;
   }
 
+  py::def("create_context_from_type", create_context_from_type,
+      (py::arg("dev_type"), py::arg("properties")=py::list()),
+      py::return_value_policy<py::manage_new_object>());
+
   {
     typedef command_queue cls;
     py::class_<cls, boost::noncopyable>("CommandQueue", 
-        py::init<const context &, const device &,
-        py::optional<cl_command_queue_properties> >())
+        py::init<const context &, 
+        py::optional<const device *, cl_command_queue_properties> >())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(set_property)
       .DEF_SIMPLE_METHOD(flush)
@@ -468,7 +472,7 @@ BOOST_PYTHON_MODULE(_cl)
 
   py::def("create_buffer", create_buffer,
       py::return_value_policy<py::manage_new_object>());
-  py::def("create_host_buffer", create_buffer,
+  py::def("create_host_buffer", create_host_buffer,
       py::return_value_policy<py::manage_new_object>());
 
   py::def("enqueue_read_buffer", enqueue_read_buffer,
@@ -572,7 +576,8 @@ BOOST_PYTHON_MODULE(_cl)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_build_info)
       .def("build", &cls::build,
-          (py::arg("options"), py::arg("devices")=py::object()))
+          (py::arg("options")="", py::arg("devices")=py::object()),
+          py::return_self<>())
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
