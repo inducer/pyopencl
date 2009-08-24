@@ -1,0 +1,52 @@
+.. This is an automatically generated file. DO NOT EDIT
+.. class :: device_info
+
+    .. attribute :: ADDRESS_BITS
+    .. attribute :: AVAILABLE
+    .. attribute :: COMPILER_AVAILABLE
+    .. attribute :: ENDIAN_LITTLE
+    .. attribute :: ERROR_CORRECTION_SUPPORT
+    .. attribute :: EXECUTION_CAPABILITIES
+    .. attribute :: EXTENSIONS
+    .. attribute :: GLOBAL_MEM_CACHELINE_SIZE
+    .. attribute :: GLOBAL_MEM_CACHE_SIZE
+    .. attribute :: GLOBAL_MEM_CACHE_TYPE
+    .. attribute :: GLOBAL_MEM_SIZE
+    .. attribute :: IMAGE2D_MAX_HEIGHT
+    .. attribute :: IMAGE2D_MAX_WIDTH
+    .. attribute :: IMAGE3D_MAX_DEPTH
+    .. attribute :: IMAGE3D_MAX_HEIGHT
+    .. attribute :: IMAGE3D_MAX_WIDTH
+    .. attribute :: IMAGE_SUPPORT
+    .. attribute :: LOCAL_MEM_SIZE
+    .. attribute :: LOCAL_MEM_TYPE
+    .. attribute :: MAX_CLOCK_FREQUENCY
+    .. attribute :: MAX_COMPUTE_UNITS
+    .. attribute :: MAX_CONSTANT_ARGS
+    .. attribute :: MAX_CONSTANT_BUFFER_SIZE
+    .. attribute :: MAX_MEM_ALLOC_SIZE
+    .. attribute :: MAX_PARAMETER_SIZE
+    .. attribute :: MAX_READ_IMAGE_ARGS
+    .. attribute :: MAX_SAMPLERS
+    .. attribute :: MAX_WORK_GROUP_SIZE
+    .. attribute :: MAX_WORK_ITEM_DIMENSIONS
+    .. attribute :: MAX_WORK_ITEM_SIZES
+    .. attribute :: MAX_WRITE_IMAGE_ARGS
+    .. attribute :: MEM_BASE_ADDR_ALIGN
+    .. attribute :: MIN_DATA_TYPE_ALIGN_SIZE
+    .. attribute :: NAME
+    .. attribute :: PREFERRED_VECTOR_WIDTH_CHAR
+    .. attribute :: PREFERRED_VECTOR_WIDTH_DOUBLE
+    .. attribute :: PREFERRED_VECTOR_WIDTH_FLOAT
+    .. attribute :: PREFERRED_VECTOR_WIDTH_INT
+    .. attribute :: PREFERRED_VECTOR_WIDTH_LONG
+    .. attribute :: PREFERRED_VECTOR_WIDTH_SHORT
+    .. attribute :: PROFILE
+    .. attribute :: PROFILING_TIMER_RESOLUTION
+    .. attribute :: QUEUE_PROPERTIES
+    .. attribute :: SINGLE_FP_CONFIG
+    .. attribute :: TYPE
+    .. attribute :: VENDOR
+    .. attribute :: VENDOR_ID
+    .. attribute :: VERSION
+

@@ -65,25 +65,6 @@ namespace
   class command_type { };
   class command_execution_status { };
   class profiling_info { };
-
-
-
-  py::list get_platforms(cl_platform_info param_name)
-  {
-    cl_uint num_platforms = 0;
-    PYOPENCL_CALL_GUARDED(clGetPlatformIDs, (0, 0, &num_platforms));
-
-    std::vector<cl_platform_id> platforms(num_platforms);
-    PYOPENCL_CALL_GUARDED(clGetPlatformIDs, 
-        (num_platforms, platforms.data(), &num_platforms));
-
-    py::list result;
-    BOOST_FOREACH(cl_platform_id pid, platforms)
-      result.append(handle_from_new_ptr(
-            new platform(pid)));
-
-    return result;
-  }
 }
 
 
@@ -423,6 +404,8 @@ BOOST_PYTHON_MODULE(_cl)
     py::class_<cls, boost::noncopyable>("Platform", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_devices)
+      .def(py::self == py::self)
+      .def(py::self != py::self)
       ;
   }
 
@@ -430,6 +413,8 @@ BOOST_PYTHON_MODULE(_cl)
     typedef device cls;
     py::class_<cls, boost::noncopyable>("Device", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
+      .def(py::self == py::self)
+      .def(py::self != py::self)
       ;
   }
 
@@ -438,6 +423,8 @@ BOOST_PYTHON_MODULE(_cl)
     py::class_<cls, boost::noncopyable>("Context", 
         py::init<py::list, py::list>())
       .DEF_SIMPLE_METHOD(get_info)
+      .def(py::self == py::self)
+      .def(py::self != py::self)
       ;
   }
 
@@ -450,12 +437,16 @@ BOOST_PYTHON_MODULE(_cl)
       .DEF_SIMPLE_METHOD(set_property)
       .DEF_SIMPLE_METHOD(flush)
       .DEF_SIMPLE_METHOD(finish)
+      .def(py::self == py::self)
+      .def(py::self != py::self)
       ;
   }
   {
     typedef event cls;
     py::class_<cls, boost::noncopyable>("Event", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
+      .def(py::self == py::self)
+      .def(py::self != py::self)
       ;
   }
 
@@ -468,6 +459,9 @@ BOOST_PYTHON_MODULE(_cl)
     typedef memory_object cls;
     py::class_<cls, boost::noncopyable>("MemoryObject", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
+      .DEF_SIMPLE_METHOD(release)
+      .def(py::self == py::self)
+      .def(py::self != py::self)
       ;
   }
 
@@ -489,6 +483,134 @@ BOOST_PYTHON_MODULE(_cl)
        py::arg("is_blocking")=false),
       py::return_value_policy<py::manage_new_object>());
 
+  // image --------------------------------------------------------------------
+  {
+    typedef cl_image_format cls;
+    py::class_<cls>("ImageFormat")
+      .def_readwrite("channel_order", &cls::image_channel_order)
+      .def_readwrite("channel_data_type", &cls::image_channel_data_type)
+      ;
+  }
+
+  DEF_SIMPLE_FUNCTION(get_supported_image_formats);
+  py::def("create_image_2d", create_image_2D,
+      (py::args("ctx", "flags", "format", "width", "height", "pitch"), 
+       py::arg("buffer")=py::object()),
+      py::return_value_policy<py::manage_new_object>());
+  py::def("create_image_3d", create_image_3D,
+      (py::args("ctx", "flags", "format", "width", "height", "depth", 
+                "row_pitch", "slice_pitch"), 
+       py::arg("buffer")=py::object()),
+      py::return_value_policy<py::manage_new_object>());
+
+  py::def("enqueue_read_image", enqueue_read_image,
+      (py::args("cq", "mem", "origin", "region", 
+                "row_pitch", "slice_pitch", "buffer"), 
+       py::arg("wait_for")=py::object(),
+       py::arg("is_blocking")=false),
+      py::return_value_policy<py::manage_new_object>());
+  py::def("enqueue_write_image", enqueue_write_image,
+      (py::args("cq", "mem", "origin", "region", 
+                "row_pitch", "slice_pitch", "buffer"), 
+       py::arg("wait_for")=py::object(),
+       py::arg("is_blocking")=false),
+      py::return_value_policy<py::manage_new_object>());
+
+  py::def("enqueue_copy_image", enqueue_copy_image,
+      (py::args("cq", "src", "dest", "src_origin", "dest_origin", "region"), 
+       py::arg("wait_for")=py::object()),
+      py::return_value_policy<py::manage_new_object>());
+  py::def("enqueue_copy_image_to_buffer", enqueue_copy_image_to_buffer,
+      (py::args("cq", "src", "dest", "origin", "region", "offset"), 
+       py::arg("wait_for")=py::object()),
+      py::return_value_policy<py::manage_new_object>());
+  py::def("enqueue_copy_buffer_to_image", enqueue_copy_image_to_buffer,
+      (py::args("cq", "src", "dest", "offset", "origin", "region"), 
+       py::arg("wait_for")=py::object()),
+      py::return_value_policy<py::manage_new_object>());
+
+  // memory_map ---------------------------------------------------------------
+  {
+    typedef memory_map cls;
+    py::class_<cls, boost::noncopyable>("MemoryMap", py::no_init)
+      .def("release", &cls::release,
+          (py::arg("cq")=0, py::arg("wait_for")=py::object()),
+          py::return_value_policy<py::manage_new_object>())
+      ;
+  }
+
+  py::def("enqueue_map_buffer", enqueue_map_buffer,
+      (py::args("cq", "buf", "flags", 
+                "offset", 
+                "shape", "dtype", "order"), 
+       py::arg("wait_for")=py::object(),
+       py::arg("is_blocking")=false));
+  py::def("enqueue_map_image", enqueue_map_image,
+      (py::args("cq", "buf", "flags", 
+                "origin", "region",
+                "shape", "dtype", "order"), 
+       py::arg("wait_for")=py::object(),
+       py::arg("is_blocking")=false));
 
 
+  // sampler ------------------------------------------------------------------
+  {
+    typedef sampler cls;
+    py::class_<cls, boost::noncopyable>("Sampler", 
+        py::init<context const &, bool, cl_addressing_mode, cl_filter_mode>())
+      .DEF_SIMPLE_METHOD(get_info)
+      .def(py::self == py::self)
+      .def(py::self != py::self)
+      ;
+  }
+
+  // program ------------------------------------------------------------------
+  {
+    typedef program cls;
+    py::class_<cls, boost::noncopyable>("Program", py::no_init)
+      .DEF_SIMPLE_METHOD(get_info)
+      .DEF_SIMPLE_METHOD(get_build_info)
+      .DEF_SIMPLE_METHOD(build)
+      .def(py::self == py::self)
+      .def(py::self != py::self)
+      ;
+  }
+
+  py::def("unload_compiler", clUnloadCompiler);
+
+  py::def("create_program_with_source", create_program_with_source,
+      py::args("ctx", "src"), 
+      py::return_value_policy<py::manage_new_object>());
+  py::def("create_program_with_binary", create_program_with_binary,
+      py::args("ctx", "devices", "binaries"), 
+      py::return_value_policy<py::manage_new_object>());
+
+  {
+    typedef kernel cls;
+    py::class_<cls, boost::noncopyable>("Kernel", 
+        py::init<const program &, std::string const &>())
+      .DEF_SIMPLE_METHOD(get_info)
+      .DEF_SIMPLE_METHOD(get_work_group_info)
+      .DEF_SIMPLE_METHOD(set_arg)
+      .def(py::self == py::self)
+      .def(py::self != py::self)
+      ;
+  }
+
+  DEF_SIMPLE_FUNCTION(create_kernels_in_program);
+  py::def("enqueue_nd_range_kernel", enqueue_nd_range_kernel,
+      (py::args("cmd_queue", "kernel"),
+      py::arg("global_work_size"),
+      py::arg("local_work_size"),
+      py::arg("global_work_offset")=py::object(),
+      py::arg("wait_for")=py::object()
+      ),
+      py::return_value_policy<py::manage_new_object>());
+  py::def("enqueue_task", enqueue_task,
+      (py::args("cmd_queue", "kernel"),
+      py::arg("wait_for")=py::object()
+      ),
+      py::return_value_policy<py::manage_new_object>());
+
+  // TODO: clEnqueueNativeKernel
 }
