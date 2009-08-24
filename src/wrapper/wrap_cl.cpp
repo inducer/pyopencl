@@ -405,7 +405,8 @@ BOOST_PYTHON_MODULE(_cl)
     typedef platform cls;
     py::class_<cls, boost::noncopyable>("Platform", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
-      .DEF_SIMPLE_METHOD(get_devices)
+      .def("get_devices", &cls::get_devices,
+          py::arg("device_type")=CL_DEVICE_TYPE_ALL)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -423,7 +424,7 @@ BOOST_PYTHON_MODULE(_cl)
   {
     typedef context cls;
     py::class_<cls, boost::noncopyable>("Context", 
-        py::init<py::list, py::optional<py::list> >())
+        py::init<py::list, py::optional<py::object> >())
       .DEF_SIMPLE_METHOD(get_info)
       .def(py::self == py::self)
       .def(py::self != py::self)
@@ -431,7 +432,7 @@ BOOST_PYTHON_MODULE(_cl)
   }
 
   py::def("create_context_from_type", create_context_from_type,
-      (py::arg("dev_type"), py::arg("properties")=py::list()),
+      (py::arg("dev_type"), py::arg("properties")=py::object()),
       py::return_value_policy<py::manage_new_object>());
 
   {

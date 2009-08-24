@@ -488,26 +488,31 @@ namespace pyopencl
 
   // context ------------------------------------------------------------------
 #define PYOPENCL_PARSE_CONTEXT_PROPERTIES \
+  cl_context_properties *props_ptr = 0; \
   std::vector<cl_context_properties> props; \
- \
-  PYTHON_FOREACH(prop_tuple, py_properties) \
+  \
+  if (py_properties.ptr() != Py_None) \
   { \
-    if (len(prop_tuple) != 2) \
-      throw error("Context", CL_INVALID_VALUE, "property tuple must have length 2"); \
-    cl_context_properties prop = \
-        py::extract<cl_context_properties>(prop_tuple[0]); \
-    props.push_back(prop); \
- \
-    if (prop == CL_CONTEXT_PLATFORM) \
+    PYTHON_FOREACH(prop_tuple, py_properties) \
     { \
-      py::extract<const platform &> value(prop_tuple[1]); \
-      props.push_back( \
-          reinterpret_cast<cl_context_properties>(value().data())); \
+      if (len(prop_tuple) != 2) \
+        throw error("Context", CL_INVALID_VALUE, "property tuple must have length 2"); \
+      cl_context_properties prop = \
+          py::extract<cl_context_properties>(prop_tuple[0]); \
+      props.push_back(prop); \
+   \
+      if (prop == CL_CONTEXT_PLATFORM) \
+      { \
+        py::extract<const platform &> value(prop_tuple[1]); \
+        props.push_back( \
+            reinterpret_cast<cl_context_properties>(value().data())); \
+      } \
+      else \
+        throw error("Context", CL_INVALID_VALUE, "invalid context property"); \
     } \
-    else \
-      throw error("Context", CL_INVALID_VALUE, "invalid context property"); \
-  } \
-  props.push_back(0); \
+    props.push_back(0); \
+    props_ptr = &props.front(); \
+  }
 
 
 
@@ -527,7 +532,7 @@ namespace pyopencl
 
       context(
           py::list py_devices,
-          py::list py_properties=py::list())
+          py::object py_properties=py::object())
       {
         PYOPENCL_PARSE_CONTEXT_PROPERTIES;
 
@@ -540,7 +545,7 @@ namespace pyopencl
 
         cl_int status_code;
         m_context = clCreateContext(
-            &props.front(),
+            props_ptr,
             devices.size(),
             &devices.front(),
             0, 0, &status_code);
@@ -621,19 +626,19 @@ namespace pyopencl
 
   context *create_context_from_type(
       cl_device_type dev_type,
-      py::list py_properties)
+      py::object py_properties)
   {
     PYOPENCL_PARSE_CONTEXT_PROPERTIES;
 
     cl_int status_code;
     cl_context ctx = clCreateContextFromType(
-        &props.front(),
+        props_ptr,
         dev_type,
         0, 0, &status_code);
 
     PYOPENCL_PRINT_CALL_TRACE("clCreateContextFromType");
     if (status_code != CL_SUCCESS)
-      throw pyopencl::error("Context", status_code);
+      throw pyopencl::error("clCreateContextFromType", status_code);
 
     try
     {

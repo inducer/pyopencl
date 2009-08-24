@@ -69,7 +69,7 @@ Platforms, Devices and Contexts
         may be used as attributes on instances of this class
         to directly query info attributes.
 
-    .. method:: get_devices(device_type)
+    .. method:: get_devices(device_type=device_type.ALL)
 
         Return a list of devices matching *device_type*.
         See :class:`device_type` for values of *device_type*.
@@ -90,7 +90,7 @@ Platforms, Devices and Contexts
 
     Two instances of this class may be compared using *=="* and *"!="*.
 
-.. class:: Context(devices, properties=[])
+.. class:: Context(devices, properties=None)
 
     Create a new context. *properties* is a list of key-value
     tuples, where each key must be one of :class:`context_properties`.
@@ -112,7 +112,7 @@ Platforms, Devices and Contexts
 Command Queues and Events
 -------------------------
 
-.. class:: CommandQueue(context, device=None, properties=[])
+.. class:: CommandQueue(context, device=None, properties=None)
 
     Create a new command queue. *properties* is a list of key-value
     tuples, where each key must be one of :class:`command_queue_properties`.
