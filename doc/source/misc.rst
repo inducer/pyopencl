@@ -4,6 +4,11 @@ Installation
 Installation information is maintained collaboratively on the 
 `PyOpenCL Wiki <http://wiki.tiker.net/PyOpenCL/Installation>`_.
 
+Acknowledgments
+===============
+
+* James Snyder provided a patch to make PyOpenCL work on OS X 10.6.
+
 User-visible Changes
 ====================
 
