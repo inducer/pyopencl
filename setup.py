@@ -58,9 +58,12 @@ def main():
 
     ext_kwargs = dict()
 
+    ver_dic = {}
+    execfile("pycuda/__init__.py", ver_dic)
+
     setup(name="pyopencl",
             # metadata
-            version="0.90",
+            version=ver_dic["VERSION_TEXT"],
             description="Python wrapper for OpenCL",
             long_description="""
             PyOpenCL lets you access GPUs and other massively parallel compute
