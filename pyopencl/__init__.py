@@ -1,6 +1,4 @@
-VERSION = (0, 90, 1)
-VERSION_STATUS = ""
-VERSION_TEXT = ".".join(str(x) for x in VERSION) + VERSION_STATUS
+from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT
 
 import pyopencl._cl as _cl
 from pyopencl._cl import *

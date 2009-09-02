@@ -59,7 +59,7 @@ def main():
     ext_kwargs = dict()
 
     ver_dic = {}
-    execfile("pycuda/__init__.py", ver_dic)
+    execfile("pyopencl/version.py", ver_dic)
 
     setup(name="pyopencl",
             # metadata
