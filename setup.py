@@ -86,8 +86,11 @@ def main():
             * Helpful and complete `Documentation <http://documen.tician.de/pyopencl>`_
               as well as a `Wiki <http://wiki.tiker.net/PyOpenCL>`_.
 
-            * Liberal license. PyOpenCL is open-source and 
+            * Liberal license. PyOpenCL is open-source under the MIT license and 
               free for commercial, academic, and private use.
+
+            * Broad support. PyOpenCL was tested and works with both AMD's and Nvidia's 
+              CL implementations.
             """,
             author=u"Andreas Kloeckner",
             author_email="inform@tiker.net",
@@ -95,7 +98,7 @@ def main():
             url="http://mathema.tician.de/software/pyopencl",
             classifiers=[
               'Environment :: Console',
-              'Development Status :: 2 - Pre-Alpha',
+              'Development Status :: 4 - Beta',
               'Intended Audience :: Developers',
               'Intended Audience :: Other Audience',
               'Intended Audience :: Science/Research',
