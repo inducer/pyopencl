@@ -45,7 +45,7 @@ copyright = '2009, Andreas Kloeckner'
 #
 # The short X.Y version.
 ver_dic = {}
-execfile("../../pyopencl/__init__.py", ver_dic)
+execfile("../../pyopencl/version.py", ver_dic)
 version = ".".join(str(x) for x in ver_dic["VERSION"])
 # The full version, including alpha/beta/rc tags.
 release = ver_dic["VERSION_TEXT"]
