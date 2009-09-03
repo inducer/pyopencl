@@ -333,8 +333,8 @@ namespace pyopencl
           case CL_PLATFORM_VENDOR:
 #if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
           case CL_PLATFORM_EXTENSIONS:
-            PYOPENCL_GET_STR_INFO(Platform, m_platform, param_name);
 #endif
+            PYOPENCL_GET_STR_INFO(Platform, m_platform, param_name);
 
           default:
             throw error("Platform.get_info", CL_INVALID_VALUE);
