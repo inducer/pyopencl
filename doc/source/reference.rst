@@ -114,8 +114,8 @@ Command Queues and Events
 
 .. class:: CommandQueue(context, device=None, properties=None)
 
-    Create a new command queue. *properties* is a list of key-value
-    tuples, where each key must be one of :class:`command_queue_properties`.
+    Create a new command queue. *properties* is a bit field
+    consisting of :class:`command_queue_properties` values.
 
     if *device* is None, one of the devices in *context* is chosen
     in an implementation-defined manner.

@@ -439,7 +439,8 @@ BOOST_PYTHON_MODULE(_cl)
     typedef command_queue cls;
     py::class_<cls, boost::noncopyable>("CommandQueue", 
         py::init<const context &, 
-        py::optional<const device *, cl_command_queue_properties> >())
+          const device *, cl_command_queue_properties>
+        ((py::arg("context"), py::arg("device")=py::object(), py::arg("properties")=0)))
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(set_property)
       .DEF_SIMPLE_METHOD(flush)
