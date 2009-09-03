@@ -13,6 +13,18 @@ Acknowledgments
 User-visible Changes
 ====================
 
+Version 0.90.2
+--------------
+
+* Fix :meth:`pyopencl.Platform.get_info`.
+* Fix passing properties to :class:`pyopencl.CommandQueue`.
+  Also fix related documentation.
+
+Version 0.90.1
+--------------
+
+* Fix building on the Mac.
+
 Version 0.90
 ------------
 
