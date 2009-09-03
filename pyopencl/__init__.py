@@ -20,6 +20,23 @@ def _add_functionality():
             _cl.Kernel: _cl.kernel_info,
             }
 
+    class ProfilingInfoGetter:
+        def __init__(self, event):
+            self.event = event
+
+        def __getattr__(self, name):
+            info_cls = _cl.profiling_info
+
+            try:
+                inf_attr = getattr(info_cls, name.upper())
+            except AttributeError:
+                raise AttributeError("%s has no attribute '%s'"
+                        % (type(self), name))
+            else:
+                return self.event.get_profiling_info(inf_attr)
+
+    _cl.Event.profile = property(ProfilingInfoGetter)
+
     def make_getattr(info_cls):
         def result(self, name):
             try:

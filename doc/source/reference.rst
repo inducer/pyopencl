@@ -145,6 +145,15 @@ Command Queues and Events
 
         See :class:`event_info` for values of *param*.
 
+    .. attribute:: profile.info
+
+        Lower case versions of the :class:`profiling_info` constants
+        may be used as attributes on the attribute `profile` of this 
+        class to directly query profiling info.
+
+        For example, you may use *evt.profile.end* instead of
+        *evt.get_profiling_info(pyopencl.profiling_info.END)*.
+
     .. attribute:: info
 
         Lower case versions of the :class:`event_info` constants
@@ -154,6 +163,8 @@ Command Queues and Events
     .. method:: get_profiling_info(param)
 
         See :class:`profiling_info` for values of *param*.
+        See :attr:`profile` for an easier way of obtaining
+        the same information.
 
     .. method:: wait()
 
