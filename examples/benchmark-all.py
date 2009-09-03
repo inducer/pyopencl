@@ -69,14 +69,13 @@ for platform in cl.get_platforms():
                 """).build()
         c = numpy.empty_like(a)
 
-        before = cl.enqueue_marker(queue)
-        after = prg.sum(queue, a.shape, a_buf, b_buf, dest_buf)
-
-        cl.enqueue_read_buffer(queue, dest_buf, c).wait()
-        elapsed = 1e-9*(after.profile.end - before.profile.end)
+        exec_evt = prg.sum(queue, a.shape, a_buf, b_buf, dest_buf)
+        exec_evt.wait()
+        elapsed = 1e-9*(exec_evt.profile.end - exec_evt.profile.start)
 
         print "Execution time of test: %g s" % elapsed
 
+        cl.enqueue_read_buffer(queue, dest_buf, c).wait()
         error = 0
         for i in range(1000):
                 if c[i] != c_result[i]:
