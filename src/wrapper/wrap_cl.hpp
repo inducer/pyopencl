@@ -816,7 +816,7 @@ namespace pyopencl
           case CL_PROFILING_COMMAND_SUBMIT:
           case CL_PROFILING_COMMAND_START:
           case CL_PROFILING_COMMAND_END:
-            PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
+            PYOPENCL_GET_INTEGRAL_INFO(EventProfiling, m_event, param_name,
                 cl_ulong);
           default:
             throw error("Event.get_profiling_info", CL_INVALID_VALUE);
