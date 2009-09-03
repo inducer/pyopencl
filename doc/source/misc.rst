@@ -8,6 +8,7 @@ Acknowledgments
 ===============
 
 * James Snyder provided a patch to make PyOpenCL work on OS X 10.6.
+* Roger Pau Monné supplied the example :file:`examples/benchmark-all.py`.
 
 User-visible Changes
 ====================
