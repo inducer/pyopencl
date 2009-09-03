@@ -67,7 +67,6 @@ for platform in cl.get_platforms():
                         }
                 }
                 """).build()
-        c = numpy.empty_like(a)
 
         exec_evt = prg.sum(queue, a.shape, a_buf, b_buf, dest_buf)
         exec_evt.wait()
@@ -75,6 +74,7 @@ for platform in cl.get_platforms():
 
         print "Execution time of test: %g s" % elapsed
 
+        c = numpy.empty_like(a)
         cl.enqueue_read_buffer(queue, dest_buf, c).wait()
         error = 0
         for i in range(1000):
