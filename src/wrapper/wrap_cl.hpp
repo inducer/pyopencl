@@ -837,7 +837,7 @@ namespace pyopencl
       py::extract<event &>(evt)().data();
 
     PYOPENCL_CALL_GUARDED_THREADED(clWaitForEvents, (
-          num_events_in_wait_list, event_wait_list.data()));
+          num_events_in_wait_list, &event_wait_list.front()));
   }
 
 
@@ -866,7 +866,7 @@ namespace pyopencl
       py::extract<event &>(py_evt)().data();
 
     PYOPENCL_CALL_GUARDED(clEnqueueWaitForEvents, (
-          cq.data(), num_events, event_list.data()));
+          cq.data(), num_events, &event_list.front()));
   }
 
 
@@ -1082,7 +1082,7 @@ namespace pyopencl
           mem.data(),
           PYOPENCL_CAST_BOOL(is_blocking),
           device_offset, len, buf,
-          num_events_in_wait_list, event_wait_list.data(), &evt
+          num_events_in_wait_list, &event_wait_list.front(), &evt
           ));
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
@@ -1113,7 +1113,7 @@ namespace pyopencl
           mem.data(),
           PYOPENCL_CAST_BOOL(is_blocking),
           device_offset, len, buf,
-          num_events_in_wait_list, event_wait_list.data(), &evt
+          num_events_in_wait_list, &event_wait_list.front(), &evt
           ));
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
@@ -1641,7 +1641,7 @@ namespace pyopencl
               for (unsigned i = 0; i < sizes.size(); ++i)
               {
                 result[i].resize(sizes[i]);
-                result_ptrs.push_back(result[i].data());
+                result_ptrs.push_back(&result[i].front());
               }
 
               PYOPENCL_CALL_GUARDED(clGetProgramInfo,
@@ -1651,7 +1651,7 @@ namespace pyopencl
               py::list py_result;
               for (unsigned i = 0; i < sizes.size(); ++i)
                 py_result.append(py::str(
-                      reinterpret_cast<char *>(result[i].data()),
+                      reinterpret_cast<char *>(&result[i].front()),
                       sizes[i]));
               return py_result;
             }
@@ -1697,7 +1697,7 @@ namespace pyopencl
             devices.push_back(
                 py::extract<device &>(py_dev)().data());
           PYOPENCL_CALL_GUARDED(clBuildProgram,
-              (m_program, devices.size(), devices.data(),
+              (m_program, devices.size(), &devices.front(),
                options.c_str(), 0 ,0));
         }
 
