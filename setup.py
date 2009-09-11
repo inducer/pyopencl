@@ -56,6 +56,18 @@ def main():
 
     import sys
 
+    if 'darwin' in sys.platform:
+        # Build for i386 & x86_64 since OpenCL doesn't run on PPC
+        if "-arch" not in conf["CXXFLAGS"]:
+            conf["CXXFLAGS"].extend(['-arch', 'i386'])
+            conf["CXXFLAGS"].extend(['-arch', 'x86_64'])
+        if "-arch" not in conf["LDFLAGS"]:
+            conf["LDFLAGS"].extend(['-arch', 'i386'])
+            conf["LDFLAGS"].extend(['-arch', 'x86_64'])
+        # Compile against 10.6 SDK, first to support OpenCL
+        conf["CXXFLAGS"].extend(['-isysroot', '/Developer/SDKs/MacOSX10.6.sdk'])
+        conf["LDFLAGS"].extend(['-isysroot', '/Developer/SDKs/MacOSX10.6.sdk'])
+
     ext_kwargs = dict()
 
     ver_dic = {}
