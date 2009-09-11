@@ -587,7 +587,7 @@ BOOST_PYTHON_MODULE(_cl)
       ;
   }
 
-  py::def("unload_compiler", clUnloadCompiler);
+  py::def("unload_compiler", unload_compiler);
 
   py::def("create_program_with_source", create_program_with_source,
       py::args("context", "src"), 

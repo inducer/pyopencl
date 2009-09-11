@@ -1788,6 +1788,13 @@ namespace pyopencl
 
 
 
+  void unload_compiler()
+  {
+    PYOPENCL_CALL_GUARDED(clUnloadCompiler, ());
+  }
+
+
+
 
   // kernel -------------------------------------------------------------------
   class kernel : boost::noncopyable
