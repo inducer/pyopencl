@@ -28,33 +28,8 @@ def _add_functionality():
         raise ValueError("a name for value %d was not found in %s"
                 % (value, cls.__name__))
 
-    addressing_mode.to_string = classmethod(to_string)
-    channel_order.to_string = classmethod(to_string)
-    channel_type.to_string = classmethod(to_string)
-    command_execution_status.to_string = classmethod(to_string)
-    command_queue_info.to_string = classmethod(to_string)
-    command_queue_properties.to_string = classmethod(to_string)
-    context_info.to_string = classmethod(to_string)
-    context_properties.to_string = classmethod(to_string)
-    device_exec_capabilities.to_string = classmethod(to_string)
-    device_fp_config.to_string = classmethod(to_string)
-    device_info.to_string = classmethod(to_string)
-    device_local_mem_type.to_string = classmethod(to_string)
-    device_mem_cache_type.to_string = classmethod(to_string)
-    device_type.to_string = classmethod(to_string)
-    event_info.to_string = classmethod(to_string)
-    filter_mode.to_string = classmethod(to_string)
-    image_info.to_string = classmethod(to_string)
-    kernel_info.to_string = classmethod(to_string)
-    kernel_work_group_info.to_string = classmethod(to_string)
-    map_flags.to_string = classmethod(to_string)
-    mem_info.to_string = classmethod(to_string)
-    mem_object_type.to_string = classmethod(to_string)
-    platform_info.to_string = classmethod(to_string)
-    profiling_info.to_string = classmethod(to_string)
-    program_build_info.to_string = classmethod(to_string)
-    program_info.to_string = classmethod(to_string)
-    sampler_info.to_string = classmethod(to_string)
+    for cls in CONSTANT_CLASSES:
+        cls.to_string = classmethod(to_string)
 
     class ProfilingInfoGetter:
         def __init__(self, event):
