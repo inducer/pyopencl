@@ -31,9 +31,7 @@ Version 0.91
 * :meth:`pyopencl.MemoryObject.get_image_info` now actually exists.
 * Add :attr:`pyopencl.MemoryObject.image.info`.
 * Fix API tracing.
-* Add constructor arguments to :class:`pyopencl.ImageFormat`. 
-  (suggested by David Garcia)
-
+* Add constructor arguments to :class:`pyopencl.ImageFormat`.  (suggested by David Garcia) 
 Version 0.90.4
 --------------
 
@@ -60,6 +58,8 @@ Version 0.90
 ------------
 
 * Initial release.
+
+.. _license:
 
 Licensing
 =========

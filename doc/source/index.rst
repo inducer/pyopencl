@@ -23,10 +23,11 @@ What makes PyOpenCL special?
 
 * Helpful Documentation. You're looking at it. ;)
 
-* Liberal license. PyOpenCL is open-source and free for commercial, 
-  academic, and private use.
+* Liberal license. PyOpenCL is open-source under the 
+  :ref:`MIT license <license>`
+  and free for commercial, academic, and private use.
 
-Here's an example, to given you an impression::
+Here's an example, to give you an impression::
 
     import pyopencl as cl
     import numpy

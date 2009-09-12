@@ -223,6 +223,7 @@ Memory
     .. method:: get_gl_texture_info(param)
 
         See :class:`gl_texture_info` for values of *param*.  Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`.  
+
     |comparable|
 
 Buffers
@@ -480,10 +481,9 @@ with GL support. See :func:`have_gl`.
 
 .. function:: enqueue_release_gl_objects(queue, mem_objects, wait_for=None)
 
-    *mem_objects* is a list of :class:`MemoryObject` instances.
-    |enqueue-waitfor|
+    *mem_objects* is a list of :class:`MemoryObject` instances. |enqueue-waitfor|
 
 .. seealso::
 
-    * :meth:`MemoryObject.get_gl_object_info`
-    * :meth:`MemoryObject.get_gl_texture_info`
+    :meth:`MemoryObject.get_gl_object_info`, :meth:`MemoryObject.get_gl_texture_info`.
+

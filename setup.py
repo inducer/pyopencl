@@ -105,8 +105,9 @@ def main():
             * Helpful and complete `Documentation <http://documen.tician.de/pyopencl>`_
               as well as a `Wiki <http://wiki.tiker.net/PyOpenCL>`_.
 
-            * Liberal license. PyOpenCL is open-source under the MIT license and 
-              free for commercial, academic, and private use.
+            * Liberal license. PyOpenCL is open-source under the 
+              `MIT license <http://en.wikipedia.org/wiki/MIT_License>`_
+              and free for commercial, academic, and private use.
 
             * Broad support. PyOpenCL was tested and works with both AMD's and Nvidia's 
               CL implementations.
