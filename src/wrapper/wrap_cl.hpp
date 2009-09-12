@@ -1145,6 +1145,14 @@ namespace pyopencl
 
 
   // images -------------------------------------------------------------------
+  cl_image_format *make_image_format(cl_channel_order ord, cl_channel_type tp)
+  {
+    std::auto_ptr<cl_image_format> result(new cl_image_format);
+    result->image_channel_order = ord;
+    result->image_channel_data_type = tp;
+    return result.release();
+  }
+
   py::list get_supported_image_formats(
       context const &ctx,
       cl_mem_flags flags,

@@ -141,6 +141,14 @@ class TestCL:
                 except AttributeError:
                     pass
 
+    def test_image_format_constructor(self):
+        iform = cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT)
+
+        assert iform.channel_order == cl.channel_order.RGBA
+        assert iform.channel_data_type == cl.channel_type.FLOAT
+        assert not iform.__dict__
+
+
 
 
 

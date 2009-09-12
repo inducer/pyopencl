@@ -16,6 +16,7 @@ User-visible Changes
 Version 0.91
 ------------
 
+* Add :ref:`gl-interop`.
 * Add a test suite.
 * Fix numerous `get_info` bugs. (reports by David Garcia and the test suite)
 * Add :meth:`pyopencl.ImageFormat.__repr__`.
@@ -30,7 +31,8 @@ Version 0.91
 * :meth:`pyopencl.MemoryObject.get_image_info` now actually exists.
 * Add :attr:`pyopencl.MemoryObject.image.info`.
 * Fix API tracing.
-* Add :ref:`gl-interop`.
+* Add constructor arguments to :class:`pyopencl.ImageFormat`. 
+  (suggested by David Garcia)
 
 Version 0.90.4
 --------------

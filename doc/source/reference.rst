@@ -194,6 +194,8 @@ Memory
 
         See :class:`image_info` for values of *param*.
 
+        .. versionadded:: 0.91
+
     .. attribute:: info
 
         Lower case versions of the :class:`mem_info` constants
@@ -248,7 +250,10 @@ Buffers
 Image Formats
 ^^^^^^^^^^^^^
 
-.. class:: ImageFormat
+.. class:: ImageFormat([channel_order, channel_type])
+
+    .. versionchanged:: 0.91
+        Constructor arguments added.
 
     .. attribute:: channel_order
 
@@ -277,18 +282,30 @@ Images
     See :class:`mem_flags` for possible values of *flags*.
     Returns a new image-type :class:`MemoryObject`.
 
+    .. versionchanged:: 0.91
+        *pitch* argument defaults to zero, moved.
+
 .. function:: create_image_3d(context, flags, format, width, height, depth, row_pitch=0, slice_pitch=0, host_buffer=None)
 
     See :class:`mem_flags` for possible values of *flags*.
     Returns a new image-type :class:`MemoryObject`.
 
+    .. versionchanged:: 0.91
+        *pitch* arguments defaults to zero, moved.
+
 .. function:: enqueue_read_image(queue, mem, origin, region, host_buffer, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
 
     |enqueue-waitfor|
 
+    .. versionchanged:: 0.91
+        *pitch* arguments defaults to zero, moved.
+
 .. function:: enqueue_write_image(queue, mem, origin, region, host_buffer, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
 
     |enqueue-waitfor|
+
+    .. versionchanged:: 0.91
+        *pitch* arguments defaults to zero, moved.
 
 .. function:: enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region, wait_for=None)
 
@@ -429,6 +446,8 @@ GL Interoperability
 
 Functionality in this section is only available when PyOpenCL is compiled 
 with GL support. See :func:`have_gl`.
+
+.. versionadded:: 0.91
 
 .. function:: have_gl()
 

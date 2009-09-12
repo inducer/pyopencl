@@ -503,6 +503,7 @@ BOOST_PYTHON_MODULE(_cl)
   {
     typedef cl_image_format cls;
     py::class_<cls>("ImageFormat")
+      .def("__init__", py::make_constructor(make_image_format))
       .def_readwrite("channel_order", &cls::image_channel_order)
       .def_readwrite("channel_data_type", &cls::image_channel_data_type)
       ;
