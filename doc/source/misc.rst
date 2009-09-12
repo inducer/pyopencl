@@ -7,11 +7,42 @@ Installation information is maintained collaboratively on the
 Acknowledgments
 ===============
 
-* James Snyder provided a patch to make PyOpenCL work on OS X 10.6.
+* James Snyder provided patches to make PyOpenCL work on OS X 10.6.
 * Roger Pau Monné supplied the example :file:`examples/benchmark-all.py`.
 
 User-visible Changes
 ====================
+
+Version 0.91
+------------
+
+* Add :ref:`gl-interop`.
+* Add a test suite.
+* Fix numerous `get_info` bugs. (reports by David Garcia and the test suite)
+* Add :meth:`pyopencl.ImageFormat.__repr__`.
+* Add :meth:`pyopencl.addressing_mode.to_string` and colleagues.
+* The `pitch` arguments to 
+  :func:`pyopencl.create_image_2d`,
+  :func:`pyopencl.create_image_3d`,
+  :func:`pyopencl.enqueue_read_image`, and
+  :func:`pyopencl.enqueue_write_image`
+  are now defaulted to zero. The argument order of `enqueue_{read,write}_image`
+  has changed for this reason.
+* :meth:`pyopencl.MemoryObject.get_image_info` now actually exists.
+* Add :attr:`pyopencl.MemoryObject.image.info`.
+* Fix API tracing.
+* Add constructor arguments to :class:`pyopencl.ImageFormat`. 
+  (suggested by David Garcia)
+
+Version 0.90.4
+--------------
+
+* Add build fixes for Windows and OS X.
+
+Version 0.90.3
+--------------
+
+* Fix a GNU-ism in the C++ code of the wrapper.
 
 Version 0.90.2
 --------------

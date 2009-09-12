@@ -108,7 +108,13 @@ namespace py = boost::python;
     else \
       throw std::runtime_error("unrecognized order specifier"); \
 
-
+#define PYOPENCL_RETURN_VECTOR(ITEMTYPE, NAME) \
+  { \
+    py::list pyopencl_result; \
+    BOOST_FOREACH(ITEMTYPE item, NAME) \
+      pyopencl_result.append(item); \
+    return pyopencl_result; \
+  }
 
 namespace
 {

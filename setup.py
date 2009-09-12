@@ -13,6 +13,7 @@ def get_config_schema():
         BoostLibraries("thread"),
 
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
+        Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
         Switch("SHIPPED_CL_HEADERS", False, "Use shipped OpenCL headers"),
 
         IncludeDir("CL", []),
@@ -47,7 +48,7 @@ def main():
     EXTRA_LIBRARIES = []
 
     if conf["CL_TRACE"]:
-        EXTRA_DEFINES["CLPP_TRACE_CL"] = 1
+        EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
 
     INCLUDE_DIRS = ['src/cpp'] + conf["BOOST_INC_DIR"] + conf["CL_INC_DIR"]
 
@@ -69,6 +70,9 @@ def main():
         conf["LDFLAGS"].extend(['-isysroot', '/Developer/SDKs/MacOSX10.6.sdk'])
 
     ext_kwargs = dict()
+
+    if conf["CL_ENABLE_GL"]:
+        EXTRA_DEFINES["HAVE_GL"] = 1
 
     ver_dic = {}
     execfile("pyopencl/version.py", ver_dic)
@@ -132,6 +136,7 @@ def main():
 
             install_requires=[
                 "pytools>=7",
+                "py>=1.0.2"
                 ],
 
             ext_package="pyopencl",
