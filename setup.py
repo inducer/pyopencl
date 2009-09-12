@@ -47,7 +47,7 @@ def main():
     EXTRA_LIBRARIES = []
 
     if conf["CL_TRACE"]:
-        EXTRA_DEFINES["CLPP_TRACE_CL"] = 1
+        EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
 
     INCLUDE_DIRS = ['src/cpp'] + conf["BOOST_INC_DIR"] + conf["CL_INC_DIR"]
 
