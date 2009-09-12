@@ -28,8 +28,9 @@ Version 0.91
   are now defaulted to zero. The argument order of `enqueue_{read,write}_image`
   has changed for this reason.
 * :meth:`pyopencl.MemoryObject.get_image_info` now actually exists.
-* Add :meth:`pyopencl.MemoryObject.image`.
-* Fixed API tracing.
+* Add :attr:`pyopencl.MemoryObject.image.info`.
+* Fix API tracing.
+* Add :ref:`gl-interop`.
 
 Version 0.90.4
 --------------
