@@ -51,7 +51,9 @@ Platforms, Devices and Contexts
     using *"=="* and *"!="*.
 .. |buf-iface| replace:: must implement the Python buffer interface. 
     (e.g. by being an :class:`numpy.ndarray`)
-.. |enqueue-waitfor| replace:: Returns a new :class:`Event`.
+.. |enqueue-waitfor| replace:: Returns a new :class:`Event`. *wait_for* 
+    may either be *None* or a list of :class:`Event` instances for 
+    whose completion this command waits before starting exeuction.
 
 .. function:: get_platforms()
 
@@ -209,6 +211,16 @@ Memory
 
     .. method:: release()
 
+    .. method:: get_gl_object_info()
+
+        Return a tuple *(obj_type, obj_name)*, where *obj_type* is one of the
+        :class:`gl_object_type` constants, and *obj_name* is the GL object 
+        name.
+        Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`.
+
+    .. method:: get_gl_texture_info(param)
+
+        See :class:`gl_texture_info` for values of *param*.  Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`.  
     |comparable|
 
 Buffers
@@ -409,3 +421,50 @@ Programs and Kernels
 .. function:: enqueue_task(queue, kernel, wait_for=None)
 
     |enqueue-waitfor|
+
+.. _gl-interop:
+
+GL Interoperability
+-------------------
+
+Functionality in this section is only available when PyOpenCL is compiled 
+with GL support. See :func:`have_gl`.
+
+.. function:: have_gl()
+
+    Return *True* if PyOpenCL was compiled with OpenGL interoperability, otherwise *False*.
+
+.. function:: create_from_gl_buffer(context, mem_flags, gl_buffer_obj)
+
+    See :class:`mem_flags` for values of *flags*.
+    Returns a new :class:`MemoryObject`.
+
+.. function:: create_from_gl_texture_2d(context, mem_flags, texture_target, miplevel, texture)
+
+    See :class:`mem_flags` for values of *flags*.
+    Returns a new :class:`MemoryObject`.
+
+.. function:: create_from_gl_texture_3d(context, mem_flags, texture_target, miplevel, texture)
+
+    See :class:`mem_flags` for values of *flags*.
+    Returns a new :class:`MemoryObject`.
+
+.. function:: create_from_gl_renderbuffer(context, mem_flags, gl_renderbuffer)
+
+    See :class:`mem_flags` for values of *flags*.
+    Returns a new :class:`MemoryObject`.
+
+.. function:: enqueue_acquire_gl_objects(queue, mem_objects, wait_for=None)
+
+    *mem_objects* is a list of :class:`MemoryObject` instances.
+    |enqueue-waitfor|
+
+.. function:: enqueue_release_gl_objects(queue, mem_objects, wait_for=None)
+
+    *mem_objects* is a list of :class:`MemoryObject` instances.
+    |enqueue-waitfor|
+
+.. seealso::
+
+    * :meth:`MemoryObject.get_gl_object_info`
+    * :meth:`MemoryObject.get_gl_texture_info`

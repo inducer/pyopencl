@@ -29,6 +29,7 @@ Version 0.91
   has changed for this reason.
 * :meth:`pyopencl.MemoryObject.get_image_info` now actually exists.
 * Add :meth:`pyopencl.MemoryObject.image`.
+* Fixed API tracing.
 
 Version 0.90.4
 --------------

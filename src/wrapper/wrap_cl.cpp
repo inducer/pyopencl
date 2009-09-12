@@ -65,8 +65,10 @@ namespace
   class command_type { };
   class command_execution_status { };
   class profiling_info { };
-}
 
+  class gl_object_type { };
+  class gl_texture_info { };
+}
 
 
 
@@ -472,6 +474,10 @@ BOOST_PYTHON_MODULE(_cl)
       .DEF_SIMPLE_METHOD(release)
       .def(py::self == py::self)
       .def(py::self != py::self)
+#ifdef HAVE_GL
+      .def("get_gl_object_info", get_gl_object_info)
+      .def("get_gl_texture_info", get_gl_texture_info)
+#endif
       ;
   }
 
@@ -631,4 +637,44 @@ BOOST_PYTHON_MODULE(_cl)
       py::return_value_policy<py::manage_new_object>());
 
   // TODO: clEnqueueNativeKernel
+
+  // GL interop ---------------------------------------------------------------
+  DEF_SIMPLE_FUNCTION(have_gl);
+
+#ifdef HAVE_GL
+  {
+    py::class_<gl_object_type> cls("gl_object_type", py::no_init);
+    ADD_ATTR(GL_OBJECT_, BUFFER);
+    ADD_ATTR(GL_OBJECT_, TEXTURE2D);
+    ADD_ATTR(GL_OBJECT_, TEXTURE3D);
+    ADD_ATTR(GL_OBJECT_, RENDERBUFFER);
+  }
+
+  {
+    py::class_<gl_texture_info> cls("gl_texture_info", py::no_init);
+    ADD_ATTR(GL_, TEXTURE_TARGET);
+    ADD_ATTR(GL_, MIPMAP_LEVEL);
+  }
+
+  py::def("create_from_gl_buffer", create_from_gl_buffer,
+      py::return_value_policy<py::manage_new_object>());
+  py::def("create_from_gl_texture_2d", create_from_gl_texture_2d,
+      py::return_value_policy<py::manage_new_object>());
+  py::def("create_from_gl_texture_3d", create_from_gl_texture_3d,
+      py::return_value_policy<py::manage_new_object>());
+  py::def("create_from_gl_renderbuffer", create_from_gl_renderbuffer,
+      py::return_value_policy<py::manage_new_object>());
+
+  py::def("enqueue_acquire_gl_objects", enqueue_acquire_gl_objects,
+      (py::args("queue", "mem_objects"),
+      py::arg("wait_for")=py::object()
+      ),
+      py::return_value_policy<py::manage_new_object>());
+  py::def("enqueue_release_gl_objects", enqueue_release_gl_objects,
+      (py::args("queue", "mem_objects"),
+      py::arg("wait_for")=py::object()
+      ),
+      py::return_value_policy<py::manage_new_object>());
+
+#endif
 }

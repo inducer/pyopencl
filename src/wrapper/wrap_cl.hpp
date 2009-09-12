@@ -10,9 +10,22 @@
 
 
 #ifdef __APPLE__
+
+// Mac ------------------------------------------------------------------------
 #include <OpenCL/opencl.h>
+#ifdef HAVE_GL
+#include <OpenCL/opencl_gl.h>
+#endif
+
 #else
+
+// elsewhere ------------------------------------------------------------------
 #include <CL/cl.h>
+#ifdef HAVE_GL
+#include <GL/gl.h>
+#include <CL/cl_gl.h>
+#endif
+
 #endif
 
 #include <stdexcept>
@@ -199,6 +212,30 @@
     bool operator!=(cls const &other) const \
     { return data() != other.data(); }
 
+
+
+
+// buffer creators ------------------------------------------------------------
+#define PYOPENCL_WRAP_BUFFER_CREATOR(NAME, CL_NAME, ARGS, CL_ARGS) \
+  memory_object *NAME ARGS \
+  { \
+    cl_int status_code; \
+    PYOPENCL_PRINT_CALL_TRACE(#CL_NAME); \
+    cl_mem mem = CL_NAME CL_ARGS; \
+    \
+    if (status_code != CL_SUCCESS) \
+      throw pyopencl::error(#CL_NAME, status_code); \
+    \
+    try \
+    { \
+      return new memory_object(mem, false); \
+    } \
+    catch (...) \
+    { \
+      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem)); \
+      throw; \
+    } \
+  }
 
 
 
@@ -994,28 +1031,9 @@ namespace pyopencl
 
 
 
-  memory_object *create_buffer(
-      context &ctx,
-      cl_mem_flags flags,
-      size_t size)
-  {
-    cl_int status_code;
-    PYOPENCL_PRINT_CALL_TRACE("clCreateBuffer");
-    cl_mem mem = clCreateBuffer(ctx.data(), flags, size, 0, &status_code);
-
-    if (status_code != CL_SUCCESS)
-      throw pyopencl::error("clCreateBuffer", status_code);
-
-    try
-    {
-      return new memory_object(mem, false);
-    }
-    catch (...)
-    {
-      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
-      throw;
-    }
-  }
+  PYOPENCL_WRAP_BUFFER_CREATOR(create_buffer, clCreateBuffer,
+      (context &ctx, cl_mem_flags flags, size_t size),
+      (ctx.data(), flags, size, 0, &status_code));
 
 
 
@@ -1060,7 +1078,6 @@ namespace pyopencl
       throw;
     }
   }
-
 
 
 
@@ -2043,6 +2060,95 @@ namespace pyopencl
 
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
+
+
+
+
+  // gl interop ---------------------------------------------------------------
+  bool have_gl()
+  {
+#ifdef HAVE_GL
+    return true;
+#else
+    return false;
+#endif
+  }
+
+
+
+
+#ifdef HAVE_GL
+  PYOPENCL_WRAP_BUFFER_CREATOR(create_from_gl_buffer, clCreateFromGLBuffer,
+      (context &ctx, cl_mem_flags flags, GLuint bufobj),
+      (ctx.data(), flags, bufobj, &status_code));
+  PYOPENCL_WRAP_BUFFER_CREATOR(create_from_gl_texture_2d, clCreateFromGLTexture2D,
+      (context &ctx, cl_mem_flags flags,
+         GLenum texture_target, GLint miplevel, GLuint texture),
+      (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
+  PYOPENCL_WRAP_BUFFER_CREATOR(create_from_gl_texture_3d, clCreateFromGLTexture3D,
+      (context &ctx, cl_mem_flags flags,
+         GLenum texture_target, GLint miplevel, GLuint texture),
+      (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
+  PYOPENCL_WRAP_BUFFER_CREATOR(create_from_gl_renderbuffer, clCreateFromGLRenderbuffer,
+      (context &ctx, cl_mem_flags flags, GLuint renderbuffer),
+      (ctx.data(), flags, renderbuffer, &status_code));
+
+
+
+
+  py::tuple get_gl_object_info(memory_object const &mem)
+  {
+    cl_gl_object_type otype;
+    GLuint gl_name;
+    PYOPENCL_CALL_GUARDED(clGetGLObjectInfo, (mem.data(), &otype, &gl_name));
+    return py::make_tuple(otype, gl_name);
+  }
+
+
+
+
+  py::object get_gl_texture_info(memory_object const &mem, cl_gl_texture_info param_name)
+  {
+    switch (param_name)
+    {
+      case CL_GL_TEXTURE_TARGET:
+        PYOPENCL_GET_INTEGRAL_INFO(GLTexture, mem.data(), param_name, GLenum);
+      case CL_GL_MIPMAP_LEVEL:
+        PYOPENCL_GET_INTEGRAL_INFO(GLTexture, mem.data(), param_name, GLint);
+
+      default:
+        throw error("MemoryObject.get_gl_texture_info", CL_INVALID_VALUE);
+    }
+  }
+
+
+
+
+#define WRAP_GL_ENQUEUE(what, What) \
+  event *enqueue_##what##_gl_objects( \
+      command_queue &cq, \
+      py::object py_mem_objects, \
+      py::object py_wait_for) \
+  { \
+    PYOPENCL_PARSE_WAIT_FOR; \
+    \
+    std::vector<cl_mem> mem_objects; \
+    PYTHON_FOREACH(mo, py_mem_objects) \
+      mem_objects.push_back(py::extract<memory_object &>(mo)().data()); \
+    \
+    cl_event evt; \
+    PYOPENCL_CALL_GUARDED(clEnqueue##What##GLObjects, ( \
+          cq.data(), \
+          mem_objects.size(), &mem_objects.front(), \
+          num_events_in_wait_list, &event_wait_list.front(), &evt \
+          )); \
+    \
+    PYOPENCL_RETURN_NEW_EVENT(evt); \
+  }
+
+  WRAP_GL_ENQUEUE(acquire, Acquire);
+  WRAP_GL_ENQUEUE(release, Release);
+#endif
 }
 
 

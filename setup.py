@@ -13,6 +13,7 @@ def get_config_schema():
         BoostLibraries("thread"),
 
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
+        Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
         Switch("SHIPPED_CL_HEADERS", False, "Use shipped OpenCL headers"),
 
         IncludeDir("CL", []),
@@ -69,6 +70,9 @@ def main():
         conf["LDFLAGS"].extend(['-isysroot', '/Developer/SDKs/MacOSX10.6.sdk'])
 
     ext_kwargs = dict()
+
+    if conf["CL_ENABLE_GL"]:
+        EXTRA_DEFINES["HAVE_GL"] = 1
 
     ver_dic = {}
     execfile("pyopencl/version.py", ver_dic)

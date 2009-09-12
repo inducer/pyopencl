@@ -116,8 +116,6 @@ namespace py = boost::python;
     return pyopencl_result; \
   }
 
-
-
 namespace
 {
   template <typename T>
