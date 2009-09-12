@@ -19,7 +19,9 @@
 #include <iostream>
 #include <vector>
 #include <utility>
+#include <numeric>
 #include <boost/foreach.hpp>
+#include <boost/scoped_array.hpp>
 #include "wrap_helpers.hpp"
 #include "numpy_init.hpp"
 
@@ -400,13 +402,13 @@ namespace pyopencl
           case CL_DEVICE_VENDOR_ID: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_MAX_COMPUTE_UNITS: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_MAX_WORK_GROUP_SIZE: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_MAX_WORK_GROUP_SIZE: DEV_GET_INT_INF(size_t);
 
           case CL_DEVICE_MAX_WORK_ITEM_SIZES:
             {
               std::vector<size_t> result;
               PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-              return py::list(result);
+              PYOPENCL_RETURN_VECTOR(size_t, result);
             }
 
           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
@@ -426,7 +428,7 @@ namespace pyopencl
           case CL_DEVICE_IMAGE3D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
           case CL_DEVICE_IMAGE3D_MAX_DEPTH: DEV_GET_INT_INF(size_t);
           case CL_DEVICE_IMAGE_SUPPORT: DEV_GET_INT_INF(cl_bool);
-          case CL_DEVICE_MAX_PARAMETER_SIZE: DEV_GET_INT_INF(cl_bool);
+          case CL_DEVICE_MAX_PARAMETER_SIZE: DEV_GET_INT_INF(size_t);
           case CL_DEVICE_MAX_SAMPLERS: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_MEM_BASE_ADDR_ALIGN: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE: DEV_GET_INT_INF(cl_uint);
@@ -611,6 +613,10 @@ namespace pyopencl
                           handle_from_new_ptr(new platform(
                             reinterpret_cast<cl_platform_id>(result[i+1]))));
                     }
+
+                  case 0:
+                    break;
+
                   default:
                     throw error("Context.get_info", CL_INVALID_VALUE,
                         "unkown context_property key encountered");
@@ -1135,7 +1141,8 @@ namespace pyopencl
     PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
           ctx.data(), flags, image_type, 
           num_image_formats, &formats.front(), 0));
-    return py::list(formats);
+
+    PYOPENCL_RETURN_VECTOR(cl_image_format, formats);
   }
 
 
@@ -1215,8 +1222,8 @@ namespace pyopencl
       command_queue &cq,
       memory_object &mem,
       py::object py_origin, py::object py_region,
-      size_t row_pitch, size_t slice_pitch,
       py::object buffer,
+      size_t row_pitch, size_t slice_pitch,
       py::object py_wait_for,
       bool is_blocking
       )
@@ -1249,8 +1256,8 @@ namespace pyopencl
       command_queue &cq,
       memory_object &mem,
       py::object py_origin, py::object py_region,
-      size_t row_pitch, size_t slice_pitch,
       py::object buffer,
+      size_t row_pitch, size_t slice_pitch,
       py::object py_wait_for,
       bool is_blocking
       )
@@ -1629,19 +1636,24 @@ namespace pyopencl
             {
               std::vector<size_t> result;
               PYOPENCL_GET_VEC_INFO(Program, m_program, param_name, result);
-              return py::list(result);
+              PYOPENCL_RETURN_VECTOR(size_t, result);
             }
           case CL_PROGRAM_BINARIES:
             {
               std::vector<size_t> sizes;
-              PYOPENCL_GET_VEC_INFO(Program, m_program, param_name, sizes);
+              PYOPENCL_GET_VEC_INFO(Program, m_program, CL_PROGRAM_BINARY_SIZES, sizes);
 
-              std::vector<std::vector<unsigned char> > result(sizes.size());
-              std::vector<unsigned char *> result_ptrs(sizes.size());
+              size_t total_size = std::accumulate(sizes.begin(), sizes.end(), 0);
+
+              boost::scoped_array<unsigned char> result(
+                  new unsigned char[total_size]);
+              std::vector<unsigned char *> result_ptrs;
+
+              unsigned char *ptr = result.get();
               for (unsigned i = 0; i < sizes.size(); ++i)
               {
-                result[i].resize(sizes[i]);
-                result_ptrs.push_back(&result[i].front());
+                result_ptrs.push_back(ptr);
+                ptr += sizes[i];
               }
 
               PYOPENCL_CALL_GUARDED(clGetProgramInfo,
@@ -1649,10 +1661,14 @@ namespace pyopencl
                    &result_ptrs.front(), 0)); \
 
               py::list py_result;
+              ptr = result.get();
               for (unsigned i = 0; i < sizes.size(); ++i)
+              {
                 py_result.append(py::str(
-                      reinterpret_cast<char *>(&result[i].front()),
+                      reinterpret_cast<char *>(ptr),
                       sizes[i]));
+                ptr += sizes[i];
+              }
               return py_result;
             }
 

@@ -132,6 +132,7 @@ def main():
 
             install_requires=[
                 "pytools>=7",
+                "py>=1.0.2"
                 ],
 
             ext_package="pyopencl",

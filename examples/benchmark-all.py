@@ -23,12 +23,6 @@ print "Execution time of test without OpenCL: ", time2 - time1, "s"
 
 for platform in cl.get_platforms():
     for device in platform.get_devices():
-        dev_type = "unknown"
-
-        for dev_type_candidate in dir(cl.device_type):
-            if getattr(cl.device_type, dev_type_candidate) == device.type:
-                dev_type = dev_type_candidate
-
         print "==============================================================="
         print "Platform name:", platform.name
         print "Platform profile:", platform.profile
@@ -36,7 +30,7 @@ for platform in cl.get_platforms():
         print "Platform version:", platform.version
         print "---------------------------------------------------------------"
         print "Device name:", device.name
-        print "Device type: ", dev_type
+        print "Device type:", cl.device_type.to_string(device.type)
         print "Device memory: ", device.global_mem_size//1024//1024, 'MB'
         print "Device max clock speed:", device.max_clock_frequency, 'MHz'
         print "Device compute units:", device.max_compute_units

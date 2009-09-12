@@ -468,6 +468,7 @@ BOOST_PYTHON_MODULE(_cl)
     typedef memory_object cls;
     py::class_<cls, boost::noncopyable>("MemoryObject", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
+      .DEF_SIMPLE_METHOD(get_image_info)
       .DEF_SIMPLE_METHOD(release)
       .def(py::self == py::self)
       .def(py::self != py::self)
@@ -503,24 +504,30 @@ BOOST_PYTHON_MODULE(_cl)
 
   DEF_SIMPLE_FUNCTION(get_supported_image_formats);
   py::def("create_image_2d", create_image_2D,
-      (py::args("context", "flags", "format", "width", "height", "pitch"), 
-       py::arg("host_buffer")=py::object()),
+      (py::args("context", "flags", "format", "width", "height"), 
+       py::arg("pitch")=0,
+       py::arg("host_buffer")=py::object()
+       ),
       py::return_value_policy<py::manage_new_object>());
   py::def("create_image_3d", create_image_3D,
-      (py::args("context", "flags", "format", "width", "height", "depth", 
-                "row_pitch", "slice_pitch"), 
-       py::arg("host_buffer")=py::object()),
+      (py::args("context", "flags", "format", "width", "height", "depth"),
+       py::arg("row_pitch")=0,
+       py::arg("slice_pitch")=0,
+       py::arg("host_buffer")=py::object()
+       ),
       py::return_value_policy<py::manage_new_object>());
 
   py::def("enqueue_read_image", enqueue_read_image,
-      (py::args("queue", "mem", "origin", "region", 
-                "row_pitch", "slice_pitch", "host_buffer"), 
+      (py::args("queue", "mem", "origin", "region", "host_buffer"), 
+       py::arg("row_pitch")=0,
+       py::arg("slice_pitch")=0,
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_write_image", enqueue_write_image,
-      (py::args("queue", "mem", "origin", "region", 
-                "row_pitch", "slice_pitch", "host_buffer"), 
+      (py::args("queue", "mem", "origin", "region", "host_buffer"), 
+       py::arg("row_pitch")=0,
+       py::arg("slice_pitch")=0,
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false),
       py::return_value_policy<py::manage_new_object>());
@@ -584,6 +591,7 @@ BOOST_PYTHON_MODULE(_cl)
           py::return_self<>())
       .def(py::self == py::self)
       .def(py::self != py::self)
+      .def("all_kernels", create_kernels_in_program)
       ;
   }
 
@@ -608,7 +616,6 @@ BOOST_PYTHON_MODULE(_cl)
       ;
   }
 
-  DEF_SIMPLE_FUNCTION(create_kernels_in_program);
   py::def("enqueue_nd_range_kernel", enqueue_nd_range_kernel,
       (py::args("queue", "kernel"),
       py::arg("global_work_size"),

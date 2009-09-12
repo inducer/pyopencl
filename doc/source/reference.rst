@@ -188,15 +188,24 @@ Memory
 
         See :class:`mem_info` for values of *param*.
 
+    .. method:: get_image_info(param)
+
+        See :class:`image_info` for values of *param*.
+
     .. attribute:: info
 
         Lower case versions of the :class:`mem_info` constants
         may be used as attributes on instances of this class
         to directly query info attributes.
 
-    .. method:: get_image_info(param)
+    .. attribute:: image.info
 
-        See :class:`image_info` for values of *param*.
+        Lower case versions of the :class:`image_info` constants
+        may be used as attributes on the attribute `image` of this 
+        class to directly query image info.
+
+        For example, you may use *img.image.depth* instead of
+        *img.get_image_info(pyopencl.image_info.DEPTH)*.
 
     .. method:: release()
 
@@ -237,6 +246,12 @@ Image Formats
 
         See :class:`channel_type` for possible values.
 
+    .. method:: __repr__
+
+        Returns a :class:`str` representation of the image format.
+
+        .. versionadded:: 0.91
+
 .. function:: get_supported_image_formats(context, flags, image_type)
 
     See :class:`mem_flags` for possible values of *flags*
@@ -245,21 +260,21 @@ Image Formats
 Images
 ^^^^^^
 
-.. function:: create_image_2d(context, flags, format, width, height, pitch, host_buffer=None)
+.. function:: create_image_2d(context, flags, format, width, height, pitch=0, host_buffer=None)
 
     See :class:`mem_flags` for possible values of *flags*.
     Returns a new image-type :class:`MemoryObject`.
 
-.. function:: create_image_3d(context, flags, format, width, height, depth, row_pitch, slice_pitch, host_buffer=None)
+.. function:: create_image_3d(context, flags, format, width, height, depth, row_pitch=0, slice_pitch=0, host_buffer=None)
 
     See :class:`mem_flags` for possible values of *flags*.
     Returns a new image-type :class:`MemoryObject`.
 
-.. function:: enqueue_read_image(queue, mem, origin, region, row_pitch, slice_pitch, host_buffer, wait_for=None, is_blocking=False)
+.. function:: enqueue_read_image(queue, mem, origin, region, host_buffer, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
 
     |enqueue-waitfor|
 
-.. function:: enqueue_write_image(queue, mem, origin, region, row_pitch, slice_pitch, host_buffer, wait_for=None, is_blocking=False)
+.. function:: enqueue_write_image(queue, mem, origin, region, host_buffer, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
 
     |enqueue-waitfor|
 
@@ -331,7 +346,7 @@ Programs and Kernels
         may be used as attributes on instances of this class
         to directly query info attributes.
 
-    .. method:: get_build_info(param, device)
+    .. method:: get_build_info(device, param)
 
         See :class:`program_build_info` for values of *param*.
 
@@ -352,6 +367,10 @@ Programs and Kernels
             :class:`Kernel` names.
 
     |comparable|
+
+    .. method:: all_kernels()
+
+        Returns a list of all :class:`Kernel` objects in the :class:`Program`.
 
 .. function:: unload_compiler()
 .. function:: create_program_with_source(context, src)
