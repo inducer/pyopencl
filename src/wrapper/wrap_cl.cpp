@@ -466,25 +466,29 @@ BOOST_PYTHON_MODULE(_cl)
       py::return_value_policy<py::manage_new_object>());
   DEF_SIMPLE_FUNCTION(enqueue_wait_for_events);
 
+  // memory_object ------------------------------------------------------------
   {
     typedef memory_object cls;
     py::class_<cls, boost::noncopyable>("MemoryObject", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
-      .DEF_SIMPLE_METHOD(get_image_info)
       .DEF_SIMPLE_METHOD(release)
       .def(py::self == py::self)
       .def(py::self != py::self)
-#ifdef HAVE_GL
-      .def("get_gl_object_info", get_gl_object_info)
-      .def("get_gl_texture_info", get_gl_texture_info)
-#endif
       ;
   }
 
-  py::def("create_buffer", create_buffer,
-      py::return_value_policy<py::manage_new_object>());
-  py::def("create_host_buffer", create_host_buffer,
-      py::return_value_policy<py::manage_new_object>());
+  {
+    typedef buffer cls;
+    py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
+        "Buffer", py::no_init)
+      .def("__init__", make_constructor(create_buffer,
+            py::default_call_policies(),
+            (py::args("context", "flags"),
+             py::arg("size")=0,
+             py::arg("hostbuf")=py::object()
+            )))
+      ;
+  }
 
   py::def("enqueue_read_buffer", enqueue_read_buffer,
       (py::args("queue", "mem", "host_buffer"), 
@@ -501,6 +505,20 @@ BOOST_PYTHON_MODULE(_cl)
 
   // image --------------------------------------------------------------------
   {
+    typedef image cls;
+    py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
+        "Image", py::no_init)
+      .def("__init__", make_constructor(create_image,
+            py::default_call_policies(),
+            (py::args("context", "flags", "format", "shape"), 
+             py::arg("pitches")=py::object(),
+             py::arg("host_buffer")=py::object()
+            )))
+      .DEF_SIMPLE_METHOD(get_image_info)
+      ;
+  }
+
+  {
     typedef cl_image_format cls;
     py::class_<cls>("ImageFormat")
       .def("__init__", py::make_constructor(make_image_format))
@@ -510,19 +528,6 @@ BOOST_PYTHON_MODULE(_cl)
   }
 
   DEF_SIMPLE_FUNCTION(get_supported_image_formats);
-  py::def("create_image_2d", create_image_2D,
-      (py::args("context", "flags", "format", "width", "height"), 
-       py::arg("pitch")=0,
-       py::arg("host_buffer")=py::object()
-       ),
-      py::return_value_policy<py::manage_new_object>());
-  py::def("create_image_3d", create_image_3D,
-      (py::args("context", "flags", "format", "width", "height", "depth"),
-       py::arg("row_pitch")=0,
-       py::arg("slice_pitch")=0,
-       py::arg("host_buffer")=py::object()
-       ),
-      py::return_value_policy<py::manage_new_object>());
 
   py::def("enqueue_read_image", enqueue_read_image,
       (py::args("queue", "mem", "origin", "region", "host_buffer"), 
@@ -591,6 +596,14 @@ BOOST_PYTHON_MODULE(_cl)
   {
     typedef program cls;
     py::class_<cls, boost::noncopyable>("Program", py::no_init)
+      .def("__init__", make_constructor(
+            create_program_with_source,
+            py::default_call_policies(),
+            py::args("context", "src")))
+      .def("__init__", make_constructor(
+            create_program_with_binary,
+            py::default_call_policies(),
+            py::args("context", "devices", "binaries")))
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_build_info)
       .def("build", &cls::build,
@@ -603,13 +616,6 @@ BOOST_PYTHON_MODULE(_cl)
   }
 
   py::def("unload_compiler", unload_compiler);
-
-  py::def("create_program_with_source", create_program_with_source,
-      py::args("context", "src"), 
-      py::return_value_policy<py::manage_new_object>());
-  py::def("create_program_with_binary", create_program_with_binary,
-      py::args("context", "devices", "binaries"), 
-      py::return_value_policy<py::manage_new_object>());
 
   {
     typedef kernel cls;
@@ -657,14 +663,41 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(GL_, MIPMAP_LEVEL);
   }
 
-  py::def("create_from_gl_buffer", create_from_gl_buffer,
-      py::return_value_policy<py::manage_new_object>());
-  py::def("create_from_gl_texture_2d", create_from_gl_texture_2d,
-      py::return_value_policy<py::manage_new_object>());
-  py::def("create_from_gl_texture_3d", create_from_gl_texture_3d,
-      py::return_value_policy<py::manage_new_object>());
-  py::def("create_from_gl_renderbuffer", create_from_gl_renderbuffer,
-      py::return_value_policy<py::manage_new_object>());
+  {
+    typedef gl_buffer cls;
+    py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
+        "GLBuffer", py::no_init)
+      .def("__init__", make_constructor(create_from_gl_buffer,
+            py::default_call_policies(),
+            (py::args("context", "flags" "bufobj"))))
+      .def("get_gl_object_info", get_gl_object_info)
+      ;
+  }
+
+  {
+    typedef gl_renderbuffer cls;
+    py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
+        "GLRenderBuffer", py::no_init)
+      .def("__init__", make_constructor(create_from_gl_renderbuffer,
+            py::default_call_policies(),
+            (py::args("context", "flags" "bufobj"))))
+      .def("get_gl_object_info", get_gl_object_info)
+      ;
+  }
+
+  {
+    typedef gl_texture cls;
+    py::class_<cls, py::bases<image>, boost::noncopyable>(
+        "GLTexture", py::no_init)
+      .def("__init__", make_constructor(create_from_gl_texture,
+            py::default_call_policies(),
+            (py::args("context", "flags", 
+                      "texture_target", "miplevel",
+                      "texture", "dims"))))
+      .def("get_gl_object_info", get_gl_object_info)
+      .DEF_SIMPLE_METHOD(get_gl_texture_info)
+      ;
+  }
 
   py::def("enqueue_acquire_gl_objects", enqueue_acquire_gl_objects,
       (py::args("queue", "mem_objects"),

@@ -51,9 +51,10 @@ Platforms, Devices and Contexts
     using *"=="* and *"!="*.
 .. |buf-iface| replace:: must implement the Python buffer interface. 
     (e.g. by being an :class:`numpy.ndarray`)
-.. |enqueue-waitfor| replace:: Returns a new :class:`Event`. *wait_for* 
+.. |explain-waitfor| replace:: *wait_for* 
     may either be *None* or a list of :class:`Event` instances for 
     whose completion this command waits before starting exeuction.
+.. |std-enqueue-blurb| replace:: Returns a new :class:`Event`. |explain-waitfor|
 
 .. function:: get_platforms()
 
@@ -61,15 +62,15 @@ Platforms, Devices and Contexts
 
 .. class:: Platform
 
-    .. method:: get_info(param)
-
-        See :class:`platform_info` for values of *param*.
-
     .. attribute:: info
 
         Lower case versions of the :class:`platform_info` constants
         may be used as attributes on instances of this class
         to directly query info attributes.
+
+    .. method:: get_info(param)
+
+        See :class:`platform_info` for values of *param*.
 
     .. method:: get_devices(device_type=device_type.ALL)
 
@@ -80,15 +81,15 @@ Platforms, Devices and Contexts
 
 .. class:: Device
 
-    .. method:: get_info(param)
-
-        See :class:`device_info` for values of *param*.
-
     .. attribute:: info
 
         Lower case versions of the :class:`device_info` constants
         may be used as attributes on instances of this class
         to directly query info attributes.
+
+    .. method:: get_info(param)
+
+        See :class:`device_info` for values of *param*.
 
     Two instances of this class may be compared using *=="* and *"!="*.
 
@@ -97,15 +98,15 @@ Platforms, Devices and Contexts
     Create a new context. *properties* is a list of key-value
     tuples, where each key must be one of :class:`context_properties`.
 
-    .. method:: get_info(param)
-
-        See :class:`context_info` for values of *param*.
-
     .. attribute:: info
 
         Lower case versions of the :class:`context_info` constants
         may be used as attributes on instances of this class
         to directly query info attributes.
+
+    .. method:: get_info(param)
+
+        See :class:`context_info` for values of *param*.
 
     |comparable|
 
@@ -122,19 +123,20 @@ Command Queues and Events
     if *device* is None, one of the devices in *context* is chosen
     in an implementation-defined manner.
 
-    .. method:: get_info(param)
-
-        See :class:`command_queue_info` for values of *param*.
-
     .. attribute:: info
 
         Lower case versions of the :class:`command_queue_info` constants
         may be used as attributes on instances of this class
         to directly query info attributes.
 
+    .. method:: get_info(param)
+
+        See :class:`command_queue_info` for values of *param*.
+
     .. method:: set_property(prop, enable)
 
         See :class:`command_queue_properties` for possible values of *prop*.
+        *enable* is a :class:`bool`.
 
     .. method:: flush()
     .. method:: finish()
@@ -143,9 +145,11 @@ Command Queues and Events
 
 .. class:: Event
 
-    .. method:: get_info(param)
+    .. attribute:: info
 
-        See :class:`event_info` for values of *param*.
+        Lower case versions of the :class:`event_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
 
     .. attribute:: profile.info
 
@@ -156,11 +160,9 @@ Command Queues and Events
         For example, you may use *evt.profile.end* instead of
         *evt.get_profiling_info(pyopencl.profiling_info.END)*.
 
-    .. attribute:: info
+    .. method:: get_info(param)
 
-        Lower case versions of the :class:`event_info` constants
-        may be used as attributes on instances of this class
-        to directly query info attributes.
+        See :class:`event_info` for values of *param*.
 
     .. method:: get_profiling_info(param)
 
@@ -186,59 +188,31 @@ Memory
 
 .. class:: MemoryObject
 
-    .. method:: get_info(param)
-
-        See :class:`mem_info` for values of *param*.
-
-    .. method:: get_image_info(param)
-
-        See :class:`image_info` for values of *param*.
-
-        .. versionadded:: 0.91
-
     .. attribute:: info
 
         Lower case versions of the :class:`mem_info` constants
         may be used as attributes on instances of this class
         to directly query info attributes.
 
-    .. attribute:: image.info
+    .. method:: get_info(param)
 
-        Lower case versions of the :class:`image_info` constants
-        may be used as attributes on the attribute `image` of this 
-        class to directly query image info.
-
-        For example, you may use *img.image.depth* instead of
-        *img.get_image_info(pyopencl.image_info.DEPTH)*.
+        See :class:`mem_info` for values of *param*.
 
     .. method:: release()
-
-    .. method:: get_gl_object_info()
-
-        Return a tuple *(obj_type, obj_name)*, where *obj_type* is one of the
-        :class:`gl_object_type` constants, and *obj_name* is the GL object 
-        name.
-        Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`.
-
-    .. method:: get_gl_texture_info(param)
-
-        See :class:`gl_texture_info` for values of *param*.  Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`.  
 
     |comparable|
 
 Buffers
 ^^^^^^^
 
-.. function:: create_buffer(context, flags, size)
+.. class:: Buffer(context, flags, size=0, hostbuf=None)
 
+    Create a :class:`Buffer`.
     See :class:`mem_flags` for values of *flags*.
-    Returns a new buffer-type :class:`MemoryObject`.
+    If *hostbuf* is specified, *size* defaults to the size of
+    the specified buffer if it is passed as zero.
 
-.. function:: create_host_buffer(context, flags, buffer)
-
-    Create a buffer :class:`MemoryObject` using host memory. *host_buffer* |buf-iface|.
-
-    See :class:`mem_flags` for values of *flags*.
+    :class:`Buffer` is a subclass of :class:`MemoryObject`.
 
 .. function:: enqueue_read_buffer(queue, mem, host_buffer, device_offset=0, wait_for=None, is_blocking=False)
 
@@ -277,48 +251,52 @@ Image Formats
 
 Images
 ^^^^^^
+.. class:: Image(context, flags, format, shape, pitches=None, host_buffer=None)
 
-.. function:: create_image_2d(context, flags, format, width, height, pitch=0, host_buffer=None)
+    :class:`Image` is a subclass of :class:`MemoryObject`.
 
-    See :class:`mem_flags` for possible values of *flags*.
-    Returns a new image-type :class:`MemoryObject`.
+    .. versionadded:: 0.91
 
-    .. versionchanged:: 0.91
-        *pitch* argument defaults to zero, moved.
+    .. attribute:: info
 
-.. function:: create_image_3d(context, flags, format, width, height, depth, row_pitch=0, slice_pitch=0, host_buffer=None)
+        Lower case versions of the :class:`mem_info` 
+        and :class:`image_info` constants
+        may be used as attributes on instances of this class
+        to directly query info attributes.
 
-    See :class:`mem_flags` for possible values of *flags*.
-    Returns a new image-type :class:`MemoryObject`.
+    .. method:: get_image_info(param)
 
-    .. versionchanged:: 0.91
-        *pitch* arguments defaults to zero, moved.
+        See :class:`image_info` for values of *param*.
+
+    .. method:: release()
+
+    |comparable|
 
 .. function:: enqueue_read_image(queue, mem, origin, region, host_buffer, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
 
-    |enqueue-waitfor|
+    |std-enqueue-blurb|
 
     .. versionchanged:: 0.91
         *pitch* arguments defaults to zero, moved.
 
 .. function:: enqueue_write_image(queue, mem, origin, region, host_buffer, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
 
-    |enqueue-waitfor|
+    |std-enqueue-blurb|
 
     .. versionchanged:: 0.91
         *pitch* arguments defaults to zero, moved.
 
 .. function:: enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region, wait_for=None)
 
-    |enqueue-waitfor|
+    |std-enqueue-blurb|
 
 .. function:: enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset, wait_for=None)
 
-    |enqueue-waitfor|
+    |std-enqueue-blurb|
 
 .. function:: enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region, wait_for=None)
 
-    |enqueue-waitfor|
+    |std-enqueue-blurb|
 
 Mapping Memory into Host Address Space
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -329,29 +307,39 @@ Mapping Memory into Host Address Space
 
 .. function:: enqueue_map_buffer(queue, buf, flags, offset, shape, dtype, order, wait_for=None, is_blocking=False)
 
-    |enqueue-waitfor| 
+    |explain-waitfor|
     *shape*, *dtype*, and *order* have the same meaning
     as in :func:`numpy.empty`.
     See :class:`map_flags` for possible values of *flags*.
+
+    :return: a tuple *(array, event)*. *array* is a
+        :class:`numpy.ndarray` representing the host side
+        of the map. Its *.base* member contains a 
+        :class:`MemoryMap`.
 
 .. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order, wait_for=None, is_blocking=False)
 
-    |enqueue-waitfor|
+    |explain-waitfor|
     *shape*, *dtype*, and *order* have the same meaning
     as in :func:`numpy.empty`.
     See :class:`map_flags` for possible values of *flags*.
+
+    :return: a tuple *(array, event)*. *array* is a
+        :class:`numpy.ndarray` representing the host side
+        of the map. Its *.base* member contains a 
+        :class:`MemoryMap`.
+
 
 Samplers
 ^^^^^^^^
 
 .. class:: Sampler(context, normalized_coords, addressing_mode, filter_mode)
 
+    *normalized_coords* is a :class:`bool` indicating whether
+    to use coordinates between 0 and 1 (*True*) or the texture's
+    natural pixel size (*False*).
     See :class:`addressing_mode` and :class:`filter_mode` for possible
     argument values.
-
-    .. method:: get_info(param)
-
-        See :class:`sampler_info` for values of *param*.
 
     .. attribute:: info
 
@@ -359,22 +347,29 @@ Samplers
         may be used as attributes on instances of this class
         to directly query info attributes.
 
+    .. method:: get_info(param)
+
+        See :class:`sampler_info` for values of *param*.
+
     |comparable|
 
 Programs and Kernels
 --------------------
 
-.. class:: Program
+.. class:: Program(context, src)
+           Program(context, devices, binaries)
 
-    .. method:: get_info(param)
-
-        See :class:`program_info` for values of *param*.
+    *binaries* must contain one binary for each entry in *devices*.
 
     .. attribute:: info
 
         Lower case versions of the :class:`program_info` constants
         may be used as attributes on instances of this class
         to directly query info attributes.
+
+    .. method:: get_info(param)
+
+        See :class:`program_info` for values of *param*.
 
     .. method:: get_build_info(device, param)
 
@@ -403,16 +398,8 @@ Programs and Kernels
         Returns a list of all :class:`Kernel` objects in the :class:`Program`.
 
 .. function:: unload_compiler()
-.. function:: create_program_with_source(context, src)
-.. function:: create_program_with_binary(context, devices, binaries)
-
-    *binaries* must contain one binary for each entry in *devices*.
 
 .. class:: Kernel(program, name)
-
-    .. method:: get_info(param)
-
-        See :class:`kernel_info` for values of *param*.
 
     .. attribute:: info
 
@@ -420,6 +407,9 @@ Programs and Kernels
         may be used as attributes on instances of this class
         to directly query info attributes.
 
+    .. method:: get_info(param)
+
+        See :class:`kernel_info` for values of *param*.
 
     .. method:: get_work_group_info(param, device)
 
@@ -427,18 +417,18 @@ Programs and Kernels
 
     .. method:: __call__(queue, global_size, *args, global_offset=None, local_size=None, wait_for=None)
 
-        |enqueue-waitfor|
+        |std-enqueue-blurb|
 
 
     |comparable|
 
 .. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None)
 
-    |enqueue-waitfor|
+    |std-enqueue-blurb|
 
 .. function:: enqueue_task(queue, kernel, wait_for=None)
 
-    |enqueue-waitfor|
+    |std-enqueue-blurb|
 
 .. _gl-interop:
 
@@ -454,36 +444,34 @@ with GL support. See :func:`have_gl`.
 
     Return *True* if PyOpenCL was compiled with OpenGL interoperability, otherwise *False*.
 
-.. function:: create_from_gl_buffer(context, mem_flags, gl_buffer_obj)
+.. class:: GLBuffer(context, flags, bufobj)
 
-    See :class:`mem_flags` for values of *flags*.
-    Returns a new :class:`MemoryObject`.
+    :class:`GLBuffer` is a subclass of :class:`MemoryObject`.
 
-.. function:: create_from_gl_texture_2d(context, mem_flags, texture_target, miplevel, texture)
+    .. attribute:: gl_object
 
-    See :class:`mem_flags` for values of *flags*.
-    Returns a new :class:`MemoryObject`.
+.. class:: GLRenderBuffer(context, flags, bufobj)
 
-.. function:: create_from_gl_texture_3d(context, mem_flags, texture_target, miplevel, texture)
+    :class:`GLRenderBuffer` is a subclass of :class:`MemoryObject`.
 
-    See :class:`mem_flags` for values of *flags*.
-    Returns a new :class:`MemoryObject`.
+    .. attribute:: gl_object
 
-.. function:: create_from_gl_renderbuffer(context, mem_flags, gl_renderbuffer)
+.. class:: GLTexture(context, flags, texture_target, miplevel, texture, dims)
 
-    See :class:`mem_flags` for values of *flags*.
-    Returns a new :class:`MemoryObject`.
+    *dims* is either 2 or 3.
+    :class:`GLTexture` is a subclass of :class:`Image`.
+
+    .. attribute:: gl_object
+
+    .. method:: get_gl_texture_info(param)
+
+        See :class:`gl_texture_info` for values of *param*.  Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`.  
 
 .. function:: enqueue_acquire_gl_objects(queue, mem_objects, wait_for=None)
 
     *mem_objects* is a list of :class:`MemoryObject` instances.
-    |enqueue-waitfor|
+    |std-enqueue-blurb|
 
 .. function:: enqueue_release_gl_objects(queue, mem_objects, wait_for=None)
 
-    *mem_objects* is a list of :class:`MemoryObject` instances. |enqueue-waitfor|
-
-.. seealso::
-
-    :meth:`MemoryObject.get_gl_object_info`, :meth:`MemoryObject.get_gl_texture_info`.
-
+    *mem_objects* is a list of :class:`MemoryObject` instances. |std-enqueue-blurb|

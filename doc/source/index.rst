@@ -40,13 +40,11 @@ Here's an example, to give you an impression::
     queue = cl.CommandQueue(ctx)
 
     mf = cl.mem_flags
-    a_buf = cl.create_host_buffer(
-            ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, a)
-    b_buf = cl.create_host_buffer(
-            ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, b)
-    dest_buf = cl.create_buffer(ctx, mf.WRITE_ONLY, b.nbytes)
+    a_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
+    b_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b)
+    dest_buf = cl.Buffer(ctx, mf.WRITE_ONLY, b.nbytes)
 
-    prg = cl.create_program_with_source(ctx, """
+    prg = cl.Program(ctx, """
         __kernel void sum(__global const float *a,
         __global const float *b, __global float *c)
         {

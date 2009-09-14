@@ -59,6 +59,17 @@
 
 
 
+#define PYOPENCL_DEPRECATED(WHAT, KILL_VERSION, EXTRA_MSG) \
+  { \
+    PyErr_Warn( \
+        PyExc_DeprecationWarning, \
+        WHAT " is deprecated and will stop working in PyOpenCL " KILL_VERSION". " \
+        EXTRA_MSG); \
+  }
+
+
+
+
 // tracing and error reporting ------------------------------------------------
 #ifdef PYOPENCL_TRACE
   #define PYOPENCL_PRINT_CALL_TRACE(NAME) \
@@ -211,32 +222,6 @@
     { return data() == other.data(); } \
     bool operator!=(cls const &other) const \
     { return data() != other.data(); }
-
-
-
-
-// buffer creators ------------------------------------------------------------
-#define PYOPENCL_WRAP_BUFFER_CREATOR(NAME, CL_NAME, ARGS, CL_ARGS) \
-  memory_object *NAME ARGS \
-  { \
-    cl_int status_code; \
-    PYOPENCL_PRINT_CALL_TRACE(#CL_NAME); \
-    cl_mem mem = CL_NAME CL_ARGS; \
-    \
-    if (status_code != CL_SUCCESS) \
-      throw pyopencl::error(#CL_NAME, status_code); \
-    \
-    try \
-    { \
-      return new memory_object(mem, false); \
-    } \
-    catch (...) \
-    { \
-      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem)); \
-      throw; \
-    } \
-  }
-
 
 
 
@@ -951,7 +936,7 @@ namespace pyopencl
       void release()
       {
         if (!m_valid)
-            throw error("MemoryObject.free", CL_INVALID_VALUE, 
+            throw error("MemoryObject.free", CL_INVALID_VALUE,
                 "trying to double-unref mem object");
         PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseMemObject,
             (m_mem));
@@ -1006,67 +991,62 @@ namespace pyopencl
             throw error("MemoryObject.get_info", CL_INVALID_VALUE);
         }
       }
-
-      py::object get_image_info(cl_image_info param_name) const
-      {
-        switch (param_name)
-        {
-          case CL_IMAGE_FORMAT:
-            PYOPENCL_GET_INTEGRAL_INFO(Image, m_mem, param_name,
-                cl_image_format);
-          case CL_IMAGE_ELEMENT_SIZE:
-          case CL_IMAGE_ROW_PITCH:
-          case CL_IMAGE_SLICE_PITCH:
-          case CL_IMAGE_WIDTH:
-          case CL_IMAGE_HEIGHT:
-          case CL_IMAGE_DEPTH:
-            PYOPENCL_GET_INTEGRAL_INFO(Image, m_mem, param_name, size_t);
-
-          default:
-            throw error("MemoryObject.get_image_info", CL_INVALID_VALUE);
-        }
-      }
   };
 
 
 
 
-  PYOPENCL_WRAP_BUFFER_CREATOR(create_buffer, clCreateBuffer,
-      (context &ctx, cl_mem_flags flags, size_t size),
-      (ctx.data(), flags, size, 0, &status_code));
+  class buffer : public memory_object
+  {
+    public:
+      buffer(cl_mem mem, bool retain, py::object *hostbuf=0)
+        : memory_object(mem, retain, hostbuf)
+      { }
+  };
 
 
 
 
-  memory_object *create_host_buffer(
+  memory_object *create_buffer(
       context &ctx,
       cl_mem_flags flags,
-      py::object buffer)
+      size_t size,
+      py::object buffer
+      )
   {
-    void *buf;
-    PYOPENCL_BUFFER_SIZE_T len;
-    if (flags & CL_MEM_USE_HOST_PTR)
+    void *buf = 0;
+    py::object *retained_buf_obj = 0;
+    if (buffer.ptr() != Py_None)
     {
-      if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
-        throw py::error_already_set();
-    }
-    else
-    {
-      if (PyObject_AsReadBuffer(
-            buffer.ptr(), const_cast<const void **>(&buf), &len))
-        throw py::error_already_set();
+      PYOPENCL_BUFFER_SIZE_T len;
+      if (flags & CL_MEM_USE_HOST_PTR)
+      {
+        if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
+          throw py::error_already_set();
+      }
+      else
+      {
+        if (PyObject_AsReadBuffer(
+              buffer.ptr(), const_cast<const void **>(&buf), &len))
+          throw py::error_already_set();
+      }
+
+      if (flags & CL_MEM_USE_HOST_PTR)
+        retained_buf_obj = &buffer;
+
+      if (size > size_t(len))
+        throw pyopencl::error("Buffer", CL_INVALID_VALUE,
+            "specified size is greater than host buffer size");
+      if (size == 0)
+        size = len;
     }
 
     cl_int status_code;
-    cl_mem mem = clCreateBuffer(ctx.data(), flags, len, buf, &status_code);
+    cl_mem mem = clCreateBuffer(ctx.data(), flags, size, buf, &status_code);
 
     PYOPENCL_PRINT_CALL_TRACE("clCreateBuffer");
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("create_host_buffer", status_code);
-
-    py::object *retained_buf_obj = 0;
-    if (flags & CL_MEM_USE_HOST_PTR)
-      retained_buf_obj = &buffer;
 
     try
     {
@@ -1145,6 +1125,37 @@ namespace pyopencl
 
 
   // images -------------------------------------------------------------------
+  class image : public memory_object
+  {
+    public:
+      image(cl_mem mem, bool retain, py::object *hostbuf=0)
+        : memory_object(mem, retain, hostbuf)
+      { }
+
+      py::object get_image_info(cl_image_info param_name) const
+      {
+        switch (param_name)
+        {
+          case CL_IMAGE_FORMAT:
+            PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name,
+                cl_image_format);
+          case CL_IMAGE_ELEMENT_SIZE:
+          case CL_IMAGE_ROW_PITCH:
+          case CL_IMAGE_SLICE_PITCH:
+          case CL_IMAGE_WIDTH:
+          case CL_IMAGE_HEIGHT:
+          case CL_IMAGE_DEPTH:
+            PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, size_t);
+
+          default:
+            throw error("MemoryObject.get_image_info", CL_INVALID_VALUE);
+        }
+      }
+  };
+
+
+
+
   cl_image_format *make_image_format(cl_channel_order ord, cl_channel_type tp)
   {
     std::auto_ptr<cl_image_format> result(new cl_image_format);
@@ -1160,11 +1171,11 @@ namespace pyopencl
   {
     cl_uint num_image_formats;
     PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
-          ctx.data(), flags, image_type, 0, 0, & num_image_formats));
+          ctx.data(), flags, image_type, 0, 0, &num_image_formats));
 
     std::vector<cl_image_format> formats(num_image_formats);
     PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
-          ctx.data(), flags, image_type, 
+          ctx.data(), flags, image_type,
           num_image_formats, &formats.front(), 0));
 
     PYOPENCL_RETURN_VECTOR(cl_image_format, formats);
@@ -1173,79 +1184,107 @@ namespace pyopencl
 
 
 
-#define PYOPENCL_MAKE_CREATE_IMAGE(ITYPE, IMG_ARG_DECLS, IMG_ARGS) \
-  inline memory_object *create_image_##ITYPE( \
-      context const &ctx, \
-      cl_mem_flags flags, \
-      cl_image_format const &fmt, \
-      IMG_ARG_DECLS, \
-      py::object buffer) \
-  { \
-    void *buf = 0; \
-    PYOPENCL_BUFFER_SIZE_T len; \
-    py::object *retained_buf_obj = 0; \
- \
-    if (buffer.ptr() != Py_None) \
-    { \
-      if (flags & CL_MEM_USE_HOST_PTR) \
-      { \
-        if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len)) \
-          throw py::error_already_set(); \
-      } \
-      else \
-      { \
-        if (PyObject_AsReadBuffer( \
-              buffer.ptr(), const_cast<const void **>(&buf), &len)) \
-          throw py::error_already_set(); \
-      } \
- \
-      if (flags & CL_MEM_USE_HOST_PTR) \
-        retained_buf_obj = &buffer; \
-    } \
- \
-    cl_int status_code; \
-    cl_mem mem = clCreateImage##ITYPE(ctx.data(), flags, &fmt, \
-        IMG_ARGS, buf, &status_code); \
- \
-    PYOPENCL_PRINT_CALL_TRACE("clCreateImage" #ITYPE); \
-    if (status_code != CL_SUCCESS) \
-      throw pyopencl::error("create_image_" #ITYPE, status_code); \
-    \
-    try \
-    { \
-      return new memory_object(mem, false, retained_buf_obj); \
-    } \
-    catch (...) \
-    { \
-      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem)); \
-      throw; \
-    } \
+  inline image *create_image(
+      context const &ctx,
+      cl_mem_flags flags,
+      cl_image_format const &fmt,
+      py::object shape,
+      py::object pitches,
+      py::object buffer)
+  {
+    void *buf = 0;
+    PYOPENCL_BUFFER_SIZE_T len;
+    py::object *retained_buf_obj = 0;
+
+    if (buffer.ptr() != Py_None)
+    {
+      if (flags & CL_MEM_USE_HOST_PTR)
+      {
+        if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
+          throw py::error_already_set();
+      }
+      else
+      {
+        if (PyObject_AsReadBuffer(
+              buffer.ptr(), const_cast<const void **>(&buf), &len))
+          throw py::error_already_set();
+      }
+
+      if (flags & CL_MEM_USE_HOST_PTR)
+        retained_buf_obj = &buffer;
+    }
+
+    unsigned dims = py::len(shape);
+    cl_int status_code;
+    cl_mem mem;
+    if (dims == 2)
+    {
+      size_t width = py::extract<size_t>(shape[0]);
+      size_t height = py::extract<size_t>(shape[1]);
+
+      size_t pitch = 0;
+      if (pitches.ptr() != Py_None)
+      {
+        if (py::len(pitches) != 1)
+          throw pyopencl::error("Image", CL_INVALID_VALUE, 
+              "invalid length of pitch tuple");
+        pitch = py::extract<size_t>(pitches[0]);
+      }
+
+      mem = clCreateImage2D(ctx.data(), flags, &fmt,
+          width, height, pitch, buf, &status_code);
+
+      PYOPENCL_PRINT_CALL_TRACE("clCreateImage2D");
+      if (status_code != CL_SUCCESS)
+        throw pyopencl::error("clCreateImage2D", status_code);
+    }
+    else if (dims == 3)
+    {
+      size_t width = py::extract<size_t>(shape[0]);
+      size_t height = py::extract<size_t>(shape[1]);
+      size_t depth = py::extract<size_t>(shape[2]);
+
+      size_t pitch_x = 0;
+      size_t pitch_y = 0;
+
+      if (pitches.ptr() != Py_None)
+      {
+        if (py::len(pitches) != 2)
+          throw pyopencl::error("Image", CL_INVALID_VALUE, 
+              "invalid length of pitch tuple");
+
+        pitch_x = py::extract<size_t>(pitches[0]);
+        pitch_y = py::extract<size_t>(pitches[1]);
+      }
+
+      mem = clCreateImage3D(ctx.data(), flags, &fmt,
+          width, height, depth, pitch_x, pitch_y, buf, &status_code);
+
+      PYOPENCL_PRINT_CALL_TRACE("clCreateImage3D");
+      if (status_code != CL_SUCCESS)
+        throw pyopencl::error("clCreateImage3D", status_code);
+    }
+    else
+      throw pyopencl::error("Image", CL_INVALID_VALUE, 
+          "invalid dimension");
+
+    try
+    {
+      return new image(mem, false, retained_buf_obj);
+    }
+    catch (...)
+    {
+      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+      throw;
+    }
   }
-
-
-
-
-#define PYOPENCL_IMG_ARG_DECLS \
-      size_t width, size_t height, size_t pitch
-#define PYOPENCL_IMG_ARGS width, height, pitch
-  PYOPENCL_MAKE_CREATE_IMAGE(2D, PYOPENCL_IMG_ARG_DECLS, PYOPENCL_IMG_ARGS)
-#undef PYOPENCL_IMG_ARG_DECLS 
-#undef PYOPENCL_IMG_ARGS
-
-#define PYOPENCL_IMG_ARG_DECLS \
-      size_t width, size_t height, size_t depth, \
-      size_t row_pitch, size_t slice_pitch
-#define PYOPENCL_IMG_ARGS width, height, depth, row_pitch, slice_pitch
-  PYOPENCL_MAKE_CREATE_IMAGE(3D, PYOPENCL_IMG_ARG_DECLS, PYOPENCL_IMG_ARGS)
-#undef PYOPENCL_IMG_ARG_DECLS 
-#undef PYOPENCL_IMG_ARGS
 
 
 
 
   event *enqueue_read_image(
       command_queue &cq,
-      memory_object &mem,
+      image &img,
       py::object py_origin, py::object py_region,
       py::object buffer,
       size_t row_pitch, size_t slice_pitch,
@@ -1266,7 +1305,7 @@ namespace pyopencl
     cl_event evt;
     PYOPENCL_CALL_GUARDED(clEnqueueReadImage, (
           cq.data(),
-          mem.data(),
+          img.data(),
           PYOPENCL_CAST_BOOL(is_blocking),
           origin, region, row_pitch, slice_pitch, buf,
           num_events_in_wait_list, &event_wait_list.front(), &evt
@@ -1279,7 +1318,7 @@ namespace pyopencl
 
   event *enqueue_write_image(
       command_queue &cq,
-      memory_object &mem,
+      image &img,
       py::object py_origin, py::object py_region,
       py::object buffer,
       size_t row_pitch, size_t slice_pitch,
@@ -1300,7 +1339,7 @@ namespace pyopencl
     cl_event evt;
     PYOPENCL_CALL_GUARDED(clEnqueueWriteImage, (
           cq.data(),
-          mem.data(),
+          img.data(),
           PYOPENCL_CAST_BOOL(is_blocking),
           origin, region, row_pitch, slice_pitch, buf,
           num_events_in_wait_list, &event_wait_list.front(), &evt
@@ -1315,8 +1354,8 @@ namespace pyopencl
       command_queue &cq,
       memory_object &src,
       memory_object &dest,
-      py::object py_src_origin, 
-      py::object py_dest_origin, 
+      py::object py_src_origin,
+      py::object py_dest_origin,
       py::object py_region,
       py::object py_wait_for
       )
@@ -1342,7 +1381,7 @@ namespace pyopencl
       command_queue &cq,
       memory_object &src,
       memory_object &dest,
-      py::object py_origin, 
+      py::object py_origin,
       py::object py_region,
       size_t offset,
       py::object py_wait_for
@@ -1369,7 +1408,7 @@ namespace pyopencl
       memory_object &src,
       memory_object &dest,
       size_t offset,
-      py::object py_origin, 
+      py::object py_origin,
       py::object py_region,
       py::object py_wait_for
       )
@@ -1381,7 +1420,7 @@ namespace pyopencl
     cl_event evt;
     PYOPENCL_CALL_GUARDED(clEnqueueCopyBufferToImage, (
           cq.data(), src.data(), dest.data(),
-          offset, origin, region, 
+          offset, origin, region,
           num_events_in_wait_list, &event_wait_list.front(), &evt
           ));
     PYOPENCL_RETURN_NEW_EVENT(evt);
@@ -1455,7 +1494,7 @@ namespace pyopencl
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clEnqueueMapBuffer");
     void *mapped = clEnqueueMapBuffer(
-          cq.data(), buf.data(), 
+          cq.data(), buf.data(),
           PYOPENCL_CAST_BOOL(is_blocking), flags,
           offset, PyArray_NBYTES(result.get()),
           num_events_in_wait_list, &event_wait_list.front(), &evt,
@@ -1484,7 +1523,7 @@ namespace pyopencl
     Py_INCREF(array_py.get());
 
     return py::make_tuple(
-        array_py, 
+        array_py,
         handle_from_new_ptr(new event(evt_handle)));
   }
 
@@ -1495,7 +1534,7 @@ namespace pyopencl
       command_queue &cq,
       memory_object &img,
       cl_map_flags flags,
-      py::object py_origin, 
+      py::object py_origin,
       py::object py_region,
       py::object py_shape, py::object dtype, py::object order_py,
       py::object py_wait_for,
@@ -1512,7 +1551,7 @@ namespace pyopencl
     PYOPENCL_PRINT_CALL_TRACE("clEnqueueMapImage");
     size_t row_pitch, slice_pitch;
     void *mapped = clEnqueueMapImage(
-          cq.data(), img.data(), 
+          cq.data(), img.data(),
           PYOPENCL_CAST_BOOL(is_blocking), flags,
           origin, region, &row_pitch, &slice_pitch,
           num_events_in_wait_list, &event_wait_list.front(), &evt,
@@ -1544,7 +1583,7 @@ namespace pyopencl
     Py_INCREF(array_py.get());
 
     return py::make_tuple(
-        array_py, 
+        array_py,
         handle_from_new_ptr(new event(evt_handle)),
         row_pitch, slice_pitch);
   }
@@ -2086,20 +2125,110 @@ namespace pyopencl
 
 
 #ifdef HAVE_GL
-  PYOPENCL_WRAP_BUFFER_CREATOR(create_from_gl_buffer, clCreateFromGLBuffer,
+  class gl_buffer : public memory_object
+  {
+    public:
+      gl_buffer(cl_mem mem, bool retain, py::object *hostbuf=0)
+        : memory_object(mem, retain, hostbuf)
+      { }
+  };
+
+
+
+
+  class gl_renderbuffer : public memory_object
+  {
+    public:
+      gl_renderbuffer(cl_mem mem, bool retain, py::object *hostbuf=0)
+        : memory_object(mem, retain, hostbuf)
+      { }
+  };
+
+
+
+
+  class gl_texture : public image
+  {
+    public:
+      gl_texture(cl_mem mem, bool retain, py::object *hostbuf=0)
+        : image(mem, retain, hostbuf)
+      { }
+
+      py::object get_gl_texture_info(cl_gl_texture_info param_name)
+      {
+        switch (param_name)
+        {
+          case CL_GL_TEXTURE_TARGET:
+            PYOPENCL_GET_INTEGRAL_INFO(GLTexture, data(), param_name, GLenum);
+          case CL_GL_MIPMAP_LEVEL:
+            PYOPENCL_GET_INTEGRAL_INFO(GLTexture, data(), param_name, GLint);
+
+          default:
+            throw error("MemoryObject.get_gl_texture_info", CL_INVALID_VALUE);
+        }
+      }
+  };
+
+
+
+
+#define PYOPENCL_WRAP_BUFFER_CREATOR(TYPE, NAME, CL_NAME, ARGS, CL_ARGS) \
+  TYPE *NAME ARGS \
+  { \
+    cl_int status_code; \
+    PYOPENCL_PRINT_CALL_TRACE(#CL_NAME); \
+    cl_mem mem = CL_NAME CL_ARGS; \
+    \
+    if (status_code != CL_SUCCESS) \
+      throw pyopencl::error(#CL_NAME, status_code); \
+    \
+    try \
+    { \
+      return new TYPE(mem, false); \
+    } \
+    catch (...) \
+    { \
+      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem)); \
+      throw; \
+    } \
+  }
+
+
+
+
+  PYOPENCL_WRAP_BUFFER_CREATOR(gl_buffer,
+      create_from_gl_buffer, clCreateFromGLBuffer,
       (context &ctx, cl_mem_flags flags, GLuint bufobj),
       (ctx.data(), flags, bufobj, &status_code));
-  PYOPENCL_WRAP_BUFFER_CREATOR(create_from_gl_texture_2d, clCreateFromGLTexture2D,
+  PYOPENCL_WRAP_BUFFER_CREATOR(gl_texture,
+      create_from_gl_texture_2d, clCreateFromGLTexture2D,
       (context &ctx, cl_mem_flags flags,
          GLenum texture_target, GLint miplevel, GLuint texture),
       (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
-  PYOPENCL_WRAP_BUFFER_CREATOR(create_from_gl_texture_3d, clCreateFromGLTexture3D,
+  PYOPENCL_WRAP_BUFFER_CREATOR(gl_texture,
+      create_from_gl_texture_3d, clCreateFromGLTexture3D,
       (context &ctx, cl_mem_flags flags,
          GLenum texture_target, GLint miplevel, GLuint texture),
       (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
-  PYOPENCL_WRAP_BUFFER_CREATOR(create_from_gl_renderbuffer, clCreateFromGLRenderbuffer,
+  PYOPENCL_WRAP_BUFFER_CREATOR(gl_renderbuffer, 
+      create_from_gl_renderbuffer, clCreateFromGLRenderbuffer,
       (context &ctx, cl_mem_flags flags, GLuint renderbuffer),
       (ctx.data(), flags, renderbuffer, &status_code));
+
+  gl_texture *create_from_gl_texture(
+      context &ctx, cl_mem_flags flags, 
+      GLenum texture_target, GLint miplevel, 
+      GLuint texture, unsigned dims)
+  {
+    if (dims == 2)
+      return create_from_gl_texture_2d(ctx, flags, texture_target, miplevel, texture);
+    else if (dims == 3)
+      return create_from_gl_texture_3d(ctx, flags, texture_target, miplevel, texture);
+    else
+      throw pyopencl::error("Image", CL_INVALID_VALUE, 
+          "invalid dimension");
+  }
+
 
 
 
@@ -2111,26 +2240,6 @@ namespace pyopencl
     PYOPENCL_CALL_GUARDED(clGetGLObjectInfo, (mem.data(), &otype, &gl_name));
     return py::make_tuple(otype, gl_name);
   }
-
-
-
-
-  py::object get_gl_texture_info(memory_object const &mem, cl_gl_texture_info param_name)
-  {
-    switch (param_name)
-    {
-      case CL_GL_TEXTURE_TARGET:
-        PYOPENCL_GET_INTEGRAL_INFO(GLTexture, mem.data(), param_name, GLenum);
-      case CL_GL_MIPMAP_LEVEL:
-        PYOPENCL_GET_INTEGRAL_INFO(GLTexture, mem.data(), param_name, GLint);
-
-      default:
-        throw error("MemoryObject.get_gl_texture_info", CL_INVALID_VALUE);
-    }
-  }
-
-
-
 
 #define WRAP_GL_ENQUEUE(what, What) \
   event *enqueue_##what##_gl_objects( \

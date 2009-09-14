@@ -7,10 +7,9 @@ ctx = cl.create_context_from_type(cl.device_type.GPU)
 queue = cl.CommandQueue(ctx)
 
 mf = cl.mem_flags
-demo_buf = cl.create_buffer(ctx, mf.WRITE_ONLY, demo_r.nbytes)
+demo_buf = cl.Buffer(ctx, mf.WRITE_ONLY, demo_r.nbytes)
 
-
-prg = cl.create_program_with_source(ctx,
+prg = cl.Program(ctx,
 """
 __kernel void demo(__global uint *demo)
 {

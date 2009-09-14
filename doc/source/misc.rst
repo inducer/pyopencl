@@ -9,6 +9,52 @@ Acknowledgments
 
 * James Snyder provided patches to make PyOpenCL work on OS X 10.6.
 * Roger Pau Monné supplied the example :file:`examples/benchmark-all.py`.
+* David Garcia contributed significantly to PyOpenCL's API design
+  and reported many bugs.
+
+Guidelines
+==========
+
+.. _api-compatibility:
+
+API Stability
+-------------
+
+I consider PyOpenCL's API "stable".  That doesn't mean it can't
+change. But if it does, your code will generally continue to run. It
+may however start spewing warnings about things you need to change to
+stay compatible with future versions.
+
+Deprecation warnings will be around for a whole release cycle, as
+identified by the second number in the release name.  (the "90" in
+"0.90") Further, the stability promise applies for any code that's
+part of a released version. It doesn't apply to undocumented bits of
+the API, and it doesn't apply to unreleased code downloaded from git.
+
+.. _versus-c:
+
+Relation with OpenCL's C Bindings
+---------------------------------
+
+We've tried to follow these guidelines when binding the OpenCL's
+C interface to Python:
+
+* Remove the `cl_`, `CL_` and `cl` prefix from data types, macros and
+  function names.
+* Follow :pep:`8`, i.e.
+
+  * Make function names lowercase.
+  * If a data type or function name is composed of more than one word,
+    separate the words with a single underscore.
+
+* `get_info` functions become attributes.
+* Object creation is done by constructors, to the extent possible.
+  (i.e. minimize use of "factory functions")
+
+* If an operation involves two or more "complex" objects (like e.g. a
+  kernel enqueue involves a kernel and a queue), refuse the temptation 
+  to guess which one should get a method for the operation.
+  Instead, simply leave that command to be a function.
 
 User-visible Changes
 ====================
@@ -28,10 +74,23 @@ Version 0.91
   :func:`pyopencl.enqueue_write_image`
   are now defaulted to zero. The argument order of `enqueue_{read,write}_image`
   has changed for this reason.
+* Deprecate
+  :func:`pyopencl.create_image_2d`,
+  :func:`pyopencl.create_image_3d`
+  in favor of the :class:`pyopencl.Image` constructor.
+* Deprecate
+  :func:`pyopencl.create_program_with_source`,
+  :func:`pyopencl.create_program_with_binary`
+  in favor of the :class:`pyopencl.Program` constructor.
+* Deprecate
+  :func:`pyopencl.create_buffer`,
+  :func:`pyopencl.create_host_buffer`
+  in favor of the :class:`pyopencl.Buffer` constructor.
 * :meth:`pyopencl.MemoryObject.get_image_info` now actually exists.
 * Add :attr:`pyopencl.MemoryObject.image.info`.
 * Fix API tracing.
 * Add constructor arguments to :class:`pyopencl.ImageFormat`.  (suggested by David Garcia) 
+
 Version 0.90.4
 --------------
 
