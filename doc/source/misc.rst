@@ -59,6 +59,16 @@ C interface to Python:
 User-visible Changes
 ====================
 
+Version 0.92
+------------
+
+.. note::
+
+    Version 0.92 is currently under development. You can get snapshots from
+    PyOpenCL's git version control.
+
+* Add :attr:`Image.shape`. (suggested by David Garcia)
+
 Version 0.91
 ------------
 
