@@ -264,6 +264,10 @@ Images
         may be used as attributes on instances of this class
         to directly query info attributes.
 
+    .. attribute:: shape
+
+        Return the value of the *shape* constructor argument as a :class:`tuple`.
+
     .. method:: get_image_info(param)
 
         See :class:`image_info` for values of *param*.

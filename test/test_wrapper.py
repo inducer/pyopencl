@@ -129,10 +129,9 @@ class TestCL:
             img_format = cl.get_supported_image_formats(
                     ctx, cl.mem_flags.READ_ONLY, cl.mem_object_type.IMAGE2D)[0]
 
-            img = cl.create_image_2d(ctx, cl.mem_flags.READ_ONLY, img_format,
-                    128, 128)
-            #img = cl.Image(ctx, cl.mem_flags.READ_ONLY, img_format,
-                    #(128, 128))
+            img = cl.Image(ctx, cl.mem_flags.READ_ONLY, img_format, (128, 256))
+            assert img.shape == (128, 256)
+
             img.depth
             img.image.depth
             do_test(img, cl.image_info,

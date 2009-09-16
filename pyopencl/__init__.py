@@ -155,8 +155,18 @@ def _add_functionality():
             else:
                 return self.event.get_image_info(inf_attr)
 
-    _cl.Image.image = property(ImageInfoGetter)
+    def image_shape(self):
+        if self.type == mem_object_type.IMAGE2D:
+            return (self.width, self.height)
+        elif self.type == mem_object_type.IMAGE3D:
+            return (self.width, self.height, self.depth)
+        else:
+            raise LogicError("only images have shapes")
 
+    _cl.Image.image = property(ImageInfoGetter)
+    _cl.Image.shape = property(image_shape)
+
+    # Event -------------------------------------------------------------------
     def event_wait(self):
         wait_for_events([self])
         return self
