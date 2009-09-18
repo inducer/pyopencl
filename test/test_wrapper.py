@@ -191,12 +191,15 @@ def pytest_generate_tests(metafunc):
                 if "context" in metafunc.funcargnames:
                     arg_dict["context"] = cl.Context([device])
 
-                metafunc.addcall(funcargs=arg_dict.copy())
+                metafunc.addcall(funcargs=arg_dict.copy(),
+                        id=", ".join("%s=%s" % (arg, value) 
+                                for arg, value in arg_dict.iteritems()))
 
     elif "platform" in metafunc.funcargnames:
         for platform in cl.get_platforms():
             metafunc.addcall(
-                    funcargs=dict(platform=platform))
+                    funcargs=dict(platform=platform),
+                    id=str(platform))
 
 
 if __name__ == "__main__":
