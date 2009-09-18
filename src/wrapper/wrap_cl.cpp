@@ -409,6 +409,7 @@ BOOST_PYTHON_MODULE(_cl)
       .DEF_SIMPLE_METHOD(get_info)
       .def("get_devices", &cls::get_devices,
           py::arg("device_type")=CL_DEVICE_TYPE_ALL)
+      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -418,6 +419,7 @@ BOOST_PYTHON_MODULE(_cl)
     typedef device cls;
     py::class_<cls, boost::noncopyable>("Device", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
+      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -428,6 +430,7 @@ BOOST_PYTHON_MODULE(_cl)
     py::class_<cls, boost::noncopyable>("Context", 
         py::init<py::list, py::optional<py::object> >())
       .DEF_SIMPLE_METHOD(get_info)
+      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -447,6 +450,7 @@ BOOST_PYTHON_MODULE(_cl)
       .DEF_SIMPLE_METHOD(set_property)
       .DEF_SIMPLE_METHOD(flush)
       .DEF_SIMPLE_METHOD(finish)
+      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -456,6 +460,7 @@ BOOST_PYTHON_MODULE(_cl)
     py::class_<cls, boost::noncopyable>("Event", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_profiling_info)
+      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -472,6 +477,7 @@ BOOST_PYTHON_MODULE(_cl)
     py::class_<cls, boost::noncopyable>("MemoryObject", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(release)
+      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -587,6 +593,7 @@ BOOST_PYTHON_MODULE(_cl)
     py::class_<cls, boost::noncopyable>("Sampler", 
         py::init<context const &, bool, cl_addressing_mode, cl_filter_mode>())
       .DEF_SIMPLE_METHOD(get_info)
+      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -609,6 +616,7 @@ BOOST_PYTHON_MODULE(_cl)
       .def("build", &cls::build,
           (py::arg("options")="", py::arg("devices")=py::object()),
           py::return_self<>())
+      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("all_kernels", create_kernels_in_program)
@@ -624,6 +632,7 @@ BOOST_PYTHON_MODULE(_cl)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
       .DEF_SIMPLE_METHOD(set_arg)
+      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
