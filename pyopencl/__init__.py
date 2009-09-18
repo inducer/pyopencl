@@ -112,7 +112,27 @@ def _add_functionality():
         else:
             return self.get_info(pi_attr)
 
+    def program_build(self, options="", devices=None):
+        try:
+            self._build()
+        except _cl.RuntimeError, e:
+            build_logs = []
+            for dev in self.devices:
+                try:
+                    log = self.get_build_info(dev, program_build_info.LOG)
+                except:
+                    log = "<error retrieving log>"
+
+                build_logs.append((dev, log))
+
+            raise _cl.RuntimeError(
+                    str(e) + "\n\n" + (75*"="+"\n").join(
+                        "Build on %s:\n\n%s" % (dev, log) for dev, log in build_logs))
+
+        return self
+
     Program.__getattr__ = program_getattr
+    Program.build = program_build
 
     # Event -------------------------------------------------------------------
     class ProfilingInfoGetter:

@@ -614,9 +614,8 @@ BOOST_PYTHON_MODULE(_cl)
             py::args("context", "devices", "binaries")))
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_build_info)
-      .def("build", &cls::build,
-          (py::arg("options")="", py::arg("devices")=py::object()),
-          py::return_self<>())
+      .def("_build", &cls::build,
+          (py::arg("options")="", py::arg("devices")=py::object()))
       .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
