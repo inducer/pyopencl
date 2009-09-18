@@ -73,6 +73,25 @@ def _add_functionality():
     for cls, info_classes in cls_to_info_cls.iteritems():
         cls.__getattr__ = make_getattr(info_classes)
 
+    # Platform ----------------------------------------------------------------
+    def platform_repr(self):
+        return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.obj_ptr)
+
+    Platform.__repr__ = platform_repr
+
+    # Device ------------------------------------------------------------------
+    def device_repr(self):
+        return "<pyopencl.Device '%s' at 0x%x>" % (self.name, self.obj_ptr)
+
+    Device.__repr__ = device_repr
+
+    # Context -----------------------------------------------------------------
+    def context_repr(self):
+        return "<pyopencl.Context at 0x%x on %s>" % (self.obj_ptr, 
+                ", ".join(repr(dev) for dev in self.devices))
+
+    Context.__repr__ = context_repr
+
     # Program -----------------------------------------------------------------
     def program_getattr(self, attr):
         try:
