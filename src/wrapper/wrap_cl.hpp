@@ -674,7 +674,7 @@ namespace pyopencl
 
       PYOPENCL_PRINT_CALL_TRACE("clCreateContext");
     }
-    // from dev_type 
+    // from dev_type
     else if (py_dev_type.ptr() != Py_None)
     {
       py::extract<cl_device_type> dev_type(py_dev_type);
@@ -1202,14 +1202,17 @@ namespace pyopencl
       cl_mem_flags flags,
       cl_mem_object_type image_type)
   {
-    cl_uint num_image_formats;
-    PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
-          ctx.data(), flags, image_type, 0, 0, &num_image_formats));
-
+    cl_uint num_image_formats = 1024;
     std::vector<cl_image_format> formats(num_image_formats);
-    PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
-          ctx.data(), flags, image_type,
-          num_image_formats, &formats.front(), 0));
+    do
+    {
+      if (formats.size() < num_image_formats)
+        formats.resize(num_image_formats);
+
+      PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
+            ctx.data(), flags, image_type,
+            formats.size(), &formats.front(), &num_image_formats));
+    } while (formats.size() < num_image_formats);
 
     PYOPENCL_RETURN_VECTOR(cl_image_format, formats);
   }
