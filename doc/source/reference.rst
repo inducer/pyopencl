@@ -93,10 +93,16 @@ Platforms, Devices and Contexts
 
     Two instances of this class may be compared using *=="* and *"!="*.
 
-.. class:: Context(devices, properties=None)
+.. class:: Context(devices, properties=None, dev_type=None)
 
     Create a new context. *properties* is a list of key-value
     tuples, where each key must be one of :class:`context_properties`.
+    Exactly one of *devices* and *dev_type* must be not `None`, where
+    *devices* is a list of :class:`Device` instances, and
+    *dev_type* is one of the :class:`device_type` constants.
+
+    .. versionchanged:: 0.91.2
+        Constructor arguments *dev_type* added.
 
     .. attribute:: info
 
@@ -109,8 +115,6 @@ Platforms, Devices and Contexts
         See :class:`context_info` for values of *param*.
 
     |comparable|
-
-.. function:: create_context_from_type(dev_type, properties=[])
 
 Command Queues and Events
 -------------------------

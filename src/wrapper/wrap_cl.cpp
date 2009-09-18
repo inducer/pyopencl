@@ -427,18 +427,19 @@ BOOST_PYTHON_MODULE(_cl)
 
   {
     typedef context cls;
-    py::class_<cls, boost::noncopyable>("Context", 
-        py::init<py::list, py::optional<py::object> >())
+    py::class_<cls, boost::noncopyable>("Context", py::no_init)
+      .def("__init__", make_constructor(create_context,
+            py::default_call_policies(),
+            (py::arg("devices")=py::object(),
+             py::arg("properties")=py::object(),
+             py::arg("dev_type")=py::object()
+            )))
       .DEF_SIMPLE_METHOD(get_info)
       .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
   }
-
-  py::def("create_context_from_type", create_context_from_type,
-      (py::arg("dev_type"), py::arg("properties")=py::object()),
-      py::return_value_policy<py::manage_new_object>());
 
   {
     typedef command_queue cls;

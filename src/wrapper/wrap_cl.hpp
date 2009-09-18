@@ -526,36 +526,6 @@ namespace pyopencl
 
 
   // context ------------------------------------------------------------------
-#define PYOPENCL_PARSE_CONTEXT_PROPERTIES \
-  cl_context_properties *props_ptr = 0; \
-  std::vector<cl_context_properties> props; \
-  \
-  if (py_properties.ptr() != Py_None) \
-  { \
-    PYTHON_FOREACH(prop_tuple, py_properties) \
-    { \
-      if (len(prop_tuple) != 2) \
-        throw error("Context", CL_INVALID_VALUE, "property tuple must have length 2"); \
-      cl_context_properties prop = \
-          py::extract<cl_context_properties>(prop_tuple[0]); \
-      props.push_back(prop); \
-   \
-      if (prop == CL_CONTEXT_PLATFORM) \
-      { \
-        py::extract<const platform &> value(prop_tuple[1]); \
-        props.push_back( \
-            reinterpret_cast<cl_context_properties>(value().data())); \
-      } \
-      else \
-        throw error("Context", CL_INVALID_VALUE, "invalid context property"); \
-    } \
-    props.push_back(0); \
-    props_ptr = &props.front(); \
-  }
-
-
-
-
   class context : public boost::noncopyable
   {
     private:
@@ -569,30 +539,6 @@ namespace pyopencl
           PYOPENCL_CALL_GUARDED(clRetainContext, (ctx));
       }
 
-      context(
-          py::list py_devices,
-          py::object py_properties=py::object())
-      {
-        PYOPENCL_PARSE_CONTEXT_PROPERTIES;
-
-        std::vector<cl_device_id> devices;
-        PYTHON_FOREACH(py_dev, py_devices)
-        {
-          py::extract<const device &> dev(py_dev);
-            devices.push_back(dev().data());
-        }
-
-        cl_int status_code;
-        m_context = clCreateContext(
-            props_ptr,
-            devices.size(),
-            &devices.front(),
-            0, 0, &status_code);
-
-        PYOPENCL_PRINT_CALL_TRACE("clCreateContext");
-        if (status_code != CL_SUCCESS)
-          throw pyopencl::error("Context", status_code);
-      }
 
       ~context()
       {
@@ -672,21 +618,78 @@ namespace pyopencl
 
 
 
-  context *create_context_from_type(
-      cl_device_type dev_type,
-      py::object py_properties)
+  context *create_context(py::object py_devices, py::object py_properties,
+      py::object py_dev_type)
   {
-    PYOPENCL_PARSE_CONTEXT_PROPERTIES;
+    // parse context properties
+    cl_context_properties *props_ptr = 0;
+    std::vector<cl_context_properties> props;
+  
+    if (py_properties.ptr() != Py_None)
+    {
+      PYTHON_FOREACH(prop_tuple, py_properties)
+      {
+        if (len(prop_tuple) != 2)
+          throw error("Context", CL_INVALID_VALUE, "property tuple must have length 2");
+        cl_context_properties prop =
+            py::extract<cl_context_properties>(prop_tuple[0]);
+        props.push_back(prop);
+    
+        if (prop == CL_CONTEXT_PLATFORM)
+        {
+          py::extract<const platform &> value(prop_tuple[1]);
+          props.push_back(
+              reinterpret_cast<cl_context_properties>(value().data()));
+        }
+        else
+          throw error("Context", CL_INVALID_VALUE, "invalid context property");
+      }
+      props.push_back(0);
+      props_ptr = &props.front();
+    }
 
     cl_int status_code;
-    cl_context ctx = clCreateContextFromType(
-        props_ptr,
-        dev_type,
-        0, 0, &status_code);
 
-    PYOPENCL_PRINT_CALL_TRACE("clCreateContextFromType");
+    cl_context ctx;
+
+    // from device list
+    if (py_devices.ptr() != Py_None)
+    {
+      if (py_dev_type.ptr() != Py_None)
+        throw error("Context", CL_INVALID_VALUE, 
+            "one of 'devices' or 'dev_type' must be None");
+
+      std::vector<cl_device_id> devices;
+      PYTHON_FOREACH(py_dev, py_devices)
+      {
+        py::extract<const device &> dev(py_dev);
+          devices.push_back(dev().data());
+      }
+
+      ctx = clCreateContext(
+          props_ptr,
+          devices.size(),
+          &devices.front(),
+          0, 0, &status_code);
+
+      PYOPENCL_PRINT_CALL_TRACE("clCreateContext");
+    }
+    // from dev_type 
+    else if (py_dev_type.ptr() != Py_None)
+    {
+      py::extract<cl_device_type> dev_type(py_dev_type);
+      ctx = clCreateContextFromType(
+          props_ptr, dev_type,
+          0, 0, &status_code);
+
+      PYOPENCL_PRINT_CALL_TRACE("clCreateContextFromType");
+    }
+    else
+      throw error("Context", CL_INVALID_VALUE, 
+          "one of 'devices' or 'dev_type' must be not None");
+
     if (status_code != CL_SUCCESS)
-      throw pyopencl::error("clCreateContextFromType", status_code);
+      throw pyopencl::error("Context", status_code);
 
     try
     {
@@ -694,10 +697,11 @@ namespace pyopencl
     }
     catch (...)
     {
-      PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseContext, (ctx));
+      PYOPENCL_CALL_GUARDED(clReleaseContext, (ctx));
       throw;
     }
   }
+
 
 
 
@@ -2063,7 +2067,6 @@ namespace pyopencl
 
 
 
-
   py::list create_kernels_in_program(program &pgm)
   {
     py::list result;
@@ -2080,8 +2083,6 @@ namespace pyopencl
 
     return result;
   }
-
-
 
 
 

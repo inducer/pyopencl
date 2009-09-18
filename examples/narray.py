@@ -3,7 +3,7 @@ import pyopencl as cl
 import numpy as np
 
 demo_r = np.empty( (500,5), dtype=np.uint32)
-ctx = cl.create_context_from_type(cl.device_type.GPU)
+ctx = cl.Context(dev_type=cl.device_type.ALL)
 queue = cl.CommandQueue(ctx)
 
 mf = cl.mem_flags

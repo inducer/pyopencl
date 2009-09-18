@@ -16,7 +16,7 @@ def _add_functionality():
                 ],
             _cl.Device: [
                 (_cl.Device.get_info, _cl.device_info)
-                ], 
+                ],
             _cl.Context: [
                 (_cl.Context.get_info, _cl.context_info),
                 ],
@@ -30,7 +30,7 @@ def _add_functionality():
                 (MemoryObject.get_info,_cl.mem_info),
                 ],
             _cl.Image: [
-                (Image.get_image_info, _cl.image_info), 
+                (Image.get_image_info, _cl.image_info),
                 (MemoryObject.get_info,_cl.mem_info),
                 ],
             _cl.Kernel: [
@@ -57,7 +57,7 @@ def _add_functionality():
         name_to_info = dict(
                 (intern(info_name.lower()), (info_method, info_value))
                 for info_method, info_class in info_classes[::-1]
-                for info_name, info_value in 
+                for info_name, info_value in
                   info_class.__dict__.iteritems()
                 if info_name != "to_string" and not info_name.startswith("_")
                 )
@@ -90,7 +90,7 @@ def _add_functionality():
 
     # Context -----------------------------------------------------------------
     def context_repr(self):
-        return "<pyopencl.Context at 0x%x on %s>" % (self.obj_ptr, 
+        return "<pyopencl.Context at 0x%x on %s>" % (self.obj_ptr,
                 ", ".join(repr(dev) for dev in self.devices))
 
     Context.__repr__ = context_repr
@@ -208,6 +208,12 @@ _add_functionality()
 
 
 # backward compatibility ------------------------------------------------------
+def create_context_from_type(dev_type, properties=None):
+    from warnings import warn
+    warn("create_context_from_type is deprecated. Use the Context() constructor instead.",
+            DeprecationWarning)
+    return Context(dev_type=dev_type, properties=properties)
+
 def create_image_2d(context, flags, format, width, height, pitch=0, host_buffer=None):
     from warnings import warn
     warn("create_image_2d is deprecated. Use the Image() constructor instead.",
@@ -219,7 +225,7 @@ def create_image_3d(context, flags, format, width, height, depth,
     from warnings import warn
     warn("create_image_3d is deprecated. Use the Image() constructor instead.",
             DeprecationWarning)
-    return Image(context, flags, format, (width, height, depth), 
+    return Image(context, flags, format, (width, height, depth),
             (row_pitch, slice_pitch), host_buffer)
 
 def create_program_with_source(context, source):
