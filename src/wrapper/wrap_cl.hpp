@@ -1631,6 +1631,15 @@ namespace pyopencl
       sampler(context const &ctx, bool normalized_coordinates,
           cl_addressing_mode am, cl_filter_mode fm)
       {
+        cl_int status_code;
+        m_sampler = clCreateSampler(
+            ctx.data(),
+            normalized_coordinates,
+            am, fm, &status_code);
+
+        PYOPENCL_PRINT_CALL_TRACE("clCreateSampler");
+        if (status_code != CL_SUCCESS)
+          throw pyopencl::error("Sampler", status_code);
       }
 
       ~sampler()

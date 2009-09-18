@@ -119,12 +119,10 @@ class TestCL:
                     try_attr_form=False)
 
         if device.image_support:
-            if "NVIDIA" not in platform.name:
-                # Samplers are crashy in Nvidia's "conformant" CL release
-                smp = cl.Sampler(ctx, True,
-                        cl.addressing_mode.CLAMP,
-                        cl.filter_mode.NEAREST)
-                do_test(smp, cl.sampler_info)
+            smp = cl.Sampler(ctx, True,
+                    cl.addressing_mode.CLAMP,
+                    cl.filter_mode.NEAREST)
+            do_test(smp, cl.sampler_info)
 
             img_format = cl.get_supported_image_formats(
                     ctx, cl.mem_flags.READ_ONLY, cl.mem_object_type.IMAGE2D)[0]
