@@ -109,7 +109,7 @@ def main():
               `MIT license <http://en.wikipedia.org/wiki/MIT_License>`_
               and free for commercial, academic, and private use.
 
-            * Broad support. PyOpenCL was tested and works with both AMD's and Nvidia's 
+            * Broad support. PyOpenCL was tested and works with Apple's, AMD's, and Nvidia's 
               CL implementations.
             """,
             author=u"Andreas Kloeckner",
