@@ -67,6 +67,12 @@ Version 0.92
     Version 0.92 is currently under development. You can get snapshots from
     PyOpenCL's git version control.
 
+Version 0.91.1
+--------------
+
+* Fixed a number of bugs, notably involving :class:`pyopencl.Sampler`.
+* :class:`pyopencl.Device`, :class:`pyopencl.Platform`,
+  :class:`pyopencl.Context` now have nicer string representations.
 * Add :attr:`Image.shape`. (suggested by David Garcia)
 
 Version 0.91
