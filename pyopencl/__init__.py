@@ -36,6 +36,9 @@ def _add_functionality():
             _cl.Kernel: [
                 (Kernel.get_info, _cl.kernel_info),
                 ],
+            _cl.Sampler: [
+                (Sampler.get_info, _cl.sampler_info),
+                ],
             }
 
     def to_string(cls, value):
