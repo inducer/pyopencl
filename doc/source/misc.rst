@@ -67,6 +67,16 @@ Version 0.92
     Version 0.92 is currently under development. You can get snapshots from
     PyOpenCL's git version control.
 
+Version 0.91.2
+--------------
+
+* :meth:`pyopencl.Program.build` now captures build logs and adds them
+  to the exception text.
+* Deprecate :func:`pyopencl.create_context_from_type` in favor of second
+  form of :class:`pyopencl.Context` constructor
+* Introduce :class:`pyopencl.LocalMemory`.
+* Document kernel invocation and :meth:`pyopencl.Kernel.set_arg`.
+
 Version 0.91.1
 --------------
 

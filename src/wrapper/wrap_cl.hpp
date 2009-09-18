@@ -967,12 +967,11 @@ namespace pyopencl
         if (!m_valid)
             throw error("MemoryObject.free", CL_INVALID_VALUE,
                 "trying to double-unref mem object");
-        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseMemObject,
-            (m_mem));
+        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseMemObject, (m_mem));
         m_valid = false;
       }
 
-      ~memory_object()
+      virtual ~memory_object()
       {
         if (m_valid)
           release();
@@ -1816,7 +1815,7 @@ namespace pyopencl
         }
       }
 
-      program &build(std::string options, py::object py_devices)
+      void build(std::string options, py::object py_devices)
       {
         if (py_devices.ptr() == Py_None)
         {
@@ -1833,8 +1832,6 @@ namespace pyopencl
               (m_program, devices.size(), &devices.front(),
                options.c_str(), 0 ,0));
         }
-
-        return *this;
       }
   };
 
@@ -1930,6 +1927,23 @@ namespace pyopencl
 
 
   // kernel -------------------------------------------------------------------
+  class local_memory
+  {
+    private:
+      size_t m_size;
+
+    public:
+      local_memory(size_t size)
+        : m_size(size)
+      { }
+
+      size_t size() const
+      { return m_size; }
+  };
+
+
+
+
   class kernel : boost::noncopyable
   {
     private:
@@ -1971,6 +1985,11 @@ namespace pyopencl
 
       PYOPENCL_EQUALITY_TESTS(kernel);
 
+      void set_arg_null(cl_uint arg_index)
+      {
+        PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index, 0, 0));
+      }
+
       void set_arg_mem(cl_uint arg_index, memory_object &mo)
       {
         cl_mem m = mo.data();
@@ -1978,7 +1997,13 @@ namespace pyopencl
             (m_kernel, arg_index, sizeof(cl_mem), &m));
       }
 
-      void set_arg_sampler(cl_uint arg_index, sampler &smp)
+      void set_arg_local(cl_uint arg_index, local_memory const &loc)
+      {
+        PYOPENCL_CALL_GUARDED(clSetKernelArg,
+            (m_kernel, arg_index, loc.size(), 0));
+      }
+
+      void set_arg_sampler(cl_uint arg_index, sampler const &smp)
       {
         cl_sampler s = smp.data();
         PYOPENCL_CALL_GUARDED(clSetKernelArg,
@@ -1991,12 +2016,20 @@ namespace pyopencl
         PYOPENCL_BUFFER_SIZE_T len;
 
         if (PyObject_AsReadBuffer(py_buffer.ptr(), &buf, &len))
+          throw py::error_already_set();
+
         PYOPENCL_CALL_GUARDED(clSetKernelArg,
             (m_kernel, arg_index, len, buf));
       }
 
       void set_arg(cl_uint arg_index, py::object arg)
       {
+        if (arg.ptr() == Py_None)
+        {
+          set_arg_null(arg_index);
+          return;
+        }
+
         py::extract<memory_object &> ex_mo(arg);
         if (ex_mo.check())
         {
@@ -2004,7 +2037,14 @@ namespace pyopencl
           return;
         }
 
-        py::extract<sampler &> ex_smp(arg);
+        py::extract<local_memory const &> ex_loc(arg);
+        if (ex_loc.check())
+        {
+          set_arg_local(arg_index, ex_loc());
+          return;
+        }
+
+        py::extract<sampler const &> ex_smp(arg);
         if (ex_smp.check())
         {
           set_arg_sampler(arg_index, ex_smp());

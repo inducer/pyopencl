@@ -638,6 +638,15 @@ BOOST_PYTHON_MODULE(_cl)
       ;
   }
 
+  {
+    typedef local_memory cls;
+    py::class_<cls, boost::noncopyable>("LocalMemory", 
+        py::init<size_t>(py::arg("size")))
+      .add_property("size", &cls::size)
+      ;
+  }
+
+
   py::def("enqueue_nd_range_kernel", enqueue_nd_range_kernel,
       (py::args("queue", "kernel"),
       py::arg("global_work_size"),

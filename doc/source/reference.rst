@@ -423,12 +423,47 @@ Programs and Kernels
 
         See :class:`kernel_work_group_info` for values of *param*.
 
+    .. method:: set_arg(self, arg)
+
+        *arg* may be
+
+        * `None`: This may be passed for `__global` memory references 
+          to pass a NULL pointer to the kernel.
+        * Anything that satisfies the Python buffer interface,
+          in particular :class:`numpy.ndarray`, :class:`str`,
+          or :mod:`numpy`'s sized scalars, such as :class:`numpy.int32`
+          or :class:`numpy.float64`. 
+
+          .. note:: 
+
+              Note that Python's own :class:`int`
+              or :class:`float` objects will not work as-is, but 
+              :mod:`struct` can be used to convert them to binary 
+              data in a :class:`str`, which will work.
+
+        * An instance of :class:`MemoryObject`. (e.g. :class:`Buffer`,
+          :class:`Image`, etc.)
+        * An instance of :class:`LocalMemory`.
+        * An instance of :class:`Sampler`.
+
     .. method:: __call__(queue, global_size, *args, global_offset=None, local_size=None, wait_for=None)
 
+        Use :func:`enqueue_nd_range_kernel` to enqueue a kernel execution, after using
+        :meth:`set_arg` to set each argument in turn. See the documentation for 
+        :meth:`set_arg` to see what argument types are allowed.
         |std-enqueue-blurb|
 
-
     |comparable|
+
+.. class:: LocalMemory(size)
+
+    A helper class to pass `__local` memory arguments to kernels.
+
+    .. versionadded:: 0.91.2
+
+    .. attribute:: size
+
+        The size of local buffer in bytes to be provided.
 
 .. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None)
 
