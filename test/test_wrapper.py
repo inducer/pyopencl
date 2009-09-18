@@ -204,4 +204,5 @@ if __name__ == "__main__":
     import pyopencl
 
     from py.test.cmdline import main
-    main([__file__])
+    import sys
+    main([__file__]+sys.argv[1:])
