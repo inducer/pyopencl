@@ -169,6 +169,82 @@ class TestCL:
             from py.test import skip
             skip("images not supported on %s" % device.name)
 
+    def test_that_python_args_fail(self, context):
+        prg = cl.Program(context, """
+            __kernel void mult(__global float *a, float b, int c)
+            { a[get_global_id(0)] *= (b+c); }
+            """).build()
+
+        a = numpy.random.rand(50000)
+        queue = cl.CommandQueue(context)
+        mf = cl.mem_flags
+        a_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=a)
+
+        try:
+            prg.mult(queue, a.shape, a_buf, 2, 3)
+            assert False, "PyOpenCL should not accept bare Python types as arguments"
+        except TypeError:
+            pass
+
+        try:
+            prg.mult(queue, a.shape, a_buf, float(2), 3)
+            assert False, "PyOpenCL should not accept bare Python types as arguments"
+        except TypeError:
+            pass
+
+        prg.mult(queue, a.shape, a_buf, numpy.float32(2), numpy.int32(3))
+
+        a_result = numpy.empty_like(a)
+        cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
+
+    def test_image_2d(self, device, context):
+        if not device.image_support:
+            from py.test import skip
+            skip("images not supported on %s" % device)
+
+        prg = cl.Program(context, """
+            __kernel void copy_image(
+              __global float *dest, 
+              __read_only image2d_t src, 
+              sampler_t samp,
+              int width)
+            { 
+              int x = get_global_id(0);
+              int y = get_global_id(1);
+              /*
+              const sampler_t samp = 
+                CLK_NORMALIZED_COORDS_FALSE
+                | CLK_ADDRESS_CLAMP
+                | CLK_FILTER_NEAREST;
+                */
+              dest[x + width*y] = read_imagef(src, samp, (float2)(x, y)).x;
+              // dest[x + width*y] = get_image_height(src);
+            }
+            """).build()
+
+        a = numpy.random.rand(1024, 1024).astype(numpy.float32)
+        queue = cl.CommandQueue(context)
+        mf = cl.mem_flags
+        a_img = cl.Image(context, mf.READ_ONLY,
+                cl.ImageFormat(cl.channel_order.R, cl.channel_type.FLOAT),
+                hostbuf=a)
+        a_dest = cl.Buffer(context, mf.READ_WRITE, a.nbytes)
+
+        samp = cl.Sampler(context, False,
+                cl.addressing_mode.CLAMP,
+                cl.filter_mode.NEAREST)
+        prg.copy_image(queue, a.shape, a_dest, a_img, samp, numpy.int32(a.shape[0]))
+
+        a_result = numpy.empty_like(a)
+        cl.enqueue_read_buffer(queue, a_dest, a_result, is_blocking=True)
+        print a_result.dtype
+
+        print a_result[:4, :4]
+        print a[:4, :4]
+        assert la.norm(a_result - a) == 0
+
+
+
 
 
 
