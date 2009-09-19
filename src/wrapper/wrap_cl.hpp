@@ -977,6 +977,9 @@ namespace pyopencl
           release();
       }
 
+      py::object hostbuf()
+      { return m_hostbuf; }
+
       const cl_mem data() const
       { return m_mem; }
 
@@ -1047,6 +1050,11 @@ namespace pyopencl
       py::object buffer
       )
   {
+    if (buffer.ptr() != Py_None && 
+        !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
+      PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
+          "but no memory flags to make use of it.");
+
     void *buf = 0;
     py::object *retained_buf_obj = 0;
     if (buffer.ptr() != Py_None)
@@ -1101,9 +1109,16 @@ namespace pyopencl
       py::object buffer,
       size_t device_offset,
       py::object py_wait_for,
-      bool is_blocking
+      bool is_blocking,
+      py::object host_buffer_deprecated
       )
   {
+    if (host_buffer_deprecated.ptr() != Py_None)
+    {
+      PYOPENCL_DEPRECATED("The 'host_buffer' keyword argument", "0.93", );
+      buffer = host_buffer_deprecated;
+    }
+
     PYOPENCL_PARSE_WAIT_FOR;
 
     void *buf;
@@ -1132,9 +1147,16 @@ namespace pyopencl
       py::object buffer,
       size_t device_offset,
       py::object py_wait_for,
-      bool is_blocking
+      bool is_blocking,
+      py::object host_buffer_deprecated
       )
   {
+    if (host_buffer_deprecated.ptr() != Py_None)
+    {
+      PYOPENCL_DEPRECATED("The 'host_buffer' keyword argument", "0.93", );
+      buffer = host_buffer_deprecated;
+    }
+
     PYOPENCL_PARSE_WAIT_FOR;
 
     const void *buf;
@@ -1226,8 +1248,30 @@ namespace pyopencl
       cl_image_format const &fmt,
       py::object shape,
       py::object pitches,
-      py::object buffer)
+      py::object buffer,
+      py::object host_buffer_deprecated
+      )
   {
+    if (host_buffer_deprecated.ptr() != Py_None)
+    {
+      PYOPENCL_DEPRECATED("The 'host_buffer' keyword argument", "0.93", );
+      buffer = host_buffer_deprecated;
+    }
+
+    if (buffer.ptr() != Py_None && 
+        !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
+      PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
+          "but no memory flags to make use of it.");
+
+    if (shape.ptr() == Py_None)
+    {
+      if (buffer.ptr() == Py_None)
+        throw pyopencl::error("Image", CL_INVALID_VALUE, 
+            "'shape' must be passed if 'hostbuf' is not given");
+
+      shape = buffer.attr("shape");
+    }
+
     void *buf = 0;
     PYOPENCL_BUFFER_SIZE_T len;
     py::object *retained_buf_obj = 0;
@@ -1325,9 +1369,16 @@ namespace pyopencl
       py::object buffer,
       size_t row_pitch, size_t slice_pitch,
       py::object py_wait_for,
-      bool is_blocking
+      bool is_blocking,
+      py::object host_buffer_deprecated
       )
   {
+    if (host_buffer_deprecated.ptr() != Py_None)
+    {
+      PYOPENCL_DEPRECATED("The 'host_buffer' keyword argument", "0.93", );
+      buffer = host_buffer_deprecated;
+    }
+
     PYOPENCL_PARSE_WAIT_FOR;
     COPY_PY_COORD_TRIPLE(origin);
     COPY_PY_REGION_TRIPLE(region);
@@ -1359,9 +1410,16 @@ namespace pyopencl
       py::object buffer,
       size_t row_pitch, size_t slice_pitch,
       py::object py_wait_for,
-      bool is_blocking
+      bool is_blocking,
+      py::object host_buffer_deprecated
       )
   {
+    if (host_buffer_deprecated.ptr() != Py_None)
+    {
+      PYOPENCL_DEPRECATED("The 'host_buffer' keyword argument", "0.93", );
+      buffer = host_buffer_deprecated;
+    }
+
     PYOPENCL_PARSE_WAIT_FOR;
     COPY_PY_COORD_TRIPLE(origin);
     COPY_PY_REGION_TRIPLE(region);

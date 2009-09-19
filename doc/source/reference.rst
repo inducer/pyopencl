@@ -202,6 +202,11 @@ Memory
 
         See :class:`mem_info` for values of *param*.
 
+    .. attribute:: hostbuf
+
+        Contains the *hostbuf* parameter if the MemoryObject was constructed
+        with :attr:`mem_flags.USE_HOST_PTR`.
+
     .. method:: release()
 
     |comparable|
@@ -218,13 +223,13 @@ Buffers
 
     :class:`Buffer` is a subclass of :class:`MemoryObject`.
 
-.. function:: enqueue_read_buffer(queue, mem, host_buffer, device_offset=0, wait_for=None, is_blocking=False)
+.. function:: enqueue_read_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=False)
 
-    *host_buffer* |buf-iface|
+    *hostbuf* |buf-iface|
 
-.. function:: enqueue_write_buffer(queue, mem, host_buffer, device_offset=0, wait_for=None, is_blocking=False)
+.. function:: enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=False)
 
-    *host_buffer* |buf-iface|
+    *hostbuf* |buf-iface|
 
 Image Formats
 ^^^^^^^^^^^^^
@@ -255,7 +260,12 @@ Image Formats
 
 Images
 ^^^^^^
-.. class:: Image(context, flags, format, shape, pitches=None, host_buffer=None)
+.. class:: Image(context, flags, format, shape=None, pitches=None, hostbuf=None)
+
+    *shape* is a 2- or 3-tuple.
+
+    If *hostbuf* is given and *shape* is `None`, then *hostbuf.shape* is 
+    used as the *shape* parameter.
 
     :class:`Image` is a subclass of :class:`MemoryObject`.
 
@@ -280,14 +290,14 @@ Images
 
     |comparable|
 
-.. function:: enqueue_read_image(queue, mem, origin, region, host_buffer, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
+.. function:: enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
 
     |std-enqueue-blurb|
 
     .. versionchanged:: 0.91
         *pitch* arguments defaults to zero, moved.
 
-.. function:: enqueue_write_image(queue, mem, origin, region, host_buffer, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
+.. function:: enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
 
     |std-enqueue-blurb|
 

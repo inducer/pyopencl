@@ -479,6 +479,7 @@ BOOST_PYTHON_MODULE(_cl)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(release)
       .add_property("obj_ptr", &cls::obj_ptr)
+      .add_property("hostbuf", &cls::hostbuf)
       .def(py::self == py::self)
       .def(py::self != py::self)
       ;
@@ -498,16 +499,20 @@ BOOST_PYTHON_MODULE(_cl)
   }
 
   py::def("enqueue_read_buffer", enqueue_read_buffer,
-      (py::args("queue", "mem", "host_buffer"), 
+      (py::args("queue", "mem", "hostbuf"), 
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false),
+       py::arg("is_blocking")=false,
+       py::arg("host_buffer")=py::object()
+       ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_write_buffer", enqueue_write_buffer,
-      (py::args("queue", "mem", "host_buffer"), 
+      (py::args("queue", "mem", "hostbuf"), 
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false),
+       py::arg("is_blocking")=false,
+       py::arg("host_buffer")=py::object()
+       ),
       py::return_value_policy<py::manage_new_object>());
 
   // image --------------------------------------------------------------------
@@ -517,8 +522,10 @@ BOOST_PYTHON_MODULE(_cl)
         "Image", py::no_init)
       .def("__init__", make_constructor(create_image,
             py::default_call_policies(),
-            (py::args("context", "flags", "format", "shape"), 
+            (py::args("context", "flags", "format"), 
+             py::arg("shape")=py::object(),
              py::arg("pitches")=py::object(),
+             py::arg("hostbuf")=py::object(),
              py::arg("host_buffer")=py::object()
             )))
       .DEF_SIMPLE_METHOD(get_image_info)
@@ -537,18 +544,22 @@ BOOST_PYTHON_MODULE(_cl)
   DEF_SIMPLE_FUNCTION(get_supported_image_formats);
 
   py::def("enqueue_read_image", enqueue_read_image,
-      (py::args("queue", "mem", "origin", "region", "host_buffer"), 
+      (py::args("queue", "mem", "origin", "region", "hostbuf"), 
        py::arg("row_pitch")=0,
        py::arg("slice_pitch")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false),
+       py::arg("is_blocking")=false,
+       py::arg("host_buffer")=py::object()
+       ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_write_image", enqueue_write_image,
-      (py::args("queue", "mem", "origin", "region", "host_buffer"), 
+      (py::args("queue", "mem", "origin", "region", "hostbuf"), 
        py::arg("row_pitch")=0,
        py::arg("slice_pitch")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false),
+       py::arg("is_blocking")=false,
+       py::arg("host_buffer")=py::object()
+       ),
       py::return_value_policy<py::manage_new_object>());
 
   py::def("enqueue_copy_image", enqueue_copy_image,

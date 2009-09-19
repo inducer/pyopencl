@@ -67,6 +67,15 @@ Version 0.92
     Version 0.92 is currently under development. You can get snapshots from
     PyOpenCL's git version control.
 
+Version 0.91.3
+--------------
+
+* All parameters named *host_buffer* were renamed *hostbuf* for consistency
+  with the :class:`pyopencl.Buffer` constructor introduced in 0.91.
+  Compatibility code is in place.
+* The :class:`Image` constructor does not need a *shape* parameter if the 
+  given *hostbuf* has *hostbuf.shape*.
+
 Version 0.91.2
 --------------
 
