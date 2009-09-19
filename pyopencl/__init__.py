@@ -115,7 +115,7 @@ def _add_functionality():
     def program_build(self, options="", devices=None):
         try:
             self._build()
-        except _cl.RuntimeError, e:
+        except Exception, e:
             build_logs = []
             for dev in self.devices:
                 try:
