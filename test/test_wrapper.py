@@ -13,6 +13,7 @@ def have_cl():
         return False
 
 
+
 if have_cl():
     import pyopencl as cl
 
@@ -225,7 +226,7 @@ class TestCL:
         a = numpy.random.rand(1024, 1024).astype(numpy.float32)
         queue = cl.CommandQueue(context)
         mf = cl.mem_flags
-        a_img = cl.Image(context, mf.READ_ONLY,
+        a_img = cl.Image(context, mf.READ_ONLY | mf.COPY_HOST_PTR,
                 cl.ImageFormat(cl.channel_order.R, cl.channel_type.FLOAT),
                 hostbuf=a)
         a_dest = cl.Buffer(context, mf.READ_WRITE, a.nbytes)
@@ -250,6 +251,9 @@ class TestCL:
 
 
 def pytest_generate_tests(metafunc):
+    if have_cl():
+        import pyopencl as cl
+
     if ("device" in metafunc.funcargnames
             or "context" in metafunc.funcargnames):
         arg_dict = {}
