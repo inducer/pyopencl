@@ -253,6 +253,9 @@ class TestCL:
 def pytest_generate_tests(metafunc):
     if have_cl():
         import pyopencl as cl
+    else:
+        # will still show "skipped" messages
+        return
 
     if ("device" in metafunc.funcargnames
             or "context" in metafunc.funcargnames):
