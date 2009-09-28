@@ -93,13 +93,15 @@ Platforms, Devices and Contexts
 
     Two instances of this class may be compared using *=="* and *"!="*.
 
-.. class:: Context(devices, properties=None, dev_type=None)
+.. class:: Context(devices=None, properties=None, dev_type=None)
 
     Create a new context. *properties* is a list of key-value
     tuples, where each key must be one of :class:`context_properties`.
-    Exactly one of *devices* and *dev_type* must be not `None`, where
+    At most one of *devices* and *dev_type* may be not `None`, where
     *devices* is a list of :class:`Device` instances, and
     *dev_type* is one of the :class:`device_type` constants.
+    If neither is specified, a context with a *dev_type* of 
+    :attr:`device_type.DEFAULT` is created.
 
     .. versionchanged:: 0.91.2
         Constructor arguments *dev_type* added.

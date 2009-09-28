@@ -675,18 +675,16 @@ namespace pyopencl
       PYOPENCL_PRINT_CALL_TRACE("clCreateContext");
     }
     // from dev_type
-    else if (py_dev_type.ptr() != Py_None)
+    else
     {
-      py::extract<cl_device_type> dev_type(py_dev_type);
-      ctx = clCreateContextFromType(
-          props_ptr, dev_type,
-          0, 0, &status_code);
+      cl_device_type dev_type = CL_DEVICE_TYPE_DEFAULT;
+      if (py_dev_type.ptr() != Py_None)
+        dev_type = py::extract<cl_device_type>(py_dev_type)();
+
+      ctx = clCreateContextFromType(props_ptr, dev_type, 0, 0, &status_code);
 
       PYOPENCL_PRINT_CALL_TRACE("clCreateContextFromType");
     }
-    else
-      throw error("Context", CL_INVALID_VALUE, 
-          "one of 'devices' or 'dev_type' must be not None");
 
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("Context", status_code);

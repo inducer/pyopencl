@@ -5,7 +5,7 @@ import numpy.linalg as la
 a = numpy.random.rand(50000).astype(numpy.float32)
 b = numpy.random.rand(50000).astype(numpy.float32)
 
-ctx = cl.Context(dev_type=cl.device_type.ALL)
+ctx = cl.Context()
 queue = cl.CommandQueue(ctx)
 
 mf = cl.mem_flags
