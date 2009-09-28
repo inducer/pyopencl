@@ -73,8 +73,9 @@ Version 0.91.3
 * All parameters named *host_buffer* were renamed *hostbuf* for consistency
   with the :class:`pyopencl.Buffer` constructor introduced in 0.91.
   Compatibility code is in place.
-* The :class:`Image` constructor does not need a *shape* parameter if the 
+* The :class:`pyopencl.Image` constructor does not need a *shape* parameter if the 
   given *hostbuf* has *hostbuf.shape*.
+* The :class:`pyopencl.Context` constructor can now be called without parameters.
 
 Version 0.91.2
 --------------
