@@ -11,6 +11,7 @@ Acknowledgments
 * Roger Pau Monné supplied the example :file:`examples/benchmark-all.py`.
 * David Garcia contributed significantly to PyOpenCL's API design
   and reported many bugs.
+* Michal Januszewski sent a patch.
 
 Guidelines
 ==========

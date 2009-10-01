@@ -114,7 +114,7 @@ def _add_functionality():
 
     def program_build(self, options="", devices=None):
         try:
-            self._build()
+            self._build(options=options, devices=devices)
         except Exception, e:
             build_logs = []
             for dev in self.devices:
