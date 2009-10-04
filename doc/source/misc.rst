@@ -12,6 +12,7 @@ Acknowledgments
 * David Garcia contributed significantly to PyOpenCL's API design
   and reported many bugs.
 * Michal Januszewski sent a patch.
+* Achim Gottinger submitted a fix for an example.
 
 Guidelines
 ==========
