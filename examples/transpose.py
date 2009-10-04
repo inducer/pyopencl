@@ -65,7 +65,7 @@ class TransposeWithLocal:
         void transpose(
           __global float *a_t, __global float *a,
           unsigned a_width, unsigned a_height,
-          __local float a_local[BLOCK_SIZE][BLOCK_SIZE+1])
+          __local float *a_local)
         {
           int base_idx_a   =
             get_group_id(0) * BLOCK_SIZE +
@@ -77,11 +77,11 @@ class TransposeWithLocal:
           int glob_idx_a   = base_idx_a + get_local_id(0) + a_width * get_local_id(1);
           int glob_idx_a_t = base_idx_a_t + get_local_id(0) + a_height * get_local_id(1);
 
-          a_local[get_local_id(1)][get_local_id(0)] = a[glob_idx_a];
+          a_local[get_local_id(1)*BLOCK_SIZE+get_local_id(0)] = a[glob_idx_a];
 
           barrier(CLK_LOCAL_MEM_FENCE);
 
-          a_t[glob_idx_a_t] = a_local[get_local_id(0)][get_local_id(1)];
+          a_t[glob_idx_a_t] = a_local[get_local_id(0)*BLOCK_SIZE+get_local_id(1)];
         }
         """% {"block_size": block_size}).build().transpose
 
@@ -127,8 +127,6 @@ def check_transpose():
 
         queue = cl.CommandQueue(ctx)
 
-        from pycuda.curandom import rand
-
         for i in numpy.arange(10, 13, 0.125):
             size = int(((2**i) // 32) * 32)
             print size
@@ -163,12 +161,10 @@ def benchmark_transpose():
     for cls in methods:
         name = cls.__name__.replace("Transpose", "")
 
-        from pycuda.curandom import rand
-
         mem_bandwidths[cls] = meth_mem_bws = []
 
         for size in sizes:
-            print "benchmarking", name, size
+
             source = numpy.random.rand(size, size).astype(numpy.float32)
 
             mf = cl.mem_flags
@@ -188,6 +184,7 @@ def benchmark_transpose():
             time = sum(evt.profile.end - evt.profile.start for evt in events)
 
             mem_bw = 2*source.nbytes*count/(time*1e-9)
+            print "benchmarking", name, size, mem_bw/1e9, "GB/s"
             meth_mem_bws.append(mem_bw)
 
             a_buf.release()
