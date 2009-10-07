@@ -34,8 +34,8 @@ mod = Module([
                 for name in ["tgt", "op1", "op2"]]))),
         Block([
             Initializer(POD(numpy.int32, "idx"), 
-                "get_local_id(0) + %d * %d * get_group_id(0)"
-                % (local_size, thread_strides))
+                "get_local_id(0) + %d * get_group_id(0)"
+                % (local_size*thread_strides))
             ]+[
             Assign(
                 "tgt[idx+%d]" % (o*local_size),
