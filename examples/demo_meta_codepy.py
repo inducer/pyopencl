@@ -2,11 +2,11 @@ import pyopencl as cl
 import numpy
 import numpy.linalg as la
 
-block_size = 16
-local_size = 32
+local_size = 256
+thread_strides = 32
 macroblock_count = 33
 dtype = numpy.float32
-total_size = block_size*local_size*macroblock_count
+total_size = local_size*thread_strides*macroblock_count
 
 ctx = cl.Context()
 queue = cl.CommandQueue(ctx)
@@ -27,27 +27,28 @@ from codepy.cgen.opencl import CLKernel, CLGlobal, \
 
 mod = Module([
     FunctionBody(
-        CLKernel(CLRequiredWorkGroupSize((
+        CLKernel(CLRequiredWorkGroupSize((local_size,),
             FunctionDeclaration(
             Value("void", "add"),
             arg_decls=[CLGlobal(Pointer(Const(POD(dtype, name))))
                 for name in ["tgt", "op1", "op2"]]))),
         Block([
-            Initializer(
-                POD(numpy.int32, "idx"), "get_global_id(0)")
+            Initializer(POD(numpy.int32, "idx"), 
+                "get_local_id(0) + %d * %d * get_group_id(0)"
+                % (local_size, thread_strides))
             ]+[
             Assign(
                 "tgt[idx+%d]" % (o*local_size),
                 "op1[idx+%d] + op2[idx+%d]" % (
                     o*local_size, 
                     o*local_size))
-            for o in range(block_size)]))])
+            for o in range(thread_strides)]))])
 
-knl = cl.Program(mod).build().add
+knl = cl.Program(ctx, str(mod)).build().add
 
-knl(c_gpu, a_gpu, b_gpu, 
-        local_size=(local_size,),
-        global_size=(local_size*macroblock_count,1))
+knl(queue, (local_size*macroblock_count,), 
+        c_buf, a_buf, b_buf, 
+        local_size=(local_size,))
 
 c = numpy.empty_like(a)
 cl.enqueue_read_buffer(queue, c_buf, c).wait()
