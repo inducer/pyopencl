@@ -133,7 +133,6 @@ def main():
 
             # build info
             packages=["pyopencl"],
-            zip_safe=False,
 
             install_requires=[
                 "pytools>=7",
