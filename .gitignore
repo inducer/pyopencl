@@ -43,3 +43,4 @@ MANIFEST
 *.BASE.[0-9]*
 tmp
 temp*
+setuptools.pth

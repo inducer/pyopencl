@@ -26,15 +26,23 @@ class TestCL:
     def test_get_info(self, platform, device):
         had_failures = [False]
 
-        QUIRKS = [
-                ("NVIDIA", [
-                    (cl.Device, cl.device_info.PLATFORM),
+        CRASH_QUIRKS = [
+                (("NVIDIA Corporation", "NVIDIA CUDA", 
+                    "OpenCL 1.0 CUDA 3.0.1"),
+                    [
+                    (cl.Event, cl.event_info.COMMAND_QUEUE),
                     ]),
                 ]
+        QUIRKS = []
+
+        plat_quirk_key = (
+                platform.vendor,
+                platform.name,
+                platform.version)
 
         def find_quirk(quirk_list, cl_obj, info):
-            for quirk_plat_name, quirks in quirk_list:
-                if quirk_plat_name in platform.name:
+            for entry_plat_key, quirks in quirk_list:
+                if entry_plat_key == plat_quirk_key:
                     for quirk_cls, quirk_info in quirks:
                         if (isinstance(cl_obj, quirk_cls)
                                 and quirk_info == info):
@@ -50,6 +58,11 @@ class TestCL:
             for info_name in dir(info_cls):
                 if not info_name.startswith("_") and info_name != "to_string":
                     info = getattr(info_cls, info_name)
+
+                    if find_quirk(CRASH_QUIRKS, cl_obj, info):
+                        print "not executing get_info", type(cl_obj), info_name
+                        print "(known crash quirk for %s)" % platform.name
+                        continue
 
                     try:
                         func(info)
