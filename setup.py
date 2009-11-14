@@ -68,6 +68,7 @@ def main():
         # Compile against 10.6 SDK, first to support OpenCL
         conf["CXXFLAGS"].extend(['-isysroot', '/Developer/SDKs/MacOSX10.6.sdk'])
         conf["LDFLAGS"].extend(['-isysroot', '/Developer/SDKs/MacOSX10.6.sdk'])
+        conf["LDFLAGS"].append("-Wl,-framework,OpenCL")
 
     ext_kwargs = dict()
 
