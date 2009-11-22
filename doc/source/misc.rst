@@ -13,6 +13,8 @@ Acknowledgments
   and reported many bugs.
 * Michal Januszewski sent a patch.
 * Achim Gottinger submitted a fix for an example.
+* Andrew Karpushin provided a fix for a whole class of crash bugs in
+  PyOpenCL.
 
 Guidelines
 ==========
