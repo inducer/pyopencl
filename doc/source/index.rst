@@ -69,8 +69,8 @@ Contents
 .. toctree::
     :maxdepth: 2
 
-    misc
     reference
+    misc
 
 Note that this guide does not explain OpenCL programming and technology. Please 
 refer to the official `Khronos OpenCL documentation <http://khronos.org/opencl>`_
