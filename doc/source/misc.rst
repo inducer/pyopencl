@@ -71,6 +71,11 @@ Version 0.92
     Version 0.92 is currently under development. You can get snapshots from
     PyOpenCL's git version control.
 
+Version 0.91.4
+--------------
+
+A bugfix release. No user-visible changes.
+
 Version 0.91.3
 --------------
 
