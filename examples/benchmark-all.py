@@ -51,7 +51,7 @@ for platform in cl.get_platforms():
             {
                         int loop;
                         int gid = get_global_id(0);
-                        for(loop=1; loop<1000;loop++)
+                        for(loop=0; loop<1000;loop++)
                         {
                                 c[gid] = a[gid] + b[gid];
                                 c[gid] = c[gid] * (a[gid] + b[gid]);
