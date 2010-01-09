@@ -1361,6 +1361,12 @@ namespace pyopencl
         pitch = py::extract<size_t>(pitches[0]);
       }
 
+      // check buffer size
+      cl_int itemsize = get_image_format_item_size(fmt);
+      if (buf && std::max(pitch, width*itemsize)*height > len)
+          throw pyopencl::error("Image", CL_INVALID_VALUE, 
+              "buffer too small");
+
       mem = clCreateImage2D(ctx.data(), flags, &fmt,
           width, height, pitch, buf, &status_code);
 
@@ -1386,6 +1392,15 @@ namespace pyopencl
         pitch_x = py::extract<size_t>(pitches[0]);
         pitch_y = py::extract<size_t>(pitches[1]);
       }
+
+      // check buffer size
+      cl_int itemsize = get_image_format_item_size(fmt);
+      if (buf && 
+          std::max(pitch_x, width*itemsize)
+          * std::max(height, pitch_y) 
+          * depth > len)
+        throw pyopencl::error("Image", CL_INVALID_VALUE, 
+            "buffer too small");
 
       mem = clCreateImage3D(ctx.data(), flags, &fmt,
           width, height, depth, pitch_x, pitch_y, buf, &status_code);
