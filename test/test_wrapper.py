@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy
 import numpy.linalg as la
-from py.test import mark as mark_test
+import pytools.test
 
 
 
@@ -24,7 +24,7 @@ if have_cl():
 class TestCL:
     disabled = not have_cl()
 
-    @mark_test.cl
+    @pytools.test.mark_test.cl
     def test_get_info(self, platform, device):
         had_failures = [False]
 
@@ -154,7 +154,7 @@ class TestCL:
         if had_failures[0]:
             raise RuntimeError("get_info testing had errors")
 
-    @mark_test.cl
+    @pytools.test.mark_test.cl
     def test_invalid_kernel_names_cause_failures(self):
         for platform in cl.get_platforms():
             for device in platform.get_devices():
@@ -170,7 +170,7 @@ class TestCL:
                 except AttributeError:
                     pass
 
-    @mark_test.cl
+    @pytools.test.mark_test.cl
     def test_image_format_constructor(self):
         # doesn't need image support to succeed
         iform = cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT)
@@ -179,7 +179,7 @@ class TestCL:
         assert iform.channel_data_type == cl.channel_type.FLOAT
         assert not iform.__dict__
 
-    @mark_test.cl
+    @pytools.test.mark_test.cl
     def test_nonempty_supported_image_formats(self, device, context):
         if device.image_support:
             assert len(cl.get_supported_image_formats(
@@ -188,7 +188,7 @@ class TestCL:
             from py.test import skip
             skip("images not supported on %s" % device.name)
 
-    @mark_test.cl
+    @pytools.test.mark_test.cl
     def test_that_python_args_fail(self, context):
         prg = cl.Program(context, """
             __kernel void mult(__global float *a, float b, int c)
@@ -217,7 +217,7 @@ class TestCL:
         a_result = numpy.empty_like(a)
         cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
 
-    @mark_test.cl
+    @pytools.test.mark_test.cl
     def test_image_2d(self, device, context):
         if not device.image_support:
             from py.test import skip
@@ -225,7 +225,7 @@ class TestCL:
 
         prg = cl.Program(context, """
             __kernel void copy_image(
-              __global float *dest, 
+              __global float4 *dest, 
               __read_only image2d_t src, 
               sampler_t samp,
               int width)
@@ -238,17 +238,17 @@ class TestCL:
                 | CLK_ADDRESS_CLAMP
                 | CLK_FILTER_NEAREST;
                 */
-              dest[x + width*y] = read_imagef(src, samp, (float2)(x, y)).x;
+              dest[x + width*y] = read_imagef(src, samp, (float2)(x, y));
               // dest[x + width*y] = get_image_height(src);
             }
             """).build()
 
-        a = numpy.random.rand(1024, 1024).astype(numpy.float32)
+        a = numpy.random.rand(1024, 1024, 4).astype(numpy.float32)
         queue = cl.CommandQueue(context)
         mf = cl.mem_flags
         a_img = cl.Image(context, mf.READ_ONLY | mf.COPY_HOST_PTR,
-                cl.ImageFormat(cl.channel_order.R, cl.channel_type.FLOAT),
-                hostbuf=a)
+                cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT),
+                shape=a.shape[:2], hostbuf=a)
         a_dest = cl.Buffer(context, mf.READ_WRITE, a.nbytes)
 
         samp = cl.Sampler(context, False,
@@ -260,8 +260,6 @@ class TestCL:
         cl.enqueue_read_buffer(queue, a_dest, a_result, is_blocking=True)
         print a_result.dtype
 
-        print a_result[:4, :4]
-        print a[:4, :4]
         assert la.norm(a_result - a) == 0
 
 
@@ -307,6 +305,9 @@ if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl
 
-    from py.test.cmdline import main
     import sys
-    main([__file__]+sys.argv[1:])
+    if len(sys.argv) > 1:
+        exec sys.argv[1]
+    else:
+        from py.test.cmdline import main
+        main([__file__])
