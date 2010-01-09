@@ -249,6 +249,18 @@ Image Formats
 
         See :class:`channel_type` for possible values.
 
+    .. attribute:: channel_count
+
+        .. versionadded:: 0.91.5
+
+    .. attribute:: dtype_size
+
+        .. versionadded:: 0.91.5
+
+    .. attribute:: itemsize
+
+        .. versionadded:: 0.91.5
+
     .. method:: __repr__
 
         Returns a :class:`str` representation of the image format.

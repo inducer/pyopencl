@@ -538,6 +538,9 @@ BOOST_PYTHON_MODULE(_cl)
       .def("__init__", py::make_constructor(make_image_format))
       .def_readwrite("channel_order", &cls::image_channel_order)
       .def_readwrite("channel_data_type", &cls::image_channel_data_type)
+      .add_property("channel_count", &get_image_format_channel_count)
+      .add_property("dtype_size", &get_image_format_channel_dtype_size)
+      .add_property("itemsize", &get_image_format_item_size)
       ;
   }
 

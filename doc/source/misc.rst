@@ -71,6 +71,13 @@ Version 0.92
     Version 0.92 is currently under development. You can get snapshots from
     PyOpenCL's git version control.
 
+Version 0.91.5
+--------------
+
+* Add :attr:`pyopencl.ImageFormat.channel_count`,
+  :attr:`pyopencl.ImageFormat.dtype_size`,
+  :attr:`pyopencl.ImageFormat.itemsize`.
+
 Version 0.91.4
 --------------
 
