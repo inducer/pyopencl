@@ -227,11 +227,24 @@ Buffers
 
 .. function:: enqueue_read_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=False)
 
+    |std-enqueue-blurb|
+
     *hostbuf* |buf-iface|
 
 .. function:: enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=False)
 
+    |std-enqueue-blurb|
+
     *hostbuf* |buf-iface|
+
+.. function:: enqueue_copy_buffer(queue, src, dst, byte_count=0, src_offset=0, dst_offset=0, wait_for=None)
+
+    If *byte_count* is passed as 0 (the default), the size of the
+    :class:`Buffer` *src* is used instead.
+
+    |std-enqueue-blurb|
+
+    .. versionadded:: 0.91.5
 
 Image Formats
 ^^^^^^^^^^^^^

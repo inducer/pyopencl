@@ -514,6 +514,15 @@ BOOST_PYTHON_MODULE(_cl)
        py::arg("host_buffer")=py::object()
        ),
       py::return_value_policy<py::manage_new_object>());
+  py::def("enqueue_copy_buffer", enqueue_copy_buffer,
+      (py::args("queue", "src", "dst"), 
+       py::arg("byte_count")=0,
+       py::arg("src_offset")=0,
+       py::arg("dst_offset")=0,
+       py::arg("wait_for")=py::object()
+       ),
+      py::return_value_policy<py::manage_new_object>());
+
 
   // image --------------------------------------------------------------------
   {

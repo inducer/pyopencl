@@ -1177,6 +1177,40 @@ namespace pyopencl
 
 
 
+  event *enqueue_copy_buffer(
+      command_queue &cq,
+      memory_object &src,
+      memory_object &dst,
+      size_t byte_count,
+      size_t src_offset,
+      size_t dst_offset,
+      py::object py_wait_for)
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    if (byte_count == 0)
+    {
+      PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+          (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count, 0));
+    }
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(clEnqueueCopyBuffer, (
+          cq.data(),
+          src.data(), dst.data(),
+          src_offset, dst_offset,
+          byte_count,
+          num_events_in_wait_list, 
+          event_wait_list.empty( ) ? NULL : &event_wait_list.front(), 
+          &evt
+          ));
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+
+
+
+
   // images -------------------------------------------------------------------
   class image : public memory_object
   {
@@ -1363,7 +1397,7 @@ namespace pyopencl
 
       // check buffer size
       cl_int itemsize = get_image_format_item_size(fmt);
-      if (buf && std::max(pitch, width*itemsize)*height > len)
+      if (buf && std::max(pitch, width*itemsize)*height > cl_uint(len))
           throw pyopencl::error("Image", CL_INVALID_VALUE, 
               "buffer too small");
 
@@ -1398,7 +1432,7 @@ namespace pyopencl
       if (buf && 
           std::max(pitch_x, width*itemsize)
           * std::max(height, pitch_y) 
-          * depth > len)
+          * depth > cl_uint(len))
         throw pyopencl::error("Image", CL_INVALID_VALUE, 
             "buffer too small");
 
