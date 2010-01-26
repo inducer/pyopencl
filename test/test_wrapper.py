@@ -24,7 +24,7 @@ if have_cl():
 class TestCL:
     disabled = not have_cl()
 
-    @pytools.test.mark_test.cl
+    @pytools.test.mark_test.opencl
     def test_get_info(self, platform, device):
         had_failures = [False]
 
@@ -154,7 +154,7 @@ class TestCL:
         if had_failures[0]:
             raise RuntimeError("get_info testing had errors")
 
-    @pytools.test.mark_test.cl
+    @pytools.test.mark_test.opencl
     def test_invalid_kernel_names_cause_failures(self):
         for platform in cl.get_platforms():
             for device in platform.get_devices():
@@ -170,7 +170,7 @@ class TestCL:
                 except AttributeError:
                     pass
 
-    @pytools.test.mark_test.cl
+    @pytools.test.mark_test.opencl
     def test_image_format_constructor(self):
         # doesn't need image support to succeed
         iform = cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT)
@@ -179,7 +179,7 @@ class TestCL:
         assert iform.channel_data_type == cl.channel_type.FLOAT
         assert not iform.__dict__
 
-    @pytools.test.mark_test.cl
+    @pytools.test.mark_test.opencl
     def test_nonempty_supported_image_formats(self, device, context):
         if device.image_support:
             assert len(cl.get_supported_image_formats(
@@ -188,7 +188,7 @@ class TestCL:
             from py.test import skip
             skip("images not supported on %s" % device.name)
 
-    @pytools.test.mark_test.cl
+    @pytools.test.mark_test.opencl
     def test_that_python_args_fail(self, context):
         prg = cl.Program(context, """
             __kernel void mult(__global float *a, float b, int c)
@@ -217,7 +217,7 @@ class TestCL:
         a_result = numpy.empty_like(a)
         cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
 
-    @pytools.test.mark_test.cl
+    @pytools.test.mark_test.opencl
     def test_image_2d(self, device, context):
         if not device.image_support:
             from py.test import skip
