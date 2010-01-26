@@ -8,7 +8,7 @@ macroblock_count = 33
 dtype = numpy.float32
 total_size = local_size*thread_strides*macroblock_count
 
-ctx = cl.Context()
+ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
 a = numpy.random.randn(total_size).astype(dtype)

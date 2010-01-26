@@ -116,8 +116,7 @@ import numpy
 
 block_size = 16
 
-
-ctx = cl.Context(dev_type=cl.device_type.ALL)
+ctx = cl.create_some_context()
 
 for dev in ctx.devices:
         assert dev.local_mem_size > 0
@@ -161,7 +160,8 @@ mf = cl.mem_flags
 kernel_params = {"block_size": block_size,
                  "w_a":a_width, "h_a":a_height, "w_b":a_height}
 
-prg = cl.Program(ctx, kernel_code % kernel_params).build()
+prg = cl.Program(ctx, kernel_code % kernel_params,
+        ).build(options="-cl-mad-enable -cl-fast-relaxed-math")
 kernel = prg.matrixMul
 
 #def __call__(self, queue, tgt, src, shape):

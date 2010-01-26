@@ -103,6 +103,14 @@ Platforms, Devices and Contexts
     If neither is specified, a context with a *dev_type* of 
     :attr:`device_type.DEFAULT` is created.
 
+    .. note::
+
+        Calling the constructor with no arguments will fail for recent
+        CL drivers that support the OpenCL ICD. If you want similar,
+        just-give-me-a-context-already behavior, we recommend
+        :func:`create_some_context`. See, e.g. this
+        `explanation by AMD <http://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=71>`_.
+
     .. versionchanged:: 0.91.2
         Constructor arguments *dev_type* added.
 
@@ -117,6 +125,15 @@ Platforms, Devices and Contexts
         See :class:`context_info` for values of *param*.
 
     |comparable|
+
+.. function:: create_some_context(interactive=True)
+
+    Create a :class:`Context` 'somehow'.
+
+    If multiple choices for platform and/or device exist, *interactive* 
+    is True, and *sys.stdin.isatty()* is also True,
+    then the user is queried about which device should be chosen.
+    Otherwise, a device is chosen in an implementation-defined manner.
 
 Command Queues and Events
 -------------------------

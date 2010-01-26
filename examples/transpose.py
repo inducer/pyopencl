@@ -120,7 +120,7 @@ def transpose_using_cl(ctx, queue, cpu_src, cls):
 def check_transpose():
     for cls in [NaiveTranspose, SillyTranspose, TransposeWithLocal]:
         print "checking", cls.__name__
-        ctx = cl.Context(dev_type=cl.device_type.ALL)
+        ctx = cl.create_some_context()
 
         for dev in ctx.devices:
             assert dev.local_mem_size > 0
@@ -143,7 +143,7 @@ def check_transpose():
 
 
 def benchmark_transpose():
-    ctx = cl.Context(dev_type=cl.device_type.ALL)
+    ctx = cl.create_some_context()
 
     for dev in ctx.devices:
         assert dev.local_mem_size > 0

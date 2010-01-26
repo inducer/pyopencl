@@ -3,7 +3,7 @@ import pyopencl as cl
 import numpy as np
 
 demo_r = np.empty( (500,5), dtype=np.uint32)
-ctx = cl.Context(dev_type=cl.device_type.ALL)
+ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
 mf = cl.mem_flags

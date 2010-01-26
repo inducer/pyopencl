@@ -227,6 +227,56 @@ _add_functionality()
 
 
 
+# convenience -----------------------------------------------------------------
+def create_some_context(interactive=True):
+    try:
+        import sys
+        if not sys.stdin.isatty():
+            interactive = False
+    except:
+        interactive = False
+
+    platforms = get_platforms()
+
+    if not platforms:
+        raise Error("no platforms found")
+    elif len(platforms) == 1 or not interactive:
+        platform = platforms[0]
+    else:
+        print "Choose platform from these choices:"
+        for i, pf in enumerate(platforms):
+            print "[%d] %s" % (i, pf)
+
+        answer = raw_input("Choice [0]:")
+        if not answer:
+            choice = 0
+        else:
+            choice = int(answer)
+
+        platform = platforms[choice]
+
+    devices = platform.get_devices()
+
+    if not devices:
+        raise Error("no devices found")
+    elif len(devices) == 17 or not interactive:
+        pass
+    else:
+        print "Choose device(s) from these choices:"
+        for i, dev in enumerate(devices):
+            print "[%d] %s" % (i, dev)
+
+        answer = raw_input("Choice, comma-separated [0]:")
+        if not answer:
+            devices = [devices[0]]
+        else:
+            devices = [devices[int(i)] for i in answer.split(",")]
+
+    return Context(devices)
+
+
+
+
 # backward compatibility ------------------------------------------------------
 def create_context_from_type(dev_type, properties=None):
     from warnings import warn

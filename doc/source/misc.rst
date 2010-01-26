@@ -78,6 +78,7 @@ Version 0.91.5
   :attr:`pyopencl.ImageFormat.dtype_size`,
   :attr:`pyopencl.ImageFormat.itemsize`.
 * Add missing :func:`pyopencl.enqueue_copy_buffer`.
+* Add :func:`pyopencl.create_some_context`.
 
 Version 0.91.4
 --------------
