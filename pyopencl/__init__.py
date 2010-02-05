@@ -259,7 +259,7 @@ def create_some_context(interactive=True):
 
     if not devices:
         raise Error("no devices found")
-    elif len(devices) == 17 or not interactive:
+    elif len(devices) == 1 or not interactive:
         pass
     else:
         print "Choose device(s) from these choices:"
