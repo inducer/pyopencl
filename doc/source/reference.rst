@@ -212,6 +212,8 @@ Command Queues and Events
     command_queue have finished execution. This command is a synchronization
     point.
 
+    .. versionadded:: 0.91.5
+
 Memory
 ------
 
