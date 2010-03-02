@@ -471,6 +471,7 @@ BOOST_PYTHON_MODULE(_cl)
   py::def("enqueue_marker", enqueue_marker,
       py::return_value_policy<py::manage_new_object>());
   DEF_SIMPLE_FUNCTION(enqueue_wait_for_events);
+  DEF_SIMPLE_FUNCTION(enqueue_barrier);
 
   // memory_object ------------------------------------------------------------
   {

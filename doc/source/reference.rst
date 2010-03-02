@@ -206,6 +206,12 @@ Command Queues and Events
 
     Returns an :class:`Event`.
 
+.. function:: enqueue_barrier(queue)
+
+    Enqueues a barrier operation. which ensures that all queued commands in
+    command_queue have finished execution. This command is a synchronization
+    point.
+
 Memory
 ------
 
