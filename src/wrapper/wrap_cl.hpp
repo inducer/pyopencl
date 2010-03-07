@@ -801,7 +801,7 @@ namespace pyopencl
       void flush()
       { PYOPENCL_CALL_GUARDED(clFlush, (m_queue)); }
       void finish()
-      { PYOPENCL_CALL_GUARDED_THREADED(clFlush, (m_queue)); }
+      { PYOPENCL_CALL_GUARDED_THREADED(clFinish, (m_queue)); }
   };
 
 
