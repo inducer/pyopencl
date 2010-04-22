@@ -354,6 +354,7 @@ BOOST_PYTHON_MODULE(_cl)
     py::class_<kernel_work_group_info> cls("kernel_work_group_info", py::no_init);
     ADD_ATTR(KERNEL_, WORK_GROUP_SIZE);
     ADD_ATTR(KERNEL_, COMPILE_WORK_GROUP_SIZE);
+    ADD_ATTR(KERNEL_, LOCAL_MEM_SIZE);
   }
 
   {
