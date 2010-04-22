@@ -18,9 +18,11 @@ def doc_class(cls):
 
 
 if not cl.have_gl():
-    print "***************************************************************"
-    print "WARNING: GL not supported. Incompleted docs will be generated."
-    print "***************************************************************"
+    print ".. warning::"
+    print
+    print "    This set of PyOpenCL documentation is incomplete because it"
+    print "    was generated on a PyOpenCL build that did not support OpenGL."
+    print
 
 print ".. This is an automatically generated file. DO NOT EDIT"
 print
