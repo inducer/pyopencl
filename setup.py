@@ -8,6 +8,17 @@ def get_config_schema():
             IncludeDir, LibraryDir, Libraries, BoostLibraries, \
             Switch, StringListOption, make_boost_base_options
 
+    import sys
+    if 'darwin' in sys.platform:
+        default_libs = []
+        default_cxxflags = ['-arch', 'i386', '-arch', 'x86_64',
+                '-isysroot', '/Developer/SDKs/MacOSX10.6.sdk']
+        default_ldflags = default_cxxflags[:] + ["-Wl,-framework,OpenCL"]
+    else:
+        default_libs = ["OpenCL"]
+        default_cxxflags = []
+        default_ldflags = []
+
     return ConfigSchema(make_boost_base_options() + [
         BoostLibraries("python"),
         BoostLibraries("thread"),
@@ -18,11 +29,11 @@ def get_config_schema():
 
         IncludeDir("CL", []),
         LibraryDir("CL", []),
-        Libraries("CL", ["OpenCL"]),
+        Libraries("CL", default_libs),
 
-        StringListOption("CXXFLAGS", [], 
+        StringListOption("CXXFLAGS", default_cxxflags, 
             help="Any extra C++ compiler options to include"),
-        StringListOption("LDFLAGS", [], 
+        StringListOption("LDFLAGS", default_ldflags, 
             help="Any extra linker options to include"),
         ])
 
@@ -54,21 +65,6 @@ def main():
 
     if conf["SHIPPED_CL_HEADERS"]:
         INCLUDE_DIRS.append('src/cl')
-
-    import sys
-
-    if 'darwin' in sys.platform:
-        # Build for i386 & x86_64 since OpenCL doesn't run on PPC
-        if "-arch" not in conf["CXXFLAGS"]:
-            conf["CXXFLAGS"].extend(['-arch', 'i386'])
-            conf["CXXFLAGS"].extend(['-arch', 'x86_64'])
-        if "-arch" not in conf["LDFLAGS"]:
-            conf["LDFLAGS"].extend(['-arch', 'i386'])
-            conf["LDFLAGS"].extend(['-arch', 'x86_64'])
-        # Compile against 10.6 SDK, first to support OpenCL
-        conf["CXXFLAGS"].extend(['-isysroot', '/Developer/SDKs/MacOSX10.6.sdk'])
-        conf["LDFLAGS"].extend(['-isysroot', '/Developer/SDKs/MacOSX10.6.sdk'])
-        conf["LDFLAGS"].append("-Wl,-framework,OpenCL")
 
     ext_kwargs = dict()
 
