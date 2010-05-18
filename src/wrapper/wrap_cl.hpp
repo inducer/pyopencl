@@ -2318,7 +2318,7 @@ namespace pyopencl
     std::vector<size_t> global_work_offset;
     if (py_global_work_offset.ptr() != Py_None)
     {
-      if (work_dim != len(py_local_work_size))
+      if (work_dim != len(py_global_work_offset))
         throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
             "global work size and offset have differing dimensions");
 
