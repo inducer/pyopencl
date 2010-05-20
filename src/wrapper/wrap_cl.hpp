@@ -2269,15 +2269,16 @@ namespace pyopencl
 
   py::list create_kernels_in_program(program &pgm)
   {
-    py::list result;
     cl_uint num_kernels;
     PYOPENCL_CALL_GUARDED(clCreateKernelsInProgram, (
           pgm.data(), 0, 0, &num_kernels));
 
-    std::vector<cl_kernel> kernels;
+    std::vector<cl_kernel> kernels(num_kernels);
     PYOPENCL_CALL_GUARDED(clCreateKernelsInProgram, (
-          pgm.data(), num_kernels, kernels.empty( ) ? NULL : &kernels.front(), &num_kernels));
+          pgm.data(), num_kernels,
+          kernels.empty( ) ? NULL : &kernels.front(), &num_kernels));
 
+    py::list result;
     BOOST_FOREACH(cl_kernel knl, kernels)
       result.append(handle_from_new_ptr(new kernel(knl, true)));
 
