@@ -44,6 +44,7 @@ namespace
   class device_exec_capabilities { };
   class command_queue_properties { };
   class context_info { };
+  class gl_context_info { };
   class context_properties { };
   class command_queue_info { };
   class mem_flags { };
@@ -212,6 +213,14 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(CONTEXT_, REFERENCE_COUNT);
     ADD_ATTR(CONTEXT_, DEVICES);
     ADD_ATTR(CONTEXT_, PROPERTIES);
+  }
+
+  {
+    py::class_<gl_context_info> cls("gl_context_info", py::no_init);
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+    ADD_ATTR(, CURRENT_DEVICE_FOR_GL_CONTEXT_KHR);
+    ADD_ATTR(, DEVICES_FOR_GL_CONTEXT_KHR);
+#endif
   }
 
   {
@@ -787,6 +796,9 @@ BOOST_PYTHON_MODULE(_cl)
       py::arg("wait_for")=py::object()
       ),
       py::return_value_policy<py::manage_new_object>());
+
+  py::def("get_gl_context_info_khr", get_gl_context_info_khr,
+      py::args("properties", "param_name"));
 
 #endif
   // }}}

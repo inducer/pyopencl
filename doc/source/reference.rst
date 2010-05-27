@@ -580,3 +580,11 @@ with GL support. See :func:`have_gl`.
 .. function:: enqueue_release_gl_objects(queue, mem_objects, wait_for=None)
 
     *mem_objects* is a list of :class:`MemoryObject` instances. |std-enqueue-blurb|
+
+.. function:: get_gl_context_info_khr(properties, param_name)
+
+    Get information on which CL device corresponds to a given
+    GL/EGL/WGL/CGL device.
+
+    See the :class:`Context` constructor for the meaning of 
+    *properties* and :class:`gl_context_info` for *param_name*.

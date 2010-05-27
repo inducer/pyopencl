@@ -1,6 +1,7 @@
 import pyopencl as cl
 
 ctxp = cl.context_properties
+gl_ci = cl.gl_context_info
 ext_lookup = {
         ctxp: {
             ctxp.GL_CONTEXT_KHR: "cl_khr_gl_sharing",
@@ -8,6 +9,13 @@ ext_lookup = {
             ctxp.GLX_DISPLAY_KHR: "cl_khr_gl_sharing",
             ctxp.WGL_HDC_KHR: "cl_khr_gl_sharing",
             ctxp.CGL_SHAREGROUP_KHR: "cl_khr_gl_sharing",
+            },
+        gl_ci: {
+            gl_ci.CURRENT_DEVICE_FOR_GL_CONTEXT_KHR:
+            "cl_khr_gl_sharing",
+
+            gl_ci.DEVICES_FOR_GL_CONTEXT_KHR:
+            "cl_khr_gl_sharing",
             }
         }
 

@@ -666,7 +666,6 @@ namespace pyopencl
   context *create_context(py::object py_devices, py::object py_properties,
       py::object py_dev_type)
   {
-    // parse context properties
     std::vector<cl_context_properties> props
       = parse_context_properties(py_properties);
 
@@ -2539,8 +2538,75 @@ namespace pyopencl
   WRAP_GL_ENQUEUE(release, Release);
 #endif
 
+
+
+
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
-  
+  py::object get_gl_context_info_khr(
+      py::object py_properties,
+      cl_gl_context_info param_name
+      )
+  {
+    std::vector<cl_context_properties> props
+      = parse_context_properties(py_properties);
+
+
+    typedef CL_API_ENTRY cl_int CL_API_CALL
+      (*func_ptr_type)(const cl_context_properties * /* properties */,
+          cl_gl_context_info            /* param_name */,
+          size_t                        /* param_value_size */,
+          void *                        /* param_value */,
+          size_t *                      /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
+
+    func_ptr_type func_ptr
+      = (func_ptr_type) clGetExtensionFunctionAddress(
+          "clGetGLContextInfoKHR");
+
+    if (!func_ptr)
+      throw error("Context.get_info", CL_INVALID_PLATFORM,
+          "clGetGLContextInfoKHR extension function not present");
+
+    cl_context_properties *props_ptr
+      = props.empty( ) ? NULL : &props.front();
+
+    switch (param_name)
+    {
+      case CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR: 
+        {
+          cl_device_id param_value;
+          PYOPENCL_CALL_GUARDED(func_ptr,
+              (props_ptr, param_name, sizeof(param_value), &param_value, 0));
+          return py::object(handle_from_new_ptr( \
+                new device(param_value, /*retain*/ true)));
+        }
+
+      case CL_DEVICES_FOR_GL_CONTEXT_KHR:
+        {
+          size_t size;
+          PYOPENCL_CALL_GUARDED(func_ptr,
+              (props_ptr, param_name, 0, 0, &size));
+
+          std::vector<cl_device_id> devices;
+
+          devices.resize(size / sizeof(devices.front()));
+
+          PYOPENCL_CALL_GUARDED(func_ptr,
+              (props_ptr, param_name, size,
+               devices.empty( ) ? NULL : &devices.front(), &size));
+
+          py::list result;
+          BOOST_FOREACH(cl_device_id did, devices)
+            result.append(handle_from_new_ptr(
+                  new device(did)));
+
+          return result;
+        }
+
+      default:
+        throw error("get_gl_context_info_khr", CL_INVALID_VALUE);
+    }
+  }
+
 #endif
 
   // }}}
