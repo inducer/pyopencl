@@ -4,11 +4,7 @@
 
 
 
-// TODO: GL Interop
-
-
-
-
+// {{{ includes 
 #ifdef __APPLE__
 
 // Mac ------------------------------------------------------------------------
@@ -38,6 +34,8 @@
 #include "wrap_helpers.hpp"
 #include "numpy_init.hpp"
 
+// }}}
+
 
 
 
@@ -46,7 +44,7 @@
 
 
 
-// tools ----------------------------------------------------------------------
+// {{{ tools
 #if PY_VERSION_HEX >= 0x02050000
   typedef Py_ssize_t PYOPENCL_BUFFER_SIZE_T;
 #else
@@ -67,10 +65,9 @@
         EXTRA_MSG); \
   }
 
+// }}}
 
-
-
-// tracing and error reporting ------------------------------------------------
+// {{{ tracing and error reporting
 #ifdef PYOPENCL_TRACE
   #define PYOPENCL_PRINT_CALL_TRACE(NAME) \
     std::cerr << NAME << std::endl;
@@ -133,11 +130,9 @@
         << std::endl; \
   }
 
+// }}}
 
-
-
-
-// get_info helpers -----------------------------------------------------------
+// {{{ get_info helpers
 #define PYOPENCL_GET_OPAQUE_INFO(WHAT, FIRST_ARG, SECOND_ARG, CL_TYPE, TYPE) \
   { \
     CL_TYPE param_value; \
@@ -186,10 +181,9 @@
     return py::object(param_value); \
   }
 
+// }}}
 
-
-
-// event helpers --------------------------------------------------------------
+// {{{ event helpers --------------------------------------------------------------
 #define PYOPENCL_PARSE_WAIT_FOR \
     cl_uint num_events_in_wait_list = 0; \
     std::vector<cl_event> event_wait_list; \
@@ -213,21 +207,22 @@
       throw; \
     }
 
+// }}}
 
-
-
-// equality testing -----------------------------------------------------------
+// {{{ equality testing
 #define PYOPENCL_EQUALITY_TESTS(cls) \
     bool operator==(cls const &other) const \
     { return data() == other.data(); } \
     bool operator!=(cls const &other) const \
     { return data() != other.data(); }
 
+// }}}
 
 
 
 namespace pyopencl
 {
+  // {{{ error
   class error : public std::runtime_error
   {
     private:
@@ -326,10 +321,9 @@ namespace pyopencl
       }
   };
 
+  // }}}
 
-
-
-  // platform -----------------------------------------------------------------
+  // {{{ platform
   class platform : boost::noncopyable
   {
     private:
@@ -397,10 +391,9 @@ namespace pyopencl
     return result;
   }
 
+  // }}}
 
-
-
-  // device -------------------------------------------------------------------
+  // {{{ device
   class device : boost::noncopyable
   {
     private:
@@ -526,10 +519,9 @@ namespace pyopencl
     return result;
   }
 
+  // }}}
 
-
-
-  // context ------------------------------------------------------------------
+  // {{{ context
   class context : public boost::noncopyable
   {
     private:
@@ -733,10 +725,9 @@ namespace pyopencl
     }
   }
 
+  // }}}
 
-
-
-  // command_queue ------------------------------------------------------------
+  // {{{ command_queue
   class command_queue
   {
     private:
@@ -837,10 +828,9 @@ namespace pyopencl
       { PYOPENCL_CALL_GUARDED_THREADED(clFinish, (m_queue)); }
   };
 
+  // }}}
 
-
-
-  // events -------------------------------------------------------------------
+  // {{{ event/synchronization
   class event : boost::noncopyable
   {
     private:
@@ -965,10 +955,9 @@ namespace pyopencl
     PYOPENCL_CALL_GUARDED(clEnqueueBarrier, (cq.data()));
   }
 
+  // }}}
 
-
-
-  // memory -------------------------------------------------------------------
+  // {{{ memory objects
   class memory_object : boost::noncopyable
   {
     private:
@@ -1241,10 +1230,9 @@ namespace pyopencl
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
+  // }}}
 
-
-
-  // images -------------------------------------------------------------------
+  // {{{ image
   class image : public memory_object
   {
     public:
@@ -1652,10 +1640,9 @@ namespace pyopencl
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
+  // }}}
 
-
-
-  // maps ---------------------------------------------------------------------
+  // {{{ maps
   class memory_map
   {
     private:
@@ -1814,10 +1801,9 @@ namespace pyopencl
         row_pitch, slice_pitch);
   }
 
+  // }}}
 
-
-
-  // sampler ------------------------------------------------------------------
+  // {{{ sampler
   class sampler : boost::noncopyable
   {
     private:
@@ -1881,10 +1867,9 @@ namespace pyopencl
       }
   };
 
+  // }}}
 
-
-
-  // program ------------------------------------------------------------------
+  // {{{ program
   class program : boost::noncopyable
   {
     private:
@@ -2116,10 +2101,9 @@ namespace pyopencl
     PYOPENCL_CALL_GUARDED(clUnloadCompiler, ());
   }
 
+  // }}}
 
-
-
-  // kernel -------------------------------------------------------------------
+  // {{{ kernel
   class local_memory
   {
     private:
@@ -2397,10 +2381,9 @@ namespace pyopencl
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
+  // }}}
 
-
-
-  // gl interop ---------------------------------------------------------------
+  // {{{ gl interop
   bool have_gl()
   {
 #ifdef HAVE_GL
@@ -2555,9 +2538,17 @@ namespace pyopencl
   WRAP_GL_ENQUEUE(acquire, Acquire);
   WRAP_GL_ENQUEUE(release, Release);
 #endif
+
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+  
+#endif
+
+  // }}}
 }
 
 
 
 
 #endif
+
+// vim: foldmethod=marker

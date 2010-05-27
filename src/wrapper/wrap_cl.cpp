@@ -34,7 +34,7 @@ namespace
 
 
 
-  // 'fake' constant scopes
+  // {{{ 'fake' constant scopes
   class platform_info { };
   class device_type { };
   class device_info { };
@@ -68,6 +68,7 @@ namespace
 
   class gl_object_type { };
   class gl_texture_info { };
+  // }}}
 }
 
 
@@ -75,6 +76,7 @@ namespace
 
 BOOST_PYTHON_MODULE(_cl)
 {
+  // {{{ exceptions
 #define DECLARE_EXC(NAME, BASE) \
   CL##NAME = py::handle<>(PyErr_NewException("pyopencl." #NAME, BASE, NULL)); \
   py::scope().attr(#NAME) = CL##NAME;
@@ -90,7 +92,9 @@ BOOST_PYTHON_MODULE(_cl)
 
     py::register_exception_translator<error>(translate_cl_error);
   }
+  // }}}
 
+  // {{{ constants
 #define ADD_ATTR(PREFIX, NAME) \
   cls.attr(#NAME) = CL_##PREFIX##NAME
 
@@ -409,6 +413,9 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(PROFILING_COMMAND_, END);
   }
 
+  // }}}
+
+  // {{{ platform
   DEF_SIMPLE_FUNCTION(get_platforms);
 
   {
@@ -423,6 +430,9 @@ BOOST_PYTHON_MODULE(_cl)
       ;
   }
 
+  // }}}
+
+  // {{{ device
   {
     typedef device cls;
     py::class_<cls, boost::noncopyable>("Device", py::no_init)
@@ -432,6 +442,10 @@ BOOST_PYTHON_MODULE(_cl)
       .def(py::self != py::self)
       ;
   }
+
+  // }}}
+
+  // {{{ context
 
   {
     typedef context cls;
@@ -449,10 +463,13 @@ BOOST_PYTHON_MODULE(_cl)
       ;
   }
 
+  // }}}
+
+  // {{{ command queue
   {
     typedef command_queue cls;
-    py::class_<cls, boost::noncopyable>("CommandQueue", 
-        py::init<const context &, 
+    py::class_<cls, boost::noncopyable>("CommandQueue",
+        py::init<const context &,
           const device *, cl_command_queue_properties>
         ((py::arg("context"), py::arg("device")=py::object(), py::arg("properties")=0)))
       .DEF_SIMPLE_METHOD(get_info)
@@ -464,6 +481,10 @@ BOOST_PYTHON_MODULE(_cl)
       .def(py::self != py::self)
       ;
   }
+
+  // }}}
+
+  // {{{ events/synchronization
   {
     typedef event cls;
     py::class_<cls, boost::noncopyable>("Event", py::no_init)
@@ -480,8 +501,9 @@ BOOST_PYTHON_MODULE(_cl)
       py::return_value_policy<py::manage_new_object>());
   DEF_SIMPLE_FUNCTION(enqueue_wait_for_events);
   DEF_SIMPLE_FUNCTION(enqueue_barrier);
+  // }}}
 
-  // memory_object ------------------------------------------------------------
+  // {{{ memory_object
   {
     typedef memory_object cls;
     py::class_<cls, boost::noncopyable>("MemoryObject", py::no_init)
@@ -508,7 +530,7 @@ BOOST_PYTHON_MODULE(_cl)
   }
 
   py::def("enqueue_read_buffer", enqueue_read_buffer,
-      (py::args("queue", "mem", "hostbuf"), 
+      (py::args("queue", "mem", "hostbuf"),
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false,
@@ -516,7 +538,7 @@ BOOST_PYTHON_MODULE(_cl)
        ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_write_buffer", enqueue_write_buffer,
-      (py::args("queue", "mem", "hostbuf"), 
+      (py::args("queue", "mem", "hostbuf"),
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false,
@@ -524,23 +546,23 @@ BOOST_PYTHON_MODULE(_cl)
        ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_copy_buffer", enqueue_copy_buffer,
-      (py::args("queue", "src", "dst"), 
+      (py::args("queue", "src", "dst"),
        py::arg("byte_count")=0,
        py::arg("src_offset")=0,
        py::arg("dst_offset")=0,
        py::arg("wait_for")=py::object()
        ),
       py::return_value_policy<py::manage_new_object>());
+  // }}}
 
-
-  // image --------------------------------------------------------------------
+  // {{{ image
   {
     typedef image cls;
     py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
         "Image", py::no_init)
       .def("__init__", make_constructor(create_image,
             py::default_call_policies(),
-            (py::args("context", "flags", "format"), 
+            (py::args("context", "flags", "format"),
              py::arg("shape")=py::object(),
              py::arg("pitches")=py::object(),
              py::arg("hostbuf")=py::object(),
@@ -565,7 +587,7 @@ BOOST_PYTHON_MODULE(_cl)
   DEF_SIMPLE_FUNCTION(get_supported_image_formats);
 
   py::def("enqueue_read_image", enqueue_read_image,
-      (py::args("queue", "mem", "origin", "region", "hostbuf"), 
+      (py::args("queue", "mem", "origin", "region", "hostbuf"),
        py::arg("row_pitch")=0,
        py::arg("slice_pitch")=0,
        py::arg("wait_for")=py::object(),
@@ -574,7 +596,7 @@ BOOST_PYTHON_MODULE(_cl)
        ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_write_image", enqueue_write_image,
-      (py::args("queue", "mem", "origin", "region", "hostbuf"), 
+      (py::args("queue", "mem", "origin", "region", "hostbuf"),
        py::arg("row_pitch")=0,
        py::arg("slice_pitch")=0,
        py::arg("wait_for")=py::object(),
@@ -584,19 +606,21 @@ BOOST_PYTHON_MODULE(_cl)
       py::return_value_policy<py::manage_new_object>());
 
   py::def("enqueue_copy_image", enqueue_copy_image,
-      (py::args("queue", "src", "dest", "src_origin", "dest_origin", "region"), 
+      (py::args("queue", "src", "dest", "src_origin", "dest_origin", "region"),
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_copy_image_to_buffer", enqueue_copy_image_to_buffer,
-      (py::args("queue", "src", "dest", "origin", "region", "offset"), 
+      (py::args("queue", "src", "dest", "origin", "region", "offset"),
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_copy_buffer_to_image", enqueue_copy_image_to_buffer,
-      (py::args("queue", "src", "dest", "offset", "origin", "region"), 
+      (py::args("queue", "src", "dest", "offset", "origin", "region"),
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
 
-  // memory_map ---------------------------------------------------------------
+  // }}}
+
+  // {{{ memory_map
   {
     typedef memory_map cls;
     py::class_<cls, boost::noncopyable>("MemoryMap", py::no_init)
@@ -607,23 +631,24 @@ BOOST_PYTHON_MODULE(_cl)
   }
 
   py::def("enqueue_map_buffer", enqueue_map_buffer,
-      (py::args("queue", "buf", "flags", 
-                "offset", 
-                "shape", "dtype", "order"), 
+      (py::args("queue", "buf", "flags",
+                "offset",
+                "shape", "dtype", "order"),
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false));
   py::def("enqueue_map_image", enqueue_map_image,
-      (py::args("queue", "img", "flags", 
+      (py::args("queue", "img", "flags",
                 "origin", "region",
-                "shape", "dtype", "order"), 
+                "shape", "dtype", "order"),
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=false));
 
+  // }}}
 
-  // sampler ------------------------------------------------------------------
+  // {{{ sampler
   {
     typedef sampler cls;
-    py::class_<cls, boost::noncopyable>("Sampler", 
+    py::class_<cls, boost::noncopyable>("Sampler",
         py::init<context const &, bool, cl_addressing_mode, cl_filter_mode>())
       .DEF_SIMPLE_METHOD(get_info)
       .add_property("obj_ptr", &cls::obj_ptr)
@@ -632,7 +657,9 @@ BOOST_PYTHON_MODULE(_cl)
       ;
   }
 
-  // program ------------------------------------------------------------------
+  // }}}
+
+  // {{{ program
   {
     typedef program cls;
     py::class_<cls, boost::noncopyable>("Program", py::no_init)
@@ -659,7 +686,7 @@ BOOST_PYTHON_MODULE(_cl)
 
   {
     typedef kernel cls;
-    py::class_<cls, boost::noncopyable>("Kernel", 
+    py::class_<cls, boost::noncopyable>("Kernel",
         py::init<const program &, std::string const &>())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
@@ -672,7 +699,7 @@ BOOST_PYTHON_MODULE(_cl)
 
   {
     typedef local_memory cls;
-    py::class_<cls, boost::noncopyable>("LocalMemory", 
+    py::class_<cls, boost::noncopyable>("LocalMemory",
         py::init<size_t>(py::arg("size")))
       .add_property("size", &cls::size)
       ;
@@ -694,8 +721,9 @@ BOOST_PYTHON_MODULE(_cl)
       py::return_value_policy<py::manage_new_object>());
 
   // TODO: clEnqueueNativeKernel
+  // }}}
 
-  // GL interop ---------------------------------------------------------------
+  // {{{ GL interop
   DEF_SIMPLE_FUNCTION(have_gl);
 
 #ifdef HAVE_GL
@@ -741,7 +769,7 @@ BOOST_PYTHON_MODULE(_cl)
         "GLTexture", py::no_init)
       .def("__init__", make_constructor(create_from_gl_texture,
             py::default_call_policies(),
-            (py::args("context", "flags", 
+            (py::args("context", "flags",
                       "texture_target", "miplevel",
                       "texture", "dims"))))
       .def("get_gl_object_info", get_gl_object_info)
@@ -761,4 +789,7 @@ BOOST_PYTHON_MODULE(_cl)
       py::return_value_policy<py::manage_new_object>());
 
 #endif
+  // }}}
 }
+
+// vim: foldmethod=marker
