@@ -213,6 +213,13 @@ BOOST_PYTHON_MODULE(_cl)
   {
     py::class_<context_properties> cls("context_properties", py::no_init);
     ADD_ATTR(CONTEXT_, PLATFORM);
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+    ADD_ATTR( ,GL_CONTEXT_KHR);
+    ADD_ATTR( ,EGL_DISPLAY_KHR);
+    ADD_ATTR( ,GLX_DISPLAY_KHR);
+    ADD_ATTR( ,WGL_HDC_KHR);
+    ADD_ATTR( ,CGL_SHAREGROUP_KHR);
+#endif
   }
 
   {

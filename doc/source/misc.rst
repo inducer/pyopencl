@@ -71,6 +71,10 @@ Version 0.92
     Version 0.92 is currently under development. You can get snapshots from
     PyOpenCL's git version control.
 
+* Add support for the
+  `cl_khr_gl_sharin <ghttp://www.khronos.org/registry/cl/extensions/khr/cl_khr_gl_sharing.txt>`_
+  extension.
+
 Version 0.91.5
 --------------
 

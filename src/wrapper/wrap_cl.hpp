@@ -317,6 +317,10 @@ namespace pyopencl
           case CL_INVALID_BUFFER_SIZE: return "invalid buffer size";
           case CL_INVALID_MIP_LEVEL: return "invalid mip level";
 
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+          case CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR: return "invalid gl sharegroup reference number";
+#endif
+
           default: return "invalid error code";
         }
       }
@@ -591,6 +595,13 @@ namespace pyopencl
                 switch (key)
                 {
                   case CL_CONTEXT_PLATFORM:
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+                  case CL_GL_CONTEXT_KHR:
+                  case CL_EGL_DISPLAY_KHR:
+                  case CL_GLX_DISPLAY_KHR:
+                  case CL_WGL_HDC_KHR:
+                  case CL_CGL_SHAREGROUP_KHR:
+#endif
                     {
                       value = py::object(
                           handle_from_new_ptr(new platform(
@@ -618,13 +629,12 @@ namespace pyopencl
 
 
 
-  context *create_context(py::object py_devices, py::object py_properties,
-      py::object py_dev_type)
+
+  std::vector<cl_context_properties> parse_context_properties(
+      py::object py_properties)
   {
-    // parse context properties
-    cl_context_properties *props_ptr = 0;
     std::vector<cl_context_properties> props;
-  
+
     if (py_properties.ptr() != Py_None)
     {
       PYTHON_FOREACH(prop_tuple, py_properties)
@@ -634,8 +644,16 @@ namespace pyopencl
         cl_context_properties prop =
             py::extract<cl_context_properties>(prop_tuple[0]);
         props.push_back(prop);
-    
-        if (prop == CL_CONTEXT_PLATFORM)
+
+        if (prop == CL_CONTEXT_PLATFORM
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+            || prop == CL_GL_CONTEXT_KHR
+            || prop == CL_EGL_DISPLAY_KHR
+            || prop == CL_GLX_DISPLAY_KHR
+            || prop == CL_WGL_HDC_KHR
+            || prop == CL_CGL_SHAREGROUP_KHR
+#endif
+            )
         {
           py::extract<const platform &> value(prop_tuple[1]);
           props.push_back(
@@ -645,8 +663,23 @@ namespace pyopencl
           throw error("Context", CL_INVALID_VALUE, "invalid context property");
       }
       props.push_back(0);
-      props_ptr = props.empty( ) ? NULL : &props.front();
     }
+
+    return props;
+  }
+
+
+
+
+  context *create_context(py::object py_devices, py::object py_properties,
+      py::object py_dev_type)
+  {
+    // parse context properties
+    std::vector<cl_context_properties> props
+      = parse_context_properties(py_properties);
+
+    cl_context_properties *props_ptr
+      = props.empty( ) ? NULL : &props.front();
 
     cl_int status_code;
 

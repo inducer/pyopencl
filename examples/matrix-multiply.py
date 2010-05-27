@@ -149,10 +149,10 @@ else:
     b_height = a_width
     b_width = 50*block_size
 
-
 h_a = numpy.random.rand(a_height, a_width).astype(numpy.float32)
 h_b = numpy.random.rand(a_width, a_height).astype(numpy.float32)
 h_c = numpy.empty((a_height, a_height)).astype(numpy.float32)
+print h_a.shape, h_b.shape
 
 mf = cl.mem_flags
 
@@ -163,6 +163,7 @@ kernel_params = {"block_size": block_size,
 prg = cl.Program(ctx, kernel_code % kernel_params,
         ).build(options="-cl-mad-enable -cl-fast-relaxed-math")
 kernel = prg.matrixMul
+#print prg.binaries[0]
 
 #def __call__(self, queue, tgt, src, shape):
 #        w, h = shape
@@ -193,7 +194,7 @@ event = kernel(queue, (a_height,a_height), d_c_buf, d_a_buf, d_b_buf,
 event.wait()
 
 t1 = time()
-count = 2
+count = 20
 for i in range(count):
     event = kernel(queue, (a_height,a_height), d_c_buf, d_a_buf, d_b_buf, 
             cl.LocalMemory(4* block_size**2),
@@ -202,7 +203,6 @@ for i in range(count):
 
 event.wait()
 
-#print event.profile.end - event.profile.start
 
 gpu_time = time()-t1
 
@@ -223,7 +223,7 @@ print "COMPUTE ", gpu_time/count
 print "COMPUTE2 ", (event.profile.end-event.profile.start)*1e-9
 
 gflop = h_c.size * (a_width * 2.) / (1000**3.)
-gflops = gflop / gpu_time
+gflops = gflop / (gpu_time/count)
 print "gflops:", gflops
 
 do_cpu = False
