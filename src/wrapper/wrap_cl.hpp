@@ -2303,9 +2303,9 @@ namespace pyopencl
     cl_int status_code;
     cl_program result = clCreateProgramWithSource(
         ctx.data(), 1, &string, &length, &status_code);
-    PYOPENCL_PRINT_CALL_TRACE("clCreateProrgramWithSource");
+    PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithSource");
     if (status_code != CL_SUCCESS)
-      throw pyopencl::error("clCreateProrgramWithSource", status_code);
+      throw pyopencl::error("clCreateProgramWithSource", status_code);
 
     try
     {
@@ -2357,9 +2357,9 @@ namespace pyopencl
         ctx.data(), num_devices,
         devices.empty( ) ? NULL : &devices.front(), sizes.empty( ) ? NULL : &sizes.front(), binaries.empty( ) ? NULL : &binaries.front(),
         /*binary_status*/ 0, &status_code);
-    PYOPENCL_PRINT_CALL_TRACE("clCreateProrgramWithBinary");
+    PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBinary");
     if (status_code != CL_SUCCESS)
-      throw pyopencl::error("clCreateProrgramWithBinary", status_code);
+      throw pyopencl::error("clCreateProgramWithBinary", status_code);
 
     try
     {
