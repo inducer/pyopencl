@@ -104,7 +104,7 @@ const_ext_lookup = {
         }
 
 cls_ext_lookup = {
-        cl.buffer_create_type: ("CL_1.1", "0.92"),
+        #cl.buffer_create_type: ("CL_1.1", "0.92"),
         }
 
 

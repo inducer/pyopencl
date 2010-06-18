@@ -464,12 +464,14 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(PROFILING_COMMAND_, END);
   }
 
+/* not needed--filled in automatically by implementation.
 #ifdef CL_VERSION_1_1
   {
     py::class_<buffer_create_type> cls("buffer_create_type", py::no_init);
     ADD_ATTR(BUFFER_CREATE_TYPE_, REGION);
   }
 #endif
+*/
 
   // }}}
 
@@ -588,6 +590,13 @@ BOOST_PYTHON_MODULE(_cl)
              py::arg("size")=0,
              py::arg("hostbuf")=py::object()
             )))
+#ifdef CL_VERSION_1_1
+      .def("get_sub_region", &cls::get_sub_region,
+          (py::args("origin", "size"), py::arg("flags")=0),
+          py::return_value_policy<py::manage_new_object>())
+      .def("__getitem__", &cls::getitem,
+          py::return_value_policy<py::manage_new_object>())
+#endif
       ;
   }
 

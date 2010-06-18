@@ -69,7 +69,7 @@ Contents
 .. toctree::
     :maxdepth: 2
 
-    reference
+    runtime
     misc
 
 Note that this guide does not explain OpenCL programming and technology. Please 

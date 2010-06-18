@@ -1074,42 +1074,90 @@ namespace pyopencl
       buffer(cl_mem mem, bool retain, py::object *hostbuf=0)
         : memory_object(mem, retain, hostbuf)
       { }
+
+#ifdef CL_VERSION_1_1
+      buffer *get_sub_region(
+          size_t origin, size_t size, cl_mem_flags flags) const
+      {
+        cl_buffer_region region = { origin, size};
+        cl_int status_code;
+        cl_mem mem = clCreateSubBuffer(data(), flags, 
+            CL_BUFFER_CREATE_TYPE_REGION, &region, &status_code);
+
+        PYOPENCL_PRINT_CALL_TRACE("clCreateSubBuffer");
+        if (status_code != CL_SUCCESS)
+          throw pyopencl::error("Buffer.get_sub_region", status_code);
+
+        try
+        {
+          return new buffer(mem, false);
+        }
+        catch (...)
+        {
+          PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+          throw;
+        }
+      }
+
+      buffer *getitem(py::object slc) const
+      {
+        Py_ssize_t start, end, stride, length;
+
+        size_t my_length;
+        PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+            (data(), CL_MEM_SIZE, sizeof(my_length), &my_length, 0));
+
+        if (PySlice_GetIndicesEx(reinterpret_cast<PySliceObject *>(slc.ptr()),
+              my_length, &start, &end, &stride, &length) != 0)
+          throw py::error_already_set();
+
+        if (stride != 1)
+          throw pyopencl::error("Buffer.__getitem__", CL_INVALID_VALUE,
+              "Buffer slice must have stride 1");
+
+        cl_mem_flags my_flags;
+        PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+            (data(), CL_MEM_FLAGS, sizeof(my_flags), &my_flags, 0));
+
+        return get_sub_region(start, end, my_flags);
+      }
+#endif
   };
 
 
 
 
-  memory_object *create_buffer(
+  buffer *create_buffer(
       context &ctx,
       cl_mem_flags flags,
       size_t size,
-      py::object buffer
+      py::object py_hostbuf
       )
   {
-    if (buffer.ptr() != Py_None && 
+    if (py_hostbuf.ptr() != Py_None && 
         !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
       PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
           "but no memory flags to make use of it.");
 
     void *buf = 0;
     py::object *retained_buf_obj = 0;
-    if (buffer.ptr() != Py_None)
+    if (py_hostbuf.ptr() != Py_None)
     {
       PYOPENCL_BUFFER_SIZE_T len;
       if (flags & CL_MEM_USE_HOST_PTR)
       {
-        if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
+        if (PyObject_AsWriteBuffer(py_hostbuf.ptr(), &buf, &len))
           throw py::error_already_set();
       }
       else
       {
         if (PyObject_AsReadBuffer(
-              buffer.ptr(), const_cast<const void **>(&buf), &len))
+              py_hostbuf.ptr(), const_cast<const void **>(&buf), &len))
           throw py::error_already_set();
       }
 
       if (flags & CL_MEM_USE_HOST_PTR)
-        retained_buf_obj = &buffer;
+        retained_buf_obj = &py_hostbuf;
 
       if (size > size_t(len))
         throw pyopencl::error("Buffer", CL_INVALID_VALUE,
@@ -1127,7 +1175,7 @@ namespace pyopencl
 
     try
     {
-      return new memory_object(mem, false, retained_buf_obj);
+      return new buffer(mem, false, retained_buf_obj);
     }
     catch (...)
     {

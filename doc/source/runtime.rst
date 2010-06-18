@@ -1,7 +1,7 @@
 .. _reference-doc:
 
-Reference Documentation
-=======================
+OpenCL Platform/Runtime Documentation
+=====================================
 
 Version Queries
 ---------------
@@ -259,6 +259,15 @@ Buffers
     the specified buffer if it is passed as zero.
 
     :class:`Buffer` is a subclass of :class:`MemoryObject`.
+
+    .. method:: get_sub_region(origin, size, flags=0)
+
+    .. method:: __getitem__(slc)
+
+        *slc* is a :class:`slice` object indicating from which byte index range
+        a sub-buffer is to be created. The *flags* argument of
+        :meth:`get_sub_region` is set to the same flags with which *self* was
+        created.
 
 .. function:: enqueue_read_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=False)
 
