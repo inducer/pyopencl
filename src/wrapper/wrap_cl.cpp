@@ -66,6 +66,7 @@ namespace
   class command_type { };
   class command_execution_status { };
   class profiling_info { };
+  class buffer_create_type { };
 
   class gl_object_type { };
   class gl_texture_info { };
@@ -171,6 +172,16 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(DEVICE_, VERSION);
     ADD_ATTR(DEVICE_, EXTENSIONS);
     ADD_ATTR(DEVICE_, PLATFORM);
+    ADD_ATTR(DEVICE_, PREFERRED_VECTOR_WIDTH_HALF);
+    ADD_ATTR(DEVICE_, HOST_UNIFIED_MEMORY);
+    ADD_ATTR(DEVICE_, NATIVE_VECTOR_WIDTH_CHAR);
+    ADD_ATTR(DEVICE_, NATIVE_VECTOR_WIDTH_SHORT);
+    ADD_ATTR(DEVICE_, NATIVE_VECTOR_WIDTH_INT);
+    ADD_ATTR(DEVICE_, NATIVE_VECTOR_WIDTH_LONG);
+    ADD_ATTR(DEVICE_, NATIVE_VECTOR_WIDTH_FLOAT);
+    ADD_ATTR(DEVICE_, NATIVE_VECTOR_WIDTH_DOUBLE);
+    ADD_ATTR(DEVICE_, NATIVE_VECTOR_WIDTH_HALF);
+    ADD_ATTR(DEVICE_, OPENCL_C_VERSION);
   }
 
   {
@@ -181,6 +192,9 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(FP_, ROUND_TO_ZERO);
     ADD_ATTR(FP_, ROUND_TO_INF);
     ADD_ATTR(FP_, FMA);
+#ifdef CL_VERSION_1_1
+    ADD_ATTR(FP_, SOFT_FLOAT);
+#endif
   }
 
   {
@@ -213,6 +227,9 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(CONTEXT_, REFERENCE_COUNT);
     ADD_ATTR(CONTEXT_, DEVICES);
     ADD_ATTR(CONTEXT_, PROPERTIES);
+#ifdef CL_VERSION_1_1
+    ADD_ATTR(CONTEXT_, NUM_DEVICES);
+#endif
   }
 
   {
@@ -264,6 +281,11 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR( , BGRA);
     ADD_ATTR( , INTENSITY);
     ADD_ATTR( , LUMINANCE);
+#ifdef CL_VERSION_1_1
+    ADD_ATTR( , Rx);
+    ADD_ATTR( , RGx);
+    ADD_ATTR( , RGBx);
+#endif
   }
 
   {
@@ -301,6 +323,10 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(MEM_, MAP_COUNT);
     ADD_ATTR(MEM_, REFERENCE_COUNT);
     ADD_ATTR(MEM_, CONTEXT);
+#ifdef CL_VERSION_1_1
+    ADD_ATTR(MEM_, ASSOCIATED_MEMOBJECT);
+    ADD_ATTR(MEM_, OFFSET);
+#endif
   }
 
   {
@@ -320,6 +346,9 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(ADDRESS_, CLAMP_TO_EDGE);
     ADD_ATTR(ADDRESS_, CLAMP);
     ADD_ATTR(ADDRESS_, REPEAT);
+#ifdef CL_VERSION_1_1
+    ADD_ATTR(ADDRESS_, MIRRORED_REPEAT);
+#endif
   }
 
   {
@@ -375,6 +404,10 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(KERNEL_, WORK_GROUP_SIZE);
     ADD_ATTR(KERNEL_, COMPILE_WORK_GROUP_SIZE);
     ADD_ATTR(KERNEL_, LOCAL_MEM_SIZE);
+#ifdef CL_VERSION_1_1
+    ADD_ATTR(KERNEL_, PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
+    ADD_ATTR(KERNEL_, PRIVATE_MEM_SIZE);
+#endif
   }
 
   {
@@ -383,6 +416,9 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(EVENT_, COMMAND_TYPE);
     ADD_ATTR(EVENT_, REFERENCE_COUNT);
     ADD_ATTR(EVENT_, COMMAND_EXECUTION_STATUS);
+#ifdef CL_VERSION_1_1
+    ADD_ATTR(EVENT_, CONTEXT);
+#endif
   }
 
   {
@@ -404,6 +440,12 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(COMMAND_, MARKER);
     ADD_ATTR(COMMAND_, ACQUIRE_GL_OBJECTS);
     ADD_ATTR(COMMAND_, RELEASE_GL_OBJECTS);
+#ifdef CL_VERSION_1_1
+    ADD_ATTR(COMMAND_, READ_BUFFER_RECT);
+    ADD_ATTR(COMMAND_, WRITE_BUFFER_RECT);
+    ADD_ATTR(COMMAND_, COPY_BUFFER_RECT);
+    ADD_ATTR(COMMAND_, USER);
+#endif
   }
 
   {
@@ -422,7 +464,16 @@ BOOST_PYTHON_MODULE(_cl)
     ADD_ATTR(PROFILING_COMMAND_, END);
   }
 
+#ifdef CL_VERSION_1_1
+  {
+    py::class_<buffer_create_type> cls("buffer_create_type", py::no_init);
+    ADD_ATTR(BUFFER_CREATE_TYPE_, REGION);
+  }
+#endif
+
   // }}}
+
+  py::def("get_cl_header_version", get_cl_header_version);
 
   // {{{ platform
   DEF_SIMPLE_FUNCTION(get_platforms);
@@ -482,7 +533,9 @@ BOOST_PYTHON_MODULE(_cl)
           const device *, cl_command_queue_properties>
         ((py::arg("context"), py::arg("device")=py::object(), py::arg("properties")=0)))
       .DEF_SIMPLE_METHOD(get_info)
+#ifndef CL_VERSION_1_1
       .DEF_SIMPLE_METHOD(set_property)
+#endif
       .DEF_SIMPLE_METHOD(flush)
       .DEF_SIMPLE_METHOD(finish)
       .add_property("obj_ptr", &cls::obj_ptr)

@@ -11,7 +11,7 @@ Version Queries
 
 .. data:: VERSION
 
-    Gives the numeric version of PyCUDA as a variable-length tuple 
+    Gives the numeric version of PyOpenCL as a variable-length tuple 
     of integers. Enables easy version checks such as
     *VERSION >= (0, 93)*.
 
@@ -23,6 +23,14 @@ Version Queries
 .. data:: VERSION_TEXT
 
     The full release name (such as `"0.93rc4"`) in string form.
+
+.. function:: get_cl_header_version()
+
+    Return a variable-length tuple of integers representing the
+    version of the OpenCL header against which PyOpenCL was
+    compiled.
+
+    .. versionadded:: 0.92
 
 .. _errors:
 
@@ -160,6 +168,8 @@ Command Queues and Events
 
         See :class:`command_queue_properties` for possible values of *prop*.
         *enable* is a :class:`bool`.
+
+        Unavailable in OpenCL 1.1 and newer.
 
     .. method:: flush()
     .. method:: finish()

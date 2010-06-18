@@ -316,12 +316,27 @@ namespace pyopencl
           case CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR: return "invalid gl sharegroup reference number";
 #endif
 
-          default: return "invalid error code";
+#ifdef CL_VERSION_1_1
+          case CL_MISALIGNED_SUB_BUFFER_OFFSET: return "misaligned sub-buffer offset";
+          case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST: return "exec status error for events in wait list";
+          case CL_INVALID_GLOBAL_WORK_SIZE: return "invalid global work size";
+#endif
+
+          default: return "invalid/unknown error code";
         }
       }
   };
 
   // }}}
+
+  py::tuple get_cl_header_version()
+  {
+#if defined(CL_VERSION_1_1)
+    return py::make_tuple(1, 1);
+#else
+    return py::make_tuple(1, 0);
+#endif
+  }
 
   // {{{ platform
   class platform : boost::noncopyable
@@ -446,6 +461,7 @@ namespace pyopencl
           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
+
           case CL_DEVICE_MAX_CLOCK_FREQUENCY: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_ADDRESS_BITS: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_MAX_READ_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
@@ -490,6 +506,22 @@ namespace pyopencl
 
           case CL_DEVICE_PLATFORM:
             PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_platform_id, platform);
+
+#ifdef CL_VERSION_1_1
+          case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
+
+          case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_NATIVE_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
+
+          case CL_DEVICE_HOST_UNIFIED_MEMORY: DEV_GET_INT_INF(cl_bool);
+          case CL_DEVICE_OPENCL_C_VERSION:
+            PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+#endif
 
           default:
             throw error("Platform.get_info", CL_INVALID_VALUE);
@@ -612,6 +644,12 @@ namespace pyopencl
               }
               return py_result;
             }
+
+#ifdef CL_VERSION_1_1
+          case CL_CONTEXT_NUM_DEVICES:
+            PYOPENCL_GET_INTEGRAL_INFO(
+                Context, m_context, param_name, cl_uint);
+#endif
 
           default:
             throw error("Context.get_info", CL_INVALID_VALUE);
@@ -811,6 +849,7 @@ namespace pyopencl
         }
       }
 
+#ifndef CL_VERSION_1_1
       cl_command_queue_properties set_property(
           cl_command_queue_properties prop,
           bool enable)
@@ -820,6 +859,7 @@ namespace pyopencl
             (m_queue, prop, PYOPENCL_CAST_BOOL(enable), &old_prop));
         return old_prop;
       }
+#endif
 
       void flush()
       { PYOPENCL_CALL_GUARDED(clFlush, (m_queue)); }
@@ -879,6 +919,11 @@ namespace pyopencl
           case CL_EVENT_REFERENCE_COUNT:
             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
                 cl_uint);
+#ifdef CL_VERSION_1_1
+          case CL_EVENT_CONTEXT:
+            PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
+                cl_context, context);
+#endif
 
           default:
             throw error("Event.get_info", CL_INVALID_VALUE);
@@ -1017,35 +1062,7 @@ namespace pyopencl
         return param_value;
       }
 
-      py::object get_info(cl_mem_info param_name) const
-      {
-        switch (param_name)
-        {
-          case CL_MEM_TYPE:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
-                cl_mem_object_type);
-          case CL_MEM_FLAGS:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
-                cl_mem_flags);
-          case CL_MEM_SIZE:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
-                size_t);
-          case CL_MEM_HOST_PTR:
-            return m_hostbuf;
-          case CL_MEM_MAP_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
-                cl_uint);
-          case CL_MEM_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
-                cl_uint);
-          case CL_MEM_CONTEXT:
-            PYOPENCL_GET_OPAQUE_INFO(MemObject, m_mem, param_name,
-                cl_context, context);
-
-          default:
-            throw error("MemoryObject.get_info", CL_INVALID_VALUE);
-        }
-      }
+      py::object get_info(cl_mem_info param_name) const;
   };
 
 
@@ -2271,9 +2288,19 @@ namespace pyopencl
               return py::list(result);
             }
           case CL_KERNEL_LOCAL_MEM_SIZE:
+#ifdef CL_VERSION_1_1
+          case CL_KERNEL_PRIVATE_MEM_SIZE:
+#endif
             PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
                 PYOPENCL_FIRST_ARG, param_name,
                 cl_ulong);
+
+#ifdef CL_VERSION_1_1
+          case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
+            PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
+                PYOPENCL_FIRST_ARG, param_name,
+                size_t);
+#endif
           default:
             throw error("Kernel.get_work_group_info", CL_INVALID_VALUE);
 #undef PYOPENCL_FIRST_ARG
@@ -2608,6 +2635,70 @@ namespace pyopencl
   }
 
 #endif
+
+  // }}}
+
+  // {{{ deferred implementation bits
+
+  inline
+  py::object memory_object::get_info(cl_mem_info param_name) const
+  {
+    switch (param_name)
+    {
+      case CL_MEM_TYPE:
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+            cl_mem_object_type);
+      case CL_MEM_FLAGS:
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+            cl_mem_flags);
+      case CL_MEM_SIZE:
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+            size_t);
+      case CL_MEM_HOST_PTR:
+        return m_hostbuf;
+      case CL_MEM_MAP_COUNT:
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+            cl_uint);
+      case CL_MEM_REFERENCE_COUNT:
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+            cl_uint);
+      case CL_MEM_CONTEXT:
+        PYOPENCL_GET_OPAQUE_INFO(MemObject, m_mem, param_name,
+            cl_context, context);
+
+#ifdef CL_VERSION_1_1
+      case CL_MEM_ASSOCIATED_MEMOBJECT:
+        {
+          cl_mem param_value;
+          PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, \
+              (m_mem, param_name, sizeof(param_value), &param_value, 0));
+          cl_mem_object_type mem_obj_type;
+          PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, \
+              (m_mem, CL_MEM_TYPE, sizeof(mem_obj_type), &mem_obj_type, 0));
+
+          switch (mem_obj_type)
+          {
+            case CL_MEM_OBJECT_BUFFER:
+              return py::object(handle_from_new_ptr(
+                    new buffer(param_value, /*retain*/ true)));
+            case CL_MEM_OBJECT_IMAGE2D:
+            case CL_MEM_OBJECT_IMAGE3D:
+              return py::object(handle_from_new_ptr(
+                    new image(param_value, /*retain*/ true)));
+            default:
+              return py::object(handle_from_new_ptr(
+                    new memory_object(param_value, /*retain*/ true)));
+          }
+        }
+      case CL_MEM_OFFSET:
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+            size_t);
+#endif
+
+      default:
+        throw error("MemoryObject.get_info", CL_INVALID_VALUE);
+    }
+  }
 
   // }}}
 }
