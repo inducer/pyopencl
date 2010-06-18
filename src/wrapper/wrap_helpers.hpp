@@ -69,8 +69,19 @@ namespace py = boost::python;
   { \
     size_t my_len = len(py_##NAME); \
     if (my_len > 3) \
-      throw error("image copy", CL_INVALID_VALUE, #NAME "has too many components"); \
-    for (size_t i = 0; i < std::min(size_t(3), my_len); ++i) \
+      throw error("transfer", CL_INVALID_VALUE, #NAME "has too many components"); \
+    for (size_t i = 0; i < my_len; ++i) \
+      NAME[i] = py::extract<size_t>(py_##NAME[i])(); \
+  }
+
+#define COPY_PY_PITCH_TUPLE(NAME) \
+  size_t NAME[2] = {0, 0}; \
+  if (py_##NAME.ptr() != Py_None) \
+  { \
+    size_t my_len = len(py_##NAME); \
+    if (my_len > 2) \
+      throw error("transfer", CL_INVALID_VALUE, #NAME "has too many components"); \
+    for (size_t i = 0; i < my_len; ++i) \
       NAME[i] = py::extract<size_t>(py_##NAME[i])(); \
   }
 
@@ -79,8 +90,8 @@ namespace py = boost::python;
   { \
     size_t my_len = len(py_##NAME); \
     if (my_len > 3) \
-      throw error("image copy", CL_INVALID_VALUE, #NAME "has too many components"); \
-    for (size_t i = 0; i < std::min(size_t(3), my_len); ++i) \
+      throw error("transfer", CL_INVALID_VALUE, #NAME "has too many components"); \
+    for (size_t i = 0; i < my_len; ++i) \
       NAME[i] = py::extract<size_t>(py_##NAME[i])(); \
   }
 

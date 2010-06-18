@@ -29,6 +29,7 @@
 #include <vector>
 #include <utility>
 #include <numeric>
+#include <boost/python/slice.hpp>
 #include <boost/foreach.hpp>
 #include <boost/scoped_array.hpp>
 #include "wrap_helpers.hpp"
@@ -329,6 +330,7 @@ namespace pyopencl
 
   // }}}
 
+  inline
   py::tuple get_cl_header_version()
   {
 #if defined(CL_VERSION_1_1)
@@ -389,6 +391,7 @@ namespace pyopencl
 
 
 
+  inline
   py::list get_platforms()
   {
     cl_uint num_platforms = 0;
@@ -660,6 +663,7 @@ namespace pyopencl
 
 
 
+  inline
   std::vector<cl_context_properties> parse_context_properties(
       py::object py_properties)
   {
@@ -701,6 +705,7 @@ namespace pyopencl
 
 
 
+  inline
   context *create_context(py::object py_devices, py::object py_properties,
       py::object py_dev_type)
   {
@@ -949,6 +954,7 @@ namespace pyopencl
 
 
 
+  inline
   void wait_for_events(py::object events)
   {
     cl_uint num_events_in_wait_list = 0;
@@ -965,6 +971,7 @@ namespace pyopencl
 
 
 
+  inline
   event *enqueue_marker(command_queue &cq)
   {
     cl_event evt;
@@ -978,6 +985,7 @@ namespace pyopencl
 
 
 
+  inline
   void enqueue_wait_for_events(command_queue &cq, py::object py_events)
   {
     cl_uint num_events = 0;
@@ -994,14 +1002,59 @@ namespace pyopencl
 
 
 
+  inline
   void enqueue_barrier(command_queue &cq)
   {
     PYOPENCL_CALL_GUARDED(clEnqueueBarrier, (cq.data()));
   }
 
+
+
+
+#ifdef CL_VERSION_1_1
+  class user_event : public event
+  {
+    public:
+      user_event(cl_event evt, bool retain)
+        : event(evt, retain)
+      { }
+
+      void set_status(cl_int execution_status)
+      {
+        PYOPENCL_CALL_GUARDED(clSetUserEventStatus, (data(), execution_status));
+      }
+  };
+
+
+
+
+  inline
+  event *create_user_event(context &ctx)
+  {
+    cl_int status_code;
+    cl_event evt = clCreateUserEvent(ctx.data(), &status_code)
+    PYOPENCL_PRINT_CALL_TRACE("clCreateUserEvent");
+
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("UserEvent", status_code);
+
+    try
+    {
+      return new user_event(evt, false);
+    }
+    catch (...)
+    {
+      clReleaseEvent(evt);
+      throw;
+    }
+  }
+
+#endif
+
   // }}}
 
-  // {{{ memory objects
+  // {{{ memory_object
+
   class memory_object : boost::noncopyable
   {
     private:
@@ -1065,8 +1118,9 @@ namespace pyopencl
       py::object get_info(cl_mem_info param_name) const;
   };
 
+  // }}}
 
-
+  // {{{ buffer
 
   class buffer : public memory_object
   {
@@ -1099,9 +1153,9 @@ namespace pyopencl
         }
       }
 
-      buffer *getitem(py::object slc) const
+      buffer *getitem(py::slice slc) const
       {
-        Py_ssize_t start, end, stride, length;
+        PYOPENCL_BUFFER_SIZE_T start, end, stride, length;
 
         size_t my_length;
         PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
@@ -1124,9 +1178,9 @@ namespace pyopencl
 #endif
   };
 
+  // {{{ buffer creation
 
-
-
+  inline
   buffer *create_buffer(
       context &ctx,
       cl_mem_flags flags,
@@ -1184,9 +1238,13 @@ namespace pyopencl
     }
   }
 
+  // }}}
 
+  // {{{ buffer transfers
 
+  // {{{ byte-for-byte transfers
 
+  inline
   event *enqueue_read_buffer(
       command_queue &cq,
       memory_object &mem,
@@ -1225,6 +1283,7 @@ namespace pyopencl
 
 
 
+  inline
   event *enqueue_write_buffer(
       command_queue &cq,
       memory_object &mem,
@@ -1263,6 +1322,7 @@ namespace pyopencl
 
 
 
+  inline
   event *enqueue_copy_buffer(
       command_queue &cq,
       memory_object &src,
@@ -1296,7 +1356,140 @@ namespace pyopencl
 
   // }}}
 
+  // {{{ rectangular transfers
+#ifdef CL_VERSION_1_1
+  inline
+  event *enqueue_read_buffer_rect(
+      command_queue &cq,
+      memory_object &mem,
+      py::object buffer,
+      py::object py_buffer_origin,
+      py::object py_host_origin,
+      py::object py_region,
+      py::object py_buffer_pitches,
+      py::object py_host_pitches,
+      py::object py_wait_for,
+      bool is_blocking
+      )
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+    COPY_PY_COORD_TRIPLE(buffer_origin);
+    COPY_PY_COORD_TRIPLE(host_origin);
+    COPY_PY_REGION_TRIPLE(region);
+    COPY_PY_PITCH_TUPLE(buffer_pitches);
+    COPY_PY_PITCH_TUPLE(host_pitches);
+
+    void *buf;
+    PYOPENCL_BUFFER_SIZE_T len;
+
+    if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
+      throw py::error_already_set();
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(clEnqueueReadBufferRect, (
+          cq.data(),
+          mem.data(),
+          PYOPENCL_CAST_BOOL(is_blocking),
+          buffer_origin, host_origin, region,
+          buffer_pitches[0], buffer_pitches[1],
+          host_pitches[0], host_pitches[1],
+          buf,
+          num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front(), &evt
+          ));
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+
+
+
+
+  inline
+  event *enqueue_write_buffer_rect(
+      command_queue &cq,
+      memory_object &mem,
+      py::object buffer,
+      py::object py_buffer_origin,
+      py::object py_host_origin,
+      py::object py_region,
+      py::object py_buffer_pitches,
+      py::object py_host_pitches,
+      py::object py_wait_for,
+      bool is_blocking
+      )
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+    COPY_PY_COORD_TRIPLE(buffer_origin);
+    COPY_PY_COORD_TRIPLE(host_origin);
+    COPY_PY_REGION_TRIPLE(region);
+    COPY_PY_PITCH_TUPLE(buffer_pitches);
+    COPY_PY_PITCH_TUPLE(host_pitches);
+
+    const void *buf;
+    PYOPENCL_BUFFER_SIZE_T len;
+
+    if (PyObject_AsReadBuffer(buffer.ptr(), &buf, &len))
+      throw py::error_already_set();
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(clEnqueueWriteBufferRect, (
+          cq.data(),
+          mem.data(),
+          PYOPENCL_CAST_BOOL(is_blocking),
+          buffer_origin, host_origin, region,
+          buffer_pitches[0], buffer_pitches[1],
+          host_pitches[0], host_pitches[1],
+          buf,
+          num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front(), &evt
+          ));
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+
+
+
+
+  inline
+  event *enqueue_copy_buffer_rect(
+      command_queue &cq,
+      memory_object &src,
+      memory_object &dst,
+      py::object py_src_origin,
+      py::object py_dst_origin,
+      py::object py_region,
+      py::object py_src_pitches,
+      py::object py_dst_pitches,
+      py::object py_wait_for)
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+    COPY_PY_COORD_TRIPLE(src_origin);
+    COPY_PY_COORD_TRIPLE(dst_origin);
+    COPY_PY_REGION_TRIPLE(region);
+    COPY_PY_PITCH_TUPLE(src_pitches);
+    COPY_PY_PITCH_TUPLE(dst_pitches);
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(clEnqueueCopyBufferRect, (
+          cq.data(),
+          src.data(), dst.data(),
+          src_origin, dst_origin, region,
+          src_pitches[0], src_pitches[1],
+          dst_pitches[0], dst_pitches[1],
+          num_events_in_wait_list, 
+          event_wait_list.empty( ) ? NULL : &event_wait_list.front(), 
+          &evt
+          ));
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+
+#endif
+
+  // }}}
+
+  // }}}
+
+  // }}}
+
   // {{{ image
+
   class image : public memory_object
   {
     public:
@@ -1328,6 +1521,9 @@ namespace pyopencl
 
 
 
+  // {{{ image formats
+
+  inline
   cl_image_format *make_image_format(cl_channel_order ord, cl_channel_type tp)
   {
     std::auto_ptr<cl_image_format> result(new cl_image_format);
@@ -1356,6 +1552,7 @@ namespace pyopencl
     PYOPENCL_RETURN_VECTOR(cl_image_format, formats);
   }
 
+  inline
   cl_uint get_image_format_channel_count(cl_image_format const &fmt)
   {
     switch (fmt.image_channel_order)
@@ -1376,6 +1573,7 @@ namespace pyopencl
     }
   }
 
+  inline
   cl_uint get_image_format_channel_dtype_size(cl_image_format const &fmt)
   {
     switch (fmt.image_channel_data_type)
@@ -1402,16 +1600,19 @@ namespace pyopencl
     }
   }
 
+  inline
   cl_uint get_image_format_item_size(cl_image_format const &fmt)
   {
     return get_image_format_channel_count(fmt)
       * get_image_format_channel_dtype_size(fmt);
   }
 
+  // }}}
 
+  // {{{ image creation
 
-
-  inline image *create_image(
+  inline 
+  image *create_image(
       context const &ctx,
       cl_mem_flags flags,
       cl_image_format const &fmt,
@@ -1543,9 +1744,11 @@ namespace pyopencl
     }
   }
 
+  // }}}
 
+  // {{{ image transfers
 
-
+  inline
   event *enqueue_read_image(
       command_queue &cq,
       image &img,
@@ -1587,6 +1790,7 @@ namespace pyopencl
 
 
 
+  inline
   event *enqueue_write_image(
       command_queue &cq,
       image &img,
@@ -1628,6 +1832,7 @@ namespace pyopencl
 
 
 
+  inline
   event *enqueue_copy_image(
       command_queue &cq,
       memory_object &src,
@@ -1655,6 +1860,7 @@ namespace pyopencl
 
 
 
+  inline
   event *enqueue_copy_image_to_buffer(
       command_queue &cq,
       memory_object &src,
@@ -1681,6 +1887,7 @@ namespace pyopencl
 
 
 
+  inline
   event *enqueue_copy_buffer_to_image(
       command_queue &cq,
       memory_object &src,
@@ -1703,6 +1910,8 @@ namespace pyopencl
           ));
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
+
+  // }}}
 
   // }}}
 
@@ -1749,6 +1958,7 @@ namespace pyopencl
 
 
 
+  inline
   py::object enqueue_map_buffer(
       command_queue &cq,
       memory_object &buf,
@@ -1807,6 +2017,7 @@ namespace pyopencl
 
 
 
+  inline
   py::object enqueue_map_image(
       command_queue &cq,
       memory_object &img,
@@ -1934,6 +2145,7 @@ namespace pyopencl
   // }}}
 
   // {{{ program
+
   class program : boost::noncopyable
   {
     private:
@@ -2080,7 +2292,8 @@ namespace pyopencl
 
 
 
-  inline program *create_program_with_source(
+  inline
+  program *create_program_with_source(
       context &ctx,
       std::string const &src)
   {
@@ -2109,7 +2322,8 @@ namespace pyopencl
 
 
 
-  inline program *create_program_with_binary(
+  inline
+  program *create_program_with_binary(
       context &ctx,
       py::object py_devices,
       py::object py_binaries)
@@ -2159,7 +2373,7 @@ namespace pyopencl
   }
 
 
-
+  inline
   void unload_compiler()
   {
     PYOPENCL_CALL_GUARDED(clUnloadCompiler, ());
@@ -2357,7 +2571,7 @@ namespace pyopencl
   };
 
 
-
+  inline
   py::list create_kernels_in_program(program &pgm)
   {
     cl_uint num_kernels;
@@ -2378,6 +2592,7 @@ namespace pyopencl
 
 
 
+  inline
   event *enqueue_nd_range_kernel(
       command_queue &cq,
       kernel &knl,
@@ -2438,6 +2653,7 @@ namespace pyopencl
 
 
 
+  inline
   event *enqueue_task(
       command_queue &cq,
       kernel &knl,
@@ -2519,6 +2735,7 @@ namespace pyopencl
 
 
 #define PYOPENCL_WRAP_BUFFER_CREATOR(TYPE, NAME, CL_NAME, ARGS, CL_ARGS) \
+  inline \
   TYPE *NAME ARGS \
   { \
     cl_int status_code; \
@@ -2579,6 +2796,7 @@ namespace pyopencl
 
 
 
+  inline
   py::tuple get_gl_object_info(memory_object const &mem)
   {
     cl_gl_object_type otype;
@@ -2588,6 +2806,7 @@ namespace pyopencl
   }
 
 #define WRAP_GL_ENQUEUE(what, What) \
+  inline \
   event *enqueue_##what##_gl_objects( \
       command_queue &cq, \
       py::object py_mem_objects, \
@@ -2617,6 +2836,7 @@ namespace pyopencl
 
 
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+  inline
   py::object get_gl_context_info_khr(
       py::object py_properties,
       cl_gl_context_info param_name
@@ -2749,6 +2969,7 @@ namespace pyopencl
   }
 
   // }}}
+
 }
 
 

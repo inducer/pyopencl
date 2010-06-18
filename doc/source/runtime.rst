@@ -224,6 +224,16 @@ Command Queues and Events
 
     .. versionadded:: 0.91.5
 
+.. class:: UserEvent(context)
+
+    A subclass of :class:`Event`. Only available with OpenCL 1.1 and newer.
+
+    .. versionadded:: 0.92
+
+    .. method:: set_status(status)
+
+        See :class:`command_execution_status` for possible values of *status*.
+
 Memory
 ------
 
@@ -289,6 +299,46 @@ Buffers
     |std-enqueue-blurb|
 
     .. versionadded:: 0.91.5
+
+.. function:: enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin, host_origin, region, buffer_pitches=None, host_pitches=None, wait_for=None, is_blocking=False)
+
+    The *origin* and *region* parameters are :class:`tuple` instances of length
+    three or shorter. The *pitches* parameters are :class:`tuple` instances of
+    length two or shorter, which may be zero to indicate 'tight packing'.
+
+    |std-enqueue-blurb|
+
+    *hostbuf* |buf-iface|
+
+    Only available in OpenCL 1.1 and newer.
+
+    .. versionadded:: 0.92
+
+.. function:: enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin, host_origin, region, buffer_pitches=None, host_pitches=None, wait_for=None, is_blocking=False)
+
+    The *origin* and *region* parameters are :class:`tuple` instances of length
+    three or shorter. The *pitches* parameters are :class:`tuple` instances of
+    length two or shorter, which may be zero to indicate 'tight packing'.
+
+    |std-enqueue-blurb|
+
+    *hostbuf* |buf-iface|
+
+    Only available in OpenCL 1.1 and newer.
+
+    .. versionadded:: 0.92
+
+.. function:: enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region, src_pitches=None, dst_pitches=None, wait_for=None)
+
+    The *origin* and *region* parameters are :class:`tuple` instances of length
+    three or shorter. The *pitches* parameters are :class:`tuple` instances of
+    length two or shorter, which may be zero to indicate 'tight packing'.
+
+    |std-enqueue-blurb|
+
+    Only available in OpenCL 1.1 and newer.
+
+    .. versionadded:: 0.92
 
 Image Formats
 ^^^^^^^^^^^^^
