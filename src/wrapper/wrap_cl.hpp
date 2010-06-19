@@ -679,20 +679,24 @@ namespace pyopencl
             py::extract<cl_context_properties>(prop_tuple[0]);
         props.push_back(prop);
 
-        if (prop == CL_CONTEXT_PLATFORM
-#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
-            || prop == CL_GL_CONTEXT_KHR
-            || prop == CL_EGL_DISPLAY_KHR
-            || prop == CL_GLX_DISPLAY_KHR
-            || prop == CL_WGL_HDC_KHR
-            || prop == CL_CGL_SHAREGROUP_KHR
-#endif
-            )
+        if (prop == CL_CONTEXT_PLATFORM)
         {
           py::extract<const platform &> value(prop_tuple[1]);
           props.push_back(
               reinterpret_cast<cl_context_properties>(value().data()));
         }
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+       else if (prop == CL_GL_CONTEXT_KHR
+            || prop == CL_EGL_DISPLAY_KHR
+            || prop == CL_GLX_DISPLAY_KHR
+            || prop == CL_WGL_HDC_KHR
+            || prop == CL_CGL_SHAREGROUP_KHR
+           )
+       {
+          py::extract<cl_context_properties> value(prop_tuple[1]);
+          props.push_back(value);
+       }
+#endif
         else
           throw error("Context", CL_INVALID_VALUE, "invalid context property");
       }

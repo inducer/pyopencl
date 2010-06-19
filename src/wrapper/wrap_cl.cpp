@@ -875,7 +875,7 @@ BOOST_PYTHON_MODULE(_cl)
         "GLBuffer", py::no_init)
       .def("__init__", make_constructor(create_from_gl_buffer,
             py::default_call_policies(),
-            (py::args("context", "flags" "bufobj"))))
+            (py::args("context", "flags", "bufobj"))))
       .def("get_gl_object_info", get_gl_object_info)
       ;
   }
@@ -886,7 +886,7 @@ BOOST_PYTHON_MODULE(_cl)
         "GLRenderBuffer", py::no_init)
       .def("__init__", make_constructor(create_from_gl_renderbuffer,
             py::default_call_policies(),
-            (py::args("context", "flags" "bufobj"))))
+            (py::args("context", "flags", "bufobj"))))
       .def("get_gl_object_info", get_gl_object_info)
       ;
   }
