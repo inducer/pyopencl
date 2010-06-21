@@ -2944,6 +2944,12 @@ namespace pyopencl
           cl_mem param_value;
           PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, \
               (m_mem, param_name, sizeof(param_value), &param_value, 0));
+          if (param_value == 0)
+          {
+            // no associated memory object? no problem.
+            return py::object();
+          }
+
           cl_mem_object_type mem_obj_type;
           PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, \
               (m_mem, CL_MEM_TYPE, sizeof(mem_obj_type), &mem_obj_type, 0));
