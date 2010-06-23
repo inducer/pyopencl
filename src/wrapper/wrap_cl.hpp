@@ -1036,7 +1036,7 @@ namespace pyopencl
   event *create_user_event(context &ctx)
   {
     cl_int status_code;
-    cl_event evt = clCreateUserEvent(ctx.data(), &status_code)
+    cl_event evt = clCreateUserEvent(ctx.data(), &status_code);
     PYOPENCL_PRINT_CALL_TRACE("clCreateUserEvent");
 
     if (status_code != CL_SUCCESS)
