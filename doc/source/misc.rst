@@ -15,6 +15,8 @@ Acknowledgments
 * Achim Gottinger submitted a fix for an example.
 * Andrew Karpushin provided a fix for a whole class of crash bugs in
   PyOpenCL.
+* Paolo Simone Gasparello provided much help in getting OpenCL-OpenGL
+  interoperability to work.
 
 Guidelines
 ==========
@@ -74,7 +76,7 @@ Version 0.92
 * Add support for OpenCL 1.1.
 * Add support for the
   `cl_khr_gl_sharing <ghttp://www.khronos.org/registry/cl/extensions/khr/cl_khr_gl_sharing.txt>`_
-  extension.
+  extension, leading to working GL interoperability.
 * Add :meth:`pyopencl.Kernel.set_args`.
 
 Version 0.91.5
