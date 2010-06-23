@@ -2,7 +2,7 @@
 
 from __future__ import division
 
-kernel_code = """
+KERNEL_CODE = """
 
 // Thread block size
 #define BLOCK_SIZE %(block_size)d
@@ -36,8 +36,8 @@ kernel_code = """
  * Device code.
  */
 
-#define AS(i, j) As[i + j * BLOCK_SIZE]
-#define BS(i, j) Bs[i + j * BLOCK_SIZE]
+#define AS(j, i) As[i + j * BLOCK_SIZE]
+#define BS(j, i) Bs[i + j * BLOCK_SIZE]
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Matrix multiplication on the device: C = A * B
@@ -45,9 +45,11 @@ kernel_code = """
 ////////////////////////////////////////////////////////////////////////////////
 __kernel __attribute__((reqd_work_group_size(16,16,1))) 
 void
-matrixMul( __global float* C, __global float* A, __global float* B,
-           __local float* As, __local float* Bs)
+matrixMul( __global float* C, __global float* A, __global float* B)
 {
+    __local float As[BLOCK_SIZE*BLOCK_SIZE];
+    __local float Bs[BLOCK_SIZE*BLOCK_SIZE];
+
     // Block index
     int bx = get_group_id(0);
     int by = get_group_id(1);
@@ -73,7 +75,7 @@ matrixMul( __global float* C, __global float* A, __global float* B,
 
     // Csub is used to store the element of the block sub-matrix
     // that is computed by the thread
-    float Csub = 0;
+    float Csub = 0.0f;
 
     // Loop over all the sub-matrices of A and B
     // required to compute the block sub-matrix
@@ -119,13 +121,12 @@ block_size = 16
 ctx = cl.create_some_context()
 
 for dev in ctx.devices:
-        assert dev.local_mem_size > 0
+    assert dev.local_mem_size > 0
 
 queue = cl.CommandQueue(ctx,
         properties=cl.command_queue_properties.PROFILING_ENABLE)
 
 #queue = cl.CommandQueue(ctx)
-
 
 if False:
     a_height = 4096
@@ -144,39 +145,33 @@ elif False:
 
 else:
     # CL SDK
-    a_height = 50*block_size
-    a_width = 100*block_size
-    b_height = a_width
+    a_width = 50*block_size
+    a_height = 100*block_size
     b_width = 50*block_size
+    b_height = a_width
+
+c_width = b_width
+c_height = a_height
 
 h_a = numpy.random.rand(a_height, a_width).astype(numpy.float32)
-h_b = numpy.random.rand(a_width, a_height).astype(numpy.float32)
-h_c = numpy.empty((a_height, a_height)).astype(numpy.float32)
-print h_a.shape, h_b.shape
-
-mf = cl.mem_flags
+h_b = numpy.random.rand(b_height, b_width).astype(numpy.float32)
+h_c = numpy.empty((c_height, c_width)).astype(numpy.float32)
 
 
 kernel_params = {"block_size": block_size,
-                 "w_a":a_width, "h_a":a_height, "w_b":a_height}
+        "w_a":a_width, "h_a":a_height, "w_b":b_width}
 
-prg = cl.Program(ctx, kernel_code % kernel_params,
+prg = cl.Program(ctx, KERNEL_CODE % kernel_params,
         ).build(options="-cl-mad-enable -cl-fast-relaxed-math")
 kernel = prg.matrixMul
 #print prg.binaries[0]
-
-#def __call__(self, queue, tgt, src, shape):
-#        w, h = shape
 
 assert a_width % block_size == 0
 assert a_height % block_size == 0
 assert b_width % block_size == 0
 
-# kernel(queue, (w, h), tgt, src, numpy.uint32(w), numpy.uint32(h))
-
-# __call__(queue, a_t_buf, a_buf, source.shape)
-
-# args: queue, domain, *args
+# transfer host -> device -----------------------------------------------------
+mf = cl.mem_flags
 
 t1 = time()
 
@@ -186,56 +181,57 @@ d_c_buf = cl.Buffer(ctx, mf.WRITE_ONLY, size=h_c.nbytes)
 
 push_time = time()-t1
 
-# warmup
-event = kernel(queue, (a_height,a_height), d_c_buf, d_a_buf, d_b_buf, 
-        cl.LocalMemory(4* block_size**2),
-        cl.LocalMemory(4* block_size**2),
-        local_size=(block_size, block_size))
+# warmup ----------------------------------------------------------------------
+for i in range(5):
+    event = kernel(queue, h_c.shape, d_c_buf, d_a_buf, d_b_buf, 
+            local_size=(block_size, block_size))
 event.wait()
 
+queue.finish()
+
+# actual benchmark ------------------------------------------------------------
 t1 = time()
+
 count = 20
 for i in range(count):
-    event = kernel(queue, (a_height,a_height), d_c_buf, d_a_buf, d_b_buf, 
-            cl.LocalMemory(4* block_size**2),
-            cl.LocalMemory(4* block_size**2),
+    event = kernel(queue, h_c.shape, d_c_buf, d_a_buf, d_b_buf, 
             local_size=(block_size, block_size))
 
 event.wait()
 
+gpu_time = (time()-t1)/count
 
-gpu_time = time()-t1
-
+# transfer device -> host -----------------------------------------------------
 t1 = time()
-
 cl.enqueue_read_buffer(queue, d_c_buf, h_c).wait()
-
 pull_time = time()-t1
 
-ans1 = h_c
-
+# timing output ---------------------------------------------------------------
 gpu_total_time = gpu_time+push_time+pull_time
 
-print "GPU (s) total:", gpu_total_time
-print "PUSH ", push_time
-print "PULL ", pull_time
-print "COMPUTE ", gpu_time/count
-print "COMPUTE2 ", (event.profile.end-event.profile.start)*1e-9
+print "GPU push+compute+pull total [s]:", gpu_total_time
+print "GPU push [s]:", push_time
+print "GPU pull [s]:", pull_time
+print "GPU compute (host-timed) [s]:", gpu_time
+print "GPU compute (event-timed) [s]: ", (event.profile.end-event.profile.start)*1e-9
 
 gflop = h_c.size * (a_width * 2.) / (1000**3.)
-gflops = gflop / (gpu_time/count)
-print "gflops:", gflops
+gflops = gflop / gpu_time
 
-do_cpu = False
+print
+print "GFlops/s:", gflops
 
-if do_cpu:
-        t1 = time()
-        ans2 = numpy.dot(h_a,h_b)
+# cpu comparison --------------------------------------------------------------
+t1 = time()
+h_c_cpu = numpy.dot(h_a,h_b)
+cpu_time = time()-t1
 
-        cpu_time = time()-t1
+print
+print "GPU==CPU:",numpy.allclose(h_c, h_c_cpu)
+print
+print "CPU time (s)", cpu_time
+print
 
-        print "CPU (s)", cpu_time
+print "GPU speedup (with transfer): ", cpu_time/gpu_total_time
+print "GPU speedup (without transfer): ", cpu_time/gpu_time
 
-        print "GPU speedup: ", cpu_time/gpu_total_time
-
-        print "GPU==CPU:",numpy.allclose(ans1,ans2)
