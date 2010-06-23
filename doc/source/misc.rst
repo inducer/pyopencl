@@ -75,6 +75,7 @@ Version 0.92
 * Add support for the
   `cl_khr_gl_sharing <ghttp://www.khronos.org/registry/cl/extensions/khr/cl_khr_gl_sharing.txt>`_
   extension.
+* Add :meth:`pyopencl.Kernel.set_args`.
 
 Version 0.91.5
 --------------

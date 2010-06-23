@@ -169,7 +169,12 @@ def _add_functionality():
         return enqueue_nd_range_kernel(queue, self, global_size, local_size,
                 global_offset, wait_for)
 
+    def kernel_set_args(self, *args):
+        for i, arg in enumerate(args):
+            self.set_arg(i, arg)
+
     Kernel.__call__ = kernel_call
+    Kernel.set_args = kernel_set_args
 
     # ImageFormat -------------------------------------------------------------
     def image_format_repr(self):

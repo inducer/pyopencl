@@ -577,6 +577,10 @@ Programs and Kernels
         * An instance of :class:`LocalMemory`.
         * An instance of :class:`Sampler`.
 
+    .. method:: set_args(self, *args)
+
+        Invoke :meth:`set_arg` on each element of *args* in turn.
+
     .. method:: __call__(queue, global_size, *args, global_offset=None, local_size=None, wait_for=None)
 
         Use :func:`enqueue_nd_range_kernel` to enqueue a kernel execution, after using
