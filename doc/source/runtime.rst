@@ -119,6 +119,17 @@ Platforms, Devices and Contexts
         :func:`create_some_context`. See, e.g. this
         `explanation by AMD <http://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=71>`_.
 
+    .. note::
+
+        For 
+        :attr:`context_properties.CL_GL_CONTEXT_KHR`,
+        :attr:`context_properties.CL_EGL_DISPLAY_KHR`,
+        :attr:`context_properties.CL_GLX_DISPLAY_KHR`,
+        :attr:`context_properties.CL_WGL_HDC_KHR`, and
+        :attr:`context_properties.CL_CGL_SHAREGROUP_KHR`
+        the value in the key-value pair is a PyOpenGL context or display
+        instance.
+
     .. versionchanged:: 0.91.2
         Constructor arguments *dev_type* added.
 

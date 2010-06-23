@@ -693,7 +693,10 @@ namespace pyopencl
             || prop == CL_CGL_SHAREGROUP_KHR
            )
        {
-          py::extract<cl_context_properties> value(prop_tuple[1]);
+          py::object ctypes = py::import("ctypes");
+          py::object prop = prop_tuple[1], c_void_p = ctypes.attr("c_void_p");
+          py::object ptr = ctypes.attr("cast")(prop, c_void_p);
+          py::extract<cl_context_properties> value(ptr.attr("value"));
           props.push_back(value);
        }
 #endif
@@ -2848,7 +2851,6 @@ namespace pyopencl
   {
     std::vector<cl_context_properties> props
       = parse_context_properties(py_properties);
-
 
     typedef CL_API_ENTRY cl_int CL_API_CALL
       (*func_ptr_type)(const cl_context_properties * /* properties */,
