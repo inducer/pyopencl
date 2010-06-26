@@ -652,7 +652,7 @@ BOOST_PYTHON_MODULE(_cl)
 
 #ifdef CL_VERSION_1_1
   py::def("enqueue_read_buffer_rect", enqueue_read_buffer_rect,
-      (py::args("queue", "mem", "hostbuf", 
+      (py::args("queue", "mem", "hostbuf",
                 "buffer_origin", "host_origin", "region"),
        py::arg("buffer_pitches")=py::object(),
        py::arg("host_pitches")=py::object(),
@@ -661,7 +661,7 @@ BOOST_PYTHON_MODULE(_cl)
        ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_write_buffer_rect", enqueue_write_buffer_rect,
-      (py::args("queue", "mem", "hostbuf", 
+      (py::args("queue", "mem", "hostbuf",
                 "buffer_origin", "host_origin", "region"),
        py::arg("buffer_pitches")=py::object(),
        py::arg("host_pitches")=py::object(),
@@ -670,7 +670,7 @@ BOOST_PYTHON_MODULE(_cl)
        ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_copy_buffer_rect", enqueue_copy_buffer_rect,
-      (py::args("queue", "src", "dst", 
+      (py::args("queue", "src", "dst",
                 "src_origin", "dst_origin", "region"),
        py::arg("src_pitches")=py::object(),
        py::arg("dst_pitches")=py::object(),

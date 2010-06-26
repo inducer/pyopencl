@@ -11,7 +11,7 @@ Version Queries
 
 .. data:: VERSION
 
-    Gives the numeric version of PyOpenCL as a variable-length tuple 
+    Gives the numeric version of PyOpenCL as a variable-length tuple
     of integers. Enables easy version checks such as
     *VERSION >= (0, 93)*.
 
@@ -55,12 +55,12 @@ Constants
 Platforms, Devices and Contexts
 -------------------------------
 
-.. |comparable| replace:: Two instances of this class may be compared 
+.. |comparable| replace:: Two instances of this class may be compared
     using *"=="* and *"!="*.
-.. |buf-iface| replace:: must implement the Python buffer interface. 
+.. |buf-iface| replace:: must implement the Python buffer interface.
     (e.g. by being an :class:`numpy.ndarray`)
-.. |explain-waitfor| replace:: *wait_for* 
-    may either be *None* or a list of :class:`Event` instances for 
+.. |explain-waitfor| replace:: *wait_for*
+    may either be *None* or a list of :class:`Event` instances for
     whose completion this command waits before starting exeuction.
 .. |std-enqueue-blurb| replace:: Returns a new :class:`Event`. |explain-waitfor|
 
@@ -108,7 +108,7 @@ Platforms, Devices and Contexts
     At most one of *devices* and *dev_type* may be not `None`, where
     *devices* is a list of :class:`Device` instances, and
     *dev_type* is one of the :class:`device_type` constants.
-    If neither is specified, a context with a *dev_type* of 
+    If neither is specified, a context with a *dev_type* of
     :attr:`device_type.DEFAULT` is created.
 
     .. note::
@@ -121,7 +121,7 @@ Platforms, Devices and Contexts
 
     .. note::
 
-        For 
+        For
         :attr:`context_properties.CL_GL_CONTEXT_KHR`,
         :attr:`context_properties.CL_EGL_DISPLAY_KHR`,
         :attr:`context_properties.CL_GLX_DISPLAY_KHR`,
@@ -149,7 +149,7 @@ Platforms, Devices and Contexts
 
     Create a :class:`Context` 'somehow'.
 
-    If multiple choices for platform and/or device exist, *interactive* 
+    If multiple choices for platform and/or device exist, *interactive*
     is True, and *sys.stdin.isatty()* is also True,
     then the user is queried about which device should be chosen.
     Otherwise, a device is chosen in an implementation-defined manner.
@@ -198,7 +198,7 @@ Command Queues and Events
     .. attribute:: profile.info
 
         Lower case versions of the :class:`profiling_info` constants
-        may be used as attributes on the attribute `profile` of this 
+        may be used as attributes on the attribute `profile` of this
         class to directly query profiling info.
 
         For example, you may use *evt.profile.end* instead of
@@ -396,7 +396,7 @@ Images
 
     *shape* is a 2- or 3-tuple.
 
-    If *hostbuf* is given and *shape* is `None`, then *hostbuf.shape* is 
+    If *hostbuf* is given and *shape* is `None`, then *hostbuf.shape* is
     used as the *shape* parameter.
 
     :class:`Image` is a subclass of :class:`MemoryObject`.
@@ -405,7 +405,7 @@ Images
 
     .. attribute:: info
 
-        Lower case versions of the :class:`mem_info` 
+        Lower case versions of the :class:`mem_info`
         and :class:`image_info` constants
         may be used as attributes on instances of this class
         to directly query info attributes.
@@ -464,7 +464,7 @@ Mapping Memory into Host Address Space
 
     :return: a tuple *(array, event)*. *array* is a
         :class:`numpy.ndarray` representing the host side
-        of the map. Its *.base* member contains a 
+        of the map. Its *.base* member contains a
         :class:`MemoryMap`.
 
 .. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order, wait_for=None, is_blocking=False)
@@ -476,7 +476,7 @@ Mapping Memory into Host Address Space
 
     :return: a tuple *(array, event)*. *array* is a
         :class:`numpy.ndarray` representing the host side
-        of the map. Its *.base* member contains a 
+        of the map. Its *.base* member contains a
         :class:`MemoryMap`.
 
 
@@ -527,12 +527,12 @@ Programs and Kernels
 
     .. method:: build(options="", devices=None)
 
-        *options* is a string of compiler flags.  
+        *options* is a string of compiler flags.
         Returns *self*.
 
     .. attribute:: kernel_name
 
-        :class:`Kernel` objects can be produced from a built 
+        :class:`Kernel` objects can be produced from a built
         (see :meth:`build`) program simply by attribute lookup.
 
         .. note::
@@ -569,18 +569,18 @@ Programs and Kernels
 
         *arg* may be
 
-        * `None`: This may be passed for `__global` memory references 
+        * `None`: This may be passed for `__global` memory references
           to pass a NULL pointer to the kernel.
         * Anything that satisfies the Python buffer interface,
           in particular :class:`numpy.ndarray`, :class:`str`,
           or :mod:`numpy`'s sized scalars, such as :class:`numpy.int32`
-          or :class:`numpy.float64`. 
+          or :class:`numpy.float64`.
 
-          .. note:: 
+          .. note::
 
               Note that Python's own :class:`int`
-              or :class:`float` objects will not work as-is, but 
-              :mod:`struct` can be used to convert them to binary 
+              or :class:`float` objects will not work as-is, but
+              :mod:`struct` can be used to convert them to binary
               data in a :class:`str`, which will work.
 
         * An instance of :class:`MemoryObject`. (e.g. :class:`Buffer`,
@@ -595,7 +595,7 @@ Programs and Kernels
     .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None)
 
         Use :func:`enqueue_nd_range_kernel` to enqueue a kernel execution, after using
-        :meth:`set_args` to set each argument in turn. See the documentation for 
+        :meth:`set_args` to set each argument in turn. See the documentation for
         :meth:`set_arg` to see what argument types are allowed.
         |std-enqueue-blurb|
 
@@ -604,7 +604,7 @@ Programs and Kernels
         .. versionchanged:: 0.92
             *local_size* was promoted to third positional argument from being a
             keyword argument. The old keyword argument usage will continue to
-            be accepted with a warning throughout the 0.92 release cycle. 
+            be accepted with a warning throughout the 0.92 release cycle.
             This is a backward-compatible change (just barely!) because
             *local_size* as third positional argument can only be a
             :class:`tuple` or *None*.  :class:`tuple` instances are never valid
@@ -637,7 +637,7 @@ Programs and Kernels
 GL Interoperability
 -------------------
 
-Functionality in this section is only available when PyOpenCL is compiled 
+Functionality in this section is only available when PyOpenCL is compiled
 with GL support. See :func:`have_gl`.
 
 .. versionadded:: 0.91
@@ -667,7 +667,7 @@ with GL support. See :func:`have_gl`.
 
     .. method:: get_gl_texture_info(param)
 
-        See :class:`gl_texture_info` for values of *param*.  Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`.  
+        See :class:`gl_texture_info` for values of *param*.  Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`.
 
 .. function:: enqueue_acquire_gl_objects(queue, mem_objects, wait_for=None)
 
@@ -683,5 +683,5 @@ with GL support. See :func:`have_gl`.
     Get information on which CL device corresponds to a given
     GL/EGL/WGL/CGL device.
 
-    See the :class:`Context` constructor for the meaning of 
+    See the :class:`Context` constructor for the meaning of
     *properties* and :class:`gl_context_info` for *param_name*.

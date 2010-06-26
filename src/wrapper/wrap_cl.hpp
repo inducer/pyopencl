@@ -4,7 +4,7 @@
 
 
 
-// {{{ includes 
+// {{{ includes
 #ifdef __APPLE__
 
 // Mac ------------------------------------------------------------------------
@@ -730,7 +730,7 @@ namespace pyopencl
     if (py_devices.ptr() != Py_None)
     {
       if (py_dev_type.ptr() != Py_None)
-        throw error("Context", CL_INVALID_VALUE, 
+        throw error("Context", CL_INVALID_VALUE,
             "one of 'devices' or 'dev_type' must be None");
 
       std::vector<cl_device_id> devices;
@@ -1142,7 +1142,7 @@ namespace pyopencl
       {
         cl_buffer_region region = { origin, size};
         cl_int status_code;
-        cl_mem mem = clCreateSubBuffer(data(), flags, 
+        cl_mem mem = clCreateSubBuffer(data(), flags,
             CL_BUFFER_CREATE_TYPE_REGION, &region, &status_code);
 
         PYOPENCL_PRINT_CALL_TRACE("clCreateSubBuffer");
@@ -1195,7 +1195,7 @@ namespace pyopencl
       py::object py_hostbuf
       )
   {
-    if (py_hostbuf.ptr() != Py_None && 
+    if (py_hostbuf.ptr() != Py_None &&
         !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
       PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
           "but no memory flags to make use of it.");
@@ -1353,8 +1353,8 @@ namespace pyopencl
           src.data(), dst.data(),
           src_offset, dst_offset,
           byte_count,
-          num_events_in_wait_list, 
-          event_wait_list.empty( ) ? NULL : &event_wait_list.front(), 
+          num_events_in_wait_list,
+          event_wait_list.empty( ) ? NULL : &event_wait_list.front(),
           &evt
           ));
 
@@ -1479,8 +1479,8 @@ namespace pyopencl
           src_origin, dst_origin, region,
           src_pitches[0], src_pitches[1],
           dst_pitches[0], dst_pitches[1],
-          num_events_in_wait_list, 
-          event_wait_list.empty( ) ? NULL : &event_wait_list.front(), 
+          num_events_in_wait_list,
+          event_wait_list.empty( ) ? NULL : &event_wait_list.front(),
           &evt
           ));
 
@@ -1574,8 +1574,8 @@ namespace pyopencl
       case CL_INTENSITY: return 1;
       case CL_LUMINANCE: return 1;
       default:
-        throw pyopencl::error("ImageFormat.channel_dtype_size", 
-            CL_INVALID_VALUE, 
+        throw pyopencl::error("ImageFormat.channel_dtype_size",
+            CL_INVALID_VALUE,
             "unrecognized channel order");
     }
   }
@@ -1601,8 +1601,8 @@ namespace pyopencl
       case CL_HALF_FLOAT: return 2;
       case CL_FLOAT: return 4;
       default:
-        throw pyopencl::error("ImageFormat.channel_dtype_size", 
-            CL_INVALID_VALUE, 
+        throw pyopencl::error("ImageFormat.channel_dtype_size",
+            CL_INVALID_VALUE,
             "unrecognized channel data type");
     }
   }
@@ -1618,7 +1618,7 @@ namespace pyopencl
 
   // {{{ image creation
 
-  inline 
+  inline
   image *create_image(
       context const &ctx,
       cl_mem_flags flags,
@@ -1635,7 +1635,7 @@ namespace pyopencl
       buffer = host_buffer_deprecated;
     }
 
-    if (buffer.ptr() != Py_None && 
+    if (buffer.ptr() != Py_None &&
         !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
       PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
           "but no memory flags to make use of it.");
@@ -1643,7 +1643,7 @@ namespace pyopencl
     if (shape.ptr() == Py_None)
     {
       if (buffer.ptr() == Py_None)
-        throw pyopencl::error("Image", CL_INVALID_VALUE, 
+        throw pyopencl::error("Image", CL_INVALID_VALUE,
             "'shape' must be passed if 'hostbuf' is not given");
 
       shape = buffer.attr("shape");
@@ -1683,7 +1683,7 @@ namespace pyopencl
       if (pitches.ptr() != Py_None)
       {
         if (py::len(pitches) != 1)
-          throw pyopencl::error("Image", CL_INVALID_VALUE, 
+          throw pyopencl::error("Image", CL_INVALID_VALUE,
               "invalid length of pitch tuple");
         pitch = py::extract<size_t>(pitches[0]);
       }
@@ -1691,7 +1691,7 @@ namespace pyopencl
       // check buffer size
       cl_int itemsize = get_image_format_item_size(fmt);
       if (buf && std::max(pitch, width*itemsize)*height > cl_uint(len))
-          throw pyopencl::error("Image", CL_INVALID_VALUE, 
+          throw pyopencl::error("Image", CL_INVALID_VALUE,
               "buffer too small");
 
       mem = clCreateImage2D(ctx.data(), flags, &fmt,
@@ -1713,7 +1713,7 @@ namespace pyopencl
       if (pitches.ptr() != Py_None)
       {
         if (py::len(pitches) != 2)
-          throw pyopencl::error("Image", CL_INVALID_VALUE, 
+          throw pyopencl::error("Image", CL_INVALID_VALUE,
               "invalid length of pitch tuple");
 
         pitch_x = py::extract<size_t>(pitches[0]);
@@ -1722,11 +1722,11 @@ namespace pyopencl
 
       // check buffer size
       cl_int itemsize = get_image_format_item_size(fmt);
-      if (buf && 
+      if (buf &&
           std::max(pitch_x, width*itemsize)
-          * std::max(height, pitch_y) 
+          * std::max(height, pitch_y)
           * depth > cl_uint(len))
-        throw pyopencl::error("Image", CL_INVALID_VALUE, 
+        throw pyopencl::error("Image", CL_INVALID_VALUE,
             "buffer too small");
 
       mem = clCreateImage3D(ctx.data(), flags, &fmt,
@@ -1737,7 +1737,7 @@ namespace pyopencl
         throw pyopencl::error("clCreateImage3D", status_code);
     }
     else
-      throw pyopencl::error("Image", CL_INVALID_VALUE, 
+      throw pyopencl::error("Image", CL_INVALID_VALUE,
           "invalid dimension");
 
     try
@@ -2450,7 +2450,7 @@ namespace pyopencl
       void set_arg_null(cl_uint arg_index)
       {
         cl_mem m = 0;
-        PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index, 
+        PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index,
               sizeof(cl_mem), &m));
       }
 
@@ -2786,14 +2786,14 @@ namespace pyopencl
       (context &ctx, cl_mem_flags flags,
          GLenum texture_target, GLint miplevel, GLuint texture),
       (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
-  PYOPENCL_WRAP_BUFFER_CREATOR(gl_renderbuffer, 
+  PYOPENCL_WRAP_BUFFER_CREATOR(gl_renderbuffer,
       create_from_gl_renderbuffer, clCreateFromGLRenderbuffer,
       (context &ctx, cl_mem_flags flags, GLuint renderbuffer),
       (ctx.data(), flags, renderbuffer, &status_code));
 
   gl_texture *create_from_gl_texture(
-      context &ctx, cl_mem_flags flags, 
-      GLenum texture_target, GLint miplevel, 
+      context &ctx, cl_mem_flags flags,
+      GLenum texture_target, GLint miplevel,
       GLuint texture, unsigned dims)
   {
     if (dims == 2)
@@ -2801,7 +2801,7 @@ namespace pyopencl
     else if (dims == 3)
       return create_from_gl_texture_3d(ctx, flags, texture_target, miplevel, texture);
     else
-      throw pyopencl::error("Image", CL_INVALID_VALUE, 
+      throw pyopencl::error("Image", CL_INVALID_VALUE,
           "invalid dimension");
   }
 
@@ -2878,7 +2878,7 @@ namespace pyopencl
 
     switch (param_name)
     {
-      case CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR: 
+      case CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR:
         {
           cl_device_id param_value;
           PYOPENCL_CALL_GUARDED(func_ptr,

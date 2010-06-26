@@ -29,7 +29,7 @@ class TestCL:
         failure_count = [0]
 
         CRASH_QUIRKS = [
-                (("NVIDIA Corporation", "NVIDIA CUDA", 
+                (("NVIDIA Corporation", "NVIDIA CUDA",
                     "OpenCL 1.0 CUDA 3.0.1"),
                     [
                     (cl.Event, cl.event_info.COMMAND_QUEUE),
@@ -227,15 +227,15 @@ class TestCL:
 
         prg = cl.Program(context, """
             __kernel void copy_image(
-              __global float4 *dest, 
-              __read_only image2d_t src, 
+              __global float4 *dest,
+              __read_only image2d_t src,
               sampler_t samp,
               int width)
-            { 
+            {
               int x = get_global_id(0);
               int y = get_global_id(1);
               /*
-              const sampler_t samp = 
+              const sampler_t samp =
                 CLK_NORMALIZED_COORDS_FALSE
                 | CLK_ADDRESS_CLAMP
                 | CLK_FILTER_NEAREST;
@@ -293,7 +293,7 @@ def pytest_generate_tests(metafunc):
                     arg_dict["context"] = cl.Context([device])
 
                 metafunc.addcall(funcargs=arg_dict.copy(),
-                        id=", ".join("%s=%s" % (arg, value) 
+                        id=", ".join("%s=%s" % (arg, value)
                                 for arg, value in arg_dict.iteritems()))
 
     elif "platform" in metafunc.funcargnames:
