@@ -26,7 +26,7 @@ class TestCL:
 
     @pytools.test.mark_test.opencl
     def test_get_info(self, platform, device):
-        had_failures = [False]
+        failure_count = [0]
 
         CRASH_QUIRKS = [
                 (("NVIDIA Corporation", "NVIDIA CUDA", 
@@ -69,13 +69,12 @@ class TestCL:
                     try:
                         func(info)
                     except:
-                        print "failed get_info", type(cl_obj), info_name
+                        msg = "failed get_info", type(cl_obj), info_name
 
                         if find_quirk(QUIRKS, cl_obj, info):
-                            print "(known quirk for %s)" % platform.name
+                            msg += ("(known quirk for %s)" % platform.name)
                         else:
-                            had_failures[0] = True
-                            raise
+                            failure_count[0] += 1
 
                     if try_attr_form:
                         try:
@@ -86,8 +85,7 @@ class TestCL:
                             if find_quirk(QUIRKS, cl_obj, info):
                                 print "(known quirk for %s)" % platform.name
                             else:
-                                had_failures[0] = True
-                                raise
+                                failure_count[0] += 1
 
         do_test(platform, cl.platform_info)
 
@@ -125,7 +123,7 @@ class TestCL:
         kernel = prg.sum
         do_test(kernel, cl.kernel_info)
 
-        evt = kernel(queue, (n,), a_buf)
+        evt = kernel(queue, (n,), None, a_buf)
         do_test(evt, cl.event_info)
 
         if profiling:
@@ -151,8 +149,12 @@ class TestCL:
             do_test(img, cl.image_info,
                     lambda info: img.get_image_info(info))
 
-        if had_failures[0]:
-            raise RuntimeError("get_info testing had errors")
+        if failure_count[0]:
+            raise RuntimeError(
+                    "get_info testing had %d errors "
+                    "(If you compiled against OpenCL 1.1 but are testing a 1.0 "
+                    "implementation, you can safely ignore this.)"
+                    % failure_count[0])
 
     @pytools.test.mark_test.opencl
     def test_invalid_kernel_names_cause_failures(self):
@@ -201,18 +203,18 @@ class TestCL:
         a_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=a)
 
         try:
-            prg.mult(queue, a.shape, a_buf, 2, 3)
+            prg.mult(queue, a.shape, None, a_buf, 2, 3)
             assert False, "PyOpenCL should not accept bare Python types as arguments"
-        except TypeError:
+        except cl.LogicError:
             pass
 
         try:
-            prg.mult(queue, a.shape, a_buf, float(2), 3)
+            prg.mult(queue, a.shape, None, a_buf, float(2), 3)
             assert False, "PyOpenCL should not accept bare Python types as arguments"
-        except TypeError:
+        except cl.LogicError:
             pass
 
-        prg.mult(queue, a.shape, a_buf, numpy.float32(2), numpy.int32(3))
+        prg.mult(queue, a.shape, None, a_buf, numpy.float32(2), numpy.int32(3))
 
         a_result = numpy.empty_like(a)
         cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
@@ -254,7 +256,7 @@ class TestCL:
         samp = cl.Sampler(context, False,
                 cl.addressing_mode.CLAMP,
                 cl.filter_mode.NEAREST)
-        prg.copy_image(queue, a.shape, a_dest, a_img, samp, numpy.int32(a.shape[0]))
+        prg.copy_image(queue, a.shape, None, a_dest, a_img, samp, numpy.int32(a.shape[0]))
 
         a_result = numpy.empty_like(a)
         cl.enqueue_read_buffer(queue, a_dest, a_result, is_blocking=True)

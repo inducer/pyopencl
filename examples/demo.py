@@ -22,7 +22,7 @@ prg = cl.Program(ctx, """
     }
     """).build()
 
-prg.sum(queue, a.shape, a_buf, b_buf, dest_buf)
+prg.sum(queue, a.shape, None, a_buf, b_buf, dest_buf)
 
 a_plus_b = numpy.empty_like(a)
 cl.enqueue_read_buffer(queue, dest_buf, a_plus_b).wait()

@@ -28,7 +28,7 @@ except:
     print prg.get_build_info(ctx.devices[0], cl.program_build_info.LOG)
     raise
 
-prg.demo(queue, (500,), demo_buf)
+prg.demo(queue, (500,), None, demo_buf)
 cl.enqueue_read_buffer(queue, demo_buf, demo_r).wait()
 
 for res in demo_r:

@@ -78,6 +78,8 @@ Version 0.92
   `cl_khr_gl_sharing <ghttp://www.khronos.org/registry/cl/extensions/khr/cl_khr_gl_sharing.txt>`_
   extension, leading to working GL interoperability.
 * Add :meth:`pyopencl.Kernel.set_args`.
+* The call signature of :meth:`pyopencl.Kernel.__call__` changed to
+  emphasize the importance of *loccal_size*.
 
 Version 0.91.5
 --------------

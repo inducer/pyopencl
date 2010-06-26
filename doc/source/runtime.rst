@@ -592,12 +592,25 @@ Programs and Kernels
 
         Invoke :meth:`set_arg` on each element of *args* in turn.
 
-    .. method:: __call__(queue, global_size, *args, global_offset=None, local_size=None, wait_for=None)
+    .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None)
 
         Use :func:`enqueue_nd_range_kernel` to enqueue a kernel execution, after using
-        :meth:`set_arg` to set each argument in turn. See the documentation for 
+        :meth:`set_args` to set each argument in turn. See the documentation for 
         :meth:`set_arg` to see what argument types are allowed.
         |std-enqueue-blurb|
+
+        *None* may be passed for local_size
+
+        .. versionchanged:: 0.92
+            *local_size* was promoted to third positional argument from being a
+            keyword argument. The old keyword argument usage will continue to
+            be accepted with a warning throughout the 0.92 release cycle. 
+            This is a backward-compatible change (just barely!) because
+            *local_size* as third positional argument can only be a
+            :class:`tuple` or *None*.  :class:`tuple` instances are never valid
+            :class:`Kernel` arguments, and *None* is valid as an argument, but
+            its treatment in the wrapper had a bug (now fixed) that prevented
+            it from working.
 
     |comparable|
 

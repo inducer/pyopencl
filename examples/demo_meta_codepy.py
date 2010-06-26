@@ -46,9 +46,8 @@ mod = Module([
 
 knl = cl.Program(ctx, str(mod)).build().add
 
-knl(queue, (local_size*macroblock_count,), 
-        c_buf, a_buf, b_buf, 
-        local_size=(local_size,))
+knl(queue, (local_size*macroblock_count,), (local_size,),
+        c_buf, a_buf, b_buf)
 
 c = numpy.empty_like(a)
 cl.enqueue_read_buffer(queue, c_buf, c).wait()

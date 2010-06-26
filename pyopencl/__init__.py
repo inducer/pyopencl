@@ -52,7 +52,7 @@ def _add_functionality():
     for cls in CONSTANT_CLASSES:
         cls.to_string = classmethod(to_string)
 
-    # get_info attributes -----------------------------------------------------
+    # {{{ get_info attributes -------------------------------------------------
     def make_getattr(info_classes):
         name_to_info = dict(
                 (intern(info_name.lower()), (info_method, info_value))
@@ -76,26 +76,34 @@ def _add_functionality():
     for cls, info_classes in cls_to_info_cls.iteritems():
         cls.__getattr__ = make_getattr(info_classes)
 
-    # Platform ----------------------------------------------------------------
+    # }}}
+
+    # {{{ Platform
     def platform_repr(self):
         return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.obj_ptr)
 
     Platform.__repr__ = platform_repr
 
-    # Device ------------------------------------------------------------------
+    # }}}
+
+    # {{{ Device
     def device_repr(self):
         return "<pyopencl.Device '%s' at 0x%x>" % (self.name, self.obj_ptr)
 
     Device.__repr__ = device_repr
 
-    # Context -----------------------------------------------------------------
+    # }}}
+
+    # {{{ Context
     def context_repr(self):
         return "<pyopencl.Context at 0x%x on %s>" % (self.obj_ptr,
                 ", ".join(repr(dev) for dev in self.devices))
 
     Context.__repr__ = context_repr
 
-    # Program -----------------------------------------------------------------
+    # }}}
+
+    # {{{ Program
     def program_getattr(self, attr):
         try:
             pi_attr = getattr(_cl.program_info, attr.upper())
@@ -134,7 +142,9 @@ def _add_functionality():
     Program.__getattr__ = program_getattr
     Program.build = program_build
 
-    # Event -------------------------------------------------------------------
+    # }}}
+
+    # {{{ Event
     class ProfilingInfoGetter:
         def __init__(self, event):
             self.event = event
@@ -152,12 +162,12 @@ def _add_functionality():
 
     _cl.Event.profile = property(ProfilingInfoGetter)
 
-    # Kernel ------------------------------------------------------------------
-    def kernel_call(self, queue, global_size, *args, **kwargs):
-        for i, arg in enumerate(args):
-            self.set_arg(i, arg)
+    # }}}
 
+    # {{{ Kernel
+    def kernel_call(self, queue, global_size, *args, **kwargs):
         global_offset = kwargs.pop("global_offset", None)
+        had_local_size = "local_size" in kwargs
         local_size = kwargs.pop("local_size", None)
         wait_for = kwargs.pop("wait_for", None)
 
@@ -166,25 +176,77 @@ def _add_functionality():
                     "Kernel.__call__ recived unexpected keyword arguments: %s"
                     % ", ".join(kwargs.keys()))
 
+        if had_local_size:
+            from warnings import warn
+            warn("The local_size keyword argument is deprecated and will be "
+                    "removed in pyopencl 0.94. Pass the local "
+                    "size as the third positional argument instead.",
+                    DeprecationWarning, stacklevel=2)
+
+        from types import NoneType
+        if isinstance(args[0], (NoneType, tuple)) and not had_local_size:
+            local_size = args[0]
+            args = args[1:]
+        elif not had_local_size:
+            from warnings import warn
+            warn("PyOpenCL Warning: There was an API change "
+                    "in Kernel.__call__() in pyopencl 0.92. "
+                    "local_size was moved from keyword argument to third "
+                    "positional argument in pyopencl 0.92. "
+                    "You didn't pass local_size, but you still need to insert "
+                    "'None' as a third argument. "
+                    "Your present usage is deprecated and will stop "
+                    "working in pyopencl 0.94.",
+                    DeprecationWarning, stacklevel=2)
+
+        self.set_args(*args)
+
         return enqueue_nd_range_kernel(queue, self, global_size, local_size,
                 global_offset, wait_for)
 
+    def kernel_set_scalar_arg_dtypes(self, arg_dtypes):
+        arg_type_chars = []
+
+        for arg_dtype in arg_dtypes:
+            if arg_dtype is None:
+                arg_type_chars.append(None)
+            else:
+                import numpy
+                arg_type_chars.append(numpy.dtype(arg_dtype).char)
+
+        self._arg_type_chars = arg_type_chars
+
     def kernel_set_args(self, *args):
-        for i, arg in enumerate(args):
-            self.set_arg(i, arg)
+        try:
+            arg_type_chars = self.__dict__["_arg_type_chars"]
+        except KeyError:
+            for i, arg in enumerate(args):
+                self.set_arg(i, arg)
+        else:
+            from struct import pack
+            for i, (arg, arg_type_char) in enumerate(
+                    zip(args, arg_type_chars)):
+                if arg_type_char:
+                    self.set_arg(i, pack(arg_type_char, arg))
+                else:
+                    self.set_arg(i, arg)
 
     Kernel.__call__ = kernel_call
+    Kernel.set_scalar_arg_dtypes = kernel_set_scalar_arg_dtypes
     Kernel.set_args = kernel_set_args
 
-    # ImageFormat -------------------------------------------------------------
+    # }}}
+
+    # {{{ ImageFormat
     def image_format_repr(self):
         return "ImageFormat(%s, %s)" % (
                 channel_order.to_string(self.channel_order),
                 channel_type.to_string(self.channel_data_type))
 
     ImageFormat.__repr__ = image_format_repr
+    # }}}
 
-    # Image -------------------------------------------------------------------
+    # {{{ Image
     class ImageInfoGetter:
         def __init__(self, event):
             from warnings import warn
@@ -213,12 +275,16 @@ def _add_functionality():
     _cl.Image.image = property(ImageInfoGetter)
     _cl.Image.shape = property(image_shape)
 
-    # Event -------------------------------------------------------------------
+    # }}}
+
+    # {{{ Event
     def event_wait(self):
         wait_for_events([self])
         return self
 
     Event.wait = event_wait
+
+    # }}}
 
     if _cl.have_gl():
         def gl_object_get_gl_object(self):
@@ -232,7 +298,7 @@ _add_functionality()
 
 
 
-# convenience -----------------------------------------------------------------
+# {{{ convenience -------------------------------------------------------------
 def create_some_context(interactive=True):
     try:
         import sys
@@ -248,7 +314,7 @@ def create_some_context(interactive=True):
     elif len(platforms) == 1 or not interactive:
         platform = platforms[0]
     else:
-        print "Choose platform from these choices:"
+        print "Choose platform:"
         for i, pf in enumerate(platforms):
             print "[%d] %s" % (i, pf)
 
@@ -267,7 +333,7 @@ def create_some_context(interactive=True):
     elif len(devices) == 1 or not interactive:
         pass
     else:
-        print "Choose device(s) from these choices:"
+        print "Choose device(s):"
         for i, dev in enumerate(devices):
             print "[%d] %s" % (i, dev)
 
@@ -279,6 +345,7 @@ def create_some_context(interactive=True):
 
     return Context(devices)
 
+# }}}
 
 
 # vim: foldmethod=marker

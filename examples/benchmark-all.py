@@ -60,7 +60,7 @@ for platform in cl.get_platforms():
                 }
                 """).build()
 
-        exec_evt = prg.sum(queue, a.shape, a_buf, b_buf, dest_buf)
+        exec_evt = prg.sum(queue, a.shape, None, a_buf, b_buf, dest_buf)
         exec_evt.wait()
         elapsed = 1e-9*(exec_evt.profile.end - exec_evt.profile.start)
 

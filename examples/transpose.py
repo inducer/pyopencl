@@ -35,9 +35,8 @@ class NaiveTranspose:
         assert w % block_size == 0
         assert h % block_size == 0
 
-        return self.kernel(queue, (w, h),
-            tgt, src, numpy.uint32(w), numpy.uint32(h),
-            local_size=(block_size, block_size))
+        return self.kernel(queue, (w, h), (block_size, block_size),
+            tgt, src, numpy.uint32(w), numpy.uint32(h))
 
 
 
@@ -48,7 +47,7 @@ class SillyTranspose(NaiveTranspose):
         assert w % block_size == 0
         assert h % block_size == 0
 
-        return self.kernel(queue, (w, h),
+        return self.kernel(queue, (w, h), None,
             tgt, src, numpy.uint32(w), numpy.uint32(h))
 
 
@@ -90,10 +89,9 @@ class TransposeWithLocal:
         assert w % block_size == 0
         assert h % block_size == 0
 
-        return self.kernel(queue, (w, h),
+        return self.kernel(queue, (w, h), (block_size, block_size),
             tgt, src, numpy.uint32(w), numpy.uint32(h),
-            cl.LocalMemory(4*block_size*(block_size+1)),
-            local_size=(block_size, block_size))
+            cl.LocalMemory(4*block_size*(block_size+1)))
 
 
 

@@ -32,7 +32,7 @@ def initialize():
     plats = cl.get_platforms()
     ctx_props = cl.context_properties
     props = [(ctx_props.PLATFORM, plats[0]), (ctx_props.GL_CONTEXT_KHR,
-	GetCurrentContext()), (ctx_props.GLX_DISPLAY_KHR, GetCurrentDisplay())]
+        GetCurrentContext()), (ctx_props.GLX_DISPLAY_KHR, GetCurrentDisplay())]
     ctx = cl.Context(properties=props)
     glClearColor(1, 1, 1, 1)
     glColor(0, 0, 1)
@@ -45,7 +45,7 @@ def initialize():
     prog = cl.Program(ctx, src).build()
     queue = cl.CommandQueue(ctx)
     cl.enqueue_acquire_gl_objects(queue, [coords_dev])
-    prog.generate_sin(queue, (n_vertices,), coords_dev)
+    prog.generate_sin(queue, (n_vertices,), None, coords_dev)
     cl.enqueue_release_gl_objects(queue, [coords_dev])
     queue.finish()
     glFlush()
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     import sys
     glutInit(sys.argv)
     if len(sys.argv) > 1:
-	n_vertices = int(sys.argv[1])
+        n_vertices = int(sys.argv[1])
     glutInitWindowSize(800, 160)
     glutInitWindowPosition(0, 0)
     glutCreateWindow('OpenCL/OpenGL Interop Tutorial: Sin Generator')
