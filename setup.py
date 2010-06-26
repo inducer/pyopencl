@@ -21,11 +21,9 @@ def get_config_schema():
 
     return ConfigSchema(make_boost_base_options() + [
         BoostLibraries("python"),
-        BoostLibraries("thread"),
 
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
-        Switch("SHIPPED_CL_HEADERS", False, "Use shipped OpenCL headers"),
 
         IncludeDir("CL", []),
         LibraryDir("CL", []),
@@ -49,7 +47,7 @@ def main():
     conf = get_config(get_config_schema())
 
     LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
-    LIBRARIES = conf["BOOST_PYTHON_LIBNAME"] + conf["BOOST_THREAD_LIBNAME"]
+    LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
 
     from os.path import dirname, join, normpath
 
@@ -62,9 +60,6 @@ def main():
         EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
 
     INCLUDE_DIRS = ['src/cpp'] + conf["BOOST_INC_DIR"] + conf["CL_INC_DIR"]
-
-    if conf["SHIPPED_CL_HEADERS"]:
-        INCLUDE_DIRS.append('src/cl')
 
     ext_kwargs = dict()
 

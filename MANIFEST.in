@@ -1,4 +1,3 @@
-include src/cl/*.hpp
 include src/wrapper/*.hpp
 include src/wrapper/*.cpp
 include test/*.py
