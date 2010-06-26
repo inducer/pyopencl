@@ -2449,7 +2449,9 @@ namespace pyopencl
 
       void set_arg_null(cl_uint arg_index)
       {
-        PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index, 0, 0));
+        cl_mem m = 0;
+        PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index, 
+              sizeof(cl_mem), &m));
       }
 
       void set_arg_mem(cl_uint arg_index, memory_object &mo)
@@ -2478,7 +2480,11 @@ namespace pyopencl
         PYOPENCL_BUFFER_SIZE_T len;
 
         if (PyObject_AsReadBuffer(py_buffer.ptr(), &buf, &len))
-          throw py::error_already_set();
+        {
+          PyErr_Clear();
+          throw error("Kernel.set_arg", CL_INVALID_VALUE,
+              "invalid kernel argument");
+        }
 
         PYOPENCL_CALL_GUARDED(clSetKernelArg,
             (m_kernel, arg_index, len, buf));
