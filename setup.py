@@ -128,7 +128,8 @@ def main():
 
             install_requires=[
                 "pytools>=7",
-                "py>=1.0.2"
+                "py>=1.0.2",
+                "decorator>=3.2.0",
                 ],
 
             ext_package="pyopencl",
