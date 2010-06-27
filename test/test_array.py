@@ -17,6 +17,8 @@ def have_cl():
 if have_cl():
     import pyopencl.array as cl_array
     import pyopencl as cl
+    from pyopencl.tools import pytest_generate_tests_for_pyopencl \
+            as pytest_generate_tests
 
 
 
@@ -542,41 +544,6 @@ def test_astype(ctx_getter):
 
     assert a2.dtype == numpy.float32
     assert la.norm(a - a2)/la.norm(a) < 1e-7
-
-
-
-
-def pytest_generate_tests(metafunc):
-    if have_cl():
-        import pyopencl as cl
-    else:
-        # will still show "skipped" messages
-        return
-
-    if ("device" in metafunc.funcargnames
-            or "ctx_getter" in metafunc.funcargnames):
-        arg_dict = {}
-
-        for platform in cl.get_platforms():
-            if "platform" in metafunc.funcargnames:
-                arg_dict["platform"] = platform
-
-            for device in platform.get_devices():
-                if "device" in metafunc.funcargnames:
-                    arg_dict["device"] = device
-
-                if "ctx_getter" in metafunc.funcargnames:
-                    arg_dict["ctx_getter"] = lambda: cl.Context([device])
-
-                metafunc.addcall(funcargs=arg_dict.copy(),
-                        id=", ".join("%s=%s" % (arg, value) 
-                                for arg, value in arg_dict.iteritems()))
-
-    elif "platform" in metafunc.funcargnames:
-        for platform in cl.get_platforms():
-            metafunc.addcall(
-                    funcargs=dict(platform=platform),
-                    id=str(platform))
 
 
 

@@ -31,6 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 import numpy
 from decorator import decorator
+import pyopencl as cl
 
 
 
@@ -54,6 +55,45 @@ def context_dependent_memoize(func, context, *args):
         result = func(context, *args)
         getattr(context,dicname)[args] = result
         return result
+
+
+
+
+def pytest_generate_tests_for_pyopencl(metafunc):
+    class ContextGetter:
+        def __init__(self, device):
+            self.device = device
+
+        def __call__(self):
+            return cl.Context([device])
+
+        def __str__(self):
+            return "<context getter for %s>" % self.device
+    if ("device" in metafunc.funcargnames
+            or "ctx_getter" in metafunc.funcargnames):
+        arg_dict = {}
+
+        for platform in cl.get_platforms():
+            if "platform" in metafunc.funcargnames:
+                arg_dict["platform"] = platform
+
+            for device in platform.get_devices():
+                if "device" in metafunc.funcargnames:
+                    arg_dict["device"] = device
+
+                if "ctx_getter" in metafunc.funcargnames:
+                    arg_dict["ctx_getter"] = ContextGetter(device)
+
+                metafunc.addcall(funcargs=arg_dict.copy(),
+                        id=", ".join("%s=%s" % (arg, value)
+                                for arg, value in arg_dict.iteritems()))
+
+    elif "platform" in metafunc.funcargnames:
+        for platform in cl.get_platforms():
+            metafunc.addcall(
+                    funcargs=dict(platform=platform),
+                    id=str(platform))
+
 
 
 

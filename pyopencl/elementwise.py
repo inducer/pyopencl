@@ -435,7 +435,7 @@ def get_frexp_kernel(context):
 def get_ldexp_kernel(context):
     return get_elwise_kernel(context,
             "float *sig, float *expt, float *z",
-            "z[i] = ldexp(sig[i], int(expt[i]))",
+            "z[i] = ldexp(sig[i], (int) expt[i])",
             "ldexp_kernel")
 
 @context_dependent_memoize

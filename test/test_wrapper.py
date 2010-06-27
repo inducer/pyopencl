@@ -17,6 +17,8 @@ def have_cl():
 
 if have_cl():
     import pyopencl as cl
+    from pyopencl.tools import pytest_generate_tests_for_pyopencl \
+            as pytest_generate_tests
 
 
 
@@ -182,7 +184,9 @@ class TestCL:
         assert not iform.__dict__
 
     @pytools.test.mark_test.opencl
-    def test_nonempty_supported_image_formats(self, device, context):
+    def test_nonempty_supported_image_formats(self, device, ctx_getter):
+        context = ctx_getter()
+
         if device.image_support:
             assert len(cl.get_supported_image_formats(
                     context, cl.mem_flags.READ_ONLY, cl.mem_object_type.IMAGE2D)) > 0
@@ -191,7 +195,9 @@ class TestCL:
             skip("images not supported on %s" % device.name)
 
     @pytools.test.mark_test.opencl
-    def test_that_python_args_fail(self, context):
+    def test_that_python_args_fail(self, ctx_getter):
+        context = ctx_getter()
+
         prg = cl.Program(context, """
             __kernel void mult(__global float *a, float b, int c)
             { a[get_global_id(0)] *= (b+c); }
@@ -220,7 +226,9 @@ class TestCL:
         cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
 
     @pytools.test.mark_test.opencl
-    def test_image_2d(self, device, context):
+    def test_image_2d(self, device, ctx_getter):
+        context = ctx_getter()
+
         if not device.image_support:
             from py.test import skip
             skip("images not supported on %s" % device)
@@ -268,39 +276,6 @@ class TestCL:
 
 
 
-
-
-def pytest_generate_tests(metafunc):
-    if have_cl():
-        import pyopencl as cl
-    else:
-        # will still show "skipped" messages
-        return
-
-    if ("device" in metafunc.funcargnames
-            or "context" in metafunc.funcargnames):
-        arg_dict = {}
-
-        for platform in cl.get_platforms():
-            if "platform" in metafunc.funcargnames:
-                arg_dict["platform"] = platform
-
-            for device in platform.get_devices():
-                if "device" in metafunc.funcargnames:
-                    arg_dict["device"] = device
-
-                if "context" in metafunc.funcargnames:
-                    arg_dict["context"] = cl.Context([device])
-
-                metafunc.addcall(funcargs=arg_dict.copy(),
-                        id=", ".join("%s=%s" % (arg, value)
-                                for arg, value in arg_dict.iteritems()))
-
-    elif "platform" in metafunc.funcargnames:
-        for platform in cl.get_platforms():
-            metafunc.addcall(
-                    funcargs=dict(platform=platform),
-                    id=str(platform))
 
 
 if __name__ == "__main__":
