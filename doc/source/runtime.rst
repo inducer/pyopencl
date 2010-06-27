@@ -578,10 +578,12 @@ Programs and Kernels
 
           .. note::
 
-              Note that Python's own :class:`int`
-              or :class:`float` objects will not work as-is, but
-              :mod:`struct` can be used to convert them to binary
-              data in a :class:`str`, which will work.
+              Note that Python's own :class:`int` or :class:`float`
+              objects will not work out of the box. See
+              :meth:`Kernel.set_scalar_arg_dtypes` for a way to make
+              them work. Alternatively, the standard library module
+              :mod:`struct` can be used to convert Python's native
+              number types to binary data in a :class:`str`.
 
         * An instance of :class:`MemoryObject`. (e.g. :class:`Buffer`,
           :class:`Image`, etc.)
@@ -591,6 +593,20 @@ Programs and Kernels
     .. method:: set_args(self, *args)
 
         Invoke :meth:`set_arg` on each element of *args* in turn.
+
+    .. method:: set_scalar_arg_dtypes(arg_dtypes)
+
+        Inform the wrapper about the sized types of scalar
+        :class:`Kernel` arguments. For each argument,
+        *arg_dtypes* contains an entry. For non-scalars,
+        this must be *None*. For scalars, it must be an
+        object acceptable to the :class:`numpy.dtype` 
+        constructor, indicating that the corresponding
+        scalar argument is of that type.
+
+        After invoking this function with the proper information,
+        most suitable number types will automatically be
+        cast to the right type for kernel invocation.
 
     .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None)
 

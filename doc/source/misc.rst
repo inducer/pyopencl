@@ -80,6 +80,7 @@ Version 0.92
 * Add :meth:`pyopencl.Kernel.set_args`.
 * The call signature of :meth:`pyopencl.Kernel.__call__` changed to
   emphasize the importance of *loccal_size*.
+* Add :meth:`pyopencl.Kernel.set_scalar_arg_dtypes`.
 
 Version 0.91.5
 --------------
