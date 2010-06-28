@@ -81,6 +81,10 @@ Version 0.92
 * The call signature of :meth:`pyopencl.Kernel.__call__` changed to
   emphasize the importance of *loccal_size*.
 * Add :meth:`pyopencl.Kernel.set_scalar_arg_dtypes`.
+* Add support for the
+  `cl_nv_device_attribute_query <ghttp://www.khronos.org/registry/cl/extensions/khr/cl_nv_device_attribute_query.txt>`_
+  extension.
+
 
 Version 0.91.5
 --------------

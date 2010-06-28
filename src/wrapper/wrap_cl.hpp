@@ -17,6 +17,8 @@
 
 // elsewhere ------------------------------------------------------------------
 #include <CL/cl.h>
+// FIXME: Nvidia doesn't install cl_ext.h by default. Grr.
+// #include <CL/cl_ext.h>
 #ifdef HAVE_GL
 #include <GL/gl.h>
 #include <CL/cl_gl.h>

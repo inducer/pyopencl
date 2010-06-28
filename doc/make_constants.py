@@ -43,6 +43,20 @@ const_ext_lookup = {
             getattr(devi, "NATIVE_VECTOR_WIDTH_DOUBLE", None): ("CL_1.1", "0.92"),
             getattr(devi, "NATIVE_VECTOR_WIDTH_HALF", None): ("CL_1.1", "0.92"),
             getattr(devi, "OPENCL_C_VERSION", None): ("CL_1.1", "0.92"),
+            getattr(devi, "COMPUTE_CAPABILITY_MAJOR_NV", None):
+            ("cl_nv_device_attribute_query", "0.92"),
+            getattr(devi, "COMPUTE_CAPABILITY_MINOR_NV", None):
+            ("cl_nv_device_attribute_query", "0.92"),
+            getattr(devi, "REGISTERS_PER_BLOCK_NV", None):
+            ("cl_nv_device_attribute_query", "0.92"),
+            getattr(devi, "WARP_SIZE_NV", None):
+            ("cl_nv_device_attribute_query", "0.92"),
+            getattr(devi, "GPU_OVERLAP_NV", None):
+            ("cl_nv_device_attribute_query", "0.92"),
+            getattr(devi, "KERNEL_EXEC_TIMEOUT_NV", None):
+            ("cl_nv_device_attribute_query", "0.92"),
+            getattr(devi, "INTEGRATED_MEMORY_NV", None):
+            ("cl_nv_device_attribute_query", "0.92"),
             },
 
         ctxp: {
