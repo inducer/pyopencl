@@ -527,9 +527,20 @@ namespace pyopencl
           case CL_DEVICE_OPENCL_C_VERSION:
             PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
 #endif
+#ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
+          case CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV:
+          case CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV:
+          case CL_DEVICE_REGISTERS_PER_BLOCK_NV:
+          case CL_DEVICE_WARP_SIZE_NV:
+            DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_GPU_OVERLAP_NV:
+          case CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV:
+          case CL_DEVICE_INTEGRATED_MEMORY_NV:
+            DEV_GET_INT_INF(cl_bool);
+#endif
 
           default:
-            throw error("Platform.get_info", CL_INVALID_VALUE);
+            throw error("Device.get_info", CL_INVALID_VALUE);
         }
       }
   };
