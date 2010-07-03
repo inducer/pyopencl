@@ -4,6 +4,7 @@ include test/*.py
 include examples/*.py
 include doc/source/*.rst
 include doc/Makefile
+include doc/*.py
 include doc/source/conf.py
 
 include distribute_setup.py
