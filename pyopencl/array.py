@@ -33,19 +33,19 @@ OTHER DEALINGS IN THE SOFTWARE.
 import numpy
 import pyopencl.elementwise as elementwise
 import pyopencl as cl
+#from pytools import memoize_method
+from decorator import decorator
 
 
 
-def splay(ctx, n):
-    max_work_items = max(dev.max_work_group_size for dev in ctx.devices)
-    max_work_items = min(128, max_work_items)
+def splay(queue, n):
+    dev = queue.device
+    max_work_items = min(128, dev.max_work_group_size)
     min_work_items = min(32, max_work_items)
-    max_groups = max(
-            4 * dev.max_compute_units * 8
-            # 4 to overfill the device
-            # 8 is an Nvidia constant--that's how many
-            # groups fit onto one compute device
-            for dev in ctx.devices)
+    max_groups = dev.max_compute_units * 4 * 8
+    # 4 to overfill the device
+    # 8 is an Nvidia constant--that's how many
+    # groups fit onto one compute device
 
     if n < min_work_items:
         group_count = 1
@@ -70,6 +70,39 @@ def splay(ctx, n):
 
 def _get_common_dtype(obj1, obj2):
     return (obj1.dtype.type(0) + obj2.dtype.type(0)).dtype
+
+
+
+
+@decorator
+def elwise_kernel_runner(kernel_getter, *args, **kwargs):
+    """Take a kernel getter of the same signature as the kernel 
+    and return a function that invokes that kernel.
+
+    Assumes that the zeroth entry in *args* is an :class:`Array`.
+    """
+
+    knl = kernel_getter(*args)
+
+    repr_ary = args[0]
+    assert isinstance(repr_ary, Array)
+
+    queue = kwargs.pop("queue", None) or repr_ary.queue
+    gs, ls = repr_ary.get_sizes(queue)
+
+    if kwargs:
+        raise TypeError("only the 'queue' keyword argument is supported")
+
+    actual_args = []
+    for arg in args:
+        if isinstance(arg, Array):
+            actual_args.append(arg.data)
+        else:
+            actual_args.append(arg)
+    actual_args.append(repr_ary.mem_size)
+
+    return knl(queue, gs, ls, *actual_args)
+
 
 
 
@@ -132,7 +165,9 @@ class Array(object):
 
         self.base = base
 
-        self._global_size, self._local_size = splay(context, self.mem_size)
+    #@memoize_method FIXME: reenable
+    def get_sizes(self, queue):
+        return splay(self.queue, self.mem_size)
 
     def set(self, ary, queue=None, async=False):
         assert ary.size == self.size
@@ -170,38 +205,28 @@ class Array(object):
         raise TypeError("pyopencl arrays are not hashable.")
 
     # kernel invocation wrappers ----------------------------------------------
-    def _axpbyz(self, selffac, other, otherfac, out, queue=None):
+    @elwise_kernel_runner
+    @staticmethod
+    def _axpbyz(out, afac, a, bfac, b, queue=None):
         """Compute ``out = selffac * self + otherfac*other``,
         where `other` is a vector.."""
         assert self.shape == other.shape
 
-        knl = elementwise.get_axpbyz_kernel(
+        return elementwise.get_axpbyz_kernel(
                 self.context, self.dtype, other.dtype, out.dtype)
 
-        knl(queue or self.queue, self._global_size, self._local_size,
-                selffac, self.data, otherfac, other.data,
-                out.data, self.mem_size)
-
-        return out
-
-    def _axpbz(self, selffac, other, out, queue=None):
+    @elwise_kernel_runner
+    def _axpbz(self, out, selffac, other, queue=None):
         """Compute ``out = selffac * self + other``, where `other` is a scalar."""
-        knl = elementwise.get_axpbz_kernel(self.context, self.dtype)
-        knl(queue or self.queue, self._global_size, self._local_size,
-                selffac, self.data, other, out.data, self.mem_size)
+        return elementwise.get_axpbz_kernel(self.context, self.dtype)
 
-        return out
-
-    def _elwise_multiply(self, other, out, queue=None):
-        knl = elementwise.get_multiply_kernel(
+    @elwise_kernel_runner
+    def _elwise_multiply(self, out, other, queue=None):
+        return elementwise.get_multiply_kernel(
                 self.context, self.dtype, other.dtype, out.dtype)
-        knl(queue or self.queue, self._global_size, self._local_size,
-                self.data, other.data,
-                out.data, self.mem_size)
 
-        return out
-
-    def _rdiv_scalar(self, other, out, queue=None):
+    @elwise_kernel_runner
+    def _rdiv_scalar(self, out, other, queue=None):
         """Divides an array by a scalar::
 
            y = n / self
@@ -209,24 +234,29 @@ class Array(object):
 
         assert self.dtype == numpy.float32
 
-        knl = elementwise.get_rdivide_elwise_kernel(self.context, self.dtype)
-        knl(queue or self.queue, self._global_size, self._local_size,
-                self.data, other,
-                out.data, self.mem_size)
+        return elementwise.get_rdivide_elwise_kernel(self.context, self.dtype)
 
-        return out
-
-    def _div(self, other, out, queue=None):
+    @elwise_kernel_runner
+    def _div(self, out, other, queue=None):
         """Divides an array by another array."""
 
         assert self.shape == other.shape
 
-        knl = elementwise.get_divide_kernel(self.context,
+        return elementwise.get_divide_kernel(self.context,
                 self.dtype, other.dtype, out.dtype)
-        knl(queue or self.queue, self._global_size, self._local_size,
-                self.data, other.data, out.data, self.mem_size)
 
-        return out
+    @elwise_kernel_runner
+    def _fill(result, scalar):
+        return elementwise.get_fill_kernel(result.context, result.dtype)
+
+    @elwise_kernel_runner
+    def _abs(result, arg):
+        return elementwise.get_unary_func_kernel(
+                arg.context, fname, arg.dtype)
+
+    @elwise_kernel_runner
+    def _pow_scalar(self, ):
+        return elementwise.get_pow_kernel(self.context, self.dtype)
 
     def _new_like_me(self, dtype=None):
         if dtype is None:
@@ -236,11 +266,12 @@ class Array(object):
                 queue=self.queue)
 
     # operators ---------------------------------------------------------------
-    def mul_add(self, selffac, other, otherfac, add_timer=None, queue=None):
+    def mul_add(self, selffac, other, otherfac, queue=None):
         """Return `selffac * self + otherfac*other`.
         """
         result = self._new_like_me(_get_common_dtype(self, other))
-        return self._axpbyz(selffac, other, otherfac, result, add_timer)
+        self._axpbyz(result, selffac, self, other, otherfac)
+        return result
 
     def __add__(self, other):
         """Add an array with an array or an array with a scalar."""
@@ -248,14 +279,16 @@ class Array(object):
         if isinstance(other, Array):
             # add another vector
             result = self._new_like_me(_get_common_dtype(self, other))
-            return self._axpbyz(1, other, 1, result)
+            self._axpbyz(result, 1, self, 1, other)
+            return result
         else:
             # add a scalar
             if other == 0:
                 return self
             else:
                 result = self._new_like_me()
-                return self._axpbz(1, other, result)
+                self._axpbz(result, 1, other)
+                return result
 
     __radd__ = __add__
 
@@ -264,14 +297,15 @@ class Array(object):
 
         if isinstance(other, Array):
             result = self._new_like_me(_get_common_dtype(self, other))
-            return self._axpbyz(1, other, -1, result)
+            self._axpbyz(result, 1, other, -1)
+            return result
         else:
             if other == 0:
                 return self
             else:
                 # create a new array for the result
                 result = self._new_like_me()
-                return self._axpbz(1, -other, result)
+                return self._axpbz(result, 1, -other)
 
     def __rsub__(self,other):
         """Substracts an array by a scalar or an array::
@@ -280,32 +314,37 @@ class Array(object):
         """
         # other must be a scalar
         result = self._new_like_me()
-        return self._axpbz(-1, other, result)
+        return self._axpbz(result, -1, other)
 
     def __iadd__(self, other):
-        return self._axpbyz(1, other, 1, self)
+        self._axpbyz(self, 1, self, 1, other)
+        return self
 
     def __isub__(self, other):
-        return self._axpbyz(1, other, -1, self)
+        return self._axpbyz(self, 1, self, -1, other)
 
     def __neg__(self):
         result = self._new_like_me()
-        return self._axpbz(-1, 0, result)
+        return self._axpbz(result, -1, self)
 
     def __mul__(self, other):
         if isinstance(other, Array):
             result = self._new_like_me(_get_common_dtype(self, other))
-            return self._elwise_multiply(other, result)
+            self._elwise_multiply(result, other)
+            return result
         else:
             result = self._new_like_me()
-            return self._axpbz(other, 0, result)
+            self._axpbz(result, other, self, 0)
+            return result
 
     def __rmul__(self, scalar):
         result = self._new_like_me()
-        return self._axpbz(scalar, 0, result)
+        self._axpbz(result, scalar, self, 0)
+        return result
 
     def __imul__(self, scalar):
-        return self._axpbz(scalar, 0, self)
+        self._axpbz(self, scalar, 0)
+        return self
 
     def __div__(self, other):
         """Divides an array by an array or a scalar::
@@ -314,14 +353,15 @@ class Array(object):
         """
         if isinstance(other, Array):
             result = self._new_like_me(_get_common_dtype(self, other))
-            return self._div(other, result)
+            return self._div(result, other)
         else:
             if other == 1:
                 return self
             else:
                 # create a new array for the result
                 result = self._new_like_me()
-                return self._axpbz(1/other, 0, result)
+                self._axpbz(result, 1/other, 0)
+                return result
 
     __truediv__ = __div__
 
@@ -333,29 +373,22 @@ class Array(object):
 
         if isinstance(other, Array):
             result = self._new_like_me(_get_common_dtype(self, other))
-
-            knl = elementwise.get_divide_kernel(self.context)
-            knl(self.queue, self._global_size, self._local_size,
-                    other.data, self.data, result.data,
-                    self.mem_size)
-
-            return result
+            other._div(result, self)
         else:
             if other == 1:
                 return self
             else:
                 # create a new array for the result
                 result = self._new_like_me()
-                return self._rdiv_scalar(other, result)
+                self._rdiv_scalar(result, other)
+
+        return result
 
     __rtruediv__ = __div__
 
     def fill(self, value, queue=None):
         """fills the array with the specified value"""
-        knl = elementwise.get_fill_kernel(self.context, self.dtype)
-        knl(queue or self.queue, self._global_size, self._local_size,
-                value, self.data, self.mem_size)
-
+        self._fill(self, value, queue=queue)
         return self
 
     def __len__(self):
@@ -370,8 +403,6 @@ class Array(object):
         of `self`.
         """
 
-        result = self._new_like_me()
-
         if self.dtype.kind == "f":
             fname = "fabs"
         elif self.dtype.kind in ["u", "i"]:
@@ -379,11 +410,8 @@ class Array(object):
         else:
             raise TypeError("unsupported dtype in __abs__()")
 
-        knl = elementwise.get_unary_func_kernel(
-                self.context, fname, self.dtype)
-        knl(self.queue, self._global_size, self._local_size,
-                self.data,result.data, self.mem_size)
-
+        result = self._new_like_me()
+        self._abs(result, self)
         return result
 
     def __pow__(self, other):
@@ -406,7 +434,6 @@ class Array(object):
             return result
         else:
             result = self._new_like_me()
-            knl = elementwise.get_pow_kernel(self.context, self.dtype)
             knl(self.queue, self._global_size, self._local_size,
                     other, self.data, result.data,
                     self.mem_size)
