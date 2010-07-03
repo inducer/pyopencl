@@ -37,8 +37,9 @@ import pyopencl as cl
 
 
 def splay(ctx, n):
-    min_work_items = 32
-    max_work_items = 128
+    max_work_items = max(dev.max_work_group_size for dev in ctx.devices)
+    max_work_items = min(128, max_work_items)
+    min_work_items = min(32, max_work_items)
     max_groups = max(
             4 * dev.max_compute_units * 8
             # 4 to overfill the device
