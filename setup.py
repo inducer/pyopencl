@@ -46,7 +46,8 @@ def main():
             NumpyExtension, set_up_shipped_boost_if_requested)
 
     hack_distutils()
-    conf = get_config(get_config_schema())
+    conf = get_config(get_config_schema(),
+            warn_about_no_config=False)
     EXTRA_OBJECTS, EXTRA_DEFINES = set_up_shipped_boost_if_requested(conf)
 
     LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
@@ -139,6 +140,9 @@ def main():
                 NumpyExtension("_cl", 
                     [
                         "src/wrapper/wrap_cl.cpp", 
+                        "src/wrapper/wrap_cl_part_1.cpp", 
+                        "src/wrapper/wrap_cl_part_2.cpp", 
+                        "src/wrapper/wrap_constants.cpp", 
                         ]+EXTRA_OBJECTS, 
                     include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
                     library_dirs=LIBRARY_DIRS + conf["CL_LIB_DIR"],

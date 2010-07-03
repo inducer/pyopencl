@@ -1552,6 +1552,7 @@ namespace pyopencl
     return result.release();
   }
 
+  inline
   py::list get_supported_image_formats(
       context const &ctx,
       cl_mem_flags flags,
@@ -2700,6 +2701,7 @@ namespace pyopencl
   // }}}
 
   // {{{ gl interop
+  inline
   bool have_gl()
   {
 #ifdef HAVE_GL
@@ -2804,6 +2806,7 @@ namespace pyopencl
       (context &ctx, cl_mem_flags flags, GLuint renderbuffer),
       (ctx.data(), flags, renderbuffer, &status_code));
 
+  inline
   gl_texture *create_from_gl_texture(
       context &ctx, cl_mem_flags flags,
       GLenum texture_target, GLint miplevel,

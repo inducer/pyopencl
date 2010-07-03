@@ -103,12 +103,13 @@ def humanize(sym_str):
 
 
 # siteconf handling -----------------------------------------------------------
-def get_config(schema=None):
+def get_config(schema=None, warn_about_no_config=True):
     if schema is None:
         from setup import get_config_schema
         schema = get_config_schema()
 
-    if not schema.have_config() and not schema.have_global_config():
+    if (not schema.have_config() and not schema.have_global_config()
+            and warn_about_no_config):
         print "*************************************************************"
         print "*** I have detected that you have not run configure.py."
         print "*************************************************************"
@@ -497,20 +498,14 @@ def set_up_shipped_boost_if_requested(conf):
                 + glob("bpl-subset/bpl_subset/libs/*/*/*.cpp")
                 + glob("bpl-subset/bpl_subset/libs/*/*.cpp"))
 
-        print len(source_files)
         source_files = [f for f in source_files
                 if not f.startswith("bpl-subset/bpl_subset/libs/thread/src")]
-        print len(source_files)
 
         import sys
         if sys.platform == "nt":
-            print glob(
-                    "bpl-subset/bpl_subset/libs/thread/src/win32/*.cpp")
             source_files += glob(
                     "bpl-subset/bpl_subset/libs/thread/src/win32/*.cpp")
         else:
-            print glob(
-                    "bpl-subset/bpl_subset/libs/thread/src/pthread/*.cpp")
             source_files += glob(
                     "bpl-subset/bpl_subset/libs/thread/src/pthread/*.cpp")
 
