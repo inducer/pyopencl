@@ -479,6 +479,48 @@ class BoostLibraries(Libraries):
                 help="Library names for Boost C++ %s library (without lib or .so)" 
                     % humanize(lib_base_name))
 
+def set_up_shipped_boost_if_requested(conf):
+    """Set up the package to use a shipped version of Boost.
+
+    Return a list of extra C files to build.
+    """
+    if conf["USE_SHIPPED_BOOST"]:
+        from os.path import exists
+        if not exists("bpl-subset/bpl_subset/boost/version.hpp"):
+            raise RuntimeError("The shipped Boost library was not found.")
+        conf["BOOST_INC_DIR"] = ["bpl-subset/bpl_subset"]
+        conf["BOOST_LIB_DIR"] = []
+        conf["BOOST_PYTHON_LIBNAME"] = []
+
+        from glob import glob
+        source_files = (glob("bpl-subset/bpl_subset/libs/*/*/*/*.cpp")
+                + glob("bpl-subset/bpl_subset/libs/*/*/*.cpp")
+                + glob("bpl-subset/bpl_subset/libs/*/*.cpp"))
+
+        print len(source_files)
+        source_files = [f for f in source_files
+                if not f.startswith("bpl-subset/bpl_subset/libs/thread/src")]
+        print len(source_files)
+
+        import sys
+        if sys.platform == "nt":
+            print glob(
+                    "bpl-subset/bpl_subset/libs/thread/src/win32/*.cpp")
+            source_files += glob(
+                    "bpl-subset/bpl_subset/libs/thread/src/win32/*.cpp")
+        else:
+            print glob(
+                    "bpl-subset/bpl_subset/libs/thread/src/pthread/*.cpp")
+            source_files += glob(
+                    "bpl-subset/bpl_subset/libs/thread/src/pthread/*.cpp")
+
+        return (source_files, 
+                {"BOOST_MULTI_INDEX_DISABLE_SERIALIZATION": 1}
+                )
+    else:
+        return [], {}
+
+
 def make_boost_base_options():
     return [
         IncludeDir("BOOST", []),

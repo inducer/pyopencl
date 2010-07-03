@@ -22,6 +22,8 @@ def get_config_schema():
     return ConfigSchema(make_boost_base_options() + [
         BoostLibraries("python"),
 
+        Switch("USE_SHIPPED_BOOST", True, "Use included Boost library"),
+
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
 
@@ -40,18 +42,18 @@ def get_config_schema():
 
 def main():
     import glob
-    from aksetup_helper import hack_distutils, get_config, setup, \
-            NumpyExtension
+    from aksetup_helper import (hack_distutils, get_config, setup,
+            NumpyExtension, set_up_shipped_boost_if_requested)
 
     hack_distutils()
     conf = get_config(get_config_schema())
+    EXTRA_OBJECTS, EXTRA_DEFINES = set_up_shipped_boost_if_requested(conf)
 
     LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
     LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
 
     from os.path import dirname, join, normpath
 
-    EXTRA_DEFINES = { }
     EXTRA_INCLUDE_DIRS = []
     EXTRA_LIBRARY_DIRS = []
     EXTRA_LIBRARIES = []
@@ -137,7 +139,7 @@ def main():
                 NumpyExtension("_cl", 
                     [
                         "src/wrapper/wrap_cl.cpp", 
-                        ], 
+                        ]+EXTRA_OBJECTS, 
                     include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
                     library_dirs=LIBRARY_DIRS + conf["CL_LIB_DIR"],
                     libraries=LIBRARIES + conf["CL_LIBNAME"],

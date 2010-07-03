@@ -12,3 +12,5 @@ include configure.py
 include Makefile.in
 include aksetup_helper.py
 include README_SETUP.txt
+
+recursive-include bpl-subset
