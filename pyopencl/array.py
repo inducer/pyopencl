@@ -288,7 +288,7 @@ class Array(object):
                 return self
             else:
                 result = self._new_like_me()
-                self._axpbz(result, 1, other)
+                self._axpbz(result, 1, self, other)
                 return result
 
     __radd__ = __add__
@@ -306,7 +306,7 @@ class Array(object):
             else:
                 # create a new array for the result
                 result = self._new_like_me()
-                return self._axpbz(result, 1, -other)
+                return self._axpbz(result, 1, self, -other)
 
     def __rsub__(self,other):
         """Substracts an array by a scalar or an array::
@@ -315,7 +315,7 @@ class Array(object):
         """
         # other must be a scalar
         result = self._new_like_me()
-        return self._axpbz(result, -1, other)
+        return self._axpbz(result, -1, self, other)
 
     def __iadd__(self, other):
         self._axpbyz(self, 1, self, 1, other)
@@ -326,7 +326,7 @@ class Array(object):
 
     def __neg__(self):
         result = self._new_like_me()
-        return self._axpbz(result, -1, self)
+        return self._axpbz(result, -1, self, 0)
 
     def __mul__(self, other):
         if isinstance(other, Array):
@@ -344,7 +344,7 @@ class Array(object):
         return result
 
     def __imul__(self, scalar):
-        self._axpbz(self, scalar, 0)
+        self._axpbz(self, scalar, self, 0)
         return self
 
     def __div__(self, other):
@@ -361,7 +361,7 @@ class Array(object):
             else:
                 # create a new array for the result
                 result = self._new_like_me()
-                self._axpbz(result, 1/other, 0)
+                self._axpbz(result, 1/other, self, 0)
                 return result
 
     __truediv__ = __div__
