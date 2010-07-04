@@ -483,15 +483,47 @@ class BoostLibraries(Libraries):
 def set_up_shipped_boost_if_requested(conf):
     """Set up the package to use a shipped version of Boost.
 
-    Return a list of extra C files to build.
+    Return a tuple of a list of extra C files to build and extra
+    defines to be used.
     """
+    from os.path import exists
+    import sys
+
     if conf["USE_SHIPPED_BOOST"]:
-        from os.path import exists
         if not exists("bpl-subset/bpl_subset/boost/version.hpp"):
-            raise RuntimeError("The shipped Boost library was not found.")
+            print >>sys.stderr, "------------------------------------------------------------------------"
+            print >>sys.stderr, "The shipped Boost library was not found, but USE_SHIPPED_BOOST is True."
+            print >>sys.stderr, "(It should be under bpl-subset/)"
+            print >>sys.stderr, "------------------------------------------------------------------------"
+            print >>sys.stderr, "If you got this package from git, you probably want to do"
+            print >>sys.stderr, ""
+            print >>sys.stderr, " $ git submodule init"
+            print >>sys.stderr, " $ git submodule update"
+            print >>sys.stderr, ""
+            print >>sys.stderr, "to fetch what you are presently missing. If you got this from"
+            print >>sys.stderr, "a distributed package on the net, that package is broken and"
+            print >>sys.stderr, "should be fixed. For now, I will turn off 'USE_SHIPPED_BOOST'"
+            print >>sys.stderr, "to try and see if the build succeeds that way, but in the long"
+            print >>sys.stderr, "run you might want to either get the missing bits or turn"
+            print >>sys.stderr, "'USE_SHIPPED_BOOST' off."
+            print >>sys.stderr, "------------------------------------------------------------------------"
+            conf["USE_SHIPPED_BOOST"] = False
+
+            delay = 10
+
+            from time import sleep
+            import sys
+            while delay:
+                sys.stdout.write("Continuing in %d seconds...   \r" % delay)
+                sys.stdout.flush()
+                delay -= 1
+                sleep(1)
+
+    if conf["USE_SHIPPED_BOOST"]:
         conf["BOOST_INC_DIR"] = ["bpl-subset/bpl_subset"]
         conf["BOOST_LIB_DIR"] = []
         conf["BOOST_PYTHON_LIBNAME"] = []
+        conf["BOOST_THREAD_LIBNAME"] = []
 
         from glob import glob
         source_files = (glob("bpl-subset/bpl_subset/libs/*/*/*/*.cpp")
