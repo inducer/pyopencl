@@ -10,7 +10,8 @@
 // Mac ------------------------------------------------------------------------
 #include <OpenCL/opencl.h>
 #ifdef HAVE_GL
-#include <OpenCL/opencl_gl.h>
+#include <OpenCL/cl_gl.h>
+#include <OpenCL/cl_gl_ext.h>
 #endif
 
 #else
@@ -2639,7 +2640,7 @@ namespace pyopencl
     std::vector<size_t> local_work_size;
     if (py_local_work_size.ptr() != Py_None)
     {
-      if (work_dim != len(py_local_work_size))
+      if (work_dim != unsigned(len(py_local_work_size)))
         throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
             "global/work work sizes have differing dimensions");
 
@@ -2652,7 +2653,7 @@ namespace pyopencl
     std::vector<size_t> global_work_offset;
     if (py_global_work_offset.ptr() != Py_None)
     {
-      if (work_dim != len(py_global_work_offset))
+      if (work_dim != unsigned(len(py_global_work_offset)))
         throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
             "global work size and offset have differing dimensions");
 

@@ -229,8 +229,10 @@ void pyopencl_expose_part_2()
       ),
       py::return_value_policy<py::manage_new_object>());
 
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
   py::def("get_gl_context_info_khr", get_gl_context_info_khr,
       py::args("properties", "param_name"));
+#endif
 
 #endif
   // }}}
