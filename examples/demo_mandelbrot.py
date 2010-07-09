@@ -1,8 +1,10 @@
 # I found this example for PyCuda here:
 # http://wiki.tiker.net/PyCuda/Examples/Mandelbrot
-# original readme below these lines. 
 #
-# I adapted it for PyOpenCL. Hopefully it is useful for someone
+# I adapted it for PyOpenCL. Hopefully it is useful to someone.
+# July 2010, HolgerRapp@gmx.net
+#
+# Original readme below these lines. 
 
 # Mandelbrot calculate using GPU, Serial numpy and faster numpy
 # Use to show the speed difference between CPU and GPU calculations
