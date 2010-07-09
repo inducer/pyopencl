@@ -161,8 +161,12 @@ h_c = numpy.empty((c_height, c_width)).astype(numpy.float32)
 kernel_params = {"block_size": block_size,
         "w_a":a_width, "h_a":a_height, "w_b":b_width}
 
+if "NVIDIA" in queue.device.vendor:
+    options = "-cl-mad-enable -cl-fast-relaxed-math"
+else:
+    options = None
 prg = cl.Program(ctx, KERNEL_CODE % kernel_params,
-        ).build(options="-cl-mad-enable -cl-fast-relaxed-math")
+        ).build(options=options)
 kernel = prg.matrixMul
 #print prg.binaries[0]
 
