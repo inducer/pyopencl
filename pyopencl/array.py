@@ -34,7 +34,6 @@ import numpy
 import pyopencl.elementwise as elementwise
 import pyopencl as cl
 #from pytools import memoize_method
-from decorator import decorator
 
 
 
@@ -74,34 +73,35 @@ def _get_common_dtype(obj1, obj2):
 
 
 
-@decorator
-def elwise_kernel_runner(kernel_getter, *args, **kwargs):
+def elwise_kernel_runner(kernel_getter):
     """Take a kernel getter of the same signature as the kernel
     and return a function that invokes that kernel.
 
     Assumes that the zeroth entry in *args* is an :class:`Array`.
     """
+    #(Note that the 'return a function' bit is done by @decorator.)
 
-    # The decorators module converts kwargs to positional arguments,
-    # so we pop the queue argument first
-    args = list(args)
-    repr_ary = args[0]
-    queue = args.pop() or repr_ary.queue
+    def kernel_runner(*args, **kwargs):
+        repr_ary = args[0]
+        queue = kwargs.pop("queue", None) or repr_ary.queue
 
-    gs, ls = repr_ary.get_sizes(queue)
-    knl = kernel_getter(*args)
+        gs, ls = repr_ary.get_sizes(queue)
+        knl = kernel_getter(*args)
 
-    assert isinstance(repr_ary, Array)
+        assert isinstance(repr_ary, Array)
 
-    actual_args = []
-    for arg in args:
-        if isinstance(arg, Array):
-            actual_args.append(arg.data)
-        else:
-            actual_args.append(arg)
-    actual_args.append(repr_ary.mem_size)
+        actual_args = []
+        for arg in args:
+            if isinstance(arg, Array):
+                actual_args.append(arg.data)
+            else:
+                actual_args.append(arg)
+        actual_args.append(repr_ary.mem_size)
 
-    return knl(queue, gs, ls, *actual_args)
+        return knl(queue, gs, ls, *actual_args)
+
+    from functools import update_wrapper
+    return update_wrapper(kernel_runner, kernel_getter)
 
 
 
@@ -167,7 +167,7 @@ class Array(object):
 
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue):
-        return splay(self.queue, self.mem_size)
+        return splay(queue, self.mem_size)
 
     def set(self, ary, queue=None, async=False):
         assert ary.size == self.size
@@ -221,22 +221,19 @@ class Array(object):
         """Compute ``out = afac * a + other``, where `other` is a scalar."""
         return elementwise.get_axpbz_kernel(out.context, out.dtype)
 
+    @staticmethod
     @elwise_kernel_runner
-    def _elwise_multiply(self, out, other, queue=None):
+    def _elwise_multiply(out, a, b, queue=None):
         return elementwise.get_multiply_kernel(
-                self.context, self.dtype, other.dtype, out.dtype)
+                a.context, a.dtype, b.dtype, out.dtype)
 
+    @staticmethod
     @elwise_kernel_runner
-    def _rdiv_scalar(self, out, other, queue=None):
-        """Divides an array by a scalar::
+    def _rdiv_scalar(out, ary, other, queue=None):
+        return elementwise.get_rdivide_elwise_kernel(
+                out.context, ary.dtype)
 
-           y = n / self
-        """
-
-        assert self.dtype == numpy.float32
-
-        return elementwise.get_rdivide_elwise_kernel(self.context, self.dtype)
-
+    @staticmethod
     @elwise_kernel_runner
     def _div(self, out, other, queue=None):
         """Divides an array by another array."""
@@ -246,32 +243,59 @@ class Array(object):
         return elementwise.get_divide_kernel(self.context,
                 self.dtype, other.dtype, out.dtype)
 
+    @staticmethod
     @elwise_kernel_runner
     def _fill(result, scalar):
         return elementwise.get_fill_kernel(result.context, result.dtype)
 
+    @staticmethod
     @elwise_kernel_runner
     def _abs(result, arg):
+        if arg.dtype.kind == "f":
+            fname = "fabs"
+        elif arg.dtype.kind in ["u", "i"]:
+            fname = "abs"
+        else:
+            raise TypeError("unsupported dtype in _abs()")
+
         return elementwise.get_unary_func_kernel(
                 arg.context, fname, arg.dtype)
 
+    @staticmethod
     @elwise_kernel_runner
-    def _pow_scalar(self, ):
-        return elementwise.get_pow_kernel(self.context, self.dtype)
+    def _pow_scalar(result, ary, exponent):
+        return elementwise.get_pow_kernel(result.context, result.dtype)
 
-    def _new_like_me(self, dtype=None):
+    @staticmethod
+    @elwise_kernel_runner
+    def _pow_array(result, base, exponent):
+        return elementwise.get_pow_array_kernel(
+                result.context, base.dtype, exponent.dtype, result.dtype)
+
+    @staticmethod
+    @elwise_kernel_runner
+    def _reverse(result, ary):
+        return elementwise.get_reverse_kernel(result.context, ary.dtype)
+
+    @staticmethod
+    @elwise_kernel_runner
+    def _copy(dest, src):
+        return elementwise.get_copy_kernel(
+                dest.context, dest.dtype, src.dtype)
+
+    def _new_like_me(self, dtype=None, queue=None):
         if dtype is None:
             dtype = self.dtype
         return self.__class__(self.context,
                 self.shape, dtype, allocator=self.allocator,
-                queue=self.queue)
+                queue=queue or self.queue)
 
     # operators ---------------------------------------------------------------
     def mul_add(self, selffac, other, otherfac, queue=None):
         """Return `selffac * self + otherfac*other`.
         """
         result = self._new_like_me(_get_common_dtype(self, other))
-        self._axpbyz(result, selffac, self, other, otherfac)
+        self._axpbyz(result, selffac, self, otherfac, other)
         return result
 
     def __add__(self, other):
@@ -301,12 +325,13 @@ class Array(object):
             self._axpbyz(result, 1, self, -1, other)
             return result
         else:
+            # subtract a scalar
             if other == 0:
                 return self
             else:
-                # create a new array for the result
                 result = self._new_like_me()
-                return self._axpbz(result, 1, self, -other)
+                self._axpbz(result, 1, self, -other)
+                return result
 
     def __rsub__(self,other):
         """Substracts an array by a scalar or an array::
@@ -315,23 +340,26 @@ class Array(object):
         """
         # other must be a scalar
         result = self._new_like_me()
-        return self._axpbz(result, -1, self, other)
+        self._axpbz(result, -1, self, other)
+        return result
 
     def __iadd__(self, other):
         self._axpbyz(self, 1, self, 1, other)
         return self
 
     def __isub__(self, other):
-        return self._axpbyz(self, 1, self, -1, other)
+        self._axpbyz(self, 1, self, -1, other)
+        return self
 
     def __neg__(self):
         result = self._new_like_me()
-        return self._axpbz(result, -1, self, 0)
+        self._axpbz(result, -1, self, 0)
+        return result
 
     def __mul__(self, other):
         if isinstance(other, Array):
             result = self._new_like_me(_get_common_dtype(self, other))
-            self._elwise_multiply(result, other)
+            self._elwise_multiply(result, self, other)
             return result
         else:
             result = self._new_like_me()
@@ -354,7 +382,7 @@ class Array(object):
         """
         if isinstance(other, Array):
             result = self._new_like_me(_get_common_dtype(self, other))
-            return self._div(result, other)
+            self._div(result, self, other)
         else:
             if other == 1:
                 return self
@@ -362,7 +390,8 @@ class Array(object):
                 # create a new array for the result
                 result = self._new_like_me()
                 self._axpbz(result, 1/other, self, 0)
-                return result
+
+        return result
 
     __truediv__ = __div__
 
@@ -381,7 +410,7 @@ class Array(object):
             else:
                 # create a new array for the result
                 result = self._new_like_me()
-                self._rdiv_scalar(result, other)
+                self._rdiv_scalar(result, self, other)
 
         return result
 
@@ -404,13 +433,6 @@ class Array(object):
         of `self`.
         """
 
-        if self.dtype.kind == "f":
-            fname = "fabs"
-        elif self.dtype.kind in ["u", "i"]:
-            fname = "abs"
-        else:
-            raise TypeError("unsupported dtype in __abs__()")
-
         result = self._new_like_me()
         self._abs(result, self)
         return result
@@ -424,22 +446,12 @@ class Array(object):
             assert self.shape == other.shape
 
             result = self._new_like_me(_get_common_dtype(self, other))
-
-            knl = elementwise.get_pow_array_kernel(self.context,
-                    self.dtype, other.dtype, result.dtype)
-
-            knl(self.queue, self._global_size, self._local_size,
-                    self.data, other.data, result.data,
-                    self.mem_size)
-
-            return result
+            self._pow_array(result, self, other)
         else:
             result = self._new_like_me()
-            knl(self.queue, self._global_size, self._local_size,
-                    other, self.data, result.data,
-                    self.mem_size)
+            self._pow_scalar(result, self, other)
 
-            return result
+        return result
 
     def reverse(self, queue=None):
         """Return this array in reversed order. The array is treated
@@ -447,11 +459,7 @@ class Array(object):
         """
 
         result = self._new_like_me()
-
-        knl = elementwise.get_reverse_kernel(self.context, self.dtype)
-        knl(queue or self.queue, self._global_size, self._local_size,
-                self.data, result.data, self.mem_size)
-
+        self._reverse(result, self)
         return result
 
     def astype(self, dtype, queue=None):
@@ -459,13 +467,8 @@ class Array(object):
             return self
 
         result = self._new_like_me(dtype=dtype)
-
-        knl = elementwise.get_copy_kernel(self.context, dtype, self.dtype)
-        knl(queue or self.queue, self._global_size, self._local_size,
-                result.data, self.data, self.mem_size)
-
+        self._copy(result, self, queue=queue)
         return result
-
 
     # slicing -----------------------------------------------------------------
     def __getitem__(self, idx):
@@ -540,6 +543,11 @@ def zeros_like(ary):
     result.fill(0)
     return result
 
+
+@elwise_kernel_runner
+def _arange(result, start, step):
+    return elementwise.get_arange_kernel(
+            result.context, result.dtype)
 
 def arange(context, queue, *args, **kwargs):
     """Create an array filled with numbers spaced `step` apart,
@@ -617,30 +625,27 @@ def arange(context, queue, *args, **kwargs):
     size = int(ceil((stop-start)/step))
 
     result = Array(context, (size,), dtype, queue=queue)
-
-    knl = elementwise.get_arange_kernel(context, dtype)
-    knl(queue, result._global_size, result._local_size,
-            result.data, start, step, size)
-
+    _arange(result, start, step, queue=queue)
     return result
 
 
 
 
-def take(a, indices, out=None, queue=None):
-    queue = queue or a.queue
+@elwise_kernel_runner
+def _take(result, ary, indices):
+    return elementwise.get_take_kernel(
+            result.context, result.dtype, indices.dtype)
 
+
+
+
+def take(a, indices, out=None, queue=None):
     if out is None:
         out = Array(a.context, indices.shape, a.dtype, a.allocator,
-                queue=queue)
+                queue=queue or a.queue)
 
     assert len(indices.shape) == 1
-
-    knl = elementwise.get_take_kernel(
-            a.context, a.dtype, indices.dtype)
-    knl(queue, a._global_size, a._local_size,
-            indices.data, a.data, out.data, indices.size)
-
+    _take(out, a, indices, queue=queue)
     return out
 
 
@@ -684,10 +689,11 @@ def multi_take(arrays, indices, out=None, queue=None):
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        knl(queue, indices._global_size, indices._local_size,
+        gs, ls = indices.get_sizes(queue)
+        knl(queue, gs, ls,
                 indices.data,
-                *([i.data for i in arrays[chunk_slice]]
-                    + [o.data for o in out[chunk_slice]]
+                *([o.data for o in out[chunk_slice]]
+                    + [i.data for i in arrays[chunk_slice]]
                     + [indices.size]))
 
     return out
@@ -751,10 +757,11 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        knl(queue, src_indices._global_size, src_indices._local_size,
-                dest_indices.data, src_indices.data,
-                *([i.data for i in arrays[chunk_slice]]
-                    + [o.data for o in out[chunk_slice]]
+        gs, ls = src_indices.get_sizes(queue)
+        knl(queue, gs, ls,
+                *([o.data for o in out[chunk_slice]]
+                    + [dest_indices.data, src_indices.data]
+                    + [i.data for i in arrays[chunk_slice]]
                     + src_offsets_list[chunk_slice]
                     + [src_indices.size]))
 
@@ -803,13 +810,22 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        knl(queue, dest_indices._global_size, dest_indices._local_size,
-                dest_indices.data,
+        gs, ls = dest_indices.get_sizes(queue)
+        knl(queue, gs, ls,
                 *([o.data for o in out[chunk_slice]]
+                    + [dest_indices.data]
                     + [i.data for i in arrays[chunk_slice]]
                     + [dest_indices.size]))
 
     return out
+
+
+
+
+@elwise_kernel_runner
+def _if_positive(result, criterion, then_, else_):
+    return elementwise.get_if_positive_kernel(
+            result.context, criterion.dtype, then_.dtype)
 
 
 
@@ -827,11 +843,7 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
 
     if out is None:
         out = empty_like(then_)
-
-    knl(queue or criterion.queue, criterion._global_size, criterion._local_size,
-            criterion.data, then_.data, else_.data, out.data,
-            criterion.size)
-
+    _if_positive(out, criterion, then_, else_)
     return out
 
 

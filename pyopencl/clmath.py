@@ -2,14 +2,16 @@ import pyopencl.array as cl_array
 import pyopencl.elementwise as elementwise
 
 def _make_unary_array_func(name):
+    @cl_array.elwise_kernel_runner
+    def knl_runner(result, arg):
+        return elementwise.get_unary_func_kernel(
+                result.context, name, arg.dtype)
+
     def f(array, queue=None):
-        result = array._new_like_me()
-
-        knl = elementwise.get_unary_func_kernel(array.context, name, array.dtype)
-        knl(queue or array.queue, array._global_size, array._local_size,
-                array.data, result.data, array.mem_size)
-
+        result = array._new_like_me(queue=queue)
+        knl_runner(result, array, queue=queue)
         return result
+
     return f
 
 # See table 6.8 in the CL spec
@@ -49,49 +51,47 @@ floor = _make_unary_array_func("floor")
 # TODO: fmax
 # TODO: fmin
 
+@cl_array.elwise_kernel_runner
+def _fmod(result, arg, mod):
+    return elementwise.get_fmod_kernel(result.context)
+
 def fmod(arg, mod, queue=None):
     """Return the floating point remainder of the division `arg/mod`,
     for each element in `arg` and `mod`."""
-    result = arg._new_like_me()
-
-    knl = elementwise.get_fmod_kernel(arg.context)
-    knl(queue or arg.queue, arg._global_size, arg._local_size,
-            arg.data, mod.data, result.data, arg.mem_size)
-
+    result = arg._new_like_me(queue=queue)
+    _fmod(result, arg, mod, queue=queue)
     return result
 
 # TODO: fract
+
+@cl_array.elwise_kernel_runner
+def _frexp(sig, expt, arg):
+    return elementwise.get_frexp_kernel(sig.context)
 
 def frexp(arg, queue=None):
     """Return a tuple `(significands, exponents)` such that
     `arg == significand * 2**exponent`.
     """
-    sig = arg._new_like_me()
-    expt = arg._new_like_me()
-
-    knl = elementwise.get_frexp_kernel(arg.context)
-    knl(queue or arg.queue, arg._global_size, arg._local_size,
-            arg.data, sig.data, expt.data, arg.mem_size)
-
+    sig = arg._new_like_me(queue=queue)
+    expt = arg._new_like_me(queue=queue)
+    _frexp(sig, expt, arg, queue=queue)
     return sig, expt
 
 # TODO: hypot
 
 ilogb = _make_unary_array_func("ilogb")
 
+@cl_array.elwise_kernel_runner
+def _ldexp(result, sig, exp):
+    return elementwise.get_ldexp_kernel(result.context)
+
 def ldexp(significand, exponent, queue=None):
     """Return a new array of floating point values composed from the
     entries of `significand` and `exponent`, paired together as
     `result = significand * 2**exponent`.
     """
-    result = significand._new_like_me()
-
-    knl = elementwise.get_ldexp_kernel(significand.context)
-    knl(queue or significand.queue,
-            significand._global_size, significand._local_size,
-            significand.data, exponent.data, result.data,
-            significand.mem_size)
-
+    result = significand._new_like_me(queue=queue)
+    _ldexp(result, significand, exponent)
     return result
 
 lgamma = _make_unary_array_func("lgamma")
@@ -107,19 +107,18 @@ logb = _make_unary_array_func("logb")
 # TODO: maxmag
 # TODO: minmag
 
+@cl_array.elwise_kernel_runner
+def _modf(intpart, fracpart, arg):
+    return elementwise.get_modf_kernel(intpart.context)
+
 def modf(arg, queue=None):
     """Return a tuple `(fracpart, intpart)` of arrays containing the
     integer and fractional parts of `arg`.
     """
 
-    intpart = arg._new_like_me()
-    fracpart = arg._new_like_me()
-
-    knl = elementwise.get_modf_kernel(arg.context)
-    knl(queue or arg.queue, arg._global_size, arg._local_size,
-            arg.data, intpart.data, fracpart.data,
-            arg.mem_size)
-
+    intpart = arg._new_like_me(queue=queue)
+    fracpart = arg._new_like_me(queue=queue)
+    _modf(intpart, fracpart, arg, queue=queue)
     return fracpart, intpart
 
 nan = _make_unary_array_func("nan")

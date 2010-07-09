@@ -167,8 +167,8 @@ def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
             }
 
     args = ([VectorArg(dtype, "dest"+str(i))for i in range(vec_count)]
-            + [VectorArg(idx_dtype, "idx")]
-            + [VectorArg(dtype, "src"+str(i))for i in range(vec_count)] )
+            + [VectorArg(dtype, "src"+str(i))for i in range(vec_count)] 
+            + [VectorArg(idx_dtype, "idx")])
     body = (
             ("%(idx_tp)s src_idx = idx[i];\n" % ctx)
             + "\n".join(
@@ -344,7 +344,7 @@ def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z):
 @context_dependent_memoize
 def get_divide_kernel(context, dtype_x, dtype_y, dtype_z):
     return get_elwise_kernel(context,
-            "%(tp_z)s *z, %(tp_x)s *x, %(tp_y)s *y, " % {
+            "%(tp_z)s *z, %(tp_x)s *x, %(tp_y)s *y" % {
                 "tp_x": dtype_to_ctype(dtype_x),
                 "tp_y": dtype_to_ctype(dtype_y),
                 "tp_z": dtype_to_ctype(dtype_z),
@@ -392,7 +392,7 @@ def get_arange_kernel(context, dtype):
 @context_dependent_memoize
 def get_pow_kernel(context, dtype):
     return get_elwise_kernel(context,
-            "%(tp)s *z, %(tp)s value, %(tp)s *y, " % {
+            "%(tp)s *z, %(tp)s *y, %(tp)s value" % {
                 "tp": dtype_to_ctype(dtype),
                 },
             "z[i] = pow(y[i], value)",

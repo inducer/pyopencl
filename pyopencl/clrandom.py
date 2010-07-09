@@ -1,4 +1,9 @@
 import pyopencl as cl
+import pyopencl.array as cl_array
+from pyopencl.tools import context_dependent_memoize
+
+
+
 
 md5_code = """
 /*
@@ -175,14 +180,14 @@ md5_code = """
 
 import numpy
 
-def rand(context, queue, shape, dtype):
-    from pyopencl.array import Array
+
+
+
+@context_dependent_memoize
+def get_rand_kernel(context, dtype):
     from pyopencl.elementwise import get_elwise_kernel
-
-    result = Array(context, shape, dtype, queue=queue)
-
     if dtype == numpy.float32:
-        func = get_elwise_kernel(context,
+        return get_elwise_kernel(context,
             "float *dest, unsigned int seed",
             md5_code + """
             #define POW_2_M32 (1/4294967296.0f)
@@ -196,7 +201,7 @@ def rand(context, queue, shape, dtype):
             """,
             "md5_rng_float")
     elif dtype == numpy.float64:
-        func = get_elwise_kernel(context,
+        return get_elwise_kernel(context,
             "double *dest, unsigned int seed",
             md5_code + """
             #define POW_2_M32 (1/4294967296.0)
@@ -211,7 +216,7 @@ def rand(context, queue, shape, dtype):
             """,
             "md5_rng_float")
     elif dtype in [numpy.int32, numpy.uint32]:
-        func = get_elwise_kernel(context,
+        return get_elwise_kernel(context,
             "unsigned int *dest, unsigned int seed",
             md5_code + """
             dest[i] = a;
@@ -226,10 +231,18 @@ def rand(context, queue, shape, dtype):
     else:
         raise NotImplementedError
 
-    func(queue, result._global_size, result._local_size,
-            result.data, numpy.random.randint(2**31-1),
-            result.size)
 
+
+
+@cl_array.elwise_kernel_runner
+def _rand(output, seed):
+    return get_rand_kernel(output.context, output.dtype)
+
+def rand(context, queue, shape, dtype):
+    from pyopencl.array import Array
+
+    result = Array(context, shape, dtype, queue=queue)
+    _rand(result, numpy.random.randint(2**31-1))
     return result
 
 
