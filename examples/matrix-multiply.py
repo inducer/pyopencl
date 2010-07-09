@@ -43,7 +43,7 @@ KERNEL_CODE = """
 //! Matrix multiplication on the device: C = A * B
 //! WA is A's width and WB is B's width
 ////////////////////////////////////////////////////////////////////////////////
-__kernel __attribute__((reqd_work_group_size(16,16,1))) 
+__kernel __attribute__((reqd_work_group_size(BLOCK_SIZE,BLOCK_SIZE,1))) 
 void
 matrixMul( __global float* C, __global float* A, __global float* B)
 {

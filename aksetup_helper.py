@@ -493,7 +493,7 @@ def set_up_shipped_boost_if_requested(conf):
         if not exists("bpl-subset/bpl_subset/boost/version.hpp"):
             print >>sys.stderr, "------------------------------------------------------------------------"
             print >>sys.stderr, "The shipped Boost library was not found, but USE_SHIPPED_BOOST is True."
-            print >>sys.stderr, "(It should be under bpl-subset/)"
+            print >>sys.stderr, "(The files should be under bpl-subset/.)"
             print >>sys.stderr, "------------------------------------------------------------------------"
             print >>sys.stderr, "If you got this package from git, you probably want to do"
             print >>sys.stderr, ""
