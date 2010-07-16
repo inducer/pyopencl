@@ -142,10 +142,13 @@ if __name__ == '__main__':
             """"
             create the image from the draw() string
             """
+            # you can experiment with these x and y ranges
             self.draw(-2.13, 0.77, -1.3, 1.3)
             self.im = Image.fromarray(self.mandel)
-            # you can experiment with these x and y ranges
-            # self.im.fromstring(self.mandel, "raw", "RGB", 0, -1)
+            self.im.putpalette(reduce(
+                lambda a,b: a+b, ((i,0,0) for i in range(255))
+            ))
+
 
         def create_label(self):
             # put the image on a label widget
