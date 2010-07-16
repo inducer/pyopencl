@@ -27,14 +27,14 @@ import pyopencl as cl
 # Speed notes are listed in the same place
 
 # set width and height of window, more pixels take longer to calculate
-w = 512
-h = 512
+w = 256
+h = 256
 
 def calc_fractal_opencl(q, maxiter):
     ctx = cl.Context(cl.get_platforms()[0].get_devices())
     queue = cl.CommandQueue(ctx)
 
-    output = np.empty(q.shape, dtype=np.uint64)# resize(np.array(0,), q.shape)
+    output = np.empty(q.shape, dtype=np.uint16)
 
     mf = cl.mem_flags
     q_opencl = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=q)
@@ -42,26 +42,27 @@ def calc_fractal_opencl(q, maxiter):
 
     prg = cl.Program(ctx, """
     __kernel void mandelbrot(__global float2 *q,
-                     __global long *output, uchar const maxiter)
+                     __global ushort *output, ushort const maxiter)
     {
         int gid = get_global_id(0);
         float nreal, real = 0;
         float imag = 0;
+
+        output[gid] = 0;
+
         for(int curiter = 0; curiter < maxiter; curiter++) {
             nreal = real*real - imag*imag + q[gid][0];
             imag = 2* real*imag + q[gid][1];
             real = nreal;
 
-            if (real*real + imag*imag > 4.) {
+            if (real*real + imag*imag > 4.)
                  output[gid] = curiter;
-                 break;
-            }
         }
     }
     """).build()
 
     prg.mandelbrot(queue, output.shape, (64,), q_opencl,
-            output_opencl, np.int8(maxiter))
+            output_opencl, np.uint16(maxiter))
 
     cl.enqueue_read_buffer(queue, output_opencl, output).wait()
 
@@ -123,8 +124,8 @@ if __name__ == '__main__':
 
         def draw(self, x1, x2, y1, y2, maxiter=300):
             # draw the Mandelbrot set, from numpy example
-            xx = np.arange(x1, x2, (x2-x1)/w*2)
-            yy = np.arange(y2, y1, (y1-y2)/h*2) * 1j
+            xx = np.arange(x1, x2, (x2-x1)/w)
+            yy = np.arange(y2, y1, (y1-y2)/h) * 1j
             q = np.ravel(xx+yy[:, np.newaxis]).astype(np.complex64)
 
             start_main = time.time()
@@ -134,18 +135,17 @@ if __name__ == '__main__':
             secs = end_main - start_main
             print "Main took", secs
 
-            output = (output + (256*output) + (256**2)*output) * 8
-            # convert output to a string
-            self.mandel = output.tostring()
+            self.mandel = (output.reshape((h,w)) /
+                    float(output.max()) * 255.).astype(np.uint8)
 
         def create_image(self):
             """"
             create the image from the draw() string
             """
-            self.im = Image.new("RGB", (w/2, h/2))
-            # you can experiment with these x and y ranges
             self.draw(-2.13, 0.77, -1.3, 1.3)
-            self.im.fromstring(self.mandel, "raw", "RGBX", 0, -1)
+            self.im = Image.fromarray(self.mandel)
+            # you can experiment with these x and y ranges
+            # self.im.fromstring(self.mandel, "raw", "RGB", 0, -1)
 
         def create_label(self):
             # put the image on a label widget
