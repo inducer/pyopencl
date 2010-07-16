@@ -122,7 +122,7 @@ if __name__ == '__main__':
             self.root.mainloop()
 
 
-        def draw(self, x1, x2, y1, y2, maxiter=300):
+        def draw(self, x1, x2, y1, y2, maxiter=30):
             # draw the Mandelbrot set, from numpy example
             xx = np.arange(x1, x2, (x2-x1)/w)
             yy = np.arange(y2, y1, (y1-y2)/h) * 1j
