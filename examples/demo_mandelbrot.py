@@ -27,8 +27,8 @@ import pyopencl as cl
 # Speed notes are listed in the same place
 
 # set width and height of window, more pixels take longer to calculate
-w = 400
-h = 400
+w = 512
+h = 512
 
 def calc_fractal_opencl(q, maxiter):
     ctx = cl.Context(cl.get_platforms()[0].get_devices())
@@ -42,7 +42,7 @@ def calc_fractal_opencl(q, maxiter):
 
     prg = cl.Program(ctx, """
     __kernel void mandelbrot(__global float2 *q,
-                     __global long *output, long const maxiter)
+                     __global long *output, uchar const maxiter)
     {
         int gid = get_global_id(0);
         float nreal, real = 0;
@@ -60,8 +60,8 @@ def calc_fractal_opencl(q, maxiter):
     }
     """).build()
 
-    prg.mandelbrot(queue, output.shape, None, q_opencl,
-            output_opencl, np.int32(maxiter))
+    prg.mandelbrot(queue, output.shape, (64,), q_opencl,
+            output_opencl, np.int8(maxiter))
 
     cl.enqueue_read_buffer(queue, output_opencl, output).wait()
 
