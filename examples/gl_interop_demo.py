@@ -1,12 +1,15 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.raw.GL.VERSION.GL_1_5 import glBufferData as rawGlBufferData
+
+from OpenGL import platform
+
 try:
-    from OpenGL.WGL import wglGetCurrentDisplay as GetCurrentDisplay, wglGetCurrentContext as GetCurrentContext
+    import OpenGL.WGL
 except:
     pass
 try:
-    from OpenGL.GLX import glXGetCurrentDisplay as GetCurrentDisplay, glXGetCurrentContext as GetCurrentContext
+    import OpenGL.GLX
 except:
     pass
 import pyopencl as cl
@@ -31,9 +34,21 @@ __kernel void generate_sin(__global float2* a)
 def initialize():
     plats = cl.get_platforms()
     ctx_props = cl.context_properties
-    props = [(ctx_props.PLATFORM, plats[0]), (ctx_props.GL_CONTEXT_KHR,
-        GetCurrentContext()), (ctx_props.GLX_DISPLAY_KHR, GetCurrentDisplay())]
+
+    props = [(ctx_props.PLATFORM, plats[0]), 
+            (ctx_props.GL_CONTEXT_KHR, platform.GetCurrentContext())]
+
+    import sys
+    if sys.platform == "linux2":
+        props.append(
+                (ctx_props.GLX_DISPLAY_KHR, 
+                    OpenGl.GLX.glXGetCurrentDisplay()))
+    elif sys.platform == "nt":
+        props.append(
+                (ctx_props.WGL_HDC_KHR, 
+                    OpenGL.WGL.wglGetCurrentDC()))
     ctx = cl.Context(properties=props)
+
     glClearColor(1, 1, 1, 1)
     glColor(0, 0, 1)
     vbo = glGenBuffers(1)
