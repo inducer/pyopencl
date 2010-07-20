@@ -1,17 +1,7 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.raw.GL.VERSION.GL_1_5 import glBufferData as rawGlBufferData
-
-from OpenGL import platform
-
-try:
-    import OpenGL.WGL
-except:
-    pass
-try:
-    import OpenGL.GLX
-except:
-    pass
+from OpenGL import platform, GLX, WGL
 import pyopencl as cl
 
 
@@ -42,11 +32,11 @@ def initialize():
     if sys.platform == "linux2":
         props.append(
                 (ctx_props.GLX_DISPLAY_KHR, 
-                    OpenGl.GLX.glXGetCurrentDisplay()))
+                    GLX.glXGetCurrentDisplay()))
     elif sys.platform == "nt":
         props.append(
                 (ctx_props.WGL_HDC_KHR, 
-                    OpenGL.WGL.wglGetCurrentDC()))
+                    WGL.wglGetCurrentDC()))
     ctx = cl.Context(properties=props)
 
     glClearColor(1, 1, 1, 1)
