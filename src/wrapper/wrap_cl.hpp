@@ -20,6 +20,12 @@
 #include <CL/cl.h>
 // FIXME: Nvidia doesn't install cl_ext.h by default. Grr.
 // #include <CL/cl_ext.h>
+
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+
 #ifdef HAVE_GL
 #include <GL/gl.h>
 #include <CL/cl_gl.h>
@@ -2875,8 +2881,8 @@ namespace pyopencl
     std::vector<cl_context_properties> props
       = parse_context_properties(py_properties);
 
-    typedef CL_API_ENTRY cl_int CL_API_CALL
-      (*func_ptr_type)(const cl_context_properties * /* properties */,
+    typedef CL_API_ENTRY cl_int (CL_API_CALL
+      *func_ptr_type)(const cl_context_properties * /* properties */,
           cl_gl_context_info            /* param_name */,
           size_t                        /* param_value_size */,
           void *                        /* param_value */,
