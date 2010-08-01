@@ -2575,7 +2575,8 @@ namespace pyopencl
               std::vector<size_t> result;
               PYOPENCL_GET_VEC_INFO(KernelWorkGroup,
                   PYOPENCL_FIRST_ARG, param_name, result);
-              return py::list(result);
+
+              PYOPENCL_RETURN_VECTOR(size_t, result);
             }
           case CL_KERNEL_LOCAL_MEM_SIZE:
 #ifdef CL_VERSION_1_1
