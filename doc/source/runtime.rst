@@ -565,7 +565,7 @@ Programs and Kernels
 
         See :class:`kernel_work_group_info` for values of *param*.
 
-    .. method:: set_arg(self, arg)
+    .. method:: set_arg(self, index, arg)
 
         *arg* may be
 
@@ -593,6 +593,8 @@ Programs and Kernels
     .. method:: set_args(self, *args)
 
         Invoke :meth:`set_arg` on each element of *args* in turn.
+
+        ..versionadded:: 0.92
 
     .. method:: set_scalar_arg_dtypes(arg_dtypes)
 
