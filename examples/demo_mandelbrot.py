@@ -41,6 +41,7 @@ def calc_fractal_opencl(q, maxiter):
     output_opencl = cl.Buffer(ctx, mf.WRITE_ONLY, output.nbytes)
 
     prg = cl.Program(ctx, """
+    #pragma OPENCL EXTENSION cl_khr_byte_addressable_store : enable
     __kernel void mandelbrot(__global float2 *q,
                      __global ushort *output, ushort const maxiter)
     {
@@ -51,11 +52,11 @@ def calc_fractal_opencl(q, maxiter):
         output[gid] = 0;
 
         for(int curiter = 0; curiter < maxiter; curiter++) {
-            nreal = real*real - imag*imag + q[gid][0];
-            imag = 2* real*imag + q[gid][1];
+            nreal = real*real - imag*imag + q[gid].x;
+            imag = 2* real*imag + q[gid].y;
             real = nreal;
 
-            if (real*real + imag*imag > 4.)
+            if (real*real + imag*imag > 4.0f)
                  output[gid] = curiter;
         }
     }
