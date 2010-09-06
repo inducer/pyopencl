@@ -82,10 +82,10 @@ Version 0.92
   emphasize the importance of *loccal_size*.
 * Add :meth:`pyopencl.Kernel.set_scalar_arg_dtypes`.
 * Add support for the
-  `cl_nv_device_attribute_query <ghttp://www.khronos.org/registry/cl/extensions/khr/cl_nv_device_attribute_query.txt>`_
+  `cl_nv_device_attribute_query <http://www.khronos.org/registry/cl/extensions/khr/cl_nv_device_attribute_query.txt>`_
   extension.
-* Add :meth:`pyopencl.Kernel.set_args`.
-
+* Add :meth:`pyopencl.array.Array` and related functionality.
+* Make build not depend on Boost C++.
 
 Version 0.91.5
 --------------
