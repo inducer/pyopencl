@@ -126,7 +126,7 @@ class Array(object):
     work on an element-by-element basis, just like :class:`numpy.ndarray`.
     """
 
-    def __init__(self, context, shape, dtype, allocator=None,
+    def __init__(self, context, shape, dtype, order="C", allocator=None,
             base=None, data=None, queue=None):
         if allocator is None:
             allocator = DefaultAllocator(context)
@@ -147,6 +147,9 @@ class Array(object):
 
         self.shape = shape
         self.dtype = numpy.dtype(dtype)
+        if order not in ["C", "F"]:
+            raise ValueError("order must be either 'C' or 'F'")
+        self.order = order
 
         self.mem_size = self.size = s
         self.nbytes = self.dtype.itemsize * self.size
@@ -180,7 +183,7 @@ class Array(object):
 
     def get(self, queue=None, ary=None, async=False):
         if ary is None:
-            ary = numpy.empty(self.shape, self.dtype)
+            ary = numpy.empty(self.shape, self.dtype, order=self.order)
         else:
             if ary.size != self.size:
                 raise TypeError("'ary' has non-matching type")
@@ -470,30 +473,6 @@ class Array(object):
         self._copy(result, self, queue=queue)
         return result
 
-    # slicing -----------------------------------------------------------------
-    def __getitem__(self, idx):
-        if idx == ():
-            return self
-
-        if len(self.shape) > 1:
-            raise NotImplementedError("multi-d slicing is not yet implemented")
-
-        if not isinstance(idx, slice):
-            raise ValueError("non-slice indexing not supported: %s" % (idx,))
-
-        l, = self.shape
-        start, stop, stride = idx.indices(l)
-
-        if stride != 1:
-            raise NotImplementedError("strided slicing is not yet implemented")
-
-        return Array(
-                shape=((stop-start)//stride,),
-                dtype=self.dtype,
-                allocator=self.allocator,
-                base=self,
-                data=int(self.data) + start*self.dtype.itemsize)
-
     # rich comparisons (or rather, lack thereof) ------------------------------
     def __eq__(self, other):
         raise NotImplementedError
@@ -517,7 +496,15 @@ class Array(object):
 
 def to_device(context, queue, ary, allocator=None, async=False):
     """Converts a numpy array to a :class:`Array`."""
-    result = Array(context, ary.shape, ary.dtype, allocator,
+    if ary.flags.f_contiguous:
+        order = "F"
+    elif ary.flags.c_contiguous:
+        order = "C"
+    else:
+        raise ValueError("to_device only works on C- or Fortran-"
+                "contiguous arrays")
+
+    result = Array(context, ary.shape, ary.dtype, order, allocator,
             queue=queue)
     result.set(ary, async=async)
     return result
@@ -528,18 +515,19 @@ empty = Array
 def zeros(context, queue, shape, dtype, allocator=None):
     """Returns an array of the given shape and dtype filled with 0's."""
 
-    result = Array(context, shape, dtype, allocator, queue=queue)
+    result = Array(context, shape, dtype, 
+            order=order, allocator=allocator, queue=queue)
     result.fill(0)
     return result
 
 def empty_like(ary):
     result = Array(ary.context,
-            ary.shape, ary.dtype, ary.allocator, queue=ary.queue)
+            ary.shape, ary.dtype, allocator=ary.allocator, queue=ary.queue)
     return result
 
 def zeros_like(ary):
     result = Array(ary.context,
-            ary.shape, ary.dtype, ary.allocator, queue=ary.queue)
+            ary.shape, ary.dtype, allocator=ary.allocator, queue=ary.queue)
     result.fill(0)
     return result
 
@@ -641,7 +629,8 @@ def _take(result, ary, indices):
 
 def take(a, indices, out=None, queue=None):
     if out is None:
-        out = Array(a.context, indices.shape, a.dtype, a.allocator,
+        out = Array(a.context, indices.shape, a.dtype, 
+                allocator=a.allocator,
                 queue=queue or a.queue)
 
     assert len(indices.shape) == 1
@@ -666,7 +655,8 @@ def multi_take(arrays, indices, out=None, queue=None):
     vec_count = len(arrays)
 
     if out is None:
-        out = [Array(context, queue, indices.shape, a_dtype, a_allocator)
+        out = [Array(context, queue, indices.shape, a_dtype, 
+            allocator=a_allocator)
                 for i in range(vec_count)]
     else:
         if len(out) != len(arrays):
@@ -715,7 +705,8 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
     vec_count = len(arrays)
 
     if out is None:
-        out = [Array(context, dest_shape, a_dtype, a_allocator, queue=queue)
+        out = [Array(context, dest_shape, a_dtype, 
+            allocator=a_allocator, queue=queue)
                 for i in range(vec_count)]
     else:
         if a_dtype != single_valued(o.dtype for o in out):
@@ -783,7 +774,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
     vec_count = len(arrays)
 
     if out is None:
-        out = [Array(context, dest_shape, a_dtype, a_allocator, queue=queue)
+        out = [Array(context, dest_shape, a_dtype, allocator=a_allocator, queue=queue)
                 for i in range(vec_count)]
     else:
         if a_dtype != single_valued(o.dtype for o in out):
