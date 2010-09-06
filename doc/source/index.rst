@@ -70,6 +70,7 @@ Contents
     :maxdepth: 2
 
     runtime
+    array
     misc
 
 Note that this guide does not explain OpenCL programming and technology. Please 
