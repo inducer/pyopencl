@@ -224,6 +224,10 @@ def _add_functionality():
                 self.set_arg(i, arg)
         else:
             from struct import pack
+
+            if len(args) != len(arg_type_chars):
+                raise ValueError("length of argument type array and "
+                        "length of argument list do not agree")
             for i, (arg, arg_type_char) in enumerate(
                     zip(args, arg_type_chars)):
                 if arg_type_char:
