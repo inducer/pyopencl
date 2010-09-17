@@ -33,7 +33,7 @@ def initialize():
         props.append(
                 (ctx_props.GLX_DISPLAY_KHR, 
                     GLX.glXGetCurrentDisplay()))
-    elif sys.platform == "nt":
+    elif sys.platform == "win32":
         props.append(
                 (ctx_props.WGL_HDC_KHR, 
                     WGL.wglGetCurrentDC()))
