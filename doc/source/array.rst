@@ -113,7 +113,7 @@ Constructing :class:`Array` Instances
 
     A synonym for the :class:`Array` constructor.
 
-.. function:: zeros(context, queue, shape, dtype, allocator=None)
+.. function:: zeros(context, queue, shape, dtype, order="C", allocator=None)
 
     Same as :func:`empty`, but the :class:`Array` is zero-initialized before
     being returned.

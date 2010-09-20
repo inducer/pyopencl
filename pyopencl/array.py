@@ -520,7 +520,7 @@ def to_device(context, queue, ary, allocator=None, async=False):
 
 empty = Array
 
-def zeros(context, queue, shape, dtype, allocator=None):
+def zeros(context, queue, shape, dtype, order="C", allocator=None):
     """Returns an array of the given shape and dtype filled with 0's."""
 
     result = Array(context, shape, dtype, 
