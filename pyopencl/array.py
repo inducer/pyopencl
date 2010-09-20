@@ -347,12 +347,20 @@ class Array(object):
         return result
 
     def __iadd__(self, other):
-        self._axpbyz(self, 1, self, 1, other)
-        return self
+        if isinstance(other, Array):
+            self._axpbyz(self, 1, self, 1, other)
+            return self
+        else:
+            self._axpbz(self, 1, self, other)
+            return self
 
     def __isub__(self, other):
-        self._axpbyz(self, 1, self, -1, other)
-        return self
+        if isinstance(other, Array):
+            self._axpbyz(self, 1, self, -1, other)
+            return self
+        else:
+            self._axpbz(self, 1, self, -other)
+            return self
 
     def __neg__(self):
         result = self._new_like_me()
