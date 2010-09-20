@@ -44,3 +44,4 @@ MANIFEST
 tmp
 temp*
 setuptools.pth
+distribute-*.tar.gz
