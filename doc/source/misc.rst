@@ -65,13 +65,16 @@ C interface to Python:
 User-visible Changes
 ====================
 
-Version 0.92
+Version 0.93
 ------------
 
 .. note::
 
-    Version 0.92 is currently under development. You can get snapshots from
+    This version is currently under development. You can get snapshots from
     PyOpenCL's git version control.
+
+Version 0.92
+------------
 
 * Add support for OpenCL 1.1.
 * Add support for the
