@@ -272,6 +272,23 @@ class TestCL:
 
         assert la.norm(a_result - a) == 0
 
+    @pytools.test.mark_test.opencl
+    def test_copy_buffer(self, ctx_getter):
+        context = ctx_getter()
+
+        queue = cl.CommandQueue(context)
+        mf = cl.mem_flags
+
+        a = numpy.random.rand(50000).astype(numpy.float32)
+        b = numpy.empty_like(a)
+
+        buf1 = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
+        buf2 = cl.Buffer(context, mf.WRITE_ONLY, b.nbytes)
+
+        cl.enqueue_copy_buffer(queue, buf1, buf2).wait()
+        cl.enqueue_read_buffer(queue, buf2, b).wait()
+
+        assert la.norm(a - b) == 0
 
 
 
