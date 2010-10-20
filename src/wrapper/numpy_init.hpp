@@ -14,11 +14,7 @@ namespace
   {
     static bool do_import_array()
     {
-#if PY_VERSION_HEX >= 0x03000000
       import_array1(false);
-#else
-      import_array();
-#endif
       return true;
     }
 
