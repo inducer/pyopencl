@@ -1,4 +1,4 @@
-from __future__ import division
+
 import math
 import numpy
 import pytools.test
@@ -44,7 +44,8 @@ numpy_func_names = {
 
 
 
-def make_unary_function_test(name, (a, b)=(0, 1), threshold=0):
+def make_unary_function_test(name, xxx_todo_changeme=(0, 1), threshold=0):
+    (a, b) = xxx_todo_changeme
     def test(ctx_getter):
         context = ctx_getter()
         queue = cl.CommandQueue(context)
@@ -176,7 +177,7 @@ if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import sys
     if len(sys.argv) > 1:
-        exec sys.argv[1]
+        exec(sys.argv[1])
     else:
         from py.test.cmdline import main
         main([__file__])

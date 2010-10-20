@@ -18,22 +18,22 @@ for i in range(1000):
                 c_result[i] = c_result[i] * (a[i] + b[i])
                 c_result[i] = c_result[i] * (a[i] / 2.0)
 time2 = time()
-print "Execution time of test without OpenCL: ", time2 - time1, "s"
+print("Execution time of test without OpenCL: ", time2 - time1, "s")
 
 
 for platform in cl.get_platforms():
     for device in platform.get_devices():
-        print "==============================================================="
-        print "Platform name:", platform.name
-        print "Platform profile:", platform.profile
-        print "Platform vendor:", platform.vendor
-        print "Platform version:", platform.version
-        print "---------------------------------------------------------------"
-        print "Device name:", device.name
-        print "Device type:", cl.device_type.to_string(device.type)
-        print "Device memory: ", device.global_mem_size//1024//1024, 'MB'
-        print "Device max clock speed:", device.max_clock_frequency, 'MHz'
-        print "Device compute units:", device.max_compute_units
+        print("===============================================================")
+        print("Platform name:", platform.name)
+        print("Platform profile:", platform.profile)
+        print("Platform vendor:", platform.vendor)
+        print("Platform version:", platform.version)
+        print("---------------------------------------------------------------")
+        print("Device name:", device.name)
+        print("Device type:", cl.device_type.to_string(device.type))
+        print("Device memory: ", device.global_mem_size//1024//1024, 'MB')
+        print("Device max clock speed:", device.max_clock_frequency, 'MHz')
+        print("Device compute units:", device.max_compute_units)
 
         # Simnple speed test
         ctx = cl.Context([device])
@@ -64,7 +64,7 @@ for platform in cl.get_platforms():
         exec_evt.wait()
         elapsed = 1e-9*(exec_evt.profile.end - exec_evt.profile.start)
 
-        print "Execution time of test: %g s" % elapsed
+        print("Execution time of test: %g s" % elapsed)
 
         c = numpy.empty_like(a)
         cl.enqueue_read_buffer(queue, dest_buf, c).wait()
@@ -73,6 +73,6 @@ for platform in cl.get_platforms():
                 if c[i] != c_result[i]:
                         error = 1
         if error:
-                print "Results doesn't match!!"
+                print("Results doesn't match!!")
         else:
-                print "Results OK"
+                print("Results OK")

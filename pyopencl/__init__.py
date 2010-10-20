@@ -183,8 +183,7 @@ def _add_functionality():
                     "size as the third positional argument instead.",
                     DeprecationWarning, stacklevel=2)
 
-        from types import NoneType
-        if isinstance(args[0], (NoneType, tuple)) and not had_local_size:
+        if isinstance(args[0], (type(None), tuple)) and not had_local_size:
             local_size = args[0]
             args = args[1:]
         elif not had_local_size:

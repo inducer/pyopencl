@@ -425,7 +425,7 @@ class Array(object):
 
         return result
 
-    __rtruediv__ = __div__
+    __rtruediv__ = __rdiv__
 
     def fill(self, value, queue=None):
         """fills the array with the specified value"""

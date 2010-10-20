@@ -70,7 +70,13 @@ def main():
         EXTRA_DEFINES["HAVE_GL"] = 1
 
     ver_dic = {}
-    execfile("pyopencl/version.py", ver_dic)
+    exec(compile(open("pyopencl/version.py").read(), "pyopencl/version.py", 'exec'), ver_dic)
+
+    try:
+        from distutils.command.build_py import build_py_2to3 as build_py
+    except ImportError:
+        # 2.x
+        from distutils.command.build_py import build_py
 
     setup(name="pyopencl",
             # metadata
@@ -107,7 +113,7 @@ def main():
             * Broad support. PyOpenCL was tested and works with Apple's, AMD's, and Nvidia's 
               CL implementations.
             """,
-            author=u"Andreas Kloeckner",
+            author="Andreas Kloeckner",
             author_email="inform@tiker.net",
             license = "MIT",
             url="http://mathema.tician.de/software/pyopencl",
@@ -121,6 +127,7 @@ def main():
               'Natural Language :: English',
               'Programming Language :: C++',
               'Programming Language :: Python',
+            'Programming Language :: Python :: 3',
               'Topic :: Scientific/Engineering',
               'Topic :: Scientific/Engineering :: Mathematics',
               'Topic :: Scientific/Engineering :: Physics',
@@ -147,11 +154,14 @@ def main():
                     include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
                     library_dirs=LIBRARY_DIRS + conf["CL_LIB_DIR"],
                     libraries=LIBRARIES + conf["CL_LIBNAME"],
-                    define_macros=list(EXTRA_DEFINES.iteritems()),
+                    define_macros=list(EXTRA_DEFINES.items()),
                     extra_compile_args=conf["CXXFLAGS"],
                     extra_link_args=conf["LDFLAGS"],
                     ),
-                ])
+                ],
+
+            # 2to3 invocation
+            cmdclass={'build_py': build_py})
 
 
 

@@ -4,7 +4,7 @@
 # I adapted it for PyOpenCL. Hopefully it is useful to someone.
 # July 2010, HolgerRapp@gmx.net
 #
-# Original readme below these lines. 
+# Original readme below these lines.
 
 # Mandelbrot calculate using GPU, Serial numpy and faster numpy
 # Use to show the speed difference between CPU and GPU calculations
@@ -134,7 +134,7 @@ if __name__ == '__main__':
             end_main = time.time()
 
             secs = end_main - start_main
-            print "Main took", secs
+            print("Main took", secs)
 
             self.mandel = (output.reshape((h,w)) /
                     float(output.max()) * 255.).astype(np.uint8)

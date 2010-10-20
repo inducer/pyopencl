@@ -492,8 +492,8 @@ def test_if_positive(ctx_getter):
     max_a_b_gpu = cl_array.maximum(a_gpu, b_gpu)
     min_a_b_gpu = cl_array.minimum(a_gpu, b_gpu)
 
-    print max_a_b_gpu
-    print numpy.maximum(a, b)
+    print(max_a_b_gpu)
+    print(numpy.maximum(a, b))
 
     assert la.norm(max_a_b_gpu.get()- numpy.maximum(a, b)) == 0
     assert la.norm(min_a_b_gpu.get()- numpy.minimum(a, b)) == 0
@@ -554,7 +554,7 @@ if __name__ == "__main__":
 
     import sys
     if len(sys.argv) > 1:
-        exec sys.argv[1]
+        exec(sys.argv[1])
     else:
         from py.test.cmdline import main
         main([__file__])

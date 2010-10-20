@@ -9,16 +9,16 @@ def print_info(obj, info_cls):
             except:
                 info_value = "<error>"
 
-            print "%s: %s" % (info_name, info_value)
+            print("%s: %s" % (info_name, info_value))
 
 for platform in cl.get_platforms():
-    print 75*"="
-    print platform
-    print 75*"="
+    print(75*"=")
+    print(platform)
+    print(75*"=")
     print_info(platform, cl.platform_info)
 
     for device in platform.get_devices():
-        print 75*"-"
-        print device
-        print 75*"-"
+        print(75*"-")
+        print(device)
+        print(75*"-")
         print_info(device, cl.device_info)

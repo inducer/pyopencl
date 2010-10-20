@@ -64,8 +64,8 @@ class TestCL:
                     info = getattr(info_cls, info_name)
 
                     if find_quirk(CRASH_QUIRKS, cl_obj, info):
-                        print "not executing get_info", type(cl_obj), info_name
-                        print "(known crash quirk for %s)" % platform.name
+                        print("not executing get_info", type(cl_obj), info_name)
+                        print("(known crash quirk for %s)" % platform.name)
                         continue
 
                     try:
@@ -82,10 +82,10 @@ class TestCL:
                         try:
                             getattr(cl_obj, info_name.lower())
                         except:
-                            print "failed attr-based get_info", type(cl_obj), info_name
+                            print("failed attr-based get_info", type(cl_obj), info_name)
 
                             if find_quirk(QUIRKS, cl_obj, info):
-                                print "(known quirk for %s)" % platform.name
+                                print("(known quirk for %s)" % platform.name)
                             else:
                                 failure_count[0] += 1
 
@@ -268,7 +268,7 @@ class TestCL:
 
         a_result = numpy.empty_like(a)
         cl.enqueue_read_buffer(queue, a_dest, a_result, is_blocking=True)
-        print a_result.dtype
+        print(a_result.dtype)
 
         assert la.norm(a_result - a) == 0
 
@@ -301,7 +301,7 @@ if __name__ == "__main__":
 
     import sys
     if len(sys.argv) > 1:
-        exec sys.argv[1]
+        exec(sys.argv[1])
     else:
         from py.test.cmdline import main
         main([__file__])

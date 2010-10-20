@@ -1,7 +1,7 @@
 # Transposition of a matrix
 # originally for PyCUDA by Hendrik Riedmann <riedmann@dam.brown.edu>
 
-from __future__ import division
+
 
 import pyopencl as cl
 import numpy
@@ -117,7 +117,7 @@ def transpose_using_cl(ctx, queue, cpu_src, cls):
 
 def check_transpose():
     for cls in [NaiveTranspose, SillyTranspose, TransposeWithLocal]:
-        print "checking", cls.__name__
+        print("checking", cls.__name__)
         ctx = cl.create_some_context()
 
         for dev in ctx.devices:
@@ -127,7 +127,7 @@ def check_transpose():
 
         for i in numpy.arange(10, 13, 0.125):
             size = int(((2**i) // 32) * 32)
-            print size
+            print(size)
 
             source = numpy.random.rand(size, size).astype(numpy.float32)
             result = transpose_using_cl(ctx, queue, source, NaiveTranspose)
@@ -182,7 +182,7 @@ def benchmark_transpose():
             time = sum(evt.profile.end - evt.profile.start for evt in events)
 
             mem_bw = 2*source.nbytes*count/(time*1e-9)
-            print "benchmarking", name, size, mem_bw/1e9, "GB/s"
+            print("benchmarking", name, size, mem_bw/1e9, "GB/s")
             meth_mem_bws.append(mem_bw)
 
             a_buf.release()
