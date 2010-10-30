@@ -21,7 +21,7 @@ if have_cl():
 
 
 
-sizes = [10, 128, 1024, 1<<10, 1<<13]
+sizes = [10, 128, 1<<10, 1<<11, 1<<13]
 
 
 
@@ -44,8 +44,11 @@ numpy_func_names = {
 
 
 
-def make_unary_function_test(name, xxx_todo_changeme=(0, 1), threshold=0):
-    (a, b) = xxx_todo_changeme
+def make_unary_function_test(name, limits=(0, 1), threshold=0):
+    (a, b) = limits
+    a = float(a)
+    b = float(b)
+
     def test(ctx_getter):
         context = ctx_getter()
         queue = cl.CommandQueue(context)
