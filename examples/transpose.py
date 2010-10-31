@@ -1,8 +1,7 @@
 # Transposition of a matrix
 # originally for PyCUDA by Hendrik Riedmann <riedmann@dam.brown.edu>
 
-
-
+from __future__ import division
 import pyopencl as cl
 import numpy
 import numpy.linalg as la
