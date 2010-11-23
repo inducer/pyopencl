@@ -41,13 +41,16 @@ def _add_functionality():
                 ],
             }
 
-    def to_string(cls, value):
+    def to_string(cls, value, default_format=None):
         for name in dir(cls):
             if (not name.startswith("_") and getattr(cls, name) == value):
                 return name
 
-        raise ValueError("a name for value %d was not found in %s"
-                % (value, cls.__name__))
+        if default_format is None:
+            raise ValueError("a name for value %d was not found in %s"
+                    % (value, cls.__name__))
+        else:
+            return default_format % value
 
     for cls in CONSTANT_CLASSES:
         cls.to_string = classmethod(to_string)
@@ -243,8 +246,10 @@ def _add_functionality():
     # {{{ ImageFormat
     def image_format_repr(self):
         return "ImageFormat(%s, %s)" % (
-                channel_order.to_string(self.channel_order),
-                channel_type.to_string(self.channel_data_type))
+                channel_order.to_string(self.channel_order, 
+                    "<unknown channel order %d>"),
+                channel_type.to_string(self.channel_data_type,
+                    "<unknown channel data type %d>"))
 
     ImageFormat.__repr__ = image_format_repr
     # }}}

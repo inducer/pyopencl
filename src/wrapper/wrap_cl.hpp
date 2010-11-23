@@ -1565,17 +1565,15 @@ namespace pyopencl
       cl_mem_flags flags,
       cl_mem_object_type image_type)
   {
-    cl_uint num_image_formats = 1024;
-    std::vector<cl_image_format> formats(num_image_formats);
-    do
-    {
-      if (formats.size() < num_image_formats)
-        formats.resize(num_image_formats);
+    cl_uint num_image_formats;
+    PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
+          ctx.data(), flags, image_type,
+          0, NULL, &num_image_formats));
 
-      PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
-            ctx.data(), flags, image_type,
-            formats.size(), formats.empty( ) ? NULL : &formats.front(), &num_image_formats));
-    } while (formats.size() < num_image_formats);
+    std::vector<cl_image_format> formats(num_image_formats);
+    PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
+          ctx.data(), flags, image_type,
+          formats.size(), formats.empty( ) ? NULL : &formats.front(), NULL));
 
     PYOPENCL_RETURN_VECTOR(cl_image_format, formats);
   }
