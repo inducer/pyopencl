@@ -394,7 +394,11 @@ Images
 ^^^^^^
 .. class:: Image(context, flags, format, shape=None, pitches=None, hostbuf=None)
 
-    *shape* is a 2- or 3-tuple.
+    See :class:`mem_flags` for values of *flags*.
+    *shape* is a 2- or 3-tuple. *format* is an instance of :class:`ImageFormat`.
+    *pitches* is a 1-tuple for 2D images and a 2-tuple for 3D images, indicating 
+    the distance in bytes from one scan line to the next, and from one 2D image
+    slice to the next.
 
     If *hostbuf* is given and *shape* is `None`, then *hostbuf.shape* is
     used as the *shape* parameter.
