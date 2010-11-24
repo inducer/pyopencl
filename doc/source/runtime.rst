@@ -403,9 +403,15 @@ Images
 
     .. note::
 
-        If you want to load images from numpy arrays or read images back into arrays, be aware
-        that numpy arrays are stored row-major by default whereas OpenCL expects them to be stored in
-        column-major order.
+        If you want to load images from :mod:`numpy.ndarray` instances or read images 
+        back into them, be aware that OpenCL images expect the *x* dimension to vary 
+        fastest, whereas in the default (C) order of :mod:`numpy` arrays, the last index
+        varies fastest. If your array is arranged in the wrong order in memory,
+        there are two possible fixes for this:
+
+        * Convert the array to Fortran (column-major) order using :func:`numpy.asarray`.
+
+        * Pass *ary.T.copy()* to the image creation function.
 
     .. versionadded:: 0.91
 
