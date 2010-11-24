@@ -401,6 +401,12 @@ Images
 
     :class:`Image` is a subclass of :class:`MemoryObject`.
 
+    .. note::
+
+        If you want to load images from numpy arrays or read images back into arrays, be aware
+        that numpy arrays are stored row-major by default whereas OpenCL expects them to be stored in
+        column-major order.
+
     .. versionadded:: 0.91
 
     .. attribute:: info
