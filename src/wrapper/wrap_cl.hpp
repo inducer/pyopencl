@@ -2031,12 +2031,12 @@ namespace pyopencl
 
     PyArray_BYTES(result.get()) = reinterpret_cast<char *>(mapped);
 
-    py::handle<> array_py(handle_from_new_ptr(map.release()));
-    PyArray_BASE(result.get()) = array_py.get();
-    Py_INCREF(array_py.get());
+    py::handle<> map_py(handle_from_new_ptr(map.release()));
+    PyArray_BASE(result.get()) = map_py.get();
+    Py_INCREF(map_py.get());
 
     return py::make_tuple(
-        array_py,
+        result,
         handle_from_new_ptr(new event(evt_handle)));
   }
 
@@ -2092,12 +2092,12 @@ namespace pyopencl
         shape.size(), shape.empty( ) ? NULL : &shape.front(), /*strides*/ NULL,
         mapped, ary_flags, /*obj*/NULL));
 
-    py::handle<> array_py(handle_from_new_ptr(map.release()));
-    PyArray_BASE(result.get()) = array_py.get();
-    Py_INCREF(array_py.get());
+    py::handle<> map_py(handle_from_new_ptr(map.release()));
+    PyArray_BASE(result.get()) = map_py.get();
+    Py_INCREF(map_py.get());
 
     return py::make_tuple(
-        array_py,
+        result,
         handle_from_new_ptr(new event(evt_handle)),
         row_pitch, slice_pitch);
   }
