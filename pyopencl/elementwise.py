@@ -42,7 +42,7 @@ def get_elwise_program(context, arguments, operation,
         name="elwise_kernel", keep=False, options=[],
         preamble="", loop_prep="", after_loop=""):
     from pyopencl import Program
-    return Program(context, """
+    source = ("""
         %(preamble)s
 
         __kernel void %(name)s(%(arguments)s)
@@ -68,7 +68,9 @@ def get_elwise_program(context, arguments, operation,
             "preamble": preamble,
             "loop_prep": loop_prep,
             "after_loop": after_loop,
-            }).build(options=" ".join(options))
+            })
+
+    return Program(context, source).build(options=" ".join(options))
 
 
 
@@ -83,7 +85,9 @@ def get_elwise_kernel_and_types(context, arguments, operation,
 
     for arg in parsed_args:
         if numpy.float64  == arg.dtype:
-            preamble += "\n\n#pragma OPENCL EXTENSION cl_khr_fp64: enable\n"
+            preamble = (
+                    "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n\n\n"
+                    + preamble)
             break
 
     parsed_args.append(ScalarArg(numpy.uintp, "n"))
