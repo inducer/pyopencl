@@ -298,7 +298,7 @@ intermediate result. The functionality in the module :mod:`pyopencl.elementwise`
 contains tools to help generate kernels that evaluate multi-stage expressions
 on one or several operands in a single pass.
 
-.. class:: ElementwiseKernel(context, arguments, operation, name="kernel", options=[])
+.. class:: ElementwiseKernel(context, arguments, operation, name="kernel", preamble="", options=[])
 
     Generate a kernel that takes a number of scalar or vector *arguments*
     and performs the scalar *operation* on each entry of its arguments, if that
@@ -310,6 +310,9 @@ on one or several operands in a single pass.
 
     *name* specifies the name as which the kernel is compiled, 
     and *options* are passed unmodified to :meth:`pyopencl.Program.build`.
+
+    *preamble* is a piece of C source code that gets inserted outside of the
+    function context in the elementwise operation's kernel source code.
 
     .. method:: __call__(*args)
 
