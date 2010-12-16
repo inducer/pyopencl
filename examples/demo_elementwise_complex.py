@@ -50,7 +50,5 @@ c_gpu_real = cl_array.empty(ctx, len(a_gpu), dtype=numpy.float32, queue=queue)
 real_part(c_gpu, c_gpu_real)
 print c_gpu.get().real - c_gpu_real.get()
 
-print a_gpu + b_gpu
-
 print la.norm(c_gpu.get() - (5*a_gpu.get()*b_gpu.get()))
 assert la.norm(c_gpu.get() - (5*a_gpu.get()*b_gpu.get())) < 1e-5
