@@ -65,13 +65,25 @@ C interface to Python:
 User-visible Changes
 ====================
 
-Version 0.93
-------------
+Version 2011.1
+--------------
 
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's git version control.
+
+* All *is_blocking* parameters now default to *True* to avoid
+  crashy-by-default behavior. (suggested by Jan Meinke)
+  In particular, this change affects
+  :func:`pyopencl.enqueue_read_buffer`,
+  :func:`pyopencl.enqueue_write_buffer`,
+  :func:`pyopencl.enqueue_read_buffer_rect`,
+  :func:`pyopencl.enqueue_write_buffer_rect`,
+  :func:`pyopencl.enqueue_read_image`,
+  :func:`pyopencl.enqueue_write_image`,
+  :func:`pyopencl.enqueue_map_buffer`,
+  :func:`pyopencl.enqueue_map_image`.
 
 Version 0.92
 ------------

@@ -46,7 +46,7 @@ void pyopencl_expose_part_2()
        py::arg("row_pitch")=0,
        py::arg("slice_pitch")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false,
+       py::arg("is_blocking")=true,
        py::arg("host_buffer")=py::object()
        ),
       py::return_value_policy<py::manage_new_object>());
@@ -55,7 +55,7 @@ void pyopencl_expose_part_2()
        py::arg("row_pitch")=0,
        py::arg("slice_pitch")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false,
+       py::arg("is_blocking")=true,
        py::arg("host_buffer")=py::object()
        ),
       py::return_value_policy<py::manage_new_object>());
@@ -90,13 +90,13 @@ void pyopencl_expose_part_2()
                 "offset",
                 "shape", "dtype", "order"),
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false));
+       py::arg("is_blocking")=true));
   py::def("enqueue_map_image", enqueue_map_image,
       (py::args("queue", "img", "flags",
                 "origin", "region",
                 "shape", "dtype", "order"),
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false));
+       py::arg("is_blocking")=true));
 
   // }}}
 

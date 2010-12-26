@@ -158,7 +158,7 @@ void pyopencl_expose_part_1()
       (py::args("queue", "mem", "hostbuf"),
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false,
+       py::arg("is_blocking")=true,
        py::arg("host_buffer")=py::object()
        ),
       py::return_value_policy<py::manage_new_object>());
@@ -166,7 +166,7 @@ void pyopencl_expose_part_1()
       (py::args("queue", "mem", "hostbuf"),
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false,
+       py::arg("is_blocking")=true,
        py::arg("host_buffer")=py::object()
        ),
       py::return_value_policy<py::manage_new_object>());
@@ -190,7 +190,7 @@ void pyopencl_expose_part_1()
        py::arg("buffer_pitches")=py::object(),
        py::arg("host_pitches")=py::object(),
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false
+       py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_write_buffer_rect", enqueue_write_buffer_rect,
@@ -199,7 +199,7 @@ void pyopencl_expose_part_1()
        py::arg("buffer_pitches")=py::object(),
        py::arg("host_pitches")=py::object(),
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=false
+       py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_copy_buffer_rect", enqueue_copy_buffer_rect,

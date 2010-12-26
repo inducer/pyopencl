@@ -290,17 +290,25 @@ Buffers
         :meth:`get_sub_region` is set to the same flags with which *self* was
         created.
 
-.. function:: enqueue_read_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=False)
+.. function:: enqueue_read_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=True)
 
     |std-enqueue-blurb|
 
     *hostbuf* |buf-iface|
 
-.. function:: enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=False)
+    .. versionchanged:: 2011.1
+
+        *is_blocking* now defaults to True.
+
+.. function:: enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=True)
 
     |std-enqueue-blurb|
 
     *hostbuf* |buf-iface|
+
+    .. versionchanged:: 2011.1
+
+        *is_blocking* now defaults to True.
 
 .. function:: enqueue_copy_buffer(queue, src, dst, byte_count=0, src_offset=0, dst_offset=0, wait_for=None)
 
@@ -311,7 +319,7 @@ Buffers
 
     .. versionadded:: 0.91.5
 
-.. function:: enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin, host_origin, region, buffer_pitches=None, host_pitches=None, wait_for=None, is_blocking=False)
+.. function:: enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin, host_origin, region, buffer_pitches=None, host_pitches=None, wait_for=None, is_blocking=True)
 
     The *origin* and *region* parameters are :class:`tuple` instances of length
     three or shorter. The *pitches* parameters are :class:`tuple` instances of
@@ -325,7 +333,11 @@ Buffers
 
     .. versionadded:: 0.92
 
-.. function:: enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin, host_origin, region, buffer_pitches=None, host_pitches=None, wait_for=None, is_blocking=False)
+    .. versionchanged:: 2011.1
+
+        *is_blocking* now defaults to True.
+
+.. function:: enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin, host_origin, region, buffer_pitches=None, host_pitches=None, wait_for=None, is_blocking=True)
 
     The *origin* and *region* parameters are :class:`tuple` instances of length
     three or shorter. The *pitches* parameters are :class:`tuple` instances of
@@ -338,6 +350,10 @@ Buffers
     Only available in OpenCL 1.1 and newer.
 
     .. versionadded:: 0.92
+
+    .. versionchanged:: 2011.1
+
+        *is_blocking* now defaults to True.
 
 .. function:: enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region, src_pitches=None, dst_pitches=None, wait_for=None)
 
@@ -438,19 +454,29 @@ Images
 
     |comparable|
 
-.. function:: enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
+.. function:: enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=True)
 
     |std-enqueue-blurb|
 
     .. versionchanged:: 0.91
         *pitch* arguments defaults to zero, moved.
 
-.. function:: enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=False)
+    .. versionchanged:: 2011.1
+
+        *is_blocking* now defaults to True.
+
+
+.. function:: enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=True)
 
     |std-enqueue-blurb|
 
     .. versionchanged:: 0.91
         *pitch* arguments defaults to zero, moved.
+
+    .. versionchanged:: 2011.1
+
+        *is_blocking* now defaults to True.
+
 
 .. function:: enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region, wait_for=None)
 
@@ -471,7 +497,7 @@ Mapping Memory into Host Address Space
 
     .. method:: release(queue=None, wait_for=None)
 
-.. function:: enqueue_map_buffer(queue, buf, flags, offset, shape, dtype, order, wait_for=None, is_blocking=False)
+.. function:: enqueue_map_buffer(queue, buf, flags, offset, shape, dtype, order, wait_for=None, is_blocking=True)
 
     |explain-waitfor|
     *shape*, *dtype*, and *order* have the same meaning
@@ -483,7 +509,11 @@ Mapping Memory into Host Address Space
         of the map. Its *.base* member contains a
         :class:`MemoryMap`.
 
-.. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order, wait_for=None, is_blocking=False)
+    .. versionchanged:: 2011.1
+
+        *is_blocking* now defaults to True.
+
+.. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order, wait_for=None, is_blocking=True)
 
     |explain-waitfor|
     *shape*, *dtype*, and *order* have the same meaning
@@ -494,6 +524,10 @@ Mapping Memory into Host Address Space
         :class:`numpy.ndarray` representing the host side
         of the map. Its *.base* member contains a
         :class:`MemoryMap`.
+
+    .. versionchanged:: 2011.1
+
+        *is_blocking* now defaults to True.
 
 
 Samplers
