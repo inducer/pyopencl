@@ -100,8 +100,13 @@ def elwise_kernel_runner(kernel_getter):
 
         return knl(queue, gs, ls, *actual_args)
 
-    from functools import update_wrapper
-    return update_wrapper(kernel_runner, kernel_getter)
+    try:
+       from functools import update_wrapper
+    except ImportError:
+        return kernel_runner
+    else:
+       return update_wrapper(kernel_runner, kernel_getter)
+
 
 
 
