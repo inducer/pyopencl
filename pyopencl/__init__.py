@@ -219,23 +219,32 @@ def _add_functionality():
         self._arg_type_chars = arg_type_chars
 
     def kernel_set_args(self, *args):
+        i = None
         try:
-            arg_type_chars = self.__dict__["_arg_type_chars"]
-        except KeyError:
-            for i, arg in enumerate(args):
-                self.set_arg(i, arg)
-        else:
-            from struct import pack
-
-            if len(args) != len(arg_type_chars):
-                raise ValueError("length of argument type array and "
-                        "length of argument list do not agree")
-            for i, (arg, arg_type_char) in enumerate(
-                    zip(args, arg_type_chars)):
-                if arg_type_char:
-                    self.set_arg(i, pack(arg_type_char, arg))
-                else:
+            try:
+                arg_type_chars = self.__dict__["_arg_type_chars"]
+            except KeyError:
+                for i, arg in enumerate(args):
                     self.set_arg(i, arg)
+            else:
+                from struct import pack
+
+                if len(args) != len(arg_type_chars):
+                    raise ValueError("length of argument type array and "
+                            "length of argument list do not agree")
+                for i, (arg, arg_type_char) in enumerate(
+                        zip(args, arg_type_chars)):
+                    if arg_type_char:
+                        self.set_arg(i, pack(arg_type_char, arg))
+                    else:
+                        self.set_arg(i, arg)
+        except LogicError, e:
+            if i is not None:
+                raise LogicError(
+                        "when processing argument #%d (1-based): %s"
+                        % (i+1, str(e)))
+            else:
+                raise
 
     Kernel.__call__ = kernel_call
     Kernel.set_scalar_arg_dtypes = kernel_set_scalar_arg_dtypes
