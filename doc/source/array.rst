@@ -403,8 +403,8 @@ Custom Reductions
     specified as float or integer formatted as string. *reduce_expr* and
     *map_expr* are specified as string formatted operations and *arguments*
     is specified as a string formatted as a C argument list. *name* specifies
-    the name as which the kernel is compiled, *keep* and *options* are passed
-    unmodified to :class:`pycuda.compiler.SourceModule`. *preamble* is specified
+    the name as which the kernel is compiled. *options* are passed
+    unmodified to :meth:`pyopencl.Program.build`. *preamble* is specified
     as a string of code.
 
     .. method __call__(*args, queue=None)
