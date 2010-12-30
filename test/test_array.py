@@ -357,99 +357,115 @@ def test_reverse(ctx_getter):
 
     assert (a[::-1] == a_gpu.get()).all()
 
-if False:
-    # not yet
 
-    @pytools.test.mark_test.opencl
-    def test_sum(ctx_getter):
-        context = ctx_getter()
-        queue = cl.CommandQueue(context)
 
-        from pyopencl.clrandom import rand as clrand
 
-        a_gpu = clrand(context, queue, (200000,))
-        a = a_gpu.get()
+@pytools.test.mark_test.opencl
+def test_sum(ctx_getter):
+    context = ctx_getter()
+    queue = cl.CommandQueue(context)
 
-        sum_a = numpy.sum(a)
+    from pyopencl.clrandom import rand as clrand
 
-        from pycuda.reduction import get_sum_kernel
-        sum_a_gpu = cl_array.sum(a_gpu).get()
+    a_gpu = clrand(context, queue, (200000,), numpy.float32)
+    a = a_gpu.get()
 
-        assert abs(sum_a_gpu-sum_a)/abs(sum_a) < 1e-4
+    sum_a = numpy.sum(a)
+    sum_a_gpu = cl_array.sum(a_gpu).get()
 
-    @pytools.test.mark_test.opencl
-    def test_minmax(ctx_getter):
-        context = ctx_getter()
-        queue = cl.CommandQueue(context)
+    assert abs(sum_a_gpu-sum_a)/abs(sum_a) < 1e-4
 
-        from pyopencl.clrandom import rand as clrand
 
-        if has_double_support():
-            dtypes = [numpy.float64, numpy.float32, numpy.int32]
-        else:
-            dtypes = [numpy.float32, numpy.int32]
 
-        for what in ["min", "max"]:
-            for dtype in dtypes:
-                a_gpu = clrand(context, queue, (200000,), dtype)
-                a = a_gpu.get()
 
-                op_a = getattr(numpy, what)(a)
-                op_a_gpu = getattr(cl_array, what)(a_gpu).get()
+@pytools.test.mark_test.opencl
+def test_minmax(ctx_getter):
+    context = ctx_getter()
+    queue = cl.CommandQueue(context)
 
-                assert op_a_gpu == op_a, (op_a_gpu, op_a, dtype, what)
+    from pyopencl.clrandom import rand as clrand
 
-    @pytools.test.mark_test.opencl
-    def test_subset_minmax(ctx_getter):
-        context = ctx_getter()
-        queue = cl.CommandQueue(context)
+    if has_double_support(context.devices[0]):
+        dtypes = [numpy.float64, numpy.float32, numpy.int32]
+    else:
+        dtypes = [numpy.float32, numpy.int32]
 
-        from pyopencl.clrandom import rand as clrand
-
-        l_a = 200000
-        gran = 5
-        l_m = l_a - l_a // gran + 1
-
-        if has_double_support():
-            dtypes = [numpy.float64, numpy.float32, numpy.int32]
-        else:
-            dtypes = [numpy.float32, numpy.int32]
-
+    for what in ["min", "max"]:
         for dtype in dtypes:
-            a_gpu = clrand(context, queue, (l_a,), dtype)
+            a_gpu = clrand(context, queue, (200000,), dtype)
             a = a_gpu.get()
 
-            meaningful_indices_gpu = cl_array.zeros(l_m, dtype=numpy.int32)
-            meaningful_indices = meaningful_indices_gpu.get()
-            j = 0
-            for i in range(len(meaningful_indices)):
-                meaningful_indices[i] = j
-                j = j + 1
-                if j % gran == 0:
-                    j = j + 1
+            op_a = getattr(numpy, what)(a)
+            op_a_gpu = getattr(cl_array, what)(a_gpu).get()
 
-            meaningful_indices_gpu = cl_array.to_device(meaningful_indices)
-            b = a[meaningful_indices]
+            assert op_a_gpu == op_a, (op_a_gpu, op_a, dtype, what)
 
-            min_a = numpy.min(b)
-            min_a_gpu = cl_array.subset_min(meaningful_indices_gpu, a_gpu).get()
 
-            assert min_a_gpu == min_a
 
-    @pytools.test.mark_test.opencl
-    def test_dot(ctx_getter):
-        from pyopencl.clrandom import rand as clrand
-        a_gpu = clrand(context, queue, (200000,))
+
+@pytools.test.mark_test.opencl
+def test_subset_minmax(ctx_getter):
+    context = ctx_getter()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+
+    l_a = 200000
+    gran = 5
+    l_m = l_a - l_a // gran + 1
+
+    if has_double_support(context.devices[0]):
+        dtypes = [numpy.float64, numpy.float32, numpy.int32]
+    else:
+        dtypes = [numpy.float32, numpy.int32]
+
+    for dtype in dtypes:
+        a_gpu = clrand(context, queue, (l_a,), dtype)
         a = a_gpu.get()
-        b_gpu = clrand(context, queue, (200000,))
-        b = b_gpu.get()
 
-        dot_ab = numpy.dot(a, b)
+        meaningful_indices_gpu = cl_array.zeros(
+                context, queue, l_m, dtype=numpy.int32)
+        meaningful_indices = meaningful_indices_gpu.get()
+        j = 0
+        for i in range(len(meaningful_indices)):
+            meaningful_indices[i] = j
+            j = j + 1
+            if j % gran == 0:
+                j = j + 1
 
-        dot_ab_gpu = cl_array.dot(a_gpu, b_gpu).get()
+        meaningful_indices_gpu = cl_array.to_device(
+                context, queue, meaningful_indices)
+        b = a[meaningful_indices]
 
-        assert abs(dot_ab_gpu-dot_ab)/abs(dot_ab) < 1e-4
+        min_a = numpy.min(b)
+        min_a_gpu = cl_array.subset_min(meaningful_indices_gpu, a_gpu).get()
 
+        assert min_a_gpu == min_a
+
+
+
+
+@pytools.test.mark_test.opencl
+def test_dot(ctx_getter):
+    context = ctx_getter()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+    a_gpu = clrand(context, queue, (200000,), numpy.float32)
+    a = a_gpu.get()
+    b_gpu = clrand(context, queue, (200000,), numpy.float32)
+    b = b_gpu.get()
+
+    dot_ab = numpy.dot(a, b)
+
+    dot_ab_gpu = cl_array.dot(a_gpu, b_gpu).get()
+
+    assert abs(dot_ab_gpu-dot_ab)/abs(dot_ab) < 1e-4
+
+
+
+
+if False:
     @pytools.test.mark_test.opencl
     def test_slice(ctx_getter):
         from pyopencl.clrandom import rand as clrand
