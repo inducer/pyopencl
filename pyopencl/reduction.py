@@ -247,7 +247,7 @@ def get_reduction_kernel(
 class ReductionKernel:
     def __init__(self, ctx, dtype_out,
             neutral, reduce_expr, map_expr=None, arguments=None,
-            name="reduce_kernel", options=[], preamble=""):
+            name="reduce_kernel", options="", preamble=""):
 
         self.dtype_out = dtype_out
 

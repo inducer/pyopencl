@@ -161,8 +161,41 @@ Conditionals
 
     Return the elementwise minimum of *a* and *b*. (added in 0.94)
 
+.. _reductions:
+
+Reductions
+^^^^^^^^^^
+
+.. function:: sum(a, dtype=None, stream=None)
+
+    .. versionadded: 2011.1
+
+.. function:: dot(a, b, dtype=None, stream=None)
+
+    .. versionadded: 2011.1
+
+.. function:: subset_dot(subset, a, b, dtype=None, stream=None)
+
+    .. versionadded: 2011.1
+
+.. function:: max(a, stream=None)
+
+    .. versionadded: 2011.1
+
+.. function:: min(a, stream=None)
+
+    .. versionadded: 2011.1
+
+.. function:: subset_max(subset, a, stream=None)
+
+    .. versionadded: 2011.1
+
+.. function:: subset_min(subset, a, stream=None)
+
+    .. versionadded: 2011.1
+
 Elementwise Functions on :class:`Arrray` Instances
------------------------------------------------------
+--------------------------------------------------
 
 .. module:: pyopencl.clmath
 
@@ -284,12 +317,6 @@ Generating Arrays of Random Numbers
 Single-pass Custom Expression Evaluation
 ----------------------------------------
 
-.. warning::
-
-    The following functionality is included in this documentation in the
-    hope that it may be useful, but its interface may change in future
-    revisions. Feedback is welcome.
-
 .. module:: pyopencl.elementwise
 
 Evaluating involved expressions on :class:`pyopencl.array.Array` instances can be
@@ -350,6 +377,51 @@ Here's a usage example::
 
 (You can find this example as :file:`examples/demo_elementwise.py` in the PyOpenCL
 distribution.)
+
+Custom Reductions
+-----------------
+
+.. module:: pycuda.reduction
+
+.. class:: ReductionKernel(ctx, dtype_out, neutral, reduce_expr, map_expr=None, arguments=None, name="reduce_kernel", options="", preamble="")
+
+    Generate a kernel that takes a number of scalar or vector *arguments*
+    (at least one vector argument), performs the *map_expr* on each entry of
+    the vector argument and then the *reduce_expr* on the outcome of that.
+    *neutral* serves as an initial value. *preamble* offers the possibility
+    to add preprocessor directives and other code (such as helper functions)
+    to be added before the actual reduction kernel code.
+
+    Vectors in *map_expr* should be indexed by the variable *i*. *reduce_expr*
+    uses the formal values "a" and "b" to indicate two operands of a binary
+    reduction operation. If you do not specify a *map_expr*, "in[i]" -- and
+    therefore the presence of only one input argument -- is automatically
+    assumed.
+
+    *dtype_out* specifies the :class:`numpy.dtype` in which the reduction is
+    performed and in which the result is returned. *neutral* is
+    specified as float or integer formatted as string. *reduce_expr* and
+    *map_expr* are specified as string formatted operations and *arguments*
+    is specified as a string formatted as a C argument list. *name* specifies
+    the name as which the kernel is compiled, *keep* and *options* are passed
+    unmodified to :class:`pycuda.compiler.SourceModule`. *preamble* is specified
+    as a string of code.
+
+    .. method __call__(*args, queue=None)
+
+    .. versionadded: 2011.1
+
+Here's a usage example::
+
+    a = pyopencl.array.arange(400, dtype=numpy.float32)
+    b = pyopencl.array.arange(400, dtype=numpy.float32)
+
+    krnl = ReductionKernel(ctx, numpy.float32, neutral="0",
+            reduce_expr="a+b", map_expr="a[i]*b[i]",
+            arguments="__global float *a, __global float *b")
+
+    my_dot_prod = krnl(a, b).get()
+
 
 Fast Fourier Transforms
 -----------------------

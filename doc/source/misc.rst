@@ -65,13 +65,16 @@ C interface to Python:
 User-visible Changes
 ====================
 
-Version 0.93
-------------
+Version 2011.1
+--------------
 
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's git version control.
+
+* Add :mod:`pycuda.reduction`.
+* Add :ref:`reductions`.
 
 Version 0.92
 ------------
