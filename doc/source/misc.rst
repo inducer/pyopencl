@@ -84,6 +84,8 @@ Version 2011.1
   :func:`pyopencl.enqueue_write_image`,
   :func:`pyopencl.enqueue_map_buffer`,
   :func:`pyopencl.enqueue_map_image`.
+* Add :mod:`pycuda.reduction`.
+* Add :ref:`reductions`.
 
 Version 0.92
 ------------
