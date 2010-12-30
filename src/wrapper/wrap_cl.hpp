@@ -18,8 +18,8 @@
 
 // elsewhere ------------------------------------------------------------------
 #include <CL/cl.h>
-// FIXME: Nvidia doesn't install cl_ext.h by default. Grr.
-// #include <CL/cl_ext.h>
+// TBD: Nvidia used to not install cl_ext.h by default. Grr.
+#include <CL/cl_ext.h>
 
 #ifdef _WIN32
 #define NOMINMAX
