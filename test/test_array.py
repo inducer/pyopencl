@@ -19,15 +19,7 @@ if have_cl():
     import pyopencl as cl
     from pyopencl.tools import pytest_generate_tests_for_pyopencl \
             as pytest_generate_tests
-
-
-
-
-def has_double_support(dev):
-    for ext in dev.extensions.split(" "):
-        if ext == "cl_khr_fp64":
-            return True
-    return False
+    from pyopencl.tools import has_double_support
 
 
 
