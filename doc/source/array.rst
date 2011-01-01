@@ -163,6 +163,7 @@ Conditionals
 
 .. _reductions:
 
+
 Reductions
 ^^^^^^^^^^
 
@@ -193,6 +194,8 @@ Reductions
 .. function:: subset_min(subset, a, stream=None)
 
     .. versionadded: 2011.1
+
+See also :ref:`custom-reductions`.
 
 Elementwise Functions on :class:`Arrray` Instances
 --------------------------------------------------
@@ -377,6 +380,8 @@ Here's a usage example::
 
 (You can find this example as :file:`examples/demo_elementwise.py` in the PyOpenCL
 distribution.)
+
+.. _custom-reductions:
 
 Custom Reductions
 -----------------
