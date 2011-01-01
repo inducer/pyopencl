@@ -19,24 +19,24 @@ a_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
 b_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b)
 c_buf = cl.Buffer(ctx, mf.WRITE_ONLY, b.nbytes)
 
-from jinja2 import Template
+from mako.template import Template
 
 tpl = Template("""
     __kernel void add(
-            __global {{ type_name }} *tgt, 
-            __global const {{ type_name }} *op1, 
-            __global const {{ type_name }} *op2)
+            __global ${ type_name } *tgt, 
+            __global const ${ type_name } *op1, 
+            __global const ${ type_name } *op2)
     {
       int idx = get_local_id(0)
-        + {{ local_size }} * {{ thread_strides }}
+        + ${ local_size } * ${ thread_strides }
         * get_group_id(0);
 
-      {% for i in range(thread_strides) %}
-          {% set offset = i*local_size %}
-          tgt[idx + {{ offset }}] = 
-            op1[idx + {{ offset }}] 
-            + op2[idx + {{ offset }}];
-      {% endfor %}
+      % for i in range(thread_strides):
+          <% offset = i*local_size %>
+          tgt[idx + ${ offset }] = 
+            op1[idx + ${ offset }] 
+            + op2[idx + ${ offset } ];
+      % endfor
     }""")
 
 rendered_tpl = tpl.render(type_name="float", 
