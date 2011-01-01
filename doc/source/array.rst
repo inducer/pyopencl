@@ -167,31 +167,31 @@ Conditionals
 Reductions
 ^^^^^^^^^^
 
-.. function:: sum(a, dtype=None, stream=None)
+.. function:: sum(a, dtype=None, queue=None)
 
     .. versionadded: 2011.1
 
-.. function:: dot(a, b, dtype=None, stream=None)
+.. function:: dot(a, b, dtype=None, queue=None)
 
     .. versionadded: 2011.1
 
-.. function:: subset_dot(subset, a, b, dtype=None, stream=None)
+.. function:: subset_dot(subset, a, b, dtype=None, queue=None)
 
     .. versionadded: 2011.1
 
-.. function:: max(a, stream=None)
+.. function:: max(a, queue=None)
 
     .. versionadded: 2011.1
 
-.. function:: min(a, stream=None)
+.. function:: min(a, queue=None)
 
     .. versionadded: 2011.1
 
-.. function:: subset_max(subset, a, stream=None)
+.. function:: subset_max(subset, a, queue=None)
 
     .. versionadded: 2011.1
 
-.. function:: subset_min(subset, a, stream=None)
+.. function:: subset_min(subset, a, queue=None)
 
     .. versionadded: 2011.1
 
