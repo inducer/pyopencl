@@ -249,7 +249,7 @@ class ReductionKernel:
             neutral, reduce_expr, map_expr=None, arguments=None,
             name="reduce_kernel", options="", preamble=""):
 
-        self.dtype_out = dtype_out
+        dtype_out = self.dtype_out = np.dtype(dtype_out)
 
         self.stage_1_inf = get_reduction_kernel(ctx,
                 dtype_to_ctype(dtype_out), dtype_out.itemsize,
