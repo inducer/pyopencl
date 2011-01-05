@@ -238,6 +238,9 @@ def get_rand_kernel(context, dtype):
 def _rand(output, seed):
     return get_rand_kernel(output.context, output.dtype)
 
+def fill_rand(result):
+    _rand(result, numpy.random.randint(2**31-1))
+
 def rand(context, queue, shape, dtype):
     from pyopencl.array import Array
 
