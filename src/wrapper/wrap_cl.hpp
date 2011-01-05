@@ -2957,7 +2957,8 @@ namespace pyopencl
         PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
             size_t);
       case CL_MEM_HOST_PTR:
-        return m_hostbuf;
+        throw pyopencl::error("MemoryObject.get_info", CL_INVALID_VALUE,
+            "Use MemoryObject.get_host_array to get host pointer.");
       case CL_MEM_MAP_COUNT:
         PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
             cl_uint);
@@ -3006,6 +3007,65 @@ namespace pyopencl
       default:
         throw error("MemoryObject.get_info", CL_INVALID_VALUE);
     }
+  }
+
+  inline
+  py::handle<> get_mem_obj_host_array(
+      py::object mem_obj_py,
+      py::object shape, py::object dtype, 
+      py::object order_py)
+  {
+    memory_object const &mem_obj = 
+      py::extract<memory_object const &>(mem_obj_py);
+    PyArray_Descr *tp_descr;
+    if (PyArray_DescrConverter(dtype.ptr(), &tp_descr) != NPY_SUCCEED)
+      throw py::error_already_set();
+
+    py::extract<npy_intp> shape_as_int(shape);
+    std::vector<npy_intp> dims;
+
+    if (shape_as_int.check())
+      dims.push_back(shape_as_int());
+    else
+      std::copy(
+          py::stl_input_iterator<npy_intp>(shape),
+          py::stl_input_iterator<npy_intp>(),
+          back_inserter(dims));
+
+    NPY_ORDER order = PyArray_CORDER;
+    PyArray_OrderConverter(order_py.ptr(), &order);
+
+    int ary_flags = 0;
+    if (order == PyArray_FORTRANORDER)
+      ary_flags |= NPY_FARRAY;
+    else if (order == PyArray_CORDER)
+      ary_flags |= NPY_CARRAY;
+    else
+      throw std::runtime_error("unrecognized order specifier");
+
+    void *host_ptr;
+    size_t mem_obj_size;
+    PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+        (mem_obj.data(), CL_MEM_HOST_PTR, sizeof(host_ptr),
+         &host_ptr, 0));
+    PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+        (mem_obj.data(), CL_MEM_SIZE, sizeof(mem_obj_size),
+         &mem_obj_size, 0));
+
+    py::handle<> result = py::handle<>(PyArray_NewFromDescr(
+        &PyArray_Type, tp_descr,
+        dims.size(), &dims.front(), /*strides*/ NULL,
+        host_ptr, ary_flags, /*obj*/NULL));
+
+    if (PyArray_NBYTES(result.get()) > mem_obj_size)
+      throw pyopencl::error("MemoryObject.get_host_array", 
+          CL_INVALID_VALUE,
+          "Resulting array is larger than memory object.");
+
+    PyArray_BASE(result.get()) = mem_obj_py.ptr();
+    Py_INCREF(mem_obj_py.ptr());
+
+    return result;
   }
 
   // }}}

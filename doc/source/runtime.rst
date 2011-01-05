@@ -256,16 +256,19 @@ Memory
         may be used as attributes on instances of this class
         to directly query info attributes.
 
+    .. attribute:: hostbuf
+
     .. method:: get_info(param)
 
         See :class:`mem_info` for values of *param*.
 
-    .. attribute:: hostbuf
-
-        Contains the *hostbuf* parameter if the MemoryObject was constructed
-        with :attr:`mem_flags.USE_HOST_PTR`.
-
     .. method:: release()
+
+    .. method:: get_host_array(shape, dtype, order="C")
+
+        Return the memory object's associated host memory 
+        area as a :class:`numpy.ndarray` of the given *shape*,
+        *dtype* and *order*.
 
     |comparable|
 
