@@ -300,7 +300,6 @@ Buffers
     *hostbuf* |buf-iface|
 
     .. versionchanged:: 2011.1
-
         *is_blocking* now defaults to True.
 
 .. function:: enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=True)
@@ -310,7 +309,6 @@ Buffers
     *hostbuf* |buf-iface|
 
     .. versionchanged:: 2011.1
-
         *is_blocking* now defaults to True.
 
 .. function:: enqueue_copy_buffer(queue, src, dst, byte_count=0, src_offset=0, dst_offset=0, wait_for=None)
@@ -337,7 +335,6 @@ Buffers
     .. versionadded:: 0.92
 
     .. versionchanged:: 2011.1
-
         *is_blocking* now defaults to True.
 
 .. function:: enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin, host_origin, region, buffer_pitches=None, host_pitches=None, wait_for=None, is_blocking=True)
@@ -355,7 +352,6 @@ Buffers
     .. versionadded:: 0.92
 
     .. versionchanged:: 2011.1
-
         *is_blocking* now defaults to True.
 
 .. function:: enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region, src_pitches=None, dst_pitches=None, wait_for=None)
@@ -465,7 +461,6 @@ Images
         *pitch* arguments defaults to zero, moved.
 
     .. versionchanged:: 2011.1
-
         *is_blocking* now defaults to True.
 
 
@@ -477,7 +472,6 @@ Images
         *pitch* arguments defaults to zero, moved.
 
     .. versionchanged:: 2011.1
-
         *is_blocking* now defaults to True.
 
 
@@ -513,7 +507,6 @@ Mapping Memory into Host Address Space
         :class:`MemoryMap`.
 
     .. versionchanged:: 2011.1
-
         *is_blocking* now defaults to True.
 
 .. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order, wait_for=None, is_blocking=True)
@@ -529,7 +522,6 @@ Mapping Memory into Host Address Space
         :class:`MemoryMap`.
 
     .. versionchanged:: 2011.1
-
         *is_blocking* now defaults to True.
 
 
