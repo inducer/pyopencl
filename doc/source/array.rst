@@ -386,7 +386,7 @@ distribution.)
 Custom Reductions
 -----------------
 
-.. module:: pycuda.reduction
+.. module:: pyopencl.reduction
 
 .. class:: ReductionKernel(ctx, dtype_out, neutral, reduce_expr, map_expr=None, arguments=None, name="reduce_kernel", options="", preamble="")
 
@@ -422,11 +422,10 @@ Here's a usage example::
     b = pyopencl.array.arange(400, dtype=numpy.float32)
 
     krnl = ReductionKernel(ctx, numpy.float32, neutral="0",
-            reduce_expr="a+b", map_expr="a[i]*b[i]",
-            arguments="__global float *a, __global float *b")
+            reduce_expr="a+b", map_expr="x[i]*y[i]",
+            arguments="__global float *x, __global float *y")
 
     my_dot_prod = krnl(a, b).get()
-
 
 Fast Fourier Transforms
 -----------------------
