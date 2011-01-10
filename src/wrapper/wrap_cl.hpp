@@ -43,13 +43,10 @@
 #include <boost/scoped_array.hpp>
 #include "wrap_helpers.hpp"
 #include "numpy_init.hpp"
+#include "tools.hpp"
 
 // }}}
 
-
-
-
-// #define PYOPENCL_TRACE
 
 
 
@@ -266,6 +263,13 @@ namespace pyopencl
       cl_int code() const
       {
         return m_code;
+      }
+
+      bool is_out_of_memory() const
+      {
+        return (code() == CL_MEM_OBJECT_ALLOCATION_FAILURE
+            || code() == CL_OUT_OF_RESOURCES
+            || code() == CL_OUT_OF_HOST_MEMORY);
       }
 
       static const char *cl_error_to_str(cl_int e)
@@ -1082,7 +1086,28 @@ namespace pyopencl
 
   // {{{ memory_object
 
-  class memory_object : boost::noncopyable
+  class memory_object_holder
+  {
+    public:
+      virtual const cl_mem data() const = 0;
+
+      PYOPENCL_EQUALITY_TESTS(memory_object_holder);
+
+      size_t size() const
+      {
+        size_t param_value;
+        PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+            (data(), CL_MEM_SIZE, sizeof(param_value), &param_value, 0));
+        return param_value;
+      }
+
+      py::object get_info(cl_mem_info param_name) const;
+  };
+
+
+
+
+  class memory_object : boost::noncopyable, public memory_object_holder
   {
     private:
       bool m_valid;
@@ -1132,22 +1157,59 @@ namespace pyopencl
         return (npy_intp) data();
       }
 
-      PYOPENCL_EQUALITY_TESTS(memory_object);
-
-      size_t size() const
-      {
-        size_t param_value;
-        PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
-            (m_mem, CL_MEM_SIZE, sizeof(param_value), &param_value, 0));
-        return param_value;
-      }
-
-      py::object get_info(cl_mem_info param_name) const;
   };
 
   // }}}
 
   // {{{ buffer
+
+  inline cl_mem create_buffer(
+      cl_context ctx,
+      cl_mem_flags flags,
+      size_t size,
+      void *host_ptr)
+  {
+    cl_int status_code;
+    cl_mem mem = clCreateBuffer(ctx, flags, size, host_ptr, &status_code);
+
+    PYOPENCL_PRINT_CALL_TRACE("clCreateBuffer");
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("create_buffer", status_code);
+
+    return mem;
+  }
+
+
+
+
+  inline cl_mem create_buffer_gc(
+      cl_context ctx,
+      cl_mem_flags flags,
+      size_t size,
+      void *host_ptr)
+  {
+    try
+    {
+      return create_buffer(ctx, flags, size, host_ptr);
+    }
+    catch (pyopencl::error &e)
+    { 
+      if (!e.is_out_of_memory())
+        throw;
+    }
+
+    // If we get here, we got an error from CL.
+    // We should run the Python GC to try and free up
+    // some memory references.
+    run_python_gc();
+
+    // Now retry the allocation. If it fails again,
+    // let it fail.
+    return create_buffer(ctx, flags, size, host_ptr);
+  }
+
+
+
 
   class buffer : public memory_object
   {
@@ -1208,7 +1270,7 @@ namespace pyopencl
   // {{{ buffer creation
 
   inline
-  buffer *create_buffer(
+  buffer *create_buffer_py(
       context &ctx,
       cl_mem_flags flags,
       size_t size,
@@ -1247,12 +1309,7 @@ namespace pyopencl
         size = len;
     }
 
-    cl_int status_code;
-    cl_mem mem = clCreateBuffer(ctx.data(), flags, size, buf, &status_code);
-
-    PYOPENCL_PRINT_CALL_TRACE("clCreateBuffer");
-    if (status_code != CL_SUCCESS)
-      throw pyopencl::error("create_host_buffer", status_code);
+    cl_mem mem = create_buffer_gc(ctx.data(), flags, size, buf);
 
     try
     {
@@ -2473,9 +2530,9 @@ namespace pyopencl
               sizeof(cl_mem), &m));
       }
 
-      void set_arg_mem(cl_uint arg_index, memory_object &mo)
+      void set_arg_mem(cl_uint arg_index, memory_object_holder &moh)
       {
-        cl_mem m = mo.data();
+        cl_mem m = moh.data();
         PYOPENCL_CALL_GUARDED(clSetKernelArg,
             (m_kernel, arg_index, sizeof(cl_mem), &m));
       }
@@ -2943,30 +3000,30 @@ namespace pyopencl
   // {{{ deferred implementation bits
 
   inline
-  py::object memory_object::get_info(cl_mem_info param_name) const
+  py::object memory_object_holder::get_info(cl_mem_info param_name) const
   {
     switch (param_name)
     {
       case CL_MEM_TYPE:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
             cl_mem_object_type);
       case CL_MEM_FLAGS:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
             cl_mem_flags);
       case CL_MEM_SIZE:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
             size_t);
       case CL_MEM_HOST_PTR:
         throw pyopencl::error("MemoryObject.get_info", CL_INVALID_VALUE,
             "Use MemoryObject.get_host_array to get host pointer.");
       case CL_MEM_MAP_COUNT:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
             cl_uint);
       case CL_MEM_REFERENCE_COUNT:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
             cl_uint);
       case CL_MEM_CONTEXT:
-        PYOPENCL_GET_OPAQUE_INFO(MemObject, m_mem, param_name,
+        PYOPENCL_GET_OPAQUE_INFO(MemObject, data(), param_name,
             cl_context, context);
 
 #ifdef CL_VERSION_1_1
@@ -2974,7 +3031,7 @@ namespace pyopencl
         {
           cl_mem param_value;
           PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, \
-              (m_mem, param_name, sizeof(param_value), &param_value, 0));
+              (data(), param_name, sizeof(param_value), &param_value, 0));
           if (param_value == 0)
           {
             // no associated memory object? no problem.
@@ -2983,7 +3040,7 @@ namespace pyopencl
 
           cl_mem_object_type mem_obj_type;
           PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, \
-              (m_mem, CL_MEM_TYPE, sizeof(mem_obj_type), &mem_obj_type, 0));
+              (data(), CL_MEM_TYPE, sizeof(mem_obj_type), &mem_obj_type, 0));
 
           switch (mem_obj_type)
           {
@@ -3000,12 +3057,12 @@ namespace pyopencl
           }
         }
       case CL_MEM_OFFSET:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, m_mem, param_name,
+        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
             size_t);
 #endif
 
       default:
-        throw error("MemoryObject.get_info", CL_INVALID_VALUE);
+        throw error("MemoryObjectHolder.get_info", CL_INVALID_VALUE);
     }
   }
 

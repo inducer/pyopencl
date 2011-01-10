@@ -59,6 +59,8 @@ def main():
     EXTRA_LIBRARY_DIRS = []
     EXTRA_LIBRARIES = []
 
+    EXTRA_DEFINES["PYGPU_PACKAGE"] = "pyopencl";
+
     if conf["CL_TRACE"]:
         EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
 
@@ -151,6 +153,7 @@ def main():
                         "src/wrapper/wrap_cl_part_1.cpp", 
                         "src/wrapper/wrap_cl_part_2.cpp", 
                         "src/wrapper/wrap_constants.cpp", 
+                        "src/wrapper/wrap_mempool.cpp", 
                         ]+EXTRA_OBJECTS, 
                     include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
                     library_dirs=LIBRARY_DIRS + conf["CL_LIB_DIR"],

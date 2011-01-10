@@ -46,7 +46,8 @@ void pyopencl_expose_part_1()
 
   {
     typedef context cls;
-    py::class_<cls, boost::noncopyable>("Context", py::no_init)
+    py::class_<cls, boost::noncopyable, 
+      boost::shared_ptr<cls> >("Context", py::no_init)
       .def("__init__", make_constructor(create_context,
             py::default_call_policies(),
             (py::arg("devices")=py::object(),
@@ -117,16 +118,23 @@ void pyopencl_expose_part_1()
   // {{{ memory_object
 
   {
-    typedef memory_object cls;
-    py::class_<cls, boost::noncopyable>("MemoryObject", py::no_init)
+    typedef memory_object_holder cls;
+    py::class_<cls, boost::noncopyable>(
+        "MemoryObjectHolder", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
-      .DEF_SIMPLE_METHOD(release)
       .def("get_host_array", get_mem_obj_host_array,
           (py::arg("shape"), py::arg("dtype"), py::arg("order")="C"))
-      .add_property("obj_ptr", &cls::obj_ptr)
-      .add_property("hostbuf", &cls::hostbuf)
       .def(py::self == py::self)
       .def(py::self != py::self)
+      ;
+  }
+  {
+    typedef memory_object cls;
+    py::class_<cls, boost::noncopyable, py::bases<memory_object_holder> >(
+        "MemoryObject", py::no_init)
+      .DEF_SIMPLE_METHOD(release)
+      .add_property("obj_ptr", &cls::obj_ptr)
+      .add_property("hostbuf", &cls::hostbuf)
       ;
   }
 
@@ -137,7 +145,7 @@ void pyopencl_expose_part_1()
     typedef buffer cls;
     py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
         "Buffer", py::no_init)
-      .def("__init__", make_constructor(create_buffer,
+      .def("__init__", make_constructor(create_buffer_py,
             py::default_call_policies(),
             (py::args("context", "flags"),
              py::arg("size")=0,
