@@ -80,6 +80,32 @@ def main():
         # 2.x
         from distutils.command.build_py import build_py
 
+    try:
+        import murko
+    except ImportError:
+        print("-------------------------------------------------------------------------")
+        print("Mako is not installed.")
+        print("-------------------------------------------------------------------------")
+        print("That is not a problem, as most of PyOpenCL will be just fine without it.")
+        print("Some higher-level parts of pyopencl (pyopencl.reduction, to be precise)")
+        print("will not function without the templating engine Mako [1] being installed.")
+        print("If you would like this functionality to work, you might want to install")
+        print("Mako after you finish installing PyOpenCL.")
+        print("")
+        print("[1] http://www.makotemplates.org/")
+        print("-------------------------------------------------------------------------")
+
+        delay = 5
+
+        from time import sleep
+        import sys
+        while delay:
+            sys.stdout.write("Continuing in %d seconds...   \r" % delay)
+            sys.stdout.flush()
+            delay -= 1
+            sleep(1)
+        print("")
+
     setup(name="pyopencl",
             # metadata
             version=ver_dic["VERSION_TEXT"],
