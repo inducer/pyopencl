@@ -37,6 +37,10 @@ def initialize():
         props.append(
                 (ctx_props.WGL_HDC_KHR, 
                     WGL.wglGetCurrentDC()))
+    else:
+        raise NotImplementedError("platform '%s' not yet supported" 
+                % sys.platform)
+
     ctx = cl.Context(properties=props)
 
     glClearColor(1, 1, 1, 1)
