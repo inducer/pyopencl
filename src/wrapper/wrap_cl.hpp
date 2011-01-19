@@ -646,6 +646,13 @@ namespace pyopencl
                 switch (key)
                 {
                   case CL_CONTEXT_PLATFORM:
+                    {
+                      value = py::object(
+                          handle_from_new_ptr(new platform(
+                            reinterpret_cast<cl_platform_id>(result[i+1]))));
+                      break;
+                    }
+
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
                   case CL_GL_CONTEXT_KHR:
                   case CL_EGL_DISPLAY_KHR:
@@ -653,11 +660,8 @@ namespace pyopencl
                   case CL_WGL_HDC_KHR:
                   case CL_CGL_SHAREGROUP_KHR:
 #endif
-                    {
-                      value = py::object(
-                          handle_from_new_ptr(new platform(
-                            reinterpret_cast<cl_platform_id>(result[i+1]))));
-                    }
+                    value = py::object(result[i+1]);
+                    break;
 
                   case 0:
                     break;
