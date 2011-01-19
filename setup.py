@@ -59,7 +59,7 @@ def main():
     EXTRA_LIBRARY_DIRS = []
     EXTRA_LIBRARIES = []
 
-    EXTRA_DEFINES["PYGPU_PACKAGE"] = "pyopencl";
+    EXTRA_DEFINES["PYGPU_PACKAGE"] = "pyopencl"
 
     if conf["CL_TRACE"]:
         EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
@@ -81,7 +81,7 @@ def main():
         from distutils.command.build_py import build_py
 
     try:
-        import murko
+        import mako
     except ImportError:
         print("-------------------------------------------------------------------------")
         print("Mako is not installed.")
@@ -180,6 +180,7 @@ def main():
                         "src/wrapper/wrap_cl_part_2.cpp", 
                         "src/wrapper/wrap_constants.cpp", 
                         "src/wrapper/wrap_mempool.cpp", 
+                        "src/wrapper/bitlog.cpp", 
                         ]+EXTRA_OBJECTS, 
                     include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
                     library_dirs=LIBRARY_DIRS + conf["CL_LIB_DIR"],
