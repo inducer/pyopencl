@@ -21,7 +21,7 @@
 // TBD: Nvidia used to not install cl_ext.h by default. Grr.
 #include <CL/cl_ext.h>
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32)
 #define NOMINMAX
 #include <windows.h>
 #endif
@@ -726,11 +726,11 @@ namespace pyopencl
           py::extract<cl_context_properties> value(ptr.attr("value"));
           props.push_back(value);
        }
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32)
        else if (prop == CL_WGL_HDC_KHR)
        {
-          py::extract<HANDLE> value(prop_tuple[1]);
-          props.push_back(value);
+          HANDLE hnd = py::extract<HANDLE>(prop_tuple[1]);
+          props.push_back(hnd);
        }
 #endif
 #endif
