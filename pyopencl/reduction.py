@@ -327,15 +327,13 @@ class ReductionKernel:
                 seq_count = (sz + macrogroup_size - 1) // macrogroup_size
 
             if group_count == 1:
-                result = empty(stage_inf.context,
+                result = empty(use_queue,
                         (), self.dtype_out,
-                        allocator=repr_vec.allocator,
-                        queue=use_queue)
+                        allocator=repr_vec.allocator)
             else:
-                result = empty(stage_inf.context,
+                result = empty(use_queue,
                         (group_count,), self.dtype_out,
-                        allocator=repr_vec.allocator,
-                        queue=use_queue)
+                        allocator=repr_vec.allocator)
 
             #print group_count, seq_count, stage_inf.group_size
             stage_inf.kernel(

@@ -30,7 +30,7 @@ def test_pow_array(ctx_getter):
     queue = cl.CommandQueue(context)
 
     a = numpy.array([1,2,3,4,5]).astype(numpy.float32)
-    a_gpu = cl_array.to_device(context, queue, a)
+    a_gpu = cl_array.to_device(queue, a)
 
     result = pow(a_gpu,a_gpu).get()
     assert (numpy.abs(a**a - result) < 1e-3).all()
@@ -47,7 +47,7 @@ def test_pow_number(ctx_getter):
     queue = cl.CommandQueue(context)
 
     a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
-    a_gpu = cl_array.to_device(context, queue, a)
+    a_gpu = cl_array.to_device(queue, a)
 
     result = pow(a_gpu, 2).get()
     assert (numpy.abs(a**2 - result) < 1e-3).all()
@@ -59,7 +59,7 @@ def test_abs(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    a = -cl_array.arange(context, queue, 111, dtype=numpy.float32)
+    a = -cl_array.arange(queue, 111, dtype=numpy.float32)
     res = a.get()
 
     for i in range(111):
@@ -80,7 +80,7 @@ def test_len(ctx_getter):
     queue = cl.CommandQueue(context)
 
     a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
-    a_cpu = cl_array.to_device(context, queue, a)
+    a_cpu = cl_array.to_device(queue, a)
     assert len(a_cpu) == 10
 
 
@@ -101,7 +101,7 @@ def test_multiply(ctx_getter):
             ]:
             for scalar in scalars:
                 a = numpy.arange(sz).astype(dtype)
-                a_gpu = cl_array.to_device(context, queue, a)
+                a_gpu = cl_array.to_device(queue, a)
                 a_doubled = (scalar * a_gpu).get()
 
                 assert (a * scalar == a_doubled).all()
@@ -115,8 +115,8 @@ def test_multiply_array(ctx_getter):
 
     a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
 
-    a_gpu = cl_array.to_device(context, queue, a)
-    b_gpu = cl_array.to_device(context, queue, a)
+    a_gpu = cl_array.to_device(queue, a)
+    b_gpu = cl_array.to_device(queue, a)
 
     a_squared = (b_gpu*a_gpu).get()
 
@@ -133,7 +133,7 @@ def test_addition_array(ctx_getter):
     queue = cl.CommandQueue(context)
 
     a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
-    a_gpu = cl_array.to_device(context, queue, a)
+    a_gpu = cl_array.to_device(queue, a)
     a_added = (a_gpu+a_gpu).get()
 
     assert (a+a == a_added).all()
@@ -149,7 +149,7 @@ def test_addition_scalar(ctx_getter):
     queue = cl.CommandQueue(context)
 
     a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
-    a_gpu = cl_array.to_device(context, queue, a)
+    a_gpu = cl_array.to_device(queue, a)
     a_added = (7+a_gpu).get()
 
     assert (7+a == a_added).all()
@@ -167,8 +167,8 @@ def test_substract_array(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    a_gpu = cl_array.to_device(context, queue, a)
-    b_gpu = cl_array.to_device(context, queue, b)
+    a_gpu = cl_array.to_device(queue, a)
+    b_gpu = cl_array.to_device(queue, b)
 
     result = (a_gpu-b_gpu).get()
     assert (a-b == result).all()
@@ -190,7 +190,7 @@ def test_substract_scalar(ctx_getter):
     a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
 
     #convert a to a gpu object
-    a_gpu = cl_array.to_device(context, queue, a)
+    a_gpu = cl_array.to_device(queue, a)
 
     result = (a_gpu-7).get()
     assert (a-7 == result).all()
@@ -209,7 +209,7 @@ def test_divide_scalar(ctx_getter):
     queue = cl.CommandQueue(context)
 
     a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
-    a_gpu = cl_array.to_device(context, queue, a)
+    a_gpu = cl_array.to_device(queue, a)
 
     result = (a_gpu/2).get()
     assert (a/2 == result).all()
@@ -231,8 +231,8 @@ def test_divide_array(ctx_getter):
     a = numpy.array([10,20,30,40,50,60,70,80,90,100]).astype(numpy.float32)
     b = numpy.array([10,10,10,10,10,10,10,10,10,10]).astype(numpy.float32)
 
-    a_gpu = cl_array.to_device(context, queue, a)
-    b_gpu = cl_array.to_device(context, queue, b)
+    a_gpu = cl_array.to_device(queue, a)
+    b_gpu = cl_array.to_device(queue, b)
 
     a_divide = (a_gpu/b_gpu).get()
     assert (numpy.abs(a/b - a_divide) < 1e-3).all()
@@ -282,9 +282,9 @@ def test_nan_arithmetic(ctx_getter):
     size = 1 << 20
 
     a = make_nan_contaminated_vector(size)
-    a_gpu = cl_array.to_device(context, queue, a)
+    a_gpu = cl_array.to_device(queue, a)
     b = make_nan_contaminated_vector(size)
-    b_gpu = cl_array.to_device(context, queue, b)
+    b_gpu = cl_array.to_device(queue, b)
 
     ab = a*b
     ab_gpu = (a_gpu*b_gpu).get()
@@ -324,8 +324,8 @@ def test_take(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    idx = cl_array.arange(context, queue, 0, 200000, 2, dtype=numpy.uint32)
-    a = cl_array.arange(context, queue, 0, 600000, 3, dtype=numpy.float32)
+    idx = cl_array.arange(queue, 0, 200000, 2, dtype=numpy.uint32)
+    a = cl_array.arange(queue, 0, 600000, 3, dtype=numpy.float32)
     result = cl_array.take(a, idx)
     assert ((3*idx).get() == result.get()).all()
 
@@ -338,7 +338,7 @@ def test_arange(ctx_getter):
     queue = cl.CommandQueue(context)
 
     n = 5000
-    a = cl_array.arange(context, queue, n, dtype=numpy.float32)
+    a = cl_array.arange(queue, n, dtype=numpy.float32)
     assert (numpy.arange(n, dtype=numpy.float32) == a.get()).all()
 
 
@@ -351,7 +351,7 @@ def test_reverse(ctx_getter):
 
     n = 5000
     a = numpy.arange(n).astype(numpy.float32)
-    a_gpu = cl_array.to_device(context, queue, a)
+    a_gpu = cl_array.to_device(queue, a)
 
     a_gpu = a_gpu.reverse()
 
@@ -424,7 +424,7 @@ def test_subset_minmax(ctx_getter):
         a = a_gpu.get()
 
         meaningful_indices_gpu = cl_array.zeros(
-                context, queue, l_m, dtype=numpy.int32)
+                queue, l_m, dtype=numpy.int32)
         meaningful_indices = meaningful_indices_gpu.get()
         j = 0
         for i in range(len(meaningful_indices)):
@@ -434,7 +434,7 @@ def test_subset_minmax(ctx_getter):
                 j = j + 1
 
         meaningful_indices_gpu = cl_array.to_device(
-                context, queue, meaningful_indices)
+                queue, meaningful_indices)
         b = a[meaningful_indices]
 
         min_a = numpy.min(b)
@@ -513,11 +513,11 @@ def test_take_put(ctx_getter):
 
     for n in [5, 17, 333]:
         one_field_size = 8
-        buf_gpu = cl_array.zeros(context, queue,
+        buf_gpu = cl_array.zeros(queue,
                 n*one_field_size, dtype=numpy.float32)
-        dest_indices = cl_array.to_device(context, queue,
+        dest_indices = cl_array.to_device(queue,
                 numpy.array([ 0,  1,  2,  3, 32, 33, 34, 35], dtype=numpy.uint32))
-        read_map = cl_array.to_device(context, queue,
+        read_map = cl_array.to_device(queue,
                 numpy.array([7, 6, 5, 4, 3, 2, 1, 0], dtype=numpy.uint32))
 
         cl_array.multi_take_put(

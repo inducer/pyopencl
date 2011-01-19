@@ -244,7 +244,7 @@ def fill_rand(result):
 def rand(context, queue, shape, dtype):
     from pyopencl.array import Array
 
-    result = Array(context, shape, dtype, queue=queue)
+    result = Array(queue, shape, dtype)
     _rand(result, numpy.random.randint(2**31-1))
     return result
 

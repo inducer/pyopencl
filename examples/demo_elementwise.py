@@ -7,9 +7,9 @@ queue = cl.CommandQueue(ctx)
 
 n = 10
 a_gpu = cl_array.to_device(
-        ctx, queue, numpy.random.randn(n).astype(numpy.float32))
+        queue, numpy.random.randn(n).astype(numpy.float32))
 b_gpu = cl_array.to_device(
-        ctx, queue, numpy.random.randn(n).astype(numpy.float32))
+        queue, numpy.random.randn(n).astype(numpy.float32))
 
 from pyopencl.elementwise import ElementwiseKernel
 lin_comb = ElementwiseKernel(ctx,

@@ -123,6 +123,15 @@ class DefaultAllocator:
 
 
 
+def _should_be_cqa(what):
+    from warnings import warn
+    warn("'%s' should be specified as the frst"
+            "('cqa') argument, "
+            "not in the '%s' keyword argument. "
+            "This will be continue to be accepted througout "
+            "versions 2011.x of PyOpenCL." % (what, what),
+            DeprecationWarning, 3)
+
 class Array(object):
     """A :mod:`pyopencl` Array is used to do array-based calculation on
     a compute device.
@@ -131,10 +140,40 @@ class Array(object):
     work on an element-by-element basis, just like :class:`numpy.ndarray`.
     """
 
-    def __init__(self, context, shape, dtype, order="C", allocator=None,
+    def __init__(self, cqa, shape, dtype, order="C", allocator=None,
             base=None, data=None, queue=None):
-        if allocator is None:
-            allocator = DefaultAllocator(context)
+        # {{{ backward compatibility for pre-cqa days
+
+        if isinstance(cqa, cl.CommandQueue):
+            if queue is not None:
+                raise TypeError("can't specify queue in 'cqa' and "
+                        "'queue' arguments")
+            queue = cqa
+
+            if allocator is None: 
+                context = queue.context
+                allocator = DefaultAllocator(context)
+
+        elif isinstance(cqa, cl.Context):
+            if queue is not None: 
+                _should_be_cqa("queue")
+
+            if allocator is not None: 
+                _should_be_cqa("allocator")
+            else:
+                allocator = DefaultAllocator(cqa)
+
+        else:
+            # cqa is assumed to be an allocator
+            if allocator is not None:
+                raise TypeError("can't specify allocator in 'cqa' and "
+                        "'allocator' arguments")
+
+            allocator = cqa
+
+        # }}}
+
+        # invariant here: allocator, queue set
 
         try:
             s = 1
@@ -147,7 +186,6 @@ class Array(object):
             s = shape
             shape = (shape,)
 
-        self.context = context
         self.queue = queue
 
         self.shape = shape
@@ -172,6 +210,8 @@ class Array(object):
             self.data = data
 
         self.base = base
+
+        self.context = self.data.context
 
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue):
@@ -294,9 +334,13 @@ class Array(object):
     def _new_like_me(self, dtype=None, queue=None):
         if dtype is None:
             dtype = self.dtype
-        return self.__class__(self.context,
-                self.shape, dtype, allocator=self.allocator,
-                queue=queue or self.queue)
+        queue = queue or self.queue
+        if queue is not None:
+            return self.__class__(queue, self.shape, dtype, allocator=self.allocator)
+        elif self.allocator is not None:
+            return self.__class__(self.allocator, self.shape, dtype)
+        else:
+            return self.__class__(self.context, self.shape, dtype)
 
     # operators ---------------------------------------------------------------
     def mul_add(self, selffac, other, otherfac, queue=None):
@@ -507,8 +551,7 @@ class Array(object):
 
 
 
-def to_device(context, queue, ary, allocator=None, async=False):
-    """Converts a numpy array to a :class:`Array`."""
+def _to_device(queue, ary, allocator=None, async=False):
     if ary.flags.f_contiguous:
         order = "F"
     elif ary.flags.c_contiguous:
@@ -517,48 +560,67 @@ def to_device(context, queue, ary, allocator=None, async=False):
         raise ValueError("to_device only works on C- or Fortran-"
                 "contiguous arrays")
 
-    result = Array(context, ary.shape, ary.dtype, order, allocator,
-            queue=queue)
+    result = Array(queue, ary.shape, ary.dtype, order, allocator)
     result.set(ary, async=async)
     return result
+
+def to_device(*args, **kwargs):
+    """Converts a numpy array to a :class:`Array`."""
+
+    if isinstance(args[0], cl.Context):
+        from warnings import warn
+        warn("Passing a context as first argument is deprecated. "
+            "This will be continue to be accepted througout "
+            "versions 2011.x of PyOpenCL.",
+            DeprecationWarning, 2)
+        args = args[1:]
+
+    return _to_device(*args, **kwargs)
+
+
 
 
 empty = Array
 
-def zeros(context, queue, shape, dtype, order="C", allocator=None):
-    """Returns an array of the given shape and dtype filled with 0's."""
-
-    result = Array(context, shape, dtype, 
-            order=order, allocator=allocator, queue=queue)
+def _zeros(queue, shape, dtype, order="C", allocator=None):
+    result = Array(queue, shape, dtype, 
+            order=order, allocator=allocator)
     result.fill(0)
     return result
 
+def zeros(*args, **kwargs):
+    """Returns an array of the given shape and dtype filled with 0's."""
+
+    if isinstance(args[0], cl.Context):
+        from warnings import warn
+        warn("Passing a context as first argument is deprecated. "
+            "This will be continue to be accepted througout "
+            "versions 2011.x of PyOpenCL.",
+            DeprecationWarning, 2)
+        args = args[1:]
+
+    return _zeros(*args, **kwargs)
+
 def empty_like(ary):
-    result = Array(ary.context,
-            ary.shape, ary.dtype, allocator=ary.allocator, queue=ary.queue)
-    return result
+    if ary.queue is not None:
+        return Array(ary.queue, ary.shape, ary.dtype, allocator=ary.allocator)
+    elif ary.allocator is not None:
+        return Array(ary.allocator, ary.shape, ary.dtype, queue=ary.queue)
+    else:
+        return Array(ary.context, ary.shape, ary.dtype)
 
 def zeros_like(ary):
-    result = Array(ary.context,
-            ary.shape, ary.dtype, allocator=ary.allocator, queue=ary.queue)
+    result = empty_like(ary)
     result.fill(0)
     return result
 
 
 @elwise_kernel_runner
-def _arange(result, start, step):
+def _arange_knl(result, start, step):
     return elementwise.get_arange_kernel(
             result.context, result.dtype)
 
-def arange(context, queue, *args, **kwargs):
-    """Create an array filled with numbers spaced `step` apart,
-    starting from `start` and ending at `stop`.
-
-    For floating point arguments, the length of the result is
-    `ceil((stop - start)/step)`.  This rule may result in the last
-    element of the result being greater than stop.
-    """
-
+def _arange(queue, *args, **kwargs):
     # argument processing -----------------------------------------------------
 
     # Yuck. Thanks, numpy developers. ;)
@@ -625,9 +687,32 @@ def arange(context, queue, *args, **kwargs):
     from math import ceil
     size = int(ceil((stop-start)/step))
 
-    result = Array(context, (size,), dtype, queue=queue)
-    _arange(result, start, step, queue=queue)
+    result = Array(queue, (size,), dtype)
+    _arange_knl(result, start, step, queue=queue)
     return result
+
+
+
+
+def arange(*args, **kwargs):
+    """Create an array filled with numbers spaced `step` apart,
+    starting from `start` and ending at `stop`.
+
+    For floating point arguments, the length of the result is
+    `ceil((stop - start)/step)`.  This rule may result in the last
+    element of the result being greater than stop.
+    """
+
+    if isinstance(args[0], cl.Context):
+        from warnings import warn
+        warn("Passing a context as first argument is deprecated. "
+            "This will be continue to be accepted througout "
+            "versions 2011.x of PyOpenCL.",
+            DeprecationWarning, 2)
+        args = args[1:]
+
+    return _arange(*args, **kwargs)
+
 
 
 
@@ -641,10 +726,9 @@ def _take(result, ary, indices):
 
 
 def take(a, indices, out=None, queue=None):
+    queue = queue or a.queue
     if out is None:
-        out = Array(a.context, indices.shape, a.dtype, 
-                allocator=a.allocator,
-                queue=queue or a.queue)
+        out = Array(queue, indices.shape, a.dtype, allocator=a.allocator)
 
     assert len(indices.shape) == 1
     _take(out, a, indices, queue=queue)
@@ -718,8 +802,7 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
     vec_count = len(arrays)
 
     if out is None:
-        out = [Array(context, dest_shape, a_dtype, 
-            allocator=a_allocator, queue=queue)
+        out = [Array(queue, dest_shape, a_dtype, allocator=a_allocator)
                 for i in range(vec_count)]
     else:
         if a_dtype != single_valued(o.dtype for o in out):

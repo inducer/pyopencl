@@ -9,17 +9,27 @@ The :class:`Array` Class
 
     .. method:: __call__(self, size)
 
-.. class:: Array(context, shape, dtype, order="C", allocator=None, base=None, data=None, queue=None)
+.. class:: Array(cqa, shape, dtype, order="C", allocator=None, base=None, data=None, queue=None)
 
     A :class:`numpy.ndarray` work-alike that stores its data and performs its
     computations on the compute device.  *shape* and *dtype* work exactly as in
     :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
-    broadcasting of scalars. (e.g. `array+5`) If the
+    broadcasting of scalars. (e.g. `array+5`)
+
+    *cqa* can be a :class:`pyopencl.Context`, :class:`pyopencl.CommandQueue`
+    or an allocator, as described below. If it is either of the latter two, the *queue*
+    or *allocator* arguments may not be passed.
+
+    *queue* (or *cqa*, as the case may be) specifies the queue in which the array
+    carries out its computations by default.
 
     *allocator* is a callable that, upon being called with an argument of the number
     of bytes to be allocated, returns an object that can be cast to an
     :class:`int` representing the address of the newly allocated memory.
     (See :class:`DefaultAllocator`.)
+
+    .. versionchanged:: 2011.1
+        Renamed *context* to *cqa*, made it general-purpose.
 
     .. attribute :: data
 
@@ -102,21 +112,27 @@ The :class:`Array` Class
 Constructing :class:`Array` Instances
 ----------------------------------------
 
-.. function:: to_device(context, queue, ary, allocator=None, async=False)
+.. function:: to_device(queue, ary, allocator=None, async=False)
 
     Return a :class:`Array` that is an exact copy of the :class:`numpy.ndarray`
     instance *ary*.
 
     See :class:`Array` for the meaning of *allocator*.
 
+    .. versionchanged:: 2011.1
+        *context* argument was deprecated.
+
 .. function:: empty(context, shape, dtype, order="C", allocator=None, base=None, data=None, queue=None)
 
     A synonym for the :class:`Array` constructor.
 
-.. function:: zeros(context, queue, shape, dtype, order="C", allocator=None)
+.. function:: zeros(queue, shape, dtype, order="C", allocator=None)
 
     Same as :func:`empty`, but the :class:`Array` is zero-initialized before
     being returned.
+
+    .. versionchanged:: 2011.1
+        *context* argument was deprecated.
 
 .. function:: empty_like(other_ary)
 
@@ -128,7 +144,7 @@ Constructing :class:`Array` Instances
     Make a new, zero-initialized :class:`Array` having the same properties
     as *other_ary*.
 
-.. function:: arange(context, queue, start, stop, step, dtype=None)
+.. function:: arange(queue, start, stop, step, dtype=None)
 
     Create a :class:`Array` filled with numbers spaced `step` apart,
     starting from `start` and ending at `stop`.
@@ -139,6 +155,9 @@ Constructing :class:`Array` Instances
 
     *dtype*, if not specified, is taken as the largest common type
     of *start*, *stop* and *step*.
+
+    .. versionchanged:: 2011.1
+        *context* argument was deprecated.
 
 .. function:: take(a, indices, out=None, queue=None)
 
