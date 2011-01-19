@@ -21,7 +21,7 @@
 // TBD: Nvidia used to not install cl_ext.h by default. Grr.
 #include <CL/cl_ext.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #define NOMINMAX
 #include <windows.h>
 #endif
@@ -717,7 +717,6 @@ namespace pyopencl
        else if (prop == CL_GL_CONTEXT_KHR
             || prop == CL_EGL_DISPLAY_KHR
             || prop == CL_GLX_DISPLAY_KHR
-            || prop == CL_WGL_HDC_KHR
             || prop == CL_CGL_SHAREGROUP_KHR
            )
        {
@@ -727,6 +726,13 @@ namespace pyopencl
           py::extract<cl_context_properties> value(ptr.attr("value"));
           props.push_back(value);
        }
+#if defined(_WIN32) || defined(_WIN64)
+       else if (prop == CL_WGL_HDC_KHR)
+       {
+          py::extract<HANDLE> value(prop_tuple[1]);
+          props.push_back(value);
+       }
+#endif
 #endif
         else
           throw error("Context", CL_INVALID_VALUE, "invalid context property");
