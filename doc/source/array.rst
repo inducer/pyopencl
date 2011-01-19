@@ -5,9 +5,7 @@ The :class:`Array` Class
 
 .. class:: DefaultAllocator(context, flags=pyopencl.mem_flags.READ_WRITE)
 
-    An Allocator that uses :class:`pyopencl.Buffer` with the given *flags*.
-
-    .. method:: __call__(self, size)
+    An alias for :class:`pyopencl.tools.CLAllocator`.
 
 .. class:: Array(cqa, shape, dtype, order="C", allocator=None, base=None, data=None, queue=None)
 

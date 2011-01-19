@@ -86,12 +86,13 @@ Version 2011.1
   :func:`pyopencl.enqueue_map_image`.
 * Add :mod:`pyopencl.reduction`.
 * Add :ref:`reductions`.
-* Add :meth:`MemoryObject.get_host_array`.
+* Add :meth:`pyopencl.MemoryObject.get_host_array`.
 * Deprecate context arguments of 
   :func:`pyopencl.array.to_device`,
   :func:`pyopencl.array.zeros`,
   :func:`pyopencl.array.arange`.
 * Make construction of :class:`pyopencl.array.Array` more flexible (*cqa* argument.)
+* Add :ref:`memory-pools`.
 
 Version 0.92
 ------------

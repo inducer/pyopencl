@@ -71,6 +71,7 @@ Contents
 
     runtime
     array
+    tools
     misc
 
 Note that this guide does not explain OpenCL programming and technology. Please 
