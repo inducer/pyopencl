@@ -179,7 +179,12 @@ namespace PYGPU_PACKAGE
 
         throw PYGPU_PACKAGE::error(
             "memory_pool::allocate",
+#ifdef PYGPU_PYCUDA
+            CUDA_ERROR_OUT_OF_MEMORY,
+#endif
+#ifdef PYGPU_PYOPENCL
             CL_MEM_OBJECT_ALLOCATION_FAILURE,
+#endif
             "failed to free memory for allocation");
       }
 
@@ -309,7 +314,13 @@ namespace PYGPU_PACKAGE
         else
           throw PYGPU_PACKAGE::error(
               "pooled_device_allocation::free", 
-              CL_INVALID_VALUE);
+#ifdef PYGPU_PYCUDA
+              CUDA_ERROR_INVALID_HANDLE
+#endif
+#ifdef PYGPU_PYOPENCL
+              CL_INVALID_VALUE
+#endif
+              );
       }
 
       pointer_type ptr() const

@@ -60,6 +60,7 @@ def main():
     EXTRA_LIBRARIES = []
 
     EXTRA_DEFINES["PYGPU_PACKAGE"] = "pyopencl"
+    EXTRA_DEFINES["PYGPU_PYOPENCL"] = "1"
 
     if conf["CL_TRACE"]:
         EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
