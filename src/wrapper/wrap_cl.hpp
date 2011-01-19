@@ -729,8 +729,9 @@ namespace pyopencl
 #if defined(_WIN32)
        else if (prop == CL_WGL_HDC_KHR)
        {
-          HANDLE hnd = py::extract<HANDLE>(prop_tuple[1]);
-          props.push_back(hnd);
+         // size_t is a stand-in for HANDLE, hopefully has the same size.
+         size_t hnd = py::extract<size_t>(prop_tuple[1]);
+         props.push_back(hnd);
        }
 #endif
 #endif
