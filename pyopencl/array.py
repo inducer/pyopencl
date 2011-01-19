@@ -112,13 +112,7 @@ def elwise_kernel_runner(kernel_getter):
 
 
 
-class DefaultAllocator:
-    def __init__(self, context, flags=cl.mem_flags.READ_WRITE):
-        self.context = context
-        self.flags = flags
-
-    def __call__(self, size):
-        return cl.Buffer(self.context, self.flags, size)
+DefaultAllocator = cl.CLAllocator
 
 
 

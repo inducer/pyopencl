@@ -290,6 +290,42 @@ class TestCL:
 
         assert la.norm(a - b) == 0
 
+    @pytools.test.mark_test.opencl
+    def test_mempool(self, ctx_getter):
+        from pyopencl.tools import MemoryPool, CLAllocator
+
+        context = ctx_getter()
+
+        pool = MemoryPool(CLAllocator(context))
+        maxlen = 10
+        queue = []
+
+        e0 = 12
+
+        for e in range(e0-6, e0-4):
+            for i in range(100):
+                queue.append(pool.allocate(1<<e))
+                if len(queue) > 10:
+                    queue.pop(0)
+        del queue
+        pool.stop_holding()
+
+    @pytools.test.mark_test.opencl
+    def test_mempool_2(self):
+        from pyopencl.tools import MemoryPool
+        from random import randrange
+
+        for i in range(2000):
+            s = randrange(1<<31) >> randrange(32)
+            bin_nr = MemoryPool.bin_number(s)
+            asize = MemoryPool.alloc_size(bin_nr)
+
+            assert asize >= s, s
+            assert MemoryPool.bin_number(asize) == bin_nr, s
+            assert asize < asize*(1+1/8)
+
+
+
 
 
 

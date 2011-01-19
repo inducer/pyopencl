@@ -1,4 +1,4 @@
-"""H."""
+"""Various helpful bits and pieces without much of a common theme."""
 
 from __future__ import division
 
@@ -32,6 +32,13 @@ OTHER DEALINGS IN THE SOFTWARE.
 import numpy
 from decorator import decorator
 import pyopencl as cl
+
+
+
+
+PooledBuffer = cl.PooledBuffer
+CLAllocator = cl.CLAllocator
+MemoryPool = cl.MemoryPool
 
 
 

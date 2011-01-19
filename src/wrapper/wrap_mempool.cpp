@@ -22,7 +22,7 @@ namespace
 
     public:
       cl_allocator(boost::shared_ptr<pyopencl::context> const &ctx,
-          cl_mem_flags flags)
+          cl_mem_flags flags=CL_MEM_READ_WRITE)
         : m_context(ctx), m_flags(flags)
       {
         if (flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR))
@@ -48,6 +48,25 @@ namespace
         pyopencl::run_python_gc();
       }
   };
+
+
+
+
+  inline
+  pyopencl::buffer *allocator_call(cl_allocator &alloc, size_t size)
+  {
+    cl_mem mem = alloc.allocate(size);
+
+    try
+    {
+      return new pyopencl::buffer(mem, false);
+    }
+    catch (...)
+    {
+      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+      throw;
+    }
+  }
 
 
 
@@ -113,7 +132,12 @@ void pyopencl_expose_mempool()
     py::class_<cls> wrapper("CLAllocator",
         py::init<
           boost::shared_ptr<pyopencl::context> const &,
-          cl_mem_flags>());
+          py::optional<cl_mem_flags> >());
+    wrapper
+      .def("__call__", allocator_call,
+          py::return_value_policy<py::manage_new_object>())
+      ;
+
   }
 
   {
