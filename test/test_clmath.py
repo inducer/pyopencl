@@ -63,7 +63,7 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0):
 
         for s in sizes:
             for dtype in dtypes:
-                args = cl_array.arange(context, queue, a, b, (b-a)/s, 
+                args = cl_array.arange(queue, a, b, (b-a)/s, 
                         dtype=numpy.float32)
                 gpu_results = gpu_func(args).get()
                 cpu_results = cpu_func(args.get())
@@ -107,8 +107,8 @@ def test_fmod(ctx_getter):
     queue = cl.CommandQueue(context)
 
     for s in sizes:
-        a = cl_array.arange(context, queue, s, dtype=numpy.float32)/10
-        a2 = cl_array.arange(context, queue, s, dtype=numpy.float32)/45.2 + 0.1
+        a = cl_array.arange(queue, s, dtype=numpy.float32)/10
+        a2 = cl_array.arange(queue, s, dtype=numpy.float32)/45.2 + 0.1
         b = clmath.fmod(a, a2)
 
         a = a.get()
@@ -124,8 +124,8 @@ def test_ldexp(ctx_getter):
     queue = cl.CommandQueue(context)
 
     for s in sizes:
-        a = cl_array.arange(context, queue, s, dtype=numpy.float32)
-        a2 = cl_array.arange(context, queue, s, dtype=numpy.float32)*1e-3
+        a = cl_array.arange(queue, s, dtype=numpy.float32)
+        a2 = cl_array.arange(queue, s, dtype=numpy.float32)*1e-3
         b = clmath.ldexp(a,a2)
 
         a = a.get()
@@ -141,7 +141,7 @@ def test_modf(ctx_getter):
     queue = cl.CommandQueue(context)
 
     for s in sizes:
-        a = cl_array.arange(context, queue, s, dtype=numpy.float32)/10
+        a = cl_array.arange(queue, s, dtype=numpy.float32)/10
         fracpart, intpart = clmath.modf(a)
 
         a = a.get()
@@ -160,7 +160,7 @@ def test_frexp(ctx_getter):
     queue = cl.CommandQueue(context)
 
     for s in sizes:
-        a = cl_array.arange(context, queue, s, dtype=numpy.float32)/10
+        a = cl_array.arange(queue, s, dtype=numpy.float32)/10
         significands, exponents = clmath.frexp(a)
 
         a = a.get()
