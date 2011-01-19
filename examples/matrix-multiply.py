@@ -164,7 +164,7 @@ kernel_params = {"block_size": block_size,
 if "NVIDIA" in queue.device.vendor:
     options = "-cl-mad-enable -cl-fast-relaxed-math"
 else:
-    options = None
+    options = ""
 prg = cl.Program(ctx, KERNEL_CODE % kernel_params,
         ).build(options=options)
 kernel = prg.matrixMul
