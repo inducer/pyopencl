@@ -11,7 +11,7 @@ using namespace pyopencl;
 extern void pyopencl_expose_constants();
 extern void pyopencl_expose_part_1();
 extern void pyopencl_expose_part_2();
-extern void pyopencl_mempool();
+extern void pyopencl_expose_mempool();
 
 BOOST_PYTHON_MODULE(_cl)
 {
