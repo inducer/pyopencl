@@ -1,7 +1,6 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.raw.GL.VERSION.GL_1_5 import glBufferData as rawGlBufferData
-from OpenGL import platform, GLX, WGL
 import pyopencl as cl
 
 
@@ -23,30 +22,11 @@ __kernel void generate_sin(__global float2* a)
 
 def initialize():
     plats = cl.get_platforms()
-    ctx_props = cl.context_properties
 
-    props = [(ctx_props.PLATFORM, plats[0])] 
-
-    import sys
-    if sys.platform == "linux2":
-        props.append(
-            (ctx_props.GL_CONTEXT_KHR, platform.GetCurrentContext()))
-        props.append(
-                (ctx_props.GLX_DISPLAY_KHR, 
-                    GLX.glXGetCurrentDisplay()))
-    elif sys.platform == "win32":
-        props.append(
-            (ctx_props.GL_CONTEXT_KHR, platform.GetCurrentContext()))
-        props.append(
-                (ctx_props.WGL_HDC_KHR, 
-                    WGL.wglGetCurrentDC()))
-    elif sys.platform == "darwin":
-        pass
-    else:
-        raise NotImplementedError("platform '%s' not yet supported" 
-                % sys.platform)
-
-    ctx = cl.Context(properties=props)
+    from pyopencl.tools import get_gl_sharing_context_properties
+    ctx = cl.Context(properties=props
+            [(ctx_props.PLATFORM, plats[0])]
+            + get_gl_sharing_context_properties())
 
     glClearColor(1, 1, 1, 1)
     glColor(0, 0, 1)

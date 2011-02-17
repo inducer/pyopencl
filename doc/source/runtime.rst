@@ -127,6 +127,7 @@ Platforms, Devices and Contexts
         :attr:`context_properties.CL_GLX_DISPLAY_KHR`,
         :attr:`context_properties.CL_WGL_HDC_KHR`, and
         :attr:`context_properties.CL_CGL_SHAREGROUP_KHR`
+        :attr:`context_properties.CL_CGL_SHAREGROUP_APPLE`
         the value in the key-value pair is a PyOpenGL context or display
         instance.
 
@@ -708,6 +709,14 @@ with GL support. See :func:`have_gl`.
 .. function:: have_gl()
 
     Return *True* if PyOpenCL was compiled with OpenGL interoperability, otherwise *False*.
+
+.. function:: get_apple_cgl_share_group()
+
+    Get share group handle for current CGL context.
+
+    Apple OS X only.
+
+    ..versionadded:: 2011.1
 
 .. class:: GLBuffer(context, flags, bufobj)
 

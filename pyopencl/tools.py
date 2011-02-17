@@ -249,4 +249,35 @@ def has_double_support(dev):
 
 
 
+def get_gl_sharing_context_properties():
+    ctx_props = cl.context_properties
+
+    from OpenGL import platform as gl_platform, GLX, WGL
+
+    props = []
+
+    import sys
+    if sys.platform == "linux2":
+        props.append(
+            (ctx_props.GL_CONTEXT_KHR, gl_platform.GetCurrentContext()))
+        props.append(
+                (ctx_props.GLX_DISPLAY_KHR, 
+                    GLX.glXGetCurrentDisplay()))
+    elif sys.platform == "win32":
+        props.append(
+            (ctx_props.GL_CONTEXT_KHR, gl_platform.GetCurrentContext()))
+        props.append(
+                (ctx_props.WGL_HDC_KHR, 
+                    WGL.wglGetCurrentDC()))
+    elif sys.platform == "darwin":
+        props.append(
+            (ctx_props.USE_CGL_SHAREGROUP_APPLE, cl. get_apple_cgl_share_group()))
+    else:
+        raise NotImplementedError("platform '%s' not yet supported" 
+                % sys.platform)
+
+    return props
+
+
+
 # vim: foldmethod=marker

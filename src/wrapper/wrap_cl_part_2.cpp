@@ -182,6 +182,11 @@ void pyopencl_expose_part_2()
   DEF_SIMPLE_FUNCTION(have_gl);
 
 #ifdef HAVE_GL
+
+#ifdef __APPLE__
+  DEF_SIMPLE_FUNCTION(get_apple_cgl_share_group);
+#endif /* __APPLE__ */
+
   {
     typedef gl_buffer cls;
     py::class_<cls, py::bases<memory_object>, boost::noncopyable>(

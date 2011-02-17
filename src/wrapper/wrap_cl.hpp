@@ -787,20 +787,6 @@ namespace pyopencl
     // from dev_type
     else
     {
-#ifdef __APPLE__
-      //If the user passes in no devices we assume GL context sharing for Apple
-      CGLContextObj kCGLContext = CGLGetCurrentContext();
-      CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
-      cl_context_properties propsarr[] =
-      {   
-        CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE, (cl_context_properties)kCGLShareGroup,
-        0   
-      };  
-
-      ctx = clCreateContext(propsarr, 0, 0, NULL, NULL, &status_code);
-
-      PYOPENCL_PRINT_CALL_TRACE("clCreateContext Apple GL Sharing");
-#else
       cl_device_type dev_type = CL_DEVICE_TYPE_DEFAULT;
       if (py_dev_type.ptr() != Py_None)
         dev_type = py::extract<cl_device_type>(py_dev_type)();
@@ -808,7 +794,6 @@ namespace pyopencl
       ctx = clCreateContextFromType(props_ptr, dev_type, 0, 0, &status_code);
 
       PYOPENCL_PRINT_CALL_TRACE("clCreateContextFromType");
-#endif
     }
 
     if (status_code != CL_SUCCESS)
@@ -824,6 +809,10 @@ namespace pyopencl
       throw;
     }
   }
+
+
+
+
 
   // }}}
 
@@ -2805,6 +2794,21 @@ namespace pyopencl
 
 
 #ifdef HAVE_GL
+
+#ifdef __APPLE__
+  inline
+  cl_context_properties get_apple_cgl_share_group()
+  {
+    CGLContextObj kCGLContext = CGLGetCurrentContext();
+    CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
+
+    return (cl_context_properties) kCGLShareGroup;
+  }
+#endif /* __APPLE__ */
+
+
+
+
   class gl_buffer : public memory_object
   {
     public:
