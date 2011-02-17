@@ -710,6 +710,12 @@ with GL support. See :func:`have_gl`.
 
     Return *True* if PyOpenCL was compiled with OpenGL interoperability, otherwise *False*.
 
+.. function:: get_gl_sharing_context_properties()
+
+    Return a :class:`list` of :class:`context_properties` that will
+    allow a newly created context to share the currently active GL
+    context.
+
 .. function:: get_apple_cgl_share_group()
 
     Get share group handle for current CGL context.
