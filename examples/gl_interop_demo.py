@@ -25,18 +25,23 @@ def initialize():
     plats = cl.get_platforms()
     ctx_props = cl.context_properties
 
-    props = [(ctx_props.PLATFORM, plats[0]), 
-            (ctx_props.GL_CONTEXT_KHR, platform.GetCurrentContext())]
+    props = [(ctx_props.PLATFORM, plats[0])] 
 
     import sys
     if sys.platform == "linux2":
+        props.append(
+            (ctx_props.GL_CONTEXT_KHR, platform.GetCurrentContext()))
         props.append(
                 (ctx_props.GLX_DISPLAY_KHR, 
                     GLX.glXGetCurrentDisplay()))
     elif sys.platform == "win32":
         props.append(
+            (ctx_props.GL_CONTEXT_KHR, platform.GetCurrentContext()))
+        props.append(
                 (ctx_props.WGL_HDC_KHR, 
                     WGL.wglGetCurrentDC()))
+    elif sys.platform == "darwin":
+        pass
     else:
         raise NotImplementedError("platform '%s' not yet supported" 
                 % sys.platform)
