@@ -24,9 +24,14 @@ def initialize():
     plats = cl.get_platforms()
 
     from pyopencl.tools import get_gl_sharing_context_properties
-    ctx = cl.Context(properties=[
-        (cl.context_properties.PLATFORM, plats[0])]
-        + get_gl_sharing_context_properties())
+    import sys
+    if sys.platform == "darwin":
+        ctx = cl.Context(properties=get_gl_sharing_context_properties(),
+                         devices=[])
+    else:
+        ctx = cl.Context(properties=[
+            (cl.context_properties.PLATFORM, plats[0])]
+            + get_gl_sharing_context_properties())
 
     glClearColor(1, 1, 1, 1)
     glColor(0, 0, 1)

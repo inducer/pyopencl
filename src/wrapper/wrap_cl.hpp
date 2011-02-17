@@ -2,8 +2,6 @@
 #define _AFJHAYYTA_PYOPENCL_HEADER_SEEN_CL_HPP
 
 
-
-
 // {{{ includes
 #ifdef __APPLE__
 
@@ -660,6 +658,8 @@ namespace pyopencl
                   case CL_GLX_DISPLAY_KHR:
                   case CL_WGL_HDC_KHR:
                   case CL_CGL_SHAREGROUP_KHR:
+#elif defined(__APPLE__) && defined(HAVE_GL)
+                  case CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE:
 #endif
                     value = py::object(result[i+1]);
                     break;
@@ -715,18 +715,6 @@ namespace pyopencl
               reinterpret_cast<cl_context_properties>(value().data()));
         }
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
-       else if (prop == CL_GL_CONTEXT_KHR
-            || prop == CL_EGL_DISPLAY_KHR
-            || prop == CL_GLX_DISPLAY_KHR
-            || prop == CL_CGL_SHAREGROUP_KHR
-           )
-       {
-          py::object ctypes = py::import("ctypes");
-          py::object prop = prop_tuple[1], c_void_p = ctypes.attr("c_void_p");
-          py::object ptr = ctypes.attr("cast")(prop, c_void_p);
-          py::extract<cl_context_properties> value(ptr.attr("value"));
-          props.push_back(value);
-       }
 #if defined(_WIN32)
        else if (prop == CL_WGL_HDC_KHR)
        {
@@ -735,7 +723,21 @@ namespace pyopencl
          props.push_back(hnd);
        }
 #endif
+       else if (prop == CL_GL_CONTEXT_KHR
+            || prop == CL_EGL_DISPLAY_KHR
+            || prop == CL_GLX_DISPLAY_KHR
+            || prop == CL_CGL_SHAREGROUP_KHR
+           )
+#elif defined(__APPLE__) && defined(HAVE_GL)
+       else if(prop == CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE)
 #endif
+       {
+          py::object ctypes = py::import("ctypes");
+          py::object prop = prop_tuple[1], c_void_p = ctypes.attr("c_void_p");
+          py::object ptr = ctypes.attr("cast")(prop, c_void_p);
+          py::extract<cl_context_properties> value(ptr.attr("value"));
+          props.push_back(value);
+       }
         else
           throw error("Context", CL_INVALID_VALUE, "invalid context property");
       }

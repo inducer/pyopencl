@@ -262,10 +262,10 @@ void pyopencl_expose_constants()
     ADD_ATTR( ,GLX_DISPLAY_KHR);
     ADD_ATTR( ,WGL_HDC_KHR);
     ADD_ATTR( ,CGL_SHAREGROUP_KHR);
-#ifdef __APPLE__
-    ADD_ATTR( ,CGL_SHAREGROUP_APPLE);
-#endif /* __APPLE__ */
 #endif
+#ifdef __APPLE__ && defined(HAVE_GL)
+    ADD_ATTR( ,CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE);
+#endif /* __APPLE__ */
   }
 
   {

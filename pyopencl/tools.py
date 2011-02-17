@@ -271,7 +271,7 @@ def get_gl_sharing_context_properties():
                     WGL.wglGetCurrentDC()))
     elif sys.platform == "darwin":
         props.append(
-            (ctx_props.USE_CGL_SHAREGROUP_APPLE, cl. get_apple_cgl_share_group()))
+            (ctx_props.CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE, cl.get_apple_cgl_share_group()))
     else:
         raise NotImplementedError("platform '%s' not yet supported" 
                 % sys.platform)
