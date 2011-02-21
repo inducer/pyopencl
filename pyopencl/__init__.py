@@ -1,6 +1,18 @@
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT
 
-import pyopencl._cl as _cl
+try:
+    import pyopencl._cl as _cl
+except ImportError:
+    import os
+    from os.path import dirname, join, realpath
+    if realpath(join(os.getcwd(), "pyopencl")) == realpath(dirname(__file__)):
+        from warnings import warn
+        warn ("It looks like you are importing PyOpenCL from the "
+                "its source directory. This likely won't work.")
+    raise
+
+
+
 from pyopencl._cl import *
 import inspect as _inspect
 
