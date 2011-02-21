@@ -7,7 +7,7 @@ except ImportError:
     from os.path import dirname, join, realpath
     if realpath(join(os.getcwd(), "pyopencl")) == realpath(dirname(__file__)):
         from warnings import warn
-        warn ("It looks like you are importing PyOpenCL from the "
+        warn ("It looks like you are importing PyOpenCL from "
                 "its source directory. This likely won't work.")
     raise
 
