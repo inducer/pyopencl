@@ -727,10 +727,10 @@ namespace pyopencl
             || prop == CL_EGL_DISPLAY_KHR
             || prop == CL_GLX_DISPLAY_KHR
             || prop == CL_CGL_SHAREGROUP_KHR
-           )
-#elif defined(__APPLE__) && defined(HAVE_GL)
-       else if(prop == CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE)
+#if defined(__APPLE__) && defined(HAVE_GL)
+            || prop == CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE
 #endif
+           )
        {
           py::object ctypes = py::import("ctypes");
           py::object prop = prop_tuple[1], c_void_p = ctypes.attr("c_void_p");
@@ -738,6 +738,7 @@ namespace pyopencl
           py::extract<cl_context_properties> value(ptr.attr("value"));
           props.push_back(value);
        }
+#endif
         else
           throw error("Context", CL_INVALID_VALUE, "invalid context property");
       }
