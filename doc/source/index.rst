@@ -66,6 +66,9 @@ source distribution.)
 Contents
 ========
 
+A `tutorial <http://enja.org/2011/02/22/adventures-in-pyopencl-part-1-getting-started-with-python/>`_
+is on the web, thanks to Ian Johnson.
+
 .. toctree::
     :maxdepth: 2
 
