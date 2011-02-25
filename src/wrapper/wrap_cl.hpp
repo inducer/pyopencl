@@ -732,12 +732,14 @@ namespace pyopencl
          props.push_back(hnd);
        }
 #endif
-       else if (prop == CL_GL_CONTEXT_KHR
+       else if (
+#if defined(__APPLE__) && defined(HAVE_GL)
+            prop == CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE
+#else
+            prop == CL_GL_CONTEXT_KHR
             || prop == CL_EGL_DISPLAY_KHR
             || prop == CL_GLX_DISPLAY_KHR
             || prop == CL_CGL_SHAREGROUP_KHR
-#if defined(__APPLE__) && defined(HAVE_GL)
-            || prop == CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE
 #endif
            )
        {
