@@ -2972,7 +2972,7 @@ namespace pyopencl
 
 
 
-#if defined(PYOPENCL_GL_SHARING_VERSION) && (PYOPENCL_GL_SHARING_VERSION >= 1)
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
   inline
   py::object get_gl_context_info_khr(
       py::object py_properties,
