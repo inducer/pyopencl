@@ -18,10 +18,6 @@
 
 #else
 
-#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
-#define PYOPENCL_GL_SHARING_VERSION cl_khr_gl_sharing
-#endif
-
 // elsewhere ------------------------------------------------------------------
 #include <CL/cl.h>
 // TBD: Nvidia used to not install cl_ext.h by default. Grr.
@@ -35,6 +31,10 @@
 #ifdef HAVE_GL
 #include <GL/gl.h>
 #include <CL/cl_gl.h>
+#endif
+
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+#define PYOPENCL_GL_SHARING_VERSION cl_khr_gl_sharing
 #endif
 
 #endif
