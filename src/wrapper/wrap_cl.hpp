@@ -8,12 +8,19 @@
 // Mac ------------------------------------------------------------------------
 #include <OpenCL/opencl.h>
 #ifdef HAVE_GL
+
+#define PYOPENCL_GL_SHARING_VERSION 1
+
 #include <OpenGL/OpenGL.h>
 #include <OpenCL/cl_gl.h>
 #include <OpenCL/cl_gl_ext.h>
 #endif
 
 #else
+
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+#define PYOPENCL_GL_SHARING_VERSION cl_khr_gl_sharing
+#endif
 
 // elsewhere ------------------------------------------------------------------
 #include <CL/cl.h>
@@ -652,18 +659,20 @@ namespace pyopencl
                       break;
                     }
 
-#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+#if defined(PYOPENCL_GL_SHARING_VERSION) && (PYOPENCL_GL_SHARING_VERSION >= 1)
+#if defined(__APPLE__) && defined(HAVE_GL)
+                  case CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE:
+#else
                   case CL_GL_CONTEXT_KHR:
                   case CL_EGL_DISPLAY_KHR:
                   case CL_GLX_DISPLAY_KHR:
                   case CL_WGL_HDC_KHR:
                   case CL_CGL_SHAREGROUP_KHR:
-#elif defined(__APPLE__) && defined(HAVE_GL)
-                  case CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE:
 #endif
                     value = py::object(result[i+1]);
                     break;
 
+#endif
                   case 0:
                     break;
 
@@ -714,7 +723,7 @@ namespace pyopencl
           props.push_back(
               reinterpret_cast<cl_context_properties>(value().data()));
         }
-#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+#if defined(PYOPENCL_GL_SHARING_VERSION) && (PYOPENCL_GL_SHARING_VERSION >= 1)
 #if defined(_WIN32)
        else if (prop == CL_WGL_HDC_KHR)
        {
@@ -2961,7 +2970,7 @@ namespace pyopencl
 
 
 
-#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+#if defined(PYOPENCL_GL_SHARING_VERSION) && (PYOPENCL_GL_SHARING_VERSION >= 1)
   inline
   py::object get_gl_context_info_khr(
       py::object py_properties,
