@@ -15,8 +15,8 @@ Acknowledgments
 * Achim Gottinger submitted a fix for an example.
 * Andrew Karpushin provided a fix for a whole class of crash bugs in
   PyOpenCL.
-* Paolo Simone Gasparello provided much help in getting OpenCL-OpenGL
-  interoperability to work.
+* Paolo Simone Gasparello, Keith Brafford, and Ian Johnson provided much help
+  in getting OpenCL-OpenGL interoperability to work.
 
 Guidelines
 ==========

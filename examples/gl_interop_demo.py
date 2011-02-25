@@ -21,17 +21,25 @@ __kernel void generate_sin(__global float2* a)
 """
 
 def initialize():
-    plats = cl.get_platforms()
+    platform = cl.get_platforms()[0]
 
     from pyopencl.tools import get_gl_sharing_context_properties
     import sys
     if sys.platform == "darwin":
         ctx = cl.Context(properties=get_gl_sharing_context_properties(),
-                         devices=[])
+                devices=[])
     else:
-        ctx = cl.Context(properties=[
-            (cl.context_properties.PLATFORM, plats[0])]
-            + get_gl_sharing_context_properties())
+        # Some OSs prefer clCreateContextFromType, some prefer
+        # clCreateContext. Try both.
+        try:
+            ctx = cl.Context(properties=[
+                (cl.context_properties.PLATFORM, platform)]
+                + get_gl_sharing_context_properties())
+        except:
+            ctx = cl.Context(properties=[
+                (cl.context_properties.PLATFORM, platform)]
+                + get_gl_sharing_context_properties(),
+                devices = [platform.get_devices()[0]])
 
     glClearColor(1, 1, 1, 1)
     glColor(0, 0, 1)
