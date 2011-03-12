@@ -2085,10 +2085,11 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
     PYOPENCL_PARSE_NUMPY_ARRAY_SPEC;
 
-    py::handle<> result = py::handle<>(PyArray_NewFromDescr(
-        &PyArray_Type, tp_descr,
-        shape.size(), shape.empty( ) ? NULL : &shape.front(), /*strides*/ NULL,
-        0, ary_flags, /*obj*/NULL));
+    npy_uintp size_in_bytes = tp_descr->elsize;
+    BOOST_FOREACH(npy_intp sdim, shape)
+      size_in_bytes *= sdim;
+
+    py::handle<> result;
 
     cl_event evt;
     cl_int status_code;
@@ -2096,7 +2097,7 @@ namespace pyopencl
     void *mapped = clEnqueueMapBuffer(
           cq.data(), buf.data(),
           PYOPENCL_CAST_BOOL(is_blocking), flags,
-          offset, PyArray_NBYTES(result.get()),
+          offset, size_in_bytes,
           num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front(), &evt,
           &status_code);
     if (status_code != CL_SUCCESS)
@@ -2107,6 +2108,15 @@ namespace pyopencl
     std::auto_ptr<memory_map> map;
     try
     {
+      result = py::handle<>(PyArray_NewFromDescr(
+          &PyArray_Type, tp_descr,
+          shape.size(), shape.empty( ) ? NULL : &shape.front(), /*strides*/ NULL,
+          mapped, ary_flags, /*obj*/NULL));
+
+      if (size_in_bytes != PyArray_NBYTES(result.get()))
+        throw pyopencl::error("enqueue_map_buffer", CL_INVALID_VALUE,
+            "miscalculated numpy array size");
+
        map = std::auto_ptr<memory_map>(new memory_map(cq, buf, mapped));
     }
     catch (...)
@@ -2115,8 +2125,6 @@ namespace pyopencl
             cq.data(), buf.data(), mapped, 0, 0, 0));
       throw;
     }
-
-    PyArray_BYTES(result.get()) = reinterpret_cast<char *>(mapped);
 
     py::handle<> map_py(handle_from_new_ptr(map.release()));
     PyArray_BASE(result.get()) = map_py.get();
