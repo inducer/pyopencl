@@ -32,7 +32,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 import numpy as np
 from decorator import decorator
 import pyopencl as cl
-import pyopencl.array as cl_array
 
 
 
@@ -138,6 +137,7 @@ def dtype_to_ctype(dtype):
     elif dtype == np.complex128:
         return "complex double"
     else:
+        import pyopencl.array as cl_array
         try:
             return cl_array.vec._dtype_to_c_name[dtype]
         except KeyError:
@@ -236,6 +236,7 @@ def parse_c_arg(c_arg):
     elif tp in ["unsigned char"]: dtype = np.uint8
     elif tp in ["bool"]: dtype = np.bool
     else:
+        import pyopencl.array as cl_array
         try:
             return cl_array.vec._c_name_to_dtype[tp]
         except KeyError:
