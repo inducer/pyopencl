@@ -178,7 +178,7 @@ md5_code = """
   d += 0x10325476;
 """
 
-import numpy
+import numpy as np
 
 
 
@@ -186,7 +186,7 @@ import numpy
 @context_dependent_memoize
 def get_rand_kernel(context, dtype):
     from pyopencl.elementwise import get_elwise_kernel
-    if dtype == numpy.float32:
+    if dtype == np.float32:
         return get_elwise_kernel(context,
             "float *dest, unsigned int seed",
             md5_code + """
@@ -200,7 +200,7 @@ def get_rand_kernel(context, dtype):
                 dest[i] = d*POW_2_M32;
             """,
             "md5_rng_float")
-    elif dtype == numpy.float64:
+    elif dtype == np.float64:
         return get_elwise_kernel(context,
             "double *dest, unsigned int seed",
             md5_code + """
@@ -215,7 +215,7 @@ def get_rand_kernel(context, dtype):
             }
             """,
             "md5_rng_float")
-    elif dtype in [numpy.int32, numpy.uint32]:
+    elif dtype in [np.int32, np.uint32]:
         return get_elwise_kernel(context,
             "unsigned int *dest, unsigned int seed",
             md5_code + """
@@ -239,13 +239,13 @@ def _rand(output, seed):
     return get_rand_kernel(output.context, output.dtype)
 
 def fill_rand(result):
-    _rand(result, numpy.random.randint(2**31-1))
+    _rand(result, np.random.randint(2**31-1))
 
 def rand(context, queue, shape, dtype):
     from pyopencl.array import Array
 
     result = Array(queue, shape, dtype)
-    _rand(result, numpy.random.randint(2**31-1))
+    _rand(result, np.random.randint(2**31-1))
     return result
 
 
@@ -257,7 +257,7 @@ if __name__ == "__main__":
     if "generate" in sys.argv[1:]:
         N = 256
         print N, "MB"
-        r = rand(ctx, queue, (N*2**18,), numpy.uint32)
+        r = rand(ctx, queue, (N*2**18,), np.uint32)
         print "generated"
         r.get().tofile("random.dat")
         print "written"
@@ -265,9 +265,9 @@ if __name__ == "__main__":
     else:
         from pylab import plot, show, subplot
         N = 250
-        r1 = rand(ctx, queue, (N,), numpy.uint32)
-        r2 = rand(ctx, queue, (N,), numpy.int32)
-        r3 = rand(ctx, queue, (N,), numpy.float32)
+        r1 = rand(ctx, queue, (N,), np.uint32)
+        r2 = rand(ctx, queue, (N,), np.int32)
+        r3 = rand(ctx, queue, (N,), np.float32)
 
         subplot(131); plot( r1.get(),"x-")
         subplot(132); plot( r2.get(),"x-")

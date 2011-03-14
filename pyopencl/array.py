@@ -30,12 +30,70 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 
-import numpy
+import numpy as np
 import pyopencl.elementwise as elementwise
 import pyopencl as cl
 #from pytools import memoize_method
 
 
+# {{{ vector types
+
+class vec:
+    pass
+
+def _create_vector_types():
+    field_names = ["x", "y", "z", "w"]
+
+    name_to_dtype = {}
+    dtype_to_name = {}
+
+    counts = [2, 3, 4, 8, 16]
+    for base_name, base_type in [
+        ('char', np.int8),
+        ('uchar', np.uint8),
+        ('short', np.int16),
+        ('ushort', np.uint16),
+        ('int', np.uint32),
+        ('uint', np.uint32),
+        ('long', np.int64),
+        ('ulong', np.uint64),
+        ('float', np.float32),
+        ('double', np.float64),
+        ]:
+        for count in counts:
+            name = "%s%d" % (base_name, count)
+
+            titles = field_names[:count]
+            if len(titles) < count:
+                titles.extend((count-len(titles))*[None])
+
+            dtype = np.dtype(dict(
+                names=["s%d" % i for i in range(count)],
+                formats=[base_type]*count,
+                titles=titles))
+
+            name_to_dtype[name] = dtype
+            dtype_to_name[dtype] = name
+
+            setattr(vec, name, dtype)
+
+            my_field_names = ",".join(field_names[:count])
+            my_field_names_defaulted = ",".join(
+                    "%s=0" % fn for fn in field_names[:count])
+            setattr(vec, "make_"+name, 
+                    staticmethod(eval(
+                        "lambda %s: array((%s), dtype=my_dtype)"
+                        % (my_field_names_defaulted, my_field_names),
+                        dict(array=np.array, my_dtype=dtype))))
+
+    vec._dtype_to_c_name = dtype_to_name
+    vec._c_name_to_dtype = name_to_dtype
+
+_create_vector_types()
+
+# }}}
+
+# {{{ helper functionality
 
 def splay(queue, n):
     dev = queue.device
@@ -126,6 +184,10 @@ def _should_be_cqa(what):
             "versions 2011.x of PyOpenCL." % (what, what),
             DeprecationWarning, 3)
 
+# }}}
+
+# {{{ array class
+
 class Array(object):
     """A :mod:`pyopencl` Array is used to do array-based calculation on
     a compute device.
@@ -183,7 +245,7 @@ class Array(object):
         self.queue = queue
 
         self.shape = shape
-        self.dtype = numpy.dtype(dtype)
+        self.dtype = np.dtype(dtype)
         if order not in ["C", "F"]:
             raise ValueError("order must be either 'C' or 'F'")
         self.order = order
@@ -222,7 +284,7 @@ class Array(object):
 
     def get(self, queue=None, ary=None, async=False):
         if ary is None:
-            ary = numpy.empty(self.shape, self.dtype, order=self.order)
+            ary = np.empty(self.shape, self.dtype, order=self.order)
         else:
             if ary.size != self.size:
                 raise TypeError("'ary' has non-matching type")
@@ -543,7 +605,9 @@ class Array(object):
     def __gt__(self, other):
         raise NotImplementedError
 
+# }}}
 
+# {{{ creation helpers
 
 def _to_device(queue, ary, allocator=None, async=False):
     if ary.flags.f_contiguous:
@@ -630,7 +694,7 @@ def _arange(queue, *args, **kwargs):
     inf.step = None
     inf.dtype = None
 
-    if isinstance(args[-1], numpy.dtype):
+    if isinstance(args[-1], np.dtype):
         dtype = args[-1]
         args = args[:-1]
         explicit_dtype = True
@@ -667,10 +731,10 @@ def _arange(queue, *args, **kwargs):
     if inf.step is None:
         inf.step = 1
     if inf.dtype is None:
-        inf.dtype = numpy.array([inf.start, inf.stop, inf.step]).dtype
+        inf.dtype = np.array([inf.start, inf.stop, inf.step]).dtype
 
     # actual functionality ----------------------------------------------------
-    dtype = numpy.dtype(inf.dtype)
+    dtype = np.dtype(inf.dtype)
     start = dtype.type(inf.start)
     step = dtype.type(inf.step)
     stop = dtype.type(inf.stop)
@@ -707,9 +771,9 @@ def arange(*args, **kwargs):
 
     return _arange(*args, **kwargs)
 
+# }}}
 
-
-
+# {{{ take/put
 
 @elwise_kernel_runner
 def _take(result, ary, indices):
@@ -900,8 +964,9 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
 
     return out
 
+# }}}
 
-
+# {{{ conditionals
 
 @elwise_kernel_runner
 def _if_positive(result, criterion, then_, else_):
@@ -943,10 +1008,9 @@ def minimum(a, b, out=None, queue=None):
     return if_positive(a.mul_add(1, b, -1, queue=queue), b, a,
             queue=queue, out=out)
 
+# }}}
 
-
-
-# reductions ------------------------------------------------------------------
+# {{{ reductions
 _builtin_min = min
 _builtin_max = max
 
@@ -987,6 +1051,8 @@ def _make_subset_minmax_kernel(what):
 
 subset_min = _make_subset_minmax_kernel("min")
 subset_max = _make_subset_minmax_kernel("max")
+
+# }}}
 
 
 

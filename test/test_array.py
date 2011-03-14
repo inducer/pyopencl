@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-import numpy
+import numpy as np
 import numpy.linalg as la
 import sys
 import pytools.test
@@ -29,14 +29,14 @@ def test_pow_array(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    a = numpy.array([1,2,3,4,5]).astype(numpy.float32)
+    a = np.array([1,2,3,4,5]).astype(np.float32)
     a_gpu = cl_array.to_device(queue, a)
 
     result = pow(a_gpu,a_gpu).get()
-    assert (numpy.abs(a**a - result) < 1e-3).all()
+    assert (np.abs(a**a - result) < 1e-3).all()
 
     result = (a_gpu**a_gpu).get()
-    assert (numpy.abs(pow(a, a) - result) < 1e-3).all()
+    assert (np.abs(pow(a, a) - result) < 1e-3).all()
 
 
 
@@ -46,11 +46,11 @@ def test_pow_number(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
+    a = np.array([1,2,3,4,5,6,7,8,9,10]).astype(np.float32)
     a_gpu = cl_array.to_device(queue, a)
 
     result = pow(a_gpu, 2).get()
-    assert (numpy.abs(a**2 - result) < 1e-3).all()
+    assert (np.abs(a**2 - result) < 1e-3).all()
 
 
 
@@ -59,7 +59,7 @@ def test_abs(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    a = -cl_array.arange(queue, 111, dtype=numpy.float32)
+    a = -cl_array.arange(queue, 111, dtype=np.float32)
     res = a.get()
 
     for i in range(111):
@@ -79,7 +79,7 @@ def test_len(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
+    a = np.array([1,2,3,4,5,6,7,8,9,10]).astype(np.float32)
     a_cpu = cl_array.to_device(queue, a)
     assert len(a_cpu) == 10
 
@@ -96,11 +96,11 @@ def test_multiply(ctx_getter):
 
     for sz in [10, 50000]:
         for dtype, scalars in [
-            (numpy.float32, [2]),
-            #(numpy.complex64, [2, 2j])
+            (np.float32, [2]),
+            #(np.complex64, [2, 2j])
             ]:
             for scalar in scalars:
-                a = numpy.arange(sz).astype(dtype)
+                a = np.arange(sz).astype(dtype)
                 a_gpu = cl_array.to_device(queue, a)
                 a_doubled = (scalar * a_gpu).get()
 
@@ -113,7 +113,7 @@ def test_multiply_array(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
+    a = np.array([1,2,3,4,5,6,7,8,9,10]).astype(np.float32)
 
     a_gpu = cl_array.to_device(queue, a)
     b_gpu = cl_array.to_device(queue, a)
@@ -132,7 +132,7 @@ def test_addition_array(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
+    a = np.array([1,2,3,4,5,6,7,8,9,10]).astype(np.float32)
     a_gpu = cl_array.to_device(queue, a)
     a_added = (a_gpu+a_gpu).get()
 
@@ -148,7 +148,7 @@ def test_addition_scalar(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
+    a = np.array([1,2,3,4,5,6,7,8,9,10]).astype(np.float32)
     a_gpu = cl_array.to_device(queue, a)
     a_added = (7+a_gpu).get()
 
@@ -161,8 +161,8 @@ def test_addition_scalar(ctx_getter):
 def test_substract_array(ctx_getter):
     """Test the substraction of two arrays."""
     #test data
-    a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
-    b = numpy.array([10,20,30,40,50,60,70,80,90,100]).astype(numpy.float32)
+    a = np.array([1,2,3,4,5,6,7,8,9,10]).astype(np.float32)
+    b = np.array([10,20,30,40,50,60,70,80,90,100]).astype(np.float32)
 
     context = ctx_getter()
     queue = cl.CommandQueue(context)
@@ -187,7 +187,7 @@ def test_substract_scalar(ctx_getter):
     queue = cl.CommandQueue(context)
 
     #test data
-    a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
+    a = np.array([1,2,3,4,5,6,7,8,9,10]).astype(np.float32)
 
     #convert a to a gpu object
     a_gpu = cl_array.to_device(queue, a)
@@ -208,7 +208,7 @@ def test_divide_scalar(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    a = numpy.array([1,2,3,4,5,6,7,8,9,10]).astype(numpy.float32)
+    a = np.array([1,2,3,4,5,6,7,8,9,10]).astype(np.float32)
     a_gpu = cl_array.to_device(queue, a)
 
     result = (a_gpu/2).get()
@@ -228,17 +228,17 @@ def test_divide_array(ctx_getter):
     queue = cl.CommandQueue(context)
 
     #test data
-    a = numpy.array([10,20,30,40,50,60,70,80,90,100]).astype(numpy.float32)
-    b = numpy.array([10,10,10,10,10,10,10,10,10,10]).astype(numpy.float32)
+    a = np.array([10,20,30,40,50,60,70,80,90,100]).astype(np.float32)
+    b = np.array([10,10,10,10,10,10,10,10,10,10]).astype(np.float32)
 
     a_gpu = cl_array.to_device(queue, a)
     b_gpu = cl_array.to_device(queue, b)
 
     a_divide = (a_gpu/b_gpu).get()
-    assert (numpy.abs(a/b - a_divide) < 1e-3).all()
+    assert (np.abs(a/b - a_divide) < 1e-3).all()
 
     a_divide = (b_gpu/a_gpu).get()
-    assert (numpy.abs(b/a - a_divide) < 1e-3).all()
+    assert (np.abs(b/a - a_divide) < 1e-3).all()
 
 
 
@@ -251,9 +251,9 @@ def test_random(ctx_getter):
     from pyopencl.clrandom import rand as clrand
 
     if has_double_support(context.devices[0]):
-        dtypes = [numpy.float32, numpy.float64]
+        dtypes = [np.float32, np.float64]
     else:
-        dtypes = [numpy.float32]
+        dtypes = [np.float32]
 
     for dtype in dtypes:
         a = clrand(context, queue, (10, 100), dtype=dtype).get()
@@ -271,7 +271,7 @@ def test_nan_arithmetic(ctx_getter):
 
     def make_nan_contaminated_vector(size):
         shape = (size,)
-        a = numpy.random.randn(*shape).astype(numpy.float32)
+        a = np.random.randn(*shape).astype(np.float32)
         #for i in range(0, shape[0], 3):
             #a[i] = float('nan')
         from random import randrange
@@ -290,7 +290,7 @@ def test_nan_arithmetic(ctx_getter):
     ab_gpu = (a_gpu*b_gpu).get()
 
     for i in range(size):
-        assert numpy.isnan(ab[i]) == numpy.isnan(ab_gpu[i])
+        assert np.isnan(ab[i]) == np.isnan(ab_gpu[i])
 
 
 
@@ -302,8 +302,8 @@ def test_elwise_kernel(ctx_getter):
 
     from pyopencl.clrandom import rand as clrand
 
-    a_gpu = clrand(context, queue, (50,), numpy.float32)
-    b_gpu = clrand(context, queue, (50,), numpy.float32)
+    a_gpu = clrand(context, queue, (50,), np.float32)
+    b_gpu = clrand(context, queue, (50,), np.float32)
 
     from pyopencl.elementwise import ElementwiseKernel
     lin_comb = ElementwiseKernel(context,
@@ -324,8 +324,8 @@ def test_take(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    idx = cl_array.arange(queue, 0, 200000, 2, dtype=numpy.uint32)
-    a = cl_array.arange(queue, 0, 600000, 3, dtype=numpy.float32)
+    idx = cl_array.arange(queue, 0, 200000, 2, dtype=np.uint32)
+    a = cl_array.arange(queue, 0, 600000, 3, dtype=np.float32)
     result = cl_array.take(a, idx)
     assert ((3*idx).get() == result.get()).all()
 
@@ -338,8 +338,8 @@ def test_arange(ctx_getter):
     queue = cl.CommandQueue(context)
 
     n = 5000
-    a = cl_array.arange(queue, n, dtype=numpy.float32)
-    assert (numpy.arange(n, dtype=numpy.float32) == a.get()).all()
+    a = cl_array.arange(queue, n, dtype=np.float32)
+    assert (np.arange(n, dtype=np.float32) == a.get()).all()
 
 
 
@@ -350,7 +350,7 @@ def test_reverse(ctx_getter):
     queue = cl.CommandQueue(context)
 
     n = 5000
-    a = numpy.arange(n).astype(numpy.float32)
+    a = np.arange(n).astype(np.float32)
     a_gpu = cl_array.to_device(queue, a)
 
     a_gpu = a_gpu.reverse()
@@ -367,10 +367,10 @@ def test_sum(ctx_getter):
 
     from pyopencl.clrandom import rand as clrand
 
-    a_gpu = clrand(context, queue, (200000,), numpy.float32)
+    a_gpu = clrand(context, queue, (200000,), np.float32)
     a = a_gpu.get()
 
-    sum_a = numpy.sum(a)
+    sum_a = np.sum(a)
     sum_a_gpu = cl_array.sum(a_gpu).get()
 
     assert abs(sum_a_gpu-sum_a)/abs(sum_a) < 1e-4
@@ -386,16 +386,16 @@ def test_minmax(ctx_getter):
     from pyopencl.clrandom import rand as clrand
 
     if has_double_support(context.devices[0]):
-        dtypes = [numpy.float64, numpy.float32, numpy.int32]
+        dtypes = [np.float64, np.float32, np.int32]
     else:
-        dtypes = [numpy.float32, numpy.int32]
+        dtypes = [np.float32, np.int32]
 
     for what in ["min", "max"]:
         for dtype in dtypes:
             a_gpu = clrand(context, queue, (200000,), dtype)
             a = a_gpu.get()
 
-            op_a = getattr(numpy, what)(a)
+            op_a = getattr(np, what)(a)
             op_a_gpu = getattr(cl_array, what)(a_gpu).get()
 
             assert op_a_gpu == op_a, (op_a_gpu, op_a, dtype, what)
@@ -415,16 +415,16 @@ def test_subset_minmax(ctx_getter):
     l_m = l_a - l_a // gran + 1
 
     if has_double_support(context.devices[0]):
-        dtypes = [numpy.float64, numpy.float32, numpy.int32]
+        dtypes = [np.float64, np.float32, np.int32]
     else:
-        dtypes = [numpy.float32, numpy.int32]
+        dtypes = [np.float32, np.int32]
 
     for dtype in dtypes:
         a_gpu = clrand(context, queue, (l_a,), dtype)
         a = a_gpu.get()
 
         meaningful_indices_gpu = cl_array.zeros(
-                queue, l_m, dtype=numpy.int32)
+                queue, l_m, dtype=np.int32)
         meaningful_indices = meaningful_indices_gpu.get()
         j = 0
         for i in range(len(meaningful_indices)):
@@ -437,7 +437,7 @@ def test_subset_minmax(ctx_getter):
                 queue, meaningful_indices)
         b = a[meaningful_indices]
 
-        min_a = numpy.min(b)
+        min_a = np.min(b)
         min_a_gpu = cl_array.subset_min(meaningful_indices_gpu, a_gpu).get()
 
         assert min_a_gpu == min_a
@@ -451,12 +451,12 @@ def test_dot(ctx_getter):
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
-    a_gpu = clrand(context, queue, (200000,), numpy.float32)
+    a_gpu = clrand(context, queue, (200000,), np.float32)
     a = a_gpu.get()
-    b_gpu = clrand(context, queue, (200000,), numpy.float32)
+    b_gpu = clrand(context, queue, (200000,), np.float32)
     b = b_gpu.get()
 
-    dot_ab = numpy.dot(a, b)
+    dot_ab = np.dot(a, b)
 
     dot_ab_gpu = cl_array.dot(a_gpu, b_gpu).get()
 
@@ -492,8 +492,8 @@ def test_if_positive(ctx_getter):
     from pyopencl.clrandom import rand as clrand
 
     l = 20000
-    a_gpu = clrand(context, queue, (l,), numpy.float32)
-    b_gpu = clrand(context, queue, (l,), numpy.float32)
+    a_gpu = clrand(context, queue, (l,), np.float32)
+    b_gpu = clrand(context, queue, (l,), np.float32)
     a = a_gpu.get()
     b = b_gpu.get()
 
@@ -501,10 +501,10 @@ def test_if_positive(ctx_getter):
     min_a_b_gpu = cl_array.minimum(a_gpu, b_gpu)
 
     print(max_a_b_gpu)
-    print(numpy.maximum(a, b))
+    print(np.maximum(a, b))
 
-    assert la.norm(max_a_b_gpu.get()- numpy.maximum(a, b)) == 0
-    assert la.norm(min_a_b_gpu.get()- numpy.minimum(a, b)) == 0
+    assert la.norm(max_a_b_gpu.get()- np.maximum(a, b)) == 0
+    assert la.norm(min_a_b_gpu.get()- np.minimum(a, b)) == 0
 
 @pytools.test.mark_test.opencl
 def test_take_put(ctx_getter):
@@ -514,11 +514,11 @@ def test_take_put(ctx_getter):
     for n in [5, 17, 333]:
         one_field_size = 8
         buf_gpu = cl_array.zeros(queue,
-                n*one_field_size, dtype=numpy.float32)
+                n*one_field_size, dtype=np.float32)
         dest_indices = cl_array.to_device(queue,
-                numpy.array([ 0,  1,  2,  3, 32, 33, 34, 35], dtype=numpy.uint32))
+                np.array([ 0,  1,  2,  3, 32, 33, 34, 35], dtype=np.uint32))
         read_map = cl_array.to_device(queue,
-                numpy.array([7, 6, 5, 4, 3, 2, 1, 0], dtype=numpy.uint32))
+                np.array([7, 6, 5, 4, 3, 2, 1, 0], dtype=np.uint32))
 
         cl_array.multi_take_put(
                 arrays=[buf_gpu for i in range(n)],
@@ -537,20 +537,20 @@ def test_astype(ctx_getter):
     if not has_double_support(context.devices[0]):
         return
 
-    a_gpu = clrand(context, queue, (2000,), dtype=numpy.float32)
+    a_gpu = clrand(context, queue, (2000,), dtype=np.float32)
 
-    a = a_gpu.get().astype(numpy.float64)
-    a2 = a_gpu.astype(numpy.float64).get()
+    a = a_gpu.get().astype(np.float64)
+    a2 = a_gpu.astype(np.float64).get()
 
-    assert a2.dtype == numpy.float64
+    assert a2.dtype == np.float64
     assert la.norm(a - a2) == 0, (a, a2)
 
-    a_gpu = clrand(context, queue, (2000,), dtype=numpy.float64)
+    a_gpu = clrand(context, queue, (2000,), dtype=np.float64)
 
-    a = a_gpu.get().astype(numpy.float32)
-    a2 = a_gpu.astype(numpy.float32).get()
+    a = a_gpu.get().astype(np.float32)
+    a2 = a_gpu.astype(np.float32).get()
 
-    assert a2.dtype == numpy.float32
+    assert a2.dtype == np.float32
     assert la.norm(a - a2)/la.norm(a) < 1e-7
 
 

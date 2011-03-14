@@ -93,6 +93,7 @@ Version 2011.1
   :func:`pyopencl.array.arange`.
 * Make construction of :class:`pyopencl.array.Array` more flexible (*cqa* argument.)
 * Add :ref:`memory-pools`.
+* Add vector types, see :class:`pyopencl.array.vec`.
 
 Version 0.92
 ------------

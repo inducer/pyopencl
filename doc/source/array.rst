@@ -1,7 +1,23 @@
-The :class:`Array` Class
-========================
+Multi-dimensional arrays on the Compute Device
+==============================================
 
 .. module:: pyopencl.array
+
+Vector Types
+------------
+
+.. class :: vec
+
+    All of OpenCL's supported vector types, such as `float3` and `long4` are
+    available as :mod:`numpy` data types within this class. These
+    :class:`numpy.dtype` instances have field names of `x`, `y`, `z`, and `w`
+    just like their OpenCL counterparts. They will work both for parameter passing
+    to kernels as well as for passing data back and forth between kernels and
+    Python code. For each type, a `make_type` function is also provided (e.g.
+    `make_float3(x,y,z)`).
+
+The :class:`Array` Class
+------------------------
 
 .. class:: DefaultAllocator(context, flags=pyopencl.mem_flags.READ_WRITE)
 
