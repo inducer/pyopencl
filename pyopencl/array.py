@@ -37,6 +37,9 @@ import pyopencl as cl
 
 
 
+
+# {{{ helper functionality
+
 def splay(queue, n):
     dev = queue.device
     max_work_items = _builtin_min(128, dev.max_work_group_size)
@@ -125,6 +128,10 @@ def _should_be_cqa(what):
             "This will be continue to be accepted througout "
             "versions 2011.x of PyOpenCL." % (what, what),
             DeprecationWarning, 3)
+
+# }}}
+
+# {{{ array class
 
 class Array(object):
     """A :mod:`pyopencl` Array is used to do array-based calculation on
@@ -543,7 +550,9 @@ class Array(object):
     def __gt__(self, other):
         raise NotImplementedError
 
+# }}}
 
+# {{{ creation helpers
 
 def _to_device(queue, ary, allocator=None, async=False):
     if ary.flags.f_contiguous:
@@ -707,9 +716,9 @@ def arange(*args, **kwargs):
 
     return _arange(*args, **kwargs)
 
+# }}}
 
-
-
+# {{{ take/put
 
 @elwise_kernel_runner
 def _take(result, ary, indices):
@@ -900,8 +909,9 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
 
     return out
 
+# }}}
 
-
+# {{{ conditionals
 
 @elwise_kernel_runner
 def _if_positive(result, criterion, then_, else_):
@@ -943,10 +953,9 @@ def minimum(a, b, out=None, queue=None):
     return if_positive(a.mul_add(1, b, -1, queue=queue), b, a,
             queue=queue, out=out)
 
+# }}}
 
-
-
-# reductions ------------------------------------------------------------------
+# {{{ reductions
 _builtin_min = min
 _builtin_max = max
 
@@ -987,6 +996,8 @@ def _make_subset_minmax_kernel(what):
 
 subset_min = _make_subset_minmax_kernel("min")
 subset_max = _make_subset_minmax_kernel("max")
+
+# }}}
 
 
 
