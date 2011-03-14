@@ -17,6 +17,7 @@ def have_cl():
 
 if have_cl():
     import pyopencl as cl
+    import pyopencl.array as cl_array
     from pyopencl.tools import pytest_generate_tests_for_pyopencl \
             as pytest_generate_tests
 
@@ -324,9 +325,26 @@ class TestCL:
             assert MemoryPool.bin_number(asize) == bin_nr, s
             assert asize < asize*(1+1/8)
 
+    @pytools.test.mark_test.opencl
+    def test_vector_args(self, ctx_getter):
+        context = ctx_getter()
+        queue = cl.CommandQueue(context)
 
+        prg = cl.Program(context, """
+            __kernel void set_vec(float4 x, __global float4 *dest)
+            { dest[get_global_id(0)] = x; }
+            """).build()
 
+        x = cl_array.vec.make_float4(1,2,3,4)
+        dest = np.empty(50000, cl_array.vec.float4)
+        mf = cl.mem_flags
+        dest_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=dest)
 
+        prg.set_vec(queue, dest.shape, None, x, dest_buf)
+
+        cl.enqueue_read_buffer(queue, dest_buf, dest).wait()
+
+        assert (dest == x).all()
 
 
 

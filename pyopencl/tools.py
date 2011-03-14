@@ -32,6 +32,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 import numpy as np
 from decorator import decorator
 import pyopencl as cl
+import pyopencl.array as cl_array
 
 
 
@@ -137,7 +138,10 @@ def dtype_to_ctype(dtype):
     elif dtype == np.complex128:
         return "complex double"
     else:
-        raise ValueError, "unable to map dtype '%s'" % dtype
+        try:
+            return cl_array.vec._dtype_to_c_name[dtype]
+        except KeyError:
+            raise ValueError, "unable to map dtype '%s'" % dtype
 
 # }}}
 
@@ -231,7 +235,11 @@ def parse_c_arg(c_arg):
     elif tp in ["char"]: dtype = np.int8
     elif tp in ["unsigned char"]: dtype = np.uint8
     elif tp in ["bool"]: dtype = np.bool
-    else: raise ValueError, "unknown type '%s'" % tp
+    else:
+        try:
+            return cl_array.vec._c_name_to_dtype[tp]
+        except KeyError:
+            raise ValueError("unknown type '%s'" % tp)
 
     return arg_class(dtype, name, vector_len)
 
