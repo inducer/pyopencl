@@ -194,7 +194,7 @@ def  get_reduction_source(
     from mako.template import Template
     from pytools import all
     from pyopencl.tools import has_double_support
-    src = Template(KERNEL).render(
+    src = str(Template(KERNEL).render(
         out_type=out_type,
         arguments=arguments,
         group_size=group_size,
@@ -206,7 +206,7 @@ def  get_reduction_source(
         preamble=preamble,
         double_support=all(
             has_double_support(dev) for dev in devices)
-        )
+        ))
 
     from pytools import Record
     class ReductionInfo(Record):
