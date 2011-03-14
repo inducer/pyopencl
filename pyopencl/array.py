@@ -30,7 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 
-import numpy
+import numpy as np
 import pyopencl.elementwise as elementwise
 import pyopencl as cl
 #from pytools import memoize_method
@@ -190,7 +190,7 @@ class Array(object):
         self.queue = queue
 
         self.shape = shape
-        self.dtype = numpy.dtype(dtype)
+        self.dtype = np.dtype(dtype)
         if order not in ["C", "F"]:
             raise ValueError("order must be either 'C' or 'F'")
         self.order = order
@@ -229,7 +229,7 @@ class Array(object):
 
     def get(self, queue=None, ary=None, async=False):
         if ary is None:
-            ary = numpy.empty(self.shape, self.dtype, order=self.order)
+            ary = np.empty(self.shape, self.dtype, order=self.order)
         else:
             if ary.size != self.size:
                 raise TypeError("'ary' has non-matching type")
@@ -639,7 +639,7 @@ def _arange(queue, *args, **kwargs):
     inf.step = None
     inf.dtype = None
 
-    if isinstance(args[-1], numpy.dtype):
+    if isinstance(args[-1], np.dtype):
         dtype = args[-1]
         args = args[:-1]
         explicit_dtype = True
@@ -676,10 +676,10 @@ def _arange(queue, *args, **kwargs):
     if inf.step is None:
         inf.step = 1
     if inf.dtype is None:
-        inf.dtype = numpy.array([inf.start, inf.stop, inf.step]).dtype
+        inf.dtype = np.array([inf.start, inf.stop, inf.step]).dtype
 
     # actual functionality ----------------------------------------------------
-    dtype = numpy.dtype(inf.dtype)
+    dtype = np.dtype(inf.dtype)
     start = dtype.type(inf.start)
     step = dtype.type(inf.step)
     stop = dtype.type(inf.stop)

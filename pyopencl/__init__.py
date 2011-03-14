@@ -13,6 +13,7 @@ except ImportError:
 
 
 
+import numpy as np
 from pyopencl._cl import *
 import inspect as _inspect
 
@@ -225,8 +226,7 @@ def _add_functionality():
             if arg_dtype is None:
                 arg_type_chars.append(None)
             else:
-                import numpy
-                arg_type_chars.append(numpy.dtype(arg_dtype).char)
+                arg_type_chars.append(np.dtype(arg_dtype).char)
 
         self._arg_type_chars = arg_type_chars
 

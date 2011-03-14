@@ -31,7 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 from pyopencl.tools import context_dependent_memoize
-import numpy
+import numpy as np
 import pyopencl as cl
 from pyopencl.tools import dtype_to_ctype, VectorArg, ScalarArg
 
@@ -84,13 +84,13 @@ def get_elwise_kernel_and_types(context, arguments, operation,
         parsed_args = arguments
 
     for arg in parsed_args:
-        if numpy.float64  == arg.dtype:
+        if np.float64  == arg.dtype:
             preamble = (
                     "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n\n\n"
                     + preamble)
             break
 
-    parsed_args.append(ScalarArg(numpy.uintp, "n"))
+    parsed_args.append(ScalarArg(np.uintp, "n"))
 
     prg = get_elwise_program(context, parsed_args, operation, name,
             keep, options, preamble, **kwargs)
@@ -297,7 +297,7 @@ def get_linear_combination_kernel(summand_descriptors,
         summands.append("a%d*x%d[i]" % (i, i))
 
     args.append(VectorArg(dtype_z, "z"))
-    args.append(ScalarArg(numpy.uintp, "n"))
+    args.append(ScalarArg(np.uintp, "n"))
 
     mod = get_elwise_module(args,
             "z[i] = " + " + ".join(summands),

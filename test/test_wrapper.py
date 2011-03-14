@@ -1,5 +1,5 @@
 from __future__ import division
-import numpy
+import numpy as np
 import numpy.linalg as la
 import pytools.test
 
@@ -203,7 +203,7 @@ class TestCL:
             { a[get_global_id(0)] *= (b+c); }
             """).build()
 
-        a = numpy.random.rand(50000)
+        a = np.random.rand(50000)
         queue = cl.CommandQueue(context)
         mf = cl.mem_flags
         a_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=a)
@@ -220,9 +220,9 @@ class TestCL:
         except cl.LogicError:
             pass
 
-        prg.mult(queue, a.shape, None, a_buf, numpy.float32(2), numpy.int32(3))
+        prg.mult(queue, a.shape, None, a_buf, np.float32(2), np.int32(3))
 
-        a_result = numpy.empty_like(a)
+        a_result = np.empty_like(a)
         cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
 
     @pytools.test.mark_test.opencl
@@ -253,7 +253,7 @@ class TestCL:
             }
             """).build()
 
-        a = numpy.random.rand(1024, 1024, 4).astype(numpy.float32)
+        a = np.random.rand(1024, 1024, 4).astype(np.float32)
         queue = cl.CommandQueue(context)
         mf = cl.mem_flags
         a_img = cl.Image(context, mf.READ_ONLY | mf.COPY_HOST_PTR,
@@ -264,9 +264,9 @@ class TestCL:
         samp = cl.Sampler(context, False,
                 cl.addressing_mode.CLAMP,
                 cl.filter_mode.NEAREST)
-        prg.copy_image(queue, a.shape, None, a_dest, a_img, samp, numpy.int32(a.shape[0]))
+        prg.copy_image(queue, a.shape, None, a_dest, a_img, samp, np.int32(a.shape[0]))
 
-        a_result = numpy.empty_like(a)
+        a_result = np.empty_like(a)
         cl.enqueue_read_buffer(queue, a_dest, a_result, is_blocking=True)
         print(a_result.dtype)
 
@@ -279,8 +279,8 @@ class TestCL:
         queue = cl.CommandQueue(context)
         mf = cl.mem_flags
 
-        a = numpy.random.rand(50000).astype(numpy.float32)
-        b = numpy.empty_like(a)
+        a = np.random.rand(50000).astype(np.float32)
+        b = np.empty_like(a)
 
         buf1 = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
         buf2 = cl.Buffer(context, mf.WRITE_ONLY, b.nbytes)
