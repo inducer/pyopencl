@@ -39,20 +39,7 @@ from pyopencl.tools import (
         dtype_to_ctype)
 from pytools import memoize_method
 import numpy as np
-
-try:
-    import mako
-except ImportError:
-    raise ImportError(
-            "PyOpenCL's reduction facility requires the Mako templating engine.\n"
-            "You or a piece of software you have used has tried to call PyOpenCL's\n"
-            "reduction code, but there was a problem importing Mako.\n\n"
-            "You may install mako now by typing one of:\n"
-            "- easy_install Mako\n"
-            "- pip install Mako\n"
-            "- aptitude install python-mako\n"
-            "\nor whatever else is appropriate for your system.")
-
+import pyopencl._mymako as mako
 
 
 
@@ -193,7 +180,7 @@ def  get_reduction_source(
 
     from mako.template import Template
     from pytools import all
-    from pyopencl.tools import has_double_support
+    from pyopencl.characterize import has_double_support
     src = str(Template(KERNEL).render(
         out_type=out_type,
         arguments=arguments,
@@ -224,7 +211,7 @@ def get_reduction_kernel(
          ctx, out_type, out_type_size,
          neutral, reduce_expr, map_expr=None, arguments=None,
          name="reduce_kernel", preamble="",
-         device=None, options="", max_group_size=None):
+         device=None, options=[], max_group_size=None):
     if map_expr is None:
         map_expr = "in[i]"
 
@@ -237,7 +224,7 @@ def get_reduction_kernel(
             name, preamble, device, max_group_size)
 
     inf.program = cl.Program(ctx, inf.source)
-    inf.program.build()
+    inf.program.build(options)
     inf.kernel = getattr(inf.program, name)
 
     from pyopencl.tools import parse_c_arg, ScalarArg
@@ -261,7 +248,7 @@ def get_reduction_kernel(
 class ReductionKernel:
     def __init__(self, ctx, dtype_out,
             neutral, reduce_expr, map_expr=None, arguments=None,
-            name="reduce_kernel", options="", preamble=""):
+            name="reduce_kernel", options=[], preamble=""):
 
         dtype_out = self.dtype_out = np.dtype(dtype_out)
 

@@ -19,7 +19,7 @@ if have_cl():
     import pyopencl as cl
     from pyopencl.tools import pytest_generate_tests_for_pyopencl \
             as pytest_generate_tests
-    from pyopencl.tools import has_double_support
+    from pyopencl.characterize import has_double_support
 
 
 
@@ -552,6 +552,40 @@ def test_astype(ctx_getter):
 
     assert a2.dtype == np.float32
     assert la.norm(a - a2)/la.norm(a) < 1e-7
+
+
+
+
+@pytools.test.mark_test.opencl
+def test_scan(ctx_getter):
+    context = ctx_getter()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
+
+    dtype = np.int32
+    for cls in [InclusiveScanKernel, ExclusiveScanKernel]:
+        knl = cls(context, dtype, "a+b", "0")
+
+        for n in [
+                10, 2**10-5, 2**10, 
+                2**20-2**18, 
+                2**20-2**18+5, 
+                2**10+5,
+                2**20+5,
+                2**20, 2**24
+                ]:
+            host_data = np.random.randint(0, 10, n).astype(dtype)
+            dev_data = cl_array.to_device(queue, host_data)
+
+            knl(dev_data)
+
+            desired_result = np.cumsum(host_data, axis=0)
+            if cls is ExclusiveScanKernel:
+                desired_result -= host_data
+
+            assert (dev_data.get() == desired_result).all()
+
 
 
 

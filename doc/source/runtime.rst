@@ -571,10 +571,14 @@ Programs and Kernels
 
         See :class:`program_build_info` for values of *param*.
 
-    .. method:: build(options="", devices=None)
+    .. method:: build(options=[], devices=None)
 
         *options* is a string of compiler flags.
         Returns *self*.
+
+        .. versionchanged:: 2011.1
+
+            *options* may now also be a :class:`list` of :class:`str`.
 
     .. attribute:: kernel_name
 

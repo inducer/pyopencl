@@ -136,7 +136,10 @@ def _add_functionality():
         else:
             return self.get_info(pi_attr)
 
-    def program_build(self, options="", devices=None):
+    def program_build(self, options=[], devices=None):
+        if isinstance(options, list):
+            options = " ".join(options)
+
         try:
             self._build(options=options, devices=devices)
         except Exception, e:
