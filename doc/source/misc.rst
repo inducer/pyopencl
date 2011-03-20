@@ -86,6 +86,7 @@ Version 2011.1
   :func:`pyopencl.enqueue_map_image`.
 * Add :mod:`pyopencl.reduction`.
 * Add :ref:`reductions`.
+* Add :mod:`pyopencl.scan`.
 * Add :meth:`pyopencl.MemoryObject.get_host_array`.
 * Deprecate context arguments of 
   :func:`pyopencl.array.to_device`,
@@ -104,7 +105,7 @@ Version 0.92
   extension, leading to working GL interoperability.
 * Add :meth:`pyopencl.Kernel.set_args`.
 * The call signature of :meth:`pyopencl.Kernel.__call__` changed to
-  emphasize the importance of *loccal_size*.
+  emphasize the importance of *local_size*.
 * Add :meth:`pyopencl.Kernel.set_scalar_arg_dtypes`.
 * Add support for the
   `cl_nv_device_attribute_query <http://www.khronos.org/registry/cl/extensions/khr/cl_nv_device_attribute_query.txt>`_

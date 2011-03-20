@@ -421,7 +421,7 @@ Custom Reductions
 
 .. module:: pyopencl.reduction
 
-.. class:: ReductionKernel(ctx, dtype_out, neutral, reduce_expr, map_expr=None, arguments=None, name="reduce_kernel", options="", preamble="")
+.. class:: ReductionKernel(ctx, dtype_out, neutral, reduce_expr, map_expr=None, arguments=None, name="reduce_kernel", options=[], preamble="")
 
     Generate a kernel that takes a number of scalar or vector *arguments*
     (at least one vector argument), performs the *map_expr* on each entry of
@@ -437,15 +437,15 @@ Custom Reductions
     assumed.
 
     *dtype_out* specifies the :class:`numpy.dtype` in which the reduction is
-    performed and in which the result is returned. *neutral* is
-    specified as float or integer formatted as string. *reduce_expr* and
-    *map_expr* are specified as string formatted operations and *arguments*
-    is specified as a string formatted as a C argument list. *name* specifies
-    the name as which the kernel is compiled. *options* are passed
-    unmodified to :meth:`pyopencl.Program.build`. *preamble* is specified
-    as a string of code.
+    performed and in which the result is returned. *neutral* is specified as
+    float or integer formatted as string. *reduce_expr* and *map_expr* are
+    specified as string formatted operations and *arguments* is specified as a
+    string formatted as a C argument list. *name* specifies the name as which
+    the kernel is compiled. *options* are passed unmodified to
+    :meth:`pyopencl.Program.build`. *preamble* specifies a string of code that
+    is inserted before the actual kernels.
 
-    .. method __call__(*args, queue=None)
+    .. method:: __call__(*args, queue=None)
 
     .. versionadded: 2011.1
 
@@ -459,6 +459,46 @@ Here's a usage example::
             arguments="__global float *x, __global float *y")
 
     my_dot_prod = krnl(a, b).get()
+
+Parallel Scan / Prefix Sum
+--------------------------
+
+.. module:: pyopencl.scan
+
+.. class:: ExclusiveScanKernel(ctx, dtype, scan_expr, neutral=None, name_prefix="scan", options=[], preamble="", devices=None)
+
+    Generates a kernel that can compute a `prefix sum <https://secure.wikimedia.org/wikipedia/en/wiki/Prefix_sum>`_
+    using any associative operation given as *scan_expr*.
+    *scan_expr* uses the formal values "a" and "b" to indicate two operands of
+    an associative binary operation. *neutral* is the neutral element
+    of *scan_expr*, obeying *scan_expr(a, neutral) == a*.
+
+    *dtype* specifies the type of the arrays being operated on. 
+    *name_prefix* is used for kernel names to ensure recognizability
+    in profiles and logs. *options* is a list of compiler options to use
+    when building. *preamble* specifies a string of code that is
+    inserted before the actual kernels. *devices* may be used to restrict
+    the set of devices on which the kernel is meant to run. (defaults
+    to all devices in the context *ctx*.
+
+    .. method:: __call__(self, input_ary, output_ary=None, allocator=None, queue=None)
+
+.. class:: InclusiveScanKernel(dtype, scan_expr, neutral=None, name_prefix="scan", options=[], preamble="", devices=None)
+
+    Works like :class:`ExclusiveScanKernel`. Unlike the exclusive case,
+    *neutral* is not required.
+
+Here's a usage example::
+
+    knl = InclusiveScanKernel(context, np.int32, "a+b")
+
+    n = 2**20-2**18+5
+    host_data = np.random.randint(0, 10, n).astype(np.int32)
+    dev_data = cl_array.to_device(queue, host_data)
+
+    knl(dev_data)
+    assert (dev_data.get() == np.cumsum(host_data, axis=0)).all()
+
 
 Fast Fourier Transforms
 -----------------------

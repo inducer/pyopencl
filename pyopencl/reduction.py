@@ -211,7 +211,7 @@ def get_reduction_kernel(
          ctx, out_type, out_type_size,
          neutral, reduce_expr, map_expr=None, arguments=None,
          name="reduce_kernel", preamble="",
-         device=None, options="", max_group_size=None):
+         device=None, options=[], max_group_size=None):
     if map_expr is None:
         map_expr = "in[i]"
 
@@ -248,7 +248,7 @@ def get_reduction_kernel(
 class ReductionKernel:
     def __init__(self, ctx, dtype_out,
             neutral, reduce_expr, map_expr=None, arguments=None,
-            name="reduce_kernel", options="", preamble=""):
+            name="reduce_kernel", options=[], preamble=""):
 
         dtype_out = self.dtype_out = np.dtype(dtype_out)
 

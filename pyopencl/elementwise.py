@@ -70,7 +70,7 @@ def get_elwise_program(context, arguments, operation,
             "after_loop": after_loop,
             })
 
-    return Program(context, source).build(options=" ".join(options))
+    return Program(context, source).build(options)
 
 
 
