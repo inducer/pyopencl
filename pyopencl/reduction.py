@@ -224,7 +224,7 @@ def get_reduction_kernel(
             name, preamble, device, max_group_size)
 
     inf.program = cl.Program(ctx, inf.source)
-    inf.program.build()
+    inf.program.build(options)
     inf.kernel = getattr(inf.program, name)
 
     from pyopencl.tools import parse_c_arg, ScalarArg
