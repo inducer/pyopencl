@@ -561,11 +561,11 @@ def test_scan(ctx_getter):
     context = ctx_getter()
     queue = cl.CommandQueue(context)
 
-    from pyopencl.scan import InclusiveScanKernel
+    from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
 
     dtype = np.int32
-    for cls in [InclusiveScanKernel]:
-        knl = cls(context, dtype, "0", "a+b")
+    for cls in [InclusiveScanKernel, ExclusiveScanKernel]:
+        knl = cls(context, dtype, "a+b", "0")
 
         for n in [
                 10, 2**10-5, 2**10, 
@@ -576,16 +576,14 @@ def test_scan(ctx_getter):
                 2**20, 2**24
                 ]:
             host_data = np.random.randint(0, 10, n).astype(dtype)
-            host_data.fill(1) # FIXME: remove me
             dev_data = cl_array.to_device(queue, host_data)
 
             knl(dev_data)
 
             desired_result = np.cumsum(host_data, axis=0)
-            #if cls is ExclusiveScanKernel:
-                #desired_result -= host_data
+            if cls is ExclusiveScanKernel:
+                desired_result -= host_data
 
-            print cls, n, (dev_data.get() == desired_result).all()
             assert (dev_data.get() == desired_result).all()
 
 

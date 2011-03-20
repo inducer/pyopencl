@@ -279,7 +279,7 @@ void ${name_prefix}_scan_intervals(
 INCLUSIVE_UPDATE_SOURCE = mako.template.Template(SHARED_PREAMBLE + """
 KERNEL
 REQD_WG_SIZE(WG_SIZE, 1, 1)
-void ${name_prefix}_inclusive_update(
+void ${name_prefix}_final_update(
     GLOBAL_MEM scan_type *output,
     const unsigned int N,
     const unsigned int interval_size,
@@ -318,12 +318,11 @@ void ${name_prefix}_inclusive_update(
 EXCLUSIVE_UPDATE_SOURCE = mako.template.Template(SHARED_PREAMBLE + """
 KERNEL
 REQD_WG_SIZE(WG_SIZE, 1, 1)
-void ${name_prefix}_exclusive_update(
+void ${name_prefix}_final_update(
     GLOBAL_MEM scan_type *output,
     const unsigned int N,
     const unsigned int interval_size,
-    GLOBAL_MEM scan_type *group_results,
-    scan_type init)
+    GLOBAL_MEM scan_type *group_results)
 {
     LOCAL_MEM scan_type sdata[WG_SIZE];
 
@@ -333,7 +332,7 @@ void ${name_prefix}_exclusive_update(
     const unsigned int interval_end   = min(interval_begin + interval_size, N);
 
     // value to add to this segment
-    scan_type carry = init;
+    scan_type carry = ${neutral};
     if(GID_0 != 0)
     {
         scan_type tmp = group_results[GID_0 - 1];
@@ -352,7 +351,7 @@ void ${name_prefix}_exclusive_update(
         if(i < interval_end)
         {
             scan_type tmp = *output;
-            sdata[LID_0] = binary_op(carry, tmp);
+            sdata[LID_0] = SCAN_EXPR(carry, tmp);
         }
 
         local_barrier();
@@ -399,22 +398,30 @@ def _uniform_interval_splitting(n, granularity, max_intervals):
 
 
 
-class InclusiveScanKernel:
+class _ScanKernelBase(object):
     def __init__(self, ctx, dtype,
-            neutral, scan_expr,
+            scan_expr, neutral=None,
             name_prefix="scan", options="", preamble="", devices=None):
 
         self.context = ctx
         dtype = self.dtype = np.dtype(dtype)
+        self.neutral = neutral
 
         if devices is None:
             devices = ctx.devices
         self.devices = devices
 
+        max_wg_size = min(dev.max_work_group_size for dev in self.devices)
+
         # Thrust says these are good for GT200
-        self.scan_wg_size = 128
-        self.update_wg_size = 256
-        self.scan_wg_seq_batches = 6
+        self.scan_wg_size = min(max_wg_size, 128)
+        self.update_wg_size = min(max_wg_size, 256)
+
+        if self.scan_wg_size < 16:
+            # Hello, Apple CPU. Nice to see you.
+            self.scan_wg_seq_batches = 128 # FIXME: guesswork
+        else:
+            self.scan_wg_seq_batches = 6
 
         from pytools import all
         from pyopencl.characterize import has_double_support
@@ -424,6 +431,7 @@ class InclusiveScanKernel:
             name_prefix=name_prefix,
             scan_type=dtype_to_ctype(dtype),
             scan_expr=scan_expr,
+            neutral=neutral,
             double_support=all(
                 has_double_support(dev) for dev in devices)
             )
@@ -439,15 +447,15 @@ class InclusiveScanKernel:
         self.scan_intervals_knl.set_scalar_arg_dtypes(
                 (None, np.uint32, np.uint32, None, None))
 
-        inclusive_update_src = str(INCLUSIVE_UPDATE_SOURCE.render(
+        final_update_src = str(self.final_update_tp.render(
             wg_size=self.update_wg_size,
             **kw_values))
 
-        inclusive_update_prg = cl.Program(ctx, inclusive_update_src).build(options)
-        self.inclusive_update_knl = getattr(
-                inclusive_update_prg,
-                name_prefix+"_inclusive_update")
-        self.inclusive_update_knl.set_scalar_arg_dtypes(
+        final_update_prg = cl.Program(self.context, final_update_src).build(options)
+        self.final_update_knl = getattr(
+                final_update_prg,
+                name_prefix+"_final_update")
+        self.final_update_knl.set_scalar_arg_dtypes(
                 (None, np.uint32, np.uint32, None))
 
     def __call__(self, input_ary, output_ary=None, allocator=None,
@@ -495,10 +503,18 @@ class InclusiveScanKernel:
                 dummy_results)
 
         # update intervals with result of second level scan
-        self.inclusive_update_knl(
+        self.final_update_knl(
                 queue, (num_groups*self.update_wg_size,), (self.update_wg_size,),
                 output_ary.data,
                 n, interval_size,
                 block_results)
 
         return output_ary
+
+
+
+class InclusiveScanKernel(_ScanKernelBase):
+    final_update_tp = INCLUSIVE_UPDATE_SOURCE
+
+class ExclusiveScanKernel(_ScanKernelBase):
+    final_update_tp = EXCLUSIVE_UPDATE_SOURCE
