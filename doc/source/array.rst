@@ -465,7 +465,7 @@ Parallel Scan / Prefix Sum
 
 .. module:: pyopencl.scan
 
-.. class:: ExclusiveScanKernel(ctx, dtype, scan_expr, neutral=None, name_prefix="scan", options=[], preamble="", devices=None)
+.. class:: ExclusiveScanKernel(ctx, dtype, scan_expr, neutral, name_prefix="scan", options=[], preamble="", devices=None)
 
     Generates a kernel that can compute a `prefix sum <https://secure.wikimedia.org/wikipedia/en/wiki/Prefix_sum>`_
     using any associative operation given as *scan_expr*.
