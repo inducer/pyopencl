@@ -166,8 +166,8 @@ def main():
             packages=["pyopencl"],
 
             install_requires=[
-                "pytools>=7",
-                "py>=1.0.2",
+                "pytools>=2011.2",
+                "pytest>=2",
                 "decorator>=3.2.0",
                 # "Mako>=0.3.6",
                 ],
