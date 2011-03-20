@@ -16,21 +16,13 @@ if have_cl():
     import pyopencl.clmath as clmath
     from pyopencl.tools import pytest_generate_tests_for_pyopencl \
             as pytest_generate_tests
+    from pyopencl.characterize import has_double_support
 
 
 
 
 
 sizes = [10, 128, 1<<10, 1<<11, 1<<13]
-
-
-
-
-def has_double_support(dev):
-    for ext in dev.extensions.split(" "):
-        if ext == "cl_khr_fp64":
-            return True
-    return False
 
 
 

@@ -19,7 +19,7 @@ if have_cl():
     import pyopencl as cl
     from pyopencl.tools import pytest_generate_tests_for_pyopencl \
             as pytest_generate_tests
-    from pyopencl.tools import has_double_support
+    from pyopencl.characterize import has_double_support
 
 
 

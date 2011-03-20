@@ -180,7 +180,7 @@ def  get_reduction_source(
 
     from mako.template import Template
     from pytools import all
-    from pyopencl.tools import has_double_support
+    from pyopencl.characterize import has_double_support
     src = str(Template(KERNEL).render(
         out_type=out_type,
         arguments=arguments,
