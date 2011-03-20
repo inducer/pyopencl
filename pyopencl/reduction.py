@@ -39,20 +39,7 @@ from pyopencl.tools import (
         dtype_to_ctype)
 from pytools import memoize_method
 import numpy as np
-
-try:
-    import mako
-except ImportError:
-    raise ImportError(
-            "PyOpenCL's reduction facility requires the Mako templating engine.\n"
-            "You or a piece of software you have used has tried to call PyOpenCL's\n"
-            "reduction code, but there was a problem importing Mako.\n\n"
-            "You may install mako now by typing one of:\n"
-            "- easy_install Mako\n"
-            "- pip install Mako\n"
-            "- aptitude install python-mako\n"
-            "\nor whatever else is appropriate for your system.")
-
+import pyopencl._mymako as mako
 
 
 
