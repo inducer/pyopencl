@@ -275,3 +275,32 @@ Frequently Asked Questions
 The FAQ is maintained collaboratively on the 
 `Wiki FAQ page <http://wiki.tiker.net/PyOpenCL/FrequentlyAskedQuestions>`_.
 
+Citing PyOpenCL
+===============
+
+We are not asking you to gratuitously cite PyOpenCL in work that is otherwise
+unrelated to software. That said, if you do discuss some of the development
+aspects of your code and would like to highlight a few of the ideas behind
+PyOpenCL, feel free to cite this article:
+
+    Andreas Klöckner, Nicolas Pinto, Yunsup Lee, Bryan Catanzaro, Paul Ivanov, Ahmed Fasih.
+    `PyCUDA and PyOpenCL: A Scripting-Based Approach to GPU Run-Time Code Generation <http://arxiv.org/abs/0911.3456>`_
+    November 2009, submitted.
+
+Here's a Bibtex entry for your convenience::
+
+    @techreport{kloeckner_pycuda_2009,
+       author = {{Kl{\"o}ckner}, Andreas 
+            and {Pinto}, Nicolas 
+            and {Lee}, Yunsup 
+            and {Catanzaro}, B. 
+            and {Ivanov}, Paul 
+            and {Fasih}, Ahmed },
+       title = "{PyCUDA and PyOpenCL: A Scripting-Based Approach to GPU Run-Time Code Generation}",
+       url = {http://arxiv.org/abs/0911.3456},
+       institution = "Scientific Computing Group, Brown University",
+       number = "2009-40",
+       address = "Providence, RI, USA",
+       year = 2009,
+       month = nov,
+    }
