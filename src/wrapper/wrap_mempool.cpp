@@ -1,3 +1,7 @@
+// Gregor Thalhammer (on Apr 13, 2011) said it's necessary to import Python.h 
+// first to prevent OS X from overriding a bunch of macros. (e.g. isspace)
+#include <Python.h>
+
 #include <vector>
 #include "wrap_helpers.hpp"
 #include "wrap_cl.hpp"
