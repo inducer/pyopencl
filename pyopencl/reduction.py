@@ -168,7 +168,7 @@ def  get_reduction_source(
         try:
             return device.warp_size_nv
         except:
-            if "nvidida" in device.vendor.lower():
+            if "nvidia" in device.vendor.lower():
                 from warnings import warn
                 warn("Reduction might be unnecessarily slow: "
                         "can't query warp size on Nvidia device")
