@@ -184,6 +184,48 @@ def _should_be_cqa(what):
             "versions 2011.x of PyOpenCL." % (what, what),
             DeprecationWarning, 3)
 
+
+
+
+def _f_contiguous_strides(itemsize, shape):
+    if shape:
+        strides = [itemsize]
+        for s in shape[:-1]:
+            strides.append(strides[-1]*s)
+        return tuple(strides)
+    else:
+        return ()
+
+def _c_contiguous_strides(itemsize, shape):
+    if shape:
+        strides = [itemsize]
+        for s in shape[:0:-1]:
+            strides.append(strides[-1]*s)
+        return tuple(strides[::-1])
+    else:
+        return ()
+
+
+
+
+class _ArrayFlags:
+    def __init__(self, ary):
+        self.array = ary
+
+    @property
+    def f_contiguous(self):
+        return self.array.strides == _f_contiguous_strides(
+                self.array.dtype.itemsize, self.array.shape)
+
+    @property
+    def c_contiguous(self):
+        return self.array.strides == _c_contiguous_strides(
+                self.array.dtype.itemsize, self.array.shape)
+
+    @property
+    def forc(self):
+        return self.f_contiguous or self.c_contiguous
+
 # }}}
 
 # {{{ array class
@@ -197,7 +239,7 @@ class Array(object):
     """
 
     def __init__(self, cqa, shape, dtype, order="C", allocator=None,
-            base=None, data=None, queue=None):
+            base=None, data=None, queue=None, strides=None):
         # {{{ backward compatibility for pre-cqa days
 
         if isinstance(cqa, cl.CommandQueue):
@@ -231,6 +273,9 @@ class Array(object):
 
         # invariant here: allocator, queue set
 
+        # {{{ determine shape and strides
+        dtype = np.dtype(dtype)
+
         try:
             s = 1
             for dim in shape:
@@ -242,13 +287,27 @@ class Array(object):
             s = shape
             shape = (shape,)
 
-        self.queue = queue
+        if strides is None:
+            if order == "F":
+                strides = _f_contiguous_strides(
+                        dtype.itemsize, shape)
+            elif order == "C":
+                strides = _c_contiguous_strides(
+                        dtype.itemsize, shape)
+            else:
+                raise ValueError("invalid order: %s" % order)
+        else:
+            # FIXME: We should possibly perform some plausibility
+            # checking on 'strides' here.
 
+            strides = tuple(strides)
+
+        # }}}
+
+        self.queue = queue
         self.shape = shape
-        self.dtype = np.dtype(dtype)
-        if order not in ["C", "F"]:
-            raise ValueError("order must be either 'C' or 'F'")
-        self.order = order
+        self.dtype = dtype
+        self.strides = strides
 
         self.mem_size = self.size = s
         self.nbytes = self.dtype.itemsize * self.size
@@ -269,6 +328,10 @@ class Array(object):
 
         self.context = self.data.context
 
+    @property
+    def flags(self):
+        return _ArrayFlags(self)
+
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue):
         return splay(queue, self.mem_size)
@@ -276,26 +339,36 @@ class Array(object):
     def set(self, ary, queue=None, async=False):
         assert ary.size == self.size
         assert ary.dtype == self.dtype
-        if self.size:
-            evt = cl.enqueue_write_buffer(queue or self.queue, self.data, ary)
+        assert self.flags.forc
 
-            if not async:
-                evt.wait()
+        if not ary.flags.forc:
+            if async:
+                raise RuntimeError("cannot asynchronously set from "
+                        "non-contiguous array")
+
+            ary = ary.copy()
+
+        if self.size:
+            cl.enqueue_write_buffer(queue or self.queue, self.data, ary, 
+                    is_blocking=not async)
 
     def get(self, queue=None, ary=None, async=False):
         if ary is None:
-            ary = np.empty(self.shape, self.dtype, order=self.order)
+            ary = np.empty(self.shape, self.dtype)
+
+            from numpy.lib.stride_tricks import as_strided
+            ary = as_strided(ary, strides=self.strides)
         else:
             if ary.size != self.size:
                 raise TypeError("'ary' has non-matching type")
             if ary.dtype != self.dtype:
                 raise TypeError("'ary' has non-matching size")
 
-        if self.size:
-            evt = cl.enqueue_read_buffer(queue or self.queue, self.data, ary)
+        assert self.flags.forc, "Array in get() must be contiguous"
 
-            if not async:
-                evt.wait()
+        if self.size:
+            cl.enqueue_read_buffer(queue or self.queue, self.data, ary,
+                    is_blocking=not async)
 
         return ary
 
@@ -388,15 +461,23 @@ class Array(object):
                 dest.context, dest.dtype, src.dtype)
 
     def _new_like_me(self, dtype=None, queue=None):
+        strides = None
         if dtype is None:
             dtype = self.dtype
+        else:
+            if dtype == self.dtype:
+                strides = self.strides
+
         queue = queue or self.queue
         if queue is not None:
-            return self.__class__(queue, self.shape, dtype, allocator=self.allocator)
+            return self.__class__(queue, self.shape, dtype, 
+                    allocator=self.allocator, strides=strides)
         elif self.allocator is not None:
-            return self.__class__(self.allocator, self.shape, dtype)
+            return self.__class__(self.allocator, self.shape, dtype,
+                    strides=strides)
         else:
-            return self.__class__(self.context, self.shape, dtype)
+            return self.__class__(self.context, self.shape, dtype,
+                    strides=strides)
 
     # operators ---------------------------------------------------------------
     def mul_add(self, selffac, other, otherfac, queue=None):
@@ -609,21 +690,14 @@ class Array(object):
 
 # {{{ creation helpers
 
-def _to_device(queue, ary, allocator=None, async=False):
-    if ary.flags.f_contiguous:
-        order = "F"
-    elif ary.flags.c_contiguous:
-        order = "C"
-    else:
-        raise ValueError("to_device only works on C- or Fortran-"
-                "contiguous arrays")
-
-    result = Array(queue, ary.shape, ary.dtype, order, allocator)
-    result.set(ary, async=async)
-    return result
-
 def to_device(*args, **kwargs):
     """Converts a numpy array to a :class:`Array`."""
+
+    def _to_device(queue, ary, allocator=None, async=False):
+        result = Array(queue, ary.shape, ary.dtype, allocator, strides=ary.strides)
+        result.set(ary, async=async)
+        return result
+
 
     if isinstance(args[0], cl.Context):
         from warnings import warn
@@ -640,14 +714,14 @@ def to_device(*args, **kwargs):
 
 empty = Array
 
-def _zeros(queue, shape, dtype, order="C", allocator=None):
-    result = Array(queue, shape, dtype, 
-            order=order, allocator=allocator)
-    result.fill(0)
-    return result
-
 def zeros(*args, **kwargs):
     """Returns an array of the given shape and dtype filled with 0's."""
+
+    def _zeros(queue, shape, dtype, order="C", allocator=None):
+        result = Array(queue, shape, dtype,
+                order=order, allocator=allocator)
+        result.fill(0)
+        return result
 
     if isinstance(args[0], cl.Context):
         from warnings import warn

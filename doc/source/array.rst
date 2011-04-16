@@ -23,7 +23,7 @@ The :class:`Array` Class
 
     An alias for :class:`pyopencl.tools.CLAllocator`.
 
-.. class:: Array(cqa, shape, dtype, order="C", allocator=None, base=None, data=None, queue=None)
+.. class:: Array(cqa, shape, dtype, order="C", *, allocator=None, base=None, data=None, queue=None)
 
     A :class:`numpy.ndarray` work-alike that stores its data and performs its
     computations on the compute device.  *shape* and *dtype* work exactly as in
@@ -42,8 +42,11 @@ The :class:`Array` Class
     :class:`int` representing the address of the newly allocated memory.
     (See :class:`DefaultAllocator`.)
 
+
     .. versionchanged:: 2011.1
         Renamed *context* to *cqa*, made it general-purpose.
+
+        All arguments beyond *order* should be considered keyword-only.
 
     .. attribute :: data
 
@@ -72,6 +75,16 @@ The :class:`Array` Class
 
         The size of the entire array in bytes. Computed as :attr:`size` times
         ``dtype.itemsize``.
+
+    .. attribute :: strides
+
+        Tuple of bytes to step in each dimension when traversing an array.
+
+    .. attribute :: flags
+
+        Return an object with attributes `c_contiguous`, `f_contiguous` and `forc`,
+        which may be used to query contiguity properties in analogy to
+        :attr:`numpy.ndarray.flags`.
 
     .. method :: __len__()
 
