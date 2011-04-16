@@ -589,6 +589,20 @@ def test_scan(ctx_getter):
 
 
 
+@pytools.test.mark_test.opencl
+def test_stride_preservation(ctx_getter):
+    context = ctx_getter()
+    queue = cl.CommandQueue(context)
+
+    A = np.random.rand(3,3)
+    AT = A.T
+    print AT.flags.f_contiguous, AT.flags.c_contiguous
+    AT_GPU = cl_array.to_device(queue, AT)
+    print AT_GPU.flags.f_contiguous, AT_GPU.flags.c_contiguous
+    assert np.allclose(AT_GPU.get(),AT)
+
+
+
 
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
