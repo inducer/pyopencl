@@ -41,7 +41,7 @@ void pyopencl_expose_part_2()
 
   DEF_SIMPLE_FUNCTION(get_supported_image_formats);
 
-  py::def("enqueue_read_image", enqueue_read_image,
+  py::def("_enqueue_read_image", enqueue_read_image,
       (py::args("queue", "mem", "origin", "region", "hostbuf"),
        py::arg("row_pitch")=0,
        py::arg("slice_pitch")=0,
@@ -50,7 +50,7 @@ void pyopencl_expose_part_2()
        py::arg("host_buffer")=py::object()
        ),
       py::return_value_policy<py::manage_new_object>());
-  py::def("enqueue_write_image", enqueue_write_image,
+  py::def("_enqueue_write_image", enqueue_write_image,
       (py::args("queue", "mem", "origin", "region", "hostbuf"),
        py::arg("row_pitch")=0,
        py::arg("slice_pitch")=0,
@@ -60,15 +60,15 @@ void pyopencl_expose_part_2()
        ),
       py::return_value_policy<py::manage_new_object>());
 
-  py::def("enqueue_copy_image", enqueue_copy_image,
+  py::def("_enqueue_copy_image", enqueue_copy_image,
       (py::args("queue", "src", "dest", "src_origin", "dest_origin", "region"),
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
-  py::def("enqueue_copy_image_to_buffer", enqueue_copy_image_to_buffer,
+  py::def("_enqueue_copy_image_to_buffer", enqueue_copy_image_to_buffer,
       (py::args("queue", "src", "dest", "origin", "region", "offset"),
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
-  py::def("enqueue_copy_buffer_to_image", enqueue_copy_image_to_buffer,
+  py::def("_enqueue_copy_buffer_to_image", enqueue_copy_image_to_buffer,
       (py::args("queue", "src", "dest", "offset", "origin", "region"),
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());

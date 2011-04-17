@@ -349,7 +349,7 @@ class Array(object):
             ary = ary.copy()
 
         if self.size:
-            cl.enqueue_write_buffer(queue or self.queue, self.data, ary, 
+            cl.enqueue_copy(queue or self.queue, self.data, ary,
                     is_blocking=not async)
 
     def get(self, queue=None, ary=None, async=False):
@@ -367,7 +367,7 @@ class Array(object):
         assert self.flags.forc, "Array in get() must be contiguous"
 
         if self.size:
-            cl.enqueue_read_buffer(queue or self.queue, self.data, ary,
+            cl.enqueue_copy(queue or self.queue, ary, self.data,
                     is_blocking=not async)
 
         return ary

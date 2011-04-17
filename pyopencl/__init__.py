@@ -7,7 +7,7 @@ except ImportError:
     from os.path import dirname, join, realpath
     if realpath(join(os.getcwd(), "pyopencl")) == realpath(dirname(__file__)):
         from warnings import warn
-        warn ("It looks like you are importing PyOpenCL from "
+        warn("It looks like you are importing PyOpenCL from "
                 "its source directory. This likely won't work.")
     raise
 
@@ -16,6 +16,7 @@ except ImportError:
 import numpy as np
 from pyopencl._cl import *
 import inspect as _inspect
+from decorator import decorator as _decorator
 
 CONSTANT_CLASSES = [
         getattr(_cl, name) for name in dir(_cl)
@@ -376,6 +377,89 @@ def create_some_context(interactive=True):
             devices = [devices[int(i)] for i in answer.split(",")]
 
     return Context(devices)
+
+
+
+
+def _mark_copy_deprecated(func):
+    def new_func(*args, **kwargs):
+        from warnings import warn
+        warn("'%s' has been deprecated in version 2011.1. Please use "
+                "enqueue_copy() instead." % func.__name__[1:], DeprecationWarning,
+                stacklevel=2)
+        return func(*args, **kwargs)
+
+    try:
+        from functools import update_wrapper
+    except ImportError:
+        pass
+    else:
+        update_wrapper(new_func, func)
+
+    return new_func
+
+
+enqueue_read_image = _mark_copy_deprecated(_cl._enqueue_read_image)
+enqueue_write_image = _mark_copy_deprecated(_cl._enqueue_write_image)
+enqueue_copy_image = _mark_copy_deprecated(_cl._enqueue_copy_image)
+enqueue_copy_image_to_buffer = _mark_copy_deprecated(_cl._enqueue_copy_image_to_buffer)
+enqueue_copy_buffer_to_image = _mark_copy_deprecated(_cl._enqueue_copy_buffer_to_image)
+enqueue_read_buffer = _mark_copy_deprecated(_cl._enqueue_read_buffer)
+enqueue_write_buffer = _mark_copy_deprecated(_cl._enqueue_write_buffer)
+enqueue_copy_buffer = _mark_copy_deprecated(_cl._enqueue_copy_buffer)
+
+if _cl.get_cl_header_version() >= (1,1):
+    enqueue_read_buffer_rect = _mark_copy_deprecated(_cl._enqueue_read_buffer_rect)
+    enqueue_write_buffer_rect = _mark_copy_deprecated(_cl._enqueue_write_buffer_rect)
+    enqueue_copy_buffer_rect = _mark_copy_deprecated(_cl._enqueue_copy_buffer_rect)
+
+def enqueue_copy(queue, dest, src, **kwargs):
+    if isinstance(dest, Buffer):
+        if isinstance(src, Buffer):
+            if "src_origin" in kwargs:
+                return _cl._enqueue_copy_buffer_rect(queue, src, dest, **kwargs)
+            else:
+                kwargs["dst_offset"] = kwargs.pop("dest_offset")
+                return _cl._enqueue_copy_buffer(queue, src, dest, **kwargs)
+        elif isinstance(src, Image):
+            return _cl._enqueue_copy_image_to_buffer(queue, src, dest, **kwargs)
+        else:
+            # assume from-host
+            if "buffer_origin" in kwargs:
+                return _cl._enqueue_write_buffer_rect(queue, dest, src, **kwargs)
+            else:
+                return _cl._enqueue_write_buffer(queue, dest, src, **kwargs)
+
+    elif isinstance(dest, Image):
+        if isinstance(src, Buffer):
+            return _cl._enqueue_copy_buffer_to_image(queue, src, dest, **kwargs)
+        elif isinstance(src, Image):
+            return _cl._enqueue_copy_image(queue, src, dest, **kwargs)
+        else:
+            # assume from-host
+            origin = kwargs.pop("origin")
+            region = kwargs.pop("region")
+            return _cl._enqueue_write_image(queue, dest, origin, region, src, **kwargs)
+
+    else:
+        # assume to-host
+
+        if isinstance(src, Buffer):
+            if "buffer_origin" in kwargs:
+                return _cl._enqueue_read_buffer_rect(queue, src, dest, **kwargs)
+            else:
+                return _cl._enqueue_read_buffer(queue, src, dest, **kwargs)
+        elif isinstance(src, Image):
+            pitches = kwargs.pop("pitches", (0,0))
+            if len(pitches) == 1:
+                kwargs["row_pitch"], = pitches
+            else:
+                kwargs["row_pitch"], kwargs["slice_pitch"] = pitches
+
+            return _cl._enqueue_read_image(queue, src, dest, **kwargs)
+        else:
+            # assume from-host
+            raise TypeError("enqueue_copy cannot perform host-to-host transfers")
 
 # }}}
 

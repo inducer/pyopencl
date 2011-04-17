@@ -25,6 +25,6 @@ prg = cl.Program(ctx, """
 prg.sum(queue, a.shape, None, a_buf, b_buf, dest_buf)
 
 a_plus_b = numpy.empty_like(a)
-cl.enqueue_read_buffer(queue, dest_buf, a_plus_b).wait()
+cl.enqueue_copy(queue, a_plus_b, dest_buf)
 
 print(la.norm(a_plus_b - (a+b)), la.norm(a_plus_b))
