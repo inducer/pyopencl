@@ -64,6 +64,9 @@ Platforms, Devices and Contexts
     whose completion this command waits before starting exeuction.
 .. |std-enqueue-blurb| replace:: Returns a new :class:`Event`. |explain-waitfor|
 
+.. |copy-depr| replace:: **Note:** This function is deprecated as of PyOpenCL 2011.1.
+        Use :func:`enqueue_copy` instead.
+
 .. function:: get_platforms()
 
     Return a list of :class:`Platform` instances.
@@ -300,6 +303,8 @@ Buffers
 
     *hostbuf* |buf-iface|
 
+    |copy-depr|
+
     .. versionchanged:: 2011.1
         *is_blocking* now defaults to True.
 
@@ -308,6 +313,8 @@ Buffers
     |std-enqueue-blurb|
 
     *hostbuf* |buf-iface|
+
+    |copy-depr|
 
     .. versionchanged:: 2011.1
         *is_blocking* now defaults to True.
@@ -318,6 +325,8 @@ Buffers
     :class:`Buffer` *src* is used instead.
 
     |std-enqueue-blurb|
+
+    |copy-depr|
 
     .. versionadded:: 0.91.5
 
@@ -330,6 +339,8 @@ Buffers
     |std-enqueue-blurb|
 
     *hostbuf* |buf-iface|
+
+    |copy-depr|
 
     Only available in OpenCL 1.1 and newer.
 
@@ -348,6 +359,8 @@ Buffers
 
     *hostbuf* |buf-iface|
 
+    |copy-depr|
+
     Only available in OpenCL 1.1 and newer.
 
     .. versionadded:: 0.92
@@ -362,6 +375,8 @@ Buffers
     length two or shorter, which may be zero to indicate 'tight packing'.
 
     |std-enqueue-blurb|
+
+    |copy-depr|
 
     Only available in OpenCL 1.1 and newer.
 
@@ -458,6 +473,8 @@ Images
 
     |std-enqueue-blurb|
 
+    |copy-depr|
+
     .. versionchanged:: 0.91
         *pitch* arguments defaults to zero, moved.
 
@@ -478,15 +495,89 @@ Images
 
 .. function:: enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region, wait_for=None)
 
+    |copy-depr|
+
     |std-enqueue-blurb|
 
 .. function:: enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset, wait_for=None)
+
+    |copy-depr|
 
     |std-enqueue-blurb|
 
 .. function:: enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region, wait_for=None)
 
+    |copy-depr|
+
     |std-enqueue-blurb|
+
+Transfers
+^^^^^^^^^
+
+.. function:: enqueue_copy(queue, dest, src, **kwargs)
+
+    Copy from :class:`Image`, :class:`Buffer` or the host to 
+    :class:`Image`, :class:`Buffer` or the host. (Note: host-to-host
+    copies are unsupported.)
+
+    The following keyword arguments are available:
+
+    :arg wait_for: (optional, default empty)
+    :arg is_blocking: Wait for completion. Defaults to *True*. 
+      (Available on any copy involving host memory)
+
+    :class:`Buffer` ↔ host transfers:
+
+    :arg device_offset: offset in bytes (optional)
+
+    :class:`Buffer` ↔ :class:`Buffer` transfers:
+
+    :arg byte_count: (optional)
+    :arg src_offset: (optional)
+    :arg dest_offset: (optional)
+
+    Rectangular :class:`Buffer` ↔  host transfers (CL 1.1 and newer):
+
+    :arg buffer_origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg host_origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg region: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg buffer_pitches: :class:`tuple` of :class:`int` of length
+        two or shorter. (optional, "tightly-packed" if unspecified)
+    :arg host_pitches: :class:`tuple` of :class:`int` of length
+        two or shorter. (optional, "tightly-packed" if unspecified)
+
+    :class:`Image` ↔ host transfers:
+
+    :arg origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg region: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg pitches: :class:`tuple` of :class:`int` of length
+        two or shorter. (optional)
+
+    :class:`Buffer` ↔ :class:`Image` transfers:
+
+    :arg offset: offset in buffer (mandatory)
+    :arg origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg region: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+
+    :class:`Image` ↔ :class:`Image` transfers:
+
+    :arg src_origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg dest_origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg region: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+
+    |std-enqueue-blurb|
+
+    .. versionadded:: 2011.1
 
 Mapping Memory into Host Address Space
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -97,6 +97,7 @@ Version 2011.1
 * Add vector types, see :class:`pyopencl.array.vec`.
 * Add :attr:`pyopencl.array.Array.strides`, :attr:`pyopencl.array.Array.flags`.
   Allow the creation of arrys in C and Fortran order.
+* Add :func:`pyopencl.enqueue_copy`. Deprecate all other transfer functions.
 
 Version 0.92
 ------------

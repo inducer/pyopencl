@@ -207,7 +207,7 @@ gpu_time = (time()-t1)/count
 
 # transfer device -> host -----------------------------------------------------
 t1 = time()
-cl.enqueue_read_buffer(queue, d_c_buf, h_c).wait()
+cl.enqueue_copy(queue, h_c, d_c_buf)
 pull_time = time()-t1
 
 # timing output ---------------------------------------------------------------

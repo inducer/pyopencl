@@ -164,7 +164,7 @@ void pyopencl_expose_part_1()
   // {{{ transfers
 
   // {{{ byte-for-byte
-  py::def("enqueue_read_buffer", enqueue_read_buffer,
+  py::def("_enqueue_read_buffer", enqueue_read_buffer,
       (py::args("queue", "mem", "hostbuf"),
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
@@ -172,7 +172,7 @@ void pyopencl_expose_part_1()
        py::arg("host_buffer")=py::object()
        ),
       py::return_value_policy<py::manage_new_object>());
-  py::def("enqueue_write_buffer", enqueue_write_buffer,
+  py::def("_enqueue_write_buffer", enqueue_write_buffer,
       (py::args("queue", "mem", "hostbuf"),
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
@@ -180,7 +180,7 @@ void pyopencl_expose_part_1()
        py::arg("host_buffer")=py::object()
        ),
       py::return_value_policy<py::manage_new_object>());
-  py::def("enqueue_copy_buffer", enqueue_copy_buffer,
+  py::def("_enqueue_copy_buffer", enqueue_copy_buffer,
       (py::args("queue", "src", "dst"),
        py::arg("byte_count")=0,
        py::arg("src_offset")=0,
@@ -194,7 +194,7 @@ void pyopencl_expose_part_1()
   // {{{ rectangular
 
 #ifdef CL_VERSION_1_1
-  py::def("enqueue_read_buffer_rect", enqueue_read_buffer_rect,
+  py::def("_enqueue_read_buffer_rect", enqueue_read_buffer_rect,
       (py::args("queue", "mem", "hostbuf",
                 "buffer_origin", "host_origin", "region"),
        py::arg("buffer_pitches")=py::object(),
@@ -203,7 +203,7 @@ void pyopencl_expose_part_1()
        py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
-  py::def("enqueue_write_buffer_rect", enqueue_write_buffer_rect,
+  py::def("_enqueue_write_buffer_rect", enqueue_write_buffer_rect,
       (py::args("queue", "mem", "hostbuf",
                 "buffer_origin", "host_origin", "region"),
        py::arg("buffer_pitches")=py::object(),
@@ -212,7 +212,7 @@ void pyopencl_expose_part_1()
        py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
-  py::def("enqueue_copy_buffer_rect", enqueue_copy_buffer_rect,
+  py::def("_enqueue_copy_buffer_rect", enqueue_copy_buffer_rect,
       (py::args("queue", "src", "dst",
                 "src_origin", "dst_origin", "region"),
        py::arg("src_pitches")=py::object(),

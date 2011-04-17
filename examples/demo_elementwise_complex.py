@@ -7,10 +7,10 @@ ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
 n = 10
-a_gpu = cl_array.to_device(ctx, queue,
+a_gpu = cl_array.to_device(queue,
         ( numpy.random.randn(n) + 1j*numpy.random.randn(n)
             ).astype(numpy.complex64))
-b_gpu = cl_array.to_device(ctx, queue,
+b_gpu = cl_array.to_device(queue,
         ( numpy.random.randn(n) + 1j*numpy.random.randn(n)
             ).astype(numpy.complex64))
 
@@ -46,7 +46,7 @@ real_part = ElementwiseKernel(ctx,
 c_gpu = cl_array.empty_like(a_gpu)
 complex_prod(5, a_gpu, b_gpu, c_gpu)
 
-c_gpu_real = cl_array.empty(ctx, len(a_gpu), dtype=numpy.float32, queue=queue)
+c_gpu_real = cl_array.empty(queue, len(a_gpu), dtype=numpy.float32)
 real_part(c_gpu, c_gpu_real)
 print c_gpu.get().real - c_gpu_real.get()
 
