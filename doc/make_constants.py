@@ -57,6 +57,11 @@ const_ext_lookup = {
             ("cl_nv_device_attribute_query", "0.92"),
             getattr(devi, "INTEGRATED_MEMORY_NV", None):
             ("cl_nv_device_attribute_query", "0.92"),
+
+            getattr(devi, "DOUBLE_FP_CONFIG", None):
+            ("cl_khr_fp64", "2011.1"),
+            getattr(devi, "HALF_FP_CONFIG", None):
+            ("cl_khr_fp16", "2011.1"),
             },
 
         ctxp: {
