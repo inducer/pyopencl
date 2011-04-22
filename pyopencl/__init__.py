@@ -394,7 +394,10 @@ def _mark_copy_deprecated(func):
     except ImportError:
         pass
     else:
-        update_wrapper(new_func, func)
+        try:
+            update_wrapper(new_func, func)
+        except AttributeError:
+            pass
 
     return new_func
 
