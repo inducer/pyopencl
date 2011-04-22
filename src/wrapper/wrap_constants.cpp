@@ -201,6 +201,10 @@ void pyopencl_expose_constants()
     ADD_ATTR(DEVICE_, KERNEL_EXEC_TIMEOUT_NV);
     ADD_ATTR(DEVICE_, INTEGRATED_MEMORY_NV);
 #endif
+// cl_amd_device_attribute_query
+#ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
+    ADD_ATTR(DEVICE_, PROFILING_TIMER_OFFSET_AMD);
+#endif
   }
 
   {
@@ -249,6 +253,10 @@ void pyopencl_expose_constants()
 #ifdef CL_VERSION_1_1
     ADD_ATTR(CONTEXT_, NUM_DEVICES);
 #endif
+// cl_amd_offline_devices
+#ifdef CL_CONTEXT_OFFLINE_DEVICES_AMD
+    ADD_ATTR(CONTEXT_, OFFLINE_DEVICES_AMD);
+#endif
   }
 
   {
@@ -290,6 +298,9 @@ void pyopencl_expose_constants()
     ADD_ATTR(MEM_, USE_HOST_PTR);
     ADD_ATTR(MEM_, ALLOC_HOST_PTR);
     ADD_ATTR(MEM_, COPY_HOST_PTR);
+#ifdef cl_amd_device_memory_flags
+    ADD_ATTR(MEM_, USE_PERSISTENT_MEM_AMD);
+#endif
   }
 
   {

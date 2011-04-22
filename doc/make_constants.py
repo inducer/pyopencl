@@ -10,6 +10,7 @@ iam = cl.addressing_mode
 evi = cl.event_info
 memi = cl.mem_info
 ctype = cl.command_type
+memf = cl.mem_flags
 
 def get_extra_lines(tup):
     ext_name, pyopencl_ver = tup
@@ -62,6 +63,9 @@ const_ext_lookup = {
             ("cl_khr_fp64", "2011.1"),
             getattr(devi, "HALF_FP_CONFIG", None):
             ("cl_khr_fp16", "2011.1"),
+
+            getattr(devi, "PROFILING_TIMER_OFFSET_AMD", None):
+            ("cl_amd_device_attribute_query", "2011.1"),
             },
 
         ctxp: {
@@ -70,6 +74,9 @@ const_ext_lookup = {
             getattr(ctxp, "GLX_DISPLAY_KHR", None): ("cl_khr_gl_sharing", "0.92"),
             getattr(ctxp, "WGL_HDC_KHR", None): ("cl_khr_gl_sharing", "0.92"),
             getattr(ctxp, "CGL_SHAREGROUP_KHR", None): ("cl_khr_gl_sharing", "0.92"),
+
+            getattr(ctxp, "OFFLINE_DEVICES_AMD", None): 
+            ("cl_amd_offline_devices", "2011.1"),
             },
 
         fpc: {
@@ -110,6 +117,11 @@ const_ext_lookup = {
             getattr(ctype, "COPY_BUFFER_RECT", None): ("CL_1.1", "0.92"),
             getattr(ctype, "USER", None): ("CL_1.1", "0.92"),
             },
+
+        memf: {
+            getattr(memf, "USE_PERSISTENT_MEM_AMD", None): 
+            ("cl_amd_device_memory_flags", "2011.1"),
+            }
         }
 try:
     gl_ci = cl.gl_context_info
