@@ -139,7 +139,7 @@
       std::cerr \
         << "PyOpenCL WARNING: a clean-up operation failed (dead context maybe?)" \
         << std::endl \
-        << pyopencl::error::make_message(#NAME, status_code) \
+        << #NAME " failed with code " << status_code \
         << std::endl; \
   }
 
@@ -246,22 +246,8 @@ namespace pyopencl
       cl_int m_code;
 
     public:
-      static std::string make_message(const char *rout, cl_int c, const char *msg=0)
-      {
-        std::string result = rout;
-        result += " failed: ";
-        result += cl_error_to_str(c);
-        if (msg)
-        {
-          result += " - ";
-          result += msg;
-        }
-        return result;
-      }
-
-      error(const char *rout, cl_int c, const char *msg=0)
-        : std::runtime_error(make_message(rout, c, msg)),
-        m_routine(rout), m_code(c)
+      error(const char *rout, cl_int c, const char *msg="")
+        : std::runtime_error(msg), m_routine(rout), m_code(c)
       { }
 
       const char *routine() const
@@ -281,79 +267,6 @@ namespace pyopencl
             || code() == CL_OUT_OF_HOST_MEMORY);
       }
 
-      static const char *cl_error_to_str(cl_int e)
-      {
-        switch (e)
-        {
-          case CL_SUCCESS: return "success";
-          case CL_DEVICE_NOT_FOUND: return "device not found";
-          case CL_DEVICE_NOT_AVAILABLE: return "device not available";
-#if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
-          case CL_COMPILER_NOT_AVAILABLE: return "device compiler not available";
-#endif
-          case CL_MEM_OBJECT_ALLOCATION_FAILURE: return "mem object allocation failure";
-          case CL_OUT_OF_RESOURCES: return "out of resources";
-          case CL_OUT_OF_HOST_MEMORY: return "out of host memory";
-          case CL_PROFILING_INFO_NOT_AVAILABLE: return "profiling info not available";
-          case CL_MEM_COPY_OVERLAP: return "mem copy overlap";
-          case CL_IMAGE_FORMAT_MISMATCH: return "image format mismatch";
-          case CL_IMAGE_FORMAT_NOT_SUPPORTED: return "image format not supported";
-          case CL_BUILD_PROGRAM_FAILURE: return "build program failure";
-          case CL_MAP_FAILURE: return "map failure";
-
-          case CL_INVALID_VALUE: return "invalid value";
-          case CL_INVALID_DEVICE_TYPE: return "invalid device type";
-          case CL_INVALID_PLATFORM: return "invalid platform";
-          case CL_INVALID_DEVICE: return "invalid device";
-          case CL_INVALID_CONTEXT: return "invalid context";
-          case CL_INVALID_QUEUE_PROPERTIES: return "invalid queue properties";
-          case CL_INVALID_COMMAND_QUEUE: return "invalid command queue";
-          case CL_INVALID_HOST_PTR: return "invalid host ptr";
-          case CL_INVALID_MEM_OBJECT: return "invalid mem object";
-          case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR: return "invalid image format descriptor";
-          case CL_INVALID_IMAGE_SIZE: return "invalid image size";
-          case CL_INVALID_SAMPLER: return "invalid sampler";
-          case CL_INVALID_BINARY: return "invalid binary";
-          case CL_INVALID_BUILD_OPTIONS: return "invalid build options";
-          case CL_INVALID_PROGRAM: return "invalid program";
-          case CL_INVALID_PROGRAM_EXECUTABLE: return "invalid program executable";
-          case CL_INVALID_KERNEL_NAME: return "invalid kernel name";
-          case CL_INVALID_KERNEL_DEFINITION: return "invalid kernel definition";
-          case CL_INVALID_KERNEL: return "invalid kernel";
-          case CL_INVALID_ARG_INDEX: return "invalid arg index";
-          case CL_INVALID_ARG_VALUE: return "invalid arg value";
-          case CL_INVALID_ARG_SIZE: return "invalid arg size";
-          case CL_INVALID_KERNEL_ARGS: return "invalid kernel args";
-          case CL_INVALID_WORK_DIMENSION: return "invalid work dimension";
-          case CL_INVALID_WORK_GROUP_SIZE: return "invalid work group size";
-          case CL_INVALID_WORK_ITEM_SIZE: return "invalid work item size";
-          case CL_INVALID_GLOBAL_OFFSET: return "invalid global offset";
-          case CL_INVALID_EVENT_WAIT_LIST: return "invalid event wait list";
-          case CL_INVALID_EVENT: return "invalid event";
-          case CL_INVALID_OPERATION: return "invalid operation";
-          case CL_INVALID_GL_OBJECT: return "invalid gl object";
-          case CL_INVALID_BUFFER_SIZE: return "invalid buffer size";
-          case CL_INVALID_MIP_LEVEL: return "invalid mip level";
-
-#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
-          case CL_INVALID_GL_SHAREGROUP_REFERENCE_KHR: return "invalid gl sharegroup reference number";
-#endif
-
-#ifdef CL_VERSION_1_1
-          case CL_MISALIGNED_SUB_BUFFER_OFFSET: return "misaligned sub-buffer offset";
-          case CL_EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST: return "exec status error for events in wait list";
-          case CL_INVALID_GLOBAL_WORK_SIZE: return "invalid global work size";
-#endif
-
-#ifdef cl_ext_device_fission
-          case CL_DEVICE_PARTITION_FAILED_EXT: return "device partition failed";
-          case CL_INVALID_PARTITION_COUNT_EXT: return "invalid partition count";
-          case CL_INVALID_PARTITION_NAME_EXT: return "invalid partition name";
-#endif
-
-          default: return "invalid/unknown error code";
-        }
-      }
   };
 
   // }}}
@@ -2499,7 +2412,7 @@ namespace pyopencl
       {
         if (py_devices.ptr() == Py_None)
         {
-          PYOPENCL_CALL_GUARDED(clBuildProgram,
+          PYOPENCL_CALL_GUARDED_THREADED(clBuildProgram,
               (m_program, 0, 0, options.c_str(), 0 ,0));
         }
         else
@@ -2508,7 +2421,7 @@ namespace pyopencl
           PYTHON_FOREACH(py_dev, py_devices)
             devices.push_back(
                 py::extract<device &>(py_dev)().data());
-          PYOPENCL_CALL_GUARDED(clBuildProgram,
+          PYOPENCL_CALL_GUARDED_THREADED(clBuildProgram,
               (m_program, devices.size(), devices.empty( ) ? NULL : &devices.front(),
                options.c_str(), 0 ,0));
         }
@@ -2557,6 +2470,7 @@ namespace pyopencl
     std::vector<cl_device_id> devices;
     std::vector<const unsigned char *> binaries;
     std::vector<size_t> sizes;
+    std::vector<cl_int> binary_statuses;
 
     int num_devices = len(py_devices);
     if (len(py_binaries) != num_devices)
@@ -2578,14 +2492,24 @@ namespace pyopencl
       sizes.push_back(len);
     }
 
+    binary_statuses.resize(num_devices);
+
     cl_int status_code;
     cl_program result = clCreateProgramWithBinary(
         ctx.data(), num_devices,
-        devices.empty( ) ? NULL : &devices.front(), sizes.empty( ) ? NULL : &sizes.front(), binaries.empty( ) ? NULL : &binaries.front(),
-        /*binary_status*/ 0, &status_code);
+        devices.empty( ) ? NULL : &devices.front(),
+        sizes.empty( ) ? NULL : &sizes.front(),
+        binaries.empty( ) ? NULL : &binaries.front(),
+        binary_statuses.empty( ) ? NULL : &binary_statuses.front(),
+        &status_code);
     PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBinary");
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("clCreateProgramWithBinary", status_code);
+
+    /*
+    for (int i = 0; i < num_devices; ++i)
+      printf("%d:%d\n", i, binary_statuses[i]);
+      */
 
     try
     {

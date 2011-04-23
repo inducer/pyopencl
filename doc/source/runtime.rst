@@ -686,7 +686,6 @@ Programs and Kernels
         Returns *self*.
 
         .. versionchanged:: 2011.1
-
             *options* may now also be a :class:`list` of :class:`str`.
 
     .. attribute:: kernel_name

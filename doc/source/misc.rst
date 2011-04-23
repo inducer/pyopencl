@@ -99,6 +99,7 @@ Version 2011.1
   Allow the creation of arrys in C and Fortran order.
 * Add :func:`pyopencl.enqueue_copy`. Deprecate all other transfer functions.
 * Add support for numerous extensions, among them device fission.
+* Add a compiler cache.
 
 Version 0.92
 ------------

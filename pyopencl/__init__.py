@@ -120,22 +120,19 @@ def _add_functionality():
 
     # }}}
 
-    # {{{ Program
-    def program_getattr(self, attr):
-        try:
-            pi_attr = getattr(_cl.program_info, attr.upper())
-        except AttributeError:
+    # {{{ _Program (the internal, non-caching version)
+
+    def program_get_build_logs(self):
+        build_logs = []
+        for dev in self.get_info(_cl.program_info.DEVICES):
             try:
-                knl = Kernel(self, attr)
-                # Nvidia does not raise errors even for invalid names,
-                # but this will give an error if the kernel is invalid.
-                knl.num_args
-                return knl
-            except LogicError:
-                raise AttributeError("'%s' was not found as a program info attribute or as a kernel name"
-                        % attr)
-        else:
-            return self.get_info(pi_attr)
+                log = self.get_build_info(dev, program_build_info.LOG)
+            except:
+                log = "<error retrieving log>"
+
+            build_logs.append((dev, log))
+
+        return build_logs
 
     def program_build(self, options=[], devices=None):
         if isinstance(options, list):
@@ -144,23 +141,31 @@ def _add_functionality():
         try:
             self._build(options=options, devices=devices)
         except Exception, e:
-            build_logs = []
-            for dev in self.devices:
-                try:
-                    log = self.get_build_info(dev, program_build_info.LOG)
-                except:
-                    log = "<error retrieving log>"
-
-                build_logs.append((dev, log))
+            from pytools import Record
+            class ErrorRecord(Record):
+                pass
 
             raise _cl.RuntimeError(
-                    str(e) + "\n\n" + (75*"="+"\n").join(
-                        "Build on %s:\n\n%s" % (dev, log) for dev, log in build_logs))
+                    ErrorRecord(
+                        what=lambda : e.what + "\n\n" + (75*"="+"\n").join(
+                            "Build on %s:\n\n%s" % (dev, log) 
+                            for dev, log in self._get_build_logs()),
+                        code=lambda : e.code,
+                        routine=lambda : e.routine))
+
+        message = (75*"="+"\n").join(
+                "Build on %s succeeded, but said:\n\n%s" % (dev, log) 
+                for dev, log in self._get_build_logs()
+                if log)
+
+        if message:
+            from warnings import warn
+            warn("Build succeeded, but resulted in non-empty logs:\n"+message)
 
         return self
 
-    Program.__getattr__ = program_getattr
-    Program.build = program_build
+    _cl._Program._get_build_logs = program_get_build_logs
+    _cl._Program.build = program_build
 
     # }}}
 
@@ -269,6 +274,7 @@ def _add_functionality():
     # }}}
 
     # {{{ ImageFormat
+
     def image_format_repr(self):
         return "ImageFormat(%s, %s)" % (
                 channel_order.to_string(self.channel_order, 
@@ -277,9 +283,11 @@ def _add_functionality():
                     "<unknown channel data type %d>"))
 
     ImageFormat.__repr__ = image_format_repr
+
     # }}}
 
     # {{{ Image
+
     class ImageInfoGetter:
         def __init__(self, event):
             from warnings import warn
@@ -311,11 +319,38 @@ def _add_functionality():
     # }}}
 
     # {{{ Event
+
     def event_wait(self):
         wait_for_events([self])
         return self
 
     Event.wait = event_wait
+
+    # }}}
+
+    # {{{ Error
+
+    def error_str(self):
+        val = self.args[0]
+        result = "%s failed: %s" % (val.routine(), 
+                status_code.to_string(val.code()).lower().replace("_", " "))
+        if val.what():
+            result += " - " + val.what()
+        return result
+
+    def error_code(self):
+        return self.args[0].code()
+
+    def error_routine(self):
+        return self.args[0].routine()
+
+    def error_what(self):
+        return self.args[0].what()
+
+    Error.__str__ = error_str
+    Error.code = property(error_code)
+    Error.routine = property(error_routine)
+    Error.what = property(error_what)
 
     # }}}
 
@@ -330,6 +365,62 @@ _add_functionality()
 
 
 
+
+# {{{ Program (including caching support)
+
+class Program(object):
+    def __init__(self, context, arg1, arg2=None):
+        if arg2 is None:
+            self._context = context
+            self._source = arg1
+            self._prg = None
+        else:
+            self._prg = _cl.Program(context, arg1, arg2)
+
+    def _get_prg(self):
+        if self._prg is not None:
+            return self._prg
+        else:
+            # "no program" can only happen in from-source case.
+            from warnings import warn
+            warn("Pre-build attribute access defeats compiler caching.", stacklevel=3)
+
+            self._prg = _cl._Program(self._context, self._source)
+            del self._context
+            del self._source
+            return self._prg
+
+    def get_info(self, arg):
+        return self._get_prg().get_info(arg)
+
+    def __getattr__(self, attr):
+        try:
+            pi_attr = getattr(_cl.program_info, attr.upper())
+        except AttributeError:
+            try:
+                knl = Kernel(self._get_prg(), attr)
+                # Nvidia does not raise errors even for invalid names,
+                # but this will give an error if the kernel is invalid.
+                knl.num_args
+                return knl
+            except LogicError:
+                raise AttributeError("'%s' was not found as a program "
+                        "info attribute or as a kernel name" % attr)
+        else:
+            return self.get_info(pi_attr)
+
+    def build(self, options=[], devices=None, cache_dir=None):
+        if self._prg is not None:
+            self._prg._build(options, devices)
+        else:
+            from pyopencl.cache import create_built_program_from_source_cached
+            self._prg = create_built_program_from_source_cached(
+                    self._context, self._source, options, devices,
+                    cache_dir=None)
+
+        return self
+
+    # }}}
 
 # {{{ convenience -------------------------------------------------------------
 def create_some_context(interactive=True):
@@ -465,6 +556,8 @@ def enqueue_copy(queue, dest, src, **kwargs):
             raise TypeError("enqueue_copy cannot perform host-to-host transfers")
 
 # }}}
+
+
 
 
 # vim: foldmethod=marker

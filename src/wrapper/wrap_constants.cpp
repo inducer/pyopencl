@@ -22,19 +22,20 @@ namespace
   void translate_cl_error(const error &err)
   {
     if (err.code() == CL_MEM_OBJECT_ALLOCATION_FAILURE)
-      PyErr_SetString(CLMemoryError.get(), err.what());
+      PyErr_SetObject(CLMemoryError.get(), py::object(err).ptr());
     else if (err.code() <= CL_INVALID_VALUE)
-      PyErr_SetString(CLLogicError.get(), err.what());
+      PyErr_SetObject(CLLogicError.get(), py::object(err).ptr());
     else if (err.code() > CL_INVALID_VALUE && err.code() < CL_SUCCESS)
-      PyErr_SetString(CLRuntimeError.get(), err.what());
+      PyErr_SetObject(CLRuntimeError.get(), py::object(err).ptr());
     else
-      PyErr_SetString(CLError.get(), err.what());
+      PyErr_SetObject(CLError.get(), py::object(err).ptr());
   }
 
 
 
 
   // {{{ 'fake' constant scopes
+  class status_code { };
   class platform_info { };
   class device_type { };
   class device_info { };
@@ -104,6 +105,85 @@ void pyopencl_expose_constants()
   cls.attr(#NAME) = CL_##PREFIX##NAME
 #define ADD_ATTR_SUFFIX(PREFIX, NAME, SUFFIX) \
   cls.attr(#NAME) = CL_##PREFIX##NAME##SUFFIX
+
+  {
+    typedef error cls;
+    py::class_<error> ("_error", py::no_init)
+      .DEF_SIMPLE_METHOD(routine)
+      .DEF_SIMPLE_METHOD(code)
+      .DEF_SIMPLE_METHOD(what)
+      ;
+  }
+
+  {
+    py::class_<status_code> cls("status_code", py::no_init);
+
+    ADD_ATTR(, SUCCESS);
+    ADD_ATTR(, DEVICE_NOT_FOUND);
+    ADD_ATTR(, DEVICE_NOT_AVAILABLE);
+#if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
+    ADD_ATTR(, COMPILER_NOT_AVAILABLE);
+#endif
+    ADD_ATTR(, MEM_OBJECT_ALLOCATION_FAILURE);
+    ADD_ATTR(, OUT_OF_RESOURCES);
+    ADD_ATTR(, OUT_OF_HOST_MEMORY);
+    ADD_ATTR(, PROFILING_INFO_NOT_AVAILABLE);
+    ADD_ATTR(, MEM_COPY_OVERLAP);
+    ADD_ATTR(, IMAGE_FORMAT_MISMATCH);
+    ADD_ATTR(, IMAGE_FORMAT_NOT_SUPPORTED);
+    ADD_ATTR(, BUILD_PROGRAM_FAILURE);
+    ADD_ATTR(, MAP_FAILURE);
+
+    ADD_ATTR(, INVALID_VALUE);
+    ADD_ATTR(, INVALID_DEVICE_TYPE);
+    ADD_ATTR(, INVALID_PLATFORM);
+    ADD_ATTR(, INVALID_DEVICE);
+    ADD_ATTR(, INVALID_CONTEXT);
+    ADD_ATTR(, INVALID_QUEUE_PROPERTIES);
+    ADD_ATTR(, INVALID_COMMAND_QUEUE);
+    ADD_ATTR(, INVALID_HOST_PTR);
+    ADD_ATTR(, INVALID_MEM_OBJECT);
+    ADD_ATTR(, INVALID_IMAGE_FORMAT_DESCRIPTOR);
+    ADD_ATTR(, INVALID_IMAGE_SIZE);
+    ADD_ATTR(, INVALID_SAMPLER);
+    ADD_ATTR(, INVALID_BINARY);
+    ADD_ATTR(, INVALID_BUILD_OPTIONS);
+    ADD_ATTR(, INVALID_PROGRAM);
+    ADD_ATTR(, INVALID_PROGRAM_EXECUTABLE);
+    ADD_ATTR(, INVALID_KERNEL_NAME);
+    ADD_ATTR(, INVALID_KERNEL_DEFINITION);
+    ADD_ATTR(, INVALID_KERNEL);
+    ADD_ATTR(, INVALID_ARG_INDEX);
+    ADD_ATTR(, INVALID_ARG_VALUE);
+    ADD_ATTR(, INVALID_ARG_SIZE);
+    ADD_ATTR(, INVALID_KERNEL_ARGS);
+    ADD_ATTR(, INVALID_WORK_DIMENSION);
+    ADD_ATTR(, INVALID_WORK_GROUP_SIZE);
+    ADD_ATTR(, INVALID_WORK_ITEM_SIZE);
+    ADD_ATTR(, INVALID_GLOBAL_OFFSET);
+    ADD_ATTR(, INVALID_EVENT_WAIT_LIST);
+    ADD_ATTR(, INVALID_EVENT);
+    ADD_ATTR(, INVALID_OPERATION);
+    ADD_ATTR(, INVALID_GL_OBJECT);
+    ADD_ATTR(, INVALID_BUFFER_SIZE);
+    ADD_ATTR(, INVALID_MIP_LEVEL);
+
+#if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+    ADD_ATTR(, INVALID_GL_SHAREGROUP_REFERENCE_KHR);
+#endif
+
+#ifdef CL_VERSION_1_1
+    ADD_ATTR(, MISALIGNED_SUB_BUFFER_OFFSET);
+    ADD_ATTR(, EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST);
+    ADD_ATTR(, INVALID_GLOBAL_WORK_SIZE);
+#endif
+
+#ifdef cl_ext_device_fission
+    ADD_ATTR(, DEVICE_PARTITION_FAILED_EXT);
+    ADD_ATTR(, INVALID_PARTITION_COUNT_EXT);
+    ADD_ATTR(, INVALID_PARTITION_NAME_EXT);
+#endif
+  }
 
   {
     py::class_<platform_info> cls("platform_info", py::no_init);

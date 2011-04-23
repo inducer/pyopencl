@@ -117,7 +117,7 @@ void pyopencl_expose_part_2()
   // {{{ program
   {
     typedef program cls;
-    py::class_<cls, boost::noncopyable>("Program", py::no_init)
+    py::class_<cls, boost::noncopyable>("_Program", py::no_init)
       .def("__init__", make_constructor(
             create_program_with_source,
             py::default_call_policies(),
