@@ -195,8 +195,7 @@ def get_device_cache_id(device):
     platform = device.platform
     return (VERSION, 
             platform.vendor, platform.name, platform.version,
-            device.vendor, device.name, device.version, device.driver_version,
-            device.opencl_c_version)
+            device.vendor, device.name, device.version, device.driver_version)
 
 
 
@@ -269,7 +268,6 @@ def retrieve_from_cache(cache_dir, cache_key):
         # }}}
 
         if check_dependencies(info.dependencies):
-            print "YES"
             return binary, info.log
         else:
             mod_cache_dir_m.reset()
@@ -328,6 +326,14 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
             binaries.append(binary)
             logs.append(log)
 
+    message = (75*"="+"\n").join(
+            "Build on %s succeeded, but said:\n\n%s" % (dev, log) 
+            for dev, log in zip(devices, logs)
+            if log is not None and log.strip())
+
+    if message:
+        from warnings import warn
+        warn("Build succeeded, but resulted in non-empty logs:\n"+message)
     # {{{ build on the build-needing devices, in one go
 
     result = None
@@ -416,6 +422,7 @@ def create_built_program_from_source_cached(ctx, src, options=[], devices=None,
             already_built = False
 
     except Exception, e:
+        raise
         from pyopencl import Error
         if (isinstance(e, Error) 
                 and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE):

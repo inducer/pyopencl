@@ -93,7 +93,7 @@ void pyopencl_expose_constants()
         CLError,
         py::handle<>(py::borrowed(PyExc_MemoryError)));
     DECLARE_EXC(MemoryError, memerr_bases.ptr());
-    DECLARE_EXC(LogicError, CLLogicError.get());
+    DECLARE_EXC(LogicError, CLError.get());
     DECLARE_EXC(RuntimeError, CLError.get());
 
     py::register_exception_translator<error>(translate_cl_error);

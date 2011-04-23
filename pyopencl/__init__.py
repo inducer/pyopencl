@@ -156,7 +156,7 @@ def _add_functionality():
         message = (75*"="+"\n").join(
                 "Build on %s succeeded, but said:\n\n%s" % (dev, log) 
                 for dev, log in self._get_build_logs()
-                if log)
+                if log is not None and log.strip())
 
         if message:
             from warnings import warn
