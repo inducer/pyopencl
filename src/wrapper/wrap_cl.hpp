@@ -151,8 +151,11 @@
     CL_TYPE param_value; \
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info, \
           (FIRST_ARG, SECOND_ARG, sizeof(param_value), &param_value, 0)); \
-    return py::object(handle_from_new_ptr( \
-          new TYPE(param_value, /*retain*/ true))); \
+    if (param_value) \
+      return py::object(handle_from_new_ptr( \
+            new TYPE(param_value, /*retain*/ true))); \
+    else \
+      return py::object(); \
   }
 
 #define PYOPENCL_GET_VEC_INFO(WHAT, FIRST_ARG, SECOND_ARG, RES_VEC) \
@@ -342,6 +345,12 @@ namespace pyopencl
           case CL_INVALID_GLOBAL_WORK_SIZE: return "invalid global work size";
 #endif
 
+#ifdef cl_ext_device_fission
+          case CL_DEVICE_PARTITION_FAILED_EXT: return "device partition failed";
+          case CL_INVALID_PARTITION_COUNT_EXT: return "invalid partition count";
+          case CL_INVALID_PARTITION_NAME_EXT: return "invalid partition name";
+#endif
+
           default: return "invalid/unknown error code";
         }
       }
@@ -435,15 +444,55 @@ namespace pyopencl
   {
     private:
       cl_device_id m_device;
+      bool m_ownable_reference;
 
     public:
       device(cl_device_id did)
-      : m_device(did)
+      : m_device(did), m_ownable_reference(false)
       { }
 
-      device(cl_device_id did, bool /*retain (ignored)*/)
-      : m_device(did)
-      { }
+      device(cl_device_id did, bool retain, bool ownable_reference=false)
+      : m_device(did), m_ownable_reference(ownable_reference)
+      {
+        if (ownable_reference)
+        {
+#ifdef cl_ext_device_fission
+          if (retain)
+          {
+            clRetainDeviceEXT_fn cl_retain_device
+              = (clRetainDeviceEXT_fn)
+              clGetExtensionFunctionAddress("clRetainDeviceEXT");
+
+            if (!cl_retain_device)
+              throw error("Device", CL_INVALID_VALUE,
+                  "clRetainDeviceEXT not available");
+
+            PYOPENCL_CALL_GUARDED(cl_retain_device, (did));
+          }
+#else
+          throw error("Device", CL_INVALID_VALUE, 
+              "cannot own references to devices when device fission is not available");
+#endif
+        }
+      }
+
+      ~device()
+      {
+#ifdef cl_ext_device_fission
+        if (m_ownable_reference)
+        {
+          clReleaseDeviceEXT_fn cl_release_device
+            = (clReleaseDeviceEXT_fn)
+            clGetExtensionFunctionAddress("clReleaseDeviceEXT");
+
+          if (!cl_release_device)
+            throw error("Device", CL_INVALID_VALUE,
+                "clReleaseDeviceEXT not available");
+
+          PYOPENCL_CALL_GUARDED_CLEANUP(cl_release_device, (m_device));
+        }
+#endif
+      }
 
       cl_device_id data() const
       {
@@ -561,11 +610,61 @@ namespace pyopencl
           case CL_DEVICE_INTEGRATED_MEMORY_NV:
             DEV_GET_INT_INF(cl_bool);
 #endif
+#ifdef cl_ext_device_fission
+          case CL_DEVICE_PARENT_DEVICE_EXT:
+            PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device);
+          case CL_DEVICE_PARTITION_TYPES_EXT:
+          case CL_DEVICE_AFFINITY_DOMAINS_EXT:
+          case CL_DEVICE_PARTITION_STYLE_EXT:
+            {
+              std::vector<cl_device_partition_property_ext> result;
+              PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_device_partition_property_ext, result);
+            }
+          case CL_DEVICE_REFERENCE_COUNT_EXT: DEV_GET_INT_INF(cl_uint);
+#endif
 
           default:
             throw error("Device.get_info", CL_INVALID_VALUE);
         }
       }
+
+#ifdef cl_ext_device_fission
+      py::list create_sub_devices(py::object py_properties)
+      {
+        std::vector<cl_device_partition_property_ext> properties;
+
+        clCreateSubDevicesEXT_fn cl_create_sub_devices
+          = (clCreateSubDevicesEXT_fn)
+          clGetExtensionFunctionAddress("clCreateSubDevicesEXT");
+
+        if (!cl_create_sub_devices)
+          throw error("Device.create_sub_devices", CL_INVALID_VALUE,
+              "clCreateSubDevicesEXT not available");
+
+        COPY_PY_LIST(cl_device_partition_property_ext, properties);
+        properties.push_back(CL_PROPERTIES_LIST_END_EXT);
+
+        cl_device_partition_property_ext *props_ptr
+          = properties.empty( ) ? NULL : &properties.front();
+
+        cl_uint num_entries;
+        PYOPENCL_CALL_GUARDED(cl_create_sub_devices,
+            (m_device, props_ptr, 0, NULL, &num_entries));
+
+        std::vector<cl_device_id> result;
+        result.resize(num_entries);
+
+        PYOPENCL_CALL_GUARDED(cl_create_sub_devices,
+            (m_device, props_ptr, num_entries, &result.front(), NULL));
+
+        py::list py_result;
+        BOOST_FOREACH(cl_device_id did, result)
+          py_result.append(handle_from_new_ptr(
+                new pyopencl::device(did, /*retain*/false, /*ownable*/true)));
+        return py_result;
+      }
+#endif
   };
 
 

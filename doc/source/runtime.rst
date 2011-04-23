@@ -147,6 +147,24 @@ Platforms, Devices and Contexts
 
         See :class:`context_info` for values of *param*.
 
+    .. method:: create_sub_devices(properties)
+
+        *properties* is an array of one (or more) of the forms::
+
+            [ dppe.EQUALLY, 8]
+            [ dppe.BY_COUNTS, 5, 7, 9, dppe.PARTITION_BY_COUNTS_LIST_END]
+            [ dppe.BY_NAMES, 5, 7, 9, dppe.PARTITION_BY_NAMES_LIST_END]
+            [ dppe.BY_AFFINITY_DOMAIN, ad.L1_CACHE]
+
+        where `dppe` represents :class:`device_partition_property_ext`
+        and `ad` represent :class:`affinity_domain_ext`.
+
+        `PROPERTIES_LIST_END_EXT` is added automatically.
+
+        Only available with the `cl_ext_device_fission` extension.
+
+        .. versionadded:: 2011.1
+
     |comparable|
 
 .. function:: create_some_context(interactive=True)

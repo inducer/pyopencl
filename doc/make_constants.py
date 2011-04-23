@@ -11,6 +11,8 @@ evi = cl.event_info
 memi = cl.mem_info
 ctype = cl.command_type
 memf = cl.mem_flags
+dppe = cl.device_partition_property_ext
+ade = cl.affinity_domain_ext
 
 def get_extra_lines(tup):
     ext_name, pyopencl_ver = tup
@@ -66,6 +68,17 @@ const_ext_lookup = {
 
             getattr(devi, "PROFILING_TIMER_OFFSET_AMD", None):
             ("cl_amd_device_attribute_query", "2011.1"),
+
+            getattr(devi, "PARENT_DEVICE_EXT", None):
+            ("cl_ext_device_fission", "2011.1"),
+            getattr(devi, "PARTITION_TYPES_EXT", None):
+            ("cl_ext_device_fission", "2011.1"),
+            getattr(devi, "AFFINITY_DOMAINS_EXT", None):
+            ("cl_ext_device_fission", "2011.1"),
+            getattr(devi, "REFERENCE_COUNT_EXT", None):
+            ("cl_ext_device_fission", "2011.1"),
+            getattr(devi, "PARTITION_STYLE_EXT", None):
+            ("cl_ext_device_fission", "2011.1"),
             },
 
         ctxp: {
@@ -121,6 +134,24 @@ const_ext_lookup = {
         memf: {
             getattr(memf, "USE_PERSISTENT_MEM_AMD", None): 
             ("cl_amd_device_memory_flags", "2011.1"),
+            },
+        dppe: {
+            getattr(dppe, "EQUALLY", None): ("cl_ext_device_fission", "2011.1"),
+            getattr(dppe, "BY_COUNTS", None): ("cl_ext_device_fission", "2011.1"),
+            getattr(dppe, "BY_NAMES", None): ("cl_ext_device_fission", "2011.1"),
+            getattr(dppe, "BY_AFFINITY_DOMAIN", None): ("cl_ext_device_fission", "2011.1"),
+
+            getattr(dppe, "PROPERTIES_LIST_END", None): ("cl_ext_device_fission", "2011.1"),
+            getattr(dppe, "PARTITION_BY_COUNTS_LIST_END", None): ("cl_ext_device_fission", "2011.1"),
+            getattr(dppe, "PARTITION_BY_NAMES_LIST_END", None): ("cl_ext_device_fission", "2011.1"),
+            },
+        ade: {
+            getattr(ade, "L1_CACHE", None): ("cl_ext_device_fission", "2011.1"),
+            getattr(ade, "L2_CACHE", None): ("cl_ext_device_fission", "2011.1"),
+            getattr(ade, "L3_CACHE", None): ("cl_ext_device_fission", "2011.1"),
+            getattr(ade, "L4_CACHE", None): ("cl_ext_device_fission", "2011.1"),
+            getattr(ade, "NUMA", None): ("cl_ext_device_fission", "2011.1"),
+            getattr(ade, "NEXT_FISSIONABLE", None): ("cl_ext_device_fission", "2011.1"),
             }
         }
 try:

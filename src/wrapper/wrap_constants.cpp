@@ -68,6 +68,9 @@ namespace
   class profiling_info { };
   class buffer_create_type { };
 
+  class device_partition_property_ext { };
+  class affinity_domain_ext { };
+
   class gl_object_type { };
   class gl_texture_info { };
   // }}}
@@ -99,6 +102,8 @@ void pyopencl_expose_constants()
   // {{{ constants
 #define ADD_ATTR(PREFIX, NAME) \
   cls.attr(#NAME) = CL_##PREFIX##NAME
+#define ADD_ATTR_SUFFIX(PREFIX, NAME, SUFFIX) \
+  cls.attr(#NAME) = CL_##PREFIX##NAME##SUFFIX
 
   {
     py::class_<platform_info> cls("platform_info", py::no_init);
@@ -205,6 +210,13 @@ void pyopencl_expose_constants()
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
     ADD_ATTR(DEVICE_, PROFILING_TIMER_OFFSET_AMD);
 #endif
+#ifdef cl_ext_device_fission
+    ADD_ATTR(DEVICE_, PARENT_DEVICE_EXT);
+    ADD_ATTR(DEVICE_, PARTITION_TYPES_EXT);
+    ADD_ATTR(DEVICE_, AFFINITY_DOMAINS_EXT);
+    ADD_ATTR(DEVICE_, REFERENCE_COUNT_EXT);
+    ADD_ATTR(DEVICE_, PARTITION_STYLE_EXT);
+#endif
   }
 
   {
@@ -253,10 +265,6 @@ void pyopencl_expose_constants()
 #ifdef CL_VERSION_1_1
     ADD_ATTR(CONTEXT_, NUM_DEVICES);
 #endif
-// cl_amd_offline_devices
-#ifdef CL_CONTEXT_OFFLINE_DEVICES_AMD
-    ADD_ATTR(CONTEXT_, OFFLINE_DEVICES_AMD);
-#endif
   }
 
   {
@@ -280,6 +288,10 @@ void pyopencl_expose_constants()
 #if defined(__APPLE__) && defined(HAVE_GL)
     ADD_ATTR( ,CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE);
 #endif /* __APPLE__ */
+// cl_amd_offline_devices
+#ifdef CL_CONTEXT_OFFLINE_DEVICES_AMD
+    ADD_ATTR(CONTEXT_, OFFLINE_DEVICES_AMD);
+#endif
   }
 
   {
@@ -505,6 +517,31 @@ void pyopencl_expose_constants()
   }
 #endif
 */
+  {
+    py::class_<device_partition_property_ext> cls(
+        "device_partition_property_ext", py::no_init);
+#ifdef cl_ext_device_fission
+    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, EQUALLY, _EXT);
+    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, BY_COUNTS, _EXT);
+    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, BY_NAMES, _EXT);
+    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, BY_AFFINITY_DOMAIN, _EXT);
+    ADD_ATTR_SUFFIX(, PROPERTIES_LIST_END, _EXT);
+    ADD_ATTR_SUFFIX(, PARTITION_BY_COUNTS_LIST_END, _EXT);
+    ADD_ATTR_SUFFIX(, PARTITION_BY_NAMES_LIST_END, _EXT);
+#endif
+  }
+
+  {
+    py::class_<affinity_domain_ext> cls("affinity_domain_ext", py::no_init);
+#ifdef cl_ext_device_fission
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L1_CACHE, _EXT);
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L2_CACHE, _EXT);
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L3_CACHE, _EXT);
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L4_CACHE, _EXT);
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, NUMA, _EXT);
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, NEXT_FISSIONABLE, _EXT);
+#endif
+  }
 
 #ifdef HAVE_GL
   {
