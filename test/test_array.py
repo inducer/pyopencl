@@ -289,8 +289,7 @@ def test_nan_arithmetic(ctx_getter):
     ab = a*b
     ab_gpu = (a_gpu*b_gpu).get()
 
-    for i in range(size):
-        assert np.isnan(ab[i]) == np.isnan(ab_gpu[i])
+    assert (np.isnan(ab) == np.isnan(ab_gpu)).all()
 
 
 
