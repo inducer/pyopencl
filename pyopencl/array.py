@@ -216,16 +216,19 @@ class _ArrayFlags:
         self.array = ary
 
     @property
+    @memoize_method
     def f_contiguous(self):
         return self.array.strides == _f_contiguous_strides(
                 self.array.dtype.itemsize, self.array.shape)
 
     @property
+    @memoize_method
     def c_contiguous(self):
         return self.array.strides == _c_contiguous_strides(
                 self.array.dtype.itemsize, self.array.shape)
 
     @property
+    @memoize_method
     def forc(self):
         return self.f_contiguous or self.c_contiguous
 
@@ -332,6 +335,7 @@ class Array(object):
         self.context = self.data.context
 
     @property
+    @memoize_method
     def flags(self):
         return _ArrayFlags(self)
 

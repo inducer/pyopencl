@@ -72,6 +72,12 @@ def pytest_generate_tests_for_pyopencl(metafunc):
             self.device = device
 
         def __call__(self):
+            # Get rid of leftovers from past tests.
+            # CL implementations are surprisingly limited in how many
+            # simultaneous contexts they allow...
+            from gc import collect
+            collect()
+
             return cl.Context([device])
 
         def __str__(self):
