@@ -20,7 +20,6 @@
 
 // elsewhere ------------------------------------------------------------------
 #include <CL/cl.h>
-// TBD: Nvidia used to not install cl_ext.h by default. Grr.
 #include <CL/cl_ext.h>
 
 #if defined(_WIN32)
@@ -369,7 +368,7 @@ namespace pyopencl
       {
         if (ownable_reference)
         {
-#ifdef cl_ext_device_fission
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
           if (retain)
           {
             clRetainDeviceEXT_fn cl_retain_device
@@ -391,7 +390,7 @@ namespace pyopencl
 
       ~device()
       {
-#ifdef cl_ext_device_fission
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
         if (m_ownable_reference)
         {
           clReleaseDeviceEXT_fn cl_release_device
@@ -523,7 +522,7 @@ namespace pyopencl
           case CL_DEVICE_INTEGRATED_MEMORY_NV:
             DEV_GET_INT_INF(cl_bool);
 #endif
-#ifdef cl_ext_device_fission
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
           case CL_DEVICE_PARENT_DEVICE_EXT:
             PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device);
           case CL_DEVICE_PARTITION_TYPES_EXT:
@@ -542,7 +541,7 @@ namespace pyopencl
         }
       }
 
-#ifdef cl_ext_device_fission
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
       py::list create_sub_devices(py::object py_properties)
       {
         std::vector<cl_device_partition_property_ext> properties;

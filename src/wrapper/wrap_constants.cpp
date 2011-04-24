@@ -178,7 +178,7 @@ void pyopencl_expose_constants()
     ADD_ATTR(, INVALID_GLOBAL_WORK_SIZE);
 #endif
 
-#ifdef cl_ext_device_fission
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     ADD_ATTR(, DEVICE_PARTITION_FAILED_EXT);
     ADD_ATTR(, INVALID_PARTITION_COUNT_EXT);
     ADD_ATTR(, INVALID_PARTITION_NAME_EXT);
@@ -290,7 +290,7 @@ void pyopencl_expose_constants()
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
     ADD_ATTR(DEVICE_, PROFILING_TIMER_OFFSET_AMD);
 #endif
-#ifdef cl_ext_device_fission
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     ADD_ATTR(DEVICE_, PARENT_DEVICE_EXT);
     ADD_ATTR(DEVICE_, PARTITION_TYPES_EXT);
     ADD_ATTR(DEVICE_, AFFINITY_DOMAINS_EXT);
@@ -600,7 +600,7 @@ void pyopencl_expose_constants()
   {
     py::class_<device_partition_property_ext> cls(
         "device_partition_property_ext", py::no_init);
-#ifdef cl_ext_device_fission
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     ADD_ATTR_SUFFIX(DEVICE_PARTITION_, EQUALLY, _EXT);
     ADD_ATTR_SUFFIX(DEVICE_PARTITION_, BY_COUNTS, _EXT);
     ADD_ATTR_SUFFIX(DEVICE_PARTITION_, BY_NAMES, _EXT);
@@ -613,7 +613,7 @@ void pyopencl_expose_constants()
 
   {
     py::class_<affinity_domain_ext> cls("affinity_domain_ext", py::no_init);
-#ifdef cl_ext_device_fission
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L1_CACHE, _EXT);
     ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L2_CACHE, _EXT);
     ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L3_CACHE, _EXT);

@@ -26,6 +26,7 @@ def get_config_schema():
 
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
+        Switch("CL_ENABLE_DEVICE_FISSION", True, "Enable device fission extension, if present"),
 
         IncludeDir("CL", []),
         LibraryDir("CL", []),
@@ -65,12 +66,15 @@ def main():
     if conf["CL_TRACE"]:
         EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
 
-    INCLUDE_DIRS = ['src/cpp'] + conf["BOOST_INC_DIR"] + conf["CL_INC_DIR"]
+    INCLUDE_DIRS = conf["BOOST_INC_DIR"] + conf["CL_INC_DIR"]
 
     ext_kwargs = dict()
 
     if conf["CL_ENABLE_GL"]:
         EXTRA_DEFINES["HAVE_GL"] = 1
+
+    if conf["CL_ENABLE_DEVICE_FISSION"]:
+        EXTRA_DEFINES["PYOPENCL_USE_DEVICE_FISSION"] = 1
 
     ver_dic = {}
     exec(compile(open("pyopencl/version.py").read(), "pyopencl/version.py", 'exec'), ver_dic)

@@ -37,7 +37,7 @@ void pyopencl_expose_part_1()
       .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
-#ifdef cl_ext_device_fission
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
       .DEF_SIMPLE_METHOD(create_sub_devices)
 #endif
       ;
