@@ -142,6 +142,10 @@ class ElementwiseKernel:
         invocation_args = []
         for arg, arg_descr in zip(args, self.arguments):
             if isinstance(arg_descr, VectorArg):
+                if not arg.flags.forc:
+                    raise RuntimeError("ElementwiseKernel cannot "
+                            "deal with non-contiguous arrays")
+
                 vectors.append(arg)
                 invocation_args.append(arg.data)
             else:

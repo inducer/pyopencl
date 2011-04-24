@@ -442,6 +442,10 @@ if _CL_MODE:
             if input_ary.shape != output_ary.shape:
                 raise ValueError("input and output must have the same shape")
 
+            if not input_ary.flags.forc:
+                raise RuntimeError("ScanKernel cannot "
+                        "deal with non-contiguous arrays")
+ 
             n, = input_ary.shape
 
             if not n:
@@ -541,6 +545,10 @@ else:
 
             if input_ary.shape != output_ary.shape:
                 raise ValueError("input and output must have the same shape")
+
+            if not input_ary.flags.forc:
+                raise RuntimeError("ScanKernel cannot "
+                        "deal with non-contiguous arrays")
 
             n, = input_ary.shape
 

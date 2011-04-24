@@ -151,6 +151,9 @@ def elwise_kernel_runner(kernel_getter):
         actual_args = []
         for arg in args:
             if isinstance(arg, Array):
+                if not arg.flags.forc:
+                    raise RuntimeError("only contiguous arrays may "
+                            "be used as arguments to this operation")
                 actual_args.append(arg.data)
             else:
                 actual_args.append(arg)

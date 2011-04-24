@@ -291,6 +291,10 @@ class ReductionKernel:
             from pyopencl.tools import VectorArg
             for arg, arg_tp in zip(args, stage_inf.arg_types):
                 if isinstance(arg_tp, VectorArg):
+                    if not arg.flags.forc:
+                        raise RuntimeError("ReductionKernel cannot "
+                                "deal with non-contiguous arrays")
+
                     vectors.append(arg)
                     invocation_args.append(arg.data)
                 else:
