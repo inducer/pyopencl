@@ -780,7 +780,7 @@ namespace pyopencl
 
 
   inline
-  context *create_context(py::object py_devices, py::object py_properties,
+  context *create_context_inner(py::object py_devices, py::object py_properties,
       py::object py_dev_type)
   {
     std::vector<cl_context_properties> props
@@ -839,6 +839,33 @@ namespace pyopencl
       PYOPENCL_CALL_GUARDED(clReleaseContext, (ctx));
       throw;
     }
+  }
+
+
+
+
+  inline
+  context *create_context(py::object py_devices, py::object py_properties,
+      py::object py_dev_type)
+  {
+    try
+    {
+      return create_context_inner(py_devices, py_properties, py_dev_type);
+    }
+    catch (pyopencl::error &e)
+    { 
+      if (!e.is_out_of_memory())
+        throw;
+    }
+
+    // If we get here, we got an error from CL.
+    // We should run the Python GC to try and free up
+    // some memory references.
+    run_python_gc();
+
+    // Now retry the allocation. If it fails again,
+    // let it fail.
+    return create_context_inner(py_devices, py_properties, py_dev_type);
   }
 
 
