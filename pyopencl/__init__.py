@@ -416,7 +416,7 @@ class Program(object):
             from pyopencl.cache import create_built_program_from_source_cached
             self._prg = create_built_program_from_source_cached(
                     self._context, self._source, options, devices,
-                    cache_dir=None)
+                    cache_dir=cache_dir)
 
         return self
 
@@ -513,7 +513,7 @@ def enqueue_copy(queue, dest, src, **kwargs):
             if "src_origin" in kwargs:
                 return _cl._enqueue_copy_buffer_rect(queue, src, dest, **kwargs)
             else:
-                kwargs["dst_offset"] = kwargs.pop("dest_offset")
+                kwargs["dst_offset"] = kwargs.pop("dest_offset", 0)
                 return _cl._enqueue_copy_buffer(queue, src, dest, **kwargs)
         elif isinstance(src, Image):
             return _cl._enqueue_copy_image_to_buffer(queue, src, dest, **kwargs)
