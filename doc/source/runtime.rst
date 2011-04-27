@@ -489,9 +489,9 @@ Images
 
 .. function:: enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=True)
 
-    |std-enqueue-blurb|
-
     |copy-depr|
+
+    |std-enqueue-blurb|
 
     .. versionchanged:: 0.91
         *pitch* arguments defaults to zero, moved.
@@ -501,6 +501,8 @@ Images
 
 
 .. function:: enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=True)
+
+    |copy-depr|
 
     |std-enqueue-blurb|
 

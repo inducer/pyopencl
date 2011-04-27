@@ -533,6 +533,13 @@ def enqueue_copy(queue, dest, src, **kwargs):
             # assume from-host
             origin = kwargs.pop("origin")
             region = kwargs.pop("region")
+
+            pitches = kwargs.pop("pitches", (0,0))
+            if len(pitches) == 1:
+                kwargs["row_pitch"], = pitches
+            else:
+                kwargs["row_pitch"], kwargs["slice_pitch"] = pitches
+
             return _cl._enqueue_write_image(queue, dest, origin, region, src, **kwargs)
 
     else:
@@ -544,13 +551,16 @@ def enqueue_copy(queue, dest, src, **kwargs):
             else:
                 return _cl._enqueue_read_buffer(queue, src, dest, **kwargs)
         elif isinstance(src, Image):
+            origin = kwargs.pop("origin")
+            region = kwargs.pop("region")
+
             pitches = kwargs.pop("pitches", (0,0))
             if len(pitches) == 1:
                 kwargs["row_pitch"], = pitches
             else:
                 kwargs["row_pitch"], kwargs["slice_pitch"] = pitches
 
-            return _cl._enqueue_read_image(queue, src, dest, **kwargs)
+            return _cl._enqueue_read_image(queue, src, origin, region, dest, **kwargs)
         else:
             # assume from-host
             raise TypeError("enqueue_copy cannot perform host-to-host transfers")
