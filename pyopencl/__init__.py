@@ -371,10 +371,21 @@ _add_functionality()
 class Program(object):
     def __init__(self, context, arg1, arg2=None):
         if arg2 is None:
+            source = arg1
+
+            import sys
+            if isinstance(source, unicode) and sys.version_info < (3,):
+                from warnings import warn
+                warn("Received OpenCL source code in Unicode, "
+                        "should be ASCII string. Attempting conversion.", 
+                        stacklevel=2)
+                source = str(source)
+
             self._context = context
-            self._source = arg1
+            self._source = source
             self._prg = None
         else:
+            # 3-argument form: context, devices, binaries
             self._prg = _cl.Program(context, arg1, arg2)
 
     def _get_prg(self):
