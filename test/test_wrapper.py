@@ -152,13 +152,6 @@ class TestCL:
             do_test(img, cl.image_info,
                     lambda info: img.get_image_info(info))
 
-        if failure_count[0]:
-            raise RuntimeError(
-                    "get_info testing had %d errors "
-                    "(If you compiled against OpenCL 1.1 but are testing a 1.0 "
-                    "implementation, you can safely ignore this.)"
-                    % failure_count[0])
-
     @pytools.test.mark_test.opencl
     def test_invalid_kernel_names_cause_failures(self):
         for platform in cl.get_platforms():
