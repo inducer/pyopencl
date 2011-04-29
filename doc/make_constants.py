@@ -36,6 +36,9 @@ def get_extra_lines(tup):
 
 const_ext_lookup = {
         devi: {
+            getattr(devi, "PLATFORM_NOT_FOUND_KHR", None):
+            ("cl_khr_icd", "2011.1"),
+
             getattr(devi, "PREFERRED_VECTOR_WIDTH_HALF", None): ("CL_1.1", "0.92"),
             getattr(devi, "HOST_UNIFIED_MEMORY", None): ("CL_1.1", "0.92"),
             getattr(devi, "NATIVE_VECTOR_WIDTH_CHAR", None): ("CL_1.1", "0.92"),
