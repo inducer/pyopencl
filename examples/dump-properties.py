@@ -9,7 +9,11 @@ def print_info(obj, info_cls):
             except:
                 info_value = "<error>"
 
-            print("%s: %s" % (info_name, info_value))
+            if info_cls == cl.device_info and info_name == "PARTITION_TYPES_EXT":
+                print("%s: %s" % (info_name, [
+                    cl.device_partition_property_ext.to_string(v) for v in info_value]))
+            else:
+                print("%s: %s" % (info_name, info_value))
 
 for platform in cl.get_platforms():
     print(75*"=")
