@@ -168,6 +168,10 @@ void pyopencl_expose_constants()
     ADD_ATTR(, INVALID_BUFFER_SIZE);
     ADD_ATTR(, INVALID_MIP_LEVEL);
 
+#if defined(cl_khr_icd) && (cl_khr_icd >= 1)
+    ADD_ATTR(, PLATFORM_NOT_FOUND_KHR);
+#endif
+
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
     ADD_ATTR(, INVALID_GL_SHAREGROUP_REFERENCE_KHR);
 #endif
