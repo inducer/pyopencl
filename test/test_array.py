@@ -584,6 +584,8 @@ def test_scan(ctx_getter):
                 desired_result -= host_data
 
             assert (dev_data.get() == desired_result).all()
+            from gc import collect
+            collect()
 
 
 
