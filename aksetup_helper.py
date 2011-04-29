@@ -5,6 +5,19 @@ distribute_setup.use_setuptools()
 import setuptools
 from setuptools import Extension
 
+def count_down_delay(delay):
+    from time import sleep
+    import sys
+    while delay:
+        sys.stdout.write("Continuing in %d seconds...   \r" % delay)
+        sys.stdout.flush()
+        delay -= 1
+        sleep(1)
+    print("")
+
+
+
+
 if not hasattr(setuptools, "_distribute"):
     print("-------------------------------------------------------------------------")
     print("Setuptools conflict detected.")
@@ -20,15 +33,8 @@ if not hasattr(setuptools, "_distribute"):
     print("I will continue after a short while, fingers crossed.")
     print("-------------------------------------------------------------------------")
 
-    delay = 10
+    count_down_delay(delay=10)
 
-    from time import sleep
-    import sys
-    while delay:
-        sys.stdout.write("Continuing in %d seconds...   \r" % delay)
-        sys.stdout.flush()
-        delay -= 1
-        sleep(1)
 
 def setup(*args, **kwargs):
     from setuptools import setup
@@ -156,15 +162,7 @@ def get_config(schema=None, warn_about_no_config=True):
         print("*** HIT Ctrl-C NOW IF THIS IS NOT WHAT YOU WANT")
         print("*************************************************************")
 
-        delay = 10
-
-        from time import sleep
-        import sys
-        while delay:
-            sys.stdout.write("Continuing in %d seconds...   \r" % delay)
-            sys.stdout.flush()
-            delay -= 1
-            sleep(1)
+        count_down_delay(delay=10)
 
     return schema.read_config()
 
@@ -540,15 +538,7 @@ def set_up_shipped_boost_if_requested(conf):
             print("------------------------------------------------------------------------")
             conf["USE_SHIPPED_BOOST"] = False
 
-            delay = 10
-
-            from time import sleep
-            import sys
-            while delay:
-                sys.stdout.write("Continuing in %d seconds...   \r" % delay)
-                sys.stdout.flush()
-                delay -= 1
-                sleep(1)
+            count_down_delay(delay=10)
 
     if conf["USE_SHIPPED_BOOST"]:
         conf["BOOST_INC_DIR"] = ["bpl-subset/bpl_subset"]

@@ -100,16 +100,27 @@ def main():
         print("[1] http://www.makotemplates.org/")
         print("-------------------------------------------------------------------------")
 
-        delay = 5
+        from aksetup_helper import count_down_delay
+        count_down_delay(delay=5)
 
-        from time import sleep
-        import sys
-        while delay:
-            sys.stdout.write("Continuing in %d seconds...   \r" % delay)
-            sys.stdout.flush()
-            delay -= 1
-            sleep(1)
-        print("")
+    might_be_cuda = False
+    for inc_dir in conf["CL_INC_DIR"]:
+        inc_dir = inc_dir.lower()
+        if "nv" in inc_dir or "cuda" in inc_dir:
+            might_be_cuda = True
+
+    if might_be_cuda and conf["CL_ENABLE_DEVICE_FISSION"]:
+        print("-------------------------------------------------------------------------")
+        print("You might be compiling against Nvidia CUDA with device fission enabled.")
+        print("-------------------------------------------------------------------------")
+        print("That is not a problem on CUDA 4.0 and newer. If you are using CUDA 3.2,")
+        print("your build will break, because Nvidia shipped a broken CL header in")
+        print("in your version. The fix is to set CL_ENABLE_DEVICE_FISSION to False")
+        print("in your PyOpenCL configuration.")
+        print("-------------------------------------------------------------------------")
+
+        from aksetup_helper import count_down_delay
+        count_down_delay(delay=5)
 
     setup(name="pyopencl",
             # metadata
