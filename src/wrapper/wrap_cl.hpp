@@ -2157,7 +2157,7 @@ namespace pyopencl
           shape.size(), shape.empty( ) ? NULL : &shape.front(), /*strides*/ NULL,
           mapped, ary_flags, /*obj*/NULL));
 
-      if (size_in_bytes != PyArray_NBYTES(result.get()))
+      if (size_in_bytes != (npy_uintp) PyArray_NBYTES(result.get()))
         throw pyopencl::error("enqueue_map_buffer", CL_INVALID_VALUE,
             "miscalculated numpy array size");
 
@@ -3222,7 +3222,7 @@ namespace pyopencl
         dims.size(), &dims.front(), /*strides*/ NULL,
         host_ptr, ary_flags, /*obj*/NULL));
 
-    if (PyArray_NBYTES(result.get()) > mem_obj_size)
+    if ((size_t) PyArray_NBYTES(result.get()) > mem_obj_size)
       throw pyopencl::error("MemoryObject.get_host_array", 
           CL_INVALID_VALUE,
           "Resulting array is larger than memory object.");
