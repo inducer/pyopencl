@@ -44,7 +44,10 @@ def get_config_schema():
 def main():
     import glob
     from aksetup_helper import (hack_distutils, get_config, setup,
-            NumpyExtension, set_up_shipped_boost_if_requested)
+            NumpyExtension, set_up_shipped_boost_if_requested,
+            check_git_submodules)
+
+    check_git_submodules()
 
     hack_distutils()
     conf = get_config(get_config_schema(),
@@ -99,6 +102,8 @@ def main():
         print("")
         print("[1] http://www.makotemplates.org/")
         print("-------------------------------------------------------------------------")
+        print("Hit Ctrl-C now if you'd like to think about the situation.")
+        print("-------------------------------------------------------------------------")
 
         from aksetup_helper import count_down_delay
         count_down_delay(delay=5)
@@ -117,6 +122,8 @@ def main():
         print("your build will break, because Nvidia shipped a broken CL header in")
         print("in your version. The fix is to set CL_ENABLE_DEVICE_FISSION to False")
         print("in your PyOpenCL configuration.")
+        print("-------------------------------------------------------------------------")
+        print("Hit Ctrl-C now if you'd like to think about the situation.")
         print("-------------------------------------------------------------------------")
 
         from aksetup_helper import count_down_delay
@@ -178,7 +185,7 @@ def main():
               ],
 
             # build info
-            packages=["pyopencl"],
+            packages=["pyopencl", "pyopencl.compyte"],
 
             install_requires=[
                 "pytools>=2011.2",

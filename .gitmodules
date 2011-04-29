@@ -1,3 +1,6 @@
 [submodule "bpl-subset"]
 	path = bpl-subset
 	url = http://git.tiker.net/trees/bpl-subset.git
+[submodule "pyopencl/compyte"]
+	path = pyopencl/compyte
+	url = http://git.tiker.net/trees/compyte.git
