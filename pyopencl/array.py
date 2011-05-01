@@ -349,9 +349,8 @@ class Array(object):
         assert self.flags.forc
 
         if not ary.flags.forc:
-            if async:
-                raise RuntimeError("cannot asynchronously set from "
-                        "non-contiguous array")
+            raise RuntimeError(
+                    "cannot set from non-contiguous array")
 
             ary = ary.copy()
 
