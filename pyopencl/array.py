@@ -34,6 +34,11 @@ import numpy as np
 import pyopencl.elementwise as elementwise
 import pyopencl as cl
 from pytools import memoize_method
+from pyopencl.compyte.array import (
+        f_contiguous_strides as _f_contiguous_strides, 
+        c_contiguous_strides as _c_contiguous_strides, 
+        ArrayFlags as _ArrayFlags,
+        get_common_dtype as _get_common_dtype)
 
 
 # {{{ vector types
@@ -125,12 +130,6 @@ def splay(queue, n):
 
 
 
-def _get_common_dtype(obj1, obj2):
-    return (obj1.dtype.type(0) + obj2.dtype.type(0)).dtype
-
-
-
-
 def elwise_kernel_runner(kernel_getter):
     """Take a kernel getter of the same signature as the kernel
     and return a function that invokes that kernel.
@@ -186,51 +185,6 @@ def _should_be_cqa(what):
             "This will be continue to be accepted througout "
             "versions 2011.x of PyOpenCL." % (what, what),
             DeprecationWarning, 3)
-
-
-
-
-def _f_contiguous_strides(itemsize, shape):
-    if shape:
-        strides = [itemsize]
-        for s in shape[:-1]:
-            strides.append(strides[-1]*s)
-        return tuple(strides)
-    else:
-        return ()
-
-def _c_contiguous_strides(itemsize, shape):
-    if shape:
-        strides = [itemsize]
-        for s in shape[:0:-1]:
-            strides.append(strides[-1]*s)
-        return tuple(strides[::-1])
-    else:
-        return ()
-
-
-
-
-class _ArrayFlags:
-    def __init__(self, ary):
-        self.array = ary
-
-    @property
-    @memoize_method
-    def f_contiguous(self):
-        return self.array.strides == _f_contiguous_strides(
-                self.array.dtype.itemsize, self.array.shape)
-
-    @property
-    @memoize_method
-    def c_contiguous(self):
-        return self.array.strides == _c_contiguous_strides(
-                self.array.dtype.itemsize, self.array.shape)
-
-    @property
-    @memoize_method
-    def forc(self):
-        return self.f_contiguous or self.c_contiguous
 
 # }}}
 
