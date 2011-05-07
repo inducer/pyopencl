@@ -777,7 +777,7 @@ Programs and Kernels
         :meth:`set_arg` to see what argument types are allowed.
         |std-enqueue-blurb|
 
-        *None* may be passed for local_size
+        *None* may be passed for local_size.
 
         .. versionchanged:: 0.92
             *local_size* was promoted to third positional argument from being a
