@@ -3,6 +3,8 @@
 "
 " (C) Andreas Kloeckner 2011, MIT license
 "
+" Uses parts of mako.vim by Armin Ronacher.
+"
 " Installation:
 " Just drop this file into ~/.vim/syntax/pyopencl.vim
 "
@@ -31,19 +33,45 @@ endtry
 unlet b:current_syntax
 syn include @pythonTop syntax/python.vim
 
-syn region makoLine start="^\s*%" skip="\\$" end="$"
-syn region makoVariable start=#\${# end=#}# contains=@pythonTop
+" {{{ mako
+
+syn region clmakoLine start="^\s*%" skip="\\$" end="$"
+syn region clmakoVariable start=#\${# end=#}# contains=@pythonTop
+syn region clmakoBlock start=#<%!# end=#%># keepend contains=@pythonTop
+
+syn match clmakoAttributeKey containedin=clmakoTag contained "[a-zA-Z_][a-zA-Z0-9_]*="
+syn region clmakoAttributeValue containedin=clmakoTag contained start=/"/ skip=/\\"/ end=/"/
+syn region clmakoAttributeValue containedin=clmakoTag contained start=/'/ skip=/\\'/ end=/'/
+
+syn region clmakoTag start="</\?%\(def\|call\|page\|include\|namespace\|inherit\|self:[_[:alnum:]]\+\)\>" end="/\?>"
+
+" The C highlighter's paren error detection screws up highlighting of 
+" Mako variables in C parens--turn it off.
+
 syn clear cParen
 syn clear cParenError
+if !exists("c_no_bracket_error")
+  syn clear cBracket
+endif
 
-syn cluster makoCode contains=makoLine,makoVariable
+syn cluster clmakoCode contains=clmakoLine,clmakoVariable,clmakoBlock,clmakoTag
+
+hi link clmakoLine Preproc
+hi link clmakoVariable Preproc
+hi link clmakoBlock Preproc
+hi link clmakoTag Define
+hi link clmakoAttributeKey String
+hi link clmakoAttributeValue String
+
+" }}}
 
 syn region pythonCLString
       \ start=+[uU]\=\z('''\|"""\)//CL//+ end="\z1" keepend
-      \ contains=@clCode,@makoCode
+      \ contains=@clCode,@clmakoCode
 
-hi link makoLine Special
-hi link makoVariable Special
-hi link pythonCLString String
+" Uncomment if you still want the code highlighted as a string.
+" hi link pythonCLString String
 
 let b:current_syntax = "pyopencl"
+
+" vim: foldmethod=marker
