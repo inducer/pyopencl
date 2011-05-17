@@ -35,6 +35,7 @@ import pyopencl.elementwise as elementwise
 import pyopencl as cl
 from pytools import memoize_method
 from pyopencl.compyte.array import (
+        as_strided as _as_strided,
         f_contiguous_strides as _f_contiguous_strides, 
         c_contiguous_strides as _c_contiguous_strides, 
         ArrayFlags as _ArrayFlags,
@@ -316,8 +317,7 @@ class Array(object):
         if ary is None:
             ary = np.empty(self.shape, self.dtype)
 
-            from numpy.lib.stride_tricks import as_strided
-            ary = as_strided(ary, strides=self.strides)
+            ary = _as_strided(ary, strides=self.strides)
         else:
             if ary.size != self.size:
                 raise TypeError("'ary' has non-matching type")
