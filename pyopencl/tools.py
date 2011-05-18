@@ -78,10 +78,11 @@ def pytest_generate_tests_for_pyopencl(metafunc):
             from gc import collect
             collect()
 
-            return cl.Context([device])
+            return cl.Context([self.device])
 
         def __str__(self):
             return "<context getter for %s>" % self.device
+
     if ("device" in metafunc.funcargnames
             or "ctx_getter" in metafunc.funcargnames):
         arg_dict = {}
