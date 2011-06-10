@@ -707,7 +707,7 @@ Programs and Kernels
 
         Returns a list of all :class:`Kernel` objects in the :class:`Program`.
 
-.. function:: unload_compiler()
+
 
 .. class:: Kernel(program, name)
 
@@ -769,6 +769,18 @@ Programs and Kernels
         After invoking this function with the proper information,
         most suitable number types will automatically be
         cast to the right type for kernel invocation.
+
+        .. note :: 
+
+            The information set by this rountine is attached to a single kernel
+            instance. A new kernel instance is created every time you use
+            `program.kernel` attribute access. The following will therefore not
+            work::
+
+               prg = cl.Program(...).build()
+               prg.kernel.set_scalar_arg_dtypes(...)
+               prg.kernel(queue, n_globals, None, args)
+
 
     .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None)
 
