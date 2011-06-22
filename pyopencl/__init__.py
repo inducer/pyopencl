@@ -204,7 +204,7 @@ def _add_functionality():
         if had_local_size:
             from warnings import warn
             warn("The local_size keyword argument is deprecated and will be "
-                    "removed in pyopencl 0.94. Pass the local "
+                    "removed in pyopencl 2012.x. Pass the local "
                     "size as the third positional argument instead.",
                     DeprecationWarning, stacklevel=2)
 
@@ -220,7 +220,7 @@ def _add_functionality():
                     "You didn't pass local_size, but you still need to insert "
                     "'None' as a third argument. "
                     "Your present usage is deprecated and will stop "
-                    "working in pyopencl 0.94.",
+                    "working in pyopencl 2012.x.",
                     DeprecationWarning, stacklevel=2)
 
         self.set_args(*args)
