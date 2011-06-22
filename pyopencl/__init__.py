@@ -332,12 +332,17 @@ def _add_functionality():
 
     def error_str(self):
         val = self.args[0]
-        result = "%s failed: %s" % (val.routine(), 
-                status_code.to_string(val.code(), "<unknown error %d>")
-                .lower().replace("_", " "))
-        if val.what():
-            result += " - " + val.what()
-        return result
+        try:
+            val.routine
+        except AttributeError:
+            return str(val)
+        else:
+            result = "%s failed: %s" % (val.routine(), 
+                    status_code.to_string(val.code(), "<unknown error %d>")
+                    .lower().replace("_", " "))
+            if val.what():
+                result += " - " + val.what()
+            return result
 
     def error_code(self):
         return self.args[0].code()
