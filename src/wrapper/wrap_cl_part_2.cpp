@@ -166,7 +166,8 @@ void pyopencl_expose_part_2()
       py::arg("global_work_size"),
       py::arg("local_work_size"),
       py::arg("global_work_offset")=py::object(),
-      py::arg("wait_for")=py::object()
+      py::arg("wait_for")=py::object(),
+      py::arg("g_times_l")=false
       ),
       py::return_value_policy<py::manage_new_object>());
   py::def("enqueue_task", enqueue_task,

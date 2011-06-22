@@ -2782,7 +2782,8 @@ namespace pyopencl
       py::object py_global_work_size,
       py::object py_local_work_size,
       py::object py_global_work_offset,
-      py::object py_wait_for)
+      py::object py_wait_for,
+      bool g_times_l)
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
@@ -2804,6 +2805,12 @@ namespace pyopencl
       local_work_size_ptr = local_work_size.empty( ) ? NULL : &local_work_size.front();
     }
 
+    if (g_times_l && local_work_size_ptr)
+    {
+      for (cl_uint work_axis = 0; work_axis < work_dim; ++work_axis)
+        global_work_size[work_axis] *= local_work_size[work_axis];
+    }
+
     size_t *global_work_offset_ptr = 0;
     std::vector<size_t> global_work_offset;
     if (py_global_work_offset.ptr() != Py_None)
@@ -2813,6 +2820,12 @@ namespace pyopencl
             "global work size and offset have differing dimensions");
 
       COPY_PY_LIST(size_t, global_work_offset);
+
+      if (g_times_l && local_work_size_ptr)
+      {
+        for (cl_uint work_axis = 0; work_axis < work_dim; ++work_axis)
+          global_work_offset[work_axis] *= local_work_size[work_axis];
+      }
 
       global_work_offset_ptr = global_work_offset.empty( ) ? NULL :  &global_work_offset.front();
     }

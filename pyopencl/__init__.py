@@ -194,6 +194,7 @@ def _add_functionality():
         global_offset = kwargs.pop("global_offset", None)
         had_local_size = "local_size" in kwargs
         local_size = kwargs.pop("local_size", None)
+        g_times_l = kwargs.pop("g_times_l", False)
         wait_for = kwargs.pop("wait_for", None)
 
         if kwargs:
@@ -226,7 +227,7 @@ def _add_functionality():
         self.set_args(*args)
 
         return enqueue_nd_range_kernel(queue, self, global_size, local_size,
-                global_offset, wait_for)
+                global_offset, wait_for, g_times_l=g_times_l)
 
     def kernel_set_scalar_arg_dtypes(self, arg_dtypes):
         arg_type_chars = []
