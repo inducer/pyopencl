@@ -440,7 +440,13 @@ class Program(object):
     # }}}
 
 # {{{ convenience -------------------------------------------------------------
-def create_some_context(interactive=True):
+def create_some_context(interactive=True, answers=None):
+    def get_input(prompt):
+        if answers:
+            return str(answers.pop(0))
+        else:
+            return raw_input(prompt)
+
     try:
         import sys
         if not sys.stdin.isatty():
@@ -455,11 +461,12 @@ def create_some_context(interactive=True):
     elif len(platforms) == 1 or not interactive:
         platform = platforms[0]
     else:
-        print "Choose platform:"
-        for i, pf in enumerate(platforms):
-            print "[%d] %s" % (i, pf)
+        if not answers:
+            print "Choose platform:"
+            for i, pf in enumerate(platforms):
+                print "[%d] %s" % (i, pf)
 
-        answer = raw_input("Choice [0]:")
+        answer = get_input("Choice [0]:")
         if not answer:
             choice = 0
         else:
@@ -474,11 +481,12 @@ def create_some_context(interactive=True):
     elif len(devices) == 1 or not interactive:
         pass
     else:
-        print "Choose device(s):"
-        for i, dev in enumerate(devices):
-            print "[%d] %s" % (i, dev)
+        if not answers:
+            print "Choose device(s):"
+            for i, dev in enumerate(devices):
+                print "[%d] %s" % (i, dev)
 
-        answer = raw_input("Choice, comma-separated [0]:")
+        answer = get_input("Choice, comma-separated [0]:")
         if not answer:
             devices = [devices[0]]
         else:
@@ -486,6 +494,14 @@ def create_some_context(interactive=True):
 
     return Context(devices)
 
+
+
+
+def _make_context_creator(answers):
+    def func():
+        return create_some_context(answers=answers)
+
+    return func
 
 
 
