@@ -256,7 +256,7 @@ def _add_functionality():
                             "length of argument list do not agree")
                 for i, (arg, arg_type_char) in enumerate(
                         zip(args, arg_type_chars)):
-                    if arg_type_char:
+                    if arg_type_char and arg_type_char != "V":
                         self.set_arg(i, pack(arg_type_char, arg))
                     else:
                         self.set_arg(i, arg)

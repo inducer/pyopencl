@@ -157,36 +157,23 @@ def dtype_to_ctype(dtype):
 
 # {{{ C argument lists --------------------------------------------------------
 class Argument:
-    def __init__(self, dtype, name, vector_len=1):
+    def __init__(self, dtype, name):
         self.dtype = np.dtype(dtype)
         self.name = name
-        self.vector_len = vector_len
 
     def __repr__(self):
         return "%s(%r, %s, %d)" % (
                 self.__class__.__name__,
                 self.name,
-                self.dtype,
-                self.vector_len)
+                self.dtype)
 
 class VectorArg(Argument):
     def declarator(self):
-        if self.vector_len == 1:
-            vlen_str = ""
-        else:
-            vlen_str = str(self.vector_len)
-
-        return "__global %s%s *%s" % (dtype_to_ctype(self.dtype), 
-                vlen_str, self.name)
+        return "__global %s *%s" % (dtype_to_ctype(self.dtype), self.name)
 
 class ScalarArg(Argument):
     def declarator(self):
-        if self.vector_len == 1:
-            vlen_str = ""
-        else:
-            vlen_str = str(self.vector_len)
-
-        return "%s%s %s" % (dtype_to_ctype(self.dtype), vlen_str, self.name)
+        return "%s %s" % (dtype_to_ctype(self.dtype), self.name)
 
 
 
@@ -218,17 +205,13 @@ def parse_c_arg(c_arg):
     tp = c_arg[:decl_match.start()]
     tp = " ".join(tp.split())
 
-    type_re = re.compile(r"^([a-z ]+)([0-9]*)$")
+    type_re = re.compile(r"^([a-z0-9 ]+)$")
     type_match = type_re.match(tp)
     if not type_match:
         raise RuntimeError("type '%s' did not match expected shape of type"
                 % tp)
 
     tp = type_match.group(1)
-    if type_match.group(2):
-        vector_len = int(type_match.group(2))
-    else:
-        vector_len = 1
 
     if tp == "float": dtype = np.float32
     elif tp == "double": dtype = np.float64
@@ -246,11 +229,11 @@ def parse_c_arg(c_arg):
     else:
         import pyopencl.array as cl_array
         try:
-            return cl_array.vec._c_name_to_dtype[tp]
+            dtype = cl_array.vec._c_name_to_dtype[tp]
         except KeyError:
             raise ValueError("unknown type '%s'" % tp)
 
-    return arg_class(dtype, name, vector_len)
+    return arg_class(dtype, name)
 
 # }}}
 

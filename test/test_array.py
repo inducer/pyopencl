@@ -605,6 +605,19 @@ def test_stride_preservation(ctx_getter):
 
 
 
+@pytools.test.mark_test.opencl
+def test_vector_fill(ctx_getter):
+    context = ctx_getter()
+    queue = cl.CommandQueue(context)
+
+    a_gpu = cl_array.Array(queue, 100, dtype=cl_array.vec.float4)
+    a_gpu.fill(cl_array.vec.make_float4(0.0, 0.0, 1.0, 0.0))
+    a = a_gpu.get()
+    assert a.dtype is cl_array.vec.float4
+
+
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl as cl
