@@ -215,7 +215,7 @@ def test_divide_scalar(ctx_getter):
     assert (a/2 == result).all()
 
     result = (2/a_gpu).get()
-    assert (2/a == result).all()
+    assert (np.abs(2/a - result) < 1e-5).all()
 
 
 

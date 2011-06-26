@@ -78,8 +78,8 @@ if have_cl():
     test_log10 = make_unary_function_test("log10", (1e-5, 1), 5e-7)
     test_sqrt = make_unary_function_test("sqrt", (1e-5, 1), 2e-7)
 
-    test_sin = make_unary_function_test("sin", (-10, 10), 1e-7)
-    test_cos = make_unary_function_test("cos", (-10, 10), 1e-7)
+    test_sin = make_unary_function_test("sin", (-10, 10), 2e-7)
+    test_cos = make_unary_function_test("cos", (-10, 10), 2e-7)
     test_asin = make_unary_function_test("asin", (-0.9, 0.9), 5e-7)
     test_acos = make_unary_function_test("acos", (-0.9, 0.9), 5e-7)
     test_tan = make_unary_function_test("tan", 
