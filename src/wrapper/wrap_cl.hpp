@@ -2403,9 +2403,16 @@ namespace pyopencl
               ptr = result.get();
               for (unsigned i = 0; i < sizes.size(); ++i)
               {
-                py_result.append(py::str(
-                      reinterpret_cast<char *>(ptr),
-                      sizes[i]));
+                py::handle<> binary_pyobj(
+#if PY_VERSION_HEX >= 0x03000000
+                    PyBytes_FromStringAndSize(
+                      reinterpret_cast<char *>(ptr), sizes[i])
+#else
+                    PyString_FromStringAndSize(
+                      reinterpret_cast<char *>(ptr), sizes[i])
+#endif
+                    );
+                py_result.append(binary_pyobj);
                 ptr += sizes[i];
               }
               return py_result;

@@ -597,9 +597,9 @@ def test_stride_preservation(ctx_getter):
 
     A = np.random.rand(3,3)
     AT = A.T
-    print AT.flags.f_contiguous, AT.flags.c_contiguous
+    print(AT.flags.f_contiguous, AT.flags.c_contiguous)
     AT_GPU = cl_array.to_device(queue, AT)
-    print AT_GPU.flags.f_contiguous, AT_GPU.flags.c_contiguous
+    print(AT_GPU.flags.f_contiguous, AT_GPU.flags.c_contiguous)
     assert np.allclose(AT_GPU.get(),AT)
 
 

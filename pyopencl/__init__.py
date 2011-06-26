@@ -138,6 +138,7 @@ def _add_functionality():
         if isinstance(options, list):
             options = " ".join(options)
 
+        err = None
         try:
             self._build(options=options, devices=devices)
         except Exception, e:
@@ -145,13 +146,22 @@ def _add_functionality():
             class ErrorRecord(Record):
                 pass
 
-            raise _cl.RuntimeError(
+            what = e.what + "\n\n" + (75*"="+"\n").join(
+                    "Build on %s:\n\n%s" % (dev, log) 
+                    for dev, log in self._get_build_logs())
+            code = e.code
+            routine = e.routine
+
+            err = _cl.RuntimeError(
                     ErrorRecord(
-                        what=lambda : e.what + "\n\n" + (75*"="+"\n").join(
-                            "Build on %s:\n\n%s" % (dev, log) 
-                            for dev, log in self._get_build_logs()),
-                        code=lambda : e.code,
-                        routine=lambda : e.routine))
+                        what=lambda : what,
+                        code=lambda : code,
+                        routine=lambda : routine))
+
+        if err is not None:
+            # Python 3.2 outputs the whole tree of currently active exceptions
+            # This serves to remove one (redundant) level from that nesting.
+            raise err
 
         message = (75*"="+"\n").join(
                 "Build on %s succeeded, but said:\n\n%s" % (dev, log) 

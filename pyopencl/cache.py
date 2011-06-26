@@ -202,9 +202,9 @@ def get_device_cache_id(device):
 
 def get_cache_key(device, options, src):
     checksum = new_hash()
-    checksum.update(src)
-    checksum.update(" ".join(options))
-    checksum.update(str(get_device_cache_id(device)))
+    checksum.update(src.encode("utf8"))
+    checksum.update(" ".join(options).encode("utf8"))
+    checksum.update(str(get_device_cache_id(device)).encode("utf8"))
     return checksum.hexdigest()
 
 # }}}
@@ -237,7 +237,7 @@ def retrieve_from_cache(cache_dir, cache_key):
             from cPickle import load
 
             try:
-                info_file = open(info_path)
+                info_file = open(info_path, "rb")
             except IOError:
                 raise _InvalidInfoFile()
 
@@ -294,13 +294,14 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
         from tempfile import gettempdir
         import getpass
         cache_dir = join(gettempdir(),
-                "pyopencl-compiler-cache-v1-uid%s" % getpass.getuser()) 
+                "pyopencl-compiler-cache-v1-uid%s-py%s" % (
+                    getpass.getuser(), ".".join(str(i) for i in sys.version_info)))
 
     # {{{ ensure cache directory exists
 
     try:
         os.mkdir(cache_dir)
-    except OSError, e:
+    except OSError as e:
         from errno import EEXIST
         if e.errno != EEXIST:
             raise
