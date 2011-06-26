@@ -65,13 +65,16 @@ C interface to Python:
 User-visible Changes
 ====================
 
-Version 2011.1
+Version 2011.2
 --------------
 
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's git version control.
+
+Version 2011.1
+--------------
 
 * All *is_blocking* parameters now default to *True* to avoid
   crashy-by-default behavior. (suggested by Jan Meinke)
