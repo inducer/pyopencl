@@ -73,6 +73,11 @@ Version 2011.2
     This version is currently under development. You can get snapshots from
     PyOpenCL's git version control.
 
+Version 2011.1.1
+----------------
+
+* Fixes for Python 3 compatibility. (with work by Christoph Gohlke)
+
 Version 2011.1
 --------------
 
