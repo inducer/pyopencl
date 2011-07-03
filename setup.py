@@ -52,7 +52,7 @@ def main():
     hack_distutils()
     conf = get_config(get_config_schema(),
             warn_about_no_config=False)
-    EXTRA_OBJECTS, EXTRA_DEFINES = set_up_shipped_boost_if_requested(conf)
+    EXTRA_OBJECTS, EXTRA_DEFINES = set_up_shipped_boost_if_requested("pyopencl", conf)
 
     LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
     LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
