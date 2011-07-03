@@ -2807,11 +2807,19 @@ namespace pyopencl
     std::vector<size_t> local_work_size;
     if (py_local_work_size.ptr() != Py_None)
     {
-      if (work_dim != unsigned(len(py_local_work_size)))
-        throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
-            "global/work work sizes have differing dimensions");
+      if (g_times_l)
+        work_dim = std::max(work_dim, unsigned(len(py_local_work_size)));
+      else
+        if (work_dim != unsigned(len(py_local_work_size)))
+          throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
+              "global/local work sizes have differing dimensions");
 
       COPY_PY_LIST(size_t, local_work_size);
+
+      while (local_work_size.size() < work_dim)
+        local_work_size.push_back(1);
+      while (global_work_size.size() < work_dim)
+        global_work_size.push_back(1);
 
       local_work_size_ptr = local_work_size.empty( ) ? NULL : &local_work_size.front();
     }
