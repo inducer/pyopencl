@@ -358,7 +358,7 @@ Generating Arrays of Random Numbers
 
 .. module:: pyopencl.clrandom
 
-.. function:: rand(context, queue, shape, dtype)
+.. function:: rand(queue, shape, dtype)
 
     Return an array of `shape` filled with random values of `dtype`
     in the range [0,1).

@@ -241,13 +241,23 @@ def _rand(output, seed):
 def fill_rand(result):
     _rand(result, np.random.randint(2**31-1))
 
-def rand(context, queue, shape, dtype):
-    from pyopencl.array import Array
+def rand(*args, **kwargs):
+    def inner_rand(queue, shape, dtype):
+        from pyopencl.array import Array
 
-    result = Array(queue, shape, dtype)
-    _rand(result, np.random.randint(2**31-1))
-    return result
+        result = Array(queue, shape, dtype)
+        _rand(result, np.random.randint(2**31-1))
+        return result
 
+    if isinstance(args[0], cl.Context):
+        from warnings import warn
+        warn("Passing a context as first argument is deprecated. "
+            "This will be continue to be accepted througout "
+            "versions 2011.x of PyOpenCL.",
+            DeprecationWarning, 2)
+        args = args[1:]
+
+    return inner_rand(*args, **kwargs)
 
 if __name__ == "__main__":
     import sys
