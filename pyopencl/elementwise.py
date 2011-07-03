@@ -28,14 +28,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-
-
 from pyopencl.tools import context_dependent_memoize
 import numpy as np
 import pyopencl as cl
 from pyopencl.tools import dtype_to_ctype, VectorArg, ScalarArg
-
-
 
 
 def get_elwise_program(context, arguments, operation,
@@ -73,8 +69,6 @@ def get_elwise_program(context, arguments, operation,
     return Program(context, source).build(options)
 
 
-
-
 def get_elwise_kernel_and_types(context, arguments, operation,
         name="elwise_kernel", keep=False, options=[], preamble="", **kwargs):
     if isinstance(arguments, str):
@@ -84,7 +78,7 @@ def get_elwise_kernel_and_types(context, arguments, operation,
         parsed_args = arguments
 
     for arg in parsed_args:
-        if np.float64  == arg.dtype:
+        if np.float64 == arg.dtype:
             preamble = (
                     "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n\n\n"
                     + preamble)
@@ -108,26 +102,27 @@ def get_elwise_kernel_and_types(context, arguments, operation,
     return kernel, parsed_args
 
 
-
-
 def get_elwise_kernel(context, arguments, operation,
         name="elwise_kernel", options=[], **kwargs):
     """Return a L{pyopencl.Kernel} that performs the same scalar operation
     on one or several vectors.
     """
-    func, arguments = get_elwise_kernel_and_types(context,
-            arguments, operation, name, options, **kwargs)
+    func, arguments = get_elwise_kernel_and_types(
+        context, arguments, operation,
+        name=name, options=options, **kwargs)
 
     return func
 
 
-
-
 class ElementwiseKernel:
+
     def __init__(self, context, arguments, operation,
             name="elwise_kernel", options=[], **kwargs):
-        self.kernel, self.arguments = get_elwise_kernel_and_types(context,
-            arguments, operation, name, options, **kwargs)
+
+        self.kernel, self.arguments = get_elwise_kernel_and_types(
+            context, arguments, operation,
+            name=name, options=options,
+            **kwargs)
 
         if not [i for i, arg in enumerate(self.arguments)
                 if isinstance(arg, VectorArg)]:
@@ -165,8 +160,6 @@ class ElementwiseKernel:
         return cl.enqueue_nd_range_kernel(queue, self.kernel, gs, ls)
 
 
-
-
 @context_dependent_memoize
 def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
     ctx = {
@@ -174,8 +167,10 @@ def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
             "tp": dtype_to_ctype(dtype),
             }
 
-    args = ([VectorArg(dtype, "dest"+str(i))for i in range(vec_count)]
-            + [VectorArg(dtype, "src"+str(i))for i in range(vec_count)] 
+    args = ([VectorArg(dtype, "dest" + str(i))
+             for i in range(vec_count)]
+            + [VectorArg(dtype, "src" + str(i))
+               for i in range(vec_count)]
             + [VectorArg(idx_dtype, "idx")])
     body = (
             ("%(idx_tp)s src_idx = idx[i];\n" % ctx)
@@ -183,9 +178,7 @@ def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
             "dest%d[i] = src%d[src_idx];" % (i, i)
             for i in range(vec_count)))
 
-    return get_elwise_kernel(context, args, body, "take")
-
-
+    return get_elwise_kernel(context, args, body, name="take")
 
 
 @context_dependent_memoize
@@ -223,9 +216,7 @@ def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
                 "%(idx_tp)s dest_idx = gmem_dest_idx[i];\n" % ctx)
             + "\n".join(get_copy_insn(i) for i in range(vec_count)))
 
-    return get_elwise_kernel(context, args, body, "take_put")
-
-
+    return get_elwise_kernel(context, args, body, name="take_put")
 
 
 @context_dependent_memoize
@@ -240,7 +231,7 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
                 for i in range(vec_count)
             ] + [
             VectorArg(idx_dtype, "gmem_dest_idx"),
-            ]  + [
+            ] + [
             VectorArg(dtype, "src%d" % i)
                 for i in range(vec_count)
             ]
@@ -250,9 +241,7 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
             + "\n".join("dest%d[dest_idx] = src%d[i];" % (i, i)
                 for i in range(vec_count)))
 
-    return get_elwise_kernel(args, body, "put")
-
-
+    return get_elwise_kernel(args, body, name="put")
 
 
 @context_dependent_memoize
@@ -263,8 +252,7 @@ def get_copy_kernel(context, dtype_dest, dtype_src):
                 "tp_src": dtype_to_ctype(dtype_src),
                 },
             "dest[i] = src[i]",
-            "copy")
-
+            name="copy")
 
 
 @context_dependent_memoize
@@ -278,7 +266,7 @@ def get_linear_combination_kernel(summand_descriptors,
             VectorArg, ScalarArg, get_elwise_module
 
     args = []
-    preamble = [ "#include <pycuda-helpers.hpp>\n\n" ]
+    preamble = ["#include <pycuda-helpers.hpp>\n\n"]
     loop_prep = []
     summands = []
     tex_names = []
@@ -312,11 +300,9 @@ def get_linear_combination_kernel(summand_descriptors,
     func = mod.get_function("linear_combination")
     tex_src = [mod.get_texref(tn) for tn in tex_names]
     func.prepare("".join(arg.struct_char for arg in args),
-            (1,1,1), texrefs=tex_src)
+            (1, 1, 1), texrefs=tex_src)
 
     return func, tex_src
-
-
 
 
 @context_dependent_memoize
@@ -328,7 +314,8 @@ def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
                 "tp_z": dtype_to_ctype(dtype_z),
                 },
             "z[i] = a*x[i] + b*y[i]",
-            "axpbyz")
+            name="axpbyz")
+
 
 @context_dependent_memoize
 def get_axpbz_kernel(context, dtype):
@@ -336,7 +323,8 @@ def get_axpbz_kernel(context, dtype):
             "%(tp)s *z, %(tp)s a, %(tp)s *x,%(tp)s b" % {
                 "tp": dtype_to_ctype(dtype)},
             "z[i] = a * x[i] + b",
-            "axpb")
+            name="axpb")
+
 
 @context_dependent_memoize
 def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z):
@@ -347,7 +335,8 @@ def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z):
                 "tp_z": dtype_to_ctype(dtype_z),
                 },
             "z[i] = x[i] * y[i]",
-            "multiply")
+            name="multiply")
+
 
 @context_dependent_memoize
 def get_divide_kernel(context, dtype_x, dtype_y, dtype_z):
@@ -358,7 +347,8 @@ def get_divide_kernel(context, dtype_x, dtype_y, dtype_z):
                 "tp_z": dtype_to_ctype(dtype_z),
                 },
             "z[i] = x[i] / y[i]",
-            "divide")
+            name="divide")
+
 
 @context_dependent_memoize
 def get_rdivide_elwise_kernel(context, dtype):
@@ -367,7 +357,8 @@ def get_rdivide_elwise_kernel(context, dtype):
                 "tp": dtype_to_ctype(dtype),
                 },
             "z[i] = y / x[i]",
-            "divide_r")
+            name="divide_r")
+
 
 @context_dependent_memoize
 def get_fill_kernel(context, dtype):
@@ -376,7 +367,8 @@ def get_fill_kernel(context, dtype):
                 "tp": dtype_to_ctype(dtype),
                 },
             "z[i] = a",
-            "fill")
+            name="fill")
+
 
 @context_dependent_memoize
 def get_reverse_kernel(context, dtype):
@@ -385,7 +377,8 @@ def get_reverse_kernel(context, dtype):
                 "tp": dtype_to_ctype(dtype),
                 },
             "z[i] = y[n-1-i]",
-            "reverse")
+            name="reverse")
+
 
 @context_dependent_memoize
 def get_arange_kernel(context, dtype):
@@ -394,7 +387,7 @@ def get_arange_kernel(context, dtype):
                 "tp": dtype_to_ctype(dtype),
                 },
             "z[i] = start + i*step",
-            "arange")
+            name="arange")
 
 
 @context_dependent_memoize
@@ -404,7 +397,8 @@ def get_pow_kernel(context, dtype):
                 "tp": dtype_to_ctype(dtype),
                 },
             "z[i] = pow(y[i], value)",
-            "pow_method")
+            name="pow_method")
+
 
 @context_dependent_memoize
 def get_pow_array_kernel(context, dtype_x, dtype_y, dtype_z):
@@ -415,21 +409,24 @@ def get_pow_array_kernel(context, dtype_x, dtype_y, dtype_z):
                 "tp_z": dtype_to_ctype(dtype_z),
                 },
             "z[i] = pow(x[i], y[i])",
-            "pow_method")
+            name="pow_method")
+
 
 @context_dependent_memoize
 def get_fmod_kernel(context):
     return get_elwise_kernel(context,
             "float *z, float *arg, float *mod",
             "z[i] = fmod(arg[i], mod[i])",
-            "fmod_kernel")
+            name="fmod_kernel")
+
 
 @context_dependent_memoize
 def get_modf_kernel(context):
     return get_elwise_kernel(context,
             "float *intpart ,float *fracpart, float *x",
             "fracpart[i] = modf(x[i], &intpart[i])",
-            "modf_kernel")
+            name="modf_kernel")
+
 
 @context_dependent_memoize
 def get_frexp_kernel(context):
@@ -440,14 +437,16 @@ def get_frexp_kernel(context):
                 significand[i] = frexp(x[i], &expt);
                 exponent[i] = expt;
             """,
-            "frexp_kernel")
+            name="frexp_kernel")
+
 
 @context_dependent_memoize
 def get_ldexp_kernel(context):
     return get_elwise_kernel(context,
             "float *z, float *sig, float *expt",
             "z[i] = ldexp(sig[i], (int) expt[i])",
-            "ldexp_kernel")
+            name="ldexp_kernel")
+
 
 @context_dependent_memoize
 def get_unary_func_kernel(context, func_name, in_dtype, out_dtype=None):
@@ -460,9 +459,7 @@ def get_unary_func_kernel(context, func_name, in_dtype, out_dtype=None):
                 "tp_out": dtype_to_ctype(out_dtype),
                 },
             "z[i] = %s(y[i])" % func_name,
-            "%s_kernel" % func_name)
-
-
+            name="%s_kernel" % func_name)
 
 
 @context_dependent_memoize
@@ -474,4 +471,4 @@ def get_if_positive_kernel(context, crit_dtype, dtype):
             VectorArg(dtype, "else_"),
             ],
             "result[i] = crit[i] > 0 ? then_[i] : else_[i]",
-            "if_positive")
+            name="if_positive")
