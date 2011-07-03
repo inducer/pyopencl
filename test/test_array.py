@@ -316,6 +316,63 @@ def test_elwise_kernel(ctx_getter):
     assert la.norm((c_gpu - (5*a_gpu+6*b_gpu)).get()) < 1e-5
 
 
+@pytools.test.mark_test.opencl
+def test_elwise_kernel_with_options(ctx_getter):
+    from pyopencl.clrandom import rand as clrand
+    from pyopencl.elementwise import ElementwiseKernel
+
+    context = ctx_getter()
+    queue = cl.CommandQueue(context)
+
+    in_gpu = clrand(context, queue, (50,), np.float32)
+
+    options = ['-DADD_ONE']
+    add_one = ElementwiseKernel(
+        context,
+        "float* out, const float *in",
+        """
+        out[i] = in[i];
+        #ifdef ADD_ONE
+        out[i]++;
+        #endif
+        """,
+        options=options,
+        )
+
+    out_gpu = cl_array.empty_like(in_gpu)
+    add_one(out_gpu, in_gpu)
+
+    gt = in_gpu.get() + 1
+    gv = out_gpu.get()
+    assert la.norm(gv - gt) < 1e-5
+
+
+@pytools.test.mark_test.opencl
+def test_elwise_kernel_with_options(ctx_getter):
+    context = ctx_getter()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+
+    a_gpu = clrand(context, queue, (50,), np.float32)
+    b_gpu = clrand(context, queue, (50,), np.float32)
+
+    from pyopencl.elementwise import ElementwiseKernel
+
+    options = ['-DADD_ONE']
+    lin_comb = ElementwiseKernel(
+        context,
+        "float a, float *x, float b, float *y, float *z",
+        "z[i] = a*x[i] + b*y[i]",
+        "linear_combination",
+        options=options,
+        )
+
+    c_gpu = cl_array.empty_like(a_gpu)
+    lin_comb(5, a_gpu, 6, b_gpu, c_gpu)
+
+    assert la.norm((c_gpu - (5*a_gpu+6*b_gpu)).get()) < 1e-5
+
 
 
 @pytools.test.mark_test.opencl
