@@ -339,6 +339,17 @@ class TestCL:
 
         assert (dest == x).all()
 
+    @pytools.test.mark_test.opencl
+    def test_header_dep_handling(self, ctx_getter):
+        context = ctx_getter()
+        queue = cl.CommandQueue(context)
+
+        kernel_src = """
+        #include <empty-header.h>
+        kernel void zonk() {}
+        """
+        cl.Program(context, kernel_src).build('-I.')
+        cl.Program(context, kernel_src).build('-I.')
 
 
 

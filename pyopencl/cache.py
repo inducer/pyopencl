@@ -156,7 +156,7 @@ def get_dependencies(src, include_path):
 
     _inner(src)
 
-    result = list(result.iteritems())
+    result = list((name,) + vals for name, vals in result.iteritems())
     result.sort()
 
     return result
@@ -294,7 +294,7 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
         from tempfile import gettempdir
         import getpass
         cache_dir = join(gettempdir(),
-                "pyopencl-compiler-cache-v1-uid%s-py%s" % (
+                "pyopencl-compiler-cache-v2-uid%s-py%s" % (
                     getpass.getuser(), ".".join(str(i) for i in sys.version_info)))
 
     # {{{ ensure cache directory exists
