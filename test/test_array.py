@@ -615,6 +615,8 @@ def test_vector_fill(ctx_getter):
     a = a_gpu.get()
     assert a.dtype is cl_array.vec.float4
 
+    a_gpu = cl_array.zeros(queue, 100, dtype=cl_array.vec.float4)
+
 
 
 

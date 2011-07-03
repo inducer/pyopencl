@@ -680,7 +680,8 @@ def zeros(*args, **kwargs):
     def _zeros(queue, shape, dtype, order="C", allocator=None):
         result = Array(queue, shape, dtype,
                 order=order, allocator=allocator)
-        result.fill(0)
+        zero = np.zeros((), dtype)
+        result.fill(zero)
         return result
 
     if isinstance(args[0], cl.Context):
@@ -703,7 +704,8 @@ def empty_like(ary):
 
 def zeros_like(ary):
     result = empty_like(ary)
-    result.fill(0)
+    zero = np.zeros((), ary.dtype)
+    result.fill(zero)
     return result
 
 
