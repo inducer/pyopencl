@@ -73,6 +73,11 @@ Version 2011.2
     This version is currently under development. You can get snapshots from
     PyOpenCL's git version control.
 
+Version 2011.1.2
+----------------
+
+* More bug fixes.
+
 Version 2011.1.1
 ----------------
 
@@ -108,6 +113,7 @@ Version 2011.1
 * Add :func:`pyopencl.enqueue_copy`. Deprecate all other transfer functions.
 * Add support for numerous extensions, among them device fission.
 * Add a compiler cache.
+* Add the 'g_times_l' keyword arg to kernel execution.
 
 Version 0.92
 ------------

@@ -782,7 +782,7 @@ Programs and Kernels
                prg.kernel(queue, n_globals, None, args)
 
 
-    .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None)
+    .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
 
         Use :func:`enqueue_nd_range_kernel` to enqueue a kernel execution, after using
         :meth:`set_args` to set each argument in turn. See the documentation for
@@ -790,6 +790,11 @@ Programs and Kernels
         |std-enqueue-blurb|
 
         *None* may be passed for local_size.
+
+        If *g_times_l* is specified, the global size will be multiplied by the
+        local size. (which makes the behavior more like Nvidia CUDA) In this case,
+        *global_size* and *local_size* also do not have to have the same number
+        of dimensions.
 
         .. versionchanged:: 0.92
             *local_size* was promoted to third positional argument from being a
@@ -801,6 +806,9 @@ Programs and Kernels
             :class:`Kernel` arguments, and *None* is valid as an argument, but
             its treatment in the wrapper had a bug (now fixed) that prevented
             it from working.
+
+        .. versionchanged:: 2011.1
+            Added the *g_times_l* keyword arg.
 
     |comparable|
 
@@ -814,9 +822,18 @@ Programs and Kernels
 
         The size of local buffer in bytes to be provided.
 
-.. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None)
+.. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=True)
 
     |std-enqueue-blurb|
+    
+    If *g_times_l* is specified, the global size will be multiplied by the
+    local size. (which makes the behavior more like Nvidia CUDA) In this case,
+    *global_size* and *local_size* also do not have to have the same number
+    of dimensions.
+
+    .. versionchanged:: 2011.1
+        Added the *g_times_l* keyword arg.
+
 
 .. function:: enqueue_task(queue, kernel, wait_for=None)
 
