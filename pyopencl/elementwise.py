@@ -35,7 +35,7 @@ from pyopencl.tools import dtype_to_ctype, VectorArg, ScalarArg
 
 
 def get_elwise_program(context, arguments, operation,
-        name="elwise_kernel", keep=False, options=[],
+        name="elwise_kernel", options=[],
         preamble="", loop_prep="", after_loop=""):
     from pyopencl import Program
     source = ("""
@@ -70,7 +70,7 @@ def get_elwise_program(context, arguments, operation,
 
 
 def get_elwise_kernel_and_types(context, arguments, operation,
-        name="elwise_kernel", keep=False, options=[], preamble="", **kwargs):
+        name="elwise_kernel", options=[], preamble="", **kwargs):
     if isinstance(arguments, str):
         from pyopencl.tools import parse_c_arg
         parsed_args = [parse_c_arg(arg) for arg in arguments.split(",")]
@@ -86,8 +86,9 @@ def get_elwise_kernel_and_types(context, arguments, operation,
 
     parsed_args.append(ScalarArg(np.uintp, "n"))
 
-    prg = get_elwise_program(context, parsed_args, operation, name,
-            keep, options, preamble, **kwargs)
+    prg = get_elwise_program(
+        context, parsed_args, operation,
+        name=name, options=options, preamble=preamble, **kwargs)
 
     scalar_arg_dtypes = []
     for arg in parsed_args:
