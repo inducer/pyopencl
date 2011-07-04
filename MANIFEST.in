@@ -1,6 +1,7 @@
 include src/wrapper/*.hpp
 include src/wrapper/*.cpp
 include test/*.py
+include test/*.h
 include examples/*.py
 include doc/source/*.rst
 include doc/Makefile

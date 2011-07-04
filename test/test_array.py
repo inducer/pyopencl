@@ -302,10 +302,11 @@ def test_elwise_kernel_with_options(ctx_getter):
         context,
         "float* out, const float *in",
         """
-        out[i] = in[i];
+        out[i] = in[i]
         #ifdef ADD_ONE
-        out[i]++;
+            +1
         #endif
+        ;
         """,
         options=options,
         )
