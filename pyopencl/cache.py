@@ -138,11 +138,13 @@ def get_dependencies(src, include_path):
                     except IOError:
                         continue
 
-                    checksum = new_hash()
-                    included_src = src_file.read()
-                    checksum.update(included_src)
-                    src_file.close()
+                    try:
+                        included_src = src_file.read()
+                    finally:
+                        src_file.close()
 
+                    checksum = new_hash()
+                    checksum.update(included_src.encode("utf8"))
                     _inner(included_src)
 
                     result[included_file_name] = (
@@ -167,8 +169,11 @@ def get_dependencies(src, include_path):
 def get_file_md5sum(fname):
     checksum = new_hash()
     inf = open(fname)
-    checksum.update(inf.read())
-    inf.close()
+    try:
+        contents = inf.read()
+    finally:
+        inf.close()
+    checksum.update(contents.encode("utf8"))
     return checksum.hexdigest()
 
 
