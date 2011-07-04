@@ -80,7 +80,13 @@ def main():
         EXTRA_DEFINES["PYOPENCL_USE_DEVICE_FISSION"] = 1
 
     ver_dic = {}
-    exec(compile(open("pyopencl/version.py").read(), "pyopencl/version.py", 'exec'), ver_dic)
+    version_file = open("pyopencl/version.py")
+    try:
+        version_file_contents = version_file.read()
+    finally:
+        version_file.close()
+
+    exec(compile(version_file_contents, "pyopencl/version.py", 'exec'), ver_dic)
 
     try:
         from distutils.command.build_py import build_py_2to3 as build_py
