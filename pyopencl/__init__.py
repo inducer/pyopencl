@@ -272,9 +272,14 @@ def _add_functionality():
                         self.set_arg(i, arg)
         except LogicError, e:
             if i is not None:
+                advice = ""
+                from pyopencl.array import Array
+                if isinstance(args[i], Array):
+                    advice = " (perhaps you meant to pass 'array.data' instead of the array itself?)"
+
                 raise LogicError(
-                        "when processing argument #%d (1-based): %s"
-                        % (i+1, str(e)))
+                        "when processing argument #%d (1-based): %s%s"
+                        % (i+1, str(e), advice))
             else:
                 raise
 
