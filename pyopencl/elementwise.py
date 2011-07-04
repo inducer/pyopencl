@@ -262,12 +262,12 @@ def get_linear_combination_kernel(summand_descriptors,
     # TODO: Port this!
     raise NotImplementedError
 
-    from pycuda.tools import dtype_to_ctype
-    from pycuda.elementwise import \
+    from pyopencl.tools import dtype_to_ctype
+    from pyopencl.elementwise import \
             VectorArg, ScalarArg, get_elwise_module
 
     args = []
-    preamble = ["#include <pycuda-helpers.hpp>\n\n"]
+    preamble = []
     loop_prep = []
     summands = []
     tex_names = []
