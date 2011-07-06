@@ -21,8 +21,8 @@ if have_cl():
 
 
 @pytools.test.mark_test.opencl
-def test_pow_array(ctx_getter):
-    context = ctx_getter()
+def test_pow_array(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
@@ -36,8 +36,8 @@ def test_pow_array(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_pow_number(ctx_getter):
-    context = ctx_getter()
+def test_pow_number(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
@@ -48,8 +48,8 @@ def test_pow_number(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_abs(ctx_getter):
-    context = ctx_getter()
+def test_abs(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a = -cl_array.arange(queue, 111, dtype=np.float32)
@@ -68,8 +68,8 @@ def test_abs(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_len(ctx_getter):
-    context = ctx_getter()
+def test_len(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
@@ -78,10 +78,10 @@ def test_len(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_multiply(ctx_getter):
+def test_multiply(ctx_factory):
     """Test the muliplication of an array with a scalar. """
 
-    context = ctx_getter()
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     for sz in [10, 50000]:
@@ -97,10 +97,10 @@ def test_multiply(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_multiply_array(ctx_getter):
+def test_multiply_array(ctx_factory):
     """Test the multiplication of two arrays."""
 
-    context = ctx_getter()
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
@@ -114,10 +114,10 @@ def test_multiply_array(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_addition_array(ctx_getter):
+def test_addition_array(ctx_factory):
     """Test the addition of two arrays."""
 
-    context = ctx_getter()
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
@@ -128,10 +128,10 @@ def test_addition_array(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_addition_scalar(ctx_getter):
+def test_addition_scalar(ctx_factory):
     """Test the addition of an array and a scalar."""
 
-    context = ctx_getter()
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
@@ -142,14 +142,14 @@ def test_addition_scalar(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_substract_array(ctx_getter):
+def test_substract_array(ctx_factory):
     """Test the substraction of two arrays."""
     #test data
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
     b = np.array([10, 20, 30, 40, 50,
                   60, 70, 80, 90, 100]).astype(np.float32)
 
-    context = ctx_getter()
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a_gpu = cl_array.to_device(queue, a)
@@ -163,10 +163,10 @@ def test_substract_array(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_substract_scalar(ctx_getter):
+def test_substract_scalar(ctx_factory):
     """Test the substraction of an array and a scalar."""
 
-    context = ctx_getter()
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     #test data
@@ -183,10 +183,10 @@ def test_substract_scalar(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_divide_scalar(ctx_getter):
+def test_divide_scalar(ctx_factory):
     """Test the division of an array and a scalar."""
 
-    context = ctx_getter()
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
@@ -200,10 +200,10 @@ def test_divide_scalar(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_divide_array(ctx_getter):
+def test_divide_array(ctx_factory):
     """Test the division of an array and a scalar. """
 
-    context = ctx_getter()
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     #test data
@@ -221,8 +221,8 @@ def test_divide_array(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_random(ctx_getter):
-    context = ctx_getter()
+def test_random(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
@@ -240,8 +240,8 @@ def test_random(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_nan_arithmetic(ctx_getter):
-    context = ctx_getter()
+def test_nan_arithmetic(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     def make_nan_contaminated_vector(size):
@@ -266,8 +266,8 @@ def test_nan_arithmetic(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_elwise_kernel(ctx_getter):
-    context = ctx_getter()
+def test_elwise_kernel(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
@@ -288,11 +288,11 @@ def test_elwise_kernel(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_elwise_kernel_with_options(ctx_getter):
+def test_elwise_kernel_with_options(ctx_factory):
     from pyopencl.clrandom import rand as clrand
     from pyopencl.elementwise import ElementwiseKernel
 
-    context = ctx_getter()
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     in_gpu = clrand(context, queue, (50,), np.float32)
@@ -320,8 +320,8 @@ def test_elwise_kernel_with_options(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_take(ctx_getter):
-    context = ctx_getter()
+def test_take(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     idx = cl_array.arange(queue, 0, 200000, 2, dtype=np.uint32)
@@ -331,8 +331,8 @@ def test_take(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_arange(ctx_getter):
-    context = ctx_getter()
+def test_arange(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     n = 5000
@@ -341,8 +341,8 @@ def test_arange(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_reverse(ctx_getter):
-    context = ctx_getter()
+def test_reverse(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     n = 5000
@@ -355,8 +355,8 @@ def test_reverse(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_sum(ctx_getter):
-    context = ctx_getter()
+def test_sum(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
@@ -371,8 +371,8 @@ def test_sum(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_minmax(ctx_getter):
-    context = ctx_getter()
+def test_minmax(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
@@ -394,8 +394,8 @@ def test_minmax(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_subset_minmax(ctx_getter):
-    context = ctx_getter()
+def test_subset_minmax(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
@@ -434,8 +434,8 @@ def test_subset_minmax(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_dot(ctx_getter):
-    context = ctx_getter()
+def test_dot(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
@@ -453,7 +453,7 @@ def test_dot(ctx_getter):
 
 if False:
     @pytools.test.mark_test.opencl
-    def test_slice(ctx_getter):
+    def test_slice(ctx_factory):
         from pyopencl.clrandom import rand as clrand
 
         l = 20000
@@ -472,8 +472,8 @@ if False:
 
 
 @pytools.test.mark_test.opencl
-def test_if_positive(ctx_getter):
-    context = ctx_getter()
+def test_if_positive(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
@@ -495,8 +495,8 @@ def test_if_positive(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_take_put(ctx_getter):
-    context = ctx_getter()
+def test_take_put(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     for n in [5, 17, 333]:
@@ -517,8 +517,8 @@ def test_take_put(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_astype(ctx_getter):
-    context = ctx_getter()
+def test_astype(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
@@ -544,8 +544,8 @@ def test_astype(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_scan(ctx_getter):
-    context = ctx_getter()
+def test_scan(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
@@ -576,8 +576,8 @@ def test_scan(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_stride_preservation(ctx_getter):
-    context = ctx_getter()
+def test_stride_preservation(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     A = np.random.rand(3, 3)
@@ -589,8 +589,8 @@ def test_stride_preservation(ctx_getter):
 
 
 @pytools.test.mark_test.opencl
-def test_vector_fill(ctx_getter):
-    context = ctx_getter()
+def test_vector_fill(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a_gpu = cl_array.Array(queue, 100, dtype=cl_array.vec.float4)

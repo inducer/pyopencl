@@ -41,8 +41,8 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0):
     a = float(a)
     b = float(b)
 
-    def test(ctx_getter):
-        context = ctx_getter()
+    def test(ctx_factory):
+        context = ctx_factory()
         queue = cl.CommandQueue(context)
 
         gpu_func = getattr(clmath, name)
@@ -94,8 +94,8 @@ if have_cl():
 
 
 @pytools.test.mark_test.opencl
-def test_fmod(ctx_getter):
-    context = ctx_getter()
+def test_fmod(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     for s in sizes:
@@ -111,8 +111,8 @@ def test_fmod(ctx_getter):
             assert math.fmod(a[i], a2[i]) == b[i]
 
 @pytools.test.mark_test.opencl
-def test_ldexp(ctx_getter):
-    context = ctx_getter()
+def test_ldexp(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     for s in sizes:
@@ -128,8 +128,8 @@ def test_ldexp(ctx_getter):
             assert math.ldexp(a[i], int(a2[i])) == b[i]
 
 @pytools.test.mark_test.opencl
-def test_modf(ctx_getter):
-    context = ctx_getter()
+def test_modf(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     for s in sizes:
@@ -147,8 +147,8 @@ def test_modf(ctx_getter):
             assert abs(fracpart_true - fracpart[i]) < 1e-4
 
 @pytools.test.mark_test.opencl
-def test_frexp(ctx_getter):
-    context = ctx_getter()
+def test_frexp(ctx_factory):
+    context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     for s in sizes:

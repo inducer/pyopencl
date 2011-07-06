@@ -67,7 +67,7 @@ def context_dependent_memoize(func, context, *args):
 
 
 def pytest_generate_tests_for_pyopencl(metafunc):
-    class ContextGetter:
+    class ContextFactory:
         def __init__(self, device):
             self.device = device
 
@@ -81,9 +81,10 @@ def pytest_generate_tests_for_pyopencl(metafunc):
             return cl.Context([self.device])
 
         def __str__(self):
-            return "<context getter for %s>" % self.device
+            return "<context factory for %s>" % self.device
 
     if ("device" in metafunc.funcargnames
+            or "ctx_factory" in metafunc.funcargnames
             or "ctx_getter" in metafunc.funcargnames):
         arg_dict = {}
 
@@ -95,8 +96,14 @@ def pytest_generate_tests_for_pyopencl(metafunc):
                 if "device" in metafunc.funcargnames:
                     arg_dict["device"] = device
 
+                if "ctx_factory" in metafunc.funcargnames:
+                    arg_dict["ctx_factory"] = ContextFactory(device)
+
                 if "ctx_getter" in metafunc.funcargnames:
-                    arg_dict["ctx_getter"] = ContextGetter(device)
+                    from warnings import warn
+                    warn("The 'ctx_getter' arg is deprecated in favor of 'ctx_factory'.",
+                            DeprecationWarning)
+                    arg_dict["ctx_getter"] = ContextFactory(device)
 
                 metafunc.addcall(funcargs=arg_dict.copy(),
                         id=", ".join("%s=%s" % (arg, value)

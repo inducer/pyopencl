@@ -178,8 +178,8 @@ class TestCL:
         assert not iform.__dict__
 
     @pytools.test.mark_test.opencl
-    def test_nonempty_supported_image_formats(self, device, ctx_getter):
-        context = ctx_getter()
+    def test_nonempty_supported_image_formats(self, device, ctx_factory):
+        context = ctx_factory()
 
         if device.image_support:
             assert len(cl.get_supported_image_formats(
@@ -189,8 +189,8 @@ class TestCL:
             skip("images not supported on %s" % device.name)
 
     @pytools.test.mark_test.opencl
-    def test_that_python_args_fail(self, ctx_getter):
-        context = ctx_getter()
+    def test_that_python_args_fail(self, ctx_factory):
+        context = ctx_factory()
 
         prg = cl.Program(context, """
             __kernel void mult(__global float *a, float b, int c)
@@ -220,8 +220,8 @@ class TestCL:
         cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
 
     @pytools.test.mark_test.opencl
-    def test_image_2d(self, device, ctx_getter):
-        context = ctx_getter()
+    def test_image_2d(self, device, ctx_factory):
+        context = ctx_factory()
 
         if not device.image_support:
             from py.test import skip
@@ -267,8 +267,8 @@ class TestCL:
         assert la.norm(a_result - a) == 0
 
     @pytools.test.mark_test.opencl
-    def test_copy_buffer(self, ctx_getter):
-        context = ctx_getter()
+    def test_copy_buffer(self, ctx_factory):
+        context = ctx_factory()
 
         queue = cl.CommandQueue(context)
         mf = cl.mem_flags
@@ -285,10 +285,10 @@ class TestCL:
         assert la.norm(a - b) == 0
 
     @pytools.test.mark_test.opencl
-    def test_mempool(self, ctx_getter):
+    def test_mempool(self, ctx_factory):
         from pyopencl.tools import MemoryPool, CLAllocator
 
-        context = ctx_getter()
+        context = ctx_factory()
 
         pool = MemoryPool(CLAllocator(context))
         maxlen = 10
@@ -319,8 +319,8 @@ class TestCL:
             assert asize < asize*(1+1/8)
 
     @pytools.test.mark_test.opencl
-    def test_vector_args(self, ctx_getter):
-        context = ctx_getter()
+    def test_vector_args(self, ctx_factory):
+        context = ctx_factory()
         queue = cl.CommandQueue(context)
 
         prg = cl.Program(context, """
@@ -340,8 +340,8 @@ class TestCL:
         assert (dest == x).all()
 
     @pytools.test.mark_test.opencl
-    def test_header_dep_handling(self, ctx_getter):
-        context = ctx_getter()
+    def test_header_dep_handling(self, ctx_factory):
+        context = ctx_factory()
         queue = cl.CommandQueue(context)
 
         kernel_src = """

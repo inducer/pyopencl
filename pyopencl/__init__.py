@@ -457,11 +457,20 @@ class Program(object):
 
 # {{{ convenience -------------------------------------------------------------
 def create_some_context(interactive=True, answers=None):
+    import os
+    if answers is None and "PYOPENCL_CTX" in os.environ:
+        ctx_spec = os.environ["PYOPENCL_CTX"]
+        answers = ctx_spec.split(":")
+
+    user_inputs = []
+
     def get_input(prompt):
         if answers:
             return str(answers.pop(0))
         else:
-            return raw_input(prompt)
+            user_input = raw_input(prompt)
+            user_inputs.append(user_input)
+            return user_input
 
     try:
         import sys
@@ -484,13 +493,35 @@ def create_some_context(interactive=True, answers=None):
 
         answer = get_input("Choice [0]:")
         if not answer:
-            choice = 0
+            platform = platforms[0]
         else:
-            choice = int(answer)
+            try:
+                choice = int(answer)
+            except ValueError:
+                choice = choice.lower()
+                platform = None
+                for i, pf in enumerate(platforms):
+                    if choice in pf.name.lower():
+                        platform = pf
+                if platform is None:
+                    raise RuntimeError("input did not match any platform")
 
-        platform = platforms[choice]
+            else:
+                platform = platforms[choice]
 
     devices = platform.get_devices()
+
+    def parse_device(choice):
+        try:
+            choice = int(answer)
+        except ValueError:
+            choice = choice.lower()
+            for i, dev in enumerate(devices):
+                if choice in dev.name.lower():
+                    return dev
+            raise RuntimeError("input did not match any platform")
+        else:
+            return devices[choice]
 
     if not devices:
         raise Error("no devices found")
@@ -508,16 +539,11 @@ def create_some_context(interactive=True, answers=None):
         else:
             devices = [devices[int(i)] for i in answer.split(",")]
 
+    if user_inputs:
+        print("Set the environment variable PYOPENCL_CTX='%s' to "
+                "avoid being asked again." % ":".join(user_inputs))
     return Context(devices)
 
-
-
-
-def _make_context_creator(answers):
-    def func():
-        return create_some_context(answers=answers)
-
-    return func
 
 
 
