@@ -37,7 +37,6 @@ import pyopencl as cl
 from pyopencl.tools import (
         context_dependent_memoize,
         dtype_to_ctype)
-from pytools import memoize_method
 import numpy as np
 import pyopencl._mymako as mako
 
@@ -45,13 +44,17 @@ import pyopencl._mymako as mako
 
 
 KERNEL = """
+
     #define GROUP_SIZE ${group_size}
     #define READ_AND_MAP(i) (${map_expr})
     #define REDUCE(a, b) (${reduce_expr})
 
     % if double_support:
         #pragma OPENCL EXTENSION cl_khr_fp64: enable
+    % elif amd_double_support:
+        #pragma OPENCL EXTENSION cl_amd_fp64: enable
     % endif
+
 
     typedef ${out_type} out_type;
 
@@ -149,13 +152,16 @@ def  get_reduction_source(
     # {{{ compute group size
 
     def get_dev_group_size(device):
+        # dirty fix for the RV770 boards
+        max_work_group_size=device.max_work_group_size
+        if "RV770" in device.name:
+            max_work_group_size=64
         return min(
-                device.max_work_group_size,
+                max_work_group_size,
                 (device.local_mem_size + out_type_size - 1)
                 // out_type_size)
 
-    group_size = min(
-            get_dev_group_size(dev) for dev in devices)
+    group_size = min(get_dev_group_size(dev) for dev in devices)
 
     if max_group_size is not None:
         group_size = min(max_group_size, group_size)
@@ -180,7 +186,7 @@ def  get_reduction_source(
 
     from mako.template import Template
     from pytools import all
-    from pyopencl.characterize import has_double_support
+    from pyopencl.characterize import has_double_support, has_amd_double_support
     src = str(Template(KERNEL).render(
         out_type=out_type,
         arguments=arguments,
@@ -192,7 +198,9 @@ def  get_reduction_source(
         name=name,
         preamble=preamble,
         double_support=all(
-            has_double_support(dev) for dev in devices)
+            has_double_support(dev) for dev in devices),
+        amd_double_support=all(
+            has_amd_double_support(dev) for dev in devices)
         ))
 
     from pytools import Record
@@ -326,7 +334,6 @@ class ReductionKernel:
                         (group_count,), self.dtype_out,
                         allocator=repr_vec.allocator)
 
-            #print group_count, seq_count, stage_inf.group_size
             stage_inf.kernel(
                     use_queue,
                     (group_count*stage_inf.group_size,),
