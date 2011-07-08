@@ -306,7 +306,7 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
 
     try:
         os.mkdir(cache_dir)
-    except OSError as e:
+    except OSError, e:
         from errno import EEXIST
         if e.errno != EEXIST:
             raise
