@@ -298,7 +298,7 @@ Memory
 
     :param flags: from :class:`migrate_mem_object_flags_ext`
 
-    ..versionadded:: 2011.1.3
+    ..versionadded:: 2011.2
 
     Only available with the `cl_ext_migrate_memobject`
     extension.

@@ -134,7 +134,7 @@ const_ext_lookup = {
             getattr(ctype, "COPY_BUFFER_RECT", None): ("CL_1.1", "0.92"),
             getattr(ctype, "USER", None): ("CL_1.1", "0.92"),
             getattr(ctype, "MIGRATE_MEM_OBJECT_EXT", None): 
-            ("cl_ext_migrate_memobject", "2011.1.3"),
+            ("cl_ext_migrate_memobject", "2011.2"),
             },
 
         memf: {
@@ -162,7 +162,7 @@ const_ext_lookup = {
             },
 
         mof: {
-            getattr(mof, "HOST", None): ("cl_ext_migrate_memobject", "2011.1.3"),
+            getattr(mof, "HOST", None): ("cl_ext_migrate_memobject", "2011.2"),
             },
 try:
     gl_ci = cl.gl_context_info

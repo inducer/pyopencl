@@ -73,6 +73,8 @@ Version 2011.2
     This version is currently under development. You can get snapshots from
     PyOpenCL's git version control.
 
+* Add :func:`enqueue_migrate_mem_object`.
+
 Version 2011.1.2
 ----------------
 
