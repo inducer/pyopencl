@@ -49,9 +49,15 @@ def usable_local_mem_size(dev, nargs=None):
     """
     usable_local_mem_size = dev.local_mem_size
 
-    if ("nvidia" in dev.platform.name.lower()
-            and (dev.compute_capability_major_nv,
-                dev.compute_capability_minor_nv) < (2, 0)):
+    try:
+        nv_compute_cap = (dev.compute_capability_major_nv,
+                dev.compute_capability_minor_nv)
+    except AttributeError:
+        nv_compute_cap = None
+
+
+    if (nv_compute_cap is not None 
+            and nv_compute_cap < (2,0)):
         # pre-Fermi use local mem for parameter passing
         if nargs is None:
             # assume maximum
