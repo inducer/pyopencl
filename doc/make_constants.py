@@ -13,6 +13,7 @@ ctype = cl.command_type
 memf = cl.mem_flags
 dppe = cl.device_partition_property_ext
 ade = cl.affinity_domain_ext
+mof = cl.migrate_mem_object_flags_ext
 
 def get_extra_lines(tup):
     ext_name, pyopencl_ver = tup
@@ -132,12 +133,15 @@ const_ext_lookup = {
             getattr(ctype, "WRITE_BUFFER_RECT", None): ("CL_1.1", "0.92"),
             getattr(ctype, "COPY_BUFFER_RECT", None): ("CL_1.1", "0.92"),
             getattr(ctype, "USER", None): ("CL_1.1", "0.92"),
+            getattr(ctype, "MIGRATE_MEM_OBJECT_EXT", None): 
+            ("cl_ext_migrate_memobject", "2011.1.3"),
             },
 
         memf: {
             getattr(memf, "USE_PERSISTENT_MEM_AMD", None): 
             ("cl_amd_device_memory_flags", "2011.1"),
             },
+
         dppe: {
             getattr(dppe, "EQUALLY", None): ("cl_ext_device_fission", "2011.1"),
             getattr(dppe, "BY_COUNTS", None): ("cl_ext_device_fission", "2011.1"),
@@ -155,8 +159,11 @@ const_ext_lookup = {
             getattr(ade, "L4_CACHE", None): ("cl_ext_device_fission", "2011.1"),
             getattr(ade, "NUMA", None): ("cl_ext_device_fission", "2011.1"),
             getattr(ade, "NEXT_FISSIONABLE", None): ("cl_ext_device_fission", "2011.1"),
-            }
-        }
+            },
+
+        mof: {
+            getattr(mof, "HOST", None): ("cl_ext_migrate_memobject", "2011.1.3"),
+            },
 try:
     gl_ci = cl.gl_context_info
 except AttributeError:

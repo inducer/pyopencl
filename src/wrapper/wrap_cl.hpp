@@ -77,6 +77,16 @@
         EXTRA_MSG); \
   }
 
+#define PYOPENCL_GET_EXT_FUN(NAME, VAR) \
+    NAME##_fn VAR \
+      = (NAME##_fn) \
+      clGetExtensionFunctionAddress(#NAME); \
+    \
+    if (!VAR) \
+      throw error(#NAME, CL_INVALID_VALUE, #NAME \
+          "not available");
+
+
 // }}}
 
 // {{{ tracing and error reporting
@@ -371,15 +381,10 @@ namespace pyopencl
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
           if (retain)
           {
-            clRetainDeviceEXT_fn cl_retain_device
-              = (clRetainDeviceEXT_fn)
-              clGetExtensionFunctionAddress("clRetainDeviceEXT");
+            PYOPENCL_GET_EXT_FUN(
+                clRetainDeviceEXT, retain_func);
 
-            if (!cl_retain_device)
-              throw error("Device", CL_INVALID_VALUE,
-                  "clRetainDeviceEXT not available");
-
-            PYOPENCL_CALL_GUARDED(cl_retain_device, (did));
+            PYOPENCL_CALL_GUARDED(retain_func, (did));
           }
 #else
           throw error("Device", CL_INVALID_VALUE, 
@@ -393,15 +398,10 @@ namespace pyopencl
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
         if (m_ownable_reference)
         {
-          clReleaseDeviceEXT_fn cl_release_device
-            = (clReleaseDeviceEXT_fn)
-            clGetExtensionFunctionAddress("clReleaseDeviceEXT");
+          PYOPENCL_GET_EXT_FUN(
+              clReleaseDeviceEXT, release_func);
 
-          if (!cl_release_device)
-            throw error("Device", CL_INVALID_VALUE,
-                "clReleaseDeviceEXT not available");
-
-          PYOPENCL_CALL_GUARDED_CLEANUP(cl_release_device, (m_device));
+          PYOPENCL_CALL_GUARDED_CLEANUP(release_func, (m_device));
         }
 #endif
       }
@@ -546,13 +546,7 @@ namespace pyopencl
       {
         std::vector<cl_device_partition_property_ext> properties;
 
-        clCreateSubDevicesEXT_fn cl_create_sub_devices
-          = (clCreateSubDevicesEXT_fn)
-          clGetExtensionFunctionAddress("clCreateSubDevicesEXT");
-
-        if (!cl_create_sub_devices)
-          throw error("Device.create_sub_devices", CL_INVALID_VALUE,
-              "clCreateSubDevicesEXT not available");
+        PYOPENCL_GET_EXT_FUN(clCreateSubDevicesEXT, create_sub_dev);
 
         COPY_PY_LIST(cl_device_partition_property_ext, properties);
         properties.push_back(CL_PROPERTIES_LIST_END_EXT);
@@ -561,13 +555,13 @@ namespace pyopencl
           = properties.empty( ) ? NULL : &properties.front();
 
         cl_uint num_entries;
-        PYOPENCL_CALL_GUARDED(cl_create_sub_devices,
+        PYOPENCL_CALL_GUARDED(create_sub_dev,
             (m_device, props_ptr, 0, NULL, &num_entries));
 
         std::vector<cl_device_id> result;
         result.resize(num_entries);
 
-        PYOPENCL_CALL_GUARDED(cl_create_sub_devices,
+        PYOPENCL_CALL_GUARDED(create_sub_dev,
             (m_device, props_ptr, num_entries, &result.front(), NULL));
 
         py::list py_result;
@@ -1232,6 +1226,33 @@ namespace pyopencl
       }
 
   };
+
+#ifdef cl_ext_migrate_memobject
+  inline
+  event *enqueue_migrate_mem_object(
+      command_queue &cq,
+      py::object py_mem_objects,
+      cl_mem_migration_flags_ext flags,
+      py::object py_wait_for)
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+    PYOPENCL_GET_EXT_FUN(
+        clEnqueueMigrateMemObjectEXT, enqueue_migrate_fn);
+
+    std::vector<cl_mem> mem_objects;
+    PYTHON_FOREACH(mo, py_mem_objects)
+      mem_objects.push_back(py::extract<memory_object &>(mo)().data());
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(enqueue_migrate_fn, (
+          cq.data(),
+          mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(),
+          flags,
+          num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front(), &evt
+          ));
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+#endif
 
   // }}}
 

@@ -294,6 +294,15 @@ Memory
 
     |comparable|
 
+.. function:: enqueue_migrate_mem_object(queue, mem_objects, flags=0, wait_for=None)
+
+    :param flags: from :class:`migrate_mem_object_flags_ext`
+
+    ..versionadded:: 2011.1.3
+
+    Only available with the `cl_ext_migrate_memobject`
+    extension.
+
 Buffers
 ^^^^^^^
 
