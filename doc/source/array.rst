@@ -464,8 +464,8 @@ Custom Reductions
 
 Here's a usage example::
 
-    a = pyopencl.array.arange(400, dtype=numpy.float32)
-    b = pyopencl.array.arange(400, dtype=numpy.float32)
+    a = pyopencl.array.arange(queue, 400, dtype=numpy.float32)
+    b = pyopencl.array.arange(queue, 400, dtype=numpy.float32)
 
     krnl = ReductionKernel(ctx, numpy.float32, neutral="0",
             reduce_expr="a+b", map_expr="x[i]*y[i]",

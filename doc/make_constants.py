@@ -164,6 +164,7 @@ const_ext_lookup = {
         mof: {
             getattr(mof, "HOST", None): ("cl_ext_migrate_memobject", "2011.2"),
             },
+        }
 try:
     gl_ci = cl.gl_context_info
 except AttributeError:
