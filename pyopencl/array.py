@@ -1093,7 +1093,4 @@ subset_max = _make_subset_minmax_kernel("max")
 
 # }}}
 
-
-
-
 # vim: foldmethod=marker

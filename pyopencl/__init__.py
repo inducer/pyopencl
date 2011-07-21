@@ -642,6 +642,72 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
 # }}}
 
+# {{{ image creation
+
+DTYPE_TO_CHANNEL_TYPE = {
+    np.dtype(np.float32): channel_type.FLOAT,
+    np.dtype(np.int16): channel_type.SIGNED_INT16,
+    np.dtype(np.int32): channel_type.SIGNED_INT32,
+    np.dtype(np.int8): channel_type.SIGNED_INT8,
+    np.dtype(np.uint16): channel_type.UNSIGNED_INT16,
+    np.dtype(np.uint32): channel_type.UNSIGNED_INT32,
+    np.dtype(np.uint8): channel_type.UNSIGNED_INT8,
+    }
+try:
+    np.float16
+except:
+    pass
+else:
+    DTYPE_TO_CHANNEL_TYPE[np.dtype(np.float16)] = channel_type.HALF_FLOAT,
+
+DTYPE_TO_CHANNEL_TYPE_NORM = {
+    np.dtype(np.int16): channel_type.SNORM_INT16,
+    np.dtype(np.int8): channel_type.SNORM_INT8,
+    np.dtype(np.int16): channel_type.UNORM_INT16,
+    np.dtype(np.uint8): channel_type.UNORM_INT8,
+    }
+
+def image_from_array(ctx, ary, num_channels, mode="r", norm_int=False):
+    # FIXME what about vector types?
+
+    if num_channels == 1:
+        shape = ary.shape
+        strides = ary.strides
+    else:
+        if ary.shape[-1] != num_channels:
+            raise RuntimeError("last dimension must be equal to number of channels")
+
+        shape = ary.shape[:-1]
+        strides = ary.strides[:-1]
+
+    if mode == "r":
+        mode_flags = mem_flags.READ_ONLY
+    elif mode == "r":
+        mode_flags = mem_flags.WRITE_ONLY
+    else:
+        raise ValueError("invalid value '%s' for 'mode'" % mode)
+
+    img_format = {
+            1: channel_order.R,
+            2: channel_order.RG,
+            3: channel_order.RGB,
+            4: channel_order.RGBA,
+            }[num_channels]
+
+    assert ary.strides[-1] == ary.dtype.itemsize
+
+    if norm_int:
+        channel_type = DTYPE_TO_CHANNEL_TYPE_NORM[ary.dtype]
+    else:
+        channel_type = DTYPE_TO_CHANNEL_TYPE[ary.dtype]
+
+    return Image(ctx, mode_flags | mem_flags.COPY_HOST_PTR,
+            ImageFormat(img_format, channel_type),
+            shape=shape, pitches=strides[:-1],
+            hostbuf=ary)
+
+# }}}
+
 
 
 
