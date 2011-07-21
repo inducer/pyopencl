@@ -220,8 +220,10 @@ class TestCL:
         cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
 
     @pytools.test.mark_test.opencl
-    def test_image_2d(self, device, ctx_factory):
+    def test_image_2d(self, ctx_factory):
         context = ctx_factory()
+
+        device, = context.devices
 
         if not device.image_support:
             from py.test import skip
@@ -229,7 +231,7 @@ class TestCL:
 
         prg = cl.Program(context, """
             __kernel void copy_image(
-              __global float4 *dest,
+              __global float *dest,
               __read_only image2d_t src,
               sampler_t samp,
               int width)
@@ -242,18 +244,19 @@ class TestCL:
                 | CLK_ADDRESS_CLAMP
                 | CLK_FILTER_NEAREST;
                 */
-              dest[x + width*y] = read_imagef(src, samp, (float2)(x, y));
+              dest[x + width*y] = read_imagef(src, samp, (float2)(x, y)).x;
               // dest[x + width*y] = get_image_height(src);
             }
             """).build()
 
-        a = np.random.rand(1024, 1024, 4).astype(np.float32)
+        num_channels = 1
+        a = np.random.rand(1024, 1024, num_channels).astype(np.float32)
+        if num_channels == 1:
+            a = a[:,:,0]
+
         queue = cl.CommandQueue(context)
-        mf = cl.mem_flags
-        a_img = cl.Image(context, mf.READ_ONLY | mf.COPY_HOST_PTR,
-                cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT),
-                shape=a.shape[:2], hostbuf=a)
-        a_dest = cl.Buffer(context, mf.READ_WRITE, a.nbytes)
+        a_img = cl.image_from_array(context, a, num_channels)
+        a_dest = cl.Buffer(context, cl.mem_flags.READ_WRITE, a.nbytes)
 
         samp = cl.Sampler(context, False,
                 cl.addressing_mode.CLAMP,
@@ -261,8 +264,7 @@ class TestCL:
         prg.copy_image(queue, a.shape, None, a_dest, a_img, samp, np.int32(a.shape[0]))
 
         a_result = np.empty_like(a)
-        cl.enqueue_read_buffer(queue, a_dest, a_result, is_blocking=True)
-        print(a_result.dtype)
+        cl.enqueue_copy(queue, a_result, a_dest)
 
         assert la.norm(a_result - a) == 0
 
