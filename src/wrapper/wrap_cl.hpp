@@ -689,7 +689,7 @@ namespace pyopencl
 
                   default:
                     throw error("Context.get_info", CL_INVALID_VALUE,
-                        "unkown context_property key encountered");
+                        "unknown context_property key encountered");
                 }
 
                 py_result.append(py::make_tuple(result[i], value));
