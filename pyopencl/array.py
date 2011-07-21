@@ -36,8 +36,8 @@ import pyopencl as cl
 from pytools import memoize_method
 from pyopencl.compyte.array import (
         as_strided as _as_strided,
-        f_contiguous_strides as _f_contiguous_strides, 
-        c_contiguous_strides as _c_contiguous_strides, 
+        f_contiguous_strides as _f_contiguous_strides,
+        c_contiguous_strides as _c_contiguous_strides,
         ArrayFlags as _ArrayFlags,
         get_common_dtype as _get_common_dtype)
 
@@ -86,7 +86,7 @@ def _create_vector_types():
             my_field_names = ",".join(field_names[:count])
             my_field_names_defaulted = ",".join(
                     "%s=0" % fn for fn in field_names[:count])
-            setattr(vec, "make_"+name, 
+            setattr(vec, "make_"+name,
                     staticmethod(eval(
                         "lambda %s: array((%s), dtype=my_dtype)"
                         % (my_field_names_defaulted, my_field_names),
@@ -209,15 +209,15 @@ class Array(object):
                         "'queue' arguments")
             queue = cqa
 
-            if allocator is None: 
+            if allocator is None:
                 context = queue.context
                 allocator = DefaultAllocator(context)
 
         elif isinstance(cqa, cl.Context):
-            if queue is not None: 
+            if queue is not None:
                 _should_be_cqa("queue")
 
-            if allocator is not None: 
+            if allocator is not None:
                 _should_be_cqa("allocator")
             else:
                 allocator = DefaultAllocator(cqa)
@@ -430,7 +430,7 @@ class Array(object):
 
         queue = queue or self.queue
         if queue is not None:
-            return self.__class__(queue, self.shape, dtype, 
+            return self.__class__(queue, self.shape, dtype,
                     allocator=self.allocator, strides=strides)
         elif self.allocator is not None:
             return self.__class__(self.allocator, self.shape, dtype,
@@ -696,11 +696,14 @@ def zeros(*args, **kwargs):
 
 def empty_like(ary):
     if ary.queue is not None:
-        return Array(ary.queue, ary.shape, ary.dtype, allocator=ary.allocator)
+        return Array(ary.queue, ary.shape, ary.dtype,
+                allocator=ary.allocator, strides=ary.strides)
     elif ary.allocator is not None:
-        return Array(ary.allocator, ary.shape, ary.dtype, queue=ary.queue)
+        return Array(ary.allocator, ary.shape, ary.dtype, queue=ary.queue,
+                strides=ary.strides)
     else:
-        return Array(ary.context, ary.shape, ary.dtype)
+        return Array(ary.context, ary.shape, ary.dtype,
+                strides=ary.strides)
 
 def zeros_like(ary):
     result = empty_like(ary)
@@ -846,7 +849,7 @@ def multi_take(arrays, indices, out=None, queue=None):
     vec_count = len(arrays)
 
     if out is None:
-        out = [Array(context, queue, indices.shape, a_dtype, 
+        out = [Array(context, queue, indices.shape, a_dtype,
             allocator=a_allocator)
                 for i in range(vec_count)]
     else:
