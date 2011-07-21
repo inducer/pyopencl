@@ -43,18 +43,23 @@ def reasonable_work_group_size_multiple(dev, ctx=None):
 
 
 
+def get_nv_compute_capability(dev):
+    try:
+        return (dev.compute_capability_major_nv,
+                dev.compute_capability_minor_nv)
+    except:
+        return None
+
+
+
+
 def usable_local_mem_size(dev, nargs=None):
     """Return an estimate of the usable local memory size.
     :arg nargs: Number of 32-bit arguments passed.
     """
     usable_local_mem_size = dev.local_mem_size
 
-    try:
-        nv_compute_cap = (dev.compute_capability_major_nv,
-                dev.compute_capability_minor_nv)
-    except AttributeError:
-        nv_compute_cap = None
-
+    nv_compute_cap = get_nv_compute_capability(dev)
 
     if (nv_compute_cap is not None 
             and nv_compute_cap < (2,0)):
