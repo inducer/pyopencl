@@ -16,7 +16,6 @@ except ImportError:
 import numpy as np
 from pyopencl._cl import *
 import inspect as _inspect
-from decorator import decorator as _decorator
 
 CONSTANT_CLASSES = [
         getattr(_cl, name) for name in dir(_cl)
@@ -25,34 +24,24 @@ CONSTANT_CLASSES = [
 
 def _add_functionality():
     cls_to_info_cls = {
-            _cl.Platform: [
+            _cl.Platform:
                 (_cl.Platform.get_info, _cl.platform_info),
-                ],
-            _cl.Device: [
-                (_cl.Device.get_info, _cl.device_info)
-                ],
-            _cl.Context: [
+            _cl.Device:
+                (_cl.Device.get_info, _cl.device_info),
+            _cl.Context:
                 (_cl.Context.get_info, _cl.context_info),
-                ],
-            _cl.CommandQueue: [
-                (_cl.CommandQueue.get_info, _cl.command_queue_info)
-                ],
-            _cl.Event: [
+            _cl.CommandQueue:
+                (_cl.CommandQueue.get_info, _cl.command_queue_info),
+            _cl.Event:
                 (_cl.Event.get_info, _cl.event_info),
-                ],
-            _cl.MemoryObject: [
+            _cl.MemoryObject:
                 (MemoryObject.get_info,_cl.mem_info),
-                ],
-            _cl.Image: [
+            _cl.Image:
                 (Image.get_image_info, _cl.image_info),
-                (MemoryObject.get_info,_cl.mem_info),
-                ],
-            _cl.Kernel: [
+            _cl.Kernel:
                 (Kernel.get_info, _cl.kernel_info),
-                ],
-            _cl.Sampler: [
+            _cl.Sampler:
                 (Sampler.get_info, _cl.sampler_info),
-                ],
             }
 
     def to_string(cls, value, default_format=None):
@@ -70,28 +59,20 @@ def _add_functionality():
         cls.to_string = classmethod(to_string)
 
     # {{{ get_info attributes -------------------------------------------------
-    def make_getattr(info_classes):
-        name_to_info = dict(
-                (intern(info_name.lower()), (info_method, info_value))
-                for info_method, info_class in info_classes[::-1]
-                for info_name, info_value in
-                  info_class.__dict__.iteritems()
-                if info_name != "to_string" and not info_name.startswith("_")
-                )
 
-        def result(self, name):
-            try:
-                inf_method, inf_attr = name_to_info[name]
-            except KeyError:
-                raise AttributeError("%s has no attribute '%s'"
-                        % (type(self), name))
-            else:
-                return inf_method(self, inf_attr)
+    def make_getinfo(info_method, info_attr):
+        def result(self):
+            return info_method(self, info_attr)
 
-        return result
+        return property(result)
 
-    for cls, info_classes in cls_to_info_cls.iteritems():
-        cls.__getattr__ = make_getattr(info_classes)
+    for cls, (info_method, info_class) in cls_to_info_cls.iteritems():
+        for info_name, info_value in info_class.__dict__.iteritems():
+            if info_name == "to_string" or info_name.startswith("_"):
+                continue
+
+            setattr(cls, info_name.lower(), make_getinfo(
+                    info_method, getattr(info_class, info_name)))
 
     # }}}
 
@@ -428,19 +409,14 @@ class Program(object):
 
     def __getattr__(self, attr):
         try:
-            pi_attr = getattr(_cl.program_info, attr.upper())
-        except AttributeError:
-            try:
-                knl = Kernel(self._get_prg(), attr)
-                # Nvidia does not raise errors even for invalid names,
-                # but this will give an error if the kernel is invalid.
-                knl.num_args
-                return knl
-            except LogicError:
-                raise AttributeError("'%s' was not found as a program "
-                        "info attribute or as a kernel name" % attr)
-        else:
-            return self.get_info(pi_attr)
+            knl = Kernel(self._get_prg(), attr)
+            # Nvidia does not raise errors even for invalid names,
+            # but this will give an error if the kernel is invalid.
+            knl.num_args
+            return knl
+        except LogicError:
+            raise AttributeError("'%s' was not found as a program "
+                    "info attribute or as a kernel name" % attr)
 
     def build(self, options=[], devices=None, cache_dir=None):
         if self._prg is not None:
