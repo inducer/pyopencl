@@ -214,7 +214,7 @@ def why_not_local_access_conflict_free(dev, itemsize,
 
             bank = (addr // gran) % bank_count
             bank_accesses.setdefault(bank, []).append(
-                    "item %s -> %s" % (work_item_id, idx[::-1]))
+                    "w.item %s -> %s" % (work_item_id, idx[::-1]))
 
         conflict_multiplicity = max(
                 len(acc) for acc in bank_accesses.itervalues())
@@ -224,7 +224,8 @@ def why_not_local_access_conflict_free(dev, itemsize,
                 if len(acc) == conflict_multiplicity:
                     conflicts.append(
                             (conflict_multiplicity,
-                                "%dx conflict on axis %d (from right): %s access bank %d" % (
+                                "%dx conflict on axis %d (from right, 0-based): "
+                                "%s access bank %d" % (
                                     conflict_multiplicity,
                                     work_item_axis,
                                     ", ".join(acc), bank)))
@@ -232,4 +233,4 @@ def why_not_local_access_conflict_free(dev, itemsize,
     if conflicts:
         return max(conflicts)
     else:
-        return None
+        return 1, None
