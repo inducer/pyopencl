@@ -97,13 +97,13 @@ def simultaneous_work_items_on_local_access(dev):
 
             return 32
 
-    if dev.device_type == cl.device_type.GPU:
+    if dev.type == cl.device_type.GPU:
         from warnings import warn
         warn("wildly guessing conflicting local access size on '%s'"
                 % dev,
                 CLCharacterizationWarning)
         return 16
-    elif dev.device_type == cl.device_type.CPU:
+    elif dev.type == cl.device_type.CPU:
         return 1
     else:
         from warnings import warn
@@ -140,13 +140,13 @@ def local_memory_bank_count(dev):
 
             return 32
 
-    if dev.device_type == cl.device_type.GPU:
+    if dev.type == cl.device_type.GPU:
         from warnings import warn
         warn("wildly guessing conflicting local access size on '%s'"
                 % dev,
                 CLCharacterizationWarning)
         return 16
-    elif dev.device_type == cl.device_type.CPU:
+    elif dev.type == cl.device_type.CPU:
         return dev.local_mem_size / local_memory_access_granularity(dev)
     else:
         from warnings import warn
