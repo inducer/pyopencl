@@ -241,13 +241,12 @@ Command Queues and Events
     |comparable|
 
 .. function:: wait_for_events(events)
+
 .. function:: enqueue_marker(queue)
 
     Returns an :class:`Event`.
 
 .. function:: enqueue_wait_for_events(queue, events)
-
-    Returns an :class:`Event`.
 
 .. function:: enqueue_barrier(queue)
 
@@ -298,7 +297,7 @@ Memory
 
     :param flags: from :class:`migrate_mem_object_flags_ext`
 
-    ..versionadded:: 2011.2
+    .. versionadded:: 2011.2
 
     Only available with the `cl_ext_migrate_memobject`
     extension.
@@ -495,6 +494,25 @@ Images
     .. method:: release()
 
     |comparable|
+
+.. function:: image_from_array(ctx, ary, num_channels, mode="r", norm_int=False)
+
+    Build a 2D or 3D :class:`Image` from the :class:`numpy.ndarray` *ary*.  If
+    *num_channels* is greater than one, the last dimension of *ary* must be
+    identical to *num_channels*. *ary* must be in C order.
+
+    The :class:`ImageFormat` is chosen as the first *num_channels* components
+    of "RGBA".
+
+    :param mode: "r" or "w" for read/write
+
+    .. note::
+
+        When reading from the image object, the indices passed to `read_imagef` are
+        in the reverse order from what they would be when accessing *ary* from
+        Python.
+
+    .. versionadded:: 2011.2
 
 .. function:: enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=True)
 
