@@ -407,6 +407,12 @@ class Program(object):
     def get_info(self, arg):
         return self._get_prg().get_info(arg)
 
+    def get_build_info(self, *args, **kwargs):
+        return self._get_prg().get_build_info(*args, **kwargs)
+
+    def all_kernels(self):
+        return self._get_prg().all_kernels()
+
     def __getattr__(self, attr):
         try:
             knl = Kernel(self._get_prg(), attr)
