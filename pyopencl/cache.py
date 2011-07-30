@@ -150,6 +150,9 @@ def get_dependencies(src, include_path):
                     finally:
                         src_file.close()
 
+                    # prevent infinite recursion if some header file appears to include itself
+                    result[included_file_name] = None
+
                     checksum = new_hash()
                     update_checksum(checksum, included_src)
                     _inner(included_src)
