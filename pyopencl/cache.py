@@ -28,6 +28,13 @@ def _erase_dir(dir):
         unlink(join(dir, name))
     rmdir(dir)
 
+def update_checksum(checksum, obj):
+    if isinstance(obj, unicode):
+        checksum.update(obj.encode("utf8"))
+    else:
+        checksum.update(obj)
+
+
 
 
 
@@ -144,7 +151,7 @@ def get_dependencies(src, include_path):
                         src_file.close()
 
                     checksum = new_hash()
-                    checksum.update(included_src.encode("utf8"))
+                    update_checksum(checksum, included_src)
                     _inner(included_src)
 
                     result[included_file_name] = (
@@ -173,7 +180,7 @@ def get_file_md5sum(fname):
         contents = inf.read()
     finally:
         inf.close()
-    checksum.update(contents.encode("utf8"))
+    update_checksum(checksum, contents)
     return checksum.hexdigest()
 
 
@@ -207,9 +214,9 @@ def get_device_cache_id(device):
 
 def get_cache_key(device, options, src):
     checksum = new_hash()
-    checksum.update(src.encode("utf8"))
-    checksum.update(" ".join(options).encode("utf8"))
-    checksum.update(str(get_device_cache_id(device)).encode("utf8"))
+    update_checksum(checksum, src)
+    update_checksum(checksum, " ".join(options))
+    update_checksum(checksum, str(get_device_cache_id(device)))
     return checksum.hexdigest()
 
 # }}}
