@@ -645,7 +645,7 @@ else:
 DTYPE_TO_CHANNEL_TYPE_NORM = {
     np.dtype(np.int16): channel_type.SNORM_INT16,
     np.dtype(np.int8): channel_type.SNORM_INT8,
-    np.dtype(np.int16): channel_type.UNORM_INT16,
+    np.dtype(np.uint16): channel_type.UNORM_INT16,
     np.dtype(np.uint8): channel_type.UNORM_INT8,
     }
 
