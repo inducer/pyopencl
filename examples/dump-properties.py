@@ -11,7 +11,6 @@ def print_info(obj, info_cls):
 
             if (info_cls == cl.device_info and info_name == "PARTITION_TYPES_EXT"
                     and isinstance(info_value, list)):
-                print info_value
                 print("%s: %s" % (info_name, [
                     cl.device_partition_property_ext.to_string(v) for v in info_value]))
             else:
@@ -28,3 +27,35 @@ for platform in cl.get_platforms():
         print(device)
         print(75*"-")
         print_info(device, cl.device_info)
+        ctx = cl.Context([device])
+        #for mf in [cl.mem_flags.READ_ONLY, cl.mem_flags.READ_WRITE, cl.mem_flags.WRITE_ONLY]:
+        for mf in [cl.mem_flags.READ_ONLY]:
+            for itype in [cl.mem_object_type.IMAGE2D, cl.mem_object_type.IMAGE3D]:
+                try:
+                    formats = cl.get_supported_image_formats(ctx, mf, itype)
+                except:
+                    formats = "<error>"
+                else:
+                    def str_chd_type(chdtype):
+                        result = cl.channel_type.to_string(chdtype,
+                                "<unknown channel data type %d>")
+
+                        result = result.replace("_INT", "")
+                        result = result.replace("UNSIGNED", "U")
+                        result = result.replace("SIGNED", "S")
+                        result = result.replace("NORM", "N")
+                        result = result.replace("FLOAT", "F")
+                        return result
+
+                    formats = ", ".join(
+                            "%s-%s" % (
+                                cl.channel_order.to_string(iform.channel_order, 
+                                    "<unknown channel order 0x%x>"),
+                                str_chd_type(iform.channel_data_type))
+                            for iform in formats)
+
+                print "%s %s FORMATS: %s\n" % (
+                        cl.mem_object_type.to_string(itype),
+                        cl.mem_flags.to_string(mf),
+                        formats)
+        del ctx

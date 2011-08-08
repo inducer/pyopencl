@@ -275,9 +275,9 @@ def _add_functionality():
     def image_format_repr(self):
         return "ImageFormat(%s, %s)" % (
                 channel_order.to_string(self.channel_order, 
-                    "<unknown channel order %d>"),
+                    "<unknown channel order 0x%x>"),
                 channel_type.to_string(self.channel_data_type,
-                    "<unknown channel data type %d>"))
+                    "<unknown channel data type 0x%x>"))
 
     ImageFormat.__repr__ = image_format_repr
 
