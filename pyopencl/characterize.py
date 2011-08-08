@@ -147,13 +147,14 @@ def local_memory_bank_count(dev):
                 CLCharacterizationWarning)
         return 16
     elif dev.type == cl.device_type.CPU:
-        return dev.local_mem_size / local_memory_access_granularity(dev)
-    else:
-        from warnings import warn
-        warn("wildly guessing conflicting local access size on '%s'"
-                % dev,
-                CLCharacterizationWarning)
-        return 16
+        if dev.local_mem_type == cl.device_local_mem_type.GLOBAL:
+            raise RuntimeError("asking for a bank count is meaningless for cache-based lmem")
+
+    from warnings import warn
+    warn("wildly guessing conflicting local access size on '%s'"
+            % dev,
+            CLCharacterizationWarning)
+    return 16
 
 
 
