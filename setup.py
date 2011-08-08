@@ -180,7 +180,7 @@ def main():
             url="http://mathema.tician.de/software/pyopencl",
             classifiers=[
               'Environment :: Console',
-              'Development Status :: 4 - Beta',
+              'Development Status :: 5 - Production/Stable',
               'Intended Audience :: Developers',
               'Intended Audience :: Other Audience',
               'Intended Audience :: Science/Research',
