@@ -234,3 +234,10 @@ def why_not_local_access_conflict_free(dev, itemsize,
         return max(conflicts)
     else:
         return 1, None
+
+
+
+
+def get_fast_inaccurate_build_options(dev):
+    return ["-cl-mad-enable", "-cl-fast-relaxed-math", 
+        "-cl-no-signed-zeros", "-cl-strict-aliasing"]
