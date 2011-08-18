@@ -654,7 +654,8 @@ def to_device(*args, **kwargs):
     """Converts a numpy array to a :class:`Array`."""
 
     def _to_device(queue, ary, allocator=None, async=False):
-        result = Array(queue, ary.shape, ary.dtype, allocator, strides=ary.strides)
+        result = Array(queue, ary.shape, ary.dtype,
+                        allocator=allocator, strides=ary.strides)
         result.set(ary, async=async)
         return result
 
