@@ -34,8 +34,8 @@ def _add_functionality():
                 (_cl.CommandQueue.get_info, _cl.command_queue_info),
             _cl.Event:
                 (_cl.Event.get_info, _cl.event_info),
-            _cl.MemoryObject:
-                (MemoryObject.get_info,_cl.mem_info),
+            _cl.MemoryObjectHolder:
+                (MemoryObjectHolder.get_info,_cl.mem_info),
             _cl.Image:
                 (Image.get_image_info, _cl.image_info),
             _cl.Kernel:
@@ -565,59 +565,71 @@ if _cl.get_cl_header_version() >= (1,1):
     enqueue_copy_buffer_rect = _mark_copy_deprecated(_cl._enqueue_copy_buffer_rect)
 
 def enqueue_copy(queue, dest, src, **kwargs):
-    if isinstance(dest, Buffer):
-        if isinstance(src, Buffer):
-            if "src_origin" in kwargs:
-                return _cl._enqueue_copy_buffer_rect(queue, src, dest, **kwargs)
+    if isinstance(dest, MemoryObjectHolder):
+        if dest.type == mem_object_type.BUFFER:
+            if isinstance(src, MemoryObjectHolder):
+                if src.type == mem_object_type.BUFFER:
+                    if "src_origin" in kwargs:
+                        return _cl._enqueue_copy_buffer_rect(queue, src, dest, **kwargs)
+                    else:
+                        kwargs["dst_offset"] = kwargs.pop("dest_offset", 0)
+                        return _cl._enqueue_copy_buffer(queue, src, dest, **kwargs)
+                elif src.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
+                    return _cl._enqueue_copy_image_to_buffer(queue, src, dest, **kwargs)
+                else:
+                    raise ValueError("invalid src mem object type")
             else:
-                kwargs["dst_offset"] = kwargs.pop("dest_offset", 0)
-                return _cl._enqueue_copy_buffer(queue, src, dest, **kwargs)
-        elif isinstance(src, Image):
-            return _cl._enqueue_copy_image_to_buffer(queue, src, dest, **kwargs)
+                # assume from-host
+                if "buffer_origin" in kwargs:
+                    return _cl._enqueue_write_buffer_rect(queue, dest, src, **kwargs)
+                else:
+                    return _cl._enqueue_write_buffer(queue, dest, src, **kwargs)
+
+        elif dest.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
+            if isinstance(src, MemoryObjectHolder):
+                if src.type == mem_object_type.BUFFER:
+                    return _cl._enqueue_copy_buffer_to_image(queue, src, dest, **kwargs)
+                elif src.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
+                    return _cl._enqueue_copy_image(queue, src, dest, **kwargs)
+                else:
+                    raise ValueError("invalid src mem object type")
+            else:
+                # assume from-host
+                origin = kwargs.pop("origin")
+                region = kwargs.pop("region")
+
+                pitches = kwargs.pop("pitches", (0,0))
+                if len(pitches) == 1:
+                    kwargs["row_pitch"], = pitches
+                else:
+                    kwargs["row_pitch"], kwargs["slice_pitch"] = pitches
+
+                return _cl._enqueue_write_image(queue, dest, origin, region, src, **kwargs)
         else:
-            # assume from-host
-            if "buffer_origin" in kwargs:
-                return _cl._enqueue_write_buffer_rect(queue, dest, src, **kwargs)
-            else:
-                return _cl._enqueue_write_buffer(queue, dest, src, **kwargs)
-
-    elif isinstance(dest, Image):
-        if isinstance(src, Buffer):
-            return _cl._enqueue_copy_buffer_to_image(queue, src, dest, **kwargs)
-        elif isinstance(src, Image):
-            return _cl._enqueue_copy_image(queue, src, dest, **kwargs)
-        else:
-            # assume from-host
-            origin = kwargs.pop("origin")
-            region = kwargs.pop("region")
-
-            pitches = kwargs.pop("pitches", (0,0))
-            if len(pitches) == 1:
-                kwargs["row_pitch"], = pitches
-            else:
-                kwargs["row_pitch"], kwargs["slice_pitch"] = pitches
-
-            return _cl._enqueue_write_image(queue, dest, origin, region, src, **kwargs)
+            raise ValueError("invalid dest mem object type")
 
     else:
         # assume to-host
 
-        if isinstance(src, Buffer):
-            if "buffer_origin" in kwargs:
-                return _cl._enqueue_read_buffer_rect(queue, src, dest, **kwargs)
-            else:
-                return _cl._enqueue_read_buffer(queue, src, dest, **kwargs)
-        elif isinstance(src, Image):
-            origin = kwargs.pop("origin")
-            region = kwargs.pop("region")
+        if isinstance(src, MemoryObjectHolder):
+            if src.type == mem_object_type.BUFFER:
+                if "buffer_origin" in kwargs:
+                    return _cl._enqueue_read_buffer_rect(queue, src, dest, **kwargs)
+                else:
+                    return _cl._enqueue_read_buffer(queue, src, dest, **kwargs)
+            elif src.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
+                origin = kwargs.pop("origin")
+                region = kwargs.pop("region")
 
-            pitches = kwargs.pop("pitches", (0,0))
-            if len(pitches) == 1:
-                kwargs["row_pitch"], = pitches
-            else:
-                kwargs["row_pitch"], kwargs["slice_pitch"] = pitches
+                pitches = kwargs.pop("pitches", (0,0))
+                if len(pitches) == 1:
+                    kwargs["row_pitch"], = pitches
+                else:
+                    kwargs["row_pitch"], kwargs["slice_pitch"] = pitches
 
-            return _cl._enqueue_read_image(queue, src, origin, region, dest, **kwargs)
+                return _cl._enqueue_read_image(queue, src, origin, region, dest, **kwargs)
+            else:
+                raise ValueError("invalid src mem object type")
         else:
             # assume from-host
             raise TypeError("enqueue_copy cannot perform host-to-host transfers")

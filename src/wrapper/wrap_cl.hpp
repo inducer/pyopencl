@@ -1193,8 +1193,14 @@ namespace pyopencl
           m_hostbuf = *hostbuf;
       }
 
-      memory_object(memory_object &src)
+      memory_object(memory_object const &src)
         : m_valid(true), m_mem(src.m_mem), m_hostbuf(src.m_hostbuf)
+      {
+        PYOPENCL_CALL_GUARDED(clRetainMemObject, (m_mem));
+      }
+
+      memory_object(memory_object_holder const &src)
+        : m_valid(true), m_mem(src.data())
       {
         PYOPENCL_CALL_GUARDED(clRetainMemObject, (m_mem));
       }
@@ -1430,7 +1436,7 @@ namespace pyopencl
   inline
   event *enqueue_read_buffer(
       command_queue &cq,
-      memory_object &mem,
+      memory_object_holder &mem,
       py::object buffer,
       size_t device_offset,
       py::object py_wait_for,
@@ -1469,7 +1475,7 @@ namespace pyopencl
   inline
   event *enqueue_write_buffer(
       command_queue &cq,
-      memory_object &mem,
+      memory_object_holder &mem,
       py::object buffer,
       size_t device_offset,
       py::object py_wait_for,
@@ -1508,8 +1514,8 @@ namespace pyopencl
   inline
   event *enqueue_copy_buffer(
       command_queue &cq,
-      memory_object &src,
-      memory_object &dst,
+      memory_object_holder &src,
+      memory_object_holder &dst,
       size_t byte_count,
       size_t src_offset,
       size_t dst_offset,
@@ -1544,7 +1550,7 @@ namespace pyopencl
   inline
   event *enqueue_read_buffer_rect(
       command_queue &cq,
-      memory_object &mem,
+      memory_object_holder &mem,
       py::object buffer,
       py::object py_buffer_origin,
       py::object py_host_origin,
@@ -1588,7 +1594,7 @@ namespace pyopencl
   inline
   event *enqueue_write_buffer_rect(
       command_queue &cq,
-      memory_object &mem,
+      memory_object_holder &mem,
       py::object buffer,
       py::object py_buffer_origin,
       py::object py_host_origin,
@@ -1632,8 +1638,8 @@ namespace pyopencl
   inline
   event *enqueue_copy_buffer_rect(
       command_queue &cq,
-      memory_object &src,
-      memory_object &dst,
+      memory_object_holder &src,
+      memory_object_holder &dst,
       py::object py_src_origin,
       py::object py_dst_origin,
       py::object py_region,
@@ -2017,8 +2023,8 @@ namespace pyopencl
   inline
   event *enqueue_copy_image(
       command_queue &cq,
-      memory_object &src,
-      memory_object &dest,
+      memory_object_holder &src,
+      memory_object_holder &dest,
       py::object py_src_origin,
       py::object py_dest_origin,
       py::object py_region,
@@ -2045,8 +2051,8 @@ namespace pyopencl
   inline
   event *enqueue_copy_image_to_buffer(
       command_queue &cq,
-      memory_object &src,
-      memory_object &dest,
+      memory_object_holder &src,
+      memory_object_holder &dest,
       py::object py_origin,
       py::object py_region,
       size_t offset,
@@ -2072,8 +2078,8 @@ namespace pyopencl
   inline
   event *enqueue_copy_buffer_to_image(
       command_queue &cq,
-      memory_object &src,
-      memory_object &dest,
+      memory_object_holder &src,
+      memory_object_holder &dest,
       size_t offset,
       py::object py_origin,
       py::object py_region,
@@ -2107,7 +2113,7 @@ namespace pyopencl
       void *m_ptr;
 
     public:
-      memory_map(command_queue &cq, memory_object &mem, void *ptr)
+      memory_map(command_queue &cq, memory_object const &mem, void *ptr)
         : m_valid(true), m_queue(cq), m_mem(mem), m_ptr(ptr)
       {
       }
@@ -2143,7 +2149,7 @@ namespace pyopencl
   inline
   py::object enqueue_map_buffer(
       command_queue &cq,
-      memory_object &buf,
+      memory_object_holder &buf,
       cl_map_flags flags,
       size_t offset,
       py::object py_shape, py::object dtype, py::object order_py,
@@ -2210,7 +2216,7 @@ namespace pyopencl
   inline
   py::object enqueue_map_image(
       command_queue &cq,
-      memory_object &img,
+      memory_object_holder &img,
       cl_map_flags flags,
       py::object py_origin,
       py::object py_region,
@@ -2699,7 +2705,7 @@ namespace pyopencl
           return;
         }
 
-        py::extract<memory_object &> ex_mo(arg);
+        py::extract<memory_object_holder &> ex_mo(arg);
         if (ex_mo.check())
         {
           set_arg_mem(arg_index, ex_mo());
@@ -3050,7 +3056,7 @@ namespace pyopencl
 
 
   inline
-  py::tuple get_gl_object_info(memory_object const &mem)
+  py::tuple get_gl_object_info(memory_object_holder const &mem)
   {
     cl_gl_object_type otype;
     GLuint gl_name;
@@ -3069,7 +3075,7 @@ namespace pyopencl
     \
     std::vector<cl_mem> mem_objects; \
     PYTHON_FOREACH(mo, py_mem_objects) \
-      mem_objects.push_back(py::extract<memory_object &>(mo)().data()); \
+      mem_objects.push_back(py::extract<memory_object_holder &>(mo)().data()); \
     \
     cl_event evt; \
     PYOPENCL_CALL_GUARDED(clEnqueue##What##GLObjects, ( \
@@ -3233,8 +3239,8 @@ namespace pyopencl
       py::object shape, py::object dtype, 
       py::object order_py)
   {
-    memory_object const &mem_obj = 
-      py::extract<memory_object const &>(mem_obj_py);
+    memory_object_holder const &mem_obj = 
+      py::extract<memory_object_holder const &>(mem_obj_py);
     PyArray_Descr *tp_descr;
     if (PyArray_DescrConverter(dtype.ptr(), &tp_descr) != NPY_SUCCEED)
       throw py::error_already_set();

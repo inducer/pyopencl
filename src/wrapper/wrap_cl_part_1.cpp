@@ -172,6 +172,8 @@ void pyopencl_expose_part_1()
       ;
   }
 
+  // }}}
+
   // {{{ transfers
 
   // {{{ byte-for-byte
@@ -237,7 +239,6 @@ void pyopencl_expose_part_1()
 
   // }}}
 
-  // }}}
 }
 
 // vim: foldmethod=marker
