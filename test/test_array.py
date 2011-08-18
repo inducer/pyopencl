@@ -13,8 +13,9 @@ def have_cl():
         return False
 
 if have_cl():
-    import pyopencl.array as cl_array
     import pyopencl as cl
+    import pyopencl.array as cl_array
+    import pyopencl.tools as cl_tools
     from pyopencl.tools import pytest_generate_tests_for_pyopencl \
             as pytest_generate_tests
     from pyopencl.characterize import has_double_support
@@ -599,6 +600,20 @@ def test_vector_fill(ctx_factory):
     assert a.dtype is cl_array.vec.float4
 
     a_gpu = cl_array.zeros(queue, 100, dtype=cl_array.vec.float4)
+
+@pytools.test.mark_test.opencl
+def test_mem_pool_with_arrays(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+    mem_pool = cl_tools.MemoryPool(cl_tools.CLAllocator(context))
+
+    a_dev = cl_array.arange(queue, 2000, dtype=np.float64, allocator=mem_pool)
+    b_dev = cl_array.to_device(queue, np.arange(2000), allocator=mem_pool) + 4000
+
+    result = cl_array.dot(a_dev, b_dev)
+    assert a_dev.allocator is mem_pool
+    assert b_dev.allocator is mem_pool
+    assert result.allocator is mem_pool
 
 
 if __name__ == "__main__":
