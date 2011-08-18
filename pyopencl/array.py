@@ -733,6 +733,7 @@ def _arange(queue, *args, **kwargs):
     inf.stop = None
     inf.step = None
     inf.dtype = None
+    inf.allocator = None
 
     if isinstance(args[-1], np.dtype):
         dtype = args[-1]
@@ -754,7 +755,7 @@ def _arange(queue, *args, **kwargs):
     else:
         raise ValueError, "too many arguments"
 
-    admissible_names = ["start", "stop", "step", "dtype"]
+    admissible_names = ["start", "stop", "step", "dtype", "allocator"]
     for k, v in kwargs.iteritems():
         if k in admissible_names:
             if getattr(inf, k) is None:
@@ -785,7 +786,7 @@ def _arange(queue, *args, **kwargs):
     from math import ceil
     size = int(ceil((stop-start)/step))
 
-    result = Array(queue, (size,), dtype)
+    result = Array(queue, (size,), dtype, allocator=inf.allocator)
     _arange_knl(result, start, step, queue=queue)
     return result
 

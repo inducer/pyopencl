@@ -171,7 +171,7 @@ Constructing :class:`Array` Instances
     Make a new, zero-initialized :class:`Array` having the same properties
     as *other_ary*.
 
-.. function:: arange(queue, start, stop, step, dtype=None)
+.. function:: arange(queue, start, stop, step, dtype=None, allocator=None)
 
     Create a :class:`Array` filled with numbers spaced `step` apart,
     starting from `start` and ending at `stop`.
@@ -185,6 +185,9 @@ Constructing :class:`Array` Instances
 
     .. versionchanged:: 2011.1
         *context* argument was deprecated.
+
+    .. versionchanged:: 2011.2
+        *allocator* keyword argument was added.
 
 .. function:: take(a, indices, out=None, queue=None)
 
