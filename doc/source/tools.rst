@@ -56,6 +56,12 @@ the available memory.
 
         Return a :class:`PooledBuffer` of the given *size*.
 
+    .. method:: __call__(size)
+
+        Synoynm for :meth:`allocate` to match :class:`CLAllocator` interface.
+
+        .. versionadded: 2011.2
+
     .. method:: free_held
 
         Free all unused memory that the pool is currently holding.

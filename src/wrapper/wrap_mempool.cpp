@@ -155,6 +155,8 @@ void pyopencl_expose_mempool()
     wrapper
       .def("allocate", device_pool_allocate,
           py::return_value_policy<py::manage_new_object>())
+      .def("__call__", device_pool_allocate,
+          py::return_value_policy<py::manage_new_object>())
       ;
 
     expose_memory_pool(wrapper);

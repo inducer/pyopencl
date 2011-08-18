@@ -46,3 +46,4 @@ temp*
 setuptools.pth
 distribute-*.tar.gz
 core
+*.sess
