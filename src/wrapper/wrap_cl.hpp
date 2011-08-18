@@ -387,7 +387,7 @@ namespace pyopencl
             PYOPENCL_CALL_GUARDED(retain_func, (did));
           }
 #else
-          throw error("Device", CL_INVALID_VALUE, 
+          throw error("Device", CL_INVALID_VALUE,
               "cannot own references to devices when device fission is not available");
 #endif
         }
@@ -847,7 +847,7 @@ namespace pyopencl
       return create_context_inner(py_devices, py_properties, py_dev_type);
     }
     catch (pyopencl::error &e)
-    { 
+    {
       if (!e.is_out_of_memory())
         throw;
     }
@@ -1294,7 +1294,7 @@ namespace pyopencl
       return create_buffer(ctx, flags, size, host_ptr);
     }
     catch (pyopencl::error &e)
-    { 
+    {
       if (!e.is_out_of_memory())
         throw;
     }
@@ -3236,10 +3236,10 @@ namespace pyopencl
   inline
   py::handle<> get_mem_obj_host_array(
       py::object mem_obj_py,
-      py::object shape, py::object dtype, 
+      py::object shape, py::object dtype,
       py::object order_py)
   {
-    memory_object_holder const &mem_obj = 
+    memory_object_holder const &mem_obj =
       py::extract<memory_object_holder const &>(mem_obj_py);
     PyArray_Descr *tp_descr;
     if (PyArray_DescrConverter(dtype.ptr(), &tp_descr) != NPY_SUCCEED)
@@ -3282,7 +3282,7 @@ namespace pyopencl
         host_ptr, ary_flags, /*obj*/NULL));
 
     if ((size_t) PyArray_NBYTES(result.get()) > mem_obj_size)
-      throw pyopencl::error("MemoryObject.get_host_array", 
+      throw pyopencl::error("MemoryObject.get_host_array",
           CL_INVALID_VALUE,
           "Resulting array is larger than memory object.");
 
