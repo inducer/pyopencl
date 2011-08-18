@@ -109,6 +109,7 @@ void pyopencl_expose_part_2()
       .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
+      .def("__hash__", &cls::hash)
       ;
   }
 
@@ -133,6 +134,7 @@ void pyopencl_expose_part_2()
       .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
+      .def("__hash__", &cls::hash)
       .def("all_kernels", create_kernels_in_program)
       ;
   }
@@ -149,6 +151,7 @@ void pyopencl_expose_part_2()
       .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
+      .def("__hash__", &cls::hash)
       ;
   }
 

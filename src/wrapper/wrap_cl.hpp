@@ -239,8 +239,9 @@
     bool operator==(cls const &other) const \
     { return data() == other.data(); } \
     bool operator!=(cls const &other) const \
-    { return data() != other.data(); }
-
+    { return data() != other.data(); } \
+    long hash() const \
+    { return (long) (intptr_t) data(); }
 // }}}
 
 
