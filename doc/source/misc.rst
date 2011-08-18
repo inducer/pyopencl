@@ -75,6 +75,14 @@ Version 2011.2
 
 * Add :func:`pyopencl.enqueue_migrate_mem_object`.
 * Add :func:`pyopencl.image_from_array`.
+* IMPORTANT BUGFIX: Kernel caching was broken for all the 2011.1.x releases, with
+  severe consequences on the execution time of :class:`pyopencl.array.Array`
+  operations.
+  Henrik Andresen at a `PyOpenCL workshop at DTU <http://gpulab.imm.dtu.dk/courses.html>`_
+  first noticed the timings
+* All comparable PyOpenCL objects are now also hashable.
+* Add :func:`pyopencl.tools.context_dependent_memoize` to the documented
+  functionality.
 
 Version 2011.1.2
 ----------------

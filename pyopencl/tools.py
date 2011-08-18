@@ -43,25 +43,47 @@ MemoryPool = cl.MemoryPool
 
 
 
+context_dependent_memoized_functions = []
+
+
+
+
 @decorator
 def context_dependent_memoize(func, context, *args):
     """Provides memoization for things that get created inside
     a context, i.e. mainly programs and kernels. Assumes that
     the first argument of the decorated function is the context.
     """
-    dicname = "_ctx_memoize_dic_%s_%x" % (
-            func.__name__, hash(func))
+    try:
+        ctx_dict = func._pyopencl_ctx_dep_memoize_dic
+    except AttributeError:
+        # FIXME: This may keep contexts alive longer than desired.
+        # But I guess since the memory in them is freed, who cares.
+        ctx_dict = func._pyopencl_ctx_dep_memoize_dic = {}
 
     try:
-        return getattr(context, dicname)[args]
-    except AttributeError:
-        result = func(context, *args)
-        setattr(context, dicname, {args: result})
-        return result
+        return ctx_dict[context][args]
     except KeyError:
+        context_dependent_memoized_functions.append(func)
+        arg_dict = ctx_dict.setdefault(context, {})
         result = func(context, *args)
-        getattr(context,dicname)[args] = result
+        arg_dict[args] = result
         return result
+
+
+
+
+def clear_context_caches():
+    for func in context_dependent_memoized_functions:
+        try:
+            ctx_dict = func._pycuda_ctx_dep_memoize_dic
+        except AttributeError:
+            pass
+        else:
+            ctx_dict.clear()
+
+import atexit
+atexit.register(clear_context_caches)
 
 
 
@@ -75,6 +97,9 @@ def pytest_generate_tests_for_pyopencl(metafunc):
             # Get rid of leftovers from past tests.
             # CL implementations are surprisingly limited in how many
             # simultaneous contexts they allow...
+
+            clear_context_caches()
+
             from gc import collect
             collect()
 

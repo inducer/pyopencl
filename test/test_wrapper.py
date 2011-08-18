@@ -353,6 +353,25 @@ class TestCL:
         cl.Program(context, kernel_src).build('-I.')
         cl.Program(context, kernel_src).build('-I.')
 
+    @pytools.test.mark_test.opencl
+    def test_context_dep_memoize(self, ctx_factory):
+        context = ctx_factory()
+        queue = cl.CommandQueue(context)
+
+        from pyopencl.tools import context_dependent_memoize
+
+        counter = [0]
+
+        @context_dependent_memoize
+        def do_something(ctx):
+            counter[0] += 1
+
+        do_something(context)
+        do_something(context)
+
+        assert counter[0] == 1
+
+
 
 
 if __name__ == "__main__":
