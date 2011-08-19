@@ -354,10 +354,16 @@ class TestCL:
 
         kernel_src = """
         #include <empty-header.h>
-        kernel void zonk() {}
+        kernel void zonk(global int *a) 
+        {
+          *a = 5;
+        }
         """
-        cl.Program(context, kernel_src).build('-I.')
-        cl.Program(context, kernel_src).build('-I.')
+
+        import os
+
+        cl.Program(context, kernel_src).build(["-I", os.getcwd()])
+        cl.Program(context, kernel_src).build(["-I", os.getcwd()])
 
     @pytools.test.mark_test.opencl
     def test_context_dep_memoize(self, ctx_factory):
