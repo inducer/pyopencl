@@ -783,7 +783,7 @@ Programs and Kernels
 
         Invoke :meth:`set_arg` on each element of *args* in turn.
 
-        ..versionadded:: 0.92
+        .. versionadded:: 0.92
 
     .. method:: set_scalar_arg_dtypes(arg_dtypes)
 
@@ -894,7 +894,7 @@ with GL support. See :func:`have_gl`.
 
     Apple OS X only.
 
-    ..versionadded:: 2011.1
+    .. versionadded:: 2011.1
 
 .. class:: GLBuffer(context, flags, bufobj)
 
