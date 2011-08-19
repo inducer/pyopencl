@@ -1,7 +1,7 @@
 Installation
 ============
 
-Installation information is maintained collaboratively on the 
+Installation information is maintained collaboratively on the
 `PyOpenCL Wiki <http://wiki.tiker.net/PyOpenCL/Installation>`_.
 
 Acknowledgments
@@ -58,7 +58,7 @@ C interface to Python:
   (i.e. minimize use of "factory functions")
 
 * If an operation involves two or more "complex" objects (like e.g. a
-  kernel enqueue involves a kernel and a queue), refuse the temptation 
+  kernel enqueue involves a kernel and a queue), refuse the temptation
   to guess which one should get a method for the operation.
   Instead, simply leave that command to be a function.
 
@@ -114,7 +114,7 @@ Version 2011.1
 * Add :ref:`reductions`.
 * Add :mod:`pyopencl.scan`.
 * Add :meth:`pyopencl.MemoryObject.get_host_array`.
-* Deprecate context arguments of 
+* Deprecate context arguments of
   :func:`pyopencl.array.to_device`,
   :func:`pyopencl.array.zeros`,
   :func:`pyopencl.array.arange`.
@@ -166,7 +166,7 @@ Version 0.91.3
 * All parameters named *host_buffer* were renamed *hostbuf* for consistency
   with the :class:`pyopencl.Buffer` constructor introduced in 0.91.
   Compatibility code is in place.
-* The :class:`pyopencl.Image` constructor does not need a *shape* parameter if the 
+* The :class:`pyopencl.Image` constructor does not need a *shape* parameter if the
   given *hostbuf* has *hostbuf.shape*.
 * The :class:`pyopencl.Context` constructor can now be called without parameters.
 
@@ -196,7 +196,7 @@ Version 0.91
 * Fix numerous `get_info` bugs. (reports by David Garcia and the test suite)
 * Add :meth:`pyopencl.ImageFormat.__repr__`.
 * Add :meth:`pyopencl.addressing_mode.to_string` and colleagues.
-* The `pitch` arguments to 
+* The `pitch` arguments to
   :func:`pyopencl.create_image_2d`,
   :func:`pyopencl.create_image_3d`,
   :func:`pyopencl.enqueue_read_image`, and
@@ -218,7 +218,7 @@ Version 0.91
 * :meth:`pyopencl.MemoryObject.get_image_info` now actually exists.
 * Add :attr:`pyopencl.MemoryObject.image.info`.
 * Fix API tracing.
-* Add constructor arguments to :class:`pyopencl.ImageFormat`.  (suggested by David Garcia) 
+* Add constructor arguments to :class:`pyopencl.ImageFormat`.  (suggested by David Garcia)
 
 Version 0.90.4
 --------------
@@ -325,7 +325,7 @@ PyOpenCL includes the RANLUXCL random number generator:
 Frequently Asked Questions
 ==========================
 
-The FAQ is maintained collaboratively on the 
+The FAQ is maintained collaboratively on the
 `Wiki FAQ page <http://wiki.tiker.net/PyOpenCL/FrequentlyAskedQuestions>`_.
 
 Citing PyOpenCL
@@ -343,11 +343,11 @@ PyOpenCL, feel free to cite this article:
 Here's a Bibtex entry for your convenience::
 
     @techreport{kloeckner_pycuda_2009,
-       author = {{Kl{\"o}ckner}, Andreas 
-            and {Pinto}, Nicolas 
-            and {Lee}, Yunsup 
-            and {Catanzaro}, B. 
-            and {Ivanov}, Paul 
+       author = {{Kl{\"o}ckner}, Andreas
+            and {Pinto}, Nicolas
+            and {Lee}, Yunsup
+            and {Catanzaro}, B.
+            and {Ivanov}, Paul
             and {Fasih}, Ahmed },
        title = "{PyCUDA and PyOpenCL: A Scripting-Based Approach to GPU Run-Time Code Generation}",
        url = {http://arxiv.org/abs/0911.3456},
