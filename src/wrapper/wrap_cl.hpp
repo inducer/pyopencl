@@ -221,14 +221,25 @@
         py::extract<event &>(evt)().data(); \
     }
 
-#define PYOPENCL_RETURN_NEW_EVENT(EVT) \
+#define PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, obj) \
     try \
     { \
-      return new event(EVT, false); \
+      return new nanny_event(evt, false, obj); \
     } \
     catch (...) \
     { \
-      clReleaseEvent(EVT); \
+      clReleaseEvent(evt); \
+      throw; \
+    }
+
+#define PYOPENCL_RETURN_NEW_EVENT(evt) \
+    try \
+    { \
+      return new event(evt, false); \
+    } \
+    catch (...) \
+    { \
+      clReleaseEvent(evt); \
       throw; \
     }
 
@@ -1051,6 +1062,31 @@ namespace pyopencl
       }
   };
 
+  class nanny_event : public event
+  {
+    // In addition to everything an event does, the nanny event holds a reference
+    // to a Python object and waits for its completion 
+
+    protected:
+      py::object        m_ward;
+
+    public:
+
+      nanny_event(cl_event evt, bool retain, py::object ward)
+        : event(evt, retain), m_ward(ward)
+      { }
+
+      nanny_event(nanny_event const &src)
+        : event(src), m_ward(src.m_ward)
+      { }
+
+      ~nanny_event()
+      { wait(); }
+
+      py::object get_ward() const
+      { return m_ward; }
+  };
+
 
 
 
@@ -1467,7 +1503,7 @@ namespace pyopencl
           device_offset, len, buf,
           num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front(), &evt
           ));
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
 
@@ -1506,7 +1542,7 @@ namespace pyopencl
           device_offset, len, buf,
           num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front(), &evt
           ));
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
 
@@ -1586,7 +1622,7 @@ namespace pyopencl
           buf,
           num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front(), &evt
           ));
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
 
@@ -1630,7 +1666,7 @@ namespace pyopencl
           buf,
           num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front(), &evt
           ));
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
 
@@ -1973,7 +2009,7 @@ namespace pyopencl
           origin, region, row_pitch, slice_pitch, buf,
           num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front(), &evt
           ));
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
 
@@ -2015,7 +2051,7 @@ namespace pyopencl
           origin, region, row_pitch, slice_pitch, buf,
           num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front(), &evt
           ));
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
 

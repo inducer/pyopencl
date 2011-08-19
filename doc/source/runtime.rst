@@ -268,6 +268,19 @@ Command Queues and Events
 
         See :class:`command_execution_status` for possible values of *status*.
 
+.. class:: NannyEvent
+
+    Transfers between host and device return events of this type. They hold
+    a reference to the host-side buffer and wait for the transfer to complete
+    when they are freed. Therefore, they can safely release the reference to
+    the object they're guarding upon destruction.
+
+    A subclass of :class:`Event`.
+
+    .. versionadded:: 2011.2
+
+    .. method:: get_ward()
+
 Memory
 ------
 
@@ -574,6 +587,9 @@ Transfers
     :arg wait_for: (optional, default empty)
     :arg is_blocking: Wait for completion. Defaults to *True*. 
       (Available on any copy involving host memory)
+
+    :return: A :class:`NannyEvent` if the transfer involved a
+        host-side buffer, otherwise an :class:`Event`.
 
     :class:`Buffer` ↔ host transfers:
 

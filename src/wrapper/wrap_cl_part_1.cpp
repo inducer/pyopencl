@@ -103,6 +103,12 @@ void pyopencl_expose_part_1()
       .def("__hash__", &cls::hash)
       ;
   }
+  {
+    typedef nanny_event cls;
+    py::class_<cls, boost::noncopyable, py::bases<event> >("NannyEvent", py::no_init)
+      .DEF_SIMPLE_METHOD(get_ward)
+      ;
+  }
 
   DEF_SIMPLE_FUNCTION(wait_for_events);
   py::def("enqueue_marker", enqueue_marker,

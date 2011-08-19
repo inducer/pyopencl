@@ -85,6 +85,7 @@ Version 2011.2
   functionality.
 * Base :mod:`pyopencl.clrandom` on `RANLUXCL <https://bitbucket.org/ivarun/ranluxcl>`_,
   add functionality.
+* Add :class:`pyopencl.NannyEvent` objects.
 
 Version 2011.1.2
 ----------------
