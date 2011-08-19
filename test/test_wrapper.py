@@ -266,7 +266,13 @@ class TestCL:
         a_result = np.empty_like(a)
         cl.enqueue_copy(queue, a_result, a_dest)
 
-        assert la.norm(a_result - a) == 0
+        good = la.norm(a_result - a) == 0
+        if not good:
+            if queue.device.type == cl.device_type.CPU:
+                assert good, ("The image implementation on your CPU CL platform '%s' "
+                        "returned bad values. This is bad, but common." % queue.device.platform)
+            else:
+                assert good
 
     @pytools.test.mark_test.opencl
     def test_copy_buffer(self, ctx_factory):
