@@ -368,6 +368,39 @@ _add_functionality()
 
 
 
+# {{{ find pyopencl shipped source code
+
+def _find_pyopencl_include_path():
+    from imp import find_module
+    import sys
+    file, pathname, descr = find_module("pyopencl")
+
+    # Who knew Python installation is so uniform and predictable?
+    from os.path import join, exists
+    possible_include_paths = [
+            join(pathname, "..", "include", "pyopencl"),
+            join(pathname, "..", "src", "cl"),
+            join(pathname, "..", "..", "..", "src", "cl"),
+            join(pathname, "..", "..", "..", "..", "include", "pyopencl"),
+            join(pathname, "..", "..", "..", "include", "pyopencl"),
+            ]
+
+    if sys.platform in ("linux2", "darwin"):
+        possible_include_paths.extend([
+            join(sys.prefix, "include" , "pyopencl"),
+            "/usr/include/pyopencl",
+            "/usr/local/include/pyopencl"
+            ])
+
+    for inc_path in possible_include_paths:
+        if exists(inc_path):
+            return inc_path
+
+    raise RuntimeError("could not find path to PyOpenCL's CL"
+            " header files, searched in : %s"
+            % '\n'.join(possible_include_paths))
+
+# }}}
 
 # {{{ Program (including caching support)
 
@@ -425,6 +458,11 @@ class Program(object):
                     "info attribute or as a kernel name" % attr)
 
     def build(self, options=[], devices=None, cache_dir=None):
+        if isinstance(options, str):
+            options = [options]
+
+        options = options + ["-I", _find_pyopencl_include_path()]
+
         if self._prg is not None:
             self._prg._build(options, devices)
         else:

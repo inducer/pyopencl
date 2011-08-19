@@ -79,10 +79,12 @@ Version 2011.2
   severe consequences on the execution time of :class:`pyopencl.array.Array`
   operations.
   Henrik Andresen at a `PyOpenCL workshop at DTU <http://gpulab.imm.dtu.dk/courses.html>`_
-  first noticed the timings
+  first noticed the strange timings.
 * All comparable PyOpenCL objects are now also hashable.
 * Add :func:`pyopencl.tools.context_dependent_memoize` to the documented
   functionality.
+* Base :mod:`pyopencl.clrandom` on `RANLUXCL <https://bitbucket.org/ivarun/ranluxcl>`_,
+  add functionality.
 
 Version 2011.1.2
 ----------------
@@ -298,6 +300,27 @@ implementation). These parts are licensed as follows:
     If you use Apache-licensed parts, be aware that these may be incompatible
     with software licensed exclusively under GPL2.  (Most software is licensed
     as GPL2 or later, in which case this is not an issue.)
+
+PyOpenCL includes the RANLUXCL random number generator:
+
+    Copyright (c) 2011 Ivar Ursin Nikolaisen
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this
+    software and associated documentation files (the "Software"), to deal in the Software
+    without restriction, including without limitation the rights to use, copy, modify,
+    merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to the following
+    conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies
+    or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+    INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+    PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+    CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
+    OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 Frequently Asked Questions
 ==========================

@@ -224,6 +224,11 @@ def main():
                     ),
                 ],
 
+            data_files=[
+                ("include/pyopencl",
+                    glob.glob("src/cl/*.cl") + glob.glob("src/cl/*.h"))
+                ],
+
             # 2to3 invocation
             cmdclass={'build_py': build_py})
 

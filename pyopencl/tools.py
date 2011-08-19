@@ -43,40 +43,42 @@ MemoryPool = cl.MemoryPool
 
 
 
-context_dependent_memoized_functions = []
+first_arg_dependent_memoized_functions = []
 
 
 
 
 @decorator
-def context_dependent_memoize(func, context, *args):
+def first_arg_dependent_memoize(func, context, *args):
     """Provides memoization for things that get created inside
     a context, i.e. mainly programs and kernels. Assumes that
     the first argument of the decorated function is the context.
     """
     try:
-        ctx_dict = func._pyopencl_ctx_dep_memoize_dic
+        ctx_dict = func._pyopencl_first_arg_dep_memoize_dic
     except AttributeError:
         # FIXME: This may keep contexts alive longer than desired.
         # But I guess since the memory in them is freed, who cares.
-        ctx_dict = func._pyopencl_ctx_dep_memoize_dic = {}
+        ctx_dict = func._pyopencl_first_arg_dep_memoize_dic = {}
 
     try:
         return ctx_dict[context][args]
     except KeyError:
-        context_dependent_memoized_functions.append(func)
+        first_arg_dependent_memoized_functions.append(func)
         arg_dict = ctx_dict.setdefault(context, {})
         result = func(context, *args)
         arg_dict[args] = result
         return result
 
+context_dependent_memoize = first_arg_dependent_memoize
+
 
 
 
 def clear_context_caches():
-    for func in context_dependent_memoized_functions:
+    for func in first_arg_dependent_memoized_functions:
         try:
-            ctx_dict = func._pycuda_ctx_dep_memoize_dic
+            ctx_dict = func._pyopencl_first_arg_dep_memoize_dic
         except AttributeError:
             pass
         else:

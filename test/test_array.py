@@ -226,18 +226,39 @@ def test_random(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    from pyopencl.clrandom import rand as clrand
+    from pyopencl.clrandom import RanluxGenerator
 
     if has_double_support(context.devices[0]):
         dtypes = [np.float32, np.float64]
     else:
         dtypes = [np.float32]
 
-    for dtype in dtypes:
-        a = clrand(context, queue, (10, 100), dtype=dtype).get()
+    gen = RanluxGenerator(queue, 5120)
 
-        assert (0 <= a).all()
-        assert (a < 1).all()
+    for dtype in dtypes:
+        ran = gen.uniform(queue, (10007,), dtype)
+        assert (0 < ran.get()).all()
+        assert (ran.get() < 1).all()
+
+        gen.synchronize(queue)
+
+        ran = gen.uniform(queue, (10007,), dtype, a=4, b=7)
+        assert (4 < ran.get()).all()
+        assert (ran.get() < 7).all()
+
+        ran = gen.normal(queue, (10007,), dtype, mu=4, sigma=3)
+
+    dtypes = [np.int32]
+    for dtype in dtypes:
+        ran = gen.uniform(queue, (10000007,), dtype, a=200, b=300)
+        assert (200 <= ran.get()).all()
+        assert (ran.get() < 300).all()
+        #from matplotlib import pyplot as pt
+        #pt.hist(ran.get())
+        #pt.show()
+
+
+
 
 
 @pytools.test.mark_test.opencl
