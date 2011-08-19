@@ -377,6 +377,8 @@ Generating Arrays of Random Numbers
         be at least 10240 for both GPU1 and GPU2, and it must be set to the same value
         for both.
 
+    .. versionadded:: 2011.2
+
     .. attribute:: state
 
         A :class:`pyopencl.array.Array` containing the state of the generator.
