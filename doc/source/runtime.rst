@@ -281,6 +281,11 @@ Command Queues and Events
 
     .. method:: get_ward()
 
+    .. method:: wait()
+
+        In addition to performing the same wait as :meth:`Event.wait()`, this
+        method also releases the reference to the guarded object.
+
 Memory
 ------
 

@@ -1060,6 +1060,11 @@ namespace pyopencl
             throw error("Event.get_profiling_info", CL_INVALID_VALUE);
         }
       }
+
+      virtual void wait()
+      {
+        PYOPENCL_CALL_GUARDED_THREADED(clWaitForEvents, (1, &m_event));
+      }
   };
 
   class nanny_event : public event
@@ -1085,6 +1090,12 @@ namespace pyopencl
 
       py::object get_ward() const
       { return m_ward; }
+
+      virtual void wait()
+      {
+        event::wait();
+        m_ward = py::object();
+      }
   };
 
 

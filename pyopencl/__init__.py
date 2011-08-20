@@ -315,16 +315,6 @@ def _add_functionality():
 
     # }}}
 
-    # {{{ Event
-
-    def event_wait(self):
-        wait_for_events([self])
-        return self
-
-    Event.wait = event_wait
-
-    # }}}
-
     # {{{ Error
 
     def error_str(self):
