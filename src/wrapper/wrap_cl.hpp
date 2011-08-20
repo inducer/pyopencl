@@ -1003,7 +1003,7 @@ namespace pyopencl
         : m_event(src.m_event)
       { PYOPENCL_CALL_GUARDED(clRetainEvent, (m_event)); }
 
-      ~event()
+      virtual ~event()
       {
         PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseEvent,
             (m_event));
@@ -1065,7 +1065,7 @@ namespace pyopencl
   class nanny_event : public event
   {
     // In addition to everything an event does, the nanny event holds a reference
-    // to a Python object and waits for its completion 
+    // to a Python object and waits for its own completion upon destruction.
 
     protected:
       py::object        m_ward;
