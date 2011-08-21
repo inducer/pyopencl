@@ -692,6 +692,9 @@ DTYPE_TO_CHANNEL_TYPE_NORM = {
 def image_from_array(ctx, ary, num_channels, mode="r", norm_int=False):
     # FIXME what about vector types?
 
+    if not ary.flags.c_contiguous:
+        raise ValueError("array must be C-contiguous")
+
     if num_channels == 1:
         shape = ary.shape
         strides = ary.strides
@@ -725,7 +728,7 @@ def image_from_array(ctx, ary, num_channels, mode="r", norm_int=False):
 
     return Image(ctx, mode_flags | mem_flags.COPY_HOST_PTR,
             ImageFormat(img_format, channel_type),
-            shape=shape, pitches=strides[:-1],
+            shape=shape[::-1], pitches=strides[::-1][1:],
             hostbuf=ary)
 
 # }}}

@@ -234,23 +234,22 @@ class TestCL:
               __global float *dest,
               __read_only image2d_t src,
               sampler_t samp,
-              int width)
+              int stride0)
             {
-              int x = get_global_id(0);
-              int y = get_global_id(1);
+              int d0 = get_global_id(0);
+              int d1 = get_global_id(1);
               /*
               const sampler_t samp =
                 CLK_NORMALIZED_COORDS_FALSE
                 | CLK_ADDRESS_CLAMP
                 | CLK_FILTER_NEAREST;
                 */
-              dest[x + width*y] = read_imagef(src, samp, (float2)(x, y)).x;
-              // dest[x + width*y] = get_image_height(src);
+              dest[d0*stride0 + d1] = read_imagef(src, samp, (float2)(d1, d0)).x;
             }
             """).build()
 
         num_channels = 1
-        a = np.random.rand(1024, 1024, num_channels).astype(np.float32)
+        a = np.random.rand(1024, 512, num_channels).astype(np.float32)
         if num_channels == 1:
             a = a[:,:,0]
 
@@ -261,7 +260,8 @@ class TestCL:
         samp = cl.Sampler(context, False,
                 cl.addressing_mode.CLAMP,
                 cl.filter_mode.NEAREST)
-        prg.copy_image(queue, a.shape, None, a_dest, a_img, samp, np.int32(a.shape[0]))
+        prg.copy_image(queue, a.shape, None, a_dest, a_img, samp,
+                np.int32(a.strides[0]/a.dtype.itemsize))
 
         a_result = np.empty_like(a)
         cl.enqueue_copy(queue, a_result, a_dest)
