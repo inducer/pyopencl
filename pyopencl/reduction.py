@@ -171,14 +171,16 @@ def  get_reduction_source(
     # {{{ compute synchronization-less group size
 
     def get_dev_no_sync_size(device):
-        try:
-            return device.warp_size_nv
-        except:
-            if "nvidia" in device.vendor.lower():
-                from warnings import warn
-                warn("Reduction might be unnecessarily slow: "
-                        "can't query warp size on Nvidia device")
+	from pyopencl.characterize import get_simd_group_size
+	result = get_simd_group_size(device)
+
+	if result is None:
+	    from warnings import warn
+	    warn("Reduction might be unnecessarily slow: "
+		    "can't query SIMD group size")
             return 1
+	
+	return result
 
     no_sync_size = min(get_dev_no_sync_size(dev) for dev in devices)
 

@@ -242,3 +242,22 @@ def why_not_local_access_conflict_free(dev, itemsize,
 def get_fast_inaccurate_build_options(dev):
     return ["-cl-mad-enable", "-cl-fast-relaxed-math", 
         "-cl-no-signed-zeros", "-cl-strict-aliasing"]
+
+
+
+
+def get_simd_group_size(dev):
+    try:
+	return dev.warp_size_nv
+    except:
+	pass
+
+    lc_vendor = dev.vendor.lower()
+    if "nvidia" in lc_vendor:
+        return 32
+
+    if ("amd" in lc_vendor or "ati" in lc_vendor) \
+        and dev.type == cl.device_type.GPU:
+        return 32
+
+    return None
