@@ -86,7 +86,8 @@ def _add_functionality():
 
     # {{{ Device
     def device_repr(self):
-        return "<pyopencl.Device '%s' at 0x%x>" % (self.name, self.obj_ptr)
+        return "<pyopencl.Device '%s' on '%s' at 0x%x>" % (
+                self.name.strip(), self.platform.name.strip(), self.obj_ptr)
 
     Device.__repr__ = device_repr
 
