@@ -222,6 +222,11 @@ def _add_functionality():
                 global_offset, wait_for, g_times_l=g_times_l)
 
     def kernel_set_scalar_arg_dtypes(self, arg_dtypes):
+        assert len(arg_dtypes) == self.num_args, (
+                "length of argument type array (%d) and "
+                "CL-generated number of arguments (%d) do not agree"
+                % (len(arg_dtypes), self.num_args))
+
         arg_type_chars = []
 
         for arg_dtype in arg_dtypes:
@@ -233,6 +238,11 @@ def _add_functionality():
         self._arg_type_chars = arg_type_chars
 
     def kernel_set_args(self, *args):
+        assert len(args) == self.num_args, (
+                "length of argument list (%d) and "
+                "CL-generated number of arguments (%d) do not agree"
+                % (len(args), self.num_args))
+
         i = None
         try:
             try:
@@ -243,9 +253,6 @@ def _add_functionality():
             else:
                 from struct import pack
 
-                if len(args) != len(arg_type_chars):
-                    raise ValueError("length of argument type array and "
-                            "length of argument list do not agree")
                 for i, (arg, arg_type_char) in enumerate(
                         zip(args, arg_type_chars)):
                     if arg_type_char and arg_type_char != "V":
