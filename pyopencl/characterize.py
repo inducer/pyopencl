@@ -1,6 +1,7 @@
 from __future__ import division
 
 import pyopencl as cl
+import numpy as np
 
 class CLCharacterizationWarning(UserWarning):
     pass
@@ -240,24 +241,43 @@ def why_not_local_access_conflict_free(dev, itemsize,
 
 
 def get_fast_inaccurate_build_options(dev):
-    return ["-cl-mad-enable", "-cl-fast-relaxed-math", 
+    return ["-cl-mad-enable", "-cl-fast-relaxed-math",
         "-cl-no-signed-zeros", "-cl-strict-aliasing"]
 
 
 
 
 def get_simd_group_size(dev):
+    """Only refers to implicit SIMD."""
     try:
-	return dev.warp_size_nv
+        return dev.warp_size_nv
     except:
-	pass
+        pass
 
-    lc_vendor = dev.vendor.lower()
+    lc_vendor = dev.platform.vendor.lower()
     if "nvidia" in lc_vendor:
         return 32
 
-    if ("amd" in lc_vendor or "ati" in lc_vendor) \
-        and dev.type == cl.device_type.GPU:
-        return 32
+    if ("advanced micro" in lc_vendor or "ati" in lc_vendor):
+        if dev.type == cl.device_type.GPU:
+            return 64
+        elif dev.type == cl.device_type.CPU:
+            return 1
+        else:
+            raise RuntimeError("unexpected AMD device type")
+
+    if dev.type == cl.device_type.CPU:
+        # implicit assumption: Impl. will vectorize
+
+        if dtype.itemsize == 1:
+            return dev.preferred_vector_width_char
+        elif dtype.itemsize == 2:
+            return dev.preferred_vector_width_short
+        elif dtype.itemsize == 4:
+            return dev.preferred_vector_width_float
+        elif dtype.itemsize == 8:
+            return dev.preferred_vector_width_double
+        else:
+            raise ValueError("unexpected dtype size in get_simd_group_size")
 
     return None
