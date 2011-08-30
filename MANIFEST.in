@@ -1,3 +1,6 @@
+include src/cl/*.h
+include src/cl/*.cl
+
 include src/wrapper/*.hpp
 include src/wrapper/*.cpp
 include test/*.py
