@@ -294,8 +294,8 @@ def test_elwise_kernel(ctx_factory):
 
     from pyopencl.clrandom import rand as clrand
 
-    a_gpu = clrand(context, queue, (50,), np.float32)
-    b_gpu = clrand(context, queue, (50,), np.float32)
+    a_gpu = clrand(queue, (50,), np.float32)
+    b_gpu = clrand(queue, (50,), np.float32)
 
     from pyopencl.elementwise import ElementwiseKernel
     lin_comb = ElementwiseKernel(context,
@@ -317,7 +317,7 @@ def test_elwise_kernel_with_options(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    in_gpu = clrand(context, queue, (50,), np.float32)
+    in_gpu = clrand(queue, (50,), np.float32)
 
     options = ['-DADD_ONE']
     add_one = ElementwiseKernel(
@@ -383,7 +383,7 @@ def test_sum(ctx_factory):
 
     from pyopencl.clrandom import rand as clrand
 
-    a_gpu = clrand(context, queue, (200000,), np.float32)
+    a_gpu = clrand(queue, (200000,), np.float32)
     a = a_gpu.get()
 
     sum_a = np.sum(a)
@@ -406,7 +406,7 @@ def test_minmax(ctx_factory):
 
     for what in ["min", "max"]:
         for dtype in dtypes:
-            a_gpu = clrand(context, queue, (200000,), dtype)
+            a_gpu = clrand(queue, (200000,), dtype)
             a = a_gpu.get()
 
             op_a = getattr(np, what)(a)
@@ -432,7 +432,7 @@ def test_subset_minmax(ctx_factory):
         dtypes = [np.float32, np.int32]
 
     for dtype in dtypes:
-        a_gpu = clrand(context, queue, (l_a,), dtype)
+        a_gpu = clrand(queue, (l_a,), dtype)
         a = a_gpu.get()
 
         meaningful_indices_gpu = cl_array.zeros(
@@ -461,9 +461,9 @@ def test_dot(ctx_factory):
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
-    a_gpu = clrand(context, queue, (200000,), np.float32)
+    a_gpu = clrand(queue, (200000,), np.float32)
     a = a_gpu.get()
-    b_gpu = clrand(context, queue, (200000,), np.float32)
+    b_gpu = clrand(queue, (200000,), np.float32)
     b = b_gpu.get()
 
     dot_ab = np.dot(a, b)
@@ -479,7 +479,7 @@ if False:
         from pyopencl.clrandom import rand as clrand
 
         l = 20000
-        a_gpu = clrand(context, queue, (l,))
+        a_gpu = clrand(queue, (l,))
         a = a_gpu.get()
 
         from random import randrange
@@ -501,8 +501,8 @@ def test_if_positive(ctx_factory):
     from pyopencl.clrandom import rand as clrand
 
     l = 20000
-    a_gpu = clrand(context, queue, (l,), np.float32)
-    b_gpu = clrand(context, queue, (l,), np.float32)
+    a_gpu = clrand(queue, (l,), np.float32)
+    b_gpu = clrand(queue, (l,), np.float32)
     a = a_gpu.get()
     b = b_gpu.get()
 
@@ -548,7 +548,7 @@ def test_astype(ctx_factory):
     if not has_double_support(context.devices[0]):
         return
 
-    a_gpu = clrand(context, queue, (2000,), dtype=np.float32)
+    a_gpu = clrand(queue, (2000,), dtype=np.float32)
 
     a = a_gpu.get().astype(np.float64)
     a2 = a_gpu.astype(np.float64).get()
@@ -556,7 +556,7 @@ def test_astype(ctx_factory):
     assert a2.dtype == np.float64
     assert la.norm(a - a2) == 0, (a, a2)
 
-    a_gpu = clrand(context, queue, (2000,), dtype=np.float64)
+    a_gpu = clrand(queue, (2000,), dtype=np.float64)
 
     a = a_gpu.get().astype(np.float32)
     a2 = a_gpu.astype(np.float32).get()
