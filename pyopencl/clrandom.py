@@ -124,7 +124,7 @@ class RanluxGenerator(object):
               if (idx+2 < out_size)
                 output[idx+2] = tail_ran.z;
               if (idx+3 < out_size)
-                output[idx+2] = tail_ran.w;
+                output[idx+3] = tail_ran.w;
 
               ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
             }
