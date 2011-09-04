@@ -715,7 +715,7 @@ def image_from_array(ctx, ary, num_channels, mode="r", norm_int=False):
 
     if mode == "r":
         mode_flags = mem_flags.READ_ONLY
-    elif mode == "r":
+    elif mode == "w":
         mode_flags = mem_flags.WRITE_ONLY
     else:
         raise ValueError("invalid value '%s' for 'mode'" % mode)
