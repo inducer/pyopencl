@@ -90,3 +90,24 @@ Kernel Caching
     all held reference contexts. If it is important to you that the
     program detaches from its context, you might need to call this
     function to free all remaining references to your context.
+
+Testing
+-------
+
+.. function:: pytest_generate_tests_for_pyopencl(metafunc)
+
+    Using the line::
+
+        from pyopencl.tools import pytest_generate_tests_for_pyopencl \
+                as pytest_generate_tests
+
+    in your `py.test <http://pytest.org>`_ test scripts allows you to use the
+    arguments *ctx_factory*, *device*, or *platform* in your test functions,
+    and they will automatically be run for each OpenCL device/platform in the
+    system, as appropriate.
+
+    The following two environment variables are also supported to control
+    device/platform choice::
+
+        PYOPENCL_TEST_PLATFORM_BLACKLIST=nvidia,intel
+        PYOPENCL_TEST_DEVICE_BLACKLIST=nvidia:260,intel:i5

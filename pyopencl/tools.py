@@ -110,6 +110,21 @@ def pytest_generate_tests_for_pyopencl(metafunc):
         def __str__(self):
             return "<context factory for %s>" % self.device
 
+    platform_blacklist = []
+    device_blacklist = []
+
+    import os
+    bl_string = os.environ.get("PYOPENCL_TEST_PLATFORM_BLACKLIST", "")
+    if bl_string:
+        platform_blacklist = [s.lower() for s in bl_string.split(",")]
+    bl_string = os.environ.get("PYOPENCL_TEST_DEVICE_BLACKLIST", "")
+    if bl_string:
+        for s in bl_string.split(","):
+            vendor_name, device_name = s.split(":")
+            device_blacklist.append((vendor_name.lower(), device_name.lower()))
+
+    from pytools import any
+
     if ("device" in metafunc.funcargnames
             or "ctx_factory" in metafunc.funcargnames
             or "ctx_getter" in metafunc.funcargnames):
@@ -119,7 +134,17 @@ def pytest_generate_tests_for_pyopencl(metafunc):
             if "platform" in metafunc.funcargnames:
                 arg_dict["platform"] = platform
 
+            platform_ish = (platform.name + ' ' + platform.vendor).lower()
+            if any(bl_plat in platform_ish for bl_plat in platform_blacklist):
+                continue
+
             for device in platform.get_devices():
+
+                device_ish = (device.name + ' ' + platform.vendor).lower()
+                if any(bl_plat in platform_ish and bl_dev in device_ish
+                        for bl_plat, bl_dev in device_blacklist):
+                    continue
+
                 if "device" in metafunc.funcargnames:
                     arg_dict["device"] = device
 
@@ -138,6 +163,11 @@ def pytest_generate_tests_for_pyopencl(metafunc):
 
     elif "platform" in metafunc.funcargnames:
         for platform in cl.get_platforms():
+
+            platform_ish = (platform.name + ' ' + platform.vendor).lower()
+            if any(bl_plat in platform_ish for bl_plat in platform_blacklist):
+                continue
+
             metafunc.addcall(
                     funcargs=dict(platform=platform),
                     id=str(platform))
