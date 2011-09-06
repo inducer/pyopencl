@@ -516,10 +516,10 @@ def create_some_context(interactive=True, answers=None):
             try:
                 choice = int(answer)
             except ValueError:
-                choice = choice.lower()
+                answer = answer.lower()
                 platform = None
                 for i, pf in enumerate(platforms):
-                    if choice in pf.name.lower():
+                    if answer in pf.name.lower():
                         platform = pf
                 if platform is None:
                     raise RuntimeError("input did not match any platform")
@@ -531,7 +531,7 @@ def create_some_context(interactive=True, answers=None):
 
     def parse_device(choice):
         try:
-            choice = int(answer)
+            choice = int(choice)
         except ValueError:
             choice = choice.lower()
             for i, dev in enumerate(devices):
@@ -555,7 +555,7 @@ def create_some_context(interactive=True, answers=None):
         if not answer:
             devices = [devices[0]]
         else:
-            devices = [devices[int(i)] for i in answer.split(",")]
+            devices = [parse_device(i) for i in answer.split(",")]
 
     if user_inputs:
         print("Set the environment variable PYOPENCL_CTX='%s' to "
