@@ -59,7 +59,7 @@ def _create_vector_types():
         ('uchar', np.uint8),
         ('short', np.int16),
         ('ushort', np.uint16),
-        ('int', np.uint32),
+        ('int', np.int32),
         ('uint', np.uint32),
         ('long', np.int64),
         ('ulong', np.uint64),
