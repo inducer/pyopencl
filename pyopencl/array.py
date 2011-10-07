@@ -242,7 +242,13 @@ class Array(object):
             for dim in shape:
                 s *= dim
         except TypeError:
-            if not isinstance(shape, int):
+            import sys
+            if sys.version >= (3,):
+                admissible_types = (int, np.integer)
+            else:
+                admissible_types = (int, long, np.integer)
+
+            if not isinstance(shape, admissible_types):
                 raise TypeError("shape must either be iterable or "
                         "castable to an integer")
             s = shape
