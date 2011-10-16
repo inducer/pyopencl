@@ -118,6 +118,12 @@ void pyopencl_expose_part_2()
   // {{{ program
   {
     typedef program cls;
+    py::enum_<cls::program_kind_type>("program_kind")
+      .value("UNKNOWN", cls::KND_UNKNOWN)
+      .value("SOURCE", cls::KND_SOURCE)
+      .value("BINARY", cls::KND_BINARY)
+      ;
+
     py::class_<cls, boost::noncopyable>("_Program", py::no_init)
       .def("__init__", make_constructor(
             create_program_with_source,
@@ -127,6 +133,7 @@ void pyopencl_expose_part_2()
             create_program_with_binary,
             py::default_call_policies(),
             py::args("context", "devices", "binaries")))
+      .DEF_SIMPLE_METHOD(kind)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_build_info)
       .def("_build", &cls::build,

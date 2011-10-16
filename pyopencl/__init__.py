@@ -141,18 +141,28 @@ def _add_functionality():
                         routine=lambda : routine))
 
         if err is not None:
-            # Python 3.2 outputs the whole tree of currently active exceptions
+            # Python 3.2 outputs the whole list of currently active exceptions
             # This serves to remove one (redundant) level from that nesting.
             raise err
 
         message = (75*"="+"\n").join(
-                "Build on %s succeeded, but said:\n\n%s" % (dev, log) 
+                "Build on %s succeeded, but said:\n\n%s" % (dev, log)
                 for dev, log in self._get_build_logs()
                 if log is not None and log.strip())
 
         if message:
+            if self.kind() == program_kind.UNKNOWN:
+                build_type = "Build"
+            elif self.kind() == program_kind.SOURCE:
+                build_type = "From-source build"
+            elif self.kind() == program_kind.BINARY:
+                build_type = "From-binary build"
+            else:
+                raise RuntimeError("unexpected kind of program")
+
             from warnings import warn
-            warn("Build succeeded, but resulted in non-empty logs:\n"+message)
+            warn("%s succeeded, but resulted in non-empty logs:\n%s"
+                    % (build_type, message))
 
         return self
 

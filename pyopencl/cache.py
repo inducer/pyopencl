@@ -344,13 +344,14 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
             logs.append(log)
 
     message = (75*"="+"\n").join(
-            "Build on %s succeeded, but said:\n\n%s" % (dev, log) 
+            "Build on %s succeeded, but said:\n\n%s" % (dev, log)
             for dev, log in zip(devices, logs)
             if log is not None and log.strip())
 
     if message:
         from warnings import warn
-        warn("Build succeeded, but resulted in non-empty logs:\n"+message)
+        warn("Built kernel retrieved from cache. Original from-source build had warnings:\n"+message)
+
     # {{{ build on the build-needing devices, in one go
 
     result = None

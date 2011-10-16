@@ -2392,12 +2392,16 @@ namespace pyopencl
 
   class program : boost::noncopyable
   {
+    public:
+      enum program_kind_type { KND_UNKNOWN, KND_SOURCE, KND_BINARY };
+
     private:
       cl_program m_program;
+      program_kind_type m_program_kind;
 
     public:
-      program(cl_program prog, bool retain)
-        : m_program(prog)
+      program(cl_program prog, bool retain, program_kind_type progkind=KND_UNKNOWN)
+        : m_program(prog), m_program_kind(progkind)
       {
         if (retain)
           PYOPENCL_CALL_GUARDED(clRetainProgram, (prog));
@@ -2411,6 +2415,11 @@ namespace pyopencl
       cl_program data() const
       {
         return m_program;
+      }
+
+      program_kind_type kind() const
+      {
+        return m_program_kind;
       }
 
       npy_intp obj_ptr() const
@@ -2560,7 +2569,7 @@ namespace pyopencl
 
     try
     {
-      return new program(result, false);
+      return new program(result, false, program::KND_SOURCE);
     }
     catch (...)
     {
@@ -2625,7 +2634,7 @@ namespace pyopencl
 
     try
     {
-      return new program(result, false);
+      return new program(result, false, program::KND_BINARY);
     }
     catch (...)
     {
