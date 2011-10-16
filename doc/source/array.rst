@@ -418,6 +418,10 @@ Generating Arrays of Random Numbers
     Return an array of `shape` filled with random values of `dtype`
     in the range [0,1).
 
+.. function:: fill_rand(result, queue=None)
+
+    Fill *result* with random values of `dtype` in the range [0,1).
+
 PyOpenCL now includes and uses the `RANLUXCL random number generator
 <https://bitbucket.org/ivarun/ranluxcl/>`_ by Ivar Ursin Nikolaisen.  In
 addition to being usable through the convenience functions above, it is

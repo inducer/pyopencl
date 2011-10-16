@@ -27,7 +27,7 @@ class RanluxGenerator(object):
         self.use_legacy_init = use_legacy_init
         self.max_work_items = max_work_items
 
-        prg = cl.Program(queue.context, """
+        src = """
             %s
 
             #include <pyopencl-ranluxcl.cl>
@@ -36,7 +36,8 @@ class RanluxGenerator(object):
             {
               ranluxcl_initialization(seeds, ranluxcltab);
             }
-            """ % self.generate_settings_defines()).build()
+            """ % self.generate_settings_defines()
+        prg = cl.Program(queue.context, src).build()
 
         self.state = cl_array.empty(queue, (num_work_items, 112), dtype=np.uint8)
         prg.init_ranlux(queue, (num_work_items,), None, np.uint32(seed),
@@ -218,12 +219,14 @@ def _get_generator(queue):
 
 
 
-@cl_array.elwise_kernel_runner
-def _rand(output, seed):
-    return get_rand_kernel(output.context, output.dtype)
+def fill_rand(result, queue=None):
+    if queue is None:
+        queue = result.queue
+    gen = _get_generator(queue)
+    gen.fill_uniform(result)
 
-def fill_rand(result):
-    _rand(result, np.random.randint(2**31-1))
+
+
 
 def rand(*args, **kwargs):
     def inner_rand(queue, shape, dtype):
