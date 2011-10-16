@@ -74,8 +74,8 @@ the available memory.
         This is useful as a cleanup action when a memory pool falls out
         of use.
 
-Kernel Caching
---------------
+Context-based Caching
+---------------------
 
 .. function:: context_dependent_memoize(func)
 
@@ -84,12 +84,16 @@ Kernel Caching
     for caching of kernels. Assumes that the first argument of the decorated
     function is the :class:`pyopencl.Context`.
 
+    .. versionadded:: 2011.2
+
 .. function:: clear_context_caches()
 
     Empties all context-dependent memoization caches. Also releases
     all held reference contexts. If it is important to you that the
     program detaches from its context, you might need to call this
     function to free all remaining references to your context.
+
+    .. versionadded:: 2011.2
 
 Testing
 -------
