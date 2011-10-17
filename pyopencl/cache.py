@@ -349,8 +349,10 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
             if log is not None and log.strip())
 
     if message:
-        from warnings import warn
-        warn("Built kernel retrieved from cache. Original from-source build had warnings:\n"+message)
+        from pyopencl import compiler_output
+        compiler_output(
+                "Built kernel retrieved from cache. Original from-source "
+                "build had warnings:\n"+message)
 
     # {{{ build on the build-needing devices, in one go
 

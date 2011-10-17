@@ -22,6 +22,22 @@ CONSTANT_CLASSES = [
         if _inspect.isclass(getattr(_cl, name))
         and name[0].islower()]
 
+class CompilerWarning(UserWarning):
+    pass
+
+def compiler_output(text):
+    import os
+    from warnings import warn
+    if int(os.environ.get("PYOPENCL_COMPILER_OUTPUT", "0")):
+        warn(text, CompilerWarning)
+    else:
+        warn("Non-empty compiler output encountered. Set the "
+                "environment variable PYOPENCL_COMPILER_OUTPUT=1 "
+                "to see more.", CompilerWarning)
+
+
+
+
 def _add_functionality():
     cls_to_info_cls = {
             _cl.Platform:
@@ -160,8 +176,7 @@ def _add_functionality():
             else:
                 raise RuntimeError("unexpected kind of program")
 
-            from warnings import warn
-            warn("%s succeeded, but resulted in non-empty logs:\n%s"
+            compiler_output("%s succeeded, but resulted in non-empty logs:\n%s"
                     % (build_type, message))
 
         return self
