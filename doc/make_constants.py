@@ -196,7 +196,7 @@ def doc_class(cls):
 
     cls_const_ext = const_ext_lookup.get(cls, {})
     for i in sorted(dir(cls)):
-        if not i.startswith("_")  and not i == "to_string":
+        if not i.startswith("_")  and not i in ["to_string", "names", "values"]:
             print "    .. attribute :: %s" % i
             value = getattr(cls, i)
 
