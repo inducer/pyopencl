@@ -74,26 +74,11 @@ the available memory.
         This is useful as a cleanup action when a memory pool falls out
         of use.
 
-Context-based Caching
----------------------
+CL-Object-dependent Caching
+---------------------------
 
-.. function:: context_dependent_memoize(func)
-
-    This decorator caches the result of the decorated function, *if* a
-    subsequent occurs with the same :class:`pyopencl.Context`.  This is useful
-    for caching of kernels. Assumes that the first argument of the decorated
-    function is the :class:`pyopencl.Context`.
-
-    .. versionadded:: 2011.2
-
-.. function:: clear_context_caches()
-
-    Empties all context-dependent memoization caches. Also releases
-    all held reference contexts. If it is important to you that the
-    program detaches from its context, you might need to call this
-    function to free all remaining references to your context.
-
-    .. versionadded:: 2011.2
+.. autofunction:: first_arg_dependent_memoize
+.. autofunction:: clear_first_arg_caches
 
 Testing
 -------
