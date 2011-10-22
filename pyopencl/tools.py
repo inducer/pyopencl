@@ -49,10 +49,14 @@ first_arg_dependent_memoized_functions = []
 
 
 @decorator
-def first_arg_dependent_memoize(func, context, *args):
+def first_arg_dependent_memoize(func, cl_object, *args):
     """Provides memoization for things that get created inside
     a context, i.e. mainly programs and kernels. Assumes that
-    the first argument of the decorated function is the context.
+    the first argument of the decorated function is an OpenCL
+    object that might go away, such as a context or a queue,
+    and based on which we might want to clear the cache.
+
+    .. versionadded:: 2011.2
     """
     try:
         ctx_dict = func._pyopencl_first_arg_dep_memoize_dic
@@ -62,11 +66,11 @@ def first_arg_dependent_memoize(func, context, *args):
         ctx_dict = func._pyopencl_first_arg_dep_memoize_dic = {}
 
     try:
-        return ctx_dict[context][args]
+        return ctx_dict[cl_object][args]
     except KeyError:
         first_arg_dependent_memoized_functions.append(func)
-        arg_dict = ctx_dict.setdefault(context, {})
-        result = func(context, *args)
+        arg_dict = ctx_dict.setdefault(cl_object, {})
+        result = func(cl_object, *args)
         arg_dict[args] = result
         return result
 
@@ -75,7 +79,14 @@ context_dependent_memoize = first_arg_dependent_memoize
 
 
 
-def clear_context_caches():
+def clear_first_arg_caches():
+    """Empties all first-argument-dependent memoization caches. Also releases
+    all held reference contexts. If it is important to you that the
+    program detaches from its context, you might need to call this
+    function to free all remaining references to your context.
+
+    .. versionadded:: 2011.2
+    """
     for func in first_arg_dependent_memoized_functions:
         try:
             ctx_dict = func._pyopencl_first_arg_dep_memoize_dic
@@ -85,7 +96,7 @@ def clear_context_caches():
             ctx_dict.clear()
 
 import atexit
-atexit.register(clear_context_caches)
+atexit.register(clear_first_arg_caches)
 
 
 
@@ -100,7 +111,7 @@ def pytest_generate_tests_for_pyopencl(metafunc):
             # CL implementations are surprisingly limited in how many
             # simultaneous contexts they allow...
 
-            clear_context_caches()
+            clear_first_arg_caches()
 
             from gc import collect
             collect()
