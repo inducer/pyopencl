@@ -10,8 +10,11 @@ import numpy as np
 
 class RanluxGenerator(object):
     def __init__(self, queue, num_work_items,
-            luxury=4, seed=None, no_warmup=False,
+            luxury=None, seed=None, no_warmup=False,
             use_legacy_init=False, max_work_items=None):
+        if luxury is None:
+            luxury = 4
+
         if seed is None:
             from time import time
             seed = int(time()*1e6) % 2<<30
@@ -206,33 +209,34 @@ class RanluxGenerator(object):
 
 
 @first_arg_dependent_memoize
-def _get_generator(queue):
+def _get_generator(queue, luxury=None):
     if queue.device.type == cl.device_type.CPU:
         num_work_items = 8 * queue.device.max_compute_units
     else:
         num_work_items = 64 * queue.device.max_compute_units
 
-    gen = RanluxGenerator(queue, num_work_items)
+    gen = RanluxGenerator(queue, num_work_items, luxury=luxury)
     queue.finish()
     return gen
 
 
 
 
-def fill_rand(result, queue=None):
+def fill_rand(result, queue=None, luxury=4):
     if queue is None:
         queue = result.queue
-    gen = _get_generator(queue)
+    gen = _get_generator(queue, luxury=luxury)
     gen.fill_uniform(result)
 
 
 
 
 def rand(*args, **kwargs):
-    def inner_rand(queue, shape, dtype):
+    def inner_rand(queue, shape, dtype, luxury=None):
         from pyopencl.array import Array
+        luxury = kwargs.pop("luxury", None)
 
-        gen = _get_generator(queue)
+        gen = _get_generator(queue, luxury)
         result = Array(queue, shape, dtype)
         gen.fill_uniform(result)
         return result
