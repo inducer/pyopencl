@@ -254,7 +254,15 @@ class TestCL:
             a = a[:,:,0]
 
         queue = cl.CommandQueue(context)
-        a_img = cl.image_from_array(context, a, num_channels)
+        try:
+            a_img = cl.image_from_array(context, a, num_channels)
+        except cl.RuntimeError, exc:
+            if exc.code == cl.status_code.IMAGE_FORMAT_NOT_SUPPORTED:
+                from py.test import skip
+                skip("required image format not supported on %s" % device.name)
+            else:
+                raise
+
         a_dest = cl.Buffer(context, cl.mem_flags.READ_WRITE, a.nbytes)
 
         samp = cl.Sampler(context, False,
