@@ -250,14 +250,24 @@ def why_not_local_access_conflict_free(dev, itemsize,
 
 
 def get_fast_inaccurate_build_options(dev):
+    """Return a list of flags valid on device *dev* that enable fast, but
+    potentially inaccurate floating point math.
+    """
     return ["-cl-mad-enable", "-cl-fast-relaxed-math",
         "-cl-no-signed-zeros", "-cl-strict-aliasing"]
 
 
 
 
-def get_simd_group_size(dev):
-    """Only refers to implicit SIMD."""
+def get_simd_group_size(dev, type_size):
+    """Return an estimate of how many work items will be executed across SIMD
+    lanes. This returns the size of what Nvidia calls a warp and what AMD calls
+    a wavefront.
+
+    Only refers to implicit SIMD.
+
+    :arg type_size: number of bytes in vector entry type.
+    """
     try:
         return dev.warp_size_nv
     except:
@@ -278,13 +288,13 @@ def get_simd_group_size(dev):
     if dev.type == cl.device_type.CPU:
         # implicit assumption: Impl. will vectorize
 
-        if dtype.itemsize == 1:
+        if type_size == 1:
             return dev.preferred_vector_width_char
-        elif dtype.itemsize == 2:
+        elif type_size == 2:
             return dev.preferred_vector_width_short
-        elif dtype.itemsize == 4:
+        elif type_size == 4:
             return dev.preferred_vector_width_float
-        elif dtype.itemsize == 8:
+        elif type_size == 8:
             return dev.preferred_vector_width_double
         else:
             raise ValueError("unexpected dtype size in get_simd_group_size")

@@ -101,9 +101,14 @@ _create_vector_types()
 
 # {{{ helper functionality
 
-def splay(queue, n):
+def splay(queue, n, kernel_specific_max_wg_size=None):
     dev = queue.device
     max_work_items = _builtin_min(128, dev.max_work_group_size)
+
+    if kernel_specific_max_wg_size is not None:
+        from __builtin__ import min
+        max_work_items = min(max_work_items, kernel_specific_max_wg_size)
+
     min_work_items = _builtin_min(32, max_work_items)
     max_groups = dev.max_compute_units * 4 * 8
     # 4 to overfill the device
@@ -143,8 +148,11 @@ def elwise_kernel_runner(kernel_getter):
         repr_ary = args[0]
         queue = kwargs.pop("queue", None) or repr_ary.queue
 
-        gs, ls = repr_ary.get_sizes(queue)
         knl = kernel_getter(*args)
+        gs, ls = repr_ary.get_sizes(queue,
+                knl.get_work_group_info(
+                    cl.kernel_work_group_info.WORK_GROUP_SIZE,
+                    queue.device))
 
         assert isinstance(repr_ary, Array)
 
@@ -301,8 +309,9 @@ class Array(object):
         return _ArrayFlags(self)
 
     #@memoize_method FIXME: reenable
-    def get_sizes(self, queue):
-        return splay(queue, self.mem_size)
+    def get_sizes(self, queue, kernel_specific_max_wg_size=None):
+        return splay(queue, self.mem_size,
+                kernel_specific_max_wg_size=kernel_specific_max_wg_size)
 
     def set(self, ary, queue=None, async=False):
         assert ary.size == self.size
@@ -881,7 +890,11 @@ def multi_take(arrays, indices, out=None, queue=None):
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = indices.get_sizes(queue)
+        gs, ls = indices.get_sizes(queue,
+                knl.get_work_group_info(
+                    cl.kernel_work_group_info.WORK_GROUP_SIZE,
+                    queue.device))
+
         knl(queue, gs, ls,
                 indices.data,
                 *([o.data for o in out[chunk_slice]]
@@ -949,7 +962,11 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = src_indices.get_sizes(queue)
+        gs, ls = src_indices.get_sizes(queue,
+                knl.get_work_group_info(
+                    cl.kernel_work_group_info.WORK_GROUP_SIZE,
+                    queue.device))
+
         knl(queue, gs, ls,
                 *([o.data for o in out[chunk_slice]]
                     + [dest_indices.data, src_indices.data]
@@ -1002,7 +1019,11 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = dest_indices.get_sizes(queue)
+        gs, ls = dest_indices.get_sizes(queue,
+                knl.get_work_group_info(
+                    cl.kernel_work_group_info.WORK_GROUP_SIZE,
+                    queue.device))
+
         knl(queue, gs, ls,
                 *([o.data for o in out[chunk_slice]]
                     + [dest_indices.data]

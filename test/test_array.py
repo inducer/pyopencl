@@ -322,7 +322,7 @@ def test_elwise_kernel_with_options(ctx_factory):
 
     in_gpu = clrand(queue, (50,), np.float32)
 
-    options = ['-DADD_ONE']
+    options = ['-D', 'ADD_ONE']
     add_one = ElementwiseKernel(
         context,
         "float* out, const float *in",

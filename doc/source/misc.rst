@@ -17,6 +17,8 @@ Acknowledgments
   PyOpenCL.
 * Paolo Simone Gasparello, Keith Brafford, and Ian Johnson provided much help
   in getting OpenCL-OpenGL interoperability to work.
+* Sean True allowed access to a test machine to ensure compatibility
+  with OS X Lion.
 
 Guidelines
 ==========
@@ -86,6 +88,8 @@ Version 2011.2
 * Base :mod:`pyopencl.clrandom` on `RANLUXCL <https://bitbucket.org/ivarun/ranluxcl>`_,
   add functionality.
 * Add :class:`pyopencl.NannyEvent` objects.
+* Add :mod:`pyopencl.characterize`.
+* Ensure compatibility with OS X Lion.
 
 Version 2011.1.2
 ----------------

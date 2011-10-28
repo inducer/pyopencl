@@ -153,9 +153,9 @@ def  get_reduction_source(
 
     def get_dev_group_size(device):
         # dirty fix for the RV770 boards
-        max_work_group_size=device.max_work_group_size
+        max_work_group_size = device.max_work_group_size
         if "RV770" in device.name:
-            max_work_group_size=64
+            max_work_group_size = 64
         return min(
                 max_work_group_size,
                 (device.local_mem_size + out_type_size - 1)
@@ -171,16 +171,16 @@ def  get_reduction_source(
     # {{{ compute synchronization-less group size
 
     def get_dev_no_sync_size(device):
-	from pyopencl.characterize import get_simd_group_size
-	result = get_simd_group_size(device)
+        from pyopencl.characterize import get_simd_group_size
+        result = get_simd_group_size(device, out_type_size)
 
-	if result is None:
-	    from warnings import warn
-	    warn("Reduction might be unnecessarily slow: "
-		    "can't query SIMD group size")
+        if result is None:
+            from warnings import warn
+            warn("Reduction might be unnecessarily slow: "
+                    "can't query SIMD group size")
             return 1
-	
-	return result
+
+        return result
 
     no_sync_size = min(get_dev_no_sync_size(dev) for dev in devices)
 
@@ -262,16 +262,34 @@ class ReductionKernel:
 
         dtype_out = self.dtype_out = np.dtype(dtype_out)
 
-        self.stage_1_inf = get_reduction_kernel(ctx,
-                dtype_to_ctype(dtype_out), dtype_out.itemsize,
-                neutral, reduce_expr, map_expr, arguments,
-                name=name+"_stage1", options=options, preamble=preamble)
+        max_group_size = None
+        trip_count = 0
+
+        while True:
+            self.stage_1_inf = get_reduction_kernel(ctx,
+                    dtype_to_ctype(dtype_out), dtype_out.itemsize,
+                    neutral, reduce_expr, map_expr, arguments,
+                    name=name+"_stage1", options=options, preamble=preamble,
+                    max_group_size=max_group_size)
+
+            kernel_max_wg_size = self.stage_1_inf.kernel.get_work_group_info(
+                    cl.kernel_work_group_info.WORK_GROUP_SIZE,
+                    ctx.devices[0])
+
+            if self.stage_1_inf.group_size <= kernel_max_wg_size:
+                break
+            else:
+                max_group_size = kernel_max_wg_size
+
+            trip_count += 1
+            assert trip_count <= 2
 
         # stage 2 has only one input and no map expression
         self.stage_2_inf = get_reduction_kernel(ctx,
                 dtype_to_ctype(dtype_out), dtype_out.itemsize,
                 neutral, reduce_expr,
-                name=name+"_stage2", options=options, preamble=preamble)
+                name=name+"_stage2", options=options, preamble=preamble,
+                max_group_size=max_group_size)
 
         from pytools import any
         from pyopencl.tools import VectorArg

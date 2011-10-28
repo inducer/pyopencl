@@ -156,7 +156,10 @@ class ElementwiseKernel:
             queue = repr_vec.queue
         invocation_args.append(repr_vec.mem_size)
 
-        gs, ls = repr_vec.get_sizes(queue)
+        gs, ls = repr_vec.get_sizes(queue,
+                self.kernel.get_work_group_info(
+                    cl.kernel_work_group_info.WORK_GROUP_SIZE,
+                    queue.device))
         self.kernel.set_args(*invocation_args)
         return cl.enqueue_nd_range_kernel(queue, self.kernel, gs, ls)
 
