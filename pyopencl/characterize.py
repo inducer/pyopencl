@@ -48,6 +48,10 @@ def reasonable_work_group_size_multiple(dev, ctx=None):
 
 
 def nv_compute_capability(dev):
+    """If *dev* is an Nvidia GPU :class:`pyopencl.Device`, return a tuple
+    *(major, minor)* indicating the device's compute capability.
+    """
+
     try:
         return (dev.compute_capability_major_nv,
                 dev.compute_capability_minor_nv)
@@ -61,6 +65,7 @@ def usable_local_mem_size(dev, nargs=None):
     """Return an estimate of the usable local memory size.
     :arg nargs: Number of 32-bit arguments passed.
     """
+
     usable_local_mem_size = dev.local_mem_size
 
     nv_compute_cap = nv_compute_capability(dev)
@@ -165,6 +170,10 @@ def why_not_local_access_conflict_free(dev, itemsize,
     :param itemsize: size of accessed data in bytes
     :param array_shape: array dimensions, fastest-moving last
         (C order)
+
+    :returns: a tuple (multiplicity, explanation), where *multiplicity*
+        is the number of work items that will conflict on a bank when accessing
+        local memory. *explanation* is a string detailing the found conflict.
     """
     # FIXME: Treat 64-bit access on NV CC 2.x + correctly
 

@@ -100,3 +100,8 @@ Testing
 
         PYOPENCL_TEST_PLATFORM_BLACKLIST=nvidia,intel
         PYOPENCL_TEST_DEVICE_BLACKLIST=nvidia:260,intel:i5
+
+Device Characterization
+-----------------------
+
+.. automodule:: pyopencl.characterize
