@@ -105,3 +105,4 @@ Device Characterization
 -----------------------
 
 .. automodule:: pyopencl.characterize
+    :members:
