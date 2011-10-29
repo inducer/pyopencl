@@ -11,7 +11,7 @@ import numpy as np
 class RanluxGenerator(object):
     def __init__(self, queue, num_work_items,
             luxury=None, seed=None, no_warmup=False,
-            use_legacy_init=False, max_work_items=None):
+            use_legacy_init=True, max_work_items=None):
         if luxury is None:
             luxury = 4
 
