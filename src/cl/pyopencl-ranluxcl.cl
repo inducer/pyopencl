@@ -551,11 +551,11 @@ void ranluxcl_initialization(uint ins, global ranluxcl_state_t *ranluxcltab)
 	//allows us to use ins = 0.
 	int k, maxWorkitems;
 
-	#ifdef RANLUXCL_USE_LEGACY_INITIALIZATION
-	maxWorkitems = RANLUXCL_USE_LEGACY_INITIALIZATION;
+	#ifdef RANLUXCL_MAXWORKITEMS
+	maxWorkitems = RANLUXCL_MAXWORKITEMS;
 	#else
 	maxWorkitems = RANLUXCL_NUMWORKITEMS;
-	#endif //RANLUXCL_USE_LEGACY_INITIALIZATION
+	#endif //RANLUXCL_MAXWORKITEMS
 
 	int scaledins = ins * maxWorkitems + 1;
 
