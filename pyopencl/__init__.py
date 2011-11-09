@@ -37,6 +37,78 @@ def compiler_output(text):
 
 
 
+# {{{ Program (including caching support)
+
+class Program(object):
+    def __init__(self, context, arg1, arg2=None):
+        if arg2 is None:
+            source = arg1
+
+            import sys
+            if isinstance(source, unicode) and sys.version_info < (3,):
+                from warnings import warn
+                warn("Received OpenCL source code in Unicode, "
+                        "should be ASCII string. Attempting conversion.",
+                        stacklevel=2)
+                source = str(source)
+
+            self._context = context
+            self._source = source
+            self._prg = None
+        else:
+            # 3-argument form: context, devices, binaries
+            self._prg = _cl._Program(context, arg1, arg2)
+
+    def _get_prg(self):
+        if self._prg is not None:
+            return self._prg
+        else:
+            # "no program" can only happen in from-source case.
+            from warnings import warn
+            warn("Pre-build attribute access defeats compiler caching.", stacklevel=3)
+
+            self._prg = _cl._Program(self._context, self._source)
+            del self._context
+            del self._source
+            return self._prg
+
+    def get_info(self, arg):
+        return self._get_prg().get_info(arg)
+
+    def get_build_info(self, *args, **kwargs):
+        return self._get_prg().get_build_info(*args, **kwargs)
+
+    def all_kernels(self):
+        return self._get_prg().all_kernels()
+
+    def __getattr__(self, attr):
+        try:
+            knl = Kernel(self._get_prg(), attr)
+            # Nvidia does not raise errors even for invalid names,
+            # but this will give an error if the kernel is invalid.
+            knl.num_args
+            return knl
+        except LogicError:
+            raise AttributeError("'%s' was not found as a program "
+                    "info attribute or as a kernel name" % attr)
+
+    def build(self, options=[], devices=None, cache_dir=None):
+        if isinstance(options, str):
+            options = [options]
+
+        options = options + ["-I", _find_pyopencl_include_path()]
+
+        if self._prg is not None:
+            self._prg._build(options, devices)
+        else:
+            from pyopencl.cache import create_built_program_from_source_cached
+            self._prg = create_built_program_from_source_cached(
+                    self._context, self._source, options, devices,
+                    cache_dir=cache_dir)
+
+        return self
+
+    # }}}
 
 def _add_functionality():
     cls_to_info_cls = {
@@ -54,6 +126,8 @@ def _add_functionality():
                 (MemoryObjectHolder.get_info,_cl.mem_info),
             _cl.Image:
                 (Image.get_image_info, _cl.image_info),
+            Program:
+                (Program.get_info, _cl.program_info),
             _cl.Kernel:
                 (Kernel.get_info, _cl.kernel_info),
             _cl.Sampler:
@@ -424,79 +498,6 @@ def _find_pyopencl_include_path():
             % '\n'.join(possible_include_paths))
 
 # }}}
-
-# {{{ Program (including caching support)
-
-class Program(object):
-    def __init__(self, context, arg1, arg2=None):
-        if arg2 is None:
-            source = arg1
-
-            import sys
-            if isinstance(source, unicode) and sys.version_info < (3,):
-                from warnings import warn
-                warn("Received OpenCL source code in Unicode, "
-                        "should be ASCII string. Attempting conversion.", 
-                        stacklevel=2)
-                source = str(source)
-
-            self._context = context
-            self._source = source
-            self._prg = None
-        else:
-            # 3-argument form: context, devices, binaries
-            self._prg = _cl._Program(context, arg1, arg2)
-
-    def _get_prg(self):
-        if self._prg is not None:
-            return self._prg
-        else:
-            # "no program" can only happen in from-source case.
-            from warnings import warn
-            warn("Pre-build attribute access defeats compiler caching.", stacklevel=3)
-
-            self._prg = _cl._Program(self._context, self._source)
-            del self._context
-            del self._source
-            return self._prg
-
-    def get_info(self, arg):
-        return self._get_prg().get_info(arg)
-
-    def get_build_info(self, *args, **kwargs):
-        return self._get_prg().get_build_info(*args, **kwargs)
-
-    def all_kernels(self):
-        return self._get_prg().all_kernels()
-
-    def __getattr__(self, attr):
-        try:
-            knl = Kernel(self._get_prg(), attr)
-            # Nvidia does not raise errors even for invalid names,
-            # but this will give an error if the kernel is invalid.
-            knl.num_args
-            return knl
-        except LogicError:
-            raise AttributeError("'%s' was not found as a program "
-                    "info attribute or as a kernel name" % attr)
-
-    def build(self, options=[], devices=None, cache_dir=None):
-        if isinstance(options, str):
-            options = [options]
-
-        options = options + ["-I", _find_pyopencl_include_path()]
-
-        if self._prg is not None:
-            self._prg._build(options, devices)
-        else:
-            from pyopencl.cache import create_built_program_from_source_cached
-            self._prg = create_built_program_from_source_cached(
-                    self._context, self._source, options, devices,
-                    cache_dir=cache_dir)
-
-        return self
-
-    # }}}
 
 # {{{ convenience -------------------------------------------------------------
 def create_some_context(interactive=True, answers=None):
