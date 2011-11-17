@@ -336,6 +336,8 @@ Buffers
 
     .. method:: get_sub_region(origin, size, flags=0)
 
+        Only available in OpenCL 1.1 and newer.
+
     .. method:: __getitem__(slc)
 
         *slc* is a :class:`slice` object indicating from which byte index range
