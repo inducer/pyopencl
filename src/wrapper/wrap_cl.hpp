@@ -1308,6 +1308,12 @@ namespace pyopencl
   }
 #endif
 
+  inline
+  memory_object *memory_object_from_int(intptr_t cl_mem_as_int)
+  {
+    return new memory_object((cl_mem) cl_mem_as_int, true);
+  }
+
   // }}}
 
   // {{{ buffer
