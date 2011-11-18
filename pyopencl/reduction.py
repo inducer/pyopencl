@@ -222,10 +222,13 @@ def get_reduction_kernel(stage,
          name="reduce_kernel", preamble="",
          device=None, options=[], max_group_size=None):
     if map_expr is None:
-        map_expr = "in[i]"
+        if stage == 2:
+            map_expr = "pyopencl_reduction_inp[i]"
+        else:
+            map_expr = "in[i]"
 
     if stage == 2:
-        in_arg = "__global const %s *in" % out_type
+        in_arg = "__global const %s *pyopencl_reduction_inp" % out_type
         if arguments:
             arguments = in_arg + ", " + arguments
         else:
