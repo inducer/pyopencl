@@ -60,21 +60,30 @@ namespace
   class map_flags { };
   class program_info { };
   class program_build_info { };
+  class program_binary_type { };
   class build_status { };
   class kernel_info { };
+  class kernel_arg_info { };
+  class kernel_arg_address_qualifier { };
+  class kernel_arg_access_qualifier { };
   class kernel_work_group_info { };
   class event_info { };
   class command_type { };
   class command_execution_status { };
   class profiling_info { };
   class buffer_create_type { };
+  class mem_migration_flags { };
+
+  class device_partition_property { };
+  class affinity_domain { };
 
   class device_partition_property_ext { };
   class affinity_domain_ext { };
 
   class gl_object_type { };
   class gl_texture_info { };
-  class migrate_mem_object_flags {};
+
+  class migrate_mem_object_flags_ext {};
   // }}}
 }
 
@@ -183,6 +192,18 @@ void pyopencl_expose_constants()
     ADD_ATTR(, INVALID_GLOBAL_WORK_SIZE);
 #endif
 
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(, COMPILE_PROGRAM_FAILURE);
+    ADD_ATTR(, LINKER_NOT_AVAILABLE);
+    ADD_ATTR(, LINK_PROGRAM_FAILURE);
+    ADD_ATTR(, DEVICE_PARTITION_FAILED);
+    ADD_ATTR(, KERNEL_ARG_INFO_NOT_AVAILABLE);
+    ADD_ATTR(, INVALID_IMAGE_DESCRIPTOR);
+    ADD_ATTR(, INVALID_COMPILER_OPTIONS);
+    ADD_ATTR(, INVALID_LINKER_OPTIONS);
+    ADD_ATTR(, INVALID_DEVICE_PARTITION_COUNT);
+#endif
+
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     ADD_ATTR(, DEVICE_PARTITION_FAILED_EXT);
     ADD_ATTR(, INVALID_PARTITION_COUNT_EXT);
@@ -207,6 +228,9 @@ void pyopencl_expose_constants()
     ADD_ATTR(DEVICE_TYPE_, CPU);
     ADD_ATTR(DEVICE_TYPE_, GPU);
     ADD_ATTR(DEVICE_TYPE_, ACCELERATOR);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(DEVICE_TYPE_, CUSTOM);
+#endif
     ADD_ATTR(DEVICE_TYPE_, ALL);
   }
 
@@ -302,6 +326,20 @@ void pyopencl_expose_constants()
     ADD_ATTR(DEVICE_, REFERENCE_COUNT_EXT);
     ADD_ATTR(DEVICE_, PARTITION_STYLE_EXT);
 #endif
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(DEVICE_, LINKER_AVAILABLE);
+    ADD_ATTR(DEVICE_, BUILT_IN_KERNELS);
+    ADD_ATTR(DEVICE_, IMAGE_MAX_BUFFER_SIZE);
+    ADD_ATTR(DEVICE_, IMAGE_MAX_ARRAY_SIZE);
+    ADD_ATTR(DEVICE_, PARENT_DEVICE);
+    ADD_ATTR(DEVICE_, PARTITION_MAX_SUB_DEVICES);
+    ADD_ATTR(DEVICE_, PARTITION_PROPERTIES);
+    ADD_ATTR(DEVICE_, PARTITION_AFFINITY_DOMAIN);
+    ADD_ATTR(DEVICE_, PARTITION_TYPE);
+    ADD_ATTR(DEVICE_, REFERENCE_COUNT);
+    ADD_ATTR(DEVICE_, PREFERRED_INTEROP_USER_SYNC);
+    ADD_ATTR(DEVICE_, PRINTF_BUFFER_SIZE);
+#endif
   }
 
   {
@@ -314,6 +352,9 @@ void pyopencl_expose_constants()
     ADD_ATTR(FP_, FMA);
 #ifdef CL_VERSION_1_1
     ADD_ATTR(FP_, SOFT_FLOAT);
+#endif
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(FP_, CORRECTLY_ROUNDED_DIVIDE_SQRT);
 #endif
   }
 
@@ -349,6 +390,9 @@ void pyopencl_expose_constants()
     ADD_ATTR(CONTEXT_, PROPERTIES);
 #ifdef CL_VERSION_1_1
     ADD_ATTR(CONTEXT_, NUM_DEVICES);
+#endif
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(CONTEXT_, INTEROP_USER_SYNC);
 #endif
   }
 
@@ -398,6 +442,11 @@ void pyopencl_expose_constants()
 #ifdef cl_amd_device_memory_flags
     ADD_ATTR(MEM_, USE_PERSISTENT_MEM_AMD);
 #endif
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(MEM_, HOST_WRITE_ONLY);
+    ADD_ATTR(MEM_, HOST_READ_ONLY);
+    ADD_ATTR(MEM_, HOST_NO_ACCESS);
+#endif
   }
 
   {
@@ -442,6 +491,12 @@ void pyopencl_expose_constants()
     ADD_ATTR(MEM_OBJECT_, BUFFER);
     ADD_ATTR(MEM_OBJECT_, IMAGE2D);
     ADD_ATTR(MEM_OBJECT_, IMAGE3D);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(MEM_OBJECT_, IMAGE2D_ARRAY);
+    ADD_ATTR(MEM_OBJECT_, IMAGE1D);
+    ADD_ATTR(MEM_OBJECT_, IMAGE1D_ARRAY);
+    ADD_ATTR(MEM_OBJECT_, IMAGE1D_BUFFER);
+#endif
   }
 
   {
@@ -468,6 +523,12 @@ void pyopencl_expose_constants()
     ADD_ATTR(IMAGE_, WIDTH);
     ADD_ATTR(IMAGE_, HEIGHT);
     ADD_ATTR(IMAGE_, DEPTH);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(IMAGE_, ARRAY_SIZE);
+    ADD_ATTR(IMAGE_, BUFFER);
+    ADD_ATTR(IMAGE_, NUM_MIP_LEVELS);
+    ADD_ATTR(IMAGE_, NUM_SAMPLES);
+#endif
   }
 
   {
@@ -500,6 +561,9 @@ void pyopencl_expose_constants()
     py::class_<map_flags> cls("map_flags", py::no_init);
     ADD_ATTR(MAP_, READ);
     ADD_ATTR(MAP_, WRITE);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(MAP_, WRITE_INVALIDATE_REGION);
+#endif
   }
 
   {
@@ -511,6 +575,10 @@ void pyopencl_expose_constants()
     ADD_ATTR(PROGRAM_, SOURCE);
     ADD_ATTR(PROGRAM_, BINARY_SIZES);
     ADD_ATTR(PROGRAM_, BINARIES);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(PROGRAM_, NUM_KERNELS);
+    ADD_ATTR(PROGRAM_, KERNEL_NAMES);
+#endif
   }
 
   {
@@ -518,6 +586,19 @@ void pyopencl_expose_constants()
     ADD_ATTR(PROGRAM_BUILD_, STATUS);
     ADD_ATTR(PROGRAM_BUILD_, OPTIONS);
     ADD_ATTR(PROGRAM_BUILD_, LOG);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(PROGRAM_, BINARY_TYPE);
+#endif
+  }
+
+  {
+    py::class_<program_binary_type> cls("program_binary_type", py::no_init);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(PROGRAM_BINARY_TYPE_, NONE);
+    ADD_ATTR(PROGRAM_BINARY_TYPE_, COMPILED_OBJECT);
+    ADD_ATTR(PROGRAM_BINARY_TYPE_, LIBRARY);
+    ADD_ATTR(PROGRAM_BINARY_TYPE_, EXECUTABLE);
+#endif
   }
 
   {
@@ -527,6 +608,41 @@ void pyopencl_expose_constants()
     ADD_ATTR(KERNEL_, REFERENCE_COUNT);
     ADD_ATTR(KERNEL_, CONTEXT);
     ADD_ATTR(KERNEL_, PROGRAM);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(KERNEL_, ATTRIBUTES);
+#endif
+  }
+
+  {
+    py::class_<kernel_arg_info> cls("kernel_arg_info", py::no_init);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(KERNEL_ARG_, ADDRESS_QUALIFIER);
+    ADD_ATTR(KERNEL_ARG_, ACCESS_QUALIFIER);
+    ADD_ATTR(KERNEL_ARG_, TYPE_NAME);
+    ADD_ATTR(KERNEL_ARG_, ARG_NAME);
+#endif
+  }
+
+  {
+    py::class_<kernel_arg_address_qualifier> cls(
+        "kernel_arg_address_qualifier", py::no_init);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(KERNEL_ARG_ADDRESS_, GLOBAL);
+    ADD_ATTR(KERNEL_ARG_ADDRESS_, LOCAL);
+    ADD_ATTR(KERNEL_ARG_ADDRESS_, CONSTANT);
+    ADD_ATTR(KERNEL_ARG_ADDRESS_, PRIVATE);
+#endif
+  }
+
+  {
+    py::class_<kernel_arg_access_qualifier> cls(
+        "kernel_arg_access_qualifier", py::no_init);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(KERNEL_ARG_ACCESS_, READ_ONLY);
+    ADD_ATTR(KERNEL_ARG_ACCESS_, WRITE_ONLY);
+    ADD_ATTR(KERNEL_ARG_ACCESS_, READ_WRITE);
+    ADD_ATTR(KERNEL_ARG_ACCESS_, NONE);
+#endif
   }
 
   {
@@ -537,6 +653,9 @@ void pyopencl_expose_constants()
 #ifdef CL_VERSION_1_1
     ADD_ATTR(KERNEL_, PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
     ADD_ATTR(KERNEL_, PRIVATE_MEM_SIZE);
+#endif
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(KERNEL_, GLOBAL_WORK_SIZE);
 #endif
   }
 
@@ -577,7 +696,13 @@ void pyopencl_expose_constants()
     ADD_ATTR(COMMAND_, USER);
 #endif
 #ifdef cl_ext_migrate_memobject
-    ADD_ATTR_SUFFIX(COMMAND_, MIGRATE_MEM_OBJECT, _EXT);
+    ADD_ATTR(COMMAND_, MIGRATE_MEM_OBJECT_EXT);
+#endif
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(COMMAND_, BARRIER);
+    ADD_ATTR(COMMAND_, MIGRATE_MEM_OBJECTS);
+    ADD_ATTR(COMMAND_, FILL_BUFFER);
+    ADD_ATTR(COMMAND_, FILL_IMAGE);
 #endif
   }
 
@@ -605,6 +730,16 @@ void pyopencl_expose_constants()
   }
 #endif
 */
+
+  {
+    py::class_<mem_migration_flags> cls(
+        "mem_migration_flags", py::no_init);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR(MIGRATE_MEM_OBJECT_, HOST);
+    ADD_ATTR(MIGRATE_MEM_OBJECT_, CONTENT_UNDEFINED);
+#endif
+  }
+
   {
     py::class_<device_partition_property_ext> cls(
         "device_partition_property_ext", py::no_init);
@@ -631,6 +766,29 @@ void pyopencl_expose_constants()
 #endif
   }
 
+  {
+    py::class_<device_partition_property> cls(
+        "device_partition_property", py::no_init);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, EQUALLY, _EXT);
+    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, BY_COUNTS, _EXT);
+    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, BY_AFFINITY_DOMAIN, _EXT);
+    ADD_ATTR_SUFFIX(, PARTITION_BY_COUNTS_LIST_END, _EXT);
+#endif
+  }
+
+  {
+    py::class_<affinity_domain> cls("affinity_domain", py::no_init);
+#ifdef CL_VERSION_1_2
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, NUMA, _EXT);
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L4_CACHE, _EXT);
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L3_CACHE, _EXT);
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L2_CACHE, _EXT);
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L1_CACHE, _EXT);
+    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, NEXT_PARTITIONABLE, _EXT);
+#endif
+  }
+
 #ifdef HAVE_GL
   {
     py::class_<gl_object_type> cls("gl_object_type", py::no_init);
@@ -648,7 +806,7 @@ void pyopencl_expose_constants()
 #endif
 
   {
-    py::class_<migrate_mem_object_flags> cls("migrate_mem_object_flags_ext", py::no_init);
+    py::class_<migrate_mem_object_flags_ext> cls("migrate_mem_object_flags_ext", py::no_init);
 #ifdef cl_ext_migrate_memobject
     ADD_ATTR_SUFFIX(MIGRATE_MEM_OBJECT_, HOST, _EXT);
 #endif

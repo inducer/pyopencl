@@ -91,6 +91,8 @@ Version 2011.2
 * Add :mod:`pyopencl.characterize`.
 * Ensure compatibility with OS X Lion.
 
+.. * Beta support for OpenCL 1.2.
+
 Version 2011.1.2
 ----------------
 

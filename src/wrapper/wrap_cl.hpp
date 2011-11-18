@@ -295,7 +295,9 @@ namespace pyopencl
   inline
   py::tuple get_cl_header_version()
   {
-#if defined(CL_VERSION_1_1)
+#if defined(CL_VERSION_1_2)
+    return py::make_tuple(1, 2);
+#elif defined(CL_VERSION_1_1)
     return py::make_tuple(1, 1);
 #else
     return py::make_tuple(1, 0);
