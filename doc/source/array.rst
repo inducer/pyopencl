@@ -90,6 +90,19 @@ The :class:`Array` Class
 
         Returns the size of the leading dimension of *self*.
 
+    .. method :: reshape(shape)
+
+        Returns an array containing the same data with a new shape.
+
+    .. method :: ravel()
+
+        Returns flattened array containing the same data.
+
+    .. metod :: view(dtype=None)
+
+        Returns view of array with the same data. If *dtype* is different from
+        current dtype, the actual bytes of memory will be reinterpreted.
+
     .. method :: set(ary, queue=None, async=False)
 
         Transfer the contents the :class:`numpy.ndarray` object *ary*

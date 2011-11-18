@@ -274,9 +274,6 @@ class Array(object):
                 self.data = self.allocator(self.size * self.dtype.itemsize)
             else:
                 self.data = None
-
-            if base is not None:
-                raise ValueError("If data is specified, base must be None.")
         else:
             self.data = data
 
@@ -288,6 +285,28 @@ class Array(object):
     @memoize_method
     def flags(self):
         return _ArrayFlags(self)
+
+    def _new_with_changes(self, data, shape=None, dtype=None, strides=None, queue=None,
+            base=None):
+        if shape is None:
+            shape = self.shape
+        if dtype is None:
+            dtype = self.dtype
+        if strides is None:
+            strides = self.strides
+        if queue is None:
+            queue = self.queue
+        if base is None and data is self.data:
+            base = self
+
+        if queue is not None:
+            return Array(queue, shape, dtype,
+                    allocator=self.allocator, strides=strides, base=base)
+        elif self.allocator is not None:
+            return Array(self.allocator, shape, dtype, queue=queue,
+                    strides=strides, base=base)
+        else:
+            return Array(self.context, shape, dtype, strides=strides, base=base)
 
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue):
@@ -641,6 +660,37 @@ class Array(object):
     def __gt__(self, other):
         raise NotImplementedError
 
+    # {{{ views
+
+    def reshape(self, *shape):
+        # TODO: add more error-checking, perhaps
+        if isinstance(shape[0], tuple) or isinstance(shape[0], list):
+            shape = tuple(shape[0])
+        size = reduce(lambda x, y: x * y, shape, 1)
+        if size != self.size:
+            raise ValueError("total size of new array must be unchanged")
+
+        return self._new_with_changes(data=self.data, shape=shape)
+
+    def ravel(self):
+        return self.reshape(self.size)
+
+    def view(self, dtype=None):
+        if dtype is None:
+            dtype = self.dtype
+
+        old_itemsize = self.dtype.itemsize
+        itemsize = np.dtype(dtype).itemsize
+
+        if self.shape[-1] * old_itemsize % itemsize != 0:
+            raise ValueError("new type not compatible with array")
+
+        shape = self.shape[:-1] + (self.shape[-1] * old_itemsize // itemsize,)
+
+        return self._new_with_changes(data=self.data, shape=shape, dtype=dtype)
+
+    # }}
+
 # }}}
 
 # {{{ creation helpers
@@ -691,15 +741,7 @@ def zeros(*args, **kwargs):
     return _zeros(*args, **kwargs)
 
 def empty_like(ary):
-    if ary.queue is not None:
-        return Array(ary.queue, ary.shape, ary.dtype,
-                allocator=ary.allocator, strides=ary.strides)
-    elif ary.allocator is not None:
-        return Array(ary.allocator, ary.shape, ary.dtype, queue=ary.queue,
-                strides=ary.strides)
-    else:
-        return Array(ary.context, ary.shape, ary.dtype,
-                strides=ary.strides)
+    return ary._new_with_changes(data=None)
 
 def zeros_like(ary):
     result = empty_like(ary)

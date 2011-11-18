@@ -636,6 +636,28 @@ def test_mem_pool_with_arrays(ctx_factory):
     assert b_dev.allocator is mem_pool
     assert result.allocator is mem_pool
 
+@pytools.test.mark_test.opencl
+def test_view(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = np.arange(128).reshape(8, 16).astype(np.float32)
+    a_dev = cl_array.to_device(queue, a)
+
+    # same dtype
+    view = a_dev.view()
+    assert view.shape == a_dev.shape and view.dtype == a_dev.dtype
+
+    # larger dtype
+    view = a_dev.view(np.complex64)
+    assert view.shape == (8, 8) and view.dtype == np.complex64
+
+    # smaller dtype
+    view = a_dev.view(np.int16)
+    assert view.shape == (8, 32) and view.dtype == np.int16
+
+
+
 
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
