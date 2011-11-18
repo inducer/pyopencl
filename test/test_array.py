@@ -656,6 +656,11 @@ def test_view(ctx_factory):
     view = a_dev.view(np.int16)
     assert view.shape == (8, 32) and view.dtype == np.int16
 
+mmc_dtype = np.dtype([("cur_min", np.float32), ("cur_max", np.float32)])
+
+from pyopencl.tools import register_dtype
+register_dtype(mmc_dtype, "minmax_collector")
+
 @pytools.test.mark_test.opencl
 def test_struct_reduce(ctx_factory):
     context = ctx_factory()
@@ -694,14 +699,11 @@ def test_struct_reduce(ctx_factory):
 
     """
 
-    mmc_dtype = np.dtype([("cur_min", np.float32), ("cur_max", np.float32)])
 
     from pyopencl.clrandom import rand as clrand
     a_gpu = clrand(queue, (20000,), dtype=np.float32)
     a = a_gpu.get()
 
-    from pyopencl.tools import register_dtype
-    register_dtype(mmc_dtype, "minmax_collector")
 
     from pyopencl.reduction import ReductionKernel
     red = ReductionKernel(context, mmc_dtype,
