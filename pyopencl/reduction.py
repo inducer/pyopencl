@@ -225,7 +225,11 @@ def get_reduction_kernel(stage,
         map_expr = "in[i]"
 
     if stage == 2:
-        arguments = "__global const %s *in" % out_type
+        in_arg = "__global const %s *in" % out_type
+        if arguments:
+            arguments = in_arg + ", " + arguments
+        else:
+            arguments = in_arg
 
     inf = get_reduction_source(
             ctx, out_type, out_type_size,
@@ -293,6 +297,8 @@ class ReductionKernel:
         if kwargs:
             raise TypeError("invalid keyword argument to reduction kernel")
 
+        stage1_args = args
+
         while True:
             invocation_args = []
             vectors = []
@@ -345,7 +351,7 @@ class ReductionKernel:
                 return result
             else:
                 stage_inf = self.stage_2_inf
-                args = [result]
+                args = (result,) + stage1_args
 
 
 
