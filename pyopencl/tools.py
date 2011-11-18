@@ -33,6 +33,11 @@ import numpy as np
 from decorator import decorator
 import pyopencl as cl
 
+from pyopencl.compyte.dtypes import (
+        register_dtype, _fill_dtype_registry,
+        dtype_to_ctype)
+
+_fill_dtype_registry(respect_windows=True)
 
 
 
@@ -175,51 +180,8 @@ def pytest_generate_tests_for_pyopencl(metafunc):
 
 
 
-# {{{ C code generation helpers -----------------------------------------------
-def dtype_to_ctype(dtype):
-    if dtype is None:
-        raise ValueError("dtype may not be None")
+# {{{ C argument lists
 
-    dtype = np.dtype(dtype)
-    if dtype == np.int64:
-        return "long"
-    elif dtype == np.uint64:
-        return "unsigned long"
-    elif dtype == np.int32:
-        return "int"
-    elif dtype == np.uint32:
-        return "unsigned int"
-    elif dtype == np.int16:
-        return "short int"
-    elif dtype == np.uint16:
-        return "short unsigned int"
-    elif dtype == np.int8:
-        return "signed char"
-    elif dtype == np.uint8:
-        return "unsigned char"
-    elif dtype == np.bool:
-        return "bool"
-    elif dtype == np.float32:
-        return "float"
-    elif dtype == np.float64:
-        return "double"
-    elif dtype == np.complex64:
-        return "complex float"
-    elif dtype == np.complex128:
-        return "complex double"
-    else:
-        import pyopencl.array as cl_array
-        try:
-            return cl_array.vec._dtype_to_c_name[dtype]
-        except KeyError:
-            raise ValueError, "unable to map dtype '%s'" % dtype
-
-# }}}
-
-
-
-
-# {{{ C argument lists --------------------------------------------------------
 class Argument:
     def __init__(self, dtype, name):
         self.dtype = np.dtype(dtype)
@@ -245,59 +207,12 @@ class ScalarArg(Argument):
 
 def parse_c_arg(c_arg):
     c_arg = (c_arg
-            .replace("const", "")
-            .replace("volatile", "")
             .replace("__global", "")
             .replace("__local", "")
             .replace("__constant", ""))
 
-    # process and remove declarator
-    import re
-    decl_re = re.compile(r"(\**)\s*([_a-zA-Z0-9]+)(\s*\[[ 0-9]*\])*\s*$")
-    decl_match = decl_re.search(c_arg)
-
-    if decl_match is None:
-        raise ValueError("couldn't parse C declarator '%s'" % c_arg)
-
-    name = decl_match.group(2)
-
-    if decl_match.group(1) or decl_match.group(3) is not None:
-        arg_class = VectorArg
-    else:
-        arg_class = ScalarArg
-
-    tp = c_arg[:decl_match.start()]
-    tp = " ".join(tp.split())
-
-    type_re = re.compile(r"^([a-z0-9 ]+)$")
-    type_match = type_re.match(tp)
-    if not type_match:
-        raise RuntimeError("type '%s' did not match expected shape of type"
-                % tp)
-
-    tp = type_match.group(1)
-
-    if tp == "float": dtype = np.float32
-    elif tp == "double": dtype = np.float64
-    elif tp in ["int", "signed int"]: dtype = np.int32
-    elif tp in ["unsigned", "unsigned int"]: dtype = np.uint32
-    elif tp in ["long", "long int"]: dtype = np.int64
-    elif tp in ["unsigned long", "unsigned long int", "long unsigned int"]:
-        dtype = np.uint64
-    elif tp in ["short", "short int"]: dtype = np.int16
-    elif tp in ["unsigned short", "unsigned short int", "short unsigned int"]:
-        dtype = np.uint16
-    elif tp in ["char", "signed char"]: dtype = np.int8
-    elif tp in ["unsigned char"]: dtype = np.uint8
-    elif tp in ["bool"]: dtype = np.bool
-    else:
-        import pyopencl.array as cl_array
-        try:
-            dtype = cl_array.vec._c_name_to_dtype[tp]
-        except KeyError:
-            raise ValueError("unknown type '%s'" % tp)
-
-    return arg_class(dtype, name)
+    from pyopencl.compyte.dtypes import parse_c_arg_backend
+    return parse_c_arg_backend(c_arg, ScalarArg, VectorArg)
 
 # }}}
 

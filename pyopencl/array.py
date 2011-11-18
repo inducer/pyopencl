@@ -50,8 +50,7 @@ class vec:
 def _create_vector_types():
     field_names = ["x", "y", "z", "w"]
 
-    name_to_dtype = {}
-    dtype_to_name = {}
+    from pyopencl.tools import register_dtype
 
     counts = [2, 3, 4, 8, 16]
     for base_name, base_type in [
@@ -78,8 +77,7 @@ def _create_vector_types():
                 formats=[base_type]*count,
                 titles=titles))
 
-            name_to_dtype[name] = dtype
-            dtype_to_name[dtype] = name
+            register_dtype(dtype, name)
 
             setattr(vec, name, dtype)
 
@@ -91,9 +89,6 @@ def _create_vector_types():
                         "lambda %s: array((%s), dtype=my_dtype)"
                         % (my_field_names_defaulted, my_field_names),
                         dict(array=np.array, my_dtype=dtype))))
-
-    vec._dtype_to_c_name = dtype_to_name
-    vec._c_name_to_dtype = name_to_dtype
 
 _create_vector_types()
 
