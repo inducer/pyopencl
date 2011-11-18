@@ -86,6 +86,7 @@ Version 2011.2
 * Base :mod:`pyopencl.clrandom` on `RANLUXCL <https://bitbucket.org/ivarun/ranluxcl>`_,
   add functionality.
 * Add :class:`pyopencl.NannyEvent` objects.
+* Add :func:`pyopencl.tools.register_dtype` to enable scan/reduction on struct types.
 
 Version 2011.1.2
 ----------------
