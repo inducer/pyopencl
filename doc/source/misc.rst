@@ -90,6 +90,7 @@ Version 2011.2
 * Add :class:`pyopencl.NannyEvent` objects.
 * Add :mod:`pyopencl.characterize`.
 * Ensure compatibility with OS X Lion.
+* Add :func:`pyopencl.tools.register_dtype` to enable scan/reduction on struct types.
 
 .. * Beta support for OpenCL 1.2.
 
