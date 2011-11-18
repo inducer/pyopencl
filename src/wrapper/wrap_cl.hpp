@@ -1310,12 +1310,6 @@ namespace pyopencl
   }
 #endif
 
-  inline
-  memory_object *memory_object_from_int(intptr_t cl_mem_as_int)
-  {
-    return new memory_object((cl_mem) cl_mem_as_int, true);
-  }
-
   // }}}
 
   // {{{ buffer
@@ -3231,6 +3225,40 @@ namespace pyopencl
 
   // {{{ deferred implementation bits
 
+  inline py::object create_mem_object_wrapper(cl_mem mem)
+  {
+    cl_mem_object_type mem_obj_type;
+    PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, \
+        (mem, CL_MEM_TYPE, sizeof(mem_obj_type), &mem_obj_type, 0));
+
+    switch (mem_obj_type)
+    {
+      case CL_MEM_OBJECT_BUFFER:
+        return py::object(handle_from_new_ptr(
+              new buffer(mem, /*retain*/ true)));
+      case CL_MEM_OBJECT_IMAGE2D:
+      case CL_MEM_OBJECT_IMAGE3D:
+#ifdef CL_VERSION_1_2
+      case CL_MEM_OBJECT_IMAGE2D_ARRAY:
+      case CL_MEM_OBJECT_IMAGE1D:
+      case CL_MEM_OBJECT_IMAGE1D_ARRAY:
+      case CL_MEM_OBJECT_IMAGE1D_BUFFER:
+#endif
+        return py::object(handle_from_new_ptr(
+              new image(mem, /*retain*/ true)));
+      default:
+        return py::object(handle_from_new_ptr(
+              new memory_object(mem, /*retain*/ true)));
+    }
+  }
+
+  inline
+  py::object memory_object_from_int(intptr_t cl_mem_as_int)
+  {
+    return create_mem_object_wrapper((cl_mem) cl_mem_as_int);
+  }
+
+
   inline
   py::object memory_object_holder::get_info(cl_mem_info param_name) const
   {
@@ -3270,23 +3298,7 @@ namespace pyopencl
             return py::object();
           }
 
-          cl_mem_object_type mem_obj_type;
-          PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, \
-              (data(), CL_MEM_TYPE, sizeof(mem_obj_type), &mem_obj_type, 0));
-
-          switch (mem_obj_type)
-          {
-            case CL_MEM_OBJECT_BUFFER:
-              return py::object(handle_from_new_ptr(
-                    new buffer(param_value, /*retain*/ true)));
-            case CL_MEM_OBJECT_IMAGE2D:
-            case CL_MEM_OBJECT_IMAGE3D:
-              return py::object(handle_from_new_ptr(
-                    new image(param_value, /*retain*/ true)));
-            default:
-              return py::object(handle_from_new_ptr(
-                    new memory_object(param_value, /*retain*/ true)));
-          }
+          return create_mem_object_wrapper(param_value);
         }
       case CL_MEM_OFFSET:
         PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,

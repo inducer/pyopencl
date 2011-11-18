@@ -152,7 +152,6 @@ void pyopencl_expose_part_1()
       .add_property("obj_ptr", &cls::obj_ptr)
       .add_property("hostbuf", &cls::hostbuf)
       .def("from_cl_mem_as_int", memory_object_from_int,
-          py::return_value_policy<py::manage_new_object>(),
           py::args("cl_mem_as_int"))
       .staticmethod("from_cl_mem_as_int")
       ;
