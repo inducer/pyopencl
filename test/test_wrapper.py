@@ -167,6 +167,10 @@ class TestCL:
                     raise RuntimeError("invalid kernel name did not cause error")
                 except AttributeError:
                     pass
+                except RuntimeError:
+                    raise RuntimeError("weird exception from OpenCL implementation "
+                            "on invalid kernel name--are you using "
+                            "Intel's implementation?")
 
     @pytools.test.mark_test.opencl
     def test_image_format_constructor(self):
