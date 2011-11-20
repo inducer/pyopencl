@@ -299,10 +299,21 @@ class _SourceInfo(Record):
     pass
 
 def _create_built_program_from_source_cached(ctx, src, options, devices, cache_dir):
-    include_path = ["."] + [
-            option[2:]
-            for option in options
-            if option.startswith("-I") or option.startswith("/I")]
+    include_path = ["."]
+
+    option_idx = 0
+    while option_idx < len(options):
+        option = options[option_idx].strip()
+        if option.startswith("-I") or option.startswith("/I"):
+            if len(option) == 2:
+                if option_idx+1 < len(options):
+                    include_path.append(options[option_idx+1])
+                option_idx += 2
+            else:
+                include_path.append(option[2:])
+                option_idx += 1
+        else:
+            option_idx += 1
 
     if cache_dir is None:
         from os.path import join
