@@ -354,26 +354,6 @@ void ranluxcl_download_seed(ranluxcl_state_t *rst,
 void ranluxcl_upload_seed(ranluxcl_state_t *rst,
 	global ranluxcl_state_t *ranluxcltab)
 {
-        global ranluxcl_state_t *myentry = ranluxcltab + RANLUXCL_MYID;
-        *myentry = *rst;
-        /*
-        printf((char const *) "(w) id: (%d/%d,%d/%d,%d/%d,LLL,%d/%d,%d/%d/%d/%d) %d\n",
-            get_global_id(0),
-            get_global_size(0),
-            get_global_id(1),
-            get_global_size(1),
-            get_global_id(2),
-            get_global_size(2),
-
-            get_local_id(0),
-            get_local_size(0),
-            get_local_id(1),
-            get_local_size(1),
-            get_local_id(2),
-            get_local_size(2),
-            RANLUXCL_MYID);
-            */
-
         ranluxcltab[RANLUXCL_MYID] = (*rst);
 }
 
