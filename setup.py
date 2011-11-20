@@ -10,10 +10,15 @@ def get_config_schema():
 
     import sys
     if 'darwin' in sys.platform:
+        import platform
+        osx_ver, _, _ = platform.mac_ver()
+        osx_ver = float('.'.join(osx_ver.split('.')[:2]))
+
         default_libs = []
         default_cxxflags = ['-arch', 'i386', '-arch', 'x86_64',
-                '-isysroot', '/Developer/SDKs/MacOSX10.6.sdk']
+                '-isysroot', '/Developer/SDKs/MacOSX%s.sdk' % osx_ver]
         default_ldflags = default_cxxflags[:] + ["-Wl,-framework,OpenCL"]
+
     else:
         default_libs = ["OpenCL"]
         default_cxxflags = []
