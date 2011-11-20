@@ -123,7 +123,7 @@ class ModuleCacheDirManager(CleanupBase):
 
 # {{{ #include dependency handling
 
-C_INCLUDE_RE = re.compile(r'^\s*\#\s*include\s+[<"]([^">]+)[">]',
+C_INCLUDE_RE = re.compile(r'^\s*\#\s*include\s+[<"](.+)[">]\s*$',
         re.MULTILINE)
 
 def get_dependencies(src, include_path):
@@ -158,7 +158,9 @@ def get_dependencies(src, include_path):
                     _inner(included_src)
 
                     result[included_file_name] = (
-                            checksum.hexdigest(), os.stat(included_file_name).st_mtime)
+                            os.stat(included_file_name).st_mtime,
+                            checksum.hexdigest(),
+                            )
 
                     found = True
                     break # stop searching the include path
