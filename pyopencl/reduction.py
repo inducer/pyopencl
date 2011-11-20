@@ -290,7 +290,6 @@ class ReductionKernel:
             trip_count += 1
             assert trip_count <= 2
 
-        # stage 2 has only one input and no map expression
         self.stage_2_inf = get_reduction_kernel(2, ctx,
                 dtype_to_ctype(dtype_out), dtype_out.itemsize,
                 neutral, reduce_expr, arguments=arguments,

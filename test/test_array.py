@@ -659,7 +659,11 @@ def test_view(ctx_factory):
     view = a_dev.view(np.int16)
     assert view.shape == (8, 32) and view.dtype == np.int16
 
-mmc_dtype = np.dtype([("cur_min", np.float32), ("cur_max", np.float32)])
+mmc_dtype = np.dtype([
+    ("cur_min", np.int32),
+    ("cur_max", np.int32),
+    ("pad", np.int32),
+    ])
 
 from pyopencl.tools import register_dtype
 register_dtype(mmc_dtype, "minmax_collector")
@@ -669,11 +673,13 @@ def test_struct_reduce(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    preamble = """//CL//
+    preamble = r"""//CL//
     struct minmax_collector
     {
-        float cur_min;
-        float cur_max;
+        int cur_min;
+        int cur_max;
+        // Workaround for OS X Lion GPU CL. Mystifying.
+        int pad;
     };
 
     typedef struct minmax_collector minmax_collector;
@@ -681,22 +687,27 @@ def test_struct_reduce(ctx_factory):
     minmax_collector mmc_neutral()
     {
         // FIXME: needs infinity literal in real use, ok here
-        minmax_collector result = {10000, -10000};
+        minmax_collector result;
+        result.cur_min = 1<<30;
+        result.cur_max = -(1<<30);
         return result;
     }
 
     minmax_collector mmc_from_scalar(float x)
     {
-        minmax_collector result = {x, x};
+        minmax_collector result;
+        result.cur_min = x;
+        result.cur_max = x;
         return result;
     }
 
     minmax_collector agg_mmc(minmax_collector a, minmax_collector b)
     {
-        minmax_collector result = {
-            fmin(a.cur_min, b.cur_min),
-            fmax(a.cur_max, b.cur_max),
-            };
+        minmax_collector result = a;
+        if (b.cur_min < result.cur_min)
+            result.cur_min = b.cur_min;
+        if (b.cur_max > result.cur_max)
+            result.cur_max = b.cur_max;
         return result;
     }
 
@@ -704,22 +715,21 @@ def test_struct_reduce(ctx_factory):
 
 
     from pyopencl.clrandom import rand as clrand
-    a_gpu = clrand(queue, (20000,), dtype=np.float32)
+    a_gpu = clrand(queue, (20000,), dtype=np.int32, a=0, b=10**6)
     a = a_gpu.get()
-
 
     from pyopencl.reduction import ReductionKernel
     red = ReductionKernel(context, mmc_dtype,
             neutral="mmc_neutral()",
             reduce_expr="agg_mmc(a, b)", map_expr="mmc_from_scalar(x[i])",
-            arguments="__global float *x", preamble=preamble)
+            arguments="__global int *x", preamble=preamble)
 
     minmax = red(a_gpu).get()
     #print minmax["cur_min"], minmax["cur_max"]
     #print np.min(a), np.max(a)
 
-    assert minmax["cur_min"] == np.min(a)
-    assert minmax["cur_max"] == np.max(a)
+    assert abs(minmax["cur_min"] - np.min(a)) < 1e-5
+    assert abs(minmax["cur_max"] - np.max(a)) < 1e-5
 
 
 
