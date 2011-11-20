@@ -371,6 +371,11 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
     already_built = False
 
     if to_be_built_indices:
+        # defeat implementation caches:
+        from uuid import uuid4
+        src = src + "\n\n__constant int pyopencl_defeat_cache_%s = 0;" % (
+                uuid4().hex)
+
         prg = _cl._Program(ctx, src)
         prg.build(options, [devices[i] for i in to_be_built_indices])
 
