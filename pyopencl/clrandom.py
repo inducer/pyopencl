@@ -222,23 +222,23 @@ def _get_generator(queue, luxury=None):
 
 
 
-def fill_rand(result, queue=None, luxury=4):
+def fill_rand(result, queue=None, luxury=4, a=0, b=1):
     if queue is None:
         queue = result.queue
     gen = _get_generator(queue, luxury=luxury)
-    gen.fill_uniform(result)
+    gen.fill_uniform(result, a=a, b=b)
 
 
 
 
 def rand(*args, **kwargs):
-    def inner_rand(queue, shape, dtype, luxury=None):
+    def inner_rand(queue, shape, dtype, luxury=None, a=0, b=1):
         from pyopencl.array import Array
         luxury = kwargs.pop("luxury", None)
 
         gen = _get_generator(queue, luxury)
         result = Array(queue, shape, dtype)
-        gen.fill_uniform(result)
+        gen.fill_uniform(result, a=a, b=b)
         return result
 
     if isinstance(args[0], cl.Context):

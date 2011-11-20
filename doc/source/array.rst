@@ -426,12 +426,12 @@ Generating Arrays of Random Numbers
         the generator a differing number of times. This function
         ensures efficiency.
 
-.. function:: rand(queue, shape, dtype)
+.. function:: rand(queue, shape, dtype, a=0, b=1)
 
     Return an array of `shape` filled with random values of `dtype`
-    in the range [0,1).
+    in the range [a,b).
 
-.. function:: fill_rand(result, queue=None)
+.. function:: fill_rand(result, queue=None, a=0, b=1)
 
     Fill *result* with random values of `dtype` in the range [0,1).
 
