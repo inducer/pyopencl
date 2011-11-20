@@ -297,6 +297,9 @@ def get_simd_group_size(dev, type_size):
         elif type_size == 8:
             return dev.preferred_vector_width_double
         else:
-            raise ValueError("unexpected dtype size in get_simd_group_size")
+            from warnings import warn
+            warn("unexpected dtype size in get_simd_group on CPU device, "
+                    "guessing group width 1")
+            return 1
 
     return None
