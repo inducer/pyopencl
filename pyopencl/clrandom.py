@@ -1,3 +1,4 @@
+from __future__ import division
 import pyopencl as cl
 import pyopencl.array as cl_array
 from pyopencl.tools import first_arg_dependent_memoize
@@ -11,7 +12,7 @@ import numpy as np
 class RanluxGenerator(object):
     def __init__(self, queue, num_work_items,
             luxury=None, seed=None, no_warmup=False,
-            use_legacy_init=True, max_work_items=None):
+            use_legacy_init=False, max_work_items=None):
         if luxury is None:
             luxury = 4
 
@@ -42,8 +43,31 @@ class RanluxGenerator(object):
             """ % self.generate_settings_defines()
         prg = cl.Program(queue.context, src).build()
 
+        # {{{ compute work group size
+
+        wg_size = prg.init_ranlux.get_work_group_info(
+                cl.kernel_work_group_info.WORK_GROUP_SIZE,
+                queue.device)
+
+        while num_work_items % wg_size != 0:
+            wg_size //= 2
+
+        import sys
+        import platform
+        if ("darwin" in sys.platform
+                and "Apple" in queue.device.platform.vendor
+                and platform.mac_ver()[0].startswith("10.7")
+                and queue.device.type == cl.device_type.CPU):
+            wg_size = 1
+
+        self.wg_size = wg_size
+
+        # }}}
+
         self.state = cl_array.empty(queue, (num_work_items, 112), dtype=np.uint8)
-        prg.init_ranlux(queue, (num_work_items,), None, np.uint32(seed),
+        self.state.fill(17)
+
+        prg.init_ranlux(queue, (num_work_items,), (self.wg_size,), np.uint32(seed),
                 self.state.data)
 
     def generate_settings_defines(self, include_double_pragma=True):
@@ -150,7 +174,8 @@ class RanluxGenerator(object):
         if queue is None:
             queue = ary.queue
 
-        self.get_gen_kernel(ary.dtype, "")(queue, (self.num_work_items,), None,
+        self.get_gen_kernel(ary.dtype, "")(queue,
+                (self.num_work_items,), (self.wg_size,),
                 self.state.data, ary.data, ary.size,
                 b-a, a)
 
@@ -167,7 +192,8 @@ class RanluxGenerator(object):
         if queue is None:
             queue = ary.queue
 
-        self.get_gen_kernel(ary.dtype, "norm")(queue, (self.num_work_items,), None,
+        self.get_gen_kernel(ary.dtype, "norm")(queue,
+                (self.num_work_items,), (self.wg_size,),
                 self.state.data, ary.data, ary.size, sigma, mu)
 
     def normal(self, *args, **kwargs):

@@ -144,6 +144,7 @@ def elwise_kernel_runner(kernel_getter):
         queue = kwargs.pop("queue", None) or repr_ary.queue
 
         knl = kernel_getter(*args)
+
         gs, ls = repr_ary.get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,

@@ -188,7 +188,6 @@ def why_not_local_access_conflict_free(dev, itemsize,
     gran = local_memory_access_granularity(dev)
     if itemsize != gran:
         from warnings import warn
-        print gran
         warn("local conflict info might be inaccurate "
                 "for itemsize != %d" % gran,
                 CLCharacterizationWarning)
