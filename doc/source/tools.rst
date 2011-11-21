@@ -98,8 +98,7 @@ Testing
     The following two environment variables are also supported to control
     device/platform choice::
 
-        PYOPENCL_TEST_PLATFORM_BLACKLIST=nvidia,intel
-        PYOPENCL_TEST_DEVICE_BLACKLIST=nvidia:260,intel:i5
+        PYOPENCL_TEST=0:0,1;intel=i5,i7
 
 Device Characterization
 -----------------------
