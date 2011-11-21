@@ -153,24 +153,22 @@ class TestCL:
                     lambda info: img.get_image_info(info))
 
     @pytools.test.mark_test.opencl
-    def test_invalid_kernel_names_cause_failures(self):
-        for platform in cl.get_platforms():
-            for device in platform.get_devices():
-                ctx = cl.Context([device])
-                prg = cl.Program(ctx, """
-                    __kernel void sum(__global float *a)
-                    { a[get_global_id(0)] *= 2; }
-                    """).build()
+    def test_invalid_kernel_names_cause_failures(self, device):
+        ctx = cl.Context([device])
+        prg = cl.Program(ctx, """
+            __kernel void sum(__global float *a)
+            { a[get_global_id(0)] *= 2; }
+            """).build()
 
-                try:
-                    prg.sam
-                    raise RuntimeError("invalid kernel name did not cause error")
-                except AttributeError:
-                    pass
-                except RuntimeError:
-                    raise RuntimeError("weird exception from OpenCL implementation "
-                            "on invalid kernel name--are you using "
-                            "Intel's implementation?")
+        try:
+            prg.sam
+            raise RuntimeError("invalid kernel name did not cause error")
+        except AttributeError:
+            pass
+        except RuntimeError:
+            raise RuntimeError("weird exception from OpenCL implementation "
+                    "on invalid kernel name--are you using "
+                    "Intel's implementation?")
 
     @pytools.test.mark_test.opencl
     def test_image_format_constructor(self):

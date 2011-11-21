@@ -106,6 +106,61 @@ atexit.register(clear_first_arg_caches)
 
 
 
+def get_test_platforms_and_devices(plat_dev_string=None):
+    """Parse a string of the form 'PYOPENCL_TEST=0:0,1;intel:i5'.
+
+    :return: list of tuples (platform, [device, device, ...])
+    """
+
+    if plat_dev_string is None:
+        import os
+        plat_dev_string = os.environ.get("PYOPENCL_TEST", None)
+
+    def find_cl_obj(objs, identifier):
+        try:
+            num = int(identifier)
+        except Exception:
+            pass
+        else:
+            return objs[num]
+
+        found = False
+        for obj in objs:
+            if identifier.lower() in (obj.name + ' ' + obj.vendor).lower():
+                return obj
+        if not found:
+            raise RuntimeError("object '%s' not found" % identifier)
+
+    if plat_dev_string:
+        result = []
+
+        for entry in plat_dev_string.split(";"):
+            lhsrhs = entry.split(":")
+
+            if len(lhsrhs) == 1:
+                platform = find_cl_obj(cl.get_platforms(), lhsrhs[0])
+                result.append((platform, platform.get_devices()))
+
+            elif len(lhsrhs) != 2:
+                raise RuntimeError("invalid syntax of PYOPENCL_TEST")
+            else:
+                plat_str, dev_strs = lhsrhs
+
+                platform = find_cl_obj(cl.get_platforms(), plat_str)
+                devs = platform.get_devices()
+                result.append(
+                        (platform, [find_cl_obj(devs, dev_id) for dev_id in dev_strs.split(",")]))
+
+        return result
+
+    else:
+        return [
+                (platform, platform.get_devices())
+                for platform in cl.get_platforms()]
+
+
+
+
 def pytest_generate_tests_for_pyopencl(metafunc):
     class ContextFactory:
         def __init__(self, device):
@@ -126,49 +181,7 @@ def pytest_generate_tests_for_pyopencl(metafunc):
         def __str__(self):
             return "<context factory for %s>" % self.device
 
-    import os
-    dev_string = os.environ.get("PYOPENCL_TEST", None)
-
-    def find_cl_obj(objs, identifier):
-        try:
-            num = int(identifier)
-        except Exception:
-            pass
-        else:
-            return objs[num]
-
-        found = False
-        for obj in objs:
-            if identifier.lower() in (obj.name + ' ' + obj.vendor).lower():
-                return obj
-        if not found:
-            raise RuntimeError("object '%s' not found" % identifier)
-
-    if dev_string:
-        # PYOPENCL_TEST=0:0,1;intel:i5
-
-        test_plat_and_dev = [] # list of tuples (platform, [device, device, ...])
-
-        for entry in dev_string.split(";"):
-            lhsrhs = entry.split(":")
-
-            if len(lhsrhs) == 1:
-                platform = find_cl_obj(cl.get_platforms(), lhsrhs[0])
-                test_plat_and_dev.append((platform, platform.get_devices()))
-
-            elif len(lhsrhs) != 2:
-                raise RuntimeError("invalid syntax of PYOPENCL_TEST")
-            else:
-                plat_str, dev_strs = lhsrhs
-
-                platform = find_cl_obj(cl.get_platforms(), plat_str)
-                devs = platform.get_devices()
-                test_plat_and_dev.append(
-                        (platform, [find_cl_obj(devs, dev_id) for dev_id in dev_strs.split(",")]))
-    else:
-        test_plat_and_dev = [
-                (platform, platform.get_devices())
-                for platform in cl.get_platforms()]
+    test_plat_and_dev = get_test_platforms_and_devices()
 
     if ("device" in metafunc.funcargnames
             or "ctx_factory" in metafunc.funcargnames
