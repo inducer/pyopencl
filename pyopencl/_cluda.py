@@ -16,9 +16,9 @@ CLUDA_PREAMBLE = """
 #define GID_1 get_group_id(1)
 #define GID_2 get_group_id(2)
 
-#define LDIM_0 get_local_id(0)
-#define LDIM_1 get_local_id(1)
-#define LDIM_2 get_local_id(2)
+#define LDIM_0 get_local_size(0)
+#define LDIM_1 get_local_size(1)
+#define LDIM_2 get_local_size(2)
 
 #define GDIM_0 get_num_groups(0)
 #define GDIM_1 get_num_groups(1)
