@@ -99,6 +99,9 @@ class Program(object):
         options = options + ["-I", _find_pyopencl_include_path()]
 
         if self._prg is not None:
+            if isinstance(options, list):
+                options = " ".join(options)
+
             self._prg._build(options, devices)
         else:
             from pyopencl.cache import create_built_program_from_source_cached

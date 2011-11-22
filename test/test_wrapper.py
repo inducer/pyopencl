@@ -360,7 +360,6 @@ class TestCL:
     @pytools.test.mark_test.opencl
     def test_header_dep_handling(self, ctx_factory):
         context = ctx_factory()
-        queue = cl.CommandQueue(context)
 
         kernel_src = """
         #include <empty-header.h>
@@ -378,7 +377,6 @@ class TestCL:
     @pytools.test.mark_test.opencl
     def test_context_dep_memoize(self, ctx_factory):
         context = ctx_factory()
-        queue = cl.CommandQueue(context)
 
         from pyopencl.tools import context_dependent_memoize
 
@@ -392,6 +390,22 @@ class TestCL:
         do_something(context)
 
         assert counter[0] == 1
+
+    @pytools.test.mark_test.opencl
+    def test_can_build_binary(self, ctx_factory):
+        ctx = ctx_factory()
+        device, = ctx.devices
+
+        program = cl.Program(ctx, """
+        __kernel void simple(__global float *in, __global float *out)
+        {
+            out[get_global_id(0)] = in[get_global_id(0)];
+        }""")
+        program.build()
+        binary = program.get_info(cl.program_info.BINARIES)[0]
+
+        foo = cl.Program(ctx, [device], [binary])
+        foo.build()
 
 
 
