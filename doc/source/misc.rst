@@ -91,8 +91,15 @@ Version 2011.2
 * Add :mod:`pyopencl.characterize`.
 * Ensure compatibility with OS X Lion.
 * Add :func:`pyopencl.tools.register_dtype` to enable scan/reduction on struct types.
-
-.. * Beta support for OpenCL 1.2.
+* :func:`pyopencl.enqueue_migrate_mem_object` was renamed
+  :func:`pyopencl.enqueue_migrate_mem_object_ext`.
+  :func:`pyopencl.enqueue_migrate_mem_object` now refers to the OpenCL 1.2 function
+  of this name, if available.
+* :func:`pyopencl.create_sub_devices` was renamed
+  :func:`pyopencl.create_sub_devices_ext`.
+  :func:`pyopencl.create_sub_devices` now refers to the OpenCL 1.2 function
+  of this name, if available.
+* Alpha support for OpenCL 1.2.
 
 Version 2011.1.2
 ----------------

@@ -75,7 +75,7 @@ namespace
   class mem_migration_flags { };
 
   class device_partition_property { };
-  class affinity_domain { };
+  class device_affinity_domain { };
 
   class device_partition_property_ext { };
   class affinity_domain_ext { };
@@ -619,7 +619,7 @@ void pyopencl_expose_constants()
     ADD_ATTR(KERNEL_ARG_, ADDRESS_QUALIFIER);
     ADD_ATTR(KERNEL_ARG_, ACCESS_QUALIFIER);
     ADD_ATTR(KERNEL_ARG_, TYPE_NAME);
-    ADD_ATTR(KERNEL_ARG_, ARG_NAME);
+    ADD_ATTR(KERNEL_ARG_, NAME);
 #endif
   }
 
@@ -778,14 +778,14 @@ void pyopencl_expose_constants()
   }
 
   {
-    py::class_<affinity_domain> cls("affinity_domain", py::no_init);
+    py::class_<device_affinity_domain> cls("device_affinity_domain", py::no_init);
 #ifdef CL_VERSION_1_2
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, NUMA, _EXT);
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L4_CACHE, _EXT);
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L3_CACHE, _EXT);
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L2_CACHE, _EXT);
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L1_CACHE, _EXT);
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, NEXT_PARTITIONABLE, _EXT);
+    ADD_ATTR(DEVICE_AFFINITY_DOMAIN_, NUMA);
+    ADD_ATTR(DEVICE_AFFINITY_DOMAIN_, L4_CACHE);
+    ADD_ATTR(DEVICE_AFFINITY_DOMAIN_, L3_CACHE);
+    ADD_ATTR(DEVICE_AFFINITY_DOMAIN_, L2_CACHE);
+    ADD_ATTR(DEVICE_AFFINITY_DOMAIN_, L1_CACHE);
+    ADD_ATTR(DEVICE_AFFINITY_DOMAIN_, NEXT_PARTITIONABLE);
 #endif
   }
 

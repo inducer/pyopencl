@@ -153,6 +153,24 @@ Platforms, Devices and Contexts
 
         *properties* is an array of one (or more) of the forms::
 
+            [ dpp.EQUALLY, 8]
+            [ dpp.BY_COUNTS, 5, 7, 9, dpp.PARTITION_BY_COUNTS_LIST_END]
+            [ dpp.BY_NAMES, 5, 7, 9, dpp.PARTITION_BY_NAMES_LIST_END]
+            [ dpp.BY_AFFINITY_DOMAIN, dad.L1_CACHE]
+
+        where `dpp` represents :class:`device_partition_property`
+        and `dad` represent :class:`device_affinity_domain`.
+
+        `PROPERTIES_LIST_END_EXT` is added automatically.
+
+        Only available with CL 1.2.
+
+        .. versionadded:: 2011.2
+
+    .. method:: create_sub_devices_ext(properties)
+
+        *properties* is an array of one (or more) of the forms::
+
             [ dppe.EQUALLY, 8]
             [ dppe.BY_COUNTS, 5, 7, 9, dppe.PARTITION_BY_COUNTS_LIST_END]
             [ dppe.BY_NAMES, 5, 7, 9, dppe.PARTITION_BY_NAMES_LIST_END]
@@ -244,19 +262,27 @@ Command Queues and Events
 
 .. function:: wait_for_events(events)
 
-.. function:: enqueue_marker(queue)
-
-    Returns an :class:`Event`.
-
-.. function:: enqueue_wait_for_events(queue, events)
-
-.. function:: enqueue_barrier(queue)
+.. function:: enqueue_barrier(queue, wait_for=None)
 
     Enqueues a barrier operation. which ensures that all queued commands in
     command_queue have finished execution. This command is a synchronization
     point.
 
     .. versionadded:: 0.91.5
+    .. versionchanged:: 2011.2
+        Takes *wait_for* and returns an :class:`Event`
+
+.. function:: enqueue_marker(queue, wait_for=None)
+
+    Returns an :class:`Event`.
+
+    .. versionchanged:: 2011.2
+        Takes *wait_for*.
+
+.. function:: enqueue_wait_for_events(queue, events)
+
+    **Note:** This function is deprecated as of PyOpenCL 2011.2.
+        Use :func:`enqueue_marker` instead.
 
 .. class:: UserEvent(context)
 
@@ -313,7 +339,15 @@ Memory
 
     |comparable|
 
-.. function:: enqueue_migrate_mem_object(queue, mem_objects, flags=0, wait_for=None)
+.. function:: enqueue_migrate_mem_objects(queue, mem_objects, flags=0, wait_for=None)
+
+    :param flags: from :class:`migrate_mem_object_flags`
+
+    .. versionadded:: 2011.2
+
+    Only available with CL 1.2.
+
+.. function:: enqueue_migrate_mem_object_ext(queue, mem_objects, flags=0, wait_for=None)
 
     :param flags: from :class:`migrate_mem_object_flags_ext`
 
@@ -760,6 +794,9 @@ Programs and Kernels
         Returns a list of all :class:`Kernel` objects in the :class:`Program`.
 
 
+.. function:: unload_platform_compiler(platform)
+
+    .. versionadded:: 2011.2
 
 .. class:: Kernel(program, name)
 
@@ -776,6 +813,12 @@ Programs and Kernels
     .. method:: get_work_group_info(param, device)
 
         See :class:`kernel_work_group_info` for values of *param*.
+
+    .. method:: get_arg_info(arg_index, param)
+
+        See :class:`kernel_arg_info` for values of *param*.
+
+        Only available in OpenCL 1.2 and newer.
 
     .. method:: set_arg(self, index, arg)
 
@@ -951,10 +994,15 @@ with GL support. See :func:`have_gl`.
 
     *mem_objects* is a list of :class:`MemoryObject` instances. |std-enqueue-blurb|
 
-.. function:: get_gl_context_info_khr(properties, param_name)
+.. function:: get_gl_context_info_khr(properties, param_name, platform=None)
 
     Get information on which CL device corresponds to a given
     GL/EGL/WGL/CGL device.
 
     See the :class:`Context` constructor for the meaning of
     *properties* and :class:`gl_context_info` for *param_name*.
+
+
+    .. versionchanged:: 2011.2
+        Accepts the *platform* argument.  Use *platform* equal to None is
+        deprecated as of PyOpenCL 2011.2.

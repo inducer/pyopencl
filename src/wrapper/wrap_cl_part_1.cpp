@@ -40,6 +40,9 @@ void pyopencl_expose_part_1()
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
+      .DEF_SIMPLE_METHOD(create_sub_devices_ext)
+#endif
+#ifdef CL_VERSION_1_2
       .DEF_SIMPLE_METHOD(create_sub_devices)
 #endif
       ;
@@ -113,9 +116,13 @@ void pyopencl_expose_part_1()
 
   DEF_SIMPLE_FUNCTION(wait_for_events);
   py::def("enqueue_marker", enqueue_marker,
+      (py::arg("queue"), py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
+  py::def("enqueue_barrier", enqueue_barrier,
+      (py::arg("queue"), py::arg("wait_for")=py::object()),
+      py::return_value_policy<py::manage_new_object>());
+
   DEF_SIMPLE_FUNCTION(enqueue_wait_for_events);
-  DEF_SIMPLE_FUNCTION(enqueue_barrier);
 
 #ifdef CL_VERSION_1_1
   {
@@ -157,8 +164,17 @@ void pyopencl_expose_part_1()
       ;
   }
 
+#ifdef CL_VERSION_1_2
+  py::def("enqueue_migrate_mem_objects", enqueue_migrate_mem_objects,
+      (py::args("queue", "mem_objects"),
+       py::arg("flags")=0,
+       py::arg("wait_for")=py::object()
+       ),
+      py::return_value_policy<py::manage_new_object>());
+#endif
+
 #ifdef cl_ext_migrate_memobject
-  py::def("enqueue_migrate_mem_object", enqueue_migrate_mem_object,
+  py::def("enqueue_migrate_mem_object_ext", enqueue_migrate_mem_object_ext,
       (py::args("queue", "mem_objects"),
        py::arg("flags")=0,
        py::arg("wait_for")=py::object()

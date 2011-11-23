@@ -237,7 +237,7 @@ const_ext_lookup = {
             "PARTITION_BY_NAMES_LIST_END": cl_12,
             },
 
-        cl.affinity_domain: {
+        cl.device_affinity_domain: {
             "NUMA": cl_12,
             "L4_CACHE": cl_12,
             "L3_CACHE": cl_12,

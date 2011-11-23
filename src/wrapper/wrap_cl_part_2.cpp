@@ -122,6 +122,7 @@ void pyopencl_expose_part_2()
       .value("UNKNOWN", cls::KND_UNKNOWN)
       .value("SOURCE", cls::KND_SOURCE)
       .value("BINARY", cls::KND_BINARY)
+      .value("BUILT_IN", cls::KND_BUILT_IN)
       ;
 
     py::class_<cls, boost::noncopyable>("_Program", py::no_init)
@@ -133,6 +134,13 @@ void pyopencl_expose_part_2()
             create_program_with_binary,
             py::default_call_policies(),
             py::args("context", "devices", "binaries")))
+#ifdef CL_VERSION_1_2
+      .def("create_with_built_in_kernels",
+          create_program_with_built_in_kernels,
+          py::args("context", "devices", "kernel_names"),
+          py::return_value_policy<py::manage_new_object>())
+      .staticmethod("create_with_built_in_kernels")
+#endif
       .DEF_SIMPLE_METHOD(kind)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_build_info)
@@ -147,6 +155,13 @@ void pyopencl_expose_part_2()
   }
 
   py::def("unload_compiler", unload_compiler);
+#ifdef CL_VERSION_1_2
+  py::def("unload_platform_compiler", unload_platform_compiler);
+#endif
+
+  // }}}
+
+  // {{{ kernel
 
   {
     typedef kernel cls;
@@ -155,6 +170,9 @@ void pyopencl_expose_part_2()
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
       .DEF_SIMPLE_METHOD(set_arg)
+#ifdef CL_VERSION_1_2
+      .DEF_SIMPLE_METHOD(get_arg_info)
+#endif
       .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
@@ -247,7 +265,7 @@ void pyopencl_expose_part_2()
 
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
   py::def("get_gl_context_info_khr", get_gl_context_info_khr,
-      py::args("properties", "param_name"));
+      (py::args("properties", "param_name"), py::arg("platform")=py::object()));
 #endif
 
 #endif
