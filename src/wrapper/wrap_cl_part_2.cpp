@@ -69,8 +69,7 @@ void pyopencl_expose_part_2()
             (py::args("context", "flags", "format"),
              py::arg("shape")=py::object(),
              py::arg("pitches")=py::object(),
-             py::arg("hostbuf")=py::object(),
-             py::arg("host_buffer")=py::object()
+             py::arg("hostbuf")=py::object()
             )))
 #ifdef CL_VERSION_1_2
       .def("__init__", make_constructor(create_image_from_desc,
@@ -101,8 +100,7 @@ void pyopencl_expose_part_2()
        py::arg("row_pitch")=0,
        py::arg("slice_pitch")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=true,
-       py::arg("host_buffer")=py::object()
+       py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
   py::def("_enqueue_write_image", enqueue_write_image,
@@ -110,8 +108,7 @@ void pyopencl_expose_part_2()
        py::arg("row_pitch")=0,
        py::arg("slice_pitch")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=true,
-       py::arg("host_buffer")=py::object()
+       py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
 

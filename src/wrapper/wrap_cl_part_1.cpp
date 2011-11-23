@@ -213,16 +213,14 @@ void pyopencl_expose_part_1()
       (py::args("queue", "mem", "hostbuf"),
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=true,
-       py::arg("host_buffer")=py::object()
+       py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
   py::def("_enqueue_write_buffer", enqueue_write_buffer,
       (py::args("queue", "mem", "hostbuf"),
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
-       py::arg("is_blocking")=true,
-       py::arg("host_buffer")=py::object()
+       py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
   py::def("_enqueue_copy_buffer", enqueue_copy_buffer,

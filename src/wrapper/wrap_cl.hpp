@@ -1707,16 +1707,8 @@ namespace pyopencl
       py::object buffer,
       size_t device_offset,
       py::object py_wait_for,
-      bool is_blocking,
-      py::object host_buffer_deprecated
-      )
+      bool is_blocking)
   {
-    if (host_buffer_deprecated.ptr() != Py_None)
-    {
-      PYOPENCL_DEPRECATED("The 'host_buffer' keyword argument", "0.93", );
-      buffer = host_buffer_deprecated;
-    }
-
     PYOPENCL_PARSE_WAIT_FOR;
 
     void *buf;
@@ -1746,16 +1738,8 @@ namespace pyopencl
       py::object buffer,
       size_t device_offset,
       py::object py_wait_for,
-      bool is_blocking,
-      py::object host_buffer_deprecated
-      )
+      bool is_blocking)
   {
-    if (host_buffer_deprecated.ptr() != Py_None)
-    {
-      PYOPENCL_DEPRECATED("The 'host_buffer' keyword argument", "0.93", );
-      buffer = host_buffer_deprecated;
-    }
-
     PYOPENCL_PARSE_WAIT_FOR;
 
     const void *buf;
@@ -2124,16 +2108,8 @@ namespace pyopencl
       cl_image_format const &fmt,
       py::object shape,
       py::object pitches,
-      py::object buffer,
-      py::object host_buffer_deprecated
-      )
+      py::object buffer)
   {
-    if (host_buffer_deprecated.ptr() != Py_None)
-    {
-      PYOPENCL_DEPRECATED("The 'host_buffer' keyword argument", "0.93", );
-      buffer = host_buffer_deprecated;
-    }
-
     if (buffer.ptr() != Py_None &&
         !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
       PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
@@ -2318,16 +2294,8 @@ namespace pyopencl
       py::object buffer,
       size_t row_pitch, size_t slice_pitch,
       py::object py_wait_for,
-      bool is_blocking,
-      py::object host_buffer_deprecated
-      )
+      bool is_blocking)
   {
-    if (host_buffer_deprecated.ptr() != Py_None)
-    {
-      PYOPENCL_DEPRECATED("The 'host_buffer' keyword argument", "0.93", );
-      buffer = host_buffer_deprecated;
-    }
-
     PYOPENCL_PARSE_WAIT_FOR;
     COPY_PY_COORD_TRIPLE(origin);
     COPY_PY_REGION_TRIPLE(region);
@@ -2360,16 +2328,8 @@ namespace pyopencl
       py::object buffer,
       size_t row_pitch, size_t slice_pitch,
       py::object py_wait_for,
-      bool is_blocking,
-      py::object host_buffer_deprecated
-      )
+      bool is_blocking)
   {
-    if (host_buffer_deprecated.ptr() != Py_None)
-    {
-      PYOPENCL_DEPRECATED("The 'host_buffer' keyword argument", "0.93", );
-      buffer = host_buffer_deprecated;
-    }
-
     PYOPENCL_PARSE_WAIT_FOR;
     COPY_PY_COORD_TRIPLE(origin);
     COPY_PY_REGION_TRIPLE(region);
