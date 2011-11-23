@@ -379,90 +379,16 @@ Buffers
         :meth:`get_sub_region` is set to the same flags with which *self* was
         created.
 
-.. function:: enqueue_read_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=True)
+
+.. function:: enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None)
+
+    :arg pattern: a buffer object (likely a :class:`numpy.ndarray`)
 
     |std-enqueue-blurb|
 
-    *hostbuf* |buf-iface|
+    Only available with CL 1.2.
 
-    |copy-depr|
-
-    .. versionchanged:: 2011.1
-        *is_blocking* now defaults to True.
-
-.. function:: enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=True)
-
-    |std-enqueue-blurb|
-
-    *hostbuf* |buf-iface|
-
-    |copy-depr|
-
-    .. versionchanged:: 2011.1
-        *is_blocking* now defaults to True.
-
-.. function:: enqueue_copy_buffer(queue, src, dst, byte_count=0, src_offset=0, dst_offset=0, wait_for=None)
-
-    If *byte_count* is passed as 0 (the default), the size of the
-    :class:`Buffer` *src* is used instead.
-
-    |std-enqueue-blurb|
-
-    |copy-depr|
-
-    .. versionadded:: 0.91.5
-
-.. function:: enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin, host_origin, region, buffer_pitches=None, host_pitches=None, wait_for=None, is_blocking=True)
-
-    The *origin* and *region* parameters are :class:`tuple` instances of length
-    three or shorter. The *pitches* parameters are :class:`tuple` instances of
-    length two or shorter, which may be zero to indicate 'tight packing'.
-
-    |std-enqueue-blurb|
-
-    *hostbuf* |buf-iface|
-
-    |copy-depr|
-
-    Only available in OpenCL 1.1 and newer.
-
-    .. versionadded:: 0.92
-
-    .. versionchanged:: 2011.1
-        *is_blocking* now defaults to True.
-
-.. function:: enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin, host_origin, region, buffer_pitches=None, host_pitches=None, wait_for=None, is_blocking=True)
-
-    The *origin* and *region* parameters are :class:`tuple` instances of length
-    three or shorter. The *pitches* parameters are :class:`tuple` instances of
-    length two or shorter, which may be zero to indicate 'tight packing'.
-
-    |std-enqueue-blurb|
-
-    *hostbuf* |buf-iface|
-
-    |copy-depr|
-
-    Only available in OpenCL 1.1 and newer.
-
-    .. versionadded:: 0.92
-
-    .. versionchanged:: 2011.1
-        *is_blocking* now defaults to True.
-
-.. function:: enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region, src_pitches=None, dst_pitches=None, wait_for=None)
-
-    The *origin* and *region* parameters are :class:`tuple` instances of length
-    three or shorter. The *pitches* parameters are :class:`tuple` instances of
-    length two or shorter, which may be zero to indicate 'tight packing'.
-
-    |std-enqueue-blurb|
-
-    |copy-depr|
-
-    Only available in OpenCL 1.1 and newer.
-
-    .. versionadded:: 0.92
+    .. versionadded:: 2011.2
 
 Image Formats
 ^^^^^^^^^^^^^
@@ -570,49 +496,15 @@ Images
 
     .. versionadded:: 2011.2
 
-.. function:: enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=True)
+.. function:: enqueue_fill_image(queue, mem, color, origin, region, wait_for=None)
 
-    |copy-depr|
-
-    |std-enqueue-blurb|
-
-    .. versionchanged:: 0.91
-        *pitch* arguments defaults to zero, moved.
-
-    .. versionchanged:: 2011.1
-        *is_blocking* now defaults to True.
-
-
-.. function:: enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=True)
-
-    |copy-depr|
+    :arg color: a buffer object (likely a :class:`numpy.ndarray`)
 
     |std-enqueue-blurb|
 
-    .. versionchanged:: 0.91
-        *pitch* arguments defaults to zero, moved.
+    Only available with CL 1.2.
 
-    .. versionchanged:: 2011.1
-        *is_blocking* now defaults to True.
-
-
-.. function:: enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region, wait_for=None)
-
-    |copy-depr|
-
-    |std-enqueue-blurb|
-
-.. function:: enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset, wait_for=None)
-
-    |copy-depr|
-
-    |std-enqueue-blurb|
-
-.. function:: enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region, wait_for=None)
-
-    |copy-depr|
-
-    |std-enqueue-blurb|
+    .. versionadded:: 2011.2
 
 Transfers
 ^^^^^^^^^
@@ -1025,5 +917,5 @@ with GL support. See :func:`have_gl`.
 
 
     .. versionchanged:: 2011.2
-        Accepts the *platform* argument.  Use *platform* equal to None is
+        Accepts the *platform* argument.  Using *platform* equal to None is
         deprecated as of PyOpenCL 2011.2.

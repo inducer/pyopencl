@@ -128,6 +128,13 @@ void pyopencl_expose_part_2()
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
 
+#ifdef CL_VERSION_1_2
+  py::def("enqueue_fill_image", enqueue_write_image,
+      (py::args("queue", "mem", "color", "origin", "region"),
+       py::arg("wait_for")=py::object()),
+      py::return_value_policy<py::manage_new_object>());
+#endif
+
   // }}}
 
   // {{{ memory_map

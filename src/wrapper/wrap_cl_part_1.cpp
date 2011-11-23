@@ -271,6 +271,12 @@ void pyopencl_expose_part_1()
 
   // }}}
 
+#ifdef CL_VERSION_1_2
+  py::def("enqueue_fill_buffer", enqueue_fill_buffer,
+      (py::args("queue", "mem", "pattern", "offset", "size"),
+       py::arg("wait_for")=py::object()),
+      py::return_value_policy<py::manage_new_object>());
+#endif
 }
 
 // vim: foldmethod=marker

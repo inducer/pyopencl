@@ -1,7 +1,7 @@
 #ifndef _AFJHAYYTA_PYOPENCL_HEADER_SEEN_WRAP_CL_HPP
 #define _AFJHAYYTA_PYOPENCL_HEADER_SEEN_WRAP_CL_HPP
 
-// CL 1.2 TODO: clEnqueueFill{Buffer, Image}
+// CL 1.2 TODO:
 // python interface for new-style image creation
 // clSetPrintfCallback
 
@@ -1940,6 +1940,36 @@ namespace pyopencl
 
   // }}}
 
+#ifdef CL_VERSION_1_2
+  inline
+  event *enqueue_fill_buffer(
+      command_queue &cq,
+      memory_object_holder &mem,
+      py::object pattern,
+      size_t offset,
+      size_t size,
+      py::object py_wait_for
+      )
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    const void *pattern_buf;
+    PYOPENCL_BUFFER_SIZE_T pattern_len;
+
+    if (PyObject_AsReadBuffer(pattern.ptr(), &pattern_buf, &pattern_len))
+      throw py::error_already_set();
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(clEnqueueFillBuffer, (
+          cq.data(),
+          mem.data(),
+          pattern_buf, pattern_len, offset, size,
+          PYOPENCL_WAITLIST_ARGS, &evt
+          ));
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+#endif
+
   // }}}
 
   // {{{ image
@@ -2444,6 +2474,38 @@ namespace pyopencl
   }
 
   // }}}
+
+#ifdef CL_VERSION_1_2
+  inline
+  event *enqueue_fill_image(
+      command_queue &cq,
+      memory_object_holder &mem,
+      py::object color,
+      py::object py_origin, py::object py_region,
+      py::object py_wait_for
+      )
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    COPY_PY_COORD_TRIPLE(origin);
+    COPY_PY_REGION_TRIPLE(region);
+
+    const void *color_buf;
+    PYOPENCL_BUFFER_SIZE_T color_len;
+
+    if (PyObject_AsReadBuffer(color.ptr(), &color_buf, &color_len))
+      throw py::error_already_set();
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(clEnqueueFillImage, (
+          cq.data(),
+          mem.data(),
+          color_buf, origin, region,
+          PYOPENCL_WAITLIST_ARGS, &evt
+          ));
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+#endif
 
   // }}}
 
