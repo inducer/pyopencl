@@ -776,6 +776,12 @@ Programs and Kernels
         .. versionchanged:: 2011.1
             *options* may now also be a :class:`list` of :class:`str`.
 
+    .. method:: compile(self, options=[], devices=None, headers=[])
+
+        Only available with CL 1.2.
+
+        .. versionadded:: 2011.2
+
     .. attribute:: kernel_name
 
         :class:`Kernel` objects can be produced from a built
@@ -793,6 +799,17 @@ Programs and Kernels
 
         Returns a list of all :class:`Kernel` objects in the :class:`Program`.
 
+.. function:: create_program_with_built_in_kernels(context, devices, kernel_names)
+
+    Only available with CL 1.2.
+
+    .. versionadded:: 2011.2
+
+.. function:: link_program(context, programs, options=[], devices=None)
+
+    Only available with CL 1.2.
+
+    .. versionadded:: 2011.2
 
 .. function:: unload_platform_compiler(platform)
 

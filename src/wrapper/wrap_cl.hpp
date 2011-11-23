@@ -1,9 +1,9 @@
-#ifndef _AFJHAYYTA_PYOPENCL_HEADER_SEEN_CL_HPP
-#define _AFJHAYYTA_PYOPENCL_HEADER_SEEN_CL_HPP
+#ifndef _AFJHAYYTA_PYOPENCL_HEADER_SEEN_WRAP_CL_HPP
+#define _AFJHAYYTA_PYOPENCL_HEADER_SEEN_WRAP_CL_HPP
 
-// CL 1.2 TODO: cl{Compile,Link}Program, clEnqueueFill{Buffer, Image}
+// CL 1.2 TODO: clEnqueueFill{Buffer, Image}
 // new-style image creation
-// clSetPrintfCallback, Python interface for built-in kernels
+// clSetPrintfCallback
 
 // {{{ includes
 
@@ -106,6 +106,26 @@
           "not available");
 
 #endif
+
+
+#define PYOPENCL_PARSE_PY_DEVICES \
+    std::vector<cl_device_id> devices_vec; \
+    cl_uint num_devices; \
+    cl_device_id *devices; \
+    \
+    if (py_devices.ptr() == Py_None) \
+    { \
+      num_devices = 0; \
+      devices = 0; \
+    } \
+    else \
+    { \
+      PYTHON_FOREACH(py_dev, py_devices) \
+        devices_vec.push_back( \
+            py::extract<device &>(py_dev)().data()); \
+      num_devices = devices_vec.size(); \
+      devices = devices_vec.empty( ) ? NULL : &devices_vec.front(); \
+    } \
 
 // }}}
 
@@ -939,13 +959,12 @@ namespace pyopencl
           devices.push_back(dev().data());
       }
 
+      PYOPENCL_PRINT_CALL_TRACE("clCreateContext");
       ctx = clCreateContext(
           props_ptr,
           devices.size(),
           devices.empty( ) ? NULL : &devices.front(),
           0, 0, &status_code);
-
-      PYOPENCL_PRINT_CALL_TRACE("clCreateContext");
     }
     // from dev_type
     else
@@ -954,9 +973,8 @@ namespace pyopencl
       if (py_dev_type.ptr() != Py_None)
         dev_type = py::extract<cl_device_type>(py_dev_type)();
 
-      ctx = clCreateContextFromType(props_ptr, dev_type, 0, 0, &status_code);
-
       PYOPENCL_PRINT_CALL_TRACE("clCreateContextFromType");
+      ctx = clCreateContextFromType(props_ptr, dev_type, 0, 0, &status_code);
     }
 
     if (status_code != CL_SUCCESS)
@@ -1045,10 +1063,10 @@ namespace pyopencl
         }
 
         cl_int status_code;
+        PYOPENCL_PRINT_CALL_TRACE("clCreateCommandQueue");
         m_queue = clCreateCommandQueue(
             ctx.data(), dev, props, &status_code);
 
-        PYOPENCL_PRINT_CALL_TRACE("clCreateCommandQueue");
         if (status_code != CL_SUCCESS)
           throw pyopencl::error("CommandQueue", status_code);
       }
@@ -1341,8 +1359,8 @@ namespace pyopencl
   event *create_user_event(context &ctx)
   {
     cl_int status_code;
-    cl_event evt = clCreateUserEvent(ctx.data(), &status_code);
     PYOPENCL_PRINT_CALL_TRACE("clCreateUserEvent");
+    cl_event evt = clCreateUserEvent(ctx.data(), &status_code);
 
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("UserEvent", status_code);
@@ -1520,9 +1538,9 @@ namespace pyopencl
       void *host_ptr)
   {
     cl_int status_code;
+    PYOPENCL_PRINT_CALL_TRACE("clCreateBuffer");
     cl_mem mem = clCreateBuffer(ctx, flags, size, host_ptr, &status_code);
 
-    PYOPENCL_PRINT_CALL_TRACE("clCreateBuffer");
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("create_buffer", status_code);
 
@@ -1574,10 +1592,10 @@ namespace pyopencl
       {
         cl_buffer_region region = { origin, size};
         cl_int status_code;
+        PYOPENCL_PRINT_CALL_TRACE("clCreateSubBuffer");
         cl_mem mem = clCreateSubBuffer(data(), flags,
             CL_BUFFER_CREATE_TYPE_REGION, &region, &status_code);
 
-        PYOPENCL_PRINT_CALL_TRACE("clCreateSubBuffer");
         if (status_code != CL_SUCCESS)
           throw pyopencl::error("Buffer.get_sub_region", status_code);
 
@@ -2145,10 +2163,10 @@ namespace pyopencl
           throw pyopencl::error("Image", CL_INVALID_VALUE,
               "buffer too small");
 
+      PYOPENCL_PRINT_CALL_TRACE("clCreateImage2D");
       mem = clCreateImage2D(ctx.data(), flags, &fmt,
           width, height, pitch, buf, &status_code);
 
-      PYOPENCL_PRINT_CALL_TRACE("clCreateImage2D");
       if (status_code != CL_SUCCESS)
         throw pyopencl::error("clCreateImage2D", status_code);
     }
@@ -2180,10 +2198,10 @@ namespace pyopencl
         throw pyopencl::error("Image", CL_INVALID_VALUE,
             "buffer too small");
 
+      PYOPENCL_PRINT_CALL_TRACE("clCreateImage3D");
       mem = clCreateImage3D(ctx.data(), flags, &fmt,
           width, height, depth, pitch_x, pitch_y, buf, &status_code);
 
-      PYOPENCL_PRINT_CALL_TRACE("clCreateImage3D");
       if (status_code != CL_SUCCESS)
         throw pyopencl::error("clCreateImage3D", status_code);
     }
@@ -2555,12 +2573,12 @@ namespace pyopencl
           cl_addressing_mode am, cl_filter_mode fm)
       {
         cl_int status_code;
+        PYOPENCL_PRINT_CALL_TRACE("clCreateSampler");
         m_sampler = clCreateSampler(
             ctx.data(),
             normalized_coordinates,
             am, fm, &status_code);
 
-        PYOPENCL_PRINT_CALL_TRACE("clCreateSampler");
         if (status_code != CL_SUCCESS)
           throw pyopencl::error("Sampler", status_code);
       }
@@ -2615,7 +2633,7 @@ namespace pyopencl
   class program : boost::noncopyable
   {
     public:
-      enum program_kind_type { KND_UNKNOWN, KND_SOURCE, KND_BINARY, KND_BUILT_IN };
+      enum program_kind_type { KND_UNKNOWN, KND_SOURCE, KND_BINARY };
 
     private:
       cl_program m_program;
@@ -2768,22 +2786,50 @@ namespace pyopencl
 
       void build(std::string options, py::object py_devices)
       {
-        if (py_devices.ptr() == Py_None)
-        {
-          PYOPENCL_CALL_GUARDED_THREADED(clBuildProgram,
-              (m_program, 0, 0, options.c_str(), 0 ,0));
-        }
-        else
-        {
-          std::vector<cl_device_id> devices;
-          PYTHON_FOREACH(py_dev, py_devices)
-            devices.push_back(
-                py::extract<device &>(py_dev)().data());
-          PYOPENCL_CALL_GUARDED_THREADED(clBuildProgram,
-              (m_program, devices.size(), devices.empty( ) ? NULL : &devices.front(),
-               options.c_str(), 0 ,0));
-        }
+        PYOPENCL_PARSE_PY_DEVICES;
+
+        PYOPENCL_CALL_GUARDED_THREADED(clBuildProgram,
+            (m_program, num_devices, devices,
+             options.c_str(), 0 ,0));
       }
+
+#ifdef CL_VERSION_1_2
+      void compile(std::string options, py::object py_devices,
+          py::object py_headers)
+      {
+        PYOPENCL_PARSE_PY_DEVICES;
+
+        // {{{ pick apart py_headers
+        // py_headers is a list of tuples *(name, program)*
+
+        std::vector<std::string> header_names;
+        std::vector<cl_program> programs;
+        PYTHON_FOREACH(name_hdr_tup, py_headers)
+        {
+          if (py::len(name_hdr_tup) != 2)
+            throw error("Program.compile", CL_INVALID_VALUE,
+                "epxected (name, header) tuple in headers list");
+          std::string name = py::extract<std::string const &>(name_hdr_tup[0]);
+          program &prg = py::extract<program &>(name_hdr_tup[1]);
+
+          header_names.push_back(name);
+          programs.push_back(prg.data());
+        }
+
+        std::vector<const char *> header_name_ptrs;
+        BOOST_FOREACH(std::string const &name, header_names)
+          header_name_ptrs.push_back(name.c_str());
+
+        // }}}
+
+        PYOPENCL_CALL_GUARDED_THREADED(clCompileProgram,
+            (m_program, num_devices, devices,
+             options.c_str(), header_names.size(),
+             programs.empty() ? NULL : &programs.front(),
+             header_name_ptrs.empty() ? NULL : &header_name_ptrs.front(),
+             0, 0));
+      }
+#endif
   };
 
 
@@ -2798,9 +2844,9 @@ namespace pyopencl
     size_t length = src.size();
 
     cl_int status_code;
+    PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithSource");
     cl_program result = clCreateProgramWithSource(
         ctx.data(), 1, &string, &length, &status_code);
-    PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithSource");
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("clCreateProgramWithSource", status_code);
 
@@ -2853,6 +2899,7 @@ namespace pyopencl
     binary_statuses.resize(num_devices);
 
     cl_int status_code;
+    PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBinary");
     cl_program result = clCreateProgramWithBinary(
         ctx.data(), num_devices,
         devices.empty( ) ? NULL : &devices.front(),
@@ -2860,7 +2907,6 @@ namespace pyopencl
         binaries.empty( ) ? NULL : &binaries.front(),
         binary_statuses.empty( ) ? NULL : &binary_statuses.front(),
         &status_code);
-    PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBinary");
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("clCreateProgramWithBinary", status_code);
 
@@ -2889,27 +2935,19 @@ namespace pyopencl
       py::object py_devices,
       std::string const &kernel_names)
   {
-    std::vector<cl_device_id> devices;
-
-    int num_devices = len(py_devices);
-    for (int i = 0; i < num_devices; ++i)
-    {
-      devices.push_back(
-          py::extract<device const &>(py_devices[i])().data());
-    }
+    PYOPENCL_PARSE_PY_DEVICES;
 
     cl_int status_code;
-    cl_program result = clCreateProgramWithBuiltInKernels(
-        ctx.data(), num_devices,
-        devices.empty( ) ? NULL : &devices.front(),
-        kernel_names.c_str(), &status_code);
     PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBuiltInKernels");
+    cl_program result = clCreateProgramWithBuiltInKernels(
+        ctx.data(), num_devices, devices,
+        kernel_names.c_str(), &status_code);
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("clCreateProgramWithBuiltInKernels", status_code);
 
     try
     {
-      return new program(result, false, program::KND_BUILT_IN);
+      return new program(result, false);
     }
     catch (...)
     {
@@ -2917,6 +2955,50 @@ namespace pyopencl
       throw;
     }
   }
+
+
+
+  inline
+  program *link_program(
+      context &ctx,
+      py::object py_programs,
+      std::string const &options,
+      py::object py_devices
+      )
+  {
+    PYOPENCL_PARSE_PY_DEVICES;
+
+    std::vector<cl_program> programs;
+    PYTHON_FOREACH(py_prg, py_programs)
+    {
+      program &prg = py::extract<program &>(py_prg);
+      programs.push_back(prg.data());
+    }
+
+    cl_int status_code;
+    PYOPENCL_PRINT_CALL_TRACE("clLinkProgram");
+    cl_program result = clLinkProgram(
+        ctx.data(), num_devices, devices,
+        options.c_str(),
+        programs.size(),
+        programs.empty() ? NULL : &programs.front(),
+        0, 0,
+        &status_code);
+
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("clLinkPorgram", status_code);
+
+    try
+    {
+      return new program(result, false);
+    }
+    catch (...)
+    {
+      clReleaseProgram(result);
+      throw;
+    }
+  }
+
 #endif
 
 
@@ -2973,9 +3055,9 @@ namespace pyopencl
       {
         cl_int status_code;
 
+        PYOPENCL_PRINT_CALL_TRACE("clCreateKernel");
         m_kernel = clCreateKernel(prg.data(), kernel_name.c_str(),
             &status_code);
-        PYOPENCL_PRINT_CALL_TRACE("clCreateKernel");
         if (status_code != CL_SUCCESS)
           throw pyopencl::error("clCreateKernel", status_code);
       }

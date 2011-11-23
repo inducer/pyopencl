@@ -40,9 +40,14 @@ def compiler_output(text):
 # {{{ Program (including caching support)
 
 class Program(object):
-    def __init__(self, context, arg1, arg2=None):
+    def __init__(self, arg1, arg2=None, arg3=None):
         if arg2 is None:
-            source = arg1
+            # 1-argument form: program
+            self._prg = arg1
+
+        elif arg3 is None:
+            # 2-argument form: context, source
+            context, source = arg1, arg2
 
             import sys
             if isinstance(source, unicode) and sys.version_info < (3,):
@@ -55,9 +60,10 @@ class Program(object):
             self._context = context
             self._source = source
             self._prg = None
+
         else:
             # 3-argument form: context, devices, binaries
-            self._prg = _cl._Program(context, arg1, arg2)
+            self._prg = _cl._Program(arg1, arg2, arg3)
 
     def _get_prg(self):
         if self._prg is not None:
@@ -111,7 +117,22 @@ class Program(object):
 
         return self
 
-    # }}}
+    def compile(self, options=[], devices=None, headers=[]):
+        options = " ".join(options)
+        return self._prg().compile(options, devices, headers)
+
+def create_program_with_built_in_kernels(context, devices, kernel_names):
+    if not isinstance(kernel_names, str):
+        kernel_names = ":".join(kernel_names)
+
+    return Program(_Program.create_with_built_in_kernels(
+        context, devices, kernel_names))
+
+def link_program(context, programs, options=[], devices=None):
+    options = " ".join(options)
+    return Program(_Program.link(context, programs, options, devices))
+
+# }}}
 
 def _add_functionality():
     cls_to_info_cls = {
@@ -244,14 +265,12 @@ def _add_functionality():
                 if log is not None and log.strip())
 
         if message:
-            if self.kind() == program_kind.UNKNOWN:
-                build_type = "Build"
-            elif self.kind() == program_kind.SOURCE:
+            if self.kind() == program_kind.SOURCE:
                 build_type = "From-source build"
             elif self.kind() == program_kind.BINARY:
                 build_type = "From-binary build"
             else:
-                raise RuntimeError("unexpected kind of program")
+                build_type = "Build"
 
             compiler_output("%s succeeded, but resulted in non-empty logs:\n%s"
                     % (build_type, message))

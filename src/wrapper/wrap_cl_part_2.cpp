@@ -122,7 +122,6 @@ void pyopencl_expose_part_2()
       .value("UNKNOWN", cls::KND_UNKNOWN)
       .value("SOURCE", cls::KND_SOURCE)
       .value("BINARY", cls::KND_BINARY)
-      .value("BUILT_IN", cls::KND_BUILT_IN)
       ;
 
     py::class_<cls, boost::noncopyable>("_Program", py::no_init)
@@ -146,6 +145,18 @@ void pyopencl_expose_part_2()
       .DEF_SIMPLE_METHOD(get_build_info)
       .def("_build", &cls::build,
           (py::arg("options")="", py::arg("devices")=py::object()))
+#ifdef CL_VERSION_1_2
+      .def("compile", &cls::compile,
+          (py::arg("options")="", py::arg("devices")=py::object(),
+           py::arg("headers")=py::list()))
+      .def("link", &link_program,
+          (py::arg("context"),
+           py::arg("programs"),
+           py::arg("options")="",
+           py::arg("devices")=py::object()),
+          py::return_value_policy<py::manage_new_object>())
+      .staticmethod("link")
+#endif
       .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
