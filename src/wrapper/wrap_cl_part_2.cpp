@@ -3,6 +3,39 @@
 
 
 
+namespace pyopencl {
+#ifdef CL_VERSION_1_2
+  py::object image_desc_dummy_getter(cl_image_desc &desc)
+  {
+    return py::object();
+  }
+
+  void image_desc_set_shape(cl_image_desc &desc, py::object py_shape)
+  {
+    COPY_PY_REGION_TRIPLE(shape);
+    desc.image_width = shape[0];
+    desc.image_height = shape[1];
+    desc.image_depth = shape[2];
+  }
+
+  void image_desc_set_pitches(cl_image_desc &desc, py::object py_pitches)
+  {
+    COPY_PY_PITCH_TUPLE(pitches);
+    desc.image_row_pitch = pitches[0];
+    desc.image_slice_pitch = pitches[1];
+  }
+
+  void image_desc_set_buffer(cl_image_desc &desc, memory_object &mobj)
+  {
+    desc.buffer = mobj.data();
+  }
+
+#endif
+}
+
+
+
+
 using namespace pyopencl;
 
 
@@ -11,6 +44,22 @@ using namespace pyopencl;
 void pyopencl_expose_part_2()
 {
   // {{{ image
+
+#ifdef CL_VERSION_1_2
+  {
+    typedef cl_image_desc cls;
+    py::class_<cls>("ImageDescriptor")
+      .def_readwrite("image_type", &cls::image_type)
+      .add_property("shape", &image_desc_dummy_getter, image_desc_set_shape)
+      .def_readwrite("array_size", &cls::image_array_size)
+      .add_property("pitches", &image_desc_dummy_getter, image_desc_set_pitches)
+      .def_readwrite("num_mip_levels", &cls::num_mip_levels)
+      .def_readwrite("num_samples", &cls::num_samples)
+      .add_property("buffer", &image_desc_dummy_getter, image_desc_set_buffer)
+      ;
+  }
+#endif
+
   {
     typedef image cls;
     py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
@@ -23,6 +72,12 @@ void pyopencl_expose_part_2()
              py::arg("hostbuf")=py::object(),
              py::arg("host_buffer")=py::object()
             )))
+#ifdef CL_VERSION_1_2
+      .def("__init__", make_constructor(create_image_from_desc,
+            py::default_call_policies(),
+            (py::args("context", "flags", "format", "desc"),
+             py::arg("hostbuf")=py::object())))
+#endif
       .DEF_SIMPLE_METHOD(get_image_info)
       ;
   }

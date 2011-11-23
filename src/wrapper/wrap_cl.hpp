@@ -2,7 +2,7 @@
 #define _AFJHAYYTA_PYOPENCL_HEADER_SEEN_WRAP_CL_HPP
 
 // CL 1.2 TODO: clEnqueueFill{Buffer, Image}
-// new-style image creation
+// python interface for new-style image creation
 // clSetPrintfCallback
 
 // {{{ includes
@@ -2219,6 +2219,62 @@ namespace pyopencl
       throw;
     }
   }
+
+#ifdef CL_VERSION_1_2
+
+  inline
+  image *create_image_from_desc(
+      context const &ctx,
+      cl_mem_flags flags,
+      cl_image_format const &fmt,
+      cl_image_desc &desc,
+      py::object buffer)
+  {
+    if (buffer.ptr() != Py_None &&
+        !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
+      PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
+          "but no memory flags to make use of it.");
+
+    void *buf = 0;
+    PYOPENCL_BUFFER_SIZE_T len;
+    py::object *retained_buf_obj = 0;
+
+    if (buffer.ptr() != Py_None)
+    {
+      if (flags & CL_MEM_USE_HOST_PTR)
+      {
+        if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
+          throw py::error_already_set();
+      }
+      else
+      {
+        if (PyObject_AsReadBuffer(
+              buffer.ptr(), const_cast<const void **>(&buf), &len))
+          throw py::error_already_set();
+      }
+
+      if (flags & CL_MEM_USE_HOST_PTR)
+        retained_buf_obj = &buffer;
+    }
+
+    PYOPENCL_PRINT_CALL_TRACE("clCreateImage");
+    cl_int status_code;
+    cl_mem mem = clCreateImage(ctx.data(), flags, &fmt, &desc, buf, &status_code);
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("clCreateImage", status_code);
+
+    try
+    {
+      return new image(mem, false, retained_buf_obj);
+    }
+    catch (...)
+    {
+      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+      throw;
+    }
+  }
+
+#endif
 
   // }}}
 
