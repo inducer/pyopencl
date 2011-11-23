@@ -341,7 +341,7 @@ Memory
 
 .. function:: enqueue_migrate_mem_objects(queue, mem_objects, flags=0, wait_for=None)
 
-    :param flags: from :class:`migrate_mem_object_flags`
+    :param flags: from :class:`mem_migration_flags`
 
     .. versionadded:: 2011.2
 
@@ -778,6 +778,8 @@ Programs and Kernels
 
     .. method:: compile(self, options=[], devices=None, headers=[])
 
+        :param headers: a list of tuples *(name, program)*.
+
         Only available with CL 1.2.
 
         .. versionadded:: 2011.2
@@ -812,6 +814,8 @@ Programs and Kernels
     .. versionadded:: 2011.2
 
 .. function:: unload_platform_compiler(platform)
+
+    Only available with CL 1.2.
 
     .. versionadded:: 2011.2
 
