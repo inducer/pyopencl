@@ -666,7 +666,8 @@ mmc_dtype = np.dtype([
     ])
 
 from pyopencl.tools import register_dtype
-register_dtype(mmc_dtype, "minmax_collector")
+register_dtype(mmc_dtype, "minmax_collector", alias_ok=True)
+register_dtype(mmc_dtype, "minmax_collector", alias_ok=True)
 
 @pytools.test.mark_test.opencl
 def test_struct_reduce(ctx_factory):
