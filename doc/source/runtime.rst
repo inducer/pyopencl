@@ -431,7 +431,7 @@ Image Formats
 
 Images
 ^^^^^^
-.. class:: Image(context, flags, format, shape=None, pitches=None, hostbuf=None)
+.. class:: Image(context, flags, format, shape=None, pitches=None, hostbuf=None, is_array=False, buffer=None):
 
     See :class:`mem_flags` for values of *flags*.
     *shape* is a 2- or 3-tuple. *format* is an instance of :class:`ImageFormat`.
@@ -457,6 +457,9 @@ Images
         * Pass *ary.T.copy()* to the image creation function.
 
     .. versionadded:: 0.91
+
+    .. versionchanged:: 2011.2
+        Added *is_array* and *buffer*, which are only available on CL 1.2 and newer.
 
     .. attribute:: info
 

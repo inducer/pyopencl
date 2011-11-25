@@ -1,8 +1,7 @@
 #ifndef _AFJHAYYTA_PYOPENCL_HEADER_SEEN_WRAP_CL_HPP
 #define _AFJHAYYTA_PYOPENCL_HEADER_SEEN_WRAP_CL_HPP
 
-// CL 1.2 TODO:
-// python interface for new-style image creation
+// CL 1.2 undecided:
 // clSetPrintfCallback
 
 // {{{ includes
@@ -2110,19 +2109,9 @@ namespace pyopencl
       py::object pitches,
       py::object buffer)
   {
-    if (buffer.ptr() != Py_None &&
-        !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
-      PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
-          "but no memory flags to make use of it.");
-
     if (shape.ptr() == Py_None)
-    {
-      if (buffer.ptr() == Py_None)
-        throw pyopencl::error("Image", CL_INVALID_VALUE,
-            "'shape' must be passed if 'hostbuf' is not given");
-
-      shape = buffer.attr("shape");
-    }
+      throw pyopencl::error("Image", CL_INVALID_VALUE,
+          "'shape' must be given");
 
     void *buf = 0;
     PYOPENCL_BUFFER_SIZE_T len;

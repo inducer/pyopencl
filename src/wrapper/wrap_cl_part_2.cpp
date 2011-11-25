@@ -16,6 +16,7 @@ namespace pyopencl {
     desc.image_width = shape[0];
     desc.image_height = shape[1];
     desc.image_depth = shape[2];
+    desc.image_array_size = shape[2];
   }
 
   void image_desc_set_pitches(cl_image_desc &desc, py::object py_pitches)
@@ -25,9 +26,12 @@ namespace pyopencl {
     desc.image_slice_pitch = pitches[1];
   }
 
-  void image_desc_set_buffer(cl_image_desc &desc, memory_object &mobj)
+  void image_desc_set_buffer(cl_image_desc &desc, memory_object *mobj)
   {
-    desc.buffer = mobj.data();
+    if (mobj)
+      desc.buffer = mobj->data();
+    else
+      desc.buffer = 0;
   }
 
 #endif
@@ -63,7 +67,7 @@ void pyopencl_expose_part_2()
   {
     typedef image cls;
     py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
-        "Image", py::no_init)
+        "_ImageBase", py::no_init)
       .def("__init__", make_constructor(create_image,
             py::default_call_policies(),
             (py::args("context", "flags", "format"),

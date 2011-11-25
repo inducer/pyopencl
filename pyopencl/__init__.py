@@ -1,4 +1,4 @@
-from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT
+
 
 try:
     import pyopencl._cl as _cl
@@ -134,6 +134,115 @@ def link_program(context, programs, options=[], devices=None):
 
 # }}}
 
+# {{{ Image
+
+class Image(_cl._ImageBase):
+    def __init__(self, context, flags, format, shape=None, pitches=None,
+            hostbuf=None, is_array=False, buffer=None):
+
+        if shape is None and hostbuf is None:
+            raise Error("'shape' must be passed if 'hostbuf' is not given")
+
+        if shape is None and hostbuf is not None:
+            shape = hostbuf.shape
+
+        if hostbuf is None and not \
+                (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
+            from warnings import warn
+            warn("'hostbuf' was passed, but no memory flags to make use of it.")
+
+        if hostbuf is None and pitches is not None:
+            raise Error("'pitches' may only be given if 'hostbuf' is given")
+
+        if get_cl_header_version() >= (1,2):
+            if buffer is not None and is_array:
+                    raise ValueError("'buffer' and 'is_array' are mutually exclusive")
+
+            if len(shape) == 3:
+                if buffer is not None:
+                    raise TypeError("'buffer' argument is not supported for 3D arrays")
+                elif is_array:
+                    image_type = mem_object_type.IMAGE2D_ARRAY
+                else:
+                    image_type = mem_object_type.IMAGE3D
+
+            elif len(shape) == 2:
+                if buffer is not None:
+                    raise TypeError("'buffer' argument is not supported for 2D arrays")
+                elif is_array:
+                    image_type = mem_object_type.IMAGE1D_ARRAY
+                else:
+                    image_type = mem_object_type.IMAGE2D
+
+            elif len(shape) == 1:
+                if buffer is not None:
+                    image_type = mem_object_type.IMAGE1D_BUFFER
+                elif is_array:
+                    raise TypeError("array of zero-dimensional images not supported")
+                else:
+                    image_type = mem_object_type.IMAGE1D
+
+            else:
+                raise ValueError("images cannot have more than three dimensions")
+
+            desc = ImageDescriptor()
+
+            desc.image_type = image_type
+            desc.shape = shape # also sets desc.array_size
+
+            if pitches is None:
+                desc.pitches = (0, 0)
+            else:
+                desc.pitches = pitches
+
+            desc.num_mip_levels = 0 # per CL 1.2 spec
+            desc.num_samples = 0 # per CL 1.2 spec
+            desc.buffer = buffer
+
+            _cl._ImageBase.__init__(self, context, flags, format, desc, hostbuf)
+        else:
+            # legacy init for CL 1.1 and older
+            if is_array:
+                raise TypeError("'is_array=True' is not supported for CL < 1.2")
+            #if num_mip_levels is not None:
+                #raise TypeError("'num_mip_levels' argument is not supported for CL < 1.2")
+            #if num_samples is not None:
+                #raise TypeError("'num_samples' argument is not supported for CL < 1.2")
+            if buffer is not None:
+                raise TypeError("'buffer' argument is not supported for CL < 1.2")
+
+            _cl._ImageBase.__init__(self, context, flags, format, shape, pitches, hostbuf)
+
+    class _ImageInfoGetter:
+        def __init__(self, event):
+            from warnings import warn
+            warn("Image.image.attr is deprecated. "
+                    "Use Image.attr directly, instead.")
+
+            self.event = event
+
+        def __getattr__(self, name):
+            try:
+                inf_attr = getattr(_cl.image_info, name.upper())
+            except AttributeError:
+                raise AttributeError("%s has no attribute '%s'"
+                        % (type(self), name))
+            else:
+                return self.event.get_image_info(inf_attr)
+
+    image = property(_ImageInfoGetter)
+
+    @property
+    def shape(self):
+        if self.type == mem_object_type.IMAGE2D:
+            return (self.width, self.height)
+        elif self.type == mem_object_type.IMAGE3D:
+            return (self.width, self.height, self.depth)
+        else:
+            raise LogicError("only images have shapes")
+
+# }}}
+
 def _add_functionality():
     cls_to_info_cls = {
             _cl.Platform:
@@ -148,8 +257,8 @@ def _add_functionality():
                 (_cl.Event.get_info, _cl.event_info),
             _cl.MemoryObjectHolder:
                 (MemoryObjectHolder.get_info,_cl.mem_info),
-            _cl.Image:
-                (Image.get_image_info, _cl.image_info),
+            Image:
+                (_cl._ImageBase.get_image_info, _cl.image_info),
             Program:
                 (Program.get_info, _cl.program_info),
             _cl.Kernel:
@@ -409,38 +518,6 @@ def _add_functionality():
                     "<unknown channel data type 0x%x>"))
 
     ImageFormat.__repr__ = image_format_repr
-
-    # }}}
-
-    # {{{ Image
-
-    class ImageInfoGetter:
-        def __init__(self, event):
-            from warnings import warn
-            warn("Image.image.attr is deprecated. "
-                    "Use Image.attr directly, instead.")
-
-            self.event = event
-
-        def __getattr__(self, name):
-            try:
-                inf_attr = getattr(_cl.image_info, name.upper())
-            except AttributeError:
-                raise AttributeError("%s has no attribute '%s'"
-                        % (type(self), name))
-            else:
-                return self.event.get_image_info(inf_attr)
-
-    def image_shape(self):
-        if self.type == mem_object_type.IMAGE2D:
-            return (self.width, self.height)
-        elif self.type == mem_object_type.IMAGE3D:
-            return (self.width, self.height, self.depth)
-        else:
-            raise LogicError("only images have shapes")
-
-    _cl.Image.image = property(ImageInfoGetter)
-    _cl.Image.shape = property(image_shape)
 
     # }}}
 
