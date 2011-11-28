@@ -62,7 +62,7 @@ high quality of lux=4 may not be needed. Indeed if two values (each value
 having 24 random bits) are glued together to form a 48-bit value the generator
 passes all tests in the TestU01 suite already with lux=2. See
 "TestU01: A C Library for Empirical Testing of Random Number Generators" by
-PIERRE L∆ECUYER and RICHARD SIMARD. SWB(224, 10, 24)[24, l] is RANLUX with
+PIERRE LAeECUYER and RICHARD SIMARD. SWB(224, 10, 24)[24, l] is RANLUX with
 two values glued together to create 48-bit numbers, and we see that it passes
 all tests already at luxury value 2.
 
@@ -233,11 +233,11 @@ please always remember to give credit to the two articles by Martin Luscher and
 Fred James, describing the generator and the Fortran 77 implementation on which
 this implementation is based, respectively:
 
-Martin LÅscher, A portable high-quality random number generator for lattice
+Martin Luescher, A portable high-quality random number generator for lattice
 field theory simulations, Computer Physics Communications 79 (1994) 100-110
 
 F. James, RANLUX: A Fortran implementation of the high-quality pseudorandom
-number generator of LÅscher, Computer Physics Communications 79 (1994) 111-114
+number generator of Luescher, Computer Physics Communications 79 (1994) 111-114
 
 ***** LICENSE ******************************************************************
 

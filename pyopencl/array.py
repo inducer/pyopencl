@@ -247,7 +247,7 @@ class Array(object):
                 s *= dim
         except TypeError:
             import sys
-            if sys.version >= (3,):
+            if sys.version_info >= (3,):
                 admissible_types = (int, np.integer)
             else:
                 admissible_types = (int, long, np.integer)
