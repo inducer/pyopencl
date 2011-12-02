@@ -67,13 +67,16 @@ C interface to Python:
 User-visible Changes
 ====================
 
-Version 2011.2
---------------
+Version 2011.2.1
+----------------
 
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's git version control.
+
+Version 2011.2
+--------------
 
 * Add :func:`pyopencl.enqueue_migrate_mem_object`.
 * Add :func:`pyopencl.image_from_array`.
