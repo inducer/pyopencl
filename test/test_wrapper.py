@@ -260,7 +260,7 @@ class TestCL:
             a_img = cl.image_from_array(context, a, num_channels)
         except cl.RuntimeError:
             import sys
-            exc = sys.exc_value
+            exc = sys.exc_info()[1]
             if exc.code == cl.status_code.IMAGE_FORMAT_NOT_SUPPORTED:
                 from py.test import skip
                 skip("required image format not supported on %s" % device.name)
