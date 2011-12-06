@@ -210,7 +210,7 @@ def check_dependencies(deps):
 def get_device_cache_id(device):
     from pyopencl.version import VERSION
     platform = device.platform
-    return (VERSION, 
+    return (VERSION,
             platform.vendor, platform.name, platform.version,
             device.vendor, device.name, device.version, device.driver_version)
 
@@ -241,57 +241,58 @@ def retrieve_from_cache(cache_dir, cache_key):
 
     cleanup_m = CleanupManager()
     try:
-        lock_m = CacheLockManager(cleanup_m, cache_dir)
-
-        mod_cache_dir_m = ModuleCacheDirManager(cleanup_m, module_cache_dir)
-        info_path = mod_cache_dir_m.sub("info")
-        binary_path = mod_cache_dir_m.sub("binary")
-        source_path = mod_cache_dir_m.sub("source.cl")
-
-        # {{{ load info file
-
         try:
-            from cPickle import load
+            CacheLockManager(cleanup_m, cache_dir)
+
+            mod_cache_dir_m = ModuleCacheDirManager(cleanup_m, module_cache_dir)
+            info_path = mod_cache_dir_m.sub("info")
+            binary_path = mod_cache_dir_m.sub("binary")
+
+            # {{{ load info file
 
             try:
-                info_file = open(info_path, "rb")
-            except IOError:
-                raise _InvalidInfoFile()
+                from cPickle import load
 
+                try:
+                    info_file = open(info_path, "rb")
+                except IOError:
+                    raise _InvalidInfoFile()
+
+                try:
+                    try:
+                        info = load(info_file)
+                    except EOFError:
+                        raise _InvalidInfoFile()
+                finally:
+                    info_file.close()
+
+            except _InvalidInfoFile:
+                mod_cache_dir_m.reset()
+                from warnings import warn
+                warn("PyOpenCL encountered an invalid info file for cache key %s"
+                        % cache_key)
+                return None
+
+            # }}}
+
+            # {{{ load binary
+
+            binary_file = open(binary_path, "rb")
             try:
-                info = load(info_file)
-            except EOFError:
-                raise _InvalidInfoFile()
+                binary = binary_file.read()
             finally:
-                info_file.close()
+                binary_file.close()
 
-        except _InvalidInfoFile:
-            mod_cache_dir_m.reset()
-            from warnings import warn
-            warn("PyOpenCL encountered an invalid info file for cache key %s" 
-                    % cache_key)
-            return None
+            # }}}
 
-        # }}}
+            if check_dependencies(info.dependencies):
+                return binary, info.log
+            else:
+                mod_cache_dir_m.reset()
 
-        # {{{ load binary
-
-        binary_file = open(binary_path, "rb")
-        try:
-            binary = binary_file.read()
-        finally:
-            binary_file.close()
-
-        # }}}
-
-        if check_dependencies(info.dependencies):
-            return binary, info.log
-        else:
-            mod_cache_dir_m.reset()
-
-    except:
-        cleanup_m.error_clean_up()
-        raise
+        except:
+            cleanup_m.error_clean_up()
+            raise
     finally:
         cleanup_m.clean_up()
 
@@ -408,37 +409,38 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
     if to_be_built_indices:
         cleanup_m = CleanupManager()
         try:
-            lock_m = CacheLockManager(cleanup_m, cache_dir)
+            try:
+                CacheLockManager(cleanup_m, cache_dir)
 
-            for i in to_be_built_indices:
-                cache_key = cache_keys[i]
-                device = devices[i]
-                binary = binaries[i]
+                for i in to_be_built_indices:
+                    cache_key = cache_keys[i]
+                    device = devices[i]
+                    binary = binaries[i]
 
-                mod_cache_dir_m = ModuleCacheDirManager(cleanup_m,
-                        join(cache_dir, cache_key))
-                info_path = mod_cache_dir_m.sub("info")
-                binary_path = mod_cache_dir_m.sub("binary")
-                source_path = mod_cache_dir_m.sub("source.cl")
+                    mod_cache_dir_m = ModuleCacheDirManager(cleanup_m,
+                            join(cache_dir, cache_key))
+                    info_path = mod_cache_dir_m.sub("info")
+                    binary_path = mod_cache_dir_m.sub("binary")
+                    source_path = mod_cache_dir_m.sub("source.cl")
 
-                outf = open(source_path, "wt")
-                outf.write(src)
-                outf.close()
+                    outf = open(source_path, "wt")
+                    outf.write(src)
+                    outf.close()
 
-                outf = open(binary_path, "wb")
-                outf.write(binary)
-                outf.close()
+                    outf = open(binary_path, "wb")
+                    outf.write(binary)
+                    outf.close()
 
-                from cPickle import dump
-                info_file = open(info_path, "wb")
-                dump(_SourceInfo(
-                    dependencies=get_dependencies(src, include_path),
-                    log=logs[i]), info_file)
-                info_file.close()
+                    from cPickle import dump
+                    info_file = open(info_path, "wb")
+                    dump(_SourceInfo(
+                        dependencies=get_dependencies(src, include_path),
+                        log=logs[i]), info_file)
+                    info_file.close()
 
-        except:
-            cleanup_m.error_clean_up()
-            raise
+            except:
+                cleanup_m.error_clean_up()
+                raise
         finally:
             cleanup_m.clean_up()
 
@@ -462,7 +464,7 @@ def create_built_program_from_source_cached(ctx, src, options=[], devices=None,
     except Exception, e:
         raise
         from pyopencl import Error
-        if (isinstance(e, Error) 
+        if (isinstance(e, Error)
                 and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE):
             # no need to try again
             raise
