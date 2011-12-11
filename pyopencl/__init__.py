@@ -1,4 +1,4 @@
-
+from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT
 
 try:
     import pyopencl._cl as _cl
