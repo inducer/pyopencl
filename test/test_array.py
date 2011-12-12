@@ -631,7 +631,7 @@ def test_mem_pool_with_arrays(ctx_factory):
     queue = cl.CommandQueue(context)
     mem_pool = cl_tools.MemoryPool(cl_tools.CLAllocator(context))
 
-    a_dev = cl_array.arange(queue, 2000, dtype=np.float64, allocator=mem_pool)
+    a_dev = cl_array.arange(queue, 2000, dtype=np.float32, allocator=mem_pool)
     b_dev = cl_array.to_device(queue, np.arange(2000), allocator=mem_pool) + 4000
 
     result = cl_array.dot(a_dev, b_dev)
