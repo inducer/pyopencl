@@ -1132,7 +1132,7 @@ def dot(a, b, dtype=None, queue=None):
 
 def subset_dot(subset, a, b, dtype=None, queue=None):
     from pyopencl.reduction import get_subset_dot_kernel
-    krnl = get_subset_dot_kernel(a.context, dtype, a.dtype, b.dtype)
+    krnl = get_subset_dot_kernel(a.context, dtype, subset.dtype, a.dtype, b.dtype)
     return krnl(subset, a, b, queue=queue)
 
 def _make_minmax_kernel(what):
@@ -1149,8 +1149,7 @@ max = _make_minmax_kernel("max")
 def _make_subset_minmax_kernel(what):
     def f(subset, a, queue=None):
         from pyopencl.reduction import get_subset_minmax_kernel
-        import pyopencl.reduction
-        krnl = get_subset_minmax_kernel(a.context, what, a.dtype)
+        krnl = get_subset_minmax_kernel(a.context, what, a.dtype, subset.dtype)
         return krnl(subset, a,  queue=queue)
 
     return f
