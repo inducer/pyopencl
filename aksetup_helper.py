@@ -737,7 +737,7 @@ def check_git_submodules():
         print("not invoke git to check whether my submodules are up to date.")
         print("")
         print("The error was:")
-        print(e)
+        print(git_error)
         print("Hit Ctrl-C now if you'd like to think about the situation.")
         print("-------------------------------------------------------------------------")
         count_down_delay(delay=5)
