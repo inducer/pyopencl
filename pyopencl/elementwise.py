@@ -148,6 +148,7 @@ class ElementwiseKernel:
                 invocation_args.append(arg)
 
         queue = kwargs.pop("queue", None)
+        wait_for = kwargs.pop("wait_for", None)
         if kwargs:
             raise TypeError("too many/unknown keyword arguments")
 
@@ -161,7 +162,8 @@ class ElementwiseKernel:
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
         self.kernel.set_args(*invocation_args)
-        return cl.enqueue_nd_range_kernel(queue, self.kernel, gs, ls)
+        return cl.enqueue_nd_range_kernel(queue, self.kernel,
+                gs, ls, wait_for=wait_for)
 
 
 @context_dependent_memoize

@@ -481,7 +481,7 @@ on one or several operands in a single pass.
     *preamble* is a piece of C source code that gets inserted outside of the
     function context in the elementwise operation's kernel source code.
 
-    .. method:: __call__(*args)
+    .. method:: __call__(*args, wait_for=None)
 
         Invoke the generated scalar kernel. The arguments may either be scalars or
         :class:`GPUArray` instances.
