@@ -568,6 +568,27 @@ def test_astype(ctx_factory):
     assert la.norm(a - a2) / la.norm(a) < 1e-7
 
 
+def summarize_error(obtained, desired, orig, thresh=1e-5):
+    err = obtained - desired
+    ok_count = 0
+
+    entries = []
+    for i, val in enumerate(err):
+        if abs(val) > thresh:
+            if ok_count:
+                entries.append("<%d ok>" % ok_count)
+                ok_count = 0
+
+            entries.append("%r (want: %r, diff: %r, orig: %r)" % (obtained[i], desired[i],
+                obtained[i]-desired[i], orig[i]))
+        else:
+            ok_count += 1
+
+    if ok_count:
+        entries.append("<%d ok>" % ok_count)
+
+    return " ".join(entries)
+
 @pytools.test.mark_test.opencl
 def test_scan(ctx_factory):
     context = ctx_factory()
@@ -576,7 +597,10 @@ def test_scan(ctx_factory):
     from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
 
     dtype = np.int32
-    for cls in [InclusiveScanKernel, ExclusiveScanKernel]:
+    for cls in [
+            InclusiveScanKernel,
+            ExclusiveScanKernel
+            ]:
         knl = cls(context, dtype, "a+b", "0")
 
         for n in [
@@ -584,10 +608,14 @@ def test_scan(ctx_factory):
             2 ** 20 - 2 ** 18,
             2 ** 20 - 2 ** 18 + 5,
             2 ** 10 + 5,
-            2 ** 20 + 5,
-            2 ** 20, 2 ** 24]:
+            2 ** 20 + 1,
+            2 ** 20, 2 ** 24
+            ]:
+
             host_data = np.random.randint(0, 10, n).astype(dtype)
             dev_data = cl_array.to_device(queue, host_data)
+
+            assert (host_data == dev_data.get()).all() # /!\ fails on Nv GT2?? for some drivers
 
             knl(dev_data)
 
@@ -595,7 +623,11 @@ def test_scan(ctx_factory):
             if cls is ExclusiveScanKernel:
                 desired_result -= host_data
 
-            assert (dev_data.get() == desired_result).all()
+            is_ok = (dev_data.get() == desired_result).all()
+            if not is_ok:
+                print summarize_error(dev_data.get(), desired_result, host_data)
+
+            assert is_ok
             from gc import collect
             collect()
 
