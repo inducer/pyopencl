@@ -37,7 +37,7 @@ from pyopencl.compyte.dtypes import (
         register_dtype, _fill_dtype_registry,
         dtype_to_ctype)
 
-_fill_dtype_registry(respect_windows=True)
+_fill_dtype_registry(respect_windows=False)
 
 
 
