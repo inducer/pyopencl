@@ -200,7 +200,7 @@ def main():
               ],
 
             # build info
-            packages=["pyopencl", "pyopencl.compyte"],
+            packages=["pyopencl", "pyopencl.characterize", "pyopencl.compyte"],
 
             install_requires=[
                 "pytools>=2011.2",
