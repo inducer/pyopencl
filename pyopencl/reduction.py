@@ -170,30 +170,8 @@ def  get_reduction_source(
     # {{{ compute synchronization-less group size
 
     def get_dev_no_sync_size(device):
-        # Tomasz Rybak says, in response to reduction mishbehaving on the AMD
-        # 'Loveland' APU:
-        #
-        #    Like in CUDA reduction bug (related to Fermi) it again seems
-        # to be related to too eager concurrency when reducing results.
-        # According to http://oscarbg.blogspot.com/2009/10/news-from-web.html
-        # "Actually the wavefront size is only 64 for the highend cards(48XX,
-        # 58XX, 57XX), but 32 for the middleend cards and 16 for the lowend
-        # cards."
-        # IMO we should use PREFERRED_WORK_GROUP_SIZE_MULTIPLE to get
-        # non_sync_size. At the same size we lose SIMD CPU optimisation,
-        # but I do not know for now how to fix those two at the same time.
-        # Attached patch fixes problem on Loveland, not breaking anything on
-        # NVIDIA ION.
-        #
-        # Further testing revealed that Intel (CPU) reports 128 as
-        # PREFERRED_WORK_GROUP_SIZE_MULTIPLE, requiring the current
-        # minimum-of-two solution.
-
-        from pyopencl.characterize import (
-                get_simd_group_size, reasonable_work_group_size_multiple)
-        result = min(
-                reasonable_work_group_size_multiple(device),
-                get_simd_group_size(device, out_type_size))
+        from pyopencl.characterize import get_simd_group_size
+        result = get_simd_group_size(device, out_type_size)
 
         if result is None:
             from warnings import warn

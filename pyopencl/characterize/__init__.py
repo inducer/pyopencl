@@ -279,7 +279,24 @@ def get_simd_group_size(dev, type_size):
 
     if ("advanced micro" in lc_vendor or "ati" in lc_vendor):
         if dev.type == cl.device_type.GPU:
-            return 64
+            # Tomasz Rybak says, in response to reduction mishbehaving on the AMD
+            # 'Loveland' APU:
+            #
+            #    Like in CUDA reduction bug (related to Fermi) it again seems
+            # to be related to too eager concurrency when reducing results.
+            # According to http://oscarbg.blogspot.com/2009/10/news-from-web.html
+            # "Actually the wavefront size is only 64 for the highend cards(48XX,
+            # 58XX, 57XX), but 32 for the middleend cards and 16 for the lowend
+            # cards."
+            # IMO we should use PREFERRED_WORK_GROUP_SIZE_MULTIPLE to get
+            # non_sync_size. At the same size we lose SIMD CPU optimisation,
+            # but I do not know for now how to fix those two at the same time.
+            # Attached patch fixes problem on Loveland, not breaking anything on
+            # NVIDIA ION.
+
+            # This is therefore our best guess as to the SIMD group size.
+
+            return reasonable_work_group_size_multiple(dev)
         elif dev.type == cl.device_type.CPU:
             return 1
         else:
