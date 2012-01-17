@@ -29,17 +29,18 @@ def has_amd_double_support(dev):
 def reasonable_work_group_size_multiple(dev, ctx=None):
     try:
         return dev.warp_size_nv
-    except AttributeError:
+    except:
         pass
 
     if ctx is None:
         ctx = cl.Context([dev])
     prg = cl.Program(ctx, """
-        void knl(float *a)
+        __kernel void knl(__global float *a)
         {
             a[get_global_id(0)] = 0;
         }
         """)
+    prg.build()
     return prg.knl.get_work_group_info(
             cl.kernel_work_group_info.PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
             dev)
