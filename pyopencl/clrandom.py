@@ -92,6 +92,9 @@ class RanluxGenerator(object):
 
     @memoize_method
     def get_gen_kernel(self, dtype, flavor=""):
+        size_multiplier = 1
+        arg_dtype = dtype
+
         if dtype == np.float64:
             bits = 64
             c_type = "double"
@@ -100,6 +103,18 @@ class RanluxGenerator(object):
             bits = 32
             c_type = "float"
             rng_expr = "(shift + scale * gen)"
+        elif dtype == cl_array.vec.float2:
+            bits = 32
+            c_type = "float"
+            rng_expr = "(shift + scale * gen)"
+            size_multiplier = 2
+            arg_dtype = np.float32
+        elif dtype in [cl_array.vec.float3, cl_array.vec.float4]:
+            bits = 32
+            c_type = "float"
+            rng_expr = "(shift + scale * gen)"
+            size_multiplier = 4
+            arg_dtype = np.float32
         elif dtype == np.int32:
             assert flavor == ""
             bits = 32
@@ -166,17 +181,18 @@ class RanluxGenerator(object):
 
         prg = cl.Program(self.context, src).build()
         knl = prg.generate
-        knl.set_scalar_arg_dtypes([None, None, np.uint64, dtype, dtype])
+        knl.set_scalar_arg_dtypes([None, None, np.uint64, arg_dtype, arg_dtype])
 
-        return knl
+        return knl, size_multiplier
 
     def fill_uniform(self, ary, a=0, b=1, queue=None):
         if queue is None:
             queue = ary.queue
 
-        self.get_gen_kernel(ary.dtype, "")(queue,
+        knl, size_multiplier = self.get_gen_kernel(ary.dtype, "")
+        knl(queue,
                 (self.num_work_items,), None,
-                self.state.data, ary.data, ary.size,
+                self.state.data, ary.data, ary.size*size_multiplier,
                 b-a, a)
 
     def uniform(self, *args, **kwargs):
@@ -192,9 +208,10 @@ class RanluxGenerator(object):
         if queue is None:
             queue = ary.queue
 
-        self.get_gen_kernel(ary.dtype, "norm")(queue,
+        knl, size_multiplier = self.get_gen_kernel(ary.dtype, "norm")
+        knl(queue,
                 (self.num_work_items,), self.wg_size,
-                self.state.data, ary.data, ary.size, sigma, mu)
+                self.state.data, ary.data, ary.size*size_multiplier, sigma, mu)
 
     def normal(self, *args, **kwargs):
         mu = kwargs.pop("mu", 0)

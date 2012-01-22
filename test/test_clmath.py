@@ -36,7 +36,7 @@ numpy_func_names = {
 
 
 
-def make_unary_function_test(name, limits=(0, 1), threshold=0):
+def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False):
     (a, b) = limits
     a = float(a)
     b = float(b)
@@ -49,19 +49,33 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0):
         cpu_func = getattr(np, numpy_func_names.get(name, name))
 
         if has_double_support(context.devices[0]):
-            dtypes = [np.float32, np.float64]
+            if use_complex:
+                dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+            else:
+                dtypes = [np.float32, np.float64]
         else:
-            dtypes = [np.float32]
+            if use_complex:
+                dtypes = [np.float32, np.complex64]
+            else:
+                dtypes = [np.float32]
 
         for s in sizes:
             for dtype in dtypes:
-                args = cl_array.arange(queue, a, b, (b-a)/s, 
-                        dtype=np.float32)
+                dtype = np.dtype(dtype)
+
+                args = cl_array.arange(queue, a, b, (b-a)/s, dtype=dtype)
+                if dtype.kind == "c":
+                    args = args+dtype.type(1j)*args
+
                 gpu_results = gpu_func(args).get()
                 cpu_results = cpu_func(args.get())
 
+                my_threshold = threshold
+                if dtype.kind == "c" and isinstance(use_complex, float):
+                    my_threshold = use_complex
+
                 max_err = np.max(np.abs(cpu_results - gpu_results))
-                assert (max_err <= threshold).all(), \
+                assert (max_err <= my_threshold).all(), \
                         (max_err, name, dtype)
 
     return pytools.test.mark_test.opencl(test)
@@ -73,22 +87,22 @@ if have_cl():
     test_ceil = make_unary_function_test("ceil", (-10, 10))
     test_floor = make_unary_function_test("ceil", (-10, 10))
     test_fabs = make_unary_function_test("fabs", (-10, 10))
-    test_exp = make_unary_function_test("exp", (-3, 3), 1e-5)
-    test_log = make_unary_function_test("log", (1e-5, 1), 1e-6)
+    test_exp = make_unary_function_test("exp", (-3, 3), 1e-5, use_complex=True)
+    test_log = make_unary_function_test("log", (1e-5, 1), 1e-6, use_complex=True)
     test_log10 = make_unary_function_test("log10", (1e-5, 1), 5e-7)
-    test_sqrt = make_unary_function_test("sqrt", (1e-5, 1), 2e-7)
+    test_sqrt = make_unary_function_test("sqrt", (1e-5, 1), 2e-7, use_complex=True)
 
-    test_sin = make_unary_function_test("sin", (-10, 10), 2e-7)
-    test_cos = make_unary_function_test("cos", (-10, 10), 2e-7)
+    test_sin = make_unary_function_test("sin", (-10, 10), 2e-7, use_complex=2e-3)
+    test_cos = make_unary_function_test("cos", (-10, 10), 2e-7, use_complex=2e-3)
     test_asin = make_unary_function_test("asin", (-0.9, 0.9), 5e-7)
     test_acos = make_unary_function_test("acos", (-0.9, 0.9), 5e-7)
     test_tan = make_unary_function_test("tan", 
-            (-math.pi/2 + 0.1, math.pi/2 - 0.1), 1e-5)
+            (-math.pi/2 + 0.1, math.pi/2 - 0.1), 1e-5, use_complex=True)
     test_atan = make_unary_function_test("atan", (-10, 10), 2e-7)
 
-    test_sinh = make_unary_function_test("sinh", (-3, 3), 1e-6)
-    test_cosh = make_unary_function_test("cosh", (-3, 3), 1e-6)
-    test_tanh = make_unary_function_test("tanh", (-3, 3), 2e-6)
+    test_sinh = make_unary_function_test("sinh", (-3, 3), 1e-6, use_complex=2e-3)
+    test_cosh = make_unary_function_test("cosh", (-3, 3), 1e-6, use_complex=2e-3)
+    test_tanh = make_unary_function_test("tanh", (-3, 3), 2e-6, use_complex=True)
 
 
 

@@ -49,24 +49,130 @@ def test_pow_number(ctx_factory):
 
 
 @pytools.test.mark_test.opencl
-def test_abs(ctx_factory):
+def test_absrealimag(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    a = -cl_array.arange(queue, 111, dtype=np.float32)
-    res = a.get()
+    def real(x): return x.real
+    def imag(x): return x.imag
+    def conj(x): return x.conj()
 
-    for i in range(111):
-        assert res[i] <= 0
+    n = 111
+    for func in [abs, real, imag, conj]:
+        for dtype in [np.int32, np.float32, np.complex64]:
+            print func, dtype
+            a = -make_random_array(queue, dtype, n)
 
-    a = abs(a)
+            host_res = func(a.get())
+            dev_res = func(a).get()
 
-    res = a.get()
+            correct = np.allclose(dev_res, host_res)
+            if not correct:
+                print dev_res
+                print host_res
+                print dev_res-host_res
+            assert correct
 
-    for i in range(111):
-        assert abs(res[i]) >= 0
-        assert res[i] == i
 
+TO_REAL = {
+        np.dtype(np.complex64): np.float32,
+        np.dtype(np.complex128): np.float64
+        }
+
+def make_random_array(queue, dtype, size):
+    from pyopencl.clrandom import rand
+
+    dtype = np.dtype(dtype)
+    if dtype.kind == "c":
+        real_dtype = TO_REAL[dtype]
+        return (rand(queue, shape=(size,), dtype=real_dtype).astype(dtype)
+                + dtype.type(1j)
+                * rand(queue, shape=(size,), dtype=real_dtype).astype(dtype))
+    else:
+        return rand(queue, shape=(size,), dtype=dtype)
+
+@pytools.test.mark_test.opencl
+def test_basic_complex(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand
+
+    size = 500
+
+    ary =  (rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64)
+            + 1j* rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64))
+    c = np.complex64(5+7j)
+
+    assert ((c*ary).get() == c*ary.get()).all()
+
+@pytools.test.mark_test.opencl
+def test_mix_complex(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    size = 10
+
+    dtypes = [
+            (np.float32, np.complex64),
+            #(np.int32, np.complex64),
+            ]
+
+    if has_double_support(context.devices[0]):
+        dtypes.extend([
+            (np.float32, np.float64),
+            (np.float32, np.complex128),
+            (np.float64, np.complex64),
+            (np.float64, np.complex128),
+            ])
+
+    from operator import add, mul, sub, div
+    for op in [add, sub, mul, div, pow]:
+        for dtype_a0, dtype_b0 in dtypes:
+            for dtype_a, dtype_b in [
+                    (dtype_a0, dtype_b0),
+                    (dtype_b0, dtype_a0),
+                    ]:
+                for is_scalar_a, is_scalar_b in [
+                        (False, False),
+                        (False, True),
+                        (True, False),
+                        ]:
+                    if is_scalar_a:
+                        ary_a = make_random_array(queue, dtype_a, 1).get()[0]
+                        host_ary_a = ary_a
+                    else:
+                        ary_a = make_random_array(queue, dtype_a, size)
+                        host_ary_a = ary_a.get()
+
+                    if is_scalar_b:
+                        ary_b = make_random_array(queue, dtype_b, 1).get()[0]
+                        host_ary_b = ary_b
+                    else:
+                        ary_b = make_random_array(queue, dtype_b, size)
+                        host_ary_b = ary_b.get()
+
+                    print op, dtype_a, dtype_b, is_scalar_a, is_scalar_b
+                    dev_result = op(ary_a, ary_b).get()
+                    host_result = op(host_ary_a, host_ary_b)
+
+                    if host_result.dtype != dev_result.dtype:
+                        # This appears to be a numpy bug, where we get
+                        # served a Python complex that is really a
+                        # smaller numpy complex.
+
+                        print "HOST_DTYPE: %s DEV_DTYPE: %s" % (
+                                host_result.dtype, dev_result.dtype)
+
+                        dev_result = dev_result.astype(host_result.dtype)
+
+                    correct = np.allclose(host_result, dev_result)
+                    if not correct:
+                        print host_result
+                        print dev_result
+                        print host_result - dev_result
+
+                    assert correct
 
 @pytools.test.mark_test.opencl
 def test_len(ctx_factory):
@@ -88,13 +194,14 @@ def test_multiply(ctx_factory):
     for sz in [10, 50000]:
         for dtype, scalars in [
             (np.float32, [2]),
+            (np.complex64, [2j]),
             ]:
             for scalar in scalars:
-                a = np.arange(sz).astype(dtype)
-                a_gpu = cl_array.to_device(queue, a)
-                a_doubled = (scalar * a_gpu).get()
+                a_gpu = make_random_array(queue, dtype, sz)
+                a = a_gpu.get()
+                a_mult = (scalar * a_gpu).get()
 
-                assert (a * scalar == a_doubled).all()
+                assert (a * scalar == a_mult).all()
 
 
 @pytools.test.mark_test.opencl
@@ -568,6 +675,27 @@ def test_astype(ctx_factory):
     assert la.norm(a - a2) / la.norm(a) < 1e-7
 
 
+def summarize_error(obtained, desired, orig, thresh=1e-5):
+    err = obtained - desired
+    ok_count = 0
+
+    entries = []
+    for i, val in enumerate(err):
+        if abs(val) > thresh:
+            if ok_count:
+                entries.append("<%d ok>" % ok_count)
+                ok_count = 0
+
+            entries.append("%r (want: %r, diff: %r, orig: %r)" % (obtained[i], desired[i],
+                obtained[i]-desired[i], orig[i]))
+        else:
+            ok_count += 1
+
+    if ok_count:
+        entries.append("<%d ok>" % ok_count)
+
+    return " ".join(entries)
+
 @pytools.test.mark_test.opencl
 def test_scan(ctx_factory):
     context = ctx_factory()
@@ -576,7 +704,10 @@ def test_scan(ctx_factory):
     from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
 
     dtype = np.int32
-    for cls in [InclusiveScanKernel, ExclusiveScanKernel]:
+    for cls in [
+            InclusiveScanKernel,
+            ExclusiveScanKernel
+            ]:
         knl = cls(context, dtype, "a+b", "0")
 
         for n in [
@@ -584,10 +715,14 @@ def test_scan(ctx_factory):
             2 ** 20 - 2 ** 18,
             2 ** 20 - 2 ** 18 + 5,
             2 ** 10 + 5,
-            2 ** 20 + 5,
-            2 ** 20, 2 ** 24]:
+            2 ** 20 + 1,
+            2 ** 20, 2 ** 24
+            ]:
+
             host_data = np.random.randint(0, 10, n).astype(dtype)
             dev_data = cl_array.to_device(queue, host_data)
+
+            assert (host_data == dev_data.get()).all() # /!\ fails on Nv GT2?? for some drivers
 
             knl(dev_data)
 
@@ -595,7 +730,11 @@ def test_scan(ctx_factory):
             if cls is ExclusiveScanKernel:
                 desired_result -= host_data
 
-            assert (dev_data.get() == desired_result).all()
+            is_ok = (dev_data.get() == desired_result).all()
+            if not is_ok:
+                print summarize_error(dev_data.get(), desired_result, host_data)
+
+            assert is_ok
             from gc import collect
             collect()
 

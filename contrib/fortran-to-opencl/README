@@ -1,0 +1,29 @@
+Experimental Fortran-to-OpenCL translator
+-----------------------------------------
+
+This is a highly experimental Fortran-to-OpenCL translator. Its purpose is to
+translate computational kernels into OpenCL-like C. It doesn't
+auto-parallelize. My purpose in writing this was to convert a few
+special-function evaluators.
+
+The best it can hope for at the moment is to automate most of the process so
+that you'll only have to fix up a few things manually afterwards. It further
+only deals with the subset of Fortran 77 that I needed. Quite a number of
+things are unimplemented.  Patches are welcome.
+
+Andreas Kloeckner <inform@tiker.net>
+
+Dependencies:
+
+- cnd
+  http://github.com/inducer/cnd
+
+- cgen
+  http://github.com/inducer/cgen
+
+- pymbolic
+  http://github.com/inducer/pymbolic
+
+- fparser
+  http://code.google.com/p/f2py
+  with fix from http://code.google.com/p/f2py/issues/detail?id=32

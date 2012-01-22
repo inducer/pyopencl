@@ -4,8 +4,14 @@ import pyopencl.elementwise as elementwise
 def _make_unary_array_func(name):
     @cl_array.elwise_kernel_runner
     def knl_runner(result, arg):
+        if arg.dtype.kind == "c":
+            from pyopencl.elementwise import complex_dtype_to_name
+            fname = "%s_%s" % (complex_dtype_to_name(arg.dtype), name)
+        else:
+            fname = name
+
         return elementwise.get_unary_func_kernel(
-                result.context, name, arg.dtype)
+                result.context, fname, arg.dtype)
 
     def f(array, queue=None):
         result = array._new_like_me(queue=queue)
@@ -14,7 +20,7 @@ def _make_unary_array_func(name):
 
     return f
 
-# See table 6.8 in the CL spec
+# See table 6.8 in the CL 1.1 spec
 acos = _make_unary_array_func("acos")
 acosh = _make_unary_array_func("acosh")
 acospi = _make_unary_array_func("acospi")

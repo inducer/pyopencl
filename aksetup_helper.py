@@ -797,7 +797,9 @@ def check_git_submodules():
             print("Hit Ctrl-C now if you'd like to think about the situation.")
             print("-------------------------------------------------------------------------")
 
-            count_down_delay(delay=10)
+            from os.path import exists
+            if not exists(".dirty-git-ok"):
+                count_down_delay(delay=10)
 
 
 

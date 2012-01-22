@@ -140,6 +140,12 @@ def main():
         from aksetup_helper import count_down_delay
         count_down_delay(delay=5)
 
+    import sys
+    if sys.version_info >= (3,):
+        pvt_struct_source = "src/wrapper/_pvt_struct_v3.cpp"
+    else:
+        pvt_struct_source = "src/wrapper/_pvt_struct_v2.cpp"
+
     setup(name="pyopencl",
             # metadata
             version=ver_dic["VERSION_TEXT"],
@@ -200,7 +206,7 @@ def main():
               ],
 
             # build info
-            packages=["pyopencl", "pyopencl.compyte"],
+            packages=["pyopencl", "pyopencl.characterize", "pyopencl.compyte"],
 
             install_requires=[
                 "pytools>=2011.2",
@@ -224,6 +230,11 @@ def main():
                     library_dirs=LIBRARY_DIRS + conf["CL_LIB_DIR"],
                     libraries=LIBRARIES + conf["CL_LIBNAME"],
                     define_macros=list(EXTRA_DEFINES.items()),
+                    extra_compile_args=conf["CXXFLAGS"],
+                    extra_link_args=conf["LDFLAGS"],
+                    ),
+                NumpyExtension("_pvt_struct",
+                    [pvt_struct_source],
                     extra_compile_args=conf["CXXFLAGS"],
                     extra_link_args=conf["LDFLAGS"],
                     ),

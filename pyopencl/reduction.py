@@ -415,7 +415,7 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None):
 
 
 @context_dependent_memoize
-def get_subset_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None):
+def get_subset_dot_kernel(ctx, dtype_out, dtype_subset, dtype_a=None, dtype_b=None):
     if dtype_out is None:
         dtype_out = dtype_a
 
@@ -432,9 +432,10 @@ def get_subset_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None):
     return ReductionKernel(ctx, dtype_out, neutral="0",
             reduce_expr="a+b", map_expr="a[lookup_tbl[i]]*b[lookup_tbl[i]]",
             arguments=
-            "__global const unsigned int *lookup_tbl, "
+            "__global const %(tp_lut)s *lookup_tbl, "
             "__global const %(tp_a)s *a, "
             "__global const %(tp_b)s *b" % {
+            "tp_lut": dtype_to_ctype(dtype_subset),
             "tp_a": dtype_to_ctype(dtype_a),
             "tp_b": dtype_to_ctype(dtype_b),
             })
@@ -482,7 +483,7 @@ def get_minmax_kernel(ctx, what, dtype):
 
 
 @context_dependent_memoize
-def get_subset_minmax_kernel(ctx, what, dtype):
+def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
     if dtype.kind == "f":
         reduce_expr = "f%s(a,b)" % what
     elif dtype.kind in "iu":
@@ -495,7 +496,8 @@ def get_subset_minmax_kernel(ctx, what, dtype):
             reduce_expr="%(reduce_expr)s" % {"reduce_expr": reduce_expr},
             map_expr="in[lookup_tbl[i]]",
             arguments=
-            "__global const unsigned int *lookup_tbl, "
+            "__global const %(tp_lut)s *lookup_tbl, "
             "__global const %(tp)s *in"  % {
             "tp": dtype_to_ctype(dtype),
+            "tp_lut": dtype_to_ctype(dtype_subset),
             }, preamble="#define MY_INFINITY (1./0)")
