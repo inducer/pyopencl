@@ -19,6 +19,8 @@ Acknowledgments
   in getting OpenCL-OpenGL interoperability to work.
 * Sean True allowed access to a test machine to ensure compatibility
   with OS X Lion.
+* Tomasz Rybak did many great things for PyOpenCL, not the least
+  of which is packaging for Debian and Ubuntu.
 
 Guidelines
 ==========
@@ -67,13 +69,15 @@ C interface to Python:
 User-visible Changes
 ====================
 
-Version 2011.2.1
+Version 2012.1
 ----------------
 
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's git version control.
+
+* Support for complex numbers.
 
 Version 2011.2
 --------------

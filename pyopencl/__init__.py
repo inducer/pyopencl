@@ -481,7 +481,7 @@ def _add_functionality():
                 for i, arg in enumerate(args):
                     self.set_arg(i, arg)
             else:
-                from struct import pack
+                from pyopencl._pvt_struct import pack
 
                 for i, (arg, arg_type_char) in enumerate(
                         zip(args, arg_type_chars)):

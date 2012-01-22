@@ -149,6 +149,18 @@ The :class:`Array` Class
 
         Return *self*, cast to *dtype*.
 
+    .. attribute :: real
+
+        .. versionadded:: 2012.1
+
+    .. attribute :: imag
+
+        .. versionadded:: 2012.1
+
+    .. method :: conj()
+
+        .. versionadded:: 2012.1
+
 Constructing :class:`Array` Instances
 ----------------------------------------
 
@@ -368,6 +380,30 @@ functions available in the OpenCL standard. (See table 6.8 in the spec.)
 .. function:: tgamma(array, queue=None)
 .. function:: trunc(array, queue=None)
 
+Complex Numbers
+---------------
+
+Since OpenCL 1.2 (and earlier) do not specify native complex number support,
+PyOpenCL works around that deficiency. By saying::
+
+    #include <pyopencl-complex.h>
+
+in your kernel, you get complex types `cfloat_t` and `cdouble_t`, along with
+functions defined on them such as `cfloat_mul(a, b)` or `cdouble_log(z)`.
+Elementwise kernels automatically include the header if your kernel has
+complex input or output.
+See the `source file
+<https://github.com/inducer/pyopencl/blob/master/src/cl/pyopencl-complex.h>`_
+for a precise list of what's available.
+
+Under the hood, the complex types are simply `float2` and `double2`.
+
+.. warning::
+    Note that addition (real + complex) and multiplication (complex*complex)
+    are defined for e.g. `float2`, but yield wrong results, so that you need to
+    use the corresponding functions.
+
+.. versionadded:: 2012.1
 
 Generating Arrays of Random Numbers
 -----------------------------------

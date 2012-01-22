@@ -384,9 +384,12 @@ class Array(object):
 
     @staticmethod
     @elwise_kernel_runner
-    def _axpbz(out, afac, a, other, queue=None):
-        """Compute ``out = afac * a + other``, where `other` is a scalar."""
-        return elementwise.get_axpbz_kernel(out.context, out.dtype)
+    def _axpbz(out, a, x, b, queue=None):
+        """Compute ``z = a * x + b``, where `b` is a scalar."""
+        a = np.array(a)
+        b = np.array(b)
+        return elementwise.get_axpbz_kernel(out.context,
+                a.dtype, x.dtype, b.dtype, out.dtype)
 
     @staticmethod
     @elwise_kernel_runner
@@ -397,12 +400,13 @@ class Array(object):
     @staticmethod
     @elwise_kernel_runner
     def _rdiv_scalar(out, ary, other, queue=None):
+        other = np.array(other)
         return elementwise.get_rdivide_elwise_kernel(
-                out.context, ary.dtype)
+                out.context, ary.dtype, other.dtype, out.dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _div(self, out, other, queue=None):
+    def _div(out, self, other, queue=None):
         """Divides an array by another array."""
 
         assert self.shape == other.shape
@@ -418,7 +422,10 @@ class Array(object):
     @staticmethod
     @elwise_kernel_runner
     def _abs(result, arg):
-        if arg.dtype.kind == "f":
+        if arg.dtype.kind == "c":
+            from pyopencl.elementwise import complex_dtype_to_name
+            fname = "%s_abs" % complex_dtype_to_name(arg.dtype)
+        elif arg.dtype.kind == "f":
             fname = "fabs"
         elif arg.dtype.kind in ["u", "i"]:
             fname = "abs"
@@ -426,18 +433,54 @@ class Array(object):
             raise TypeError("unsupported dtype in _abs()")
 
         return elementwise.get_unary_func_kernel(
-                arg.context, fname, arg.dtype)
+                arg.context, fname, arg.dtype, out_dtype=result.dtype)
+
+    @staticmethod
+    @elwise_kernel_runner
+    def _real(result, arg):
+        from pyopencl.elementwise import complex_dtype_to_name
+        fname = "%s_real" % complex_dtype_to_name(arg.dtype)
+        return elementwise.get_unary_func_kernel(
+                arg.context, fname, arg.dtype, out_dtype=result.dtype)
+
+    @staticmethod
+    @elwise_kernel_runner
+    def _imag(result, arg):
+        from pyopencl.elementwise import complex_dtype_to_name
+        fname = "%s_imag" % complex_dtype_to_name(arg.dtype)
+        return elementwise.get_unary_func_kernel(
+                arg.context, fname, arg.dtype, out_dtype=result.dtype)
+
+    @staticmethod
+    @elwise_kernel_runner
+    def _conj(result, arg):
+        from pyopencl.elementwise import complex_dtype_to_name
+        fname = "%s_conj" % complex_dtype_to_name(arg.dtype)
+        return elementwise.get_unary_func_kernel(
+                arg.context, fname, arg.dtype, out_dtype=result.dtype)
 
     @staticmethod
     @elwise_kernel_runner
     def _pow_scalar(result, ary, exponent):
-        return elementwise.get_pow_kernel(result.context, result.dtype)
+        exponent = np.array(exponent)
+        return elementwise.get_pow_kernel(result.context,
+                ary.dtype, exponent.dtype, result.dtype,
+                is_base_array=True, is_exp_array=False)
+
+    @staticmethod
+    @elwise_kernel_runner
+    def _rpow_scalar(result, base, exponent):
+        base = np.array(base)
+        return elementwise.get_pow_kernel(result.context,
+                base.dtype, exponent.dtype, result.dtype,
+                is_base_array=False, is_exp_array=True)
 
     @staticmethod
     @elwise_kernel_runner
     def _pow_array(result, base, exponent):
-        return elementwise.get_pow_array_kernel(
-                result.context, base.dtype, exponent.dtype, result.dtype)
+        return elementwise.get_pow_kernel(
+                result.context, base.dtype, exponent.dtype, result.dtype,
+                is_base_array=True, is_exp_array=True)
 
     @staticmethod
     @elwise_kernel_runner
@@ -483,15 +526,17 @@ class Array(object):
         if isinstance(other, Array):
             # add another vector
             result = self._new_like_me(_get_common_dtype(self, other))
-            self._axpbyz(result, 1, self, 1, other)
+            self._axpbyz(result,
+                    self.dtype.type(1), self,
+                    other.dtype.type(1), other)
             return result
         else:
             # add a scalar
             if other == 0:
                 return self
             else:
-                result = self._new_like_me()
-                self._axpbz(result, 1, self, other)
+                result = self._new_like_me(_get_common_dtype(self, other))
+                self._axpbz(result, self.dtype.type(1), self, other)
                 return result
 
     __radd__ = __add__
@@ -501,15 +546,17 @@ class Array(object):
 
         if isinstance(other, Array):
             result = self._new_like_me(_get_common_dtype(self, other))
-            self._axpbyz(result, 1, self, -1, other)
+            self._axpbyz(result,
+                    self.dtype.type(1), self,
+                    other.dtype.type(-1), other)
             return result
         else:
             # subtract a scalar
             if other == 0:
                 return self
             else:
-                result = self._new_like_me()
-                self._axpbz(result, 1, self, -other)
+                result = self._new_like_me(_get_common_dtype(self, other))
+                self._axpbz(result, self.dtype.type(1), self, -other)
                 return result
 
     def __rsub__(self,other):
@@ -518,24 +565,26 @@ class Array(object):
            x = n - self
         """
         # other must be a scalar
-        result = self._new_like_me()
-        self._axpbz(result, -1, self, other)
+        result = self._new_like_me(_get_common_dtype(self, other))
+        self._axpbz(result, self.dtype.type(-1), self, other)
         return result
 
     def __iadd__(self, other):
         if isinstance(other, Array):
-            self._axpbyz(self, 1, self, 1, other)
+            self._axpbyz(self,
+                    self.dtype.type(1), self,
+                    other.dtype.type(1), other)
             return self
         else:
-            self._axpbz(self, 1, self, other)
+            self._axpbz(self, self.dtype.type(1), self, other)
             return self
 
     def __isub__(self, other):
         if isinstance(other, Array):
-            self._axpbyz(self, 1, self, -1, other)
+            self._axpbyz(self, self.dtype.type(1), self, other.dtype.type(-1), other)
             return self
         else:
-            self._axpbz(self, 1, self, -other)
+            self._axpbz(self, self.dtype.type(1), self, -other)
             return self
 
     def __neg__(self):
@@ -549,17 +598,17 @@ class Array(object):
             self._elwise_multiply(result, self, other)
             return result
         else:
-            result = self._new_like_me()
-            self._axpbz(result, other, self, 0)
+            result = self._new_like_me(_get_common_dtype(self, other))
+            self._axpbz(result, other, self, self.dtype.type(0))
             return result
 
     def __rmul__(self, scalar):
-        result = self._new_like_me()
-        self._axpbz(result, scalar, self, 0)
+        result = self._new_like_me(_get_common_dtype(self, scalar))
+        self._axpbz(result, scalar, self, self.dtype.type(0))
         return result
 
     def __imul__(self, scalar):
-        self._axpbz(self, scalar, self, 0)
+        self._axpbz(self, scalar, self, self.dtype.type(0))
         return self
 
     def __div__(self, other):
@@ -575,8 +624,9 @@ class Array(object):
                 return self
             else:
                 # create a new array for the result
-                result = self._new_like_me()
-                self._axpbz(result, 1/other, self, 0)
+                result = self._new_like_me(_get_common_dtype(self, other))
+                self._axpbz(result,
+                        1/other, self, self.dtype.type(0))
 
         return result
 
@@ -596,7 +646,7 @@ class Array(object):
                 return self
             else:
                 # create a new array for the result
-                result = self._new_like_me()
+                result = self._new_like_me(_get_common_dtype(self, other))
                 self._rdiv_scalar(result, self, other)
 
         return result
@@ -620,7 +670,7 @@ class Array(object):
         of `self`.
         """
 
-        result = self._new_like_me()
+        result = self._new_like_me(self.dtype.type(0).real.dtype)
         self._abs(result, self)
         return result
 
@@ -635,9 +685,15 @@ class Array(object):
             result = self._new_like_me(_get_common_dtype(self, other))
             self._pow_array(result, self, other)
         else:
-            result = self._new_like_me()
+            result = self._new_like_me(_get_common_dtype(self, other))
             self._pow_scalar(result, self, other)
 
+        return result
+
+    def __rpow__(self, other):
+        # other must be a scalar
+        result = self._new_like_me(_get_common_dtype(self, other))
+        self._rpow_scalar(result, other, self)
         return result
 
     def reverse(self, queue=None):
@@ -675,6 +731,36 @@ class Array(object):
 
     def __gt__(self, other):
         raise NotImplementedError
+
+    # {{{ complex-valued business
+
+    @property
+    def real(self):
+        if self.dtype.kind == "c":
+            result = self._new_like_me(self.dtype.type(0).real.dtype)
+            self._real(result, self)
+            return result
+        else:
+            return self
+
+    @property
+    def imag(self):
+        if self.dtype.kind == "c":
+            result = self._new_like_me(self.dtype.type(0).real.dtype)
+            self._imag(result, self)
+            return result
+        else:
+            return zeros_like(self)
+
+    def conj(self):
+        if self.dtype.kind == "c":
+            result = self._new_like_me()
+            self._conj(result, self)
+            return result
+        else:
+            return self
+
+    # }}}
 
     # {{{ views
 

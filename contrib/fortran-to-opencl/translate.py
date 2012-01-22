@@ -255,7 +255,7 @@ class ComplexCCodeMapper(CCodeMapperBase):
             complex_sum = self.join_rec(" + ", complexes, PREC_SUM)
 
             if real_sum:
-                result = "to_%s(%s) + %s" % (tgt_name, real_sum, complex_sum)
+                result = "%s_fromreal(%s) + %s" % (tgt_name, real_sum, complex_sum)
             else:
                 result = complex_sum
 
@@ -337,12 +337,12 @@ class ComplexCCodeMapper(CCodeMapperBase):
                 e_complex = 'c' == self.infer_type(expr.exponent).kind
 
                 if b_complex and not e_complex:
-                    return "%s_rpower(%s, %s)" % (
+                    return "%s_powr(%s, %s)" % (
                             self.complex_type_name(tgt_dtype),
                             self.rec(expr.base, PREC_NONE),
                             self.rec(expr.exponent, PREC_NONE))
                 else:
-                    return "%s_power(%s, %s)" % (
+                    return "%s_pow(%s, %s)" % (
                             self.complex_type_name(tgt_dtype),
                             self.rec(expr.base, PREC_NONE),
                             self.rec(expr.exponent, PREC_NONE))
