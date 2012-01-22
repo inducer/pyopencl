@@ -19,9 +19,9 @@
  *
  */
 
-// This file is available in pyopencl kernels and provides complex types
-// 'cfloat_t' and 'cdouble_t', along with a number of special functions
-// as visible below, e.g. cdouble_log(z).
+// This file is available for inclusion in pyopencl kernels and provides
+// complex types 'cfloat_t' and 'cdouble_t', along with a number of special
+// functions as visible below, e.g. cdouble_log(z).
 //
 // Under the hood, the complex types are simply float2 and double2.
 
@@ -29,6 +29,7 @@
   \
   REAL_TP TPROOT##_real(TP a) { return a.x; } \
   REAL_TP TPROOT##_imag(TP a) { return a.y; } \
+  REAL_TP TPROOT##_abs(TP a) { return hypot(a.x, a.y); } \
   \
   TP TPROOT##_conj(TP a) { return (TP)(a.x, -a.y); } \
   \
