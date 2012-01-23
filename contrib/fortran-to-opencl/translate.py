@@ -331,7 +331,7 @@ class ComplexCCodeMapper(CCodeMapperBase):
                 value = expr.base
                 for i in range(expr.exponent-1):
                     value = value * expr.base
-                return self.rec(expr.base, enclosing_prec)
+                return self.rec(value, enclosing_prec)
             else:
                 b_complex = 'c' == self.infer_type(expr.base).kind
                 e_complex = 'c' == self.infer_type(expr.exponent).kind
@@ -987,15 +987,7 @@ def f2cl(source, free_form=False, strict=True,
         if isinstance(entry, cgen.FunctionBody):
             func_decls.append(entry.fdecl)
 
-    PREAMBLE = r"""
-        #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-        #include <pyopencl-complex.h>
-        """
-
-    mod = (PREAMBLE+str(
-        cgen.Module(func_decls + [cgen.Line()] + source)))
-
-    open("hank107.cl", "w").write(mod)
+    mod = cgen.Module(func_decls + [cgen.Line()] + source)
 
     from cnd import transform_cl
     str_mod = transform_cl(str(mod))
@@ -1005,7 +997,6 @@ def f2cl(source, free_form=False, strict=True,
 
 
 if __name__ == "__main__":
-    import pyopencl as cl
     from cgen.opencl import CLConstant
 
     mod = f2cl(open("hank107.f").read(),
@@ -1020,9 +1011,6 @@ if __name__ == "__main__":
             )
 
     open("hank107.cl", "w").write(mod)
-    ctx = cl.create_some_context()
-    prg = cl.Program(ctx, mod)
-    prg.build()
 
 # vim: foldmethod=marker
 
