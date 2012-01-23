@@ -166,7 +166,9 @@ def test_mix_complex(ctx_factory):
 
                         dev_result = dev_result.astype(host_result.dtype)
 
-                    correct = np.allclose(host_result, dev_result)
+                    err = la.norm(host_result-dev_result)/la.norm(host_result)
+                    print err
+                    correct = err < 1e-5
                     if not correct:
                         print host_result
                         print dev_result
