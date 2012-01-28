@@ -247,10 +247,27 @@ class TypeInferenceMapper(CombineMapper):
         return expr.dtype
 
     def map_constant(self, expr):
-        return np.array(expr).dtype
+        return np.asarray(expr).dtype
 
     def map_variable(self, expr):
         return self.scope.get_type(expr.name)
+
+    def map_call(self, expr):
+        name = expr.function.name
+        if name == "fromreal":
+            arg, = expr.parameters
+            base_dtype = self.rec(arg)
+            tgt_real_dtype = (np.float32(0)+base_dtype.type(0)).dtype
+            assert tgt_real_dtype.kind == "f"
+            if tgt_real_dtype == np.float32:
+                return np.dtype(np.complex64)
+            elif tgt_real_dtype == np.float64:
+                return np.dtype(np.complex128)
+            else:
+                raise RuntimeError("unexpected complex type")
+
+        else:
+            return CombineMapper.map_call(self, expr)
 
 
 
@@ -426,8 +443,8 @@ class CCodeMapper(ComplexCCodeMapper):
             if name in ["conjg", "dconjg"]:
                 name = "conj"
 
-            if name == "cdlog":
-                name = "log"
+            if name[:2] == "cd" and name[2:] in ["log", "exp", "sqrt"]:
+                name = name[2:]
 
             if name == "aimag":
                 name = "imag"
@@ -468,6 +485,9 @@ class CCodeMapper(ComplexCCodeMapper):
             return "{ %s, %s }" % (self.rec(r, PREC_NONE), self.rec(i, PREC_NONE))
         else:
             return expr.value
+
+    def map_wildcard(self, expr, enclosing_prec):
+        return ":"
 
 
 # }}}
@@ -710,6 +730,8 @@ class ArgumentAnalayzer(FTreeWalkerBase):
         scope = self.scope_stack[-1]
 
         lhs = self.parse_expr(node.variable)
+
+
         from pymbolic.primitives import Subscript, Call
         if isinstance(lhs, Subscript):
             lhs_name = lhs.aggregate.name
@@ -1089,6 +1111,13 @@ class F2CLTranslator(FTreeWalkerBase):
         if lhs_dtype.kind != 'c' and rhs_dtype.kind == 'c':
             from pymbolic import var
             rhs = var("real")(rhs)
+        # check for silent widening of real
+        if lhs_dtype.kind == 'c' and rhs_dtype.kind != 'c':
+            from pymbolic import var
+            rhs = var("fromreal")(rhs)
+
+        if lhs_name == "cd":
+            print lhs_dtype, rhs_dtype, rhs
 
         return cgen.Assign(self.gen_expr(lhs), self.gen_expr(rhs))
 
@@ -1318,15 +1347,26 @@ def f2cl_files(source_file, target_file, **kwargs):
 if __name__ == "__main__":
     from cgen.opencl import CLConstant
 
-    f2cl_files("hank107.f", "hank107.cl",
+    if 0:
+        f2cl_files("hank107.f", "hank107.cl",
+                addr_space_hints={
+                    ("hank107p", "p"): CLConstant,
+                    ("hank107pc", "p"): CLConstant,
+                    },
+                force_casts={
+                    ("hank107p", 0): "__constant cdouble_t *",
+                    })
+
+        f2cl_files("cdjseval2d.f", "cdjseval2d.cl")
+
+    f2cl_files("hank103.f", "hank103.cl",
             addr_space_hints={
-                ("hank107p", "p"): CLConstant,
-                ("hank107pc", "p"): CLConstant,
+                ("hank103p", "p"): CLConstant,
+                ("hank103pc", "p"): CLConstant,
                 },
             force_casts={
-                ("hank107p", 0): "__constant cdouble_t *",
-                })
-
-    f2cl_files("cdjseval2d.f", "cdjseval2d.cl", try_compile=True)
+                ("hank103p", 0): "__constant cdouble_t *",
+                },
+            try_compile=True)
 
 # vim: foldmethod=marker
