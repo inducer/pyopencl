@@ -85,7 +85,9 @@ def get_elwise_kernel_and_types(context, arguments, operation,
     for arg in parsed_args:
         if arg.dtype in [np.float64, np.complex128]:
             if not have_double_pragma:
-                pragmas.append("#pragma OPENCL EXTENSION cl_khr_fp64: enable\n")
+                pragmas.append(
+                        "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n"
+                        "#define PYOPENCL_DEFINE_CDOUBLE\n")
                 have_double_pragma = True
         if arg.dtype.kind == 'c':
             if not have_complex_include:

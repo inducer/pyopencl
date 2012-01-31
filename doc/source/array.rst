@@ -396,6 +396,13 @@ See the `source file
 <https://github.com/inducer/pyopencl/blob/master/src/cl/pyopencl-complex.h>`_
 for a precise list of what's available.
 
+If you need double precision support, please::
+
+    #define PYOPENCL_DEFINE_CDOUBLE
+
+before including the header, as DP support apparently cannot be reliably
+autodetected.
+
 Under the hood, the complex types are simply `float2` and `double2`.
 
 .. warning::

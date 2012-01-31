@@ -219,7 +219,7 @@
 PYOPENCL_DECLARE_COMPLEX_TYPE(float, FLT);
 #define cfloat_cast(a) ((cfloat_t) ((a).x, (a).y))
 
-#ifdef DBL_EPSILON
+#ifdef PYOPENCL_DEFINE_CDOUBLE
 PYOPENCL_DECLARE_COMPLEX_TYPE(double, DBL);
 #define cdouble_cast(a) ((cdouble_t) ((a).x, (a).y))
 #endif
