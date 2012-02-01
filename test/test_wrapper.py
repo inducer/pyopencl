@@ -363,6 +363,9 @@ class TestCL:
     def test_header_dep_handling(self, ctx_factory):
         context = ctx_factory()
 
+        from os.path import exists
+        assert exists("empty-header.h") # if this fails, change dir to pyopencl/test
+
         kernel_src = """
         #include <empty-header.h>
         kernel void zonk(global int *a) 
