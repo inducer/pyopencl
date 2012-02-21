@@ -146,7 +146,7 @@ class Image(_cl._ImageBase):
         if shape is None and hostbuf is not None:
             shape = hostbuf.shape
 
-        if hostbuf is None and not \
+        if hostbuf is not None and not \
                 (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
             from warnings import warn
             warn("'hostbuf' was passed, but no memory flags to make use of it.")
