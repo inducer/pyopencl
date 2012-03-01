@@ -239,7 +239,7 @@ void pyopencl_expose_part_2()
 
   {
     typedef kernel cls;
-    py::class_<cls, boost::noncopyable>("Kernel",
+    py::class_<cls, boost::noncopyable>("_Kernel",
         py::init<const program &, std::string const &>())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)

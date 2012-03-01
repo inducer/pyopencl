@@ -204,8 +204,9 @@ class TestCL:
         mf = cl.mem_flags
         a_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=a)
 
+        knl = cl.Kernel(prg, "mult")
         try:
-            prg.mult(queue, a.shape, None, a_buf, 2, 3)
+            knl(queue, a.shape, None, a_buf, 2, 3)
             assert False, "PyOpenCL should not accept bare Python types as arguments"
         except cl.LogicError:
             pass

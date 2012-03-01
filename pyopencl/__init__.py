@@ -37,6 +37,14 @@ def compiler_output(text):
 
 
 
+# {{{ Kernel
+
+class Kernel(_cl._Kernel):
+    def __init__(self, prg, name):
+        _cl._Kernel.__init__(self, prg._get_prg(), name)
+
+# }}}
+
 # {{{ Program (including caching support)
 
 class Program(object):
@@ -89,7 +97,7 @@ class Program(object):
 
     def __getattr__(self, attr):
         try:
-            knl = Kernel(self._get_prg(), attr)
+            knl = Kernel(self, attr)
             # Nvidia does not raise errors even for invalid names,
             # but this will give an error if the kernel is invalid.
             knl.num_args
@@ -261,7 +269,7 @@ def _add_functionality():
                 (_cl._ImageBase.get_image_info, _cl.image_info),
             Program:
                 (Program.get_info, _cl.program_info),
-            _cl.Kernel:
+            Kernel:
                 (Kernel.get_info, _cl.kernel_info),
             _cl.Sampler:
                 (Sampler.get_info, _cl.sampler_info),
