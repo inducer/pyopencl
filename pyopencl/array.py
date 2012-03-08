@@ -39,7 +39,16 @@ from pyopencl.compyte.array import (
         f_contiguous_strides as _f_contiguous_strides,
         c_contiguous_strides as _c_contiguous_strides,
         ArrayFlags as _ArrayFlags,
-        get_common_dtype as _get_common_dtype)
+        get_common_dtype as _get_common_dtype_base)
+from pyopencl.characterize import has_double_support
+
+
+
+
+def _get_common_dtype(obj1, obj2, queue):
+    return _get_common_dtype_base(obj1, obj2,
+            has_double_support(queue.device))
+
 
 
 # {{{ vector types
@@ -516,7 +525,8 @@ class Array(object):
     def mul_add(self, selffac, other, otherfac, queue=None):
         """Return `selffac * self + otherfac*other`.
         """
-        result = self._new_like_me(_get_common_dtype(self, other))
+        result = self._new_like_me(
+                _get_common_dtype(self, other, queue or self.queue))
         self._axpbyz(result, selffac, self, otherfac, other)
         return result
 
@@ -525,7 +535,7 @@ class Array(object):
 
         if isinstance(other, Array):
             # add another vector
-            result = self._new_like_me(_get_common_dtype(self, other))
+            result = self._new_like_me(_get_common_dtype(self, other, self.queue))
             self._axpbyz(result,
                     self.dtype.type(1), self,
                     other.dtype.type(1), other)
@@ -535,8 +545,9 @@ class Array(object):
             if other == 0:
                 return self
             else:
-                result = self._new_like_me(_get_common_dtype(self, other))
-                self._axpbz(result, self.dtype.type(1), self, other)
+                common_dtype = _get_common_dtype(self, other, self.queue)
+                result = self._new_like_me(common_dtype)
+                self._axpbz(result, self.dtype.type(1), self, common_dtype.type(other))
                 return result
 
     __radd__ = __add__
@@ -545,7 +556,7 @@ class Array(object):
         """Substract an array from an array or a scalar from an array."""
 
         if isinstance(other, Array):
-            result = self._new_like_me(_get_common_dtype(self, other))
+            result = self._new_like_me(_get_common_dtype(self, other, self.queue))
             self._axpbyz(result,
                     self.dtype.type(1), self,
                     other.dtype.type(-1), other)
@@ -555,7 +566,7 @@ class Array(object):
             if other == 0:
                 return self
             else:
-                result = self._new_like_me(_get_common_dtype(self, other))
+                result = self._new_like_me(_get_common_dtype(self, other, self.queue))
                 self._axpbz(result, self.dtype.type(1), self, -other)
                 return result
 
@@ -564,9 +575,10 @@ class Array(object):
 
            x = n - self
         """
+        common_dtype = _get_common_dtype(self, other, self.queue)
         # other must be a scalar
-        result = self._new_like_me(_get_common_dtype(self, other))
-        self._axpbz(result, self.dtype.type(-1), self, other)
+        result = self._new_like_me(common_dtype)
+        self._axpbz(result, self.dtype.type(-1), self, common_dtype.type(other))
         return result
 
     def __iadd__(self, other):
@@ -594,17 +606,19 @@ class Array(object):
 
     def __mul__(self, other):
         if isinstance(other, Array):
-            result = self._new_like_me(_get_common_dtype(self, other))
+            result = self._new_like_me(_get_common_dtype(self, other, self.queue))
             self._elwise_multiply(result, self, other)
             return result
         else:
-            result = self._new_like_me(_get_common_dtype(self, other))
-            self._axpbz(result, other, self, self.dtype.type(0))
+            common_dtype = _get_common_dtype(self, other, self.queue)
+            result = self._new_like_me(common_dtype)
+            self._axpbz(result, common_dtype.type(other), self, self.dtype.type(0))
             return result
 
     def __rmul__(self, scalar):
-        result = self._new_like_me(_get_common_dtype(self, scalar))
-        self._axpbz(result, scalar, self, self.dtype.type(0))
+        common_dtype = _get_common_dtype(self, scalar, self.queue)
+        result = self._new_like_me(common_dtype)
+        self._axpbz(result, common_dtype.type(scalar), self, self.dtype.type(0))
         return result
 
     def __imul__(self, scalar):
@@ -617,16 +631,17 @@ class Array(object):
            x = self / n
         """
         if isinstance(other, Array):
-            result = self._new_like_me(_get_common_dtype(self, other))
+            result = self._new_like_me(_get_common_dtype(self, other, self.queue))
             self._div(result, self, other)
         else:
             if other == 1:
                 return self
             else:
                 # create a new array for the result
-                result = self._new_like_me(_get_common_dtype(self, other))
+                common_dtype = _get_common_dtype(self, other, self.queue)
+                result = self._new_like_me(common_dtype)
                 self._axpbz(result,
-                        1/other, self, self.dtype.type(0))
+                        common_dtype.type(1/other), self, self.dtype.type(0))
 
         return result
 
@@ -639,15 +654,16 @@ class Array(object):
         """
 
         if isinstance(other, Array):
-            result = self._new_like_me(_get_common_dtype(self, other))
+            result = self._new_like_me(_get_common_dtype(self, other, self.queue))
             other._div(result, self)
         else:
             if other == 1:
                 return self
             else:
                 # create a new array for the result
-                result = self._new_like_me(_get_common_dtype(self, other))
-                self._rdiv_scalar(result, self, other)
+                common_dtype = _get_common_dtype(self, other, self.queue)
+                result = self._new_like_me(common_dtype)
+                self._rdiv_scalar(result, self, common_dtype.type(other))
 
         return result
 
@@ -682,18 +698,19 @@ class Array(object):
         if isinstance(other, Array):
             assert self.shape == other.shape
 
-            result = self._new_like_me(_get_common_dtype(self, other))
+            result = self._new_like_me(_get_common_dtype(self, other, self.queue))
             self._pow_array(result, self, other)
         else:
-            result = self._new_like_me(_get_common_dtype(self, other))
+            result = self._new_like_me(_get_common_dtype(self, other, self.queue))
             self._pow_scalar(result, self, other)
 
         return result
 
     def __rpow__(self, other):
         # other must be a scalar
-        result = self._new_like_me(_get_common_dtype(self, other))
-        self._rpow_scalar(result, other, self)
+        common_dtype = _get_common_dtype(self, other, self.queue)
+        result = self._new_like_me(common_dtype)
+        self._rpow_scalar(result, common_dtype.type(other), self)
         return result
 
     def reverse(self, queue=None):
@@ -792,6 +809,8 @@ class Array(object):
         return self._new_with_changes(data=self.data, shape=shape, dtype=dtype)
 
     # }}
+
+# }}}
 
 # }}}
 

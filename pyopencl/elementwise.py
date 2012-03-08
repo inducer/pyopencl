@@ -432,8 +432,14 @@ def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z):
     x = "x[i]"
     y = "y[i]"
 
+    if x_is_complex and dtype_x != dtype_z:
+        x = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), x)
+    if y_is_complex and dtype_y != dtype_z:
+        y = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), y)
+
     if x_is_complex and y_is_complex:
         xy = "%s_mul(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+
     else:
         xy = "%s * %s" % (x, y)
 
@@ -503,7 +509,7 @@ def get_rdivide_elwise_kernel(context, dtype_x, dtype_y, dtype_z):
             y = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), y)
 
     if x_is_complex and y_is_complex:
-        yox = "%s_divide(%s, %s)" % (complex_dtype_to_name(dtype_z), y / x)
+        yox = "%s_divide(%s, %s)" % (complex_dtype_to_name(dtype_z), y, x)
     elif not y_is_complex and x_is_complex:
         yox = "%s_rdivide(%s, %s)" % (complex_dtype_to_name(dtype_x), y, x)
     else:

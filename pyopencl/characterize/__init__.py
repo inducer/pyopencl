@@ -2,10 +2,12 @@ from __future__ import division
 
 import pyopencl as cl
 import numpy as np
+from pytools import memoize
 
 class CLCharacterizationWarning(UserWarning):
     pass
 
+@memoize
 def has_double_support(dev):
     for ext in dev.extensions.split(" "):
         if ext == "cl_khr_fp64":

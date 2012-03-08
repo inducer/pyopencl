@@ -104,7 +104,8 @@ def test_basic_complex(ctx_factory):
             + 1j* rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64))
     c = np.complex64(5+7j)
 
-    assert ((c*ary).get() == c*ary.get()).all()
+    host_ary = ary.get()
+    assert la.norm((c*ary).get() - c*host_ary) < 1e-5 * la.norm(host_ary)
 
 @pytools.test.mark_test.opencl
 def test_mix_complex(ctx_factory):

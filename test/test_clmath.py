@@ -90,7 +90,7 @@ if have_cl():
     test_exp = make_unary_function_test("exp", (-3, 3), 1e-5, use_complex=True)
     test_log = make_unary_function_test("log", (1e-5, 1), 1e-6, use_complex=True)
     test_log10 = make_unary_function_test("log10", (1e-5, 1), 5e-7)
-    test_sqrt = make_unary_function_test("sqrt", (1e-5, 1), 2e-7, use_complex=True)
+    test_sqrt = make_unary_function_test("sqrt", (1e-5, 1), 3e-7, use_complex=True)
 
     test_sin = make_unary_function_test("sin", (-10, 10), 2e-7, use_complex=2e-3)
     test_cos = make_unary_function_test("cos", (-10, 10), 2e-7, use_complex=2e-3)
