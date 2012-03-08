@@ -217,9 +217,9 @@
   PYOPENCL_DECLARE_COMPLEX_TYPE_INT(BASE, BASE_3LTR, c##BASE, c##BASE##_t)
 
 PYOPENCL_DECLARE_COMPLEX_TYPE(float, FLT);
-#define cfloat_cast(a) ((cfloat_t) ((a).x, (a).y))
+#define cfloat_cast(a) ((cfloat_t) ((float) (a).x, (float) (a).y))
 
 #ifdef PYOPENCL_DEFINE_CDOUBLE
 PYOPENCL_DECLARE_COMPLEX_TYPE(double, DBL);
-#define cdouble_cast(a) ((cdouble_t) ((a).x, (a).y))
+#define cdouble_cast(a) ((cdouble_t) ((double) (a).x, (double) (a).y))
 #endif
