@@ -302,6 +302,8 @@ class _SourceInfo(Record):
     pass
 
 def _create_built_program_from_source_cached(ctx, src, options, devices, cache_dir):
+    from os.path import join # required in multiple places below
+
     include_path = ["."]
 
     option_idx = 0
@@ -319,7 +321,6 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
             option_idx += 1
 
     if cache_dir is None:
-        from os.path import join
         from tempfile import gettempdir
         import getpass
         cache_dir = join(gettempdir(),
