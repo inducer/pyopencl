@@ -12,11 +12,22 @@ def get_config_schema():
     if 'darwin' in sys.platform:
         import platform
         osx_ver, _, _ = platform.mac_ver()
-        osx_ver = float('.'.join(osx_ver.split('.')[:2]))
+        osx_ver = '.'.join(osx_ver.split('.')[:2])
+
+        sysroot_paths = [
+                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk" % osx_ver,
+                "/Developer/SDKs/MacOSX%s.sdk" % osx_ver
+                ]
 
         default_libs = []
-        default_cxxflags = ['-arch', 'i386', '-arch', 'x86_64',
-                '-isysroot', '/Developer/SDKs/MacOSX%s.sdk' % osx_ver]
+        default_cxxflags = ['-arch', 'i386', '-arch', 'x86_64']
+
+        from os.path import isdir
+        for srp in sysroot_paths:
+            if isdir(srp):
+                default_cxxflags.extend(['-isysroot', srp])
+                break
+
         default_ldflags = default_cxxflags[:] + ["-Wl,-framework,OpenCL"]
 
     else:
