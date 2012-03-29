@@ -327,7 +327,12 @@ class ComplexCCodeMapper(CCodeMapperBase):
             from pymbolic.mapper.stringifier import PREC_PRODUCT, PREC_NONE
             real_prd = self.join_rec("*", reals, PREC_PRODUCT)
 
-            complex_prd = self.rec(complexes[0], PREC_NONE)
+            if len(complexes) == 1:
+                myprec = PREC_PRODUCT
+            else:
+                myprec = PREC_NONE
+
+            complex_prd = self.rec(complexes[0], myprec)
             for child in complexes[1:]:
                 complex_prd = "%s_mul(%s, %s)" % (
                         tgt_name, complex_prd,
