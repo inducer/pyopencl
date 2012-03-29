@@ -7,20 +7,22 @@ Installation information is maintained collaboratively on the
 Acknowledgments
 ===============
 
-* James Snyder provided patches to make PyOpenCL work on OS X 10.6.
-* Roger Pau Monné supplied the example :file:`examples/benchmark-all.py`.
-* David Garcia contributed significantly to PyOpenCL's API design
-  and reported many bugs.
-* Michal Januszewski sent a patch.
-* Achim Gottinger submitted a fix for an example.
-* Andrew Karpushin provided a fix for a whole class of crash bugs in
-  PyOpenCL.
-* Paolo Simone Gasparello, Keith Brafford, and Ian Johnson provided much help
-  in getting OpenCL-OpenGL interoperability to work.
-* Sean True allowed access to a test machine to ensure compatibility
-  with OS X Lion.
-* Tomasz Rybak did many great things for PyOpenCL, not the least
-  of which is packaging for Debian and Ubuntu.
+Too many to list. Please see the
+`commit log <https://github.com/inducer/pyopencl/commits/master>`_
+for detailed acknowledgments.
+
+Tips
+====
+
+Syntax highlighting
+-------------------
+
+You can obtain Vim syntax highlighting for OpenCL C inlined in Python by
+checking `this file
+<https://github.com/inducer/pyopencl/blob/master/contrib/pyopencl.vim>`_.
+
+Note that the triple-quoted strings containing the source must start with
+`"""//CL// ..."""`.
 
 Guidelines
 ==========

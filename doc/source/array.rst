@@ -3,8 +3,11 @@ Multi-dimensional arrays on the Compute Device
 
 .. module:: pyopencl.array
 
+Data Types
+----------
+
 Vector Types
-------------
+^^^^^^^^^^^^
 
 .. class :: vec
 
@@ -15,6 +18,21 @@ Vector Types
     to kernels as well as for passing data back and forth between kernels and
     Python code. For each type, a `make_type` function is also provided (e.g.
     `make_float3(x,y,z)`).
+
+Custom data types
+^^^^^^^^^^^^^^^^^
+
+If you would like to use your own (struct/union/whatever) data types in array
+operations where you supply operation source code, define those types in the
+*preamble* passed to :class:`pyopencl.elementwise.ElementwiseKernel`,
+:class:`pyopencl.reduction.ReductionKernel` (or similar), and let PyOpenCL know
+about them using this function:
+
+.. function:: pyopencl.tools.register_dtype(dtype, name)
+
+    *dtype* is a :func:`numpy.dtype`.
+
+    .. versionadded: 2011.2
 
 The :class:`Array` Class
 ------------------------
@@ -162,7 +180,7 @@ The :class:`Array` Class
         .. versionadded:: 2012.1
 
 Constructing :class:`Array` Instances
-----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. function:: to_device(queue, ary, allocator=None, async=False)
 
@@ -647,18 +665,6 @@ Here's a usage example::
     assert (dev_data.get() == np.cumsum(host_data, axis=0)).all()
 
 
-Custom data types in Reduction and Scan
----------------------------------------
-
-If you would like to use your own (struct/union/whatever) data types in
-scan and reduction, define those types in the *preamble* and let PyOpenCL
-know about them using this function:
-
-.. function:: pyopencl.tools.register_dtype(dtype, name)
-
-    *dtype* is a :func:`numpy.dtype`.
-
-    .. versionadded: 2011.2
 
 Fast Fourier Transforms
 -----------------------
