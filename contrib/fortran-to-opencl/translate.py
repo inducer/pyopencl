@@ -127,7 +127,16 @@ class FortranExpressionParser(ExpressionParserBase):
             else:
                 dtype = np.float32
 
-            return TypedLiteral(value.replace("d", "e"), dtype)
+            value = value.replace("d", "e")
+            if value.startswith("."):
+                prev_value = value
+                value = "0"+value
+                print value, prev_value
+            elif value.startswith("-."):
+                prev_value = value
+                value = "-0"+value[1:]
+                print value, prev_value
+            return TypedLiteral(value, dtype)
 
         elif next_tag is _identifier:
             name = pstate.next_str_and_advance()
@@ -1120,9 +1129,6 @@ class F2CLTranslator(FTreeWalkerBase):
         if lhs_dtype.kind == 'c' and rhs_dtype.kind != 'c':
             from pymbolic import var
             rhs = var("fromreal")(rhs)
-
-        if lhs_name == "cd":
-            print lhs_dtype, rhs_dtype, rhs
 
         return cgen.Assign(self.gen_expr(lhs), self.gen_expr(rhs))
 
