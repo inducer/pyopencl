@@ -375,12 +375,18 @@ void pyopencl_expose_constants()
     py::class_<device_exec_capabilities> cls("device_exec_capabilities", py::no_init);
     ADD_ATTR(EXEC_, KERNEL);
     ADD_ATTR(EXEC_, NATIVE_KERNEL);
+#ifdef CL_EXEC_IMMEDIATE_EXECUTION_INTEL
+    ADD_ATTR(EXEC_, IMMEDIATE_EXECUTION_INTEL);
+#endif
   }
 
   {
     py::class_<command_queue_properties> cls("command_queue_properties", py::no_init);
     ADD_ATTR(QUEUE_, OUT_OF_ORDER_EXEC_MODE_ENABLE);
     ADD_ATTR(QUEUE_, PROFILING_ENABLE);
+#ifdef CL_QUEUE_IMMEDIATE_EXECUTION_ENABLE_INTEL
+    ADD_ATTR(QUEUE_, IMMEDIATE_EXECUTION_ENABLE_INTEL);
+#endif
   }
 
   {
