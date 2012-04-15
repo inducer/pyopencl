@@ -36,6 +36,11 @@
   TP TPROOT##_fromreal(REAL_TP a) { return (TP)(a, 0); } \
   TP TPROOT##_conj(TP a) { return (TP)(a.x, -a.y); } \
   \
+  TP TPROOT##_addr(TP a, REAL_TP b) \
+  { \
+    return (TP)(b+a.x, a.y); \
+  } \
+  \
   TP TPROOT##_mul(TP a, TP b) \
   { \
     return (TP)( \
