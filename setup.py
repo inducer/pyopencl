@@ -117,7 +117,7 @@ def main():
         print("Mako is not installed.")
         print("-------------------------------------------------------------------------")
         print("That is not a problem, as most of PyOpenCL will be just fine without it.")
-        print("Some higher-level parts of pyopencl (pyopencl.reduction, to be precise)")
+        print("Some higher-level parts of pyopencl (such as pyopencl.reduction)")
         print("will not function without the templating engine Mako [1] being installed.")
         print("If you would like this functionality to work, you might want to install")
         print("Mako after you finish installing PyOpenCL.")
