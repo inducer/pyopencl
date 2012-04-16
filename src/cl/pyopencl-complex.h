@@ -48,6 +48,11 @@
         a.x*b.y + a.y*b.x); \
   } \
   \
+  TP TPROOT##_mulr(TP a, REAL_TP b) \
+  { \
+    return a*b; \
+  } \
+  \
   TP TPROOT##_rdivide(REAL_TP z1, TP z2) \
   { \
     if (fabs(z2.x) <= fabs(z2.y)) { \
