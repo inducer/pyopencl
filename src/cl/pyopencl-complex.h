@@ -94,9 +94,9 @@
   } \
   \
   TP TPROOT##_divider(TP a, REAL_TP b) \
-  { \
-    return a/b; \
-  } \
+  { \
+    return a/b; \
+  } \
   \
   TP TPROOT##_pow(TP a, TP b) \
   { \
