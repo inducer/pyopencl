@@ -24,6 +24,9 @@
 // functions as visible below, e.g. cdouble_log(z).
 //
 // Under the hood, the complex types are simply float2 and double2.
+// Note that native (operator-based) addition (float + float2) and
+// multiplication (float2*float1) is defined for these types,
+// but do not match the rules of complex arithmetic.
 
 #define PYOPENCL_DECLARE_COMPLEX_TYPE_INT(REAL_TP, REAL_3LTR, TPROOT, TP) \
   \
