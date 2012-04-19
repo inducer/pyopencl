@@ -59,6 +59,11 @@
     return a*b; \
   } \
   \
+  TP TPROOT##_rmul(REAL_TP a, TP b) \
+  { \
+    return a*b; \
+  } \
+  \
   TP TPROOT##_rdivide(REAL_TP z1, TP z2) \
   { \
     if (fabs(z2.x) <= fabs(z2.y)) { \
