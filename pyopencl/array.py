@@ -303,7 +303,9 @@ class Array(object):
 
         self.base = base
 
-        self.context = self.data.context
+    @property
+    def context(self):
+        return self.data.context
 
     @property
     @memoize_method
@@ -820,11 +822,13 @@ def to_device(*args, **kwargs):
     """Converts a numpy array to a :class:`Array`."""
 
     def _to_device(queue, ary, allocator=None, async=False):
+        if ary.dtype == object:
+            raise RuntimeError("to_device does not work on object arrays.")
+
         result = Array(queue, ary.shape, ary.dtype,
                         allocator=allocator, strides=ary.strides)
         result.set(ary, async=async)
         return result
-
 
     if isinstance(args[0], cl.Context):
         from warnings import warn
