@@ -179,6 +179,43 @@ def test_frexp(ctx_factory):
             assert sig_true == significands[i]
             assert ex_true == exponents[i]
 
+@pytools.test.mark_test.opencl
+def test_bessel_j(ctx_factory):
+    try:
+        import scipy.special as spec
+    except ImportError:
+        from py.test import skip
+        skip("scipy not present--cannot test Bessel function")
+
+    a = np.logspace(-5, 5, 10**6)
+
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    if not has_double_support(ctx.devices[0]):
+        from py.test import skip
+        skip("no double precision support--cannot test bessel function")
+
+    a_dev = cl_array.to_device(queue, a)
+
+    for n in range(0, 30):
+        cl_bessel = clmath.bessel_jn(n, a_dev).get()
+        scipy_bessel = spec.jn(n, a)
+
+        error = np.max(np.abs(cl_bessel-scipy_bessel))
+        print n, error
+        assert error < 1e-10
+        assert not np.isnan(cl_bessel).any()
+
+        if 0 and n == 15:
+            import matplotlib.pyplot as pt
+            #pt.plot(scipy_bessel)
+            #pt.plot(cl_bessel)
+
+            pt.loglog(a, np.abs(cl_bessel-scipy_bessel))
+            pt.show()
+
+
 
 
 

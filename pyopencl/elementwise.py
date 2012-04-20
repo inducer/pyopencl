@@ -643,6 +643,17 @@ def get_ldexp_kernel(context):
 
 
 @context_dependent_memoize
+def get_bessel_jn_kernel(context):
+    return get_elwise_kernel(context,
+            "double *z, int ord_n, double *x",
+            "z[i] = bessel_jn(ord_n, x[i])",
+            name="bessel_jn_kernel",
+            preamble="""
+            #include <pyopencl-bessel-j.h>
+            """)
+
+
+@context_dependent_memoize
 def get_unary_func_kernel(context, func_name, in_dtype, out_dtype=None):
     if out_dtype is None:
         out_dtype = in_dtype

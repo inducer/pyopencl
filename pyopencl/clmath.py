@@ -121,7 +121,6 @@ def modf(arg, queue=None):
     """Return a tuple `(fracpart, intpart)` of arrays containing the
     integer and fractional parts of `arg`.
     """
-
     intpart = arg._new_like_me(queue=queue)
     fracpart = arg._new_like_me(queue=queue)
     _modf(intpart, fracpart, arg, queue=queue)
@@ -150,7 +149,21 @@ tanpi = _make_unary_array_func("tanpi")
 tgamma = _make_unary_array_func("tgamma")
 trunc = _make_unary_array_func("trunc")
 
+
 # no point wrapping half_ or native_
 
 # TODO: table 6.10, integer functions
 # TODO: table 6.12, clamp et al
+
+@cl_array.elwise_kernel_runner
+def _bessel_jn(result, sig, exp):
+    return elementwise.get_bessel_jn_kernel(result.context)
+
+def bessel_jn(n, x, queue=None):
+    """Return a new array of floating point values composed from the
+    entries of `significand` and `exponent`, paired together as
+    `result = significand * 2**exponent`.
+    """
+    result = x._new_like_me(queue=queue)
+    _bessel_jn(result, n, x)
+    return result
