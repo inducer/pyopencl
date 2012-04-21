@@ -203,7 +203,7 @@ def test_bessel_j(ctx_factory):
         scipy_bessel = spec.jn(n, a)
 
         error = np.max(np.abs(cl_bessel-scipy_bessel))
-        print n, error
+        print(n, error)
         assert error < 1e-10
         assert not np.isnan(cl_bessel).any()
 

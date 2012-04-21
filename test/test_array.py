@@ -60,7 +60,7 @@ def test_absrealimag(ctx_factory):
     n = 111
     for func in [abs, real, imag, conj]:
         for dtype in [np.int32, np.float32, np.complex64]:
-            print func, dtype
+            print(func, dtype)
             a = -make_random_array(queue, dtype, n)
 
             host_res = func(a.get())
@@ -68,9 +68,9 @@ def test_absrealimag(ctx_factory):
 
             correct = np.allclose(dev_res, host_res)
             if not correct:
-                print dev_res
-                print host_res
-                print dev_res-host_res
+                print(dev_res)
+                print(host_res)
+                print(dev_res-host_res)
             assert correct
 
 
@@ -127,8 +127,8 @@ def test_mix_complex(ctx_factory):
             (np.float64, np.complex128),
             ])
 
-    from operator import add, mul, sub, div
-    for op in [add, sub, mul, div, pow]:
+    from operator import add, mul, sub, truediv
+    for op in [add, sub, mul, truediv, pow]:
         for dtype_a0, dtype_b0 in dtypes:
             for dtype_a, dtype_b in [
                     (dtype_a0, dtype_b0),
@@ -153,7 +153,7 @@ def test_mix_complex(ctx_factory):
                         ary_b = make_random_array(queue, dtype_b, size)
                         host_ary_b = ary_b.get()
 
-                    print op, dtype_a, dtype_b, is_scalar_a, is_scalar_b
+                    print(op, dtype_a, dtype_b, is_scalar_a, is_scalar_b)
                     dev_result = op(ary_a, ary_b).get()
                     host_result = op(host_ary_a, host_ary_b)
 
@@ -162,18 +162,18 @@ def test_mix_complex(ctx_factory):
                         # served a Python complex that is really a
                         # smaller numpy complex.
 
-                        print "HOST_DTYPE: %s DEV_DTYPE: %s" % (
-                                host_result.dtype, dev_result.dtype)
+                        print("HOST_DTYPE: %s DEV_DTYPE: %s" % (
+                                host_result.dtype, dev_result.dtype))
 
                         dev_result = dev_result.astype(host_result.dtype)
 
                     err = la.norm(host_result-dev_result)/la.norm(host_result)
-                    print err
+                    print(err)
                     correct = err < 1e-5
                     if not correct:
-                        print host_result
-                        print dev_result
-                        print host_result - dev_result
+                        print(host_result)
+                        print(dev_result)
+                        print(host_result - dev_result)
 
                     assert correct
 
@@ -735,7 +735,7 @@ def test_scan(ctx_factory):
 
             is_ok = (dev_data.get() == desired_result).all()
             if not is_ok:
-                print summarize_error(dev_data.get(), desired_result, host_data)
+                print(summarize_error(dev_data.get(), desired_result, host_data))
 
             assert is_ok
             from gc import collect
