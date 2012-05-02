@@ -124,7 +124,7 @@ void pyopencl_expose_part_2()
       (py::args("queue", "src", "dest", "origin", "region", "offset"),
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
-  py::def("_enqueue_copy_buffer_to_image", enqueue_copy_image_to_buffer,
+  py::def("_enqueue_copy_buffer_to_image", enqueue_copy_buffer_to_image,
       (py::args("queue", "src", "dest", "offset", "origin", "region"),
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
