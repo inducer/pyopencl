@@ -342,13 +342,17 @@ class Array(object):
     def set(self, ary, queue=None, async=False):
         assert ary.size == self.size
         assert ary.dtype == self.dtype
-        assert self.flags.forc
 
         if not ary.flags.forc:
-            raise RuntimeError(
-                    "cannot set from non-contiguous array")
+            raise RuntimeError("cannot set from non-contiguous array")
 
             ary = ary.copy()
+
+        if ary.strides != self.strides:
+            from warnings import warn
+            warn("Setting array from one with different strides/storage order. "
+                    "This will cease to work in 2013.x.",
+                    stacklevel=2)
 
         if self.size:
             cl.enqueue_copy(queue or self.queue, self.data, ary,
