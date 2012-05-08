@@ -213,7 +213,7 @@ def test_bessel_j(ctx_factory):
         hellskitchen_result = np.empty((len(a), nterms), dtype=np.complex128)
         for i, a_i in enumerate(a):
             if i % 10000 == 0:
-                print "%.1f %%" % (100 * i/len(a))
+                print("%.1f %%" % (100 * i/len(a)))
             ier, fjs, _, _ = jfuns2d(nterms, a_i, 1, 0, 10000)
             hellskitchen_result[i] = fjs[:nterms]
         assert ier == 0
