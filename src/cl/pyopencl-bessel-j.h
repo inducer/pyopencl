@@ -372,7 +372,7 @@ fstart:
     if( ++ctr > 1000 )
     {
       //mtherr( "jv", UNDERFLOW );
-      pk = nan(24);
+      pk = nan((uint)24);
 
       goto done;
     }
@@ -478,7 +478,7 @@ double bessel_jvs(double n, double x)
 {
   double t, u, y, z, k;
   int ex;
-  int sgngam;
+  int sgngam = 1;
 
   z = -x * x / 4.0;
   u = 1.0;
@@ -973,7 +973,7 @@ double bessel_jv(double n, double x)
   {
     // mtherr( "Jv", DOMAIN );
     // y = 0.0;
-    y = nan(22);
+    y = nan((uint)22);
     goto done;
   }
 
@@ -1101,7 +1101,7 @@ underf:
     {
       //mtherr( "Jv", TLOSS );
       //y = 0.0;
-      y = nan(23);
+      y = nan((uint)23);
       goto done;
     }
     t = x/n;
