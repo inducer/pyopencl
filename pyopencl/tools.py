@@ -44,6 +44,8 @@ register_dtype(np.complex128, "cdouble_t")
 
 
 
+bitlog2 = cl.bitlog2
+
 PooledBuffer = cl.PooledBuffer
 CLAllocator = cl.CLAllocator
 MemoryPool = cl.MemoryPool
