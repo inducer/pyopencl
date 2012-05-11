@@ -1,5 +1,5 @@
 //  Pieced together from Boost C++ and Cephes by
-//  Andreas Kloeckner (C) 20112
+//  Andreas Kloeckner (C) 2012
 //
 //  Pieces from:
 //

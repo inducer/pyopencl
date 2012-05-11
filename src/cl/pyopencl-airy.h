@@ -1,5 +1,5 @@
 //  Ported from Cephes by
-//  Andreas Kloeckner (C) 20112
+//  Andreas Kloeckner (C) 2012
 //
 // Cephes Math Library Release 2.8:  June, 2000
 // Copyright 1984, 1987, 1989, 1992, 2000 by Stephen L. Moshier
