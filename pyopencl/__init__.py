@@ -695,6 +695,8 @@ def create_some_context(interactive=True, answers=None):
                 "avoid being asked again." % ":".join(user_inputs))
     return Context(devices)
 
+_csc = create_some_context
+
 
 
 
