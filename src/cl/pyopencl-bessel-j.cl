@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <pyopencl-cephes.h>
-#include <pyopencl-airy.h>
+#include <pyopencl-cephes.cl>
+#include <pyopencl-airy.cl>
 
 typedef double T;
 
