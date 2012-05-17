@@ -649,7 +649,7 @@ def get_bessel_jn_kernel(context):
             "z[i] = bessel_jn(ord_n, x[i])",
             name="bessel_jn_kernel",
             preamble="""
-            #include <pyopencl-bessel-j.h>
+            #include <pyopencl-bessel-j.cl>
             """)
 
 

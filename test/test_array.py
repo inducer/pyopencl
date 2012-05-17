@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+
 import numpy as np
 import numpy.linalg as la
 import sys
@@ -734,7 +735,7 @@ def test_scan(ctx_factory):
                 desired_result -= host_data
 
             is_ok = (dev_data.get() == desired_result).all()
-            if not is_ok:
+            if 0 and not is_ok:
                 print(summarize_error(dev_data.get(), desired_result, host_data))
 
             assert is_ok
