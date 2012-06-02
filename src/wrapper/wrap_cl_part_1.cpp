@@ -42,7 +42,7 @@ void pyopencl_expose_part_1()
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
       .DEF_SIMPLE_METHOD(create_sub_devices_ext)
 #endif
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(create_sub_devices)
 #endif
       ;
@@ -80,7 +80,7 @@ void pyopencl_expose_part_1()
           const device *, cl_command_queue_properties>
         ((py::arg("context"), py::arg("device")=py::object(), py::arg("properties")=0)))
       .DEF_SIMPLE_METHOD(get_info)
-#ifndef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION < 0x1010
       .DEF_SIMPLE_METHOD(set_property)
 #endif
       .DEF_SIMPLE_METHOD(flush)
@@ -124,7 +124,7 @@ void pyopencl_expose_part_1()
 
   DEF_SIMPLE_FUNCTION(enqueue_wait_for_events);
 
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
   {
     typedef user_event cls;
     py::class_<cls, py::bases<event>, boost::noncopyable>("UserEvent", py::no_init)
@@ -164,7 +164,7 @@ void pyopencl_expose_part_1()
       ;
   }
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   py::def("enqueue_migrate_mem_objects", enqueue_migrate_mem_objects,
       (py::args("queue", "mem_objects"),
        py::arg("flags")=0,
@@ -194,7 +194,7 @@ void pyopencl_expose_part_1()
              py::arg("size")=0,
              py::arg("hostbuf")=py::object()
             )))
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
       .def("get_sub_region", &cls::get_sub_region,
           (py::args("origin", "size"), py::arg("flags")=0),
           py::return_value_policy<py::manage_new_object>())
@@ -236,7 +236,7 @@ void pyopencl_expose_part_1()
 
   // {{{ rectangular
 
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
   py::def("_enqueue_read_buffer_rect", enqueue_read_buffer_rect,
       (py::args("queue", "mem", "hostbuf",
                 "buffer_origin", "host_origin", "region"),
@@ -269,7 +269,7 @@ void pyopencl_expose_part_1()
 
   // }}}
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   py::def("enqueue_fill_buffer", enqueue_fill_buffer,
       (py::args("queue", "mem", "pattern", "offset", "size"),
        py::arg("wait_for")=py::object()),

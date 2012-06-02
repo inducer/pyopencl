@@ -43,6 +43,7 @@ def get_config_schema():
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
         Switch("CL_ENABLE_DEVICE_FISSION", True, "Enable device fission extension, if present"),
+        Option("CL_PRETEND_VERSION", None, "Dotted CL version (e.g. 1.2) which you'd like to use."),
 
         IncludeDir("CL", []),
         LibraryDir("CL", []),
@@ -94,6 +95,13 @@ def main():
 
     if conf["CL_ENABLE_DEVICE_FISSION"]:
         EXTRA_DEFINES["PYOPENCL_USE_DEVICE_FISSION"] = 1
+    if conf["CL_PRETEND_VERSION"]:
+        try:
+            major, minor = [int(x) for x in conf["CL_PRETEND_VERSION"].split(".")]
+            EXTRA_DEFINES["PYOPENCL_PRETEND_CL_VERSION"] = 0x1000*major + 0x10 * minor
+        except:
+            print("CL_PRETEND_VERSION must be of the form M.N, with two integers M and N")
+            raise
 
     ver_dic = {}
     version_file = open("pyopencl/version.py")

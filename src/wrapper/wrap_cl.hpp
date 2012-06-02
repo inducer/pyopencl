@@ -55,6 +55,20 @@
 #include "numpy_init.hpp"
 #include "tools.hpp"
 
+#ifdef PYOPENCL_PRETEND_CL_VERSION
+#define PYOPENCL_CL_VERSION PYOPENCL_PRETEND_CL_VERSION
+#else
+
+#if defined(CL_VERSION_1_2)
+#define PYOPENCL_CL_VERSION 0x1020
+#elif defined(CL_VERSION_1_1)
+#define PYOPENCL_CL_VERSION 0x1010
+#else
+#define PYOPENCL_CL_VERSION 0x1000
+#endif
+
+#endif
+
 // }}}
 
 
@@ -82,7 +96,7 @@
         EXTRA_MSG); \
   }
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
 
 #define PYOPENCL_GET_EXT_FUN(PLATFORM, NAME, VAR) \
     NAME##_fn VAR \
@@ -337,13 +351,10 @@ namespace pyopencl
   inline
   py::tuple get_cl_header_version()
   {
-#if defined(CL_VERSION_1_2)
-    return py::make_tuple(1, 2);
-#elif defined(CL_VERSION_1_1)
-    return py::make_tuple(1, 1);
-#else
-    return py::make_tuple(1, 0);
-#endif
+    return py::make_tuple(
+        PYOPENCL_CL_VERSION >> (3*4),
+        PYOPENCL_CL_VERSION >> (1*4)
+        );
   }
 
   // {{{ platform
@@ -424,7 +435,7 @@ namespace pyopencl
       enum reference_type_t {
         REF_NOT_OWNABLE,
         REF_FISSION_EXT,
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
         REF_CL_1_2,
 #endif
       };
@@ -447,7 +458,7 @@ namespace pyopencl
 #if (defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION))
           else if (ref_type == REF_FISSION_EXT)
           {
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
             cl_platform_id plat;
             PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (m_device, CL_DEVICE_PLATFORM,
                   sizeof(plat), &plat, NULL));
@@ -460,7 +471,7 @@ namespace pyopencl
           }
 #endif
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
           else if (ref_type == REF_CL_1_2)
           {
             PYOPENCL_CALL_GUARDED(clRetainDevice, (did));
@@ -480,7 +491,7 @@ namespace pyopencl
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
         else if (m_ref_type == REF_FISSION_EXT)
         {
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
           cl_platform_id plat;
           PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (m_device, CL_DEVICE_PLATFORM,
                 sizeof(plat), &plat, NULL));
@@ -493,7 +504,7 @@ namespace pyopencl
         }
 #endif
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
         else if (m_ref_type == REF_CL_1_2)
           PYOPENCL_CALL_GUARDED(clReleaseDevice, (m_device));
 #endif
@@ -589,7 +600,7 @@ namespace pyopencl
           case CL_DEVICE_PLATFORM:
             PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_platform_id, platform);
 
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
 
           case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
@@ -628,7 +639,7 @@ namespace pyopencl
             }
           case CL_DEVICE_REFERENCE_COUNT_EXT: DEV_GET_INT_INF(cl_uint);
 #endif
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
           case CL_DEVICE_LINKER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
           case CL_DEVICE_BUILT_IN_KERNELS:
             PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
@@ -660,7 +671,7 @@ namespace pyopencl
         }
       }
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
       py::list create_sub_devices(py::object py_properties)
       {
         std::vector<cl_device_partition_property> properties;
@@ -695,7 +706,7 @@ namespace pyopencl
       {
         std::vector<cl_device_partition_property_ext> properties;
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
         cl_platform_id plat;
         PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (m_device, CL_DEVICE_PLATFORM,
               sizeof(plat), &plat, NULL));
@@ -854,7 +865,7 @@ namespace pyopencl
               return py_result;
             }
 
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
           case CL_CONTEXT_NUM_DEVICES:
             PYOPENCL_GET_INTEGRAL_INFO(
                 Context, m_context, param_name, cl_uint);
@@ -1108,7 +1119,7 @@ namespace pyopencl
         }
       }
 
-#ifndef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION < 0x1010
       cl_command_queue_properties set_property(
           cl_command_queue_properties prop,
           bool enable)
@@ -1178,7 +1189,7 @@ namespace pyopencl
           case CL_EVENT_REFERENCE_COUNT:
             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
                 cl_uint);
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
           case CL_EVENT_CONTEXT:
             PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
                 cl_context, context);
@@ -1268,7 +1279,7 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
     cl_event evt;
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
     PYOPENCL_CALL_GUARDED(clEnqueueMarkerWithWaitList, (
           cq.data(), PYOPENCL_WAITLIST_ARGS, &evt));
 #else
@@ -1295,7 +1306,7 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
     cl_event evt;
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
     PYOPENCL_CALL_GUARDED(clEnqueueBarrierWithWaitList,
         (cq.data(), PYOPENCL_WAITLIST_ARGS, &evt));
 
@@ -1337,7 +1348,7 @@ namespace pyopencl
 
 
 
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
   class user_event : public event
   {
     public:
@@ -1462,7 +1473,7 @@ namespace pyopencl
 
   };
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   inline
   event *enqueue_migrate_mem_objects(
       command_queue &cq,
@@ -1497,7 +1508,7 @@ namespace pyopencl
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
     // {{{ get platform
     cl_device_id dev;
     PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo, (cq.data(), CL_QUEUE_DEVICE,
@@ -1585,7 +1596,7 @@ namespace pyopencl
         : memory_object(mem, retain, hostbuf)
       { }
 
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
       buffer *get_sub_region(
           size_t origin, size_t size, cl_mem_flags flags) const
       {
@@ -1795,7 +1806,7 @@ namespace pyopencl
   // }}}
 
   // {{{ rectangular transfers
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
   inline
   event *enqueue_read_buffer_rect(
       command_queue &cq,
@@ -1923,7 +1934,7 @@ namespace pyopencl
 
   // }}}
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   inline
   event *enqueue_fill_buffer(
       command_queue &cq,
@@ -1977,12 +1988,12 @@ namespace pyopencl
           case CL_IMAGE_WIDTH:
           case CL_IMAGE_HEIGHT:
           case CL_IMAGE_DEPTH:
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
           case CL_IMAGE_ARRAY_SIZE:
 #endif
             PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, size_t);
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
           case CL_IMAGE_BUFFER:
             {
               cl_mem param_value;
@@ -2215,7 +2226,7 @@ namespace pyopencl
     }
   }
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
 
   inline
   image *create_image_from_desc(
@@ -2424,7 +2435,7 @@ namespace pyopencl
 
   // }}}
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   inline
   event *enqueue_fill_image(
       command_queue &cq,
@@ -2810,7 +2821,7 @@ namespace pyopencl
               return py_result;
             }
             // }}}
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
           case CL_PROGRAM_NUM_KERNELS:
             PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
                 size_t);
@@ -2838,7 +2849,7 @@ namespace pyopencl
           case CL_PROGRAM_BUILD_LOG:
             PYOPENCL_GET_STR_INFO(ProgramBuild,
                 PYOPENCL_FIRST_ARG, param_name);
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
           case CL_PROGRAM_BINARY_TYPE:
             PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
                 PYOPENCL_FIRST_ARG, param_name,
@@ -2860,7 +2871,7 @@ namespace pyopencl
              options.c_str(), 0 ,0));
       }
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
       void compile(std::string options, py::object py_devices,
           py::object py_headers)
       {
@@ -2995,7 +3006,7 @@ namespace pyopencl
 
 
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   inline
   program *create_program_with_built_in_kernels(
       context &ctx,
@@ -3077,7 +3088,7 @@ namespace pyopencl
     PYOPENCL_CALL_GUARDED(clUnloadCompiler, ());
   }
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   inline
   void unload_platform_compiler(platform &plat)
   {
@@ -3237,7 +3248,7 @@ namespace pyopencl
           case CL_KERNEL_PROGRAM:
             PYOPENCL_GET_OPAQUE_INFO(Kernel, m_kernel, param_name,
                 cl_program, program);
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
           case CL_KERNEL_ATTRIBUTES:
             PYOPENCL_GET_STR_INFO(Kernel, m_kernel, param_name);
 #endif
@@ -3267,14 +3278,14 @@ namespace pyopencl
               PYOPENCL_RETURN_VECTOR(size_t, result);
             }
           case CL_KERNEL_LOCAL_MEM_SIZE:
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
           case CL_KERNEL_PRIVATE_MEM_SIZE:
 #endif
             PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
                 PYOPENCL_FIRST_ARG, param_name,
                 cl_ulong);
 
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
           case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
             PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
                 PYOPENCL_FIRST_ARG, param_name,
@@ -3286,7 +3297,7 @@ namespace pyopencl
         }
       }
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
       py::object get_arg_info(
           cl_uint arg_index,
           cl_kernel_arg_info param_name
@@ -3639,7 +3650,7 @@ namespace pyopencl
 
     func_ptr_type func_ptr;
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
     if (py_platform.ptr() != Py_None)
     {
       platform &plat = py::extract<platform &>(py_platform);
@@ -3724,7 +3735,7 @@ namespace pyopencl
               new buffer(mem, /*retain*/ true)));
       case CL_MEM_OBJECT_IMAGE2D:
       case CL_MEM_OBJECT_IMAGE3D:
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
       case CL_MEM_OBJECT_IMAGE2D_ARRAY:
       case CL_MEM_OBJECT_IMAGE1D:
       case CL_MEM_OBJECT_IMAGE1D_ARRAY:
@@ -3772,7 +3783,7 @@ namespace pyopencl
         PYOPENCL_GET_OPAQUE_INFO(MemObject, data(), param_name,
             cl_context, context);
 
-#ifdef CL_VERSION_1_1
+#if PYOPENCL_CL_VERSION >= 0x1010
       case CL_MEM_ASSOCIATED_MEMOBJECT:
         {
           cl_mem param_value;

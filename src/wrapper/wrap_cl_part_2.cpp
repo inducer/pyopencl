@@ -4,7 +4,7 @@
 
 
 namespace pyopencl {
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   py::object image_desc_dummy_getter(cl_image_desc &desc)
   {
     return py::object();
@@ -49,7 +49,7 @@ void pyopencl_expose_part_2()
 {
   // {{{ image
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   {
     typedef cl_image_desc cls;
     py::class_<cls>("ImageDescriptor")
@@ -75,7 +75,7 @@ void pyopencl_expose_part_2()
              py::arg("pitches")=py::object(),
              py::arg("hostbuf")=py::object()
             )))
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
       .def("__init__", make_constructor(create_image_from_desc,
             py::default_call_policies(),
             (py::args("context", "flags", "format", "desc"),
@@ -129,7 +129,7 @@ void pyopencl_expose_part_2()
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
 
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   py::def("enqueue_fill_image", enqueue_write_image,
       (py::args("queue", "mem", "color", "origin", "region"),
        py::arg("wait_for")=py::object()),
@@ -196,7 +196,7 @@ void pyopencl_expose_part_2()
             create_program_with_binary,
             py::default_call_policies(),
             py::args("context", "devices", "binaries")))
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
       .def("create_with_built_in_kernels",
           create_program_with_built_in_kernels,
           py::args("context", "devices", "kernel_names"),
@@ -208,7 +208,7 @@ void pyopencl_expose_part_2()
       .DEF_SIMPLE_METHOD(get_build_info)
       .def("_build", &cls::build,
           (py::arg("options")="", py::arg("devices")=py::object()))
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
       .def("compile", &cls::compile,
           (py::arg("options")="", py::arg("devices")=py::object(),
            py::arg("headers")=py::list()))
@@ -229,7 +229,7 @@ void pyopencl_expose_part_2()
   }
 
   py::def("unload_compiler", unload_compiler);
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
   py::def("unload_platform_compiler", unload_platform_compiler);
 #endif
 
@@ -244,7 +244,7 @@ void pyopencl_expose_part_2()
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
       .DEF_SIMPLE_METHOD(set_arg)
-#ifdef CL_VERSION_1_2
+#if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(get_arg_info)
 #endif
       .add_property("obj_ptr", &cls::obj_ptr)
