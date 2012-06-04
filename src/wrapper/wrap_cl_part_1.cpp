@@ -105,6 +105,9 @@ void pyopencl_expose_part_1()
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
+      .def("from_cl_event_as_int", create_event_wrapper_from_int,
+	   py::args("cl_event_as_int"))
+      .staticmethod("from_cl_event_as_int")
       ;
   }
   {

@@ -3722,6 +3722,11 @@ namespace pyopencl
 
   // {{{ deferred implementation bits
 
+  inline py::object create_event_wrapper_from_int(intptr_t cl_event_as_int)
+  {
+    return py::object(handle_from_new_ptr(new event((cl_event)cl_event_as_int, true)));
+  }
+
   inline py::object create_mem_object_wrapper(cl_mem mem)
   {
     cl_mem_object_type mem_obj_type;
