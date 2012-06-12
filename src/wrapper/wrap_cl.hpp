@@ -353,7 +353,7 @@ namespace pyopencl
   {
     return py::make_tuple(
         PYOPENCL_CL_VERSION >> (3*4),
-        PYOPENCL_CL_VERSION >> (1*4)
+        (PYOPENCL_CL_VERSION >> (1*4)) & 0xff
         );
   }
 
