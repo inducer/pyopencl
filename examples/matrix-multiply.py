@@ -187,7 +187,7 @@ push_time = time()-t1
 
 # warmup ----------------------------------------------------------------------
 for i in range(5):
-    event = kernel(queue, h_c.shape, (block_size, block_size), 
+    event = kernel(queue, h_c.shape[::-1], (block_size, block_size), 
             d_c_buf, d_a_buf, d_b_buf)
     event.wait()
 
@@ -198,7 +198,7 @@ t1 = time()
 
 count = 20
 for i in range(count):
-    event = kernel(queue, h_c.shape, (block_size, block_size),
+    event = kernel(queue, h_c.shape[::-1], (block_size, block_size),
             d_c_buf, d_a_buf, d_b_buf)
 
 event.wait()
