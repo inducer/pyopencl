@@ -80,6 +80,8 @@ Version 2012.1
     PyOpenCL's git version control.
 
 * Support for complex numbers.
+* Support for Bessel functions. (experimental)
+* Numerous fixes.
 
 Version 2011.2
 --------------
