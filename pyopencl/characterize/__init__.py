@@ -143,7 +143,7 @@ def local_memory_bank_count(dev):
         else:
             if nv_compute_cap >= (3,0):
                 from warnings import warn
-                warn("wildly guessing conflicting local access size on '%s'"
+                warn("wildly guessing local memory bank count on '%s'"
                         % dev,
                         CLCharacterizationWarning)
 
@@ -151,7 +151,7 @@ def local_memory_bank_count(dev):
 
     if dev.type == cl.device_type.GPU:
         from warnings import warn
-        warn("wildly guessing conflicting local access size on '%s'"
+        warn("wildly guessing local memory bank count on '%s'"
                 % dev,
                 CLCharacterizationWarning)
         return 16
