@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <pyopencl-cephes.cl>
+#include <pyopencl-eval-tbl.cl>
 
 __constant const double airy_maxairy = 103.892;
 

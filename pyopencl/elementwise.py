@@ -643,14 +643,14 @@ def get_ldexp_kernel(context):
 
 
 @context_dependent_memoize
-def get_bessel_jn_kernel(context):
+def get_bessel_kernel(context, which_func):
     return get_elwise_kernel(context,
             "double *z, int ord_n, double *x",
-            "z[i] = bessel_jn(ord_n, x[i])",
-            name="bessel_jn_kernel",
+            "z[i] = bessel_%sn(ord_n, x[i])" % which_func,
+            name="bessel_%sn_kernel" % which_func,
             preamble="""
-            #include <pyopencl-bessel-j.cl>
-            """)
+            #include <pyopencl-bessel-%s.cl>
+            """ % which_func)
 
 
 @context_dependent_memoize

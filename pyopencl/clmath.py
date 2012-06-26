@@ -157,13 +157,18 @@ trunc = _make_unary_array_func("trunc")
 
 @cl_array.elwise_kernel_runner
 def _bessel_jn(result, sig, exp):
-    return elementwise.get_bessel_jn_kernel(result.context)
+    return elementwise.get_bessel_kernel(result.context, "j")
+
+@cl_array.elwise_kernel_runner
+def _bessel_yn(result, sig, exp):
+    return elementwise.get_bessel_kernel(result.context, "y")
 
 def bessel_jn(n, x, queue=None):
-    """Return a new array of floating point values composed from the
-    entries of `significand` and `exponent`, paired together as
-    `result = significand * 2**exponent`.
-    """
     result = x._new_like_me(queue=queue)
     _bessel_jn(result, n, x)
+    return result
+
+def bessel_yn(n, x, queue=None):
+    result = x._new_like_me(queue=queue)
+    _bessel_yn(result, n, x)
     return result

@@ -19,52 +19,16 @@
 
 #pragma once
 
-#include <pyopencl-cephes.cl>
+#include <pyopencl-eval-tbl.cl>
 #include <pyopencl-airy.cl>
 
-typedef double T;
-
-// {{{ evaluate_rational
-
-T evaluate_rational_backend(__constant const T* num, __constant const T* denom, T z, int count)
-{
-   T s1, s2;
-   if(z <= 1)
-   {
-      s1 = num[count-1];
-      s2 = denom[count-1];
-      for(int i = (int)count - 2; i >= 0; --i)
-      {
-         s1 *= z;
-         s2 *= z;
-         s1 += num[i];
-         s2 += denom[i];
-      }
-   }
-   else
-   {
-      z = 1 / z;
-      s1 = num[0];
-      s2 = denom[0];
-      for(unsigned i = 1; i < count; ++i)
-      {
-         s1 *= z;
-         s2 *= z;
-         s1 += num[i];
-         s2 += denom[i];
-      }
-   }
-   return s1 / s2;
-}
-
-// }}}
-
-#define evaluate_rational(num, denom, z) \
-  evaluate_rational_backend(num, denom, z, sizeof(num)/sizeof(T))
+typedef double bessel_j_scalar_type;
+// FIXME: T is really a bad name
+typedef bessel_j_scalar_type T;
 
 // {{{ bessel_j0
 
-__constant const T bessel_j0_P1[] = {
+__constant const bessel_j_scalar_type bessel_j0_P1[] = {
      -4.1298668500990866786e+11,
      2.7282507878605942706e+10,
      -6.2140700423540120665e+08,
@@ -73,7 +37,7 @@ __constant const T bessel_j0_P1[] = {
      1.0344222815443188943e+02,
      -1.2117036164593528341e-01
 };
-__constant const T bessel_j0_Q1[] = {
+__constant const bessel_j_scalar_type bessel_j0_Q1[] = {
      2.3883787996332290397e+12,
      2.6328198300859648632e+10,
      1.3985097372263433271e+08,
@@ -82,7 +46,7 @@ __constant const T bessel_j0_Q1[] = {
      1.0,
      0.0
 };
-__constant const T bessel_j0_P2[] = {
+__constant const bessel_j_scalar_type bessel_j0_P2[] = {
      -1.8319397969392084011e+03,
      -1.2254078161378989535e+04,
      -7.2879702464464618998e+03,
@@ -92,7 +56,7 @@ __constant const T bessel_j0_P2[] = {
      7.4321196680624245801e+02,
      4.8591703355916499363e+01
 };
-__constant const T bessel_j0_Q2[] = {
+__constant const bessel_j_scalar_type bessel_j0_Q2[] = {
      -3.5783478026152301072e+05,
      2.4599102262586308984e+05,
      -8.4055062591169562211e+04,
@@ -102,7 +66,7 @@ __constant const T bessel_j0_Q2[] = {
      -2.5258076240801555057e+01,
      1.0
 };
-__constant const T bessel_j0_PC[] = {
+__constant const bessel_j_scalar_type bessel_j0_PC[] = {
      2.2779090197304684302e+04,
      4.1345386639580765797e+04,
      2.1170523380864944322e+04,
@@ -110,7 +74,7 @@ __constant const T bessel_j0_PC[] = {
      1.5376201909008354296e+02,
      8.8961548424210455236e-01
 };
-__constant const T bessel_j0_QC[] = {
+__constant const bessel_j_scalar_type bessel_j0_QC[] = {
      2.2779090197304684318e+04,
      4.1370412495510416640e+04,
      2.1215350561880115730e+04,
@@ -118,7 +82,7 @@ __constant const T bessel_j0_QC[] = {
      1.5711159858080893649e+02,
      1.0
 };
-__constant const T bessel_j0_PS[] = {
+__constant const bessel_j_scalar_type bessel_j0_PS[] = {
     -8.9226600200800094098e+01,
     -1.8591953644342993800e+02,
     -1.1183429920482737611e+02,
@@ -126,7 +90,7 @@ __constant const T bessel_j0_PS[] = {
     -1.2441026745835638459e+00,
     -8.8033303048680751817e-03
 };
-__constant const T bessel_j0_QS[] = {
+__constant const bessel_j_scalar_type bessel_j0_QS[] = {
      5.7105024128512061905e+03,
      1.1951131543434613647e+04,
      7.2642780169211018836e+03,
@@ -135,16 +99,16 @@ __constant const T bessel_j0_QS[] = {
      1.0
 };
 
-T bessel_j0(T x)
+bessel_j_scalar_type bessel_j0(bessel_j_scalar_type x)
 {
-    const T x1  =  2.4048255576957727686e+00,
+    const bessel_j_scalar_type x1  =  2.4048255576957727686e+00,
           x2  =  5.5200781102863106496e+00,
           x11 =  6.160e+02,
           x12 =  -1.42444230422723137837e-03,
           x21 =  1.4130e+03,
           x22 =  5.46860286310649596604e-04;
 
-    T value, factor, r, rc, rs;
+    bessel_j_scalar_type value, factor, r, rc, rs;
 
     if (x < 0)
     {
@@ -156,25 +120,25 @@ T bessel_j0(T x)
     }
     if (x <= 4)                       // x in (0, 4]
     {
-        T y = x * x;
-        r = evaluate_rational(bessel_j0_P1, bessel_j0_Q1, y);
+        bessel_j_scalar_type y = x * x;
+        r = boost_evaluate_rational(bessel_j0_P1, bessel_j0_Q1, y);
         factor = (x + x1) * ((x - x11/256) - x12);
         value = factor * r;
     }
     else if (x <= 8.0)                  // x in (4, 8]
     {
-        T y = 1 - (x * x)/64;
-        r = evaluate_rational(bessel_j0_P2, bessel_j0_Q2, y);
+        bessel_j_scalar_type y = 1 - (x * x)/64;
+        r = boost_evaluate_rational(bessel_j0_P2, bessel_j0_Q2, y);
         factor = (x + x2) * ((x - x21/256) - x22);
         value = factor * r;
     }
     else                                // x in (8, \infty)
     {
-        T y = 8 / x;
-        T y2 = y * y;
-        T z = x - 0.25f * M_PI;
-        rc = evaluate_rational(bessel_j0_PC, bessel_j0_QC, y2);
-        rs = evaluate_rational(bessel_j0_PS, bessel_j0_QS, y2);
+        bessel_j_scalar_type y = 8 / x;
+        bessel_j_scalar_type y2 = y * y;
+        bessel_j_scalar_type z = x - 0.25f * M_PI;
+        rc = boost_evaluate_rational(bessel_j0_PC, bessel_j0_QC, y2);
+        rs = boost_evaluate_rational(bessel_j0_PS, bessel_j0_QS, y2);
         factor = sqrt(2 / (x * M_PI));
         value = factor * (rc * cos(z) - y * rs * sin(z));
     }
@@ -186,7 +150,7 @@ T bessel_j0(T x)
 
 // {{{ bessel_j1
 
-__constant const T bessel_j1_P1[] = {
+__constant const bessel_j_scalar_type bessel_j1_P1[] = {
      -1.4258509801366645672e+11,
      6.6781041261492395835e+09,
      -1.1548696764841276794e+08,
@@ -195,7 +159,7 @@ __constant const T bessel_j1_P1[] = {
      1.0650724020080236441e+01,
      -1.0767857011487300348e-02
 };
-__constant const T bessel_j1_Q1[] = {
+__constant const bessel_j_scalar_type bessel_j1_Q1[] = {
      4.1868604460820175290e+12,
      4.2091902282580133541e+10,
      2.0228375140097033958e+08,
@@ -204,7 +168,7 @@ __constant const T bessel_j1_Q1[] = {
      1.0,
      0.0
 };
-__constant const T bessel_j1_P2[] = {
+__constant const bessel_j_scalar_type bessel_j1_P2[] = {
      -1.7527881995806511112e+16,
      1.6608531731299018674e+15,
      -3.6658018905416665164e+13,
@@ -214,7 +178,7 @@ __constant const T bessel_j1_P2[] = {
      -7.5023342220781607561e+03,
      4.6179191852758252278e+00
 };
-__constant const T bessel_j1_Q2[] = {
+__constant const bessel_j_scalar_type bessel_j1_Q2[] = {
      1.7253905888447681194e+18,
      1.7128800897135812012e+16,
      8.4899346165481429307e+13,
@@ -224,7 +188,7 @@ __constant const T bessel_j1_Q2[] = {
      1.3886978985861357615e+03,
      1.0
 };
-__constant const T bessel_j1_PC[] = {
+__constant const bessel_j_scalar_type bessel_j1_PC[] = {
     -4.4357578167941278571e+06,
     -9.9422465050776411957e+06,
     -6.6033732483649391093e+06,
@@ -233,7 +197,7 @@ __constant const T bessel_j1_PC[] = {
     -1.6116166443246101165e+03,
     0.0
 };
-__constant const T bessel_j1_QC[] = {
+__constant const bessel_j_scalar_type bessel_j1_QC[] = {
     -4.4357578167941278568e+06,
     -9.9341243899345856590e+06,
     -6.5853394797230870728e+06,
@@ -242,7 +206,7 @@ __constant const T bessel_j1_QC[] = {
     -1.4550094401904961825e+03,
     1.0
 };
-__constant const T bessel_j1_PS[] = {
+__constant const bessel_j_scalar_type bessel_j1_PS[] = {
      3.3220913409857223519e+04,
      8.5145160675335701966e+04,
      6.6178836581270835179e+04,
@@ -251,7 +215,7 @@ __constant const T bessel_j1_PS[] = {
      3.5265133846636032186e+01,
      0.0
 };
-__constant const T bessel_j1_QS[] = {
+__constant const bessel_j_scalar_type bessel_j1_QS[] = {
      7.0871281941028743574e+05,
      1.8194580422439972989e+06,
      1.4194606696037208929e+06,
@@ -262,16 +226,16 @@ __constant const T bessel_j1_QS[] = {
 };
 
 
-T bessel_j1(T x)
+bessel_j_scalar_type bessel_j1(bessel_j_scalar_type x)
 {
-    const T x1  =  3.8317059702075123156e+00,
+    const bessel_j_scalar_type x1  =  3.8317059702075123156e+00,
                    x2  =  7.0155866698156187535e+00,
                    x11 =  9.810e+02,
                    x12 =  -3.2527979248768438556e-04,
                    x21 =  1.7960e+03,
                    x22 =  -3.8330184381246462950e-05;
 
-    T value, factor, r, rc, rs, w;
+    bessel_j_scalar_type value, factor, r, rc, rs, w;
 
     w = fabs(x);
     if (x == 0)
@@ -280,25 +244,25 @@ T bessel_j1(T x)
     }
     if (w <= 4)                       // w in (0, 4]
     {
-        T y = x * x;
-        r = evaluate_rational(bessel_j1_P1, bessel_j1_Q1, y);
+        bessel_j_scalar_type y = x * x;
+        r = boost_evaluate_rational(bessel_j1_P1, bessel_j1_Q1, y);
         factor = w * (w + x1) * ((w - x11/256) - x12);
         value = factor * r;
     }
     else if (w <= 8)                  // w in (4, 8]
     {
-        T y = x * x;
-        r = evaluate_rational(bessel_j1_P2, bessel_j1_Q2, y);
+        bessel_j_scalar_type y = x * x;
+        r = boost_evaluate_rational(bessel_j1_P2, bessel_j1_Q2, y);
         factor = w * (w + x2) * ((w - x21/256) - x22);
         value = factor * r;
     }
     else                                // w in (8, \infty)
     {
-        T y = 8 / w;
-        T y2 = y * y;
-        T z = w - 0.75f * M_PI;
-        rc = evaluate_rational(bessel_j1_PC, bessel_j1_QC, y2);
-        rs = evaluate_rational(bessel_j1_PS, bessel_j1_QS, y2);
+        bessel_j_scalar_type y = 8 / w;
+        bessel_j_scalar_type y2 = y * y;
+        bessel_j_scalar_type z = w - 0.75f * M_PI;
+        rc = boost_evaluate_rational(bessel_j1_PC, bessel_j1_QC, y2);
+        rs = boost_evaluate_rational(bessel_j1_PS, bessel_j1_QS, y2);
         factor = sqrt(2 / (w * M_PI));
         value = factor * (rc * cos(z) - y * rs * sin(z));
     }

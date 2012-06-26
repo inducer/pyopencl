@@ -180,7 +180,7 @@ def test_frexp(ctx_factory):
             assert ex_true == exponents[i]
 
 @pytools.test.mark_test.opencl
-def test_bessel_j(ctx_factory):
+def test_bessel(ctx_factory):
     try:
         import scipy.special as spec
     except ImportError:
@@ -198,7 +198,7 @@ def test_bessel_j(ctx_factory):
     nterms = 30
 
     try:
-        from hellskitchen._native import jfuns2d
+        from hellskitchen._native import jfuns2d, hank103_vec
     except ImportError:
         use_hellskitchen = False
     else:
@@ -209,46 +209,64 @@ def test_bessel_j(ctx_factory):
     else:
         a = np.logspace(-5, 5, 10**6)
 
-    if use_hellskitchen:
-        hellskitchen_result = np.empty((len(a), nterms), dtype=np.complex128)
-        for i, a_i in enumerate(a):
-            if i % 10000 == 0:
-                print("%.1f %%" % (100 * i/len(a)))
-            ier, fjs, _, _ = jfuns2d(nterms, a_i, 1, 0, 10000)
-            hellskitchen_result[i] = fjs[:nterms]
-        assert ier == 0
-
-    a_dev = cl_array.to_device(queue, a)
-
-    for n in range(0, nterms):
-        cl_bessel = clmath.bessel_jn(n, a_dev).get()
-        scipy_bessel = spec.jn(n, a)
-
-        error_scipy = np.max(np.abs(cl_bessel-scipy_bessel))
-        assert error_scipy < 1e-10, error_scipy
+    for which_func, cl_func, scipy_func, is_rel in [
+            #("j", clmath.bessel_jn, spec.jn, False),
+            ("y", clmath.bessel_yn, spec.yn, True)
+            ]:
+        if is_rel:
+            def get_err(check, ref):
+                return np.max(np.abs(check-ref)) / np.max(np.abs(ref))
+        else:
+            def get_err(check, ref):
+                return np.max(np.abs(check-ref))
 
         if use_hellskitchen:
-            hk_bessel = hellskitchen_result[:, n]
-            error_hk = np.max(np.abs(cl_bessel-hk_bessel))
-            assert error_hk < 1e-10, error_hk
-            error_hk_scipy = np.max(np.abs(scipy_bessel-hk_bessel))
-            print(n, error_scipy, error_hk, error_hk_scipy)
-        else:
-            print(n, error_scipy)
+            hellskitchen_result = np.empty((len(a), nterms), dtype=np.complex128)
+            if which_func == "j":
+                for i, a_i in enumerate(a):
+                    if i % 10000 == 0:
+                        print("%.1f %%" % (100 * i/len(a)))
+                    ier, fjs, _, _ = jfuns2d(nterms, a_i, 1, 0, 10000)
+                    hellskitchen_result[i] = fjs[:nterms]
+                assert ier == 0
+            elif which_func == "y":
+                h0, h1 = hank103_vec(a, ifexpon=1)
+                hellskitchen_result[:, 0] = h0.imag
+                hellskitchen_result[:, 1] = h1.imag
 
-        assert not np.isnan(cl_bessel).any()
+        a_dev = cl_array.to_device(queue, a)
 
-        if 0 and n == 15:
-            import matplotlib.pyplot as pt
-            #pt.plot(scipy_bessel)
-            #pt.plot(cl_bessel)
+        for n in range(0, nterms):
+            cl_bessel = cl_func(n, a_dev).get()
+            scipy_bessel = scipy_func(n, a)
 
-            pt.loglog(a, np.abs(cl_bessel-scipy_bessel), label="vs scipy")
-            if use_hellskitchen:
-                pt.loglog(a, np.abs(cl_bessel-hk_bessel), label="vs hellskitchen")
-            pt.legend()
-            pt.show()
+            error_scipy = get_err(cl_bessel, scipy_bessel)
+            assert error_scipy < 1e-10, error_scipy
 
+            if use_hellskitchen and (
+                    which_func == "j"
+                    or
+                    (which_func == "y" and n in [0, 1])):
+                hk_bessel = hellskitchen_result[:, n]
+                error_hk = get_err(cl_bessel, hk_bessel)
+                assert error_hk < 1e-10, error_hk
+                error_hk_scipy = get_err(scipy_bessel, hk_bessel)
+                print(n, error_scipy, error_hk, error_hk_scipy)
+            else:
+                print(n, error_scipy)
+
+            assert not np.isnan(cl_bessel).any()
+
+            if 0 and n == 15:
+                import matplotlib.pyplot as pt
+                #pt.plot(scipy_bessel)
+                #pt.plot(cl_bessel)
+
+                pt.loglog(a, np.abs(cl_bessel-scipy_bessel), label="vs scipy")
+                if use_hellskitchen:
+                    pt.loglog(a, np.abs(cl_bessel-hk_bessel), label="vs hellskitchen")
+                pt.legend()
+                pt.show()
 
 
 
