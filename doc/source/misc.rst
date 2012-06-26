@@ -71,13 +71,15 @@ C interface to Python:
 User-visible Changes
 ====================
 
-Version 2012.1
-----------------
-
+Version 2012.2
+--------------
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's git version control.
+
+Version 2012.1
+--------------
 
 * Support for complex numbers.
 * Support for Bessel functions. (experimental)
