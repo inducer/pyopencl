@@ -35,6 +35,7 @@
   REAL_TP TPROOT##_abs(TP a) { return hypot(a.x, a.y); } \
   \
   TP TPROOT##_fromreal(REAL_TP a) { return (TP)(a, 0); } \
+  TP TPROOT##_new(REAL_TP a, REAL_TP b) { return (TP)(a, b); } \
   TP TPROOT##_conj(TP a) { return (TP)(a.x, -a.y); } \
   \
   TP TPROOT##_add(TP a, TP b) \
