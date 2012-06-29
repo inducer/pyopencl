@@ -336,8 +336,8 @@ bessel_y_scalar_type bessel_yn_small_z(int n, bessel_y_scalar_type z, bessel_y_s
    }
    else
    {
-      bessel_y_scalar_type p = pow(z / 2, n);
-      bessel_y_scalar_type result = -((tgamma(n) / M_PI));
+      bessel_y_scalar_type p = pow(z / 2, (bessel_y_scalar_type) n);
+      bessel_y_scalar_type result = -((tgamma((bessel_y_scalar_type) n) / M_PI));
       if(p * DBL_MAX < result)
       {
          bessel_y_scalar_type div = DBL_MAX / 8;
@@ -391,7 +391,7 @@ bessel_y_scalar_type bessel_yn(int n, bessel_y_scalar_type x)
        bessel_y_scalar_type scale = 1;
        value = bessel_yn_small_z(n, x, &scale);
        if(DBL_MAX * fabs(scale) < fabs(value))
-          return copysign(1, scale) * copysign(1, value) * DBL_MAX;
+          return copysign((bessel_y_scalar_type) 1, scale) * copysign((bessel_y_scalar_type) 1, value) * DBL_MAX;
        value /= scale;
     }
     else if (n == 0)
