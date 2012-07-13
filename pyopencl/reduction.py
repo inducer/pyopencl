@@ -44,16 +44,19 @@ import pyopencl._mymako as mako
 
 
 KERNEL = """
-
     #define GROUP_SIZE ${group_size}
     #define READ_AND_MAP(i) (${map_expr})
     #define REDUCE(a, b) (${reduce_expr})
 
     % if double_support:
         #pragma OPENCL EXTENSION cl_khr_fp64: enable
+        #define PYOPENCL_DEFINE_CDOUBLE
     % elif amd_double_support:
         #pragma OPENCL EXTENSION cl_amd_fp64: enable
+        #define PYOPENCL_DEFINE_CDOUBLE
     % endif
+
+    #include <pyopencl-complex.h>
 
     ${preamble}
 
@@ -402,8 +405,26 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None):
     if dtype_a is None:
         dtype_a = dtype_out
 
+    a_is_complex = dtype_a.kind == "c"
+    b_is_complex = dtype_b.kind == "c"
+    out_is_complex = dtype_out.kind == "c"
+
+    if out_is_complex:
+        a = "a[i]"
+        b = "b[i]"
+        from pyopencl.elementwise import complex_dtype_to_name
+        if a_is_complex and dtype_a != dtype_out:
+            a = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), a)
+        if b_is_complex and dtype_b != dtype_out:
+            b = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), b)
+
+        map_expr = "%s_mul(%s, %s)" % (
+                complex_dtype_to_name(dtype_out), a, b)
+    else:
+        map_expr = "a[i]*b[i]"
+
     return ReductionKernel(ctx, dtype_out, neutral="0",
-            reduce_expr="a+b", map_expr="a[i]*b[i]",
+            reduce_expr="a+b", map_expr=map_expr,
             arguments=
             "__global const %(tp_a)s *a, "
             "__global const %(tp_b)s *b" % {

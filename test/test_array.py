@@ -490,20 +490,34 @@ def test_reverse(ctx_factory):
     assert (a[::-1] == a_gpu.get()).all()
 
 
+def general_clrand(queue, shape, dtype):
+    from pyopencl.clrandom import rand as clrand
+
+    dtype = np.dtype(dtype)
+    if dtype.kind == "c":
+        real_dtype = dtype.type(0).real.dtype
+        return clrand(queue, shape, real_dtype) + 1j*clrand(queue, shape, real_dtype)
+    else:
+        return clrand(queue, shape, dtype)
+
+
+
+
 @pytools.test.mark_test.opencl
 def test_sum(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    from pyopencl.clrandom import rand as clrand
+    n = 200000
+    for dtype in [np.float32, np.complex64]:
+        a_gpu = general_clrand(queue, (n,), dtype)
 
-    a_gpu = clrand(queue, (200000,), np.float32)
-    a = a_gpu.get()
+        a = a_gpu.get()
 
-    sum_a = np.sum(a)
-    sum_a_gpu = cl_array.sum(a_gpu).get()
+        sum_a = np.sum(a)
+        sum_a_gpu = cl_array.sum(a_gpu).get()
 
-    assert abs(sum_a_gpu - sum_a) / abs(sum_a) < 1e-4
+        assert abs(sum_a_gpu - sum_a) / abs(sum_a) < 1e-4
 
 
 @pytools.test.mark_test.opencl
@@ -574,17 +588,17 @@ def test_dot(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    from pyopencl.clrandom import rand as clrand
-    a_gpu = clrand(queue, (200000,), np.float32)
-    a = a_gpu.get()
-    b_gpu = clrand(queue, (200000,), np.float32)
-    b = b_gpu.get()
+    for dtype in [np.float32, np.complex64]:
+        a_gpu = general_clrand(queue, (200000,), dtype)
+        a = a_gpu.get()
+        b_gpu = general_clrand(queue, (200000,), dtype)
+        b = b_gpu.get()
 
-    dot_ab = np.dot(a, b)
+        dot_ab = np.dot(a, b)
 
-    dot_ab_gpu = cl_array.dot(a_gpu, b_gpu).get()
+        dot_ab_gpu = cl_array.dot(a_gpu, b_gpu).get()
 
-    assert abs(dot_ab_gpu - dot_ab) / abs(dot_ab) < 1e-4
+        assert abs(dot_ab_gpu - dot_ab) / abs(dot_ab) < 1e-4
 
 
 if False:
