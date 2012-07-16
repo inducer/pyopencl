@@ -372,11 +372,11 @@ PyOpenCL, feel free to cite this article:
 Here's a Bibtex entry for your convenience::
 
     @article{kloeckner_pycuda_2012,
-       author = {{Kl{\"o}ckner}, Andreas·
-            and {Pinto}, Nicolas·
-            and {Lee}, Yunsup·
-            and {Catanzaro}, B.·
-            and {Ivanov}, Paul·
+       author = {{Kl{\"o}ckner}, Andreas
+            and {Pinto}, Nicolas
+            and {Lee}, Yunsup
+            and {Catanzaro}, B.
+            and {Ivanov}, Paul
             and {Fasih}, Ahmed },
        title = "{PyCUDA and PyOpenCL: A Scripting-Based Approach to GPU Run-Time Code Generation}",
        journal = "Parallel Computing",
