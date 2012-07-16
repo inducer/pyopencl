@@ -179,6 +179,25 @@ def test_mix_complex(ctx_factory):
                     assert correct
 
 @pytools.test.mark_test.opencl
+def test_pow_neg1_vs_inv(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    device = ctx.devices[0]
+    if not has_double_support(device):
+        from py.test import skip
+        skip("double precision not supported on %s" % device)
+
+    a_dev = make_random_array(queue, np.complex128, 20000)
+
+    res1 = (a_dev ** (-1)).get()
+    res2 = (1/a_dev).get()
+    ref = 1/a_dev.get()
+
+    assert la.norm(res1-ref, np.inf) / la.norm(ref) < 1e-13
+    assert la.norm(res2-ref, np.inf) / la.norm(ref) < 1e-13
+
+@pytools.test.mark_test.opencl
 def test_len(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -673,8 +692,10 @@ def test_astype(ctx_factory):
 
     from pyopencl.clrandom import rand as clrand
 
-    if not has_double_support(context.devices[0]):
-        return
+    device = context.devices[0]
+    if not has_double_support(device):
+        from py.test import skip
+        skip("double precision not supported on %s" % device)
 
     a_gpu = clrand(queue, (2000,), dtype=np.float32)
 

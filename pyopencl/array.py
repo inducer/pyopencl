@@ -668,13 +668,10 @@ class Array(object):
             result = self._new_like_me(_get_common_dtype(self, other, self.queue))
             other._div(result, self)
         else:
-            if other == 1:
-                return self
-            else:
-                # create a new array for the result
-                common_dtype = _get_common_dtype(self, other, self.queue)
-                result = self._new_like_me(common_dtype)
-                self._rdiv_scalar(result, self, common_dtype.type(other))
+            # create a new array for the result
+            common_dtype = _get_common_dtype(self, other, self.queue)
+            result = self._new_like_me(common_dtype)
+            self._rdiv_scalar(result, self, common_dtype.type(other))
 
         return result
 
