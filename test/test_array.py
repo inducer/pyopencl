@@ -607,17 +607,23 @@ def test_dot(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    for dtype in [np.float32, np.complex64]:
-        a_gpu = general_clrand(queue, (200000,), dtype)
-        a = a_gpu.get()
-        b_gpu = general_clrand(queue, (200000,), dtype)
-        b = b_gpu.get()
+    dtypes = [np.float32, np.complex64]
+    if has_double_support(context.devices[0]):
+        dtypes.extend([np.float64, np.complex128])
 
-        dot_ab = np.dot(a, b)
+    for a_dtype in dtypes:
+        for b_dtype in dtypes:
+            print a_dtype, b_dtype
+            a_gpu = general_clrand(queue, (200000,), a_dtype)
+            a = a_gpu.get()
+            b_gpu = general_clrand(queue, (200000,), b_dtype)
+            b = b_gpu.get()
 
-        dot_ab_gpu = cl_array.dot(a_gpu, b_gpu).get()
+            dot_ab = np.dot(a, b)
 
-        assert abs(dot_ab_gpu - dot_ab) / abs(dot_ab) < 1e-4
+            dot_ab_gpu = cl_array.dot(a_gpu, b_gpu).get()
+
+            assert abs(dot_ab_gpu - dot_ab) / abs(dot_ab) < 1e-4
 
 
 if False:
