@@ -43,7 +43,7 @@ import pyopencl._mymako as mako
 
 
 
-KERNEL = """
+KERNEL = """//CL//
     #define GROUP_SIZE ${group_size}
     #define READ_AND_MAP(i) (${map_expr})
     #define REDUCE(a, b) (${reduce_expr})
@@ -522,3 +522,5 @@ def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
             "tp": dtype_to_ctype(dtype),
             "tp_lut": dtype_to_ctype(dtype_subset),
             }, preamble="#define MY_INFINITY (1./0)")
+
+# vim: filetype=pyopencl:fdm=marker
