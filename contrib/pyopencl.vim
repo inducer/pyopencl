@@ -77,6 +77,8 @@ syn region pythonCLRawString
 " hi link pythonCLString String
 " hi link pythonCLRawString String
 
+syntax sync fromstart
+
 let b:current_syntax = "pyopencl"
 
 " vim: foldmethod=marker
