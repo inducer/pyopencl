@@ -704,8 +704,8 @@ def summarize_error(obtained, desired, orig, thresh=1e-5):
                 entries.append("<%d ok>" % ok_count)
                 ok_count = 0
 
-            entries.append("%r (want: %r, diff: %r, orig: %r)" % (obtained[i], desired[i],
-                obtained[i]-desired[i], orig[i]))
+            entries.append("%r (want: %r, got: %r, orig: %r)" % (obtained[i], desired[i],
+                obtained[i], orig[i]))
         else:
             ok_count += 1
 
@@ -729,13 +729,15 @@ def test_scan(ctx_factory):
         knl = cls(context, dtype, "a+b", "0")
 
         for n in [
-            10, 2 ** 10 - 5, 2 ** 10,
-            2 ** 20 - 2 ** 18,
-            2 ** 20 - 2 ** 18 + 5,
-            2 ** 10 + 5,
-            2 ** 20 + 1,
-            2 ** 20, 2 ** 24
-            ]:
+                10,
+                2 ** 10 - 5,
+                2 ** 10,
+                2 ** 10 + 5,
+                2 ** 20 - 2 ** 18,
+                2 ** 20 - 2 ** 18 + 5,
+                2 ** 20 + 1,
+                2 ** 20, 2 ** 24
+                ]:
 
             host_data = np.random.randint(0, 10, n).astype(dtype)
             dev_data = cl_array.to_device(queue, host_data)
@@ -752,6 +754,7 @@ def test_scan(ctx_factory):
             if 0 and not is_ok:
                 print(summarize_error(dev_data.get(), desired_result, host_data))
 
+            print n, is_ok
             assert is_ok
             from gc import collect
             collect()
