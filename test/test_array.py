@@ -741,6 +741,17 @@ def summarize_error(obtained, desired, orig, thresh=1e-5):
 
     return " ".join(entries)
 
+scan_test_counts = [
+    10,
+    2 ** 10 - 5,
+    2 ** 10,
+    2 ** 10 + 5,
+    2 ** 20 - 2 ** 18,
+    2 ** 20 - 2 ** 18 + 5,
+    2 ** 20 + 1,
+    2 ** 20, 2 ** 24
+    ]
+
 @pytools.test.mark_test.opencl
 def test_scan(ctx_factory):
     context = ctx_factory()
@@ -755,16 +766,7 @@ def test_scan(ctx_factory):
             ]:
         knl = cls(context, dtype, "a+b", "0")
 
-        for n in [
-                10,
-                2 ** 10 - 5,
-                2 ** 10,
-                2 ** 10 + 5,
-                2 ** 20 - 2 ** 18,
-                2 ** 20 - 2 ** 18 + 5,
-                2 ** 20 + 1,
-                2 ** 20, 2 ** 24
-                ]:
+        for n in scan_test_counts:
 
             host_data = np.random.randint(0, 10, n).astype(dtype)
             dev_data = cl_array.to_device(queue, host_data)
@@ -778,7 +780,7 @@ def test_scan(ctx_factory):
                 desired_result -= host_data
 
             is_ok = (dev_data.get() == desired_result).all()
-            if 0 and not is_ok:
+            if 1 and not is_ok:
                 print(summarize_error(dev_data.get(), desired_result, host_data))
 
             print n, is_ok
@@ -786,6 +788,22 @@ def test_scan(ctx_factory):
             from gc import collect
             collect()
 
+@pytools.test.mark_test.opencl
+def test_copy_if(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+    for n in scan_test_counts:
+        a_dev = clrand(queue, (n,), dtype=np.int32, a=0, b=1000)
+        a = a_dev.get()
+
+        from pyopencl.scan import copy_if
+
+        selected = a[a>300]
+        selected_dev, count_dev = copy_if(a_dev, "ary[i] > 300")
+
+        assert (selected_dev.get()[:count_dev.get()] == selected).all()
 
 @pytools.test.mark_test.opencl
 def test_stride_preservation(ctx_factory):
