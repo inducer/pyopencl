@@ -751,7 +751,7 @@ def test_scan(ctx_factory):
                 desired_result -= host_data
 
             is_ok = (dev_data.get() == desired_result).all()
-            if 0 and not is_ok:
+            if 1 and not is_ok:
                 print(summarize_error(dev_data.get(), desired_result, host_data))
 
             print n, is_ok
@@ -759,6 +759,21 @@ def test_scan(ctx_factory):
             from gc import collect
             collect()
 
+@pytools.test.mark_test.opencl
+def test_copy_if(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+    a_dev = clrand(queue, (200000,), dtype=np.int32, a=0, b=1000)
+    a = a_dev.get()
+
+    from pyopencl.scan import copy_if
+
+    selected = a[a>300]
+    selected_dev = copy_if(a_dev, "ary[i] > 300").get()[:len(selected)]
+
+    assert (selected_dev == selected).all()
 
 @pytools.test.mark_test.opencl
 def test_stride_preservation(ctx_factory):
