@@ -773,10 +773,33 @@ def test_copy_if(ctx_factory):
 
         from pyopencl.scan import copy_if
 
-        selected = a[a>300]
-        selected_dev, count_dev = copy_if(a_dev, "ary[i] > 300")
+        crit = a_dev.dtype.type(300)
+        selected = a[a>crit]
+        selected_dev, count_dev = copy_if(a_dev, "ary[i] > myval", [("myval", crit)])
 
         assert (selected_dev.get()[:count_dev.get()] == selected).all()
+
+@pytools.test.mark_test.opencl
+def test_partition(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+    for n in scan_test_counts:
+        a_dev = clrand(queue, (n,), dtype=np.int32, a=0, b=1000)
+        a = a_dev.get()
+
+        crit = a_dev.dtype.type(300)
+        true_host = a[a>crit]
+        false_host = a[a<=crit]
+
+        from pyopencl.scan import partition
+        true_dev, false_dev, count_true_dev = partition(a_dev, "ary[i] > myval", [("myval", crit)])
+
+        count_true_dev = count_true_dev.get()
+
+        assert (true_dev.get()[:count_true_dev] == true_host).all()
+        assert (false_dev.get()[:n-count_true_dev] == false_host).all()
 
 @pytools.test.mark_test.opencl
 def test_stride_preservation(ctx_factory):
