@@ -802,6 +802,27 @@ def test_partition(ctx_factory):
         assert (false_dev.get()[:n-count_true_dev] == false_host).all()
 
 @pytools.test.mark_test.opencl
+def test_unique(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+    for n in scan_test_counts:
+        a_dev = clrand(queue, (n,), dtype=np.int32, a=0, b=1000)
+        a = a_dev.get()
+        a = np.sort(a)
+        a_dev = cl_array.to_device(queue, a)
+
+        a_unique_host = np.unique(a)
+
+        from pyopencl.scan import unique_by_key
+        a_unique_dev, count_unique_dev = unique_by_key(a_dev)
+
+        count_unique_dev = count_unique_dev.get()
+
+        assert (a_unique_dev.get()[:count_unique_dev] == a_unique_host).all()
+
+@pytools.test.mark_test.opencl
 def test_stride_preservation(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
