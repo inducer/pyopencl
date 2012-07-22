@@ -112,6 +112,10 @@ class Program(object):
 
         options = options + ["-I", _find_pyopencl_include_path()]
 
+        import os
+        if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
+            self._prg = _cl._Program(self._context, self._source)
+
         if self._prg is not None:
             if isinstance(options, list):
                 options = " ".join(options)
@@ -123,11 +127,15 @@ class Program(object):
                     self._context, self._source, options, devices,
                     cache_dir=cache_dir)
 
+        del self._context
+        del self._source
+
         return self
 
     def compile(self, options=[], devices=None, headers=[]):
         options = " ".join(options)
         return self._prg().compile(options, devices, headers)
+
 
 def create_program_with_built_in_kernels(context, devices, kernel_names):
     if not isinstance(kernel_names, str):
