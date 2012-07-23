@@ -621,6 +621,11 @@ def create_some_context(interactive=True, answers=None):
         ctx_spec = os.environ["PYOPENCL_CTX"]
         answers = ctx_spec.split(":")
 
+    if answers is not None:
+        pre_provided_answers = answers[:]
+    else:
+        pre_provided_answers = None
+
     user_inputs = []
 
     def get_input(prompt):
@@ -699,6 +704,8 @@ def create_some_context(interactive=True, answers=None):
             devices = [parse_device(i) for i in answer.split(",")]
 
     if user_inputs:
+        if pre_provided_answers is not None:
+            user_inputs = pre_provided_answers + user_inputs
         print("Set the environment variable PYOPENCL_CTX='%s' to "
                 "avoid being asked again." % ":".join(user_inputs))
     return Context(devices)
