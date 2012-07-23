@@ -22,63 +22,25 @@ if have_cl():
     from pyopencl.characterize import has_double_support
 
 
-@pytools.test.mark_test.opencl
-def test_pow_array(ctx_factory):
-    context = ctx_factory()
-    queue = cl.CommandQueue(context)
-
-    a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
-    a_gpu = cl_array.to_device(queue, a)
-
-    result = pow(a_gpu, a_gpu).get()
-    assert (np.abs(a ** a - result) < 1e-3).all()
-
-    result = (a_gpu ** a_gpu).get()
-    assert (np.abs(pow(a, a) - result) < 1e-3).all()
 
 
-@pytools.test.mark_test.opencl
-def test_pow_number(ctx_factory):
-    context = ctx_factory()
-    queue = cl.CommandQueue(context)
-
-    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
-    a_gpu = cl_array.to_device(queue, a)
-
-    result = pow(a_gpu, 2).get()
-    assert (np.abs(a ** 2 - result) < 1e-3).all()
-
-
-@pytools.test.mark_test.opencl
-def test_absrealimag(ctx_factory):
-    context = ctx_factory()
-    queue = cl.CommandQueue(context)
-
-    def real(x): return x.real
-    def imag(x): return x.imag
-    def conj(x): return x.conj()
-
-    n = 111
-    for func in [abs, real, imag, conj]:
-        for dtype in [np.int32, np.float32, np.complex64]:
-            print(func, dtype)
-            a = -make_random_array(queue, dtype, n)
-
-            host_res = func(a.get())
-            dev_res = func(a).get()
-
-            correct = np.allclose(dev_res, host_res)
-            if not correct:
-                print(dev_res)
-                print(host_res)
-                print(dev_res-host_res)
-            assert correct
-
+# {{{ helpers
 
 TO_REAL = {
         np.dtype(np.complex64): np.float32,
         np.dtype(np.complex128): np.float64
         }
+
+def general_clrand(queue, shape, dtype):
+    from pyopencl.clrandom import rand as clrand
+
+    dtype = np.dtype(dtype)
+    if dtype.kind == "c":
+        real_dtype = dtype.type(0).real.dtype
+        return clrand(queue, shape, real_dtype) + 1j*clrand(queue, shape, real_dtype)
+    else:
+        return clrand(queue, shape, dtype)
+
 
 def make_random_array(queue, dtype, size):
     from pyopencl.clrandom import rand
@@ -91,6 +53,10 @@ def make_random_array(queue, dtype, size):
                 * rand(queue, shape=(size,), dtype=real_dtype).astype(dtype))
     else:
         return rand(queue, shape=(size,), dtype=dtype)
+
+# }}}
+
+# {{{ dtype-related
 
 @pytools.test.mark_test.opencl
 def test_basic_complex(ctx_factory):
@@ -197,14 +163,73 @@ def test_pow_neg1_vs_inv(ctx_factory):
     assert la.norm(res1-ref, np.inf) / la.norm(ref) < 1e-13
     assert la.norm(res2-ref, np.inf) / la.norm(ref) < 1e-13
 
+
 @pytools.test.mark_test.opencl
-def test_len(ctx_factory):
+def test_vector_fill(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a_gpu = cl_array.Array(queue, 100, dtype=cl_array.vec.float4)
+    a_gpu.fill(cl_array.vec.make_float4(0.0, 0.0, 1.0, 0.0))
+    a = a_gpu.get()
+    assert a.dtype is cl_array.vec.float4
+
+    a_gpu = cl_array.zeros(queue, 100, dtype=cl_array.vec.float4)
+
+@pytools.test.mark_test.opencl
+def test_absrealimag(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    def real(x): return x.real
+    def imag(x): return x.imag
+    def conj(x): return x.conj()
+
+    n = 111
+    for func in [abs, real, imag, conj]:
+        for dtype in [np.int32, np.float32, np.complex64]:
+            print(func, dtype)
+            a = -make_random_array(queue, dtype, n)
+
+            host_res = func(a.get())
+            dev_res = func(a).get()
+
+            correct = np.allclose(dev_res, host_res)
+            if not correct:
+                print(dev_res)
+                print(host_res)
+                print(dev_res-host_res)
+            assert correct
+
+# }}}
+
+# {{{ operands
+
+@pytools.test.mark_test.opencl
+def test_pow_array(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
+    a_gpu = cl_array.to_device(queue, a)
+
+    result = pow(a_gpu, a_gpu).get()
+    assert (np.abs(a ** a - result) < 1e-3).all()
+
+    result = (a_gpu ** a_gpu).get()
+    assert (np.abs(pow(a, a) - result) < 1e-3).all()
+
+
+@pytools.test.mark_test.opencl
+def test_pow_number(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
-    a_cpu = cl_array.to_device(queue, a)
-    assert len(a_cpu) == 10
+    a_gpu = cl_array.to_device(queue, a)
+
+    result = pow(a_gpu, 2).get()
+    assert (np.abs(a ** 2 - result) < 1e-3).all()
 
 
 @pytools.test.mark_test.opencl
@@ -350,6 +375,9 @@ def test_divide_array(ctx_factory):
     a_divide = (b_gpu / a_gpu).get()
     assert (np.abs(b / a - a_divide) < 1e-3).all()
 
+# }}}
+
+# {{{ RNG
 
 @pytools.test.mark_test.opencl
 def test_random(ctx_factory):
@@ -390,35 +418,9 @@ def test_random(ctx_factory):
         #pt.hist(ran.get())
         #pt.show()
 
+# }}}
 
-
-
-
-@pytools.test.mark_test.opencl
-def test_nan_arithmetic(ctx_factory):
-    context = ctx_factory()
-    queue = cl.CommandQueue(context)
-
-    def make_nan_contaminated_vector(size):
-        shape = (size,)
-        a = np.random.randn(*shape).astype(np.float32)
-        from random import randrange
-        for i in range(size // 10):
-            a[randrange(0, size)] = float('nan')
-        return a
-
-    size = 1 << 20
-
-    a = make_nan_contaminated_vector(size)
-    a_gpu = cl_array.to_device(queue, a)
-    b = make_nan_contaminated_vector(size)
-    b_gpu = cl_array.to_device(queue, b)
-
-    ab = a * b
-    ab_gpu = (a_gpu * b_gpu).get()
-
-    assert (np.isnan(ab) == np.isnan(ab_gpu)).all()
-
+# {{{ elementwise
 
 @pytools.test.mark_test.opencl
 def test_elwise_kernel(ctx_factory):
@@ -508,19 +510,81 @@ def test_reverse(ctx_factory):
 
     assert (a[::-1] == a_gpu.get()).all()
 
+@pytools.test.mark_test.opencl
+def test_if_positive(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
 
-def general_clrand(queue, shape, dtype):
     from pyopencl.clrandom import rand as clrand
 
-    dtype = np.dtype(dtype)
-    if dtype.kind == "c":
-        real_dtype = dtype.type(0).real.dtype
-        return clrand(queue, shape, real_dtype) + 1j*clrand(queue, shape, real_dtype)
-    else:
-        return clrand(queue, shape, dtype)
+    l = 20000
+    a_gpu = clrand(queue, (l,), np.float32)
+    b_gpu = clrand(queue, (l,), np.float32)
+    a = a_gpu.get()
+    b = b_gpu.get()
+
+    max_a_b_gpu = cl_array.maximum(a_gpu, b_gpu)
+    min_a_b_gpu = cl_array.minimum(a_gpu, b_gpu)
+
+    print(max_a_b_gpu)
+    print(np.maximum(a, b))
+
+    assert la.norm(max_a_b_gpu.get() - np.maximum(a, b)) == 0
+    assert la.norm(min_a_b_gpu.get() - np.minimum(a, b)) == 0
 
 
+@pytools.test.mark_test.opencl
+def test_take_put(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
 
+    for n in [5, 17, 333]:
+        one_field_size = 8
+        buf_gpu = cl_array.zeros(queue,
+                n * one_field_size, dtype=np.float32)
+        dest_indices = cl_array.to_device(queue,
+                np.array([0, 1, 2,  3, 32, 33, 34, 35], dtype=np.uint32))
+        read_map = cl_array.to_device(queue,
+                np.array([7, 6, 5, 4, 3, 2, 1, 0], dtype=np.uint32))
+
+        cl_array.multi_take_put(
+                arrays=[buf_gpu for i in range(n)],
+                dest_indices=dest_indices,
+                src_indices=read_map,
+                src_offsets=[i * one_field_size for i in range(n)],
+                dest_shape=(96,))
+
+
+@pytools.test.mark_test.opencl
+def test_astype(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+
+    if not has_double_support(context.devices[0]):
+        from py.test import skip
+        skip("double precision not supported on %s" % device)
+
+    a_gpu = clrand(queue, (2000,), dtype=np.float32)
+
+    a = a_gpu.get().astype(np.float64)
+    a2 = a_gpu.astype(np.float64).get()
+
+    assert a2.dtype == np.float64
+    assert la.norm(a - a2) == 0, (a, a2)
+
+    a_gpu = clrand(queue, (2000,), dtype=np.float64)
+
+    a = a_gpu.get().astype(np.float32)
+    a2 = a_gpu.astype(np.float32).get()
+
+    assert a2.dtype == np.float32
+    assert la.norm(a - a2) / la.norm(a) < 1e-7
+
+# }}}
+
+# {{{ reduction
 
 @pytools.test.mark_test.opencl
 def test_sum(ctx_factory):
@@ -625,100 +689,81 @@ def test_dot(ctx_factory):
 
             assert abs(dot_ab_gpu - dot_ab) / abs(dot_ab) < 1e-4
 
+mmc_dtype = np.dtype([
+    ("cur_min", np.int32),
+    ("cur_max", np.int32),
+    ("pad", np.int32),
+    ])
 
-if False:
-    @pytools.test.mark_test.opencl
-    def test_slice(ctx_factory):
-        from pyopencl.clrandom import rand as clrand
-
-        l = 20000
-        a_gpu = clrand(queue, (l,))
-        a = a_gpu.get()
-
-        from random import randrange
-        for i in range(200):
-            start = randrange(l)
-            end = randrange(start, l)
-
-            a_gpu_slice = a_gpu[start:end]
-            a_slice = a[start:end]
-
-            assert la.norm(a_gpu_slice.get() - a_slice) == 0
-
+from pyopencl.tools import register_dtype
+register_dtype(mmc_dtype, "minmax_collector", alias_ok=True)
+register_dtype(mmc_dtype, "minmax_collector", alias_ok=True)
 
 @pytools.test.mark_test.opencl
-def test_if_positive(ctx_factory):
+def test_struct_reduce(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    from pyopencl.clrandom import rand as clrand
+    preamble = r"""//CL//
+    struct minmax_collector
+    {
+        int cur_min;
+        int cur_max;
+        // Workaround for OS X Lion GPU CL. Mystifying.
+        int pad;
+    };
 
-    l = 20000
-    a_gpu = clrand(queue, (l,), np.float32)
-    b_gpu = clrand(queue, (l,), np.float32)
+    typedef struct minmax_collector minmax_collector;
+
+    minmax_collector mmc_neutral()
+    {
+        // FIXME: needs infinity literal in real use, ok here
+        minmax_collector result;
+        result.cur_min = 1<<30;
+        result.cur_max = -(1<<30);
+        return result;
+    }
+
+    minmax_collector mmc_from_scalar(float x)
+    {
+        minmax_collector result;
+        result.cur_min = x;
+        result.cur_max = x;
+        return result;
+    }
+
+    minmax_collector agg_mmc(minmax_collector a, minmax_collector b)
+    {
+        minmax_collector result = a;
+        if (b.cur_min < result.cur_min)
+            result.cur_min = b.cur_min;
+        if (b.cur_max > result.cur_max)
+            result.cur_max = b.cur_max;
+        return result;
+    }
+
+    """
+
+    from pyopencl.clrandom import rand as clrand
+    a_gpu = clrand(queue, (20000,), dtype=np.int32, a=0, b=10**6)
     a = a_gpu.get()
-    b = b_gpu.get()
 
-    max_a_b_gpu = cl_array.maximum(a_gpu, b_gpu)
-    min_a_b_gpu = cl_array.minimum(a_gpu, b_gpu)
+    from pyopencl.reduction import ReductionKernel
+    red = ReductionKernel(context, mmc_dtype,
+            neutral="mmc_neutral()",
+            reduce_expr="agg_mmc(a, b)", map_expr="mmc_from_scalar(x[i])",
+            arguments="__global int *x", preamble=preamble)
 
-    print(max_a_b_gpu)
-    print(np.maximum(a, b))
+    minmax = red(a_gpu).get()
+    #print minmax["cur_min"], minmax["cur_max"]
+    #print np.min(a), np.max(a)
 
-    assert la.norm(max_a_b_gpu.get() - np.maximum(a, b)) == 0
-    assert la.norm(min_a_b_gpu.get() - np.minimum(a, b)) == 0
+    assert abs(minmax["cur_min"] - np.min(a)) < 1e-5
+    assert abs(minmax["cur_max"] - np.max(a)) < 1e-5
 
+# }}}
 
-@pytools.test.mark_test.opencl
-def test_take_put(ctx_factory):
-    context = ctx_factory()
-    queue = cl.CommandQueue(context)
-
-    for n in [5, 17, 333]:
-        one_field_size = 8
-        buf_gpu = cl_array.zeros(queue,
-                n * one_field_size, dtype=np.float32)
-        dest_indices = cl_array.to_device(queue,
-                np.array([0, 1, 2,  3, 32, 33, 34, 35], dtype=np.uint32))
-        read_map = cl_array.to_device(queue,
-                np.array([7, 6, 5, 4, 3, 2, 1, 0], dtype=np.uint32))
-
-        cl_array.multi_take_put(
-                arrays=[buf_gpu for i in range(n)],
-                dest_indices=dest_indices,
-                src_indices=read_map,
-                src_offsets=[i * one_field_size for i in range(n)],
-                dest_shape=(96,))
-
-
-@pytools.test.mark_test.opencl
-def test_astype(ctx_factory):
-    context = ctx_factory()
-    queue = cl.CommandQueue(context)
-
-    from pyopencl.clrandom import rand as clrand
-
-    device = context.devices[0]
-    if not has_double_support(device):
-        from py.test import skip
-        skip("double precision not supported on %s" % device)
-
-    a_gpu = clrand(queue, (2000,), dtype=np.float32)
-
-    a = a_gpu.get().astype(np.float64)
-    a2 = a_gpu.astype(np.float64).get()
-
-    assert a2.dtype == np.float64
-    assert la.norm(a - a2) == 0, (a, a2)
-
-    a_gpu = clrand(queue, (2000,), dtype=np.float64)
-
-    a = a_gpu.get().astype(np.float32)
-    a2 = a_gpu.astype(np.float32).get()
-
-    assert a2.dtype == np.float32
-    assert la.norm(a - a2) / la.norm(a) < 1e-7
-
+# {{{ scan-related
 
 def summarize_error(obtained, desired, orig, thresh=1e-5):
     err = obtained - desired
@@ -850,6 +895,39 @@ def test_unique(ctx_factory):
         assert (a_unique_dev.get()[:count_unique_dev] == a_unique_host).all()
 
 @pytools.test.mark_test.opencl
+def test_segmented_scan(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from random import randrange
+    from pyopencl.clrandom import rand as clrand
+    for n in scan_test_counts:
+        a_dev = clrand(queue, (n,), dtype=np.int32, a=0, b=1000)
+        a = a_dev.get()
+
+        seg_boundary_count = min(100, randrange(0, int(0.4*n)))
+        seg_boundaries = np.fromiter(sorted(randrange(n) for i in xrange(seg_boundary_count)),
+                dtype=np.intp)
+        print seg_boundaries
+
+        seg_boundary_flags = np.zeros(n, dtype=np.uint8)
+        seg_boundary_flags[seg_boundaries] = 1
+        seg_boundary_flags_dev = cl_array.to_device(queue, seg_boundary_flags)
+
+# }}}
+
+# {{{ misc
+
+@pytools.test.mark_test.opencl
+def test_len(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
+    a_cpu = cl_array.to_device(queue, a)
+    assert len(a_cpu) == 10
+
+@pytools.test.mark_test.opencl
 def test_stride_preservation(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -861,18 +939,30 @@ def test_stride_preservation(ctx_factory):
     print(AT_GPU.flags.f_contiguous, AT_GPU.flags.c_contiguous)
     assert np.allclose(AT_GPU.get(), AT)
 
-
 @pytools.test.mark_test.opencl
-def test_vector_fill(ctx_factory):
+def test_nan_arithmetic(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    a_gpu = cl_array.Array(queue, 100, dtype=cl_array.vec.float4)
-    a_gpu.fill(cl_array.vec.make_float4(0.0, 0.0, 1.0, 0.0))
-    a = a_gpu.get()
-    assert a.dtype is cl_array.vec.float4
+    def make_nan_contaminated_vector(size):
+        shape = (size,)
+        a = np.random.randn(*shape).astype(np.float32)
+        from random import randrange
+        for i in range(size // 10):
+            a[randrange(0, size)] = float('nan')
+        return a
 
-    a_gpu = cl_array.zeros(queue, 100, dtype=cl_array.vec.float4)
+    size = 1 << 20
+
+    a = make_nan_contaminated_vector(size)
+    a_gpu = cl_array.to_device(queue, a)
+    b = make_nan_contaminated_vector(size)
+    b_gpu = cl_array.to_device(queue, b)
+
+    ab = a * b
+    ab_gpu = (a_gpu * b_gpu).get()
+
+    assert (np.isnan(ab) == np.isnan(ab_gpu)).all()
 
 @pytools.test.mark_test.opencl
 def test_mem_pool_with_arrays(ctx_factory):
@@ -908,78 +998,26 @@ def test_view(ctx_factory):
     view = a_dev.view(np.int16)
     assert view.shape == (8, 32) and view.dtype == np.int16
 
-mmc_dtype = np.dtype([
-    ("cur_min", np.int32),
-    ("cur_max", np.int32),
-    ("pad", np.int32),
-    ])
-
-from pyopencl.tools import register_dtype
-register_dtype(mmc_dtype, "minmax_collector", alias_ok=True)
-register_dtype(mmc_dtype, "minmax_collector", alias_ok=True)
+# }}}
 
 @pytools.test.mark_test.opencl
-def test_struct_reduce(ctx_factory):
-    context = ctx_factory()
-    queue = cl.CommandQueue(context)
-
-    preamble = r"""//CL//
-    struct minmax_collector
-    {
-        int cur_min;
-        int cur_max;
-        // Workaround for OS X Lion GPU CL. Mystifying.
-        int pad;
-    };
-
-    typedef struct minmax_collector minmax_collector;
-
-    minmax_collector mmc_neutral()
-    {
-        // FIXME: needs infinity literal in real use, ok here
-        minmax_collector result;
-        result.cur_min = 1<<30;
-        result.cur_max = -(1<<30);
-        return result;
-    }
-
-    minmax_collector mmc_from_scalar(float x)
-    {
-        minmax_collector result;
-        result.cur_min = x;
-        result.cur_max = x;
-        return result;
-    }
-
-    minmax_collector agg_mmc(minmax_collector a, minmax_collector b)
-    {
-        minmax_collector result = a;
-        if (b.cur_min < result.cur_min)
-            result.cur_min = b.cur_min;
-        if (b.cur_max > result.cur_max)
-            result.cur_max = b.cur_max;
-        return result;
-    }
-
-    """
-
-
+def no_test_slice(ctx_factory):
     from pyopencl.clrandom import rand as clrand
-    a_gpu = clrand(queue, (20000,), dtype=np.int32, a=0, b=10**6)
+
+    l = 20000
+    a_gpu = clrand(queue, (l,))
     a = a_gpu.get()
 
-    from pyopencl.reduction import ReductionKernel
-    red = ReductionKernel(context, mmc_dtype,
-            neutral="mmc_neutral()",
-            reduce_expr="agg_mmc(a, b)", map_expr="mmc_from_scalar(x[i])",
-            arguments="__global int *x", preamble=preamble)
+    from random import randrange
+    for i in range(200):
+        start = randrange(l)
+        end = randrange(start, l)
 
-    minmax = red(a_gpu).get()
-    #print minmax["cur_min"], minmax["cur_max"]
-    #print np.min(a), np.max(a)
+        a_gpu_slice = a_gpu[start:end]
+        a_slice = a[start:end]
 
-    assert abs(minmax["cur_min"] - np.min(a)) < 1e-5
-    assert abs(minmax["cur_max"] - np.max(a)) < 1e-5
+        assert la.norm(a_gpu_slice.get() - a_slice) == 0
+
 
 
 
@@ -996,4 +1034,4 @@ if __name__ == "__main__":
         from py.test.cmdline import main
         main([__file__])
 
-# vim: filetype=pyopencl
+# vim: filetype=pyopencl:fdm=marker
