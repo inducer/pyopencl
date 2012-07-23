@@ -45,6 +45,8 @@ from pyopencl.tools import context_dependent_memoize
 # {{{ preamble
 
 SHARED_PREAMBLE = CLUDA_PREAMBLE + """//CL//
+#pragma OPENCL EXTENSION cl_khr_byte_addressable_store : enable
+
 #define WG_SIZE ${wg_size}
 
 /* SCAN_EXPR has no right know the indices it is scanning at because
@@ -135,7 +137,7 @@ void ${name_prefix}_scan_intervals(
         , GLOBAL_MEM index_type *g_first_segment_start_in_interval
     %endif
     %if store_segment_start_flags:
-        , GLOBAL_MEM index_type *g_segment_start_flags
+        , GLOBAL_MEM char *g_segment_start_flags
     %endif
     )
 {
@@ -144,7 +146,7 @@ void ${name_prefix}_scan_intervals(
     LOCAL_MEM scan_type ldata[K + 1][WG_SIZE + 1];
 
     %if is_segmented:
-        LOCAL_MEM bool l_segment_start_flags[K][WG_SIZE];
+        LOCAL_MEM char l_segment_start_flags[K][WG_SIZE];
         LOCAL_MEM index_type l_first_segment_start_in_subtree[WG_SIZE];
 
         // only relevant/populated for local id 0
@@ -513,7 +515,7 @@ void ${name_prefix}_final_update(
         , GLOBAL_MEM index_type *g_first_segment_start_in_interval
     %endif
     %if is_segmented and use_lookbehind_update:
-        , GLOBAL_MEM bool *g_segment_start_flags
+        , GLOBAL_MEM char *g_segment_start_flags
     %endif
     )
 {
@@ -521,7 +523,7 @@ void ${name_prefix}_final_update(
         LOCAL_MEM scan_type ldata[WG_SIZE];
     %endif
     %if is_segmented and use_lookbehind_update:
-        LOCAL_MEM scan_type l_segment_start_flags[WG_SIZE];
+        LOCAL_MEM char l_segment_start_flags[WG_SIZE];
     %endif
 
     const index_type interval_begin = interval_size * GID_0;
@@ -532,12 +534,18 @@ void ${name_prefix}_final_update(
     if (GID_0 != 0)
         carry = interval_results[GID_0 - 1];
 
+    %if is_segmented:
+        const index_type first_seg_start_in_interval =
+            g_first_segment_start_in_interval[GID_0];
+
+    %endif
+
     %if not use_lookbehind_update:
         // {{{ no look-behind ('prev_item' not in output_statement -> simpler)
 
         index_type update_i = interval_begin+LID_0;
 
-        <%def name="update_loop_plain(end, phase)">
+        <%def name="update_loop_plain(end)">
             for(; update_i < ${end}; update_i += WG_SIZE)
             {
                 scan_type partial_val = partial_scan_buffer[update_i];
@@ -547,7 +555,17 @@ void ${name_prefix}_final_update(
             }
         </%def>
 
-        <% update_loop = self.update_loop_plain %>
+        // {{{ update to the first intra-interval segment boundary
+
+        %if is_segmented:
+            index_type seg_end = min(first_seg_start_in_interval, interval_end);
+            ${update_loop_plain("seg_end")}
+            carry = ${neutral};
+        %endif
+
+        // }}}
+
+        ${update_loop_plain("interval_end")}
 
         // }}}
     %else:
@@ -560,71 +578,56 @@ void ${name_prefix}_final_update(
         index_type group_base = interval_begin;
         scan_type prev_value = carry; // (A)
 
-        <%def name="update_loop_lookbehind(end, phase)">
-            for(; group_base < ${end}; group_base += WG_SIZE)
+        for(; group_base < interval_end; group_base += WG_SIZE)
+        {
+            index_type update_i = group_base+LID_0;
+
+            // load a work group's worth of data
+            if (update_i < interval_end)
             {
-                index_type update_i = group_base+LID_0;
+                scan_type tmp = partial_scan_buffer[update_i];
 
-                // load a work group's worth of data
-                if (update_i < ${end})
-                {
-                    scan_type tmp = partial_scan_buffer[update_i];
-                    ldata[LID_0] = SCAN_EXPR(carry, tmp);
-                    %if is_segmented:
-                        l_segment_start_flags[LID_0] = g_segment_start_flags[update_i];
-                    %endif
-                }
+                %if is_segmented:
+                if (update_i < first_seg_start_in_interval)
+                %endif
+                { tmp = SCAN_EXPR(carry, tmp); }
 
-                local_barrier();
+                ldata[LID_0] = tmp;
 
-                // find prev_value
-                if (LID_0 != 0)
-                    prev_value = ldata[LID_0 - 1];
-                /*
-                else
-                    prev_value = carry (see (A)) OR last tail (see (B));
-                */
-
-                if (update_i < ${end})
-                {
-                    %if is_segmented:
-                        if (l_segment_start_flags[LID_0])
-                            prev_value = ${neutral};
-                    %endif
-
-                    scan_type value = ldata[LID_0];
-                    OUTPUT_STMT(update_i, prev_value, value)
-                }
-
-                if (LID_0 == 0)
-                    prev_value = ldata[WG_SIZE - 1]; // (B)
-
-                local_barrier();
+                %if is_segmented:
+                    l_segment_start_flags[LID_0] = g_segment_start_flags[update_i];
+                %endif
             }
-        </%def>
 
-        // FIXME TAKE CARE OF BLOCK RESYNCING
+            local_barrier();
 
-        <% update_loop = self.update_loop_lookbehind %>
+            // find prev_value
+            if (LID_0 != 0)
+                prev_value = ldata[LID_0 - 1];
+            /*
+            else
+                prev_value = carry (see (A)) OR last tail (see (B));
+            */
+
+            if (update_i < interval_end)
+            {
+                %if is_segmented:
+                    if (l_segment_start_flags[LID_0])
+                        prev_value = ${neutral};
+                %endif
+
+                scan_type value = ldata[LID_0];
+                OUTPUT_STMT(update_i, prev_value, value)
+            }
+
+            if (LID_0 == 0)
+                prev_value = ldata[WG_SIZE - 1]; // (B)
+
+            local_barrier();
+        }
 
         // }}}
     %endif
-
-    %if is_segmented:
-        // {{{ update to the first intra-interval segment boundary
-
-        const index_type first_seg_start_in_interval =
-            g_first_segment_start_in_interval[GID_0];
-
-        index_type seg_end = min(first_seg_start_in_interval, interval_end);
-        ${update_loop("seg_end", phase="first_seg")}
-
-        carry = ${neutral};
-
-        // }}}
-    %endif
-
-    ${update_loop("interval_end", phase="remainder")}
 }
 """
 
@@ -674,24 +677,26 @@ _PREFIX_WORDS = set("""
         l_ o_mod_k o_div_k l_segment_start_flags scan_value sum
         first_seg_start_in_interval g_segment_start_flags
         group_base seg_end
-        """.split())
-
-_IGNORED_WORDS = set("""
-        typedef for endfor if void while endwhile endfor endif else const printf
-        None return bool n
-
-        set iteritems len setdefault
 
         LID_2 LID_1 LID_0
         LDIM_0 LDIM_1 LDIM_2
         GDIM_0 GDIM_1 GDIM_2
         GID_0 GID_1 GID_2
+        """.split())
+
+_IGNORED_WORDS = set("""
+        typedef for endfor if void while endwhile endfor endif else const printf
+        None return bool n char
+
+        set iteritems len setdefault
+
         GLOBAL_MEM LOCAL_MEM_ARG WITHIN_KERNEL LOCAL_MEM KERNEL REQD_WG_SIZE
         local_barrier
         CLK_LOCAL_MEM_FENCE OPENCL EXTENSION
         pragma __attribute__ __global __kernel __local
         get_local_size get_local_id cl_khr_fp64 reqd_work_group_size
         get_num_groups barrier get_group_id
+        cl_khr_byte_addressable_store
 
         _final_update _scan_intervals
 
@@ -961,7 +966,8 @@ class GenericScanKernel(object):
             use_lookbehind_update=use_lookbehind_update,
             **self.code_variables))
 
-        with open("update.cl", "wt") as f: f.write(final_update_src)
+        #with open("update.cl", "wt") as f: f.write(final_update_src)
+
         final_update_prg = cl.Program(self.context, final_update_src).build(options)
         self.final_update_knl = getattr(
                 final_update_prg,
@@ -1011,7 +1017,7 @@ class GenericScanKernel(object):
             store_segment_start_flags=store_segment_start_flags,
             **self.code_variables))
 
-        with open("scan-lev%d.cl" % (1 if is_first_level else 2), "wt") as f: f.write(scan_src)
+        #with open("scan-lev%d.cl" % (1 if is_first_level else 2), "wt") as f: f.write(scan_src)
 
         prg = cl.Program(self.context, scan_src).build(self.options)
 
