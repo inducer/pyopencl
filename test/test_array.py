@@ -909,72 +909,85 @@ def test_segmented_scan(ctx_factory):
     dtype = np.int32
     ctype = dtype_to_ctype(dtype)
 
-    from pyopencl.scan import GenericScanKernel
-    knl = GenericScanKernel(context, dtype,
-            arguments="__global %s *ary, __global char *segflags, __global %s *out"
-                % (ctype, ctype),
-            input_expr="ary[i]",
-            scan_expr="a+b", neutral="0",
-            is_segment_start_expr="segflags[i]",
-            output_statement="out[i] = item",
-            options=["-g", "-O0"])
-
-    np.set_printoptions(threshold=2000)
-    from random import randrange
-    from pyopencl.clrandom import rand as clrand
-    for n in scan_test_counts:
-        a_dev = clrand(queue, (n,), dtype=dtype, a=0, b=10)
-        a = a_dev.get()
-
-        if 10 <= n < 20:
-            seg_boundaries_values = [
-                    [0, 9],
-                    [0, 3],
-                    [4, 6],
-                    ]
+    for is_exclusive in [False, True]:
+    #for is_exclusive in [True, False]:
+        if is_exclusive:
+            output_statement = "out[i] = prev_item"
         else:
-            seg_boundaries_values = []
-            for i in range(10):
-                seg_boundary_count = max(2, min(100, randrange(0, int(0.4*n))))
-                seg_boundaries = [randrange(n) for i in xrange(seg_boundary_count)]
-                if n >= 1029:
-                    seg_boundaries.insert(0, 1028)
-                seg_boundaries.sort()
-                seg_boundaries_values.append(seg_boundaries)
+            output_statement = "out[i] = item"
 
-        for seg_boundaries in seg_boundaries_values:
-            #print "BOUNDARIES", seg_boundaries
+        from pyopencl.scan import GenericScanKernel
+        knl = GenericScanKernel(context, dtype,
+                arguments="__global %s *ary, __global char *segflags, __global %s *out"
+                    % (ctype, ctype),
+                input_expr="ary[i]",
+                scan_expr="a+b", neutral="0",
+                is_segment_start_expr="segflags[i]",
+                output_statement=output_statement,
+                options=[])
 
-            seg_boundary_flags = np.zeros(n, dtype=np.uint8)
-            seg_boundary_flags[seg_boundaries] = 1
-            seg_boundary_flags_dev = cl_array.to_device(queue, seg_boundary_flags)
+        np.set_printoptions(threshold=2000)
+        from random import randrange
+        from pyopencl.clrandom import rand as clrand
+        for n in scan_test_counts:
+            a_dev = clrand(queue, (n,), dtype=dtype, a=0, b=10)
+            a = a_dev.get()
 
-            seg_boundaries.insert(0, 0)
+            if 10 <= n < 20:
+                seg_boundaries_values = [
+                        [0, 9],
+                        [0, 3],
+                        [4, 6],
+                        ]
+            else:
+                seg_boundaries_values = []
+                for i in range(10):
+                    seg_boundary_count = max(2, min(100, randrange(0, int(0.4*n))))
+                    seg_boundaries = [randrange(n) for i in xrange(seg_boundary_count)]
+                    if n >= 1029:
+                        seg_boundaries.insert(0, 1028)
+                    seg_boundaries.sort()
+                    seg_boundaries_values.append(seg_boundaries)
 
-            result_host = a.copy()
-            for i, seg_start in enumerate(seg_boundaries):
-                if i+1 < len(seg_boundaries):
-                    slc = slice(seg_start, seg_boundaries[i+1])
-                else:
-                    slc = slice(seg_start, None)
+            for seg_boundaries in seg_boundaries_values:
+                #print "BOUNDARIES", seg_boundaries
 
-                result_host[slc] = np.cumsum(result_host[slc])
+                seg_boundary_flags = np.zeros(n, dtype=np.uint8)
+                seg_boundary_flags[seg_boundaries] = 1
+                seg_boundary_flags_dev = cl_array.to_device(queue, seg_boundary_flags)
 
-            #print "REF", result_host
+                seg_boundaries.insert(0, 0)
 
-            result_dev = cl_array.empty_like(a_dev)
-            knl(a_dev, seg_boundary_flags_dev, result_dev)
+                result_host = a.copy()
+                for i, seg_start in enumerate(seg_boundaries):
+                    if i+1 < len(seg_boundaries):
+                        seg_end = seg_boundaries[i+1]
+                    else:
+                        seg_end = None
 
-            #print "RES", result_dev
-            is_correct = (result_dev.get() == result_host).all()
-            if not is_correct:
-                diff = result_dev.get() - result_host
-                print "RES-REF", diff
-                print("ERRWHERE", np.where(diff))
-                print(n, list(seg_boundaries_values))
+                    if is_exclusive:
+                        result_host[seg_start+1:seg_end] = np.cumsum(
+                                result_host[seg_start:seg_end][:-1])
+                        result_host[seg_start] = 0
+                    else:
+                        result_host[seg_start:seg_end] = np.cumsum(
+                                result_host[seg_start:seg_end])
 
-            assert is_correct
-        print(n, "done")
+                #print "REF", result_host
+
+                result_dev = cl_array.empty_like(a_dev)
+                knl(a_dev, seg_boundary_flags_dev, result_dev)
+
+                #print "RES", result_dev
+                is_correct = (result_dev.get() == result_host).all()
+                if not is_correct:
+                    diff = result_dev.get() - result_host
+                    print "RES-REF", diff
+                    print("ERRWHERE", np.where(diff))
+                    print(n, list(seg_boundaries))
+
+                assert is_correct
+            print(n, "done")
 
 
 
