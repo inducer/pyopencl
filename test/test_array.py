@@ -834,7 +834,7 @@ def test_scan(ctx_factory):
             if 1 and not is_ok:
                 print(summarize_error(dev_data.get(), desired_result, host_data))
 
-            print n, is_ok
+            print(n, is_ok)
             assert is_ok
             from gc import collect
             collect()
@@ -909,8 +909,8 @@ def test_segmented_scan(ctx_factory):
     dtype = np.int32
     ctype = dtype_to_ctype(dtype)
 
-    for is_exclusive in [False, True]:
-    #for is_exclusive in [True, False]:
+    #for is_exclusive in [False, True]:
+    for is_exclusive in [True, False]:
         if is_exclusive:
             output_statement = "out[i] = prev_item"
         else:
@@ -951,6 +951,7 @@ def test_segmented_scan(ctx_factory):
 
             for seg_boundaries in seg_boundaries_values:
                 #print "BOUNDARIES", seg_boundaries
+                #print a
 
                 seg_boundary_flags = np.zeros(n, dtype=np.uint8)
                 seg_boundary_flags[seg_boundaries] = 1
@@ -967,11 +968,11 @@ def test_segmented_scan(ctx_factory):
 
                     if is_exclusive:
                         result_host[seg_start+1:seg_end] = np.cumsum(
-                                result_host[seg_start:seg_end][:-1])
+                                a[seg_start:seg_end][:-1])
                         result_host[seg_start] = 0
                     else:
                         result_host[seg_start:seg_end] = np.cumsum(
-                                result_host[seg_start:seg_end])
+                                a[seg_start:seg_end])
 
                 #print "REF", result_host
 
@@ -982,12 +983,13 @@ def test_segmented_scan(ctx_factory):
                 is_correct = (result_dev.get() == result_host).all()
                 if not is_correct:
                     diff = result_dev.get() - result_host
-                    print "RES-REF", diff
+                    print("RES-REF", diff)
                     print("ERRWHERE", np.where(diff))
                     print(n, list(seg_boundaries))
 
                 assert is_correct
-            print(n, "done")
+
+            print("%d excl:%s done" % (n, is_exclusive))
 
 
 
