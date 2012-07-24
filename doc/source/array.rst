@@ -688,6 +688,11 @@ greater than 300::
     out = a.copy()
     knl(a, out)
 
+    a_host = a.get()
+    out_host = a[a > 300]
+
+    assert (out_host == out.get()[:len(out_host)]).all()
+
 The value being scanned over is a number of flags indicating whether each array
 element is greater than 300. These flags are computed by *input_expr*. The
 prefix sum over this array gives a running count of array items greater than
