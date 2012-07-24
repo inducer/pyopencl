@@ -172,3 +172,4 @@ intersphinx_mapping = {
         'http://documen.tician.de/boostmpi/': None,
         }
 
+autoclass_content = "both"

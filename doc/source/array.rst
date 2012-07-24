@@ -28,11 +28,15 @@ operations where you supply operation source code, define those types in the
 :class:`pyopencl.reduction.ReductionKernel` (or similar), and let PyOpenCL know
 about them using this function:
 
-.. function:: pyopencl.tools.register_dtype(dtype, name)
+.. currentmodule:: pyopencl.tools
 
-    *dtype* is a :func:`numpy.dtype`.
+.. function:: register_dtype(dtype, name)
+
+    *dtype* is a :class:`numpy.dtype`.
 
     .. versionadded: 2011.2
+
+.. currentmodule:: pyopencl.array
 
 Complex Numbers
 ^^^^^^^^^^^^^^^
@@ -637,6 +641,97 @@ Parallel Scan / Prefix Sum
 
 .. module:: pyopencl.scan
 
+.. |scan_extra_args| replace:: a list of tuples *(name, value)* specifying
+    extra arguments to pass to the scan procedure. *value* must be :mod:`numpy`
+    sized type.
+.. |preamble| replace:: A snippet of C that is inserted into the compiled kernel
+    before the actual kernel function. May be used for, e.g. type definitions
+    or include statements.
+
+A prefix sum is a running sum of an array, as provided by
+e.g. :mod:`numpy.cumsum`::
+
+    >>> import numpy as np
+    >>> a = [1,1,1,1,1,2,2,2,2,2]
+    >>> np.cumsum(a)
+    array([ 1,  2,  3,  4,  5,  7,  9, 11, 13, 15])
+
+This is a very simple example of what a scan can do. It turns out that scans
+are significantly more versatile. They are a basic building block of many
+non-trivial parallel algorithms. Many of the operations enabled by scans seem
+difficult to parallelize because of loop-carried dependencies.
+
+.. seealso::
+
+    `Prefix sums and their applications <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.128.6230>`_, by Guy Blelloch.
+        This article gives an overview of some surprising applications of scans.
+
+    :ref:`predefined-scans`
+        These operations built into PyOpenCL are realized using :class:`GenericScanKernel`.
+
+Usage Example
+^^^^^^^^^^^^^
+
+This example illustrates the implementation of a simplified version of :func:`copy_if`,
+which copies integers from an array into the (variable-size) output if they are
+greater than 300::
+
+    knl = GenericScanKernel(
+            ctx, np.int32,
+            arguments="__global int *ary, __global int *out",
+            input_expr="(ary[i] > 300) ? 1 : 0",
+            scan_expr="a+b", neutral="0",
+            output_statement="""
+                if (prev_item != item) out[item-1] = ary[i];
+                """)
+
+    out = a.copy()
+    knl(a, out)
+
+The value being scanned over is a number of flags indicating whether each array
+element is greater than 300. This flag is computed by the *input_expr*. The
+prefix sum over this array gives the index (+1) of each item.  The
+*output_statement* the compares `prev_item` (the previous item's scan result,
+i.e. index) to `item` (the current item's scan result, i.e. index). If they
+differ, i.e. if the predicate was satisfied at this position, then the item is
+stored in the output at the computed index.
+
+This example does not make use of the following advanced features also available
+in PyOpenCL:
+
+* Segmented scans
+
+* Access to the previous items in *input_expr* (e.g. for comparisons)
+  See the `implementation <https://github.com/inducer/pyopencl/blob/master/pyopencl/scan.py#L1353>`_ of :func:`unique` for an example.
+
+Making Custom Scan Kernels
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded: 2012.2
+
+.. autoclass:: GenericScanKernel
+
+    .. method:: __call__(*args, allocator=None, queue=None)
+
+        *queue* and *allocator* default to the ones provided on the first
+        :class:`pyopencl.array.Array` in *args*.
+
+.. _predefined-scans:
+
+Pre-defined higher-level operations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: copy_if
+
+.. autofunction:: remove_if
+
+.. autofunction:: partition
+
+.. autofunction:: unique
+
+Simple / Legacy Interface
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. class:: ExclusiveScanKernel(ctx, dtype, scan_expr, neutral, name_prefix="scan", options=[], preamble="", devices=None)
 
     Generates a kernel that can compute a `prefix sum <https://secure.wikimedia.org/wikipedia/en/wiki/Prefix_sum>`_
@@ -657,8 +752,13 @@ Parallel Scan / Prefix Sum
 
 .. class:: InclusiveScanKernel(dtype, scan_expr, neutral=None, name_prefix="scan", options=[], preamble="", devices=None)
 
-    Works like :class:`ExclusiveScanKernel`. Unlike the exclusive case,
-    *neutral* is not required.
+    Works like :class:`ExclusiveScanKernel`.
+
+    .. versionchanged:: 2012.2
+        *neutral* is now always required.
+
+For the array `[1,2,3]`, inclusive scan results in `[1,3,6]`, and exclusive
+scan results in `[0,1,3]`.
 
 Here's a usage example::
 

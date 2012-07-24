@@ -893,8 +893,8 @@ def test_unique(ctx_factory):
 
         a_unique_host = np.unique(a)
 
-        from pyopencl.scan import unique_by_key
-        a_unique_dev, count_unique_dev = unique_by_key(a_dev)
+        from pyopencl.scan import unique
+        a_unique_dev, count_unique_dev = unique(a_dev)
 
         count_unique_dev = count_unique_dev.get()
 

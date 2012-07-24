@@ -766,6 +766,10 @@ class _ScanKernelInfo(Record):
 # }}}
 
 class GenericScanKernel(object):
+    """Generates and executes code that performs prefix sums ("scans") on
+    arbitrary types, with many possible tweaks.
+    """
+
     # {{{ constructor
 
     def __init__(self, ctx, dtype,
@@ -776,39 +780,58 @@ class GenericScanKernel(object):
         """
         :arg ctx: a :class:`pyopencl.Context` within which the code
             for this scan kernel will be generated.
-        :arg dtype: the :class:`numpy.dtype` of the result
-        :arg scan_expr: The associative operation carrying out the scan,
-            represented as a C string. Its arguments are available as `a`
-            and `b` when it is evaluated.
+        :arg dtype: the :class:`numpy.dtype` with which the scan will
+            be performed. May be a structured type if that type was registered
+            through :func:`pyopencl.tools.register_dtype`.
         :arg arguments: A string of comma-separated C argument declarations.
             If *arguments* is specified, then *input_expr* must also be
-            specified.
-        :arg input_expr: A C expression, encoded as a string, to be applied
-            to each array entry when scan first touches it. *arguments*
-            must be given if *input_expr* is given.
+            specified. All types used here must be known to PyOpenCL.
+            (see :func:`pyopencl.tools.register_dtype`).
+        :arg scan_expr: The associative, binary operation carrying out the scan,
+            represented as a C string. Its two arguments are available as `a`
+            and `b` when it is evaluated.
+
+            This expression may call functions given in the *preamble*.
+        :arg input_expr: A C expression, encoded as a string, resulting
+            in the values to which the scan is applied. This may be used
+            to apply a mapping to values stored in *arguments* before being
+            scanned. The result of this expression must match *dtype*.
+            The index intended to be mapped is available as *i* in this
+            expression. This expression may also use the variables defined
+            by *input_fetch_expr*.
+
+            This expression may also call functions given in the *preamble*.
         :arg output_statement: a C statement that writes
             the output of the scan. It has access to the scan result as *item*,
             the preceding scan result item as *prev_item*, and the current index
-            as *i*. *prev_item* is unavailable when using exclusive scan.
-            *prev_item* in a segmented scan will be the neutral element
+            as *i*. *prev_item* in a segmented scan will be the neutral element
             at a segment boundary, not the immediately preceding item.
 
-            Note that *prev_item enables the construction of an exclusive
-            scan.
-        :arg is_segment_start_expr: If given, makes the scan a segmented
-            scan. Has access to the current index `i` and the input element
-            as `a` and returns a bool. If it returns true, then previous
-            sums will not spill over into the item with index i.
+            Using *prev_item* in output statement has a small run-time cost.
+            *prev_item* enables the construction of an exclusive scan.
+        :arg is_segment_start_expr: A C expression, encoded as a string,
+            resulting in a C `bool` value that determines whether a new
+            scan segments starts at index *i*.  If given, makes the scan a
+            segmented scan. Has access to the current index `i`, the result
+            of *input_expr* as a, and in addition may use *arguments* and
+            *input_fetch_expr* variables just like *input_expr*.
+
+            If it returns true, then previous sums will not spill over into the
+            item with index *i* or subsequent items.
         :arg input_fetch_exprs: a list of tuples *(NAME, ARG_NAME, OFFSET)*.
             An entry here has the effect of doing the equivalent of the following
             before input_expr::
 
-                typeof(ARG_NAME) NAME = ARG_NAME[i+OFFSET];
+                ARG_NAME_TYPE NAME = ARG_NAME[i+OFFSET];
 
-            OFFSET is allowed to be 0 or -1.
+            `OFFSET` is allowed to be 0 or -1, and `ARG_NAME_TYPE` is the type
+            of `ARG_NAME`.
+        :arg preamble: |preamble|
 
         The first array in the argument list determines the size of the index
-        space over which the scan is carried out.
+        space over which the scan is carried out, and thus the values over
+        which the index *i* occurring in a number of code fragments in
+        arguments above will vary.
 
         All code fragments further have access to N, the number of elements
         being processed in the scan.
@@ -1230,9 +1253,16 @@ def _get_copy_if_kernel(ctx, dtype, predicate, scan_dtype,
             preamble=preamble)
 
 def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
-    """
-    :arg extra_args: a list of tuples *(name, value)* specifying extra
-        arguments to pass to the scan procedure.
+    """Copy the elements of *ary* satisfying *predicate* to an output array.
+
+    :arg predicate: a C expression evaluating to a `bool`, represented as a string.
+        The value to test is available as `ary[i]`, and if the expression evaluates
+        to `true`, then this value ends up in the output.
+    :arg extra_args: |scan_extra_args|
+    :arg preamble: |preamble|
+    :returns: a tuple *(out, count)* where *out* is the output array and *count*
+        is an on-device scalar (fetch to host with `count.get()`) indicating
+        how many elements satisfied *predicate*.
     """
     if len(ary) > np.iinfo(np.uint32):
         scan_dtype = np.uint64
@@ -1250,6 +1280,17 @@ def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
     return out, count
 
 def remove_if(ary, predicate, extra_args=[], queue=None, preamble=""):
+    """Copy the elements of *ary* not satisfying *predicate* to an output array.
+
+    :arg predicate: a C expression evaluating to a `bool`, represented as a string.
+        The value to test is available as `ary[i]`, and if the expression evaluates
+        to `false`, then this value ends up in the output.
+    :arg extra_args: |scan_extra_args|
+    :arg preamble: |preamble|
+    :returns: a tuple *(out, count)* where *out* is the output array and *count*
+        is an on-device scalar (fetch to host with `count.get()`) indicating
+        how many elements did not satisfy *predicate*.
+    """
     return copy_if(ary, "!(%s)" % predicate, extra_args=extra_args, queue=queue,
             preamble=preamble)
 
@@ -1281,9 +1322,16 @@ def _get_partition_kernel(ctx, dtype, predicate, scan_dtype,
             preamble=preamble)
 
 def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
-    """
-    :arg extra_args: a list of tuples *(name, value)* specifying extra
-        arguments to pass to the scan procedure.
+    """Copy the elements of *ary* into one of two arrays depending on whether
+    they satisfy *predicate*.
+
+    :arg predicate: a C expression evaluating to a `bool`, represented as a string.
+        The value to test is available as `ary[i]`.
+    :arg extra_args: |scan_extra_args|
+    :arg preamble: |preamble|
+    :returns: a tuple *(out_true, out_false, count)* where *count*
+        is an on-device scalar (fetch to host with `count.get()`) indicating
+        how many elements satisfied the predicate.
     """
     if len(ary) > np.iinfo(np.uint32):
         scan_dtype = np.uint64
@@ -1302,7 +1350,7 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
     return out_true, out_false, count
 
 @context_dependent_memoize
-def _get_unique_by_key_kernel(ctx, dtype, key_expr, scan_dtype,
+def _get_unique_kernel(ctx, dtype, is_equal_expr, scan_dtype,
         extra_args_types, preamble):
     ctype = dtype_to_ctype(dtype)
     arguments = [
@@ -1313,7 +1361,7 @@ def _get_unique_by_key_kernel(ctx, dtype, key_expr, scan_dtype,
                 "%s %s" % (dtype_to_ctype(arg_dtype), name)
                 for name, arg_dtype in extra_args_types]
 
-    key_expr_define = "#define KEY_EXPR(a) %s\n" % key_expr.replace("\n", " ")
+    key_expr_define = "#define IS_EQUAL_EXPR(a, b) %s\n" % is_equal_expr.replace("\n", " ")
     return GenericScanKernel(
             ctx, dtype,
             arguments=", ".join(arguments),
@@ -1321,7 +1369,7 @@ def _get_unique_by_key_kernel(ctx, dtype, key_expr, scan_dtype,
                 ("ary_im1", "ary", -1),
                 ("ary_i", "ary", 0),
                 ],
-            input_expr="(i == 0 || KEY_EXPR(ary_im1) != KEY_EXPR(ary_i)) ? 1 : 0",
+            input_expr="(i == 0) || (IS_EQUAL_EXPR(ary_im1, ary_i) ? 0 : 1)",
             scan_expr="a+b", neutral="0",
             output_statement="""
                 if (prev_item != item) out[item-1] = ary[i];
@@ -1329,10 +1377,21 @@ def _get_unique_by_key_kernel(ctx, dtype, key_expr, scan_dtype,
                 """,
             preamble=preamble+"\n\n"+key_expr_define)
 
-def unique_by_key(ary, key_expr="a", extra_args=[], queue=None, preamble=""):
-    """
-    :arg extra_args: a list of tuples *(name, value)* specifying extra
-        arguments to pass to the scan procedure.
+def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
+    """Copy the elements of *ary* into the output if *is_equal_expr*, applied to the
+    array element and its predecessor, yields false.
+
+    Works like the UNIX command :program:`uniq`, with a potentially custom comparison.
+    This operation is often used on sorted sequences.
+
+    :arg is_equal_expr: a C expression evaluating to a `bool`, represented as a string.
+        The elements being compared are available as `a` and `b`. If this expression
+        yields `false`, the two are considered distinct.
+    :arg extra_args: |scan_extra_args|
+    :arg preamble: |preamble|
+    :returns: a tuple *(out, count)* where *out* is the output array and *count*
+        is an on-device scalar (fetch to host with `count.get()`) indicating
+        how many elements satisfied the predicate.
     """
 
     if len(ary) > np.iinfo(np.uint32):
@@ -1343,7 +1402,7 @@ def unique_by_key(ary, key_expr="a", extra_args=[], queue=None, preamble=""):
     extra_args_types = tuple((name, val.dtype) for name, val in extra_args)
     extra_args_values = tuple(val for name, val in extra_args)
 
-    knl = _get_unique_by_key_kernel(ary.context, ary.dtype, key_expr, scan_dtype,
+    knl = _get_unique_kernel(ary.context, ary.dtype, is_equal_expr, scan_dtype,
             extra_args_types, preamble)
     out = cl_array.empty_like(ary)
     count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=np.uint64)
