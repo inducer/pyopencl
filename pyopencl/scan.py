@@ -115,6 +115,9 @@ typedef ${index_ctype} index_type;
 #
 # Exclusive scan is realized by allowing look-behind (access to the
 # preceding item) in the final update, by means of a local shift.
+#
+# NOTE: All segment_start_in_X indices are relative to the start
+# of the array.
 
 SCAN_INTERVALS_SOURCE = SHARED_PREAMBLE + r"""//CL//
 
@@ -131,9 +134,7 @@ void ${name_prefix}_scan_intervals(
         , GLOBAL_MEM scan_type *interval_results
     %endif
     %if is_segmented and is_first_level:
-        /* NO_SEG_BOUNDARY if no segment boundary in interval.
-        Otherwise, index relative to interval beginning.
-        */
+        // NO_SEG_BOUNDARY if no segment boundary in interval.
         , GLOBAL_MEM index_type *g_first_segment_start_in_interval
     %endif
     %if store_segment_start_flags:
