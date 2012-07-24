@@ -689,19 +689,19 @@ greater than 300::
     knl(a, out)
 
 The value being scanned over is a number of flags indicating whether each array
-element is greater than 300. This flag is computed by the *input_expr*. The
-prefix sum over this array gives the index (+1) of each item.  The
-*output_statement* the compares `prev_item` (the previous item's scan result,
-i.e. index) to `item` (the current item's scan result, i.e. index). If they
-differ, i.e. if the predicate was satisfied at this position, then the item is
-stored in the output at the computed index.
+element is greater than 300. These flags are computed by *input_expr*. The
+prefix sum over this array gives a running count of array items greater than
+300. The *output_statement* the compares `prev_item` (the previous item's scan
+result, i.e. index) to `item` (the current item's scan result, i.e.
+index). If they differ, i.e. if the predicate was satisfied at this
+position, then the item is stored in the output at the computed index.
 
 This example does not make use of the following advanced features also available
 in PyOpenCL:
 
 * Segmented scans
 
-* Access to the previous items in *input_expr* (e.g. for comparisons)
+* Access to the previous item in *input_expr* (e.g. for comparisons)
   See the `implementation <https://github.com/inducer/pyopencl/blob/master/pyopencl/scan.py#L1353>`_ of :func:`unique` for an example.
 
 Making Custom Scan Kernels
