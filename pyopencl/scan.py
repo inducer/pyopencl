@@ -165,7 +165,7 @@ void ${name_prefix}_scan_intervals(
 
         local_fetch_expr_args = set(
             arg_name
-            for arg_name, ife_offsets in fetch_expr_offsets.iteritems()
+            for arg_name, ife_offsets in fetch_expr_offsets.items()
             if -1 in ife_offsets or len(ife_offsets) > 1)
     %>
 
@@ -758,7 +758,7 @@ def _make_template(s):
         from warnings import warn
         warn("leftover words in identifier prefixing: " + " ".join(leftovers))
 
-    return mako.template.Template(s, strict_undefined=True, disable_unicode=True)
+    return mako.template.Template(s, strict_undefined=True)
 
 from pytools import Record
 class _ScanKernelInfo(Record):
@@ -1265,7 +1265,7 @@ def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied *predicate*.
     """
-    if len(ary) > np.iinfo(np.uint32):
+    if len(ary) > np.iinfo(np.uint32).max:
         scan_dtype = np.uint64
     else:
         scan_dtype = np.uint32
@@ -1334,7 +1334,7 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied the predicate.
     """
-    if len(ary) > np.iinfo(np.uint32):
+    if len(ary) > np.iinfo(np.uint32).max:
         scan_dtype = np.uint64
     else:
         scan_dtype = np.uint32
@@ -1395,7 +1395,7 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
         how many elements satisfied the predicate.
     """
 
-    if len(ary) > np.iinfo(np.uint32):
+    if len(ary) > np.iinfo(np.uint32).max:
         scan_dtype = np.uint64
     else:
         scan_dtype = np.uint32

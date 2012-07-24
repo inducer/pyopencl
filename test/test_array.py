@@ -677,7 +677,7 @@ def test_dot(ctx_factory):
 
     for a_dtype in dtypes:
         for b_dtype in dtypes:
-            print a_dtype, b_dtype
+            print(a_dtype, b_dtype)
             a_gpu = general_clrand(queue, (200000,), a_dtype)
             a = a_gpu.get()
             b_gpu = general_clrand(queue, (200000,), b_dtype)
@@ -943,7 +943,7 @@ def test_segmented_scan(ctx_factory):
                 seg_boundaries_values = []
                 for i in range(10):
                     seg_boundary_count = max(2, min(100, randrange(0, int(0.4*n))))
-                    seg_boundaries = [randrange(n) for i in xrange(seg_boundary_count)]
+                    seg_boundaries = [randrange(n) for i in range(seg_boundary_count)]
                     if n >= 1029:
                         seg_boundaries.insert(0, 1028)
                     seg_boundaries.sort()
