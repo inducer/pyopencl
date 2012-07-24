@@ -127,8 +127,8 @@ class Program(object):
                     self._context, self._source, options, devices,
                     cache_dir=cache_dir)
 
-        del self._context
-        del self._source
+            del self._context
+            del self._source
 
         return self
 
