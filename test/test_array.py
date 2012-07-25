@@ -768,21 +768,37 @@ def test_struct_reduce(ctx_factory):
 def summarize_error(obtained, desired, orig, thresh=1e-5):
     err = obtained - desired
     ok_count = 0
+    bad_count = 0
+
+    bad_limit = 200
+
+    def summarize_counts():
+        if ok_count:
+            entries.append("<%d ok>" % ok_count)
+        if bad_count >= bad_limit:
+            entries.append("<%d more bad>" % (bad_count-bad_limit))
 
     entries = []
     for i, val in enumerate(err):
         if abs(val) > thresh:
             if ok_count:
-                entries.append("<%d ok>" % ok_count)
+                summarize_counts()
                 ok_count = 0
 
-            entries.append("%r (want: %r, got: %r, orig: %r)" % (obtained[i], desired[i],
-                obtained[i], orig[i]))
+            bad_count += 1
+
+            if bad_count < bad_limit:
+                entries.append("%r (want: %r, got: %r, orig: %r)" % (obtained[i], desired[i],
+                    obtained[i], orig[i]))
         else:
+            if bad_count:
+                summarize_counts()
+                bad_count = 0
+
             ok_count += 1
 
-    if ok_count:
-        entries.append("<%d ok>" % ok_count)
+
+    summarize_counts()
 
     return " ".join(entries)
 
@@ -818,7 +834,6 @@ def test_scan(ctx_factory):
         knl = cls(context, dtype, "a+b", "0")
 
         for n in scan_test_counts:
-
             host_data = np.random.randint(0, 10, n).astype(dtype)
             dev_data = cl_array.to_device(queue, host_data)
 
@@ -832,9 +847,10 @@ def test_scan(ctx_factory):
 
             is_ok = (dev_data.get() == desired_result).all()
             if 1 and not is_ok:
+                print "something went wrong, summarizing error..."
                 print(summarize_error(dev_data.get(), desired_result, host_data))
 
-            print(n, is_ok)
+            print("n:%d %s worked:%s" % (n, cls, is_ok))
             assert is_ok
             from gc import collect
             collect()
