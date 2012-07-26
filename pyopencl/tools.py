@@ -293,4 +293,23 @@ def get_gl_sharing_context_properties():
 
 
 
+
+def dtype_to_c_struct(dtype):
+    dtype = np.dtype(dtype)
+
+    fields = sorted(dtype.fields.iteritems(),
+            key=lambda (name, (dtype, offset)): offset)
+
+    # FIXME check that this matches C alignment fulres
+    c_fields = []
+    for name, (field_dtype, offset) in fields:
+        c_fields.append("  %s %s;" % (dtype_to_ctype(field_dtype), name))
+
+    return "typedef struct {\n%s\n} %s;" % (
+            "\n".join(c_fields),
+            dtype_to_ctype(dtype))
+
+
+
+
 # vim: foldmethod=marker

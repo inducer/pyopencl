@@ -704,16 +704,8 @@ def test_struct_reduce(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    preamble = r"""//CL//
-    struct minmax_collector
-    {
-        int cur_min;
-        int cur_max;
-        // Workaround for OS X Lion GPU CL. Mystifying.
-        int pad;
-    };
-
-    typedef struct minmax_collector minmax_collector;
+    from pyopencl.tools import dtype_to_c_struct
+    preamble = dtype_to_c_struct(mmc_dtype) + r"""//CL//
 
     minmax_collector mmc_neutral()
     {
