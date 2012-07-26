@@ -37,11 +37,12 @@ change. But if it does, your code will generally continue to run. It
 may however start spewing warnings about things you need to change to
 stay compatible with future versions.
 
-Deprecation warnings will be around for a whole release cycle, as
-identified by the second number in the release name.  (the "90" in
-"0.90") Further, the stability promise applies for any code that's
-part of a released version. It doesn't apply to undocumented bits of
-the API, and it doesn't apply to unreleased code downloaded from git.
+Deprecation warnings will be around for a whole year, as identified by the
+first number in the release name.  (the "2014" in "2014.1") I.e. a function
+that was deprecated in 2014.n will generally be removed in 2015.n (or perhaps
+later). Further, the stability promise applies for any code that's part of a
+released version. It doesn't apply to undocumented bits of the API, and it
+doesn't apply to unreleased code downloaded from git.
 
 .. _versus-c:
 
@@ -76,7 +77,15 @@ Version 2012.2
 .. note::
 
     This version is currently under development. You can get snapshots from
-    PyOpenCL's git version control.
+    PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
+
+* Vastly improved :ref:`custom-scan`.
+* Add :func:`pyopencl.tools.dtype_to_c_struct`.
+* More/improved Bessel functions.
+  See `the source <https://github.com/inducer/pyopencl/tree/master/src/cl>`_.
+* Add :envvar:`PYOPENCL_NO_CACHE` environment variable to aid debugging
+  (e.g. with AMD's CPU implementation, see
+  `their programming guide <http://developer.amd.com/sdks/AMDAPPSDK/assets/AMD_Accelerated_Parallel_Processing_OpenCL_Programming_Guide.pdf>`_.
 
 Version 2012.1
 --------------

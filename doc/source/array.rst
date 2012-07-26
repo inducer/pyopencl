@@ -3,8 +3,16 @@ Multi-dimensional arrays on the Compute Device
 
 .. module:: pyopencl.array
 
+The functionality in this module provides something of a work-alike for
+:mod:`numpy` arrays, but with all operations executed on the CL compute device.
+
 Data Types
 ----------
+
+PyOpenCL provides some amount of integration between the :mod:`numpy`
+type system, as represented by :class:`numpy.dtype`, and the types
+available in OpenCL. All the simple scalar types map straightforwardly
+to their CL counterparts.
 
 Vector Types
 ^^^^^^^^^^^^
@@ -35,6 +43,34 @@ about them using this function:
     *dtype* is a :class:`numpy.dtype`.
 
     .. versionadded: 2011.2
+
+.. function:: dtype_to_ctype(dtype)
+
+    Returns a C name registered for *dtype*.
+
+    .. versionadded: 2012.2
+
+This function helps with producing C/OpenCL declarations for structured
+:class:`numpy.dtype` instances:
+
+.. function:: dtype_to_c_struct(dtype)
+
+    Return a C structure declaration for *dtype*.
+
+    .. versionadded: 2012.2
+
+This example explains its use::
+
+    >>> import pyopencl as cl
+    >>> import pyopencl.tools
+    >>> import numpy as np
+    >>> t = np.dtype([("id", np.uint32), ("value", np.float32)])
+    >>> cl.tools.register_dtype(t, "id_val")
+    >>> print cl.tools.dtype_to_c_struct(t)
+    typedef struct {
+      unsigned id;
+      float value;
+    } id_val;
 
 .. currentmodule:: pyopencl.array
 
@@ -96,10 +132,8 @@ The :class:`Array` Class
     carries out its computations by default.
 
     *allocator* is a callable that, upon being called with an argument of the number
-    of bytes to be allocated, returns an object that can be cast to an
-    :class:`int` representing the address of the newly allocated memory.
+    of bytes to be allocated, returns an :class:`pyopencl.Buffer` object.
     (See :class:`DefaultAllocator`.)
-
 
     .. versionchanged:: 2011.1
         Renamed *context* to *cqa*, made it general-purpose.
@@ -283,15 +317,15 @@ Conditionals
 .. function:: if_positive(criterion, then_, else_, out=None, queue=None)
 
     Return an array like *then_*, which, for the element at index *i*,
-    contains *then_[i]* if *criterion[i]>0*, else *else_[i]*. (added in 0.94)
+    contains *then_[i]* if *criterion[i]>0*, else *else_[i]*.
 
 .. function:: maximum(a, b, out=None, queue=None)
 
-    Return the elementwise maximum of *a* and *b*. (added in 0.94)
+    Return the elementwise maximum of *a* and *b*.
 
 .. function:: minimum(a, b, out=None, queue=None)
 
-    Return the elementwise minimum of *a* and *b*. (added in 0.94)
+    Return the elementwise minimum of *a* and *b*.
 
 .. _reductions:
 
@@ -639,6 +673,8 @@ Here's a usage example::
             arguments="__global float *x, __global float *y")
 
     my_dot_prod = krnl(a, b).get()
+
+.. _custom-scan:
 
 Parallel Scan / Prefix Sum
 --------------------------
