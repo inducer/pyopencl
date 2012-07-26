@@ -10,11 +10,17 @@ import numpy as np
 
 
 class RanluxGenerator(object):
-    def __init__(self, queue, num_work_items,
+    def __init__(self, queue, num_work_items=None,
             luxury=None, seed=None, no_warmup=False,
             use_legacy_init=False, max_work_items=None):
         if luxury is None:
             luxury = 4
+
+        if num_work_items is None:
+            if queue.device.type == cl.device_type.CPU:
+                num_work_items = 8 * queue.device.max_compute_units
+            else:
+                num_work_items = 64 * queue.device.max_compute_units
 
         if seed is None:
             from time import time
@@ -253,12 +259,7 @@ class RanluxGenerator(object):
 
 @first_arg_dependent_memoize
 def _get_generator(queue, luxury=None):
-    if queue.device.type == cl.device_type.CPU:
-        num_work_items = 8 * queue.device.max_compute_units
-    else:
-        num_work_items = 64 * queue.device.max_compute_units
-
-    gen = RanluxGenerator(queue, num_work_items, luxury=luxury)
+    gen = RanluxGenerator(queue, luxury=luxury)
     queue.finish()
     return gen
 
