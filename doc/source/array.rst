@@ -209,6 +209,10 @@ The :class:`Array` Class
         :mod:`numpy.ndarray`. If *ary* is given, it must have the right
         size (not necessarily shape) and dtype.
 
+    .. method :: copy(queue=None)
+
+        .. versionadded:: 2012.2
+
     .. method :: __str__()
     .. method :: __repr__()
 

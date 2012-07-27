@@ -377,6 +377,12 @@ class Array(object):
 
         return ary
 
+    def copy(self, queue=None):
+        queue = queue or self.queue
+        result = self._new_like_me()
+        cl.enqueue_copy(queue, result.data, self.data, byte_count=self.nbytes)
+        return result
+
     def __str__(self):
         return str(self.get())
 
