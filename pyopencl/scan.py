@@ -685,7 +685,7 @@ _PREFIX_WORDS = set("""
         is_seg_start update_i scan_item_at_i seq_i read_i
         l_ o_mod_k o_div_k l_segment_start_flags scan_value sum
         first_seg_start_in_interval g_segment_start_flags
-        group_base seg_end
+        group_base seg_end my_val
 
         LID_2 LID_1 LID_0
         LDIM_0 LDIM_1 LDIM_2
@@ -706,7 +706,7 @@ _IGNORED_WORDS = set("""
         get_local_size get_local_id cl_khr_fp64 reqd_work_group_size
         get_num_groups barrier get_group_id
 
-        _final_update _scan_intervals
+        _final_update _scan_intervals _debug_scan
 
         positions all padded integer its previous write based true writes 0
         has local worth scan_expr to read cannot not X items False bank
