@@ -909,6 +909,28 @@ def test_unique(ctx_factory):
         assert (a_unique_dev.get()[:count_unique_dev] == a_unique_host).all()
 
 @pytools.test.mark_test.opencl
+def test_index_preservation(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    for n in scan_test_counts:
+
+        from pyopencl.scan import GenericScanKernel
+        knl = GenericScanKernel(
+                context, np.int32,
+                arguments="__global int *out",
+                input_expr="i",
+                scan_expr="b", neutral="0",
+                output_statement="""
+                    out[i] = item;
+                    """)
+
+        out = cl_array.empty(queue, n, dtype=np.int32)
+        knl(out)
+
+        assert (out.get() == np.arange(n)).all()
+
+@pytools.test.mark_test.opencl
 def test_segmented_scan(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)

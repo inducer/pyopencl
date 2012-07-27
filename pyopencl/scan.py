@@ -312,7 +312,7 @@ void ${name_prefix}_scan_intervals(
                     }
                     else
                     %endif
-                        sum = SCAN_EXPR(tmp, sum);
+                        sum = SCAN_EXPR(sum, tmp);
 
                     ldata[k][LID_0] = sum;
                 }
