@@ -765,6 +765,16 @@ Making Custom Scan Kernels
         *queue* and *allocator* default to the ones provided on the first
         :class:`pyopencl.array.Array` in *args*.
 
+Debugging aids
+~~~~~~~~~~~~~~
+
+.. class:: GenericDebugScanKernel
+
+    Performs the same function and has the same interface as
+    :class:`GenericScanKernel`, but uses a dead-simple, sequential scan.  Works
+    best on CPU platforms, and helps isolate bugs in scans by removing the
+    potential for issues originating in parallel execution.
+
 .. _predefined-scans:
 
 Pre-defined higher-level operations
