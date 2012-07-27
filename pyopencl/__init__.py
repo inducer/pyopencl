@@ -123,9 +123,38 @@ class Program(object):
             self._prg._build(options, devices)
         else:
             from pyopencl.cache import create_built_program_from_source_cached
-            self._prg = create_built_program_from_source_cached(
-                    self._context, self._source, options, devices,
-                    cache_dir=cache_dir)
+
+            err = None
+            try:
+                self._prg = create_built_program_from_source_cached(
+                        self._context, self._source, options, devices,
+                        cache_dir=cache_dir)
+            except _cl.RuntimeError, e:
+                from pytools import Record
+                class ErrorRecord(Record):
+                    pass
+
+                from tempfile import NamedTemporaryFile
+                srcfile = NamedTemporaryFile(mode="wt", delete=False, suffix=".cl")
+                try:
+                    srcfile.write(self._source)
+                finally:
+                    srcfile.close()
+
+                what = e.what + "\n(source saved as %s)" % srcfile.name
+                code = e.code
+                routine = e.routine
+
+                err = _cl.RuntimeError(
+                        ErrorRecord(
+                            what=lambda : what,
+                            code=lambda : code,
+                            routine=lambda : routine))
+
+            if err is not None:
+                # Python 3.2 outputs the whole list of currently active exceptions
+                # This serves to remove one (redundant) level from that nesting.
+                raise err
 
             del self._context
             del self._source
