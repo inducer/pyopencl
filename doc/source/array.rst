@@ -733,7 +733,7 @@ greater than 300::
     knl(a, out)
 
     a_host = a.get()
-    out_host = a[a > 300]
+    out_host = a_host[a_host > 300]
 
     assert (out_host == out.get()[:len(out_host)]).all()
 
