@@ -196,7 +196,8 @@ void pyopencl_expose_part_2()
             create_program_with_binary,
             py::default_call_policies(),
             py::args("context", "devices", "binaries")))
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if (PYOPENCL_CL_VERSION >= 0x1020) && \
+      ((PYOPENCL_CL_VERSION >= 0x1030) && defined(__APPLE__))
       .def("create_with_built_in_kernels",
           create_program_with_built_in_kernels,
           py::args("context", "devices", "kernel_names"),

@@ -3006,7 +3006,8 @@ namespace pyopencl
 
 
 
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if (PYOPENCL_CL_VERSION >= 0x1020) && \
+      ((PYOPENCL_CL_VERSION >= 0x1030) && defined(__APPLE__))
   inline
   program *create_program_with_built_in_kernels(
       context &ctx,
@@ -3033,9 +3034,11 @@ namespace pyopencl
       throw;
     }
   }
+#endif
 
 
 
+#if PYOPENCL_CL_VERSION >= 0x1020
   inline
   program *link_program(
       context &ctx,
