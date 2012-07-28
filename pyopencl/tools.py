@@ -231,7 +231,7 @@ class Argument:
         self.name = name
 
     def __repr__(self):
-        return "%s(%r, %s, %d)" % (
+        return "%s(%r, %s)" % (
                 self.__class__.__name__,
                 self.name,
                 self.dtype)
