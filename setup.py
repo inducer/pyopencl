@@ -74,11 +74,7 @@ def main():
     LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
     LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
 
-    from os.path import dirname, join, normpath
-
     EXTRA_INCLUDE_DIRS = []
-    EXTRA_LIBRARY_DIRS = []
-    EXTRA_LIBRARIES = []
 
     EXTRA_DEFINES["PYGPU_PACKAGE"] = "pyopencl"
     EXTRA_DEFINES["PYGPU_PYOPENCL"] = "1"
@@ -87,8 +83,6 @@ def main():
         EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
 
     INCLUDE_DIRS = conf["BOOST_INC_DIR"] + conf["CL_INC_DIR"]
-
-    ext_kwargs = dict()
 
     if conf["CL_ENABLE_GL"]:
         EXTRA_DEFINES["HAVE_GL"] = 1
