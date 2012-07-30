@@ -957,7 +957,7 @@ def test_segmented_scan(ctx_factory):
                 arguments="__global %s *ary, __global char *segflags, __global %s *out"
                     % (ctype, ctype),
                 input_expr="ary[i]",
-                scan_expr="a+b", neutral="0",
+                scan_expr="across_seg_boundary ? b : (a+b)", neutral="0",
                 is_segment_start_expr="segflags[i]",
                 output_statement=output_statement,
                 options=[])
@@ -1117,6 +1117,9 @@ def test_view(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def no_test_slice(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
     from pyopencl.clrandom import rand as clrand
 
     l = 20000
