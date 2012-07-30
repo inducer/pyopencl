@@ -117,6 +117,13 @@ SCAN_INTERVALS_SOURCE = SHARED_PREAMBLE + r"""//CL//
 
 #define K ${k_group_size}
 
+// #define DEBUG
+#ifdef DEBUG
+    #define pycl_printf(ARGS) printf ARGS
+#else
+    #define pycl_printf(ARGS) /* */
+#endif
+
 KERNEL
 REQD_WG_SIZE(WG_SIZE, 1, 1)
 void ${name_prefix}_scan_intervals(
@@ -208,6 +215,8 @@ void ${name_prefix}_scan_intervals(
                 local_barrier();
             %endif
 
+            pycl_printf(("after input_fetch_exprs\n"));
+
             // }}}
 
             // {{{ read a unit's worth of data from global
@@ -256,6 +265,8 @@ void ${name_prefix}_scan_intervals(
                 }
             }
 
+            pycl_printf(("after read from global\n"));
+
             // }}}
 
             // {{{ carry in from previous unit, if applicable
@@ -278,6 +289,8 @@ void ${name_prefix}_scan_intervals(
                     %endif
                     );
             }
+
+            pycl_printf(("after carry-in\n"));
 
             // }}}
 
@@ -320,6 +333,8 @@ void ${name_prefix}_scan_intervals(
                     ldata[k][LID_0] = sum;
                 }
             }
+
+            pycl_printf(("after scan along k\n"));
 
             // }}}
 
@@ -422,6 +437,8 @@ void ${name_prefix}_scan_intervals(
                 <% scan_offset *= 2 %>
             % endwhile
 
+            pycl_printf(("after tree scan\n"));
+
             // }}}
 
             // {{{ update local values
@@ -459,6 +476,8 @@ void ${name_prefix}_scan_intervals(
                 }
             %endif
 
+            pycl_printf(("after local update\n"));
+
             // }}}
 
             local_barrier();
@@ -473,10 +492,13 @@ void ${name_prefix}_scan_intervals(
                 if (unit_base + offset < interval_end)
                 %endif
                 {
+                    pycl_printf(("write: %d\n", unit_base + offset));
                     partial_scan_buffer[unit_base + offset] =
                         ldata[offset % K][offset / K];
                 }
             }
+
+            pycl_printf(("after write\n"));
 
             // }}}
 
@@ -696,7 +718,7 @@ _PREFIX_WORDS = set("""
         is_seg_start update_i scan_item_at_i seq_i read_i
         l_ o_mod_k o_div_k l_segment_start_flags scan_value sum
         first_seg_start_in_interval g_segment_start_flags
-        group_base seg_end my_val
+        group_base seg_end my_val DEBUG ARGS
 
         LID_2 LID_1 LID_0
         LDIM_0 LDIM_1 LDIM_2
@@ -706,7 +728,7 @@ _PREFIX_WORDS = set("""
 
 _IGNORED_WORDS = set("""
         typedef for endfor if void while endwhile endfor endif else const printf
-        None return bool n char true false
+        None return bool n char true false ifdef pycl_printf
 
         set iteritems len setdefault
 
@@ -738,6 +760,7 @@ _IGNORED_WORDS = set("""
         intra Therefore find code assumption
         branch workgroup complicated granularity phase remainder than simpler
         We smaller look ifs lots self behind allow barriers whole loop
+        after
 
         is_tail is_first_level input_expr argument_signature preamble
         double_support neutral output_statement index_type_max
