@@ -4,6 +4,7 @@ import numpy as np
 import numpy.linalg as la
 import sys
 import pytools.test
+from pytools import memoize
 
 
 def have_cl():
@@ -689,23 +690,30 @@ def test_dot(ctx_factory):
 
             assert abs(dot_ab_gpu - dot_ab) / abs(dot_ab) < 1e-4
 
-mmc_dtype = np.dtype([
-    ("cur_min", np.int32),
-    ("cur_max", np.int32),
-    ("pad", np.int32),
-    ])
+@memoize
+def make_mmc_dtype(device):
+    dtype = np.dtype([
+        ("cur_min", np.int32),
+        ("cur_max", np.int32),
+        ("pad", np.int32),
+        ])
 
-from pyopencl.tools import register_dtype
-register_dtype(mmc_dtype, "minmax_collector", alias_ok=True)
-register_dtype(mmc_dtype, "minmax_collector", alias_ok=True)
+    name = "minmax_collector"
+    from pyopencl.tools import register_dtype, match_dtype_to_c_struct
+
+    dtype, c_decl = match_dtype_to_c_struct(device, name, dtype)
+    register_dtype(dtype, name)
+
+    return dtype, c_decl
 
 @pytools.test.mark_test.opencl
 def test_struct_reduce(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    from pyopencl.tools import dtype_to_c_struct
-    preamble = dtype_to_c_struct(mmc_dtype) + r"""//CL//
+    mmc_dtype, mmc_c_decl = make_mmc_dtype(context.devices[0])
+
+    preamble = mmc_c_decl + r"""//CL//
 
     minmax_collector mmc_neutral()
     {
