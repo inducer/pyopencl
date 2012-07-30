@@ -956,6 +956,10 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         max_scan_wg_size = min(dev.max_work_group_size for dev in self.devices)
 
+        if self.devices[0].type == cl.device_type.CPU:
+            # (about the widest vector a CPU can support)
+            max_scan_wg_size = 16
+
         while True:
             candidate_scan_info = self.build_scan_kernel(
                     max_scan_wg_size, self.parsed_args, self.input_expr,
@@ -1068,9 +1072,9 @@ class GenericScanKernel(_GenericScanKernelBase):
         # k_group_size should be a power of two because of in-kernel
         # division by that number.
 
-        if wg_size < 16:
-            # Hello, Apple CPU. Nice to see you.
-            k_group_size = 128 # FIXME: guesswork
+        # FIXME: guesswork
+        if self.devices[0].type == cl.device_type.CPU:
+            k_group_size = 128
         else:
             k_group_size = 8
 
