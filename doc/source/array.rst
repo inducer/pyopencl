@@ -55,6 +55,10 @@ This function helps with producing C/OpenCL declarations for structured
 
 .. autofunction:: match_dtype_to_c_struct
 
+A more complete example of how to use custom structured types can be
+found in :file:`examples/demo-struct-reduce.py` in the PyOpenCL
+distribution.
+
 .. currentmodule:: pyopencl.array
 
 Complex Numbers
