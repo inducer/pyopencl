@@ -53,24 +53,7 @@ about them using this function:
 This function helps with producing C/OpenCL declarations for structured
 :class:`numpy.dtype` instances:
 
-.. function:: dtype_to_c_struct(dtype)
-
-    Return a C structure declaration for *dtype*.
-
-    .. versionadded: 2012.2
-
-This example explains its use::
-
-    >>> import pyopencl as cl
-    >>> import pyopencl.tools
-    >>> import numpy as np
-    >>> t = np.dtype([("id", np.uint32), ("value", np.float32)])
-    >>> cl.tools.register_dtype(t, "id_val")
-    >>> print cl.tools.dtype_to_c_struct(t)
-    typedef struct {
-      unsigned id;
-      float value;
-    } id_val;
+.. autofunction:: match_dtype_to_c_struct
 
 .. currentmodule:: pyopencl.array
 

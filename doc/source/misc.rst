@@ -80,7 +80,8 @@ Version 2012.2
     PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
 
 * Vastly improved :ref:`custom-scan`.
-* Add :func:`pyopencl.tools.dtype_to_c_struct`.
+* Add :func:`pyopencl.tools.match_dtype_to_c_struct`,
+  for better integration of the CL and :mod:`numpy` type systems.
 * More/improved Bessel functions.
   See `the source <https://github.com/inducer/pyopencl/tree/master/src/cl>`_.
 * Add :envvar:`PYOPENCL_NO_CACHE` environment variable to aid debugging
