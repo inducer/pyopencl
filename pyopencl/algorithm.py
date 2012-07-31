@@ -276,17 +276,6 @@ RADIX_SORT_PREAMBLE_TPL = Template(r"""//CL//
     #endif
 
     <%
-      def get_count_branch(known_bits):
-          if len(known_bits) == bits:
-              return "s.c%s" % known_bits
-
-          b = len(known_bits)
-          boundary_mnr = known_bits + "1" + (bits-b-1)*"0"
-
-          return ("((mnr < %s) ? %s : %s)" % (
-              int(boundary_mnr, 2),
-              get_count_branch(known_bits+"0"),
-              get_count_branch(known_bits+"1")))
     %>
 
     index_t get_count(scan_t s, int mnr)
@@ -375,7 +364,7 @@ class RadixSort(object):
     <https://en.wikipedia.org/wiki/Radix_sort>`_ on the compute device.
     """
     def __init__(self, context, arguments, key_expr, sort_arg_names,
-            bits_at_a_time=4, index_dtype=np.int32, key_dtype=np.uint32,
+            bits_at_a_time=3, index_dtype=np.int32, key_dtype=np.uint32,
             options=[]):
         """
         :arg arguments: A string of comma-separated C argument declarations.
@@ -417,6 +406,17 @@ class RadixSort(object):
                     if arg.name in sort_arg_names]
                 + [ ScalarArg(np.int32, "base_bit") ])
 
+        def get_count_branch(known_bits):
+            if len(known_bits) == self.bits:
+                return "s.c%s" % known_bits
+
+            boundary_mnr = known_bits + "1" + (self.bits-len(known_bits)-1)*"0"
+
+            return ("((mnr < %s) ? %s : %s)" % (
+                int(boundary_mnr, 2),
+                get_count_branch(known_bits+"0"),
+                get_count_branch(known_bits+"1")))
+
         codegen_args = dict(
                 bits=self.bits,
                 key_ctype=dtype_to_ctype(self.key_dtype),
@@ -426,6 +426,7 @@ class RadixSort(object):
                 padded_bin=_padded_bin,
                 scan_ctype=scan_ctype,
                 sort_arg_names=sort_arg_names,
+                get_count_branch=get_count_branch,
                 )
 
         preamble = scan_t_cdecl+RADIX_SORT_PREAMBLE_TPL.render(**codegen_args)
