@@ -816,7 +816,9 @@ scan_test_counts = [
     2 ** 20 - 2 ** 18,
     2 ** 20 - 2 ** 18 + 5,
     2 ** 20 + 1,
-    2 ** 20, 2 ** 24
+    2 ** 20,
+    2 ** 23 + 3,
+    2 ** 24 + 5
     ]
 
 @pytools.test.mark_test.opencl
@@ -1070,8 +1072,8 @@ def test_sort(ctx_factory):
 
         numpy_elapsed = numpy_end-dev_end
         dev_elapsed = dev_end-dev_start
-        print  "  dev: %.2f s numpy: %.2f ratio: %.1fx" % (
-                dev_elapsed, numpy_elapsed, dev_elapsed/numpy_elapsed)
+        print  "  dev: %.2f MKeys/s numpy: %.2f MKeys/s ratio: %.2fx" % (
+                1e-6*n/dev_elapsed, 1e-6*n/numpy_elapsed, numpy_elapsed/dev_elapsed)
         assert (a_dev_sorted.get() == a_sorted).all()
 
 

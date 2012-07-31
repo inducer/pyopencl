@@ -401,7 +401,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     src = r"""
         #define pycl_offsetof(st, m) \
-                 ((size_t) ( (char *)&((st *)0)->m - (char *)0 ))
+                 ((size_t) ((__local char *) &(dummy.m) - (__local char *)&dummy ))
 
         %(pre_decls)s
 
@@ -410,6 +410,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
         __kernel void get_size_and_offsets(__global size_t *result)
         {
             result[0] = sizeof(%(my_type)s);
+            __local %(my_type)s dummy;
             %(offset_code)s
         }
     """ % dict(
@@ -428,8 +429,23 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     import pyopencl.array
     result_buf = cl.array.empty(queue, 1+len(fields), np.uintp)
-    knl(queue, (1,), None, result_buf.data)
+    knl(queue, (1,), (1,), result_buf.data)
+    queue.finish()
     size_and_offsets = result_buf.get()
+
+    size = int(size_and_offsets[0])
+
+    from pytools import any
+    offsets = size_and_offsets[1:]
+    if any(ofs >= size for ofs in offsets):
+        # offsets not plausible
+
+        if dtype.itemsize == size:
+            # If sizes match, use numpy's idea of the offsets.
+            offsets = [offset
+                    for field_name, (field_dtype, offset) in fields]
+        else:
+            raise RuntimeError("cannot discover struct layout on '%s'" % device)
 
     result_buf.data.release()
     del knl
@@ -440,7 +456,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     dtype_arg_dict = dict(
             names=[field_name for field_name, (field_dtype, offset) in fields],
             formats=[field_dtype for field_name, (field_dtype, offset) in fields],
-            offsets=[int(x) for x in size_and_offsets[1:]],
+            offsets=[int(x) for x in offsets],
             itemsize=int(size_and_offsets[0]),
             )
     dtype = np.dtype(dtype_arg_dict)
