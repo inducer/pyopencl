@@ -559,7 +559,10 @@ void ${name_prefix}_final_update(
     %if is_segmented:
         const index_type first_seg_start_in_interval =
             g_first_segment_start_in_interval[GID_0];
+    %endif
 
+    %if not is_segmented and 'last_item' in output_statement:
+        scan_type last_item = interval_results[GDIM_0-1];
     %endif
 
     %if not use_lookbehind_update:
@@ -851,19 +854,23 @@ class _GenericScanKernelBase(object):
             in the values to which the scan is applied. This may be used
             to apply a mapping to values stored in *arguments* before being
             scanned. The result of this expression must match *dtype*.
-            The index intended to be mapped is available as *i* in this
+            The index intended to be mapped is available as `i` in this
             expression. This expression may also use the variables defined
             by *input_fetch_expr*.
 
             This expression may also call functions given in the *preamble*.
         :arg output_statement: a C statement that writes
-            the output of the scan. It has access to the scan result as *item*,
-            the preceding scan result item as *prev_item*, and the current index
-            as *i*. *prev_item* in a segmented scan will be the neutral element
+            the output of the scan. It has access to the scan result as `item`,
+            the preceding scan result item as `prev_item`, and the current index
+            as `i`. `prev_item` in a segmented scan will be the neutral element
             at a segment boundary, not the immediately preceding item.
 
             Using *prev_item* in output statement has a small run-time cost.
-            *prev_item* enables the construction of an exclusive scan.
+            `prev_item` enables the construction of an exclusive scan.
+
+            For non-segmented scans, *output_statement* may also reference
+            `last_item`, which evaluates to the scan result of the last
+            array entry.
         :arg is_segment_start_expr: A C expression, encoded as a string,
             resulting in a C `bool` value that determines whether a new
             scan segments starts at index *i*.  If given, makes the scan a
