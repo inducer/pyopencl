@@ -371,8 +371,8 @@ RADIX_SORT_OUTPUT_STMT_TPL = Template(r"""//CL//
 # {{{ driver
 
 class RadixSort(object):
-    """Provides a general least-significant-digit `radix sort
-    <https://en.wikipedia.org/wiki/Radix_sort>`_ on the compute device.
+    """Provides a general `radix sort <https://en.wikipedia.org/wiki/Radix_sort>`_
+    on the compute device.
     """
     def __init__(self, context, arguments, key_expr, sort_arg_names,
             bits_at_a_time=4, index_dtype=np.int32, key_dtype=np.uint32,
@@ -383,7 +383,7 @@ class RadixSort(object):
             specified. All types used here must be known to PyOpenCL.
             (see :func:`pyopencl.tools.register_dtype`).
         :arg key_expr: An integer-valued C expression returning the
-            key to which radix sort is applied. The array index
+            key based on which the sort is performed. The array index
             for which the key is to be computed is available as `i`.
             The expression may refer to any of the *arguments*.
         :arg sort_arg_names: A list of argument names whose corresponding
