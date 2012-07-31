@@ -764,17 +764,6 @@ Debugging aids
 
 .. _predefined-scans:
 
-Pre-defined higher-level operations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. autofunction:: copy_if
-
-.. autofunction:: remove_if
-
-.. autofunction:: partition
-
-.. autofunction:: unique
-
 Simple / Legacy Interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -817,7 +806,25 @@ Here's a usage example::
     knl(dev_data)
     assert (dev_data.get() == np.cumsum(host_data, axis=0)).all()
 
+Higher-level algorithms
+-----------------------
 
+.. module:: pyopencl.algorithm
+
+.. autofunction:: copy_if
+
+.. autofunction:: remove_if
+
+.. autofunction:: partition
+
+.. autofunction:: unique
+
+Sorting
+^^^^^^^
+
+.. autoclass:: RadixSort
+
+    .. automethod:: __call__
 
 Fast Fourier Transforms
 -----------------------

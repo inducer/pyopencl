@@ -32,11 +32,10 @@ https://code.google.com/p/thrust/source/browse/thrust/detail/backend/cuda/detail
 import numpy as np
 
 import pyopencl as cl
-import pyopencl.array as cl_array
+import pyopencl.array
 from pyopencl.tools import dtype_to_ctype, bitlog2
 import pyopencl._mymako as mako
 from pyopencl._cluda import CLUDA_PREAMBLE
-from pyopencl.tools import context_dependent_memoize
 
 
 
@@ -1123,7 +1122,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                 + self.index_dtype.itemsize*wg_size
 
                 + k_group_size*wg_size*sum(
-                    self.arg_dtypes[arg_name]
+                    arg_dtypes[arg_name].itemsize
                     for arg_name, ife_offsets in fetch_expr_offsets.items()
                     if -1 in ife_offsets or len(ife_offsets) > 1))
 
@@ -1210,16 +1209,16 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         # {{{ allocate some buffers
 
-        interval_results = cl_array.empty(queue,
+        interval_results = cl.array.empty(queue,
                 num_intervals, dtype=self.dtype,
                 allocator=allocator)
 
-        partial_scan_buffer = cl_array.empty(
+        partial_scan_buffer = cl.array.empty(
                 queue, n, dtype=self.dtype,
                 allocator=allocator)
 
         if self.store_segment_start_flags:
-            segment_start_flags = cl_array.empty(
+            segment_start_flags = cl.array.empty(
                     queue, n, dtype=np.bool,
                     allocator=allocator)
 
@@ -1232,7 +1231,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                 ]
 
         if self.is_segmented:
-            first_segment_start_in_interval = cl_array.empty(queue,
+            first_segment_start_in_interval = cl.array.empty(queue,
                     num_intervals, dtype=self.index_dtype,
                     allocator=allocator)
             scan1_args.append(first_segment_start_in_interval.data)
@@ -1350,8 +1349,6 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
                 + [self.index_dtype])
         self.kernel.set_scalar_arg_dtypes(scalar_arg_dtypes)
 
-        # }}}
-
     def __call__(self, *args, **kwargs):
         # {{{ argument processing
 
@@ -1407,7 +1404,7 @@ class _LegacyScanKernelBase(GenericScanKernel): # FIXME
             output_ary = input_ary
 
         if isinstance(output_ary, (str, unicode)) and output_ary == "new":
-            output_ary = cl_array.empty_like(input_ary, allocator=allocator)
+            output_ary = cl.array.empty_like(input_ary, allocator=allocator)
 
         if input_ary.shape != output_ary.shape:
             raise ValueError("input and output must have the same shape")
@@ -1431,191 +1428,6 @@ class InclusiveScanKernel(_LegacyScanKernelBase):
 
 class ExclusiveScanKernel(_LegacyScanKernelBase):
     ary_output_statement = "output_ary[i] = prev_item;"
-
-# }}}
-
-# {{{ higher-level trickery
-
-@context_dependent_memoize
-def _get_copy_if_kernel(ctx, dtype, predicate, scan_dtype,
-        extra_args_types, preamble):
-    ctype = dtype_to_ctype(dtype)
-    arguments = [
-        "__global %s *ary" % ctype,
-        "__global %s *out" % ctype,
-        "__global unsigned long *count",
-        ] + [
-                "%s %s" % (dtype_to_ctype(arg_dtype), name)
-                for name, arg_dtype in extra_args_types]
-
-    return GenericScanKernel(
-            ctx, dtype,
-            arguments=", ".join(arguments),
-            input_expr="(%s) ? 1 : 0" % predicate,
-            scan_expr="a+b", neutral="0",
-            output_statement="""
-                if (prev_item != item) out[item-1] = ary[i];
-                if (i+1 == N) *count = item;
-                """,
-            preamble=preamble)
-
-def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
-    """Copy the elements of *ary* satisfying *predicate* to an output array.
-
-    :arg predicate: a C expression evaluating to a `bool`, represented as a string.
-        The value to test is available as `ary[i]`, and if the expression evaluates
-        to `true`, then this value ends up in the output.
-    :arg extra_args: |scan_extra_args|
-    :arg preamble: |preamble|
-    :returns: a tuple *(out, count)* where *out* is the output array and *count*
-        is an on-device scalar (fetch to host with `count.get()`) indicating
-        how many elements satisfied *predicate*.
-    """
-    if len(ary) > np.iinfo(np.uint32).max:
-        scan_dtype = np.uint64
-    else:
-        scan_dtype = np.uint32
-
-    extra_args_types = tuple((name, val.dtype) for name, val in extra_args)
-    extra_args_values = tuple(val for name, val in extra_args)
-
-    knl = _get_copy_if_kernel(ary.context, ary.dtype, predicate, scan_dtype,
-            extra_args_types, preamble=preamble)
-    out = cl_array.empty_like(ary)
-    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=np.uint64)
-    knl(ary, out, count, *extra_args_values, queue=queue)
-    return out, count
-
-def remove_if(ary, predicate, extra_args=[], queue=None, preamble=""):
-    """Copy the elements of *ary* not satisfying *predicate* to an output array.
-
-    :arg predicate: a C expression evaluating to a `bool`, represented as a string.
-        The value to test is available as `ary[i]`, and if the expression evaluates
-        to `false`, then this value ends up in the output.
-    :arg extra_args: |scan_extra_args|
-    :arg preamble: |preamble|
-    :returns: a tuple *(out, count)* where *out* is the output array and *count*
-        is an on-device scalar (fetch to host with `count.get()`) indicating
-        how many elements did not satisfy *predicate*.
-    """
-    return copy_if(ary, "!(%s)" % predicate, extra_args=extra_args, queue=queue,
-            preamble=preamble)
-
-@context_dependent_memoize
-def _get_partition_kernel(ctx, dtype, predicate, scan_dtype,
-        extra_args_types, preamble):
-    ctype = dtype_to_ctype(dtype)
-    arguments = [
-        "__global %s *ary" % ctype,
-        "__global %s *out_true" % ctype,
-        "__global %s *out_false" % ctype,
-        "__global unsigned long *count_true",
-        ] + [
-                "%s %s" % (dtype_to_ctype(arg_dtype), name)
-                for name, arg_dtype in extra_args_types]
-
-    return GenericScanKernel(
-            ctx, dtype,
-            arguments=", ".join(arguments),
-            input_expr="(%s) ? 1 : 0" % predicate,
-            scan_expr="a+b", neutral="0",
-            output_statement="""
-                if (prev_item != item)
-                    out_true[item-1] = ary[i];
-                else
-                    out_false[i-item] = ary[i];
-                if (i+1 == N) *count_true = item;
-                """,
-            preamble=preamble)
-
-def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
-    """Copy the elements of *ary* into one of two arrays depending on whether
-    they satisfy *predicate*.
-
-    :arg predicate: a C expression evaluating to a `bool`, represented as a string.
-        The value to test is available as `ary[i]`.
-    :arg extra_args: |scan_extra_args|
-    :arg preamble: |preamble|
-    :returns: a tuple *(out_true, out_false, count)* where *count*
-        is an on-device scalar (fetch to host with `count.get()`) indicating
-        how many elements satisfied the predicate.
-    """
-    if len(ary) > np.iinfo(np.uint32).max:
-        scan_dtype = np.uint64
-    else:
-        scan_dtype = np.uint32
-
-    extra_args_types = tuple((name, val.dtype) for name, val in extra_args)
-    extra_args_values = tuple(val for name, val in extra_args)
-
-    knl = _get_partition_kernel(ary.context, ary.dtype, predicate, scan_dtype,
-            extra_args_types, preamble)
-    out_true = cl_array.empty_like(ary)
-    out_false = cl_array.empty_like(ary)
-    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=np.uint64)
-    knl(ary, out_true, out_false, count, *extra_args_values, queue=queue)
-    return out_true, out_false, count
-
-@context_dependent_memoize
-def _get_unique_kernel(ctx, dtype, is_equal_expr, scan_dtype,
-        extra_args_types, preamble):
-    ctype = dtype_to_ctype(dtype)
-    arguments = [
-        "__global %s *ary" % ctype,
-        "__global %s *out" % ctype,
-        "__global unsigned long *count_unique",
-        ] + [
-                "%s %s" % (dtype_to_ctype(arg_dtype), name)
-                for name, arg_dtype in extra_args_types]
-
-    key_expr_define = "#define IS_EQUAL_EXPR(a, b) %s\n" \
-            % _process_code_for_macro(is_equal_expr)
-    return GenericScanKernel(
-            ctx, dtype,
-            arguments=", ".join(arguments),
-            input_fetch_exprs=[
-                ("ary_im1", "ary", -1),
-                ("ary_i", "ary", 0),
-                ],
-            input_expr="(i == 0) || (IS_EQUAL_EXPR(ary_im1, ary_i) ? 0 : 1)",
-            scan_expr="a+b", neutral="0",
-            output_statement="""
-                if (prev_item != item) out[item-1] = ary[i];
-                if (i+1 == N) *count_unique = item;
-                """,
-            preamble=preamble+"\n\n"+key_expr_define)
-
-def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
-    """Copy the elements of *ary* into the output if *is_equal_expr*, applied to the
-    array element and its predecessor, yields false.
-
-    Works like the UNIX command :program:`uniq`, with a potentially custom comparison.
-    This operation is often used on sorted sequences.
-
-    :arg is_equal_expr: a C expression evaluating to a `bool`, represented as a string.
-        The elements being compared are available as `a` and `b`. If this expression
-        yields `false`, the two are considered distinct.
-    :arg extra_args: |scan_extra_args|
-    :arg preamble: |preamble|
-    :returns: a tuple *(out, count)* where *out* is the output array and *count*
-        is an on-device scalar (fetch to host with `count.get()`) indicating
-        how many elements satisfied the predicate.
-    """
-
-    if len(ary) > np.iinfo(np.uint32).max:
-        scan_dtype = np.uint64
-    else:
-        scan_dtype = np.uint32
-
-    extra_args_types = tuple((name, val.dtype) for name, val in extra_args)
-    extra_args_values = tuple(val for name, val in extra_args)
-
-    knl = _get_unique_kernel(ary.context, ary.dtype, is_equal_expr, scan_dtype,
-            extra_args_types, preamble)
-    out = cl_array.empty_like(ary)
-    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=np.uint64)
-    knl(ary, out, count, *extra_args_values, queue=queue)
-    return out, count
 
 # }}}
 

@@ -865,7 +865,7 @@ def test_copy_if(ctx_factory):
         a_dev = clrand(queue, (n,), dtype=np.int32, a=0, b=1000)
         a = a_dev.get()
 
-        from pyopencl.scan import copy_if
+        from pyopencl.algorithm import copy_if
 
         crit = a_dev.dtype.type(300)
         selected = a[a>crit]
@@ -887,7 +887,7 @@ def test_partition(ctx_factory):
         true_host = a[a>crit]
         false_host = a[a<=crit]
 
-        from pyopencl.scan import partition
+        from pyopencl.algorithm import partition
         true_dev, false_dev, count_true_dev = partition(a_dev, "ary[i] > myval", [("myval", crit)])
 
         count_true_dev = count_true_dev.get()
@@ -909,7 +909,7 @@ def test_unique(ctx_factory):
 
         a_unique_host = np.unique(a)
 
-        from pyopencl.scan import unique
+        from pyopencl.algorithm import unique
         a_unique_dev, count_unique_dev = unique(a_dev)
 
         count_unique_dev = count_unique_dev.get()
@@ -1035,6 +1035,34 @@ def test_segmented_scan(ctx_factory):
 
             print("%d excl:%s done" % (n, is_exclusive))
 
+
+@pytools.test.mark_test.opencl
+def test_sort(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    dtype = np.int32
+
+    from pyopencl.algorithm import RadixSort
+    sort = RadixSort(context, "int *ary", key_expr="ary[i]",
+            sort_arg_names=["ary"])
+
+    from pyopencl.clrandom import RanluxGenerator
+    rng = RanluxGenerator(queue, seed=15)
+
+    for n in scan_test_counts:
+        print n
+
+        print "rng"
+        a_dev = rng.uniform(queue, (n,), dtype=dtype, a=0, b=2**16)
+        a = a_dev.get()
+
+        print "device"
+        a_dev_sorted, = sort(a_dev, key_bits=16)
+        queue.finish()
+        print "numpy"
+        a_sorted = np.sort(a)
+        assert (a_dev_sorted.get() == a_sorted).all()
 
 
 # }}}
