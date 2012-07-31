@@ -1050,18 +1050,28 @@ def test_sort(ctx_factory):
     from pyopencl.clrandom import RanluxGenerator
     rng = RanluxGenerator(queue, seed=15)
 
+    from time import time
+
     for n in scan_test_counts:
         print n
 
-        print "rng"
+        print "  rng"
         a_dev = rng.uniform(queue, (n,), dtype=dtype, a=0, b=2**16)
         a = a_dev.get()
 
-        print "device"
+        dev_start = time()
+        print "  device"
         a_dev_sorted, = sort(a_dev, key_bits=16)
         queue.finish()
-        print "numpy"
+        dev_end = time()
+        print "  numpy"
         a_sorted = np.sort(a)
+        numpy_end = time()
+
+        numpy_elapsed = numpy_end-dev_end
+        dev_elapsed = dev_end-dev_start
+        print  "  dev: %.2f s numpy: %.2f ratio: %.1fx" % (
+                dev_elapsed, numpy_elapsed, dev_elapsed/numpy_elapsed)
         assert (a_dev_sorted.get() == a_sorted).all()
 
 
