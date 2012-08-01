@@ -66,11 +66,11 @@ hi link clmakoAttributeValue String
 " }}}
 
 syn region pythonCLString
-      \ start=+[uU]\=\z('''\|"""\)//CL//+ end="\z1" keepend
+      \ start=+[uU]\=\z('''\|"""\)//CL\(:[a-zA-Z_0-9]\+\)\?//+ end="\z1" keepend
       \ contains=@clCode,@clmakoCode
 
 syn region pythonCLRawString
-      \ start=+[uU]\=[rR]\z('''\|"""\)//CL//+ end="\z1" keepend
+      \ start=+[uU]\=[rR]\z('''\|"""\)//CL\(:[a-zA-Z_0-9]\+\)\?//+ end="\z1" keepend
       \ contains=@clCode,@clmakoCode
 
 " Uncomment if you still want the code highlighted as a string.

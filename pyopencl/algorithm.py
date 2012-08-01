@@ -30,7 +30,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 import numpy as np
 import pyopencl as cl
 import pyopencl.array
-from pyopencl.scan import GenericScanKernel
+from pyopencl.scan import GenericScanKernel, ScanTemplate
 from pyopencl.tools import dtype_to_ctype
 from pyopencl.tools import context_dependent_memoize
 from pytools import memoize
@@ -41,28 +41,16 @@ from mako.template import Template
 
 # {{{ copy_if
 
-@context_dependent_memoize
-def _get_copy_if_kernel(ctx, dtype, predicate, scan_dtype,
-        extra_args_types, preamble):
-    ctype = dtype_to_ctype(dtype)
-    arguments = [
-        "__global %s *ary" % ctype,
-        "__global %s *out" % ctype,
-        "__global unsigned long *count",
-        ] + [
-                "%s %s" % (dtype_to_ctype(arg_dtype), name)
-                for name, arg_dtype in extra_args_types]
+_copy_if_template = ScanTemplate(
+        arguments="item_t *ary, item_t *out, scan_t *count",
+        input_expr="(%(predicate)s) ? 1 : 0",
+        scan_expr="a+b", neutral="0",
+        output_statement="""
+            if (prev_item != item) out[item-1] = ary[i];
+            if (i+1 == N) *count = item;
+            """,
+        template_processor="printf")
 
-    return GenericScanKernel(
-            ctx, dtype,
-            arguments=", ".join(arguments),
-            input_expr="(%s) ? 1 : 0" % predicate,
-            scan_expr="a+b", neutral="0",
-            output_statement="""
-                if (prev_item != item) out[item-1] = ary[i];
-                if (i+1 == N) *count = item;
-                """,
-            preamble=preamble)
 
 def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
     """Copy the elements of *ary* satisfying *predicate* to an output array.
@@ -76,18 +64,20 @@ def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied *predicate*.
     """
-    if len(ary) > np.iinfo(np.uint32).max:
-        scan_dtype = np.uint64
+    if len(ary) > np.iinfo(np.int32).max:
+        scan_dtype = np.int64
     else:
-        scan_dtype = np.uint32
+        scan_dtype = np.int32
 
-    extra_args_types = tuple((name, val.dtype) for name, val in extra_args)
+    extra_args_types = tuple((val.dtype, name) for name, val in extra_args)
     extra_args_values = tuple(val for name, val in extra_args)
 
-    knl = _get_copy_if_kernel(ary.context, ary.dtype, predicate, scan_dtype,
-            extra_args_types, preamble=preamble)
+    knl = _copy_if_template.build(ary.context,
+            type_values=(("scan_t", scan_dtype), ("item_t", ary.dtype)),
+            var_values=(("predicate", predicate),),
+            more_preamble=preamble, more_arguments=extra_args_types)
     out = cl.array.empty_like(ary)
-    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=np.uint64)
+    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
     knl(ary, out, count, *extra_args_values, queue=queue)
     return out, count
 
@@ -114,32 +104,22 @@ def remove_if(ary, predicate, extra_args=[], queue=None, preamble=""):
 
 # {{{ partition
 
-@context_dependent_memoize
-def _get_partition_kernel(ctx, dtype, predicate, scan_dtype,
-        extra_args_types, preamble):
-    ctype = dtype_to_ctype(dtype)
-    arguments = [
-        "__global %s *ary" % ctype,
-        "__global %s *out_true" % ctype,
-        "__global %s *out_false" % ctype,
-        "__global unsigned long *count_true",
-        ] + [
-                "%s %s" % (dtype_to_ctype(arg_dtype), name)
-                for name, arg_dtype in extra_args_types]
-
-    return GenericScanKernel(
-            ctx, dtype,
-            arguments=", ".join(arguments),
-            input_expr="(%s) ? 1 : 0" % predicate,
-            scan_expr="a+b", neutral="0",
-            output_statement="""
+_partition_template = ScanTemplate(
+        arguments=(
+            "item_t *ary, item_t *out_true, item_t *out_false, "
+            "scan_t *count_true"),
+        input_expr="(%(predicate)s) ? 1 : 0",
+        scan_expr="a+b", neutral="0",
+        output_statement="""//CL//
                 if (prev_item != item)
                     out_true[item-1] = ary[i];
                 else
                     out_false[i-item] = ary[i];
                 if (i+1 == N) *count_true = item;
                 """,
-            preamble=preamble)
+        template_processor="printf")
+
+
 
 def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
     """Copy the elements of *ary* into one of two arrays depending on whether
@@ -158,14 +138,18 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
     else:
         scan_dtype = np.uint32
 
-    extra_args_types = tuple((name, val.dtype) for name, val in extra_args)
+    extra_args_types = tuple((val.dtype, name) for name, val in extra_args)
     extra_args_values = tuple(val for name, val in extra_args)
 
-    knl = _get_partition_kernel(ary.context, ary.dtype, predicate, scan_dtype,
-            extra_args_types, preamble)
+    knl = _partition_template.build(
+            ary.context,
+            type_values=(("item_t", ary.dtype), ("scan_t", scan_dtype)),
+            var_values=(("predicate", predicate),),
+            more_preamble=preamble, more_arguments=extra_args_types)
+
     out_true = cl.array.empty_like(ary)
     out_false = cl.array.empty_like(ary)
-    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=np.uint64)
+    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
     knl(ary, out_true, out_false, count, *extra_args_values, queue=queue)
     return out_true, out_false, count
 
@@ -173,35 +157,21 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
 
 # {{{ unique
 
-@context_dependent_memoize
-def _get_unique_kernel(ctx, dtype, is_equal_expr, scan_dtype,
-        extra_args_types, preamble):
-    ctype = dtype_to_ctype(dtype)
-    arguments = [
-        "__global %s *ary" % ctype,
-        "__global %s *out" % ctype,
-        "__global unsigned long *count_unique",
-        ] + [
-                "%s %s" % (dtype_to_ctype(arg_dtype), name)
-                for name, arg_dtype in extra_args_types]
-
-    from pyopencl.scan import _process_code_for_macro
-    key_expr_define = "#define IS_EQUAL_EXPR(a, b) %s\n" \
-            % _process_code_for_macro(is_equal_expr)
-    return GenericScanKernel(
-            ctx, dtype,
-            arguments=", ".join(arguments),
-            input_fetch_exprs=[
-                ("ary_im1", "ary", -1),
-                ("ary_i", "ary", 0),
-                ],
-            input_expr="(i == 0) || (IS_EQUAL_EXPR(ary_im1, ary_i) ? 0 : 1)",
-            scan_expr="a+b", neutral="0",
-            output_statement="""
+_unique_template = ScanTemplate(
+        arguments="item_t *ary, item_t *out, scan_t *count_unique",
+        input_fetch_exprs=[
+            ("ary_im1", "ary", -1),
+            ("ary_i", "ary", 0),
+            ],
+        input_expr="(i == 0) || (IS_EQUAL_EXPR(ary_im1, ary_i) ? 0 : 1)",
+        scan_expr="a+b", neutral="0",
+        output_statement="""
                 if (prev_item != item) out[item-1] = ary[i];
                 if (i+1 == N) *count_unique = item;
                 """,
-            preamble=preamble+"\n\n"+key_expr_define)
+        preamble="#define IS_EQUAL_EXPR(a, b) %(macro_is_equal_expr)s\n",
+        template_processor="printf")
+
 
 def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
     """Copy the elements of *ary* into the output if *is_equal_expr*, applied to the
@@ -225,13 +195,17 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
     else:
         scan_dtype = np.uint32
 
-    extra_args_types = tuple((name, val.dtype) for name, val in extra_args)
+    extra_args_types = tuple((val.dtype, name) for name, val in extra_args)
     extra_args_values = tuple(val for name, val in extra_args)
 
-    knl = _get_unique_kernel(ary.context, ary.dtype, is_equal_expr, scan_dtype,
-            extra_args_types, preamble)
+    knl = _unique_template.build(
+            ary.context,
+            type_values=(("item_t", ary.dtype), ("scan_t", scan_dtype)),
+            var_values=(("macro_is_equal_expr", is_equal_expr),),
+            more_preamble=preamble, more_arguments=extra_args_types)
+
     out = cl.array.empty_like(ary)
-    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=np.uint64)
+    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
     knl(ary, out, count, *extra_args_values, queue=queue)
     return out, count
 

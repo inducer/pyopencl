@@ -61,6 +61,7 @@ def _create_vector_types():
 
     from pyopencl.tools import register_dtype
 
+    vec.types = {}
     counts = [2, 3, 4, 8, 16]
     for base_name, base_type in [
         ('char', np.int8),
@@ -98,6 +99,8 @@ def _create_vector_types():
                         "lambda %s: array((%s), dtype=my_dtype)"
                         % (my_field_names_defaulted, my_field_names),
                         dict(array=np.array, my_dtype=dtype))))
+
+            vec.types[np.dtype(base_type), count] = dtype
 
 _create_vector_types()
 

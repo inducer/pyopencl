@@ -32,7 +32,9 @@ OTHER DEALINGS IN THE SOFTWARE.
 import numpy as np
 from decorator import decorator
 import pyopencl as cl
-from pytools import memoize
+from pytools import memoize, memoize_method
+
+import re
 
 from pyopencl.compyte.dtypes import (
         register_dtype, _fill_dtype_registry,
@@ -54,7 +56,7 @@ MemoryPool = cl.MemoryPool
 
 
 
-first_arg_dependent_memoized_functions = []
+_first_arg_dependent_caches = []
 
 
 
@@ -79,7 +81,7 @@ def first_arg_dependent_memoize(func, cl_object, *args):
     try:
         return ctx_dict[cl_object][args]
     except KeyError:
-        first_arg_dependent_memoized_functions.append(func)
+        _first_arg_dependent_caches.append(ctx_dict)
         arg_dict = ctx_dict.setdefault(cl_object, {})
         result = func(cl_object, *args)
         arg_dict[args] = result
@@ -98,13 +100,8 @@ def clear_first_arg_caches():
 
     .. versionadded:: 2011.2
     """
-    for func in first_arg_dependent_memoized_functions:
-        try:
-            ctx_dict = func._pyopencl_first_arg_dep_memoize_dic
-        except AttributeError:
-            pass
-        else:
-            ctx_dict.clear()
+    for cache in _first_arg_dependent_caches:
+        cache.clear()
 
 import atexit
 atexit.register(clear_first_arg_caches)
@@ -493,5 +490,185 @@ def dtype_to_c_struct(device, dtype):
     return c_decl
 
 
+
+# {{{ code generation/templating helper
+
+def _process_code_for_macro(code):
+    code = code.replace("//CL//", "\n")
+
+    if "//" in code:
+        raise RuntimeError("end-of-line comments ('//') may not be used in "
+                "code snippets")
+
+    return code.replace("\n", " \\\n")
+
+class _SimpleTextTemplate:
+    def __init__(self, txt):
+        self.txt = txt
+
+    def render(self, context):
+        return self.txt
+
+class _PrintfTextTemplate:
+    def __init__(self, txt):
+        self.txt = txt
+
+    def render(self, context):
+        return self.txt % context
+
+class _MakoTextTemplate:
+    def __init__(self, txt):
+        from mako.template import Template
+        self.template = Template(txt, strict_undefined=True)
+
+    def render(self, context):
+        return self.template.render(**context)
+
+
+
+
+class _ArgumentPlaceholder:
+    def __init__(self, typename, name):
+        self.typename = typename
+        self.name = name
+
+    def to_arg(self, type_dict):
+        if isinstance(self.typename, str):
+            try:
+                dtype = type_dict[self.typename]
+            except KeyError:
+                from pyopencl.compyte.dtypes import NAME_TO_DTYPE
+                dtype = NAME_TO_DTYPE[self.typename]
+        else:
+            dtype = np.dtype(self.typename)
+
+        return self.target_class(dtype, self.name)
+
+class _VectorArgPlaceholder(_ArgumentPlaceholder):
+    target_class = VectorArg
+
+class _ScalarArgPlaceholder(_ArgumentPlaceholder):
+    target_class = ScalarArg
+
+
+
+
+class _TemplateRenderer(object):
+    def __init__(self, template, type_values, var_values, context=None, options=[]):
+        self.template = template
+        self.type_dict = dict(type_values)
+        self.var_dict = dict(var_values)
+
+        for name in self.var_dict:
+            if name.startswith("macro_"):
+                self.var_dict[name] = _process_code_for_macro(self.var_dict[name])
+
+        self.context = context
+        self.options = options
+
+    def __call__(self, txt):
+        if txt is None:
+            return txt
+
+        result = self.template.get_text_template(txt).render(self.var_dict)
+
+        # substitute in types
+        for name, dtype in self.type_dict.iteritems():
+            result = re.sub(r"\b%s\b" % name, dtype_to_ctype(dtype), result)
+
+        return result
+
+    def get_rendered_kernel(self, txt, kernel_name):
+        prg = cl.Program(self.context, self(txt)).build(self.options)
+
+        kernel_name_prefix = self.var_dict.get("kernel_name_prefix")
+        if kernel_name_prefix is not None:
+            kernel_name = kernel_name_prefix+kernel_name
+
+        return getattr(prg, kernel_name)
+
+    def render_argument_list(self, arguments, more_arguments):
+        all_args = []
+
+        if isinstance(arguments, str):
+            all_args.extend(arguments.split(","))
+        else:
+            all_args.extend(arguments)
+
+        if isinstance(more_arguments, str):
+            all_args.extend(more_arguments.split(","))
+        else:
+            all_args.extend(more_arguments)
+
+        from pyopencl.compyte.dtypes import parse_c_arg_backend
+        parsed_args = []
+        for arg in all_args:
+            if isinstance(arg, str):
+                ph = parse_c_arg_backend(arg,
+                        _ScalarArgPlaceholder, _VectorArgPlaceholder,
+                        name_to_dtype=lambda x: x)
+                parsed_arg = ph.to_arg(self.type_dict)
+            elif isinstance(arg, Argument):
+                parsed_arg = arg
+            elif isinstance(arg, tuple):
+                ph = _ScalarArgPlaceholder(arg[0], arg[1])
+                parsed_arg = ph.to_arg(self.type_dict)
+
+            parsed_args.append(parsed_arg)
+
+        return parsed_args
+
+
+
+
+class KernelTemplateBase(object):
+    def __init__(self, template_processor=None):
+        self.template_processor = template_processor
+
+        self.build_cache = {}
+        _first_arg_dependent_caches.append(self.build_cache)
+
+    def get_preamble(self):
+        pass
+
+    _TEMPLATE_PROCESSOR_PATTERN = re.compile(r"^//CL(?::([a-zA-Z0-9_]+))?//")
+
+    @memoize_method
+    def get_text_template(self, txt):
+        proc_match = self._TEMPLATE_PROCESSOR_PATTERN.match(txt)
+        tpl_processor = None
+
+        chop_first = 0
+        if proc_match is not None:
+            tpl_processor = proc_match.group(1)
+            # chop off //CL// mark
+            txt = txt[len(proc_match.group(0)):]
+        if tpl_processor is None:
+            tpl_processor = self.template_processor
+
+        if tpl_processor is None or tpl_processor == "none":
+            return _SimpleTextTemplate(txt)
+        elif tpl_processor == "printf":
+            return _PrintfTextTemplate(txt)
+        elif tpl_processor == "mako":
+            return _MakoTextTemplate(txt)
+        else:
+            raise RuntimeError("unknown template processor '%s'" % proc_match.group(1))
+
+    def get_renderer(self, type_values, var_values, context=None, options=[]):
+        return _TemplateRenderer(self, type_values, var_values)
+
+    def build(self, context, *args, **kwargs):
+        """Provide caching for an :meth:`build_inner`."""
+
+        cache_key = (context, args, tuple(sorted(kwargs.iteritems())))
+        try:
+            return self.build_cache[cache_key]
+        except KeyError:
+            result = self.build_inner(context, *args, **kwargs)
+            self.build_cache[cache_key] = result
+            return result
+
+# }}}
 
 # vim: foldmethod=marker

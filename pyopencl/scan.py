@@ -33,7 +33,8 @@ import numpy as np
 
 import pyopencl as cl
 import pyopencl.array
-from pyopencl.tools import dtype_to_ctype, bitlog2
+from pyopencl.tools import (dtype_to_ctype, bitlog2,
+        KernelTemplateBase, _process_code_for_macro)
 import pyopencl._mymako as mako
 from pyopencl._cluda import CLUDA_PREAMBLE
 
@@ -663,15 +664,6 @@ void ${name_prefix}_final_update(
 
 # {{{ helpers
 
-def _process_code_for_macro(code):
-    code = code.replace("//CL//", "\n")
-
-    if "//" in code:
-        raise RuntimeError("end-of-line comments ('//') may not be used in "
-                "scan code snippets")
-
-    return code.replace("\n", " \\\n")
-
 def _round_down_to_power_of_2(val):
     result = 2**bitlog2(val)
     if result > val:
@@ -774,7 +766,7 @@ _IGNORED_WORDS = set("""
         use_lookbehind_update store_segment_start_flags
         update_loop first_seg
 
-        a b prev_item i prev_item_unavailable_with_local_update prev_value
+        a b prev_item i last_item prev_value
         N NO_SEG_BOUNDARY across_seg_boundary
         """.split())
 
@@ -1393,7 +1385,7 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
 
 # {{{ compatibility interface
 
-class _LegacyScanKernelBase(GenericScanKernel): # FIXME
+class _LegacyScanKernelBase(GenericScanKernel):
     def __init__(self, ctx, dtype,
             scan_expr, neutral=None,
             name_prefix="scan", options=[], preamble="", devices=None):
@@ -1440,6 +1432,42 @@ class InclusiveScanKernel(_LegacyScanKernelBase):
 
 class ExclusiveScanKernel(_LegacyScanKernelBase):
     ary_output_statement = "output_ary[i] = prev_item;"
+
+# }}}
+
+# {{{ template
+
+class ScanTemplate(KernelTemplateBase):
+    def __init__(self,
+            arguments, input_expr, scan_expr, neutral, output_statement,
+            is_segment_start_expr=None, input_fetch_exprs=[],
+            name_prefix="scan", preamble="", template_processor=None):
+
+        KernelTemplateBase.__init__(self, template_processor=template_processor)
+        self.arguments = arguments
+        self.input_expr = input_expr
+        self.scan_expr = scan_expr
+        self.neutral = neutral
+        self.output_statement = output_statement
+        self.is_segment_start_expr = is_segment_start_expr
+        self.input_fetch_exprs = input_fetch_exprs
+        self.name_prefix = name_prefix
+        self.preamble = preamble
+
+    def build_inner(self, context, type_values, var_values,
+            more_preamble="", more_arguments=(), declare_types=(),
+            options=(), devices=None, scan_cls=GenericScanKernel):
+        renderer = self.get_renderer(type_values, var_values, context, options)
+
+        return scan_cls(context, renderer.type_dict["scan_t"],
+            renderer.render_argument_list(self.arguments, more_arguments),
+            renderer(self.input_expr), renderer(self.scan_expr), renderer(self.neutral),
+            renderer(self.output_statement),
+            is_segment_start_expr=renderer(self.is_segment_start_expr),
+            input_fetch_exprs=self.input_fetch_exprs,
+            index_dtype=renderer.type_dict.get("index_t", np.int32),
+            name_prefix=renderer(self.name_prefix), options=list(options),
+            preamble=renderer(more_preamble+"\n"+self.preamble), devices=devices)
 
 # }}}
 
