@@ -478,6 +478,30 @@ def test_elwise_kernel_with_options(ctx_factory):
 
 
 @pytools.test.mark_test.opencl
+def test_ranged_elwise_kernel(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.elementwise import ElementwiseKernel
+    set_to_seven = ElementwiseKernel(context,
+            "float *z", "z[i] = 7", "set_to_seven")
+
+    for i, slc in enumerate([
+            slice(5, 20000),
+            slice(5, 20000, 17),
+            slice(3000, 5, -1),
+            slice(1000, -1),
+            ]):
+
+        a_gpu = cl_array.zeros(queue, (50000,), dtype=np.float32)
+        a_cpu = np.zeros(a_gpu.shape, a_gpu.dtype)
+
+        a_cpu[slc] = 7
+        set_to_seven(a_gpu, slice=slc)
+
+        assert (a_cpu == a_gpu.get()).all()
+
+@pytools.test.mark_test.opencl
 def test_take(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
