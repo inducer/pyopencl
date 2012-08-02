@@ -267,6 +267,41 @@ class ElementwiseKernel:
         return cl.enqueue_nd_range_kernel(queue, kernel,
                 gs, ls, wait_for=wait_for)
 
+# }}}
+
+# {{{ template
+
+class ElementwiseTemplate(KernelTemplateBase):
+    def __init__(self,
+            arguments, operation, name="elwise", preamble="",
+            template_processor=None):
+
+        KernelTemplateBase.__init__(self, template_processor=template_processor)
+        self.arguments = arguments
+        self.operation = operation
+        self.name = name
+        self.preamble = preamble
+
+    def build_inner(self, context, type_values, var_values,
+            more_preamble="", more_arguments=(), declare_types=(),
+            options=()):
+        renderer = self.get_renderer(type_values, var_values, context, options)
+
+        arg_list = renderer.render_argument_list(self.arguments, more_arguments)
+        type_decl_preamble = renderer.get_type_decl_preamble(
+                context.devices[0], declare_types, arg_list)
+
+        return ElementwiseKernel(context,
+            arg_list, renderer(self.operation),
+            name=renderer(self.name), options=list(options),
+            preamble=(
+                type_decl_preamble
+                + "\n" + renderer(self.preamble + "\n" + more_preamble)),
+            auto_preamble=True)
+
+# }}}
+
+# {{{ kernels supporting array functionality
 
 @context_dependent_memoize
 def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
@@ -762,3 +797,7 @@ def get_if_positive_kernel(context, crit_dtype, dtype):
             ],
             "result[i] = crit[i] > 0 ? then_[i] : else_[i]",
             name="if_positive")
+
+# }}}
+
+# vim: fdm=marker:filetype=pyopencl
