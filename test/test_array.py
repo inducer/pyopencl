@@ -873,7 +873,7 @@ def test_scan(ctx_factory):
 
             is_ok = (dev_data.get() == desired_result).all()
             if 1 and not is_ok:
-                print "something went wrong, summarizing error..."
+                print("something went wrong, summarizing error...")
                 print(summarize_error(dev_data.get(), desired_result, host_data))
 
             print("n:%d %s worked:%s" % (n, cls, is_ok))
@@ -1079,25 +1079,25 @@ def test_sort(ctx_factory):
     from time import time
 
     for n in scan_test_counts:
-        print n
+        print(n)
 
-        print "  rng"
+        print("  rng")
         a_dev = rng.uniform(queue, (n,), dtype=dtype, a=0, b=2**16)
         a = a_dev.get()
 
         dev_start = time()
-        print "  device"
+        print("  device")
         a_dev_sorted, = sort(a_dev, key_bits=16)
         queue.finish()
         dev_end = time()
-        print "  numpy"
+        print("  numpy")
         a_sorted = np.sort(a)
         numpy_end = time()
 
         numpy_elapsed = numpy_end-dev_end
         dev_elapsed = dev_end-dev_start
-        print  "  dev: %.2f MKeys/s numpy: %.2f MKeys/s ratio: %.2fx" % (
-                1e-6*n/dev_elapsed, 1e-6*n/numpy_elapsed, numpy_elapsed/dev_elapsed)
+        print ("  dev: %.2f MKeys/s numpy: %.2f MKeys/s ratio: %.2fx" % (
+                1e-6*n/dev_elapsed, 1e-6*n/numpy_elapsed, numpy_elapsed/dev_elapsed))
         assert (a_dev_sorted.get() == a_sorted).all()
 
 
