@@ -135,7 +135,8 @@ class TestCL:
                     lambda info: evt.get_profiling_info(info),
                     try_attr_form=False)
 
-        if device.image_support:
+        # crashes on intel...
+        if device.image_support and platform.vendor != "Intel(R) Corporation":
             smp = cl.Sampler(ctx, True,
                     cl.addressing_mode.CLAMP,
                     cl.filter_mode.NEAREST)
@@ -231,6 +232,10 @@ class TestCL:
         if not device.image_support:
             from py.test import skip
             skip("images not supported on %s" % device)
+
+        if device.platform.vendor == "Intel(R) Corporation":
+            from py.test import skip
+            skip("images crashy on %s" % device)
 
         prg = cl.Program(context, """
             __kernel void copy_image(
