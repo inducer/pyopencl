@@ -37,12 +37,13 @@ from pytools import memoize, memoize_method
 import re
 
 from pyopencl.compyte.dtypes import (
+        get_or_register_dtype, TypeNameNotKnown,
         register_dtype, _fill_dtype_registry,
         dtype_to_ctype)
 
 _fill_dtype_registry(respect_windows=False)
-register_dtype(np.complex64, "cfloat_t")
-register_dtype(np.complex128, "cdouble_t")
+get_or_register_dtype("cfloat_t", np.complex64)
+get_or_register_dtype("cdouble_t", np.complex128)
 
 
 
@@ -378,9 +379,9 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
         } id_val;
         >>> print dtype
         [('id', '<u4'), ('value', '<f4')]
-        >>> cl.tools.register_dtype(dtype, 'id_val')
+        >>> dtype_cl.tools.get_or_register_dtype('id_val', dtype)
 
-    As this example shows, it is important to call :func:`register_dtype` on
+    As this example shows, it is important to call :func:`get_or_register_dtype` on
     the modified `dtype` returned by this function, not the original one.
     """
 

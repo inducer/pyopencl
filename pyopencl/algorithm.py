@@ -221,18 +221,19 @@ def _padded_bin(i, l):
 
 @memoize
 def _make_sort_scan_type(device, bits, index_dtype):
+    name = "pyopencl_sort_scan_%s_%dbits_t" % (
+            index_dtype.type.__name__, bits)
+
     fields = []
     for mnr in range(2**bits):
         fields.append(('c%s' % _padded_bin(mnr, bits), index_dtype))
 
     dtype = np.dtype(fields)
 
-    name = "pyopencl_sort_scan_%s_%dbits_t" % (
-            index_dtype.type.__name__, bits)
-    from pyopencl.tools import register_dtype, match_dtype_to_c_struct
+    from pyopencl.tools import get_or_register_dtype, match_dtype_to_c_struct
     dtype, c_decl = match_dtype_to_c_struct(device, name, dtype)
 
-    register_dtype(dtype, name)
+    dtype = get_or_register_dtype(name, dtype)
     return name, dtype, c_decl
 
 # {{{ types, helpers preamble
@@ -344,7 +345,7 @@ class RadixSort(object):
         :arg arguments: A string of comma-separated C argument declarations.
             If *arguments* is specified, then *input_expr* must also be
             specified. All types used here must be known to PyOpenCL.
-            (see :func:`pyopencl.tools.register_dtype`).
+            (see :func:`pyopencl.tools.get_or_register_dtype`).
         :arg key_expr: An integer-valued C expression returning the
             key based on which the sort is performed. The array index
             for which the key is to be computed is available as `i`.

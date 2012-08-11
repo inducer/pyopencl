@@ -87,6 +87,8 @@ Version 2012.2
 * Add :envvar:`PYOPENCL_NO_CACHE` environment variable to aid debugging
   (e.g. with AMD's CPU implementation, see
   `their programming guide <http://developer.amd.com/sdks/AMDAPPSDK/assets/AMD_Accelerated_Parallel_Processing_OpenCL_Programming_Guide.pdf>`_.
+* Deprecated :func:`pyopencl.tools.register_dtype` in favor of
+  :func:`pyopencl.tools.get_or_register_dtype`.
 
 Version 2012.1
 --------------

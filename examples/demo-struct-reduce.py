@@ -9,10 +9,10 @@ def make_collector_dtype(device):
         ])
 
     name = "minmax_collector"
-    from pyopencl.tools import register_dtype, match_dtype_to_c_struct
+    from pyopencl.tools import get_or_register_dtype, match_dtype_to_c_struct
 
     dtype, c_decl = match_dtype_to_c_struct(device, name, dtype)
-    register_dtype(dtype, name)
+    dtype = get_or_register_dtype(name, dtype)
 
     return dtype, c_decl
 

@@ -814,11 +814,11 @@ class _GenericScanKernelBase(object):
             for this scan kernel will be generated.
         :arg dtype: the :class:`numpy.dtype` with which the scan will
             be performed. May be a structured type if that type was registered
-            through :func:`pyopencl.tools.register_dtype`.
+            through :func:`pyopencl.tools.get_or_register_dtype`.
         :arg arguments: A string of comma-separated C argument declarations.
             If *arguments* is specified, then *input_expr* must also be
             specified. All types used here must be known to PyOpenCL.
-            (see :func:`pyopencl.tools.register_dtype`).
+            (see :func:`pyopencl.tools.get_or_register_dtype`).
         :arg scan_expr: The associative, binary operation carrying out the scan,
             represented as a C string. Its two arguments are available as `a`
             and `b` when it is evaluated. `b` is guaranteed to be the

@@ -38,11 +38,17 @@ about them using this function:
 
 .. currentmodule:: pyopencl.tools
 
+.. autofunction:: get_or_register_dtype
+
+.. exception:: TypeNameNotKnown
+
+    .. versionadded:: 2012.2
+
 .. function:: register_dtype(dtype, name)
 
-    *dtype* is a :class:`numpy.dtype`.
-
-    .. versionadded: 2011.2
+    .. versionchanged:: 2012.2
+        This function has been deprecated. It is recommended that you develop
+        against the new interface, :func:`get_or_register_dtype`.
 
 .. function:: dtype_to_ctype(dtype)
 

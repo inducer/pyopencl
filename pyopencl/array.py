@@ -59,7 +59,7 @@ class vec:
 def _create_vector_types():
     field_names = ["x", "y", "z", "w"]
 
-    from pyopencl.tools import register_dtype
+    from pyopencl.tools import get_or_register_dtype
 
     vec.types = {}
     counts = [2, 3, 4, 8, 16]
@@ -87,7 +87,7 @@ def _create_vector_types():
                 formats=[base_type]*count,
                 titles=titles))
 
-            register_dtype(dtype, name)
+            get_or_register_dtype(name, dtype)
 
             setattr(vec, name, dtype)
 
