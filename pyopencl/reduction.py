@@ -158,10 +158,15 @@ def  get_reduction_source(
         max_work_group_size = device.max_work_group_size
         if "RV770" in device.name:
             max_work_group_size = 64
-        return min(
-                max_work_group_size,
-                (device.local_mem_size + out_type_size - 1)
-                // out_type_size)
+
+        # compute lmem limit
+        from pytools import div_ceil
+        lmem_wg_size = div_ceil(max_work_group_size, out_type_size)
+        result = min(max_work_group_size, lmem_wg_size)
+
+        # round down to power of 2
+        from pyopencl.tools import bitlog2
+        return 2**bitlog2(result)
 
     group_size = min(get_dev_group_size(dev) for dev in devices)
 
