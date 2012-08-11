@@ -589,7 +589,7 @@ def test_astype(ctx_factory):
 
     if not has_double_support(context.devices[0]):
         from py.test import skip
-        skip("double precision not supported on %s" % device)
+        skip("double precision not supported on %s" % context.devices[0])
 
     a_gpu = clrand(queue, (2000,), dtype=np.float32)
 
@@ -898,6 +898,8 @@ def test_copy_if(ctx_factory):
         selected_dev, count_dev = copy_if(a_dev, "ary[i] > myval", [("myval", crit)])
 
         assert (selected_dev.get()[:count_dev.get()] == selected).all()
+        from gc import collect
+        collect()
 
 @pytools.test.mark_test.opencl
 def test_partition(ctx_factory):
@@ -941,6 +943,8 @@ def test_unique(ctx_factory):
         count_unique_dev = count_unique_dev.get()
 
         assert (a_unique_dev.get()[:count_unique_dev] == a_unique_host).all()
+        from gc import collect
+        collect()
 
 @pytools.test.mark_test.opencl
 def test_index_preservation(ctx_factory):
@@ -969,6 +973,8 @@ def test_index_preservation(ctx_factory):
             knl(out)
 
             assert (out.get() == np.arange(n)).all()
+            from gc import collect
+            collect()
 
 @pytools.test.mark_test.opencl
 def test_segmented_scan(ctx_factory):
@@ -1058,6 +1064,8 @@ def test_segmented_scan(ctx_factory):
                     print(n, list(seg_boundaries))
 
                 assert is_correct
+                from gc import collect
+                collect()
 
             print("%d excl:%s done" % (n, is_exclusive))
 
