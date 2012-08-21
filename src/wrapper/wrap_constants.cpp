@@ -99,10 +99,7 @@ void pyopencl_expose_constants()
 
   {
     DECLARE_EXC(Error, NULL);
-    py::tuple memerr_bases = py::make_tuple(
-        CLError,
-        py::handle<>(py::borrowed(PyExc_MemoryError)));
-    DECLARE_EXC(MemoryError, memerr_bases.ptr());
+    DECLARE_EXC(MemoryError, CLError.get());
     DECLARE_EXC(LogicError, CLError.get());
     DECLARE_EXC(RuntimeError, CLError.get());
 
