@@ -293,6 +293,80 @@ class TestCL:
                 assert good
 
     @pytools.test.mark_test.opencl
+    def test_image_3d(self, ctx_factory):
+        #test for image_from_array for 3d image of float2
+        context = ctx_factory()
+
+        device, = context.devices
+
+        if not device.image_support:
+            from py.test import skip
+            skip("images not supported on %s" % device)
+
+        if device.platform.vendor == "Intel(R) Corporation":
+            from py.test import skip
+            skip("images crashy on %s" % device)
+
+        prg = cl.Program(context, """
+            __kernel void copy_image_plane(
+              __global float2 *dest,
+              __read_only image3d_t src,
+              sampler_t samp,
+              int stride0,
+              int stride1)
+            {
+              int d0 = get_global_id(0);
+              int d1 = get_global_id(1);
+              int d2 = get_global_id(2);
+              /*
+              const sampler_t samp =
+                CLK_NORMALIZED_COORDS_FALSE
+                | CLK_ADDRESS_CLAMP
+                | CLK_FILTER_NEAREST;
+                */
+              dest[d0*stride0 + d1*stride1 + d2] = read_imagef(src, samp, (float4)(d2, d1, d0, 0)).xy;
+            }
+            """).build()
+
+        num_channels = 2
+        shape = (3,4,2)
+        a = np.random.random( shape + (num_channels,)).astype(np.float32)
+
+        queue = cl.CommandQueue(context)
+        try:
+            a_img = cl.image_from_array(context, a, num_channels)
+        except cl.RuntimeError:
+            import sys
+            exc = sys.exc_info()[1]
+            if exc.code == cl.status_code.IMAGE_FORMAT_NOT_SUPPORTED:
+                from py.test import skip
+                skip("required image format not supported on %s" % device.name)
+            else:
+                raise
+
+        a_dest = cl.Buffer(context, cl.mem_flags.READ_WRITE, a.nbytes)
+
+        samp = cl.Sampler(context, False,
+                cl.addressing_mode.CLAMP,
+                cl.filter_mode.NEAREST)
+        prg.copy_image_plane(queue, shape, None, a_dest, a_img, samp,
+                             np.int32(a.strides[0]/a.itemsize/num_channels),
+                             np.int32(a.strides[1]/a.itemsize/num_channels),
+                             )
+
+        a_result = np.empty_like(a)
+        cl.enqueue_copy(queue, a_result, a_dest)
+
+        good = la.norm(a_result - a) == 0
+        if not good:
+            if queue.device.type == cl.device_type.CPU:
+                assert good, ("The image implementation on your CPU CL platform '%s' "
+                        "returned bad values. This is bad, but common." % queue.device.platform)
+            else:
+                assert good
+
+
+    @pytools.test.mark_test.opencl
     def test_copy_buffer(self, ctx_factory):
         context = ctx_factory()
 
@@ -374,7 +448,7 @@ class TestCL:
 
         kernel_src = """
         #include <empty-header.h>
-        kernel void zonk(global int *a) 
+        kernel void zonk(global int *a)
         {
           *a = 5;
         }

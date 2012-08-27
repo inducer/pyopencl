@@ -2198,8 +2198,7 @@ namespace pyopencl
       // check buffer size
       cl_int itemsize = get_image_format_item_size(fmt);
       if (buf &&
-          std::max(pitch_x, width*itemsize)
-          * std::max(height, pitch_y)
+          std::max(std::max(pitch_x, width*itemsize)*height, pitch_y)
           * depth > cl_uint(len))
         throw pyopencl::error("Image", CL_INVALID_VALUE,
             "buffer too small");
