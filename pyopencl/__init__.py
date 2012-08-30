@@ -688,33 +688,39 @@ def create_some_context(interactive=True, answers=None):
         if not answer:
             platform = platforms[0]
         else:
+            platform = None
             try:
-                choice = int(answer)
+                int_choice = int(answer)
             except ValueError:
+                pass
+            else:
+                if 0 <= int_choice < len(platforms):
+                    platform = platforms[int_choice]
+
+            if platform is None:
                 answer = answer.lower()
-                platform = None
                 for i, pf in enumerate(platforms):
                     if answer in pf.name.lower():
                         platform = pf
                 if platform is None:
                     raise RuntimeError("input did not match any platform")
 
-            else:
-                platform = platforms[choice]
-
     devices = platform.get_devices()
 
     def parse_device(choice):
         try:
-            choice = int(choice)
+            int_choice = int(choice)
         except ValueError:
-            choice = choice.lower()
-            for i, dev in enumerate(devices):
-                if choice in dev.name.lower():
-                    return dev
-            raise RuntimeError("input did not match any platform")
+            pass
         else:
-            return devices[choice]
+            if 0 <= int_choice < len(devices):
+                return devices[int_choice]
+
+        choice = choice.lower()
+        for i, dev in enumerate(devices):
+            if choice in dev.name.lower():
+                return dev
+        raise RuntimeError("input did not match any platform")
 
     if not devices:
         raise Error("no devices found")
