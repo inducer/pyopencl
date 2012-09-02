@@ -260,7 +260,7 @@ class ElementwiseKernel:
                     abs(range_.stop - range_.start)//step,
                     max_wg_size)
         else:
-            invocation_args.append(repr_vec.mem_size)
+            invocation_args.append(repr_vec.size)
             gs, ls = repr_vec.get_sizes(queue, max_wg_size)
 
         kernel.set_args(*invocation_args)

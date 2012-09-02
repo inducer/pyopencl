@@ -151,11 +151,6 @@ The :class:`Array` Class
         The number of meaningful entries in the array. Can also be computed by
         multiplying up the numbers in :attr:`shape`.
 
-    .. attribute :: mem_size
-
-        The total number of entries, including padding, that are present in
-        the array.
-
     .. attribute :: nbytes
 
         The size of the entire array in bytes. Computed as :attr:`size` times

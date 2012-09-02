@@ -173,7 +173,7 @@ def elwise_kernel_runner(kernel_getter):
                 actual_args.append(arg.data)
             else:
                 actual_args.append(arg)
-        actual_args.append(repr_ary.mem_size)
+        actual_args.append(repr_ary.size)
 
         return knl(queue, gs, ls, *actual_args)
 
@@ -279,6 +279,7 @@ class Array(object):
                         dtype.itemsize, shape)
             else:
                 raise ValueError("invalid order: %s" % order)
+
         else:
             # FIXME: We should possibly perform some plausibility
             # checking on 'strides' here.
@@ -292,7 +293,7 @@ class Array(object):
         self.dtype = dtype
         self.strides = strides
 
-        self.mem_size = self.size = s
+        self.size = s
         self.nbytes = self.dtype.itemsize * self.size
 
         self.allocator = allocator
@@ -314,6 +315,12 @@ class Array(object):
     @memoize_method
     def flags(self):
         return _ArrayFlags(self)
+
+    @property
+    def mem_size(self):
+        from warnings import warn
+        warn("Array.mem_size is deprecated. Use Array.size",
+                DeprecationWarning, stacklevel=2)
 
     def _new_with_changes(self, data, shape=None, dtype=None, strides=None, queue=None,
             base=None):
@@ -339,7 +346,9 @@ class Array(object):
 
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue, kernel_specific_max_wg_size=None):
-        return splay(queue, self.mem_size,
+        if not self.flags.forc:
+            raise NotImplementedError("cannot operate on non-contiguous array")
+        return splay(queue, self.size,
                 kernel_specific_max_wg_size=kernel_specific_max_wg_size)
 
     def set(self, ary, queue=None, async=False):
@@ -828,6 +837,19 @@ class Array(object):
     # }}
 
 # }}}
+
+def as_strided(ary, shape=None, strides=None):
+    """Make an :class:`Array` from the given array with the given
+    shape and strides.
+    """
+
+    # undocumented for the moment
+
+    shape = shape or ary.shape
+    strides = strides or ary.strides
+
+    return Array(ary.queue, shape, ary.dtype, allocator=ary.allocator,
+            base=ary.base, data=ary.data, strides=strides)
 
 # }}}
 
