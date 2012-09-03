@@ -258,7 +258,7 @@ Constructing :class:`Array` Instances
     .. versionchanged:: 2011.1
         *context* argument was deprecated.
 
-.. function:: empty(queue, shape, dtype, order="C", allocator=None, base=None, data=None)
+.. function:: empty(queue, shape, dtype, order="C", allocator=None, data=None)
 
     A synonym for the :class:`Array` constructor.
 

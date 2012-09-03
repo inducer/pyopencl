@@ -216,7 +216,7 @@ class Array(object):
     """
 
     def __init__(self, cqa, shape, dtype, order="C", allocator=None,
-            base=None, data=None, queue=None, strides=None):
+            data=None, queue=None, strides=None):
         # {{{ backward compatibility for pre-cqa days
 
         if isinstance(cqa, cl.CommandQueue):
@@ -305,8 +305,6 @@ class Array(object):
         else:
             self.data = data
 
-        self.base = base
-
     @property
     def context(self):
         return self.data.context
@@ -322,8 +320,7 @@ class Array(object):
         warn("Array.mem_size is deprecated. Use Array.size",
                 DeprecationWarning, stacklevel=2)
 
-    def _new_with_changes(self, data, shape=None, dtype=None, strides=None, queue=None,
-            base=None):
+    def _new_with_changes(self, data, shape=None, dtype=None, strides=None, queue=None):
         if shape is None:
             shape = self.shape
         if dtype is None:
@@ -332,17 +329,15 @@ class Array(object):
             strides = self.strides
         if queue is None:
             queue = self.queue
-        if base is None and data is self.data:
-            base = self
 
         if queue is not None:
             return Array(queue, shape, dtype,
-                    allocator=self.allocator, strides=strides, base=base)
+                    allocator=self.allocator, strides=strides, data=data)
         elif self.allocator is not None:
             return Array(self.allocator, shape, dtype, queue=queue,
-                    strides=strides, base=base)
+                    strides=strides, data=data)
         else:
-            return Array(self.context, shape, dtype, strides=strides, base=base)
+            return Array(self.context, shape, dtype, strides=strides, data=data)
 
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue, kernel_specific_max_wg_size=None):
@@ -831,8 +826,12 @@ class Array(object):
             raise ValueError("new type not compatible with array")
 
         shape = self.shape[:-1] + (self.shape[-1] * old_itemsize // itemsize,)
+        strides = tuple(
+                s * itemsize // old_itemsize
+                for s in self.strides)
 
-        return self._new_with_changes(data=self.data, shape=shape, dtype=dtype)
+        return self._new_with_changes(data=self.data, shape=shape, dtype=dtype,
+                strides=strides)
 
     # }}
 
@@ -849,7 +848,7 @@ def as_strided(ary, shape=None, strides=None):
     strides = strides or ary.strides
 
     return Array(ary.queue, shape, ary.dtype, allocator=ary.allocator,
-            base=ary.base, data=ary.data, strides=strides)
+            data=ary.data, strides=strides)
 
 # }}}
 
