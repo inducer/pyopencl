@@ -882,13 +882,24 @@ DTYPE_TO_CHANNEL_TYPE_NORM = {
     np.dtype(np.uint8): channel_type.UNORM_INT8,
     }
 
-def image_from_array(ctx, ary, num_channels, mode="r", norm_int=False):
-    # FIXME what about vector types?
-
+def image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False):
     if not ary.flags.c_contiguous:
         raise ValueError("array must be C-contiguous")
 
-    if num_channels == 1:
+    dtype = ary.dtype
+    if num_channels is None:
+
+        from pyopencl.array import vec
+        try:
+            dtype, num_channels = vec.type_to_scalar_and_count[dtype]
+        except KeyError:
+            # It must be a scalar type then.
+            pass
+
+        shape = ary.shape
+        strides = ary.strides
+
+    elif num_channels == 1:
         shape = ary.shape
         strides = ary.strides
     else:
@@ -915,9 +926,9 @@ def image_from_array(ctx, ary, num_channels, mode="r", norm_int=False):
     assert ary.strides[-1] == ary.dtype.itemsize
 
     if norm_int:
-        channel_type = DTYPE_TO_CHANNEL_TYPE_NORM[ary.dtype]
+        channel_type = DTYPE_TO_CHANNEL_TYPE_NORM[dtype]
     else:
-        channel_type = DTYPE_TO_CHANNEL_TYPE[ary.dtype]
+        channel_type = DTYPE_TO_CHANNEL_TYPE[dtype]
 
     return Image(ctx, mode_flags | mem_flags.COPY_HOST_PTR,
             ImageFormat(img_format, channel_type),

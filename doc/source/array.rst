@@ -14,6 +14,8 @@ type system, as represented by :class:`numpy.dtype`, and the types
 available in OpenCL. All the simple scalar types map straightforwardly
 to their CL counterparts.
 
+.. _vector-types:
+
 Vector Types
 ^^^^^^^^^^^^
 

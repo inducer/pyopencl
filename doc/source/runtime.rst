@@ -480,11 +480,13 @@ Images
 
     |comparable|
 
-.. function:: image_from_array(ctx, ary, num_channels, mode="r", norm_int=False)
+.. function:: image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False)
 
     Build a 2D or 3D :class:`Image` from the :class:`numpy.ndarray` *ary*.  If
     *num_channels* is greater than one, the last dimension of *ary* must be
-    identical to *num_channels*. *ary* must be in C order.
+    identical to *num_channels*. *ary* must be in C order. If *num_channels* is
+    not given, it defaults to 1 for scalar types and the number of entries
+    for :ref:`vector-types`.
 
     The :class:`ImageFormat` is chosen as the first *num_channels* components
     of "RGBA".
@@ -496,6 +498,9 @@ Images
         When reading from the image object, the indices passed to `read_imagef` are
         in the reverse order from what they would be when accessing *ary* from
         Python.
+
+    If *norm_int* is `True`, then the integer values are normalized to a floating
+    point scale of 0..1 when read.
 
     .. versionadded:: 2011.2
 

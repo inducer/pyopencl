@@ -62,7 +62,10 @@ def _create_vector_types():
     from pyopencl.tools import get_or_register_dtype
 
     vec.types = {}
+    vec.type_to_scalar_and_count = {}
+
     counts = [2, 3, 4, 8, 16]
+
     for base_name, base_type in [
         ('char', np.int8),
         ('uchar', np.uint8),
@@ -101,6 +104,7 @@ def _create_vector_types():
                         dict(array=np.array, my_dtype=dtype))))
 
             vec.types[np.dtype(base_type), count] = dtype
+            vec.type_to_scalar_and_count[dtype] = np.dtype(base_type), count
 
 _create_vector_types()
 
