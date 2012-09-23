@@ -894,7 +894,7 @@ def image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False):
             dtype, num_channels = vec.type_to_scalar_and_count[dtype]
         except KeyError:
             # It must be a scalar type then.
-            pass
+            num_channels = 1
 
         shape = ary.shape
         strides = ary.strides
