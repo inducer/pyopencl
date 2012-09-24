@@ -5,7 +5,7 @@
 
 /* Compared with vanilla Python's struct module, this adds support
  * for packing complex values and only supports native packing.
- * (the minimum that's needed for PyCUDA.) */
+ * (the minimum that's needed for PyOpenCL.) */
 
 #define PY_SSIZE_T_CLEAN
 
@@ -1562,7 +1562,7 @@ init_pvt_struct(void)
 
 	/* Add some symbolic constants to the module */
 	if (StructError == NULL) {
-		StructError = PyErr_NewException("pycuda._pvt_struct.error", NULL, NULL);
+		StructError = PyErr_NewException("pyopencl._pvt_struct.error", NULL, NULL);
 		if (StructError == NULL)
 			return;
 	}
