@@ -140,6 +140,61 @@
       devices = devices_vec.empty( ) ? NULL : &devices_vec.front(); \
     } \
 
+
+#define PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(OPERATION) \
+    try \
+    { \
+      OPERATION \
+    } \
+    catch (pyopencl::error &e) \
+    { \
+      if (!e.is_out_of_memory()) \
+        throw; \
+    } \
+    \
+    /* If we get here, we got an error from CL.
+     * We should run the Python GC to try and free up
+     * some memory references. */ \
+    run_python_gc(); \
+    \
+    /* Now retry the allocation. If it fails again,
+     * let it fail. */ \
+    { \
+      OPERATION \
+    }
+
+
+
+
+#define PYOPENCL_RETRY_IF_MEM_ERROR(OPERATION) \
+  { \
+    bool failed_with_mem_error = false; \
+    try \
+    { \
+      OPERATION \
+    } \
+    catch (pyopencl::error &e) \
+    { \
+      failed_with_mem_error = true; \
+      if (!e.is_out_of_memory()) \
+        throw; \
+    } \
+    \
+    if (failed_with_mem_error) \
+    { \
+      /* If we get here, we got an error from CL.
+       * We should run the Python GC to try and free up
+       * some memory references. */ \
+      run_python_gc(); \
+      \
+      /* Now retry the allocation. If it fails again,
+       * let it fail. */ \
+      { \
+        OPERATION \
+      } \
+    } \
+  }
+
 // }}}
 
 // {{{ tracing and error reporting
@@ -1008,24 +1063,9 @@ namespace pyopencl
   context *create_context(py::object py_devices, py::object py_properties,
       py::object py_dev_type)
   {
-    try
-    {
+    PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
       return create_context_inner(py_devices, py_properties, py_dev_type);
-    }
-    catch (pyopencl::error &e)
-    {
-      if (!e.is_out_of_memory())
-        throw;
-    }
-
-    // If we get here, we got an error from CL.
-    // We should run the Python GC to try and free up
-    // some memory references.
-    run_python_gc();
-
-    // Now retry the allocation. If it fails again,
-    // let it fail.
-    return create_context_inner(py_devices, py_properties, py_dev_type);
+    )
   }
 
 
@@ -1488,12 +1528,14 @@ namespace pyopencl
       mem_objects.push_back(py::extract<memory_object &>(mo)().data());
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueMigrateMemObjects, (
-          cq.data(),
-          mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(),
-          flags,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueMigrateMemObjects, (
+            cq.data(),
+            mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(),
+            flags,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ));
+      );
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 #endif
@@ -1527,12 +1569,14 @@ namespace pyopencl
       mem_objects.push_back(py::extract<memory_object &>(mo)().data());
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(enqueue_migrate_fn, (
-          cq.data(),
-          mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(),
-          flags,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(enqueue_migrate_fn, (
+            cq.data(),
+            mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(),
+            flags,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ));
+      );
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 #endif
@@ -1566,26 +1610,41 @@ namespace pyopencl
       size_t size,
       void *host_ptr)
   {
-    try
-    {
+    PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
       return create_buffer(ctx, flags, size, host_ptr);
-    }
-    catch (pyopencl::error &e)
-    {
-      if (!e.is_out_of_memory())
-        throw;
-    }
-
-    // If we get here, we got an error from CL.
-    // We should run the Python GC to try and free up
-    // some memory references.
-    run_python_gc();
-
-    // Now retry the allocation. If it fails again,
-    // let it fail.
-    return create_buffer(ctx, flags, size, host_ptr);
+    );
   }
 
+
+
+#if PYOPENCL_CL_VERSION >= 0x1010
+  inline cl_mem create_sub_buffer(
+      cl_mem buffer, cl_mem_flags flags, cl_buffer_create_type bct,
+      const void *buffer_create_info)
+  {
+    cl_int status_code;
+    PYOPENCL_PRINT_CALL_TRACE("clCreateSubBuffer");
+    cl_mem mem = clCreateSubBuffer(buffer, flags,
+        bct, buffer_create_info, &status_code);
+
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("clCreateSubBuffer", status_code);
+
+    return mem;
+  }
+
+
+
+
+  inline cl_mem create_sub_buffer_gc(
+      cl_mem buffer, cl_mem_flags flags, cl_buffer_create_type bct,
+      const void *buffer_create_info)
+  {
+    PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
+      return create_sub_buffer(buffer, flags, bct, buffer_create_info);
+    );
+  }
+#endif
 
 
 
@@ -1601,13 +1660,9 @@ namespace pyopencl
           size_t origin, size_t size, cl_mem_flags flags) const
       {
         cl_buffer_region region = { origin, size};
-        cl_int status_code;
-        PYOPENCL_PRINT_CALL_TRACE("clCreateSubBuffer");
-        cl_mem mem = clCreateSubBuffer(data(), flags,
-            CL_BUFFER_CREATE_TYPE_REGION, &region, &status_code);
 
-        if (status_code != CL_SUCCESS)
-          throw pyopencl::error("Buffer.get_sub_region", status_code);
+        cl_mem mem = create_sub_buffer_gc(
+            data(), flags, CL_BUFFER_CREATE_TYPE_REGION, &region);
 
         try
         {
@@ -1728,13 +1783,15 @@ namespace pyopencl
       throw py::error_already_set();
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueReadBuffer, (
-          cq.data(),
-          mem.data(),
-          PYOPENCL_CAST_BOOL(is_blocking),
-          device_offset, len, buf,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueReadBuffer, (
+            cq.data(),
+            mem.data(),
+            PYOPENCL_CAST_BOOL(is_blocking),
+            device_offset, len, buf,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ))
+      );
     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
@@ -1759,13 +1816,15 @@ namespace pyopencl
       throw py::error_already_set();
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
-          cq.data(),
-          mem.data(),
-          PYOPENCL_CAST_BOOL(is_blocking),
-          device_offset, len, buf,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
+            cq.data(),
+            mem.data(),
+            PYOPENCL_CAST_BOOL(is_blocking),
+            device_offset, len, buf,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ))
+      );
     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
@@ -1791,14 +1850,16 @@ namespace pyopencl
     }
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueCopyBuffer, (
-          cq.data(),
-          src.data(), dst.data(),
-          src_offset, dst_offset,
-          byte_count,
-          PYOPENCL_WAITLIST_ARGS,
-          &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueCopyBuffer, (
+            cq.data(),
+            src.data(), dst.data(),
+            src_offset, dst_offset,
+            byte_count,
+            PYOPENCL_WAITLIST_ARGS,
+            &evt
+            ))
+      );
 
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
@@ -1835,16 +1896,18 @@ namespace pyopencl
       throw py::error_already_set();
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueReadBufferRect, (
-          cq.data(),
-          mem.data(),
-          PYOPENCL_CAST_BOOL(is_blocking),
-          buffer_origin, host_origin, region,
-          buffer_pitches[0], buffer_pitches[1],
-          host_pitches[0], host_pitches[1],
-          buf,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueReadBufferRect, (
+            cq.data(),
+            mem.data(),
+            PYOPENCL_CAST_BOOL(is_blocking),
+            buffer_origin, host_origin, region,
+            buffer_pitches[0], buffer_pitches[1],
+            host_pitches[0], host_pitches[1],
+            buf,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ))
+      );
     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
@@ -1879,16 +1942,18 @@ namespace pyopencl
       throw py::error_already_set();
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueWriteBufferRect, (
-          cq.data(),
-          mem.data(),
-          PYOPENCL_CAST_BOOL(is_blocking),
-          buffer_origin, host_origin, region,
-          buffer_pitches[0], buffer_pitches[1],
-          host_pitches[0], host_pitches[1],
-          buf,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueWriteBufferRect, (
+            cq.data(),
+            mem.data(),
+            PYOPENCL_CAST_BOOL(is_blocking),
+            buffer_origin, host_origin, region,
+            buffer_pitches[0], buffer_pitches[1],
+            host_pitches[0], host_pitches[1],
+            buf,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ))
+      );
     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
@@ -1915,15 +1980,17 @@ namespace pyopencl
     COPY_PY_PITCH_TUPLE(dst_pitches);
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueCopyBufferRect, (
-          cq.data(),
-          src.data(), dst.data(),
-          src_origin, dst_origin, region,
-          src_pitches[0], src_pitches[1],
-          dst_pitches[0], dst_pitches[1],
-          PYOPENCL_WAITLIST_ARGS,
-          &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueCopyBufferRect, (
+            cq.data(),
+            src.data(), dst.data(),
+            src_origin, dst_origin, region,
+            src_pitches[0], src_pitches[1],
+            dst_pitches[0], dst_pitches[1],
+            PYOPENCL_WAITLIST_ARGS,
+            &evt
+            ))
+      );
 
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
@@ -1954,12 +2021,14 @@ namespace pyopencl
       throw py::error_already_set();
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueFillBuffer, (
-          cq.data(),
-          mem.data(),
-          pattern_buf, pattern_len, offset, size,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueFillBuffer, (
+            cq.data(),
+            mem.data(),
+            pattern_buf, pattern_len, offset, size,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ))
+      );
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 #endif
@@ -2170,11 +2239,14 @@ namespace pyopencl
               "buffer too small");
 
       PYOPENCL_PRINT_CALL_TRACE("clCreateImage2D");
-      mem = clCreateImage2D(ctx.data(), flags, &fmt,
-          width, height, pitch, buf, &status_code);
+      PYOPENCL_RETRY_IF_MEM_ERROR(
+          {
+            mem = clCreateImage2D(ctx.data(), flags, &fmt,
+                width, height, pitch, buf, &status_code);
+            if (status_code != CL_SUCCESS)
+              throw pyopencl::error("clCreateImage2D", status_code);
+          } );
 
-      if (status_code != CL_SUCCESS)
-        throw pyopencl::error("clCreateImage2D", status_code);
     }
     else if (dims == 3)
     {
@@ -2204,11 +2276,13 @@ namespace pyopencl
             "buffer too small");
 
       PYOPENCL_PRINT_CALL_TRACE("clCreateImage3D");
-      mem = clCreateImage3D(ctx.data(), flags, &fmt,
-          width, height, depth, pitch_x, pitch_y, buf, &status_code);
-
-      if (status_code != CL_SUCCESS)
-        throw pyopencl::error("clCreateImage3D", status_code);
+      PYOPENCL_RETRY_IF_MEM_ERROR(
+          {
+            mem = clCreateImage3D(ctx.data(), flags, &fmt,
+              width, height, depth, pitch_x, pitch_y, buf, &status_code);
+            if (status_code != CL_SUCCESS)
+              throw pyopencl::error("clCreateImage3D", status_code);
+          } );
     }
     else
       throw pyopencl::error("Image", CL_INVALID_VALUE,
@@ -2306,13 +2380,16 @@ namespace pyopencl
       throw py::error_already_set();
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueReadImage, (
-          cq.data(),
-          img.data(),
-          PYOPENCL_CAST_BOOL(is_blocking),
-          origin, region, row_pitch, slice_pitch, buf,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueReadImage, (
+            cq.data(),
+            img.data(),
+            PYOPENCL_CAST_BOOL(is_blocking),
+            origin, region, row_pitch, slice_pitch, buf,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ));
+      );
     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
@@ -2340,13 +2417,15 @@ namespace pyopencl
       throw py::error_already_set();
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueWriteImage, (
-          cq.data(),
-          img.data(),
-          PYOPENCL_CAST_BOOL(is_blocking),
-          origin, region, row_pitch, slice_pitch, buf,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueWriteImage, (
+            cq.data(),
+            img.data(),
+            PYOPENCL_CAST_BOOL(is_blocking),
+            origin, region, row_pitch, slice_pitch, buf,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ));
+      );
     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
@@ -2370,11 +2449,13 @@ namespace pyopencl
     COPY_PY_REGION_TRIPLE(region);
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueCopyImage, (
-          cq.data(), src.data(), dest.data(),
-          src_origin, dest_origin, region,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueCopyImage, (
+            cq.data(), src.data(), dest.data(),
+            src_origin, dest_origin, region,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ));
+      );
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
@@ -2397,11 +2478,13 @@ namespace pyopencl
     COPY_PY_REGION_TRIPLE(region);
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueCopyImageToBuffer, (
-          cq.data(), src.data(), dest.data(),
-          origin, region, offset,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueCopyImageToBuffer, (
+            cq.data(), src.data(), dest.data(),
+            origin, region, offset,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ));
+      );
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
@@ -2424,11 +2507,13 @@ namespace pyopencl
     COPY_PY_REGION_TRIPLE(region);
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueCopyBufferToImage, (
-          cq.data(), src.data(), dest.data(),
-          offset, origin, region,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueCopyBufferToImage, (
+            cq.data(), src.data(), dest.data(),
+            offset, origin, region,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ));
+      );
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
@@ -2456,12 +2541,14 @@ namespace pyopencl
       throw py::error_already_set();
 
     cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueFillImage, (
-          cq.data(),
-          mem.data(),
-          color_buf, origin, region,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(clEnqueueFillImage, (
+            cq.data(),
+            mem.data(),
+            color_buf, origin, region,
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ));
+      );
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 #endif
@@ -2534,14 +2621,19 @@ namespace pyopencl
     cl_event evt;
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clEnqueueMapBuffer");
-    void *mapped = clEnqueueMapBuffer(
-          cq.data(), buf.data(),
-          PYOPENCL_CAST_BOOL(is_blocking), flags,
-          offset, size_in_bytes,
-          PYOPENCL_WAITLIST_ARGS, &evt,
-          &status_code);
-    if (status_code != CL_SUCCESS)
-      throw pyopencl::error("clEnqueueMapBuffer", status_code);
+    void *mapped;
+
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+        {
+          mapped = clEnqueueMapBuffer(
+                cq.data(), buf.data(),
+                PYOPENCL_CAST_BOOL(is_blocking), flags,
+                offset, size_in_bytes,
+                PYOPENCL_WAITLIST_ARGS, &evt,
+                &status_code);
+          if (status_code != CL_SUCCESS)
+            throw pyopencl::error("clEnqueueMapBuffer", status_code);
+        } );
 
     event evt_handle(evt, false);
 
@@ -2599,14 +2691,18 @@ namespace pyopencl
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clEnqueueMapImage");
     size_t row_pitch, slice_pitch;
-    void *mapped = clEnqueueMapImage(
-          cq.data(), img.data(),
-          PYOPENCL_CAST_BOOL(is_blocking), flags,
-          origin, region, &row_pitch, &slice_pitch,
-          PYOPENCL_WAITLIST_ARGS, &evt,
-          &status_code);
-    if (status_code != CL_SUCCESS)
-      throw pyopencl::error("clEnqueueMapImage", status_code);
+    void *mapped;
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      {
+        mapped = clEnqueueMapImage(
+              cq.data(), img.data(),
+              PYOPENCL_CAST_BOOL(is_blocking), flags,
+              origin, region, &row_pitch, &slice_pitch,
+              PYOPENCL_WAITLIST_ARGS, &evt,
+              &status_code);
+        if (status_code != CL_SUCCESS)
+          throw pyopencl::error("clEnqueueMapImage", status_code);
+      } );
 
     event evt_handle(evt, false);
 
@@ -3414,18 +3510,19 @@ namespace pyopencl
       global_work_offset_ptr = global_work_offset.empty( ) ? NULL :  &global_work_offset.front();
     }
 
-    cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueNDRangeKernel, (
-          cq.data(),
-          knl.data(),
-          work_dim,
-          global_work_offset_ptr,
-          global_work_size.empty( ) ? NULL : &global_work_size.front(),
-          local_work_size_ptr,
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
-
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    PYOPENCL_RETRY_RETURN_IF_MEM_ERROR( {
+          cl_event evt;
+          PYOPENCL_CALL_GUARDED(clEnqueueNDRangeKernel, (
+                cq.data(),
+                knl.data(),
+                work_dim,
+                global_work_offset_ptr,
+                global_work_size.empty( ) ? NULL : &global_work_size.front(),
+                local_work_size_ptr,
+                PYOPENCL_WAITLIST_ARGS, &evt
+                ));
+          PYOPENCL_RETURN_NEW_EVENT(evt);
+        } );
   }
 
 
@@ -3441,14 +3538,15 @@ namespace pyopencl
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
-    cl_event evt;
-    PYOPENCL_CALL_GUARDED(clEnqueueTask, (
-          cq.data(),
-          knl.data(),
-          PYOPENCL_WAITLIST_ARGS, &evt
-          ));
-
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    PYOPENCL_RETRY_RETURN_IF_MEM_ERROR( {
+      cl_event evt;
+      PYOPENCL_CALL_GUARDED(clEnqueueTask, (
+            cq.data(),
+            knl.data(),
+            PYOPENCL_WAITLIST_ARGS, &evt
+            ));
+      PYOPENCL_RETURN_NEW_EVENT(evt);
+    } );
   }
 
   // }}}
