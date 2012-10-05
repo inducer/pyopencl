@@ -37,14 +37,6 @@ def compiler_output(text):
 
 
 
-class CLAllocator(DeferredAllocator):
-    def __init__(self, *args, **kwargs):
-        from warnings import warn
-        warn("pyopencl.CLAllocator is deprecated. "
-                "It will be continue to exist throughout the 2013.x "
-                "versions of PyOpenCL. Use {Deferred,Immediate}Allocator.",
-                DeprecationWarning, 2)
-        DeferredAllocator.__init__(self, *args, **kwargs)
 
 # {{{ Kernel
 

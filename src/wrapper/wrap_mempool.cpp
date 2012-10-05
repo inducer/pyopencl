@@ -237,7 +237,7 @@ void pyopencl_expose_mempool()
 
   {
     typedef cl_allocator_base cls;
-    py::class_<cls, boost::noncopyable> wrapper("AllocatorBase", py::no_init);
+    py::class_<cls, boost::noncopyable> wrapper("_tools_AllocatorBase", py::no_init);
     wrapper
       .def("__call__", allocator_call,
           py::return_value_policy<py::manage_new_object>())
@@ -247,7 +247,7 @@ void pyopencl_expose_mempool()
 
   {
     typedef cl_deferred_allocator cls;
-    py::class_<cls, py::bases<cl_allocator_base> > wrapper("DeferredAllocator",
+    py::class_<cls, py::bases<cl_allocator_base> > wrapper("_tools_DeferredAllocator",
         py::init<
           boost::shared_ptr<pyopencl::context> const &,
           py::optional<cl_mem_flags> >());
@@ -255,7 +255,7 @@ void pyopencl_expose_mempool()
 
   {
     typedef cl_immediate_allocator cls;
-    py::class_<cls, py::bases<cl_allocator_base> > wrapper("ImmediateAllocator",
+    py::class_<cls, py::bases<cl_allocator_base> > wrapper("_tools_ImmediateAllocator",
         py::init<pyopencl::command_queue &, py::optional<cl_mem_flags> >());
   }
 
