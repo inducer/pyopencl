@@ -91,6 +91,9 @@ Version 2012.2
   :func:`pyopencl.tools.get_or_register_dtype`.
 * Clean up the :class:`pyopencl.array.Array` constructor interface. Deprecate
   arrays with :attr:`pyopencl.array.Array.queue` equal to *None*.
+* Deprecate :class:`pyopencl.array.DefaultAllocator`.
+* Deprecate :class:`pyopencl.CLAllocator`.
+* Introudce :class:`pyopencl.DeferredAllocator`, :class:`pyopencl.ImmediateAllocator`.
 
 Version 2012.1
 --------------

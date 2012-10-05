@@ -1159,6 +1159,15 @@ namespace pyopencl
         }
       }
 
+      std::auto_ptr<context> get_context() const
+      {
+        cl_context param_value;
+        PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo,
+            (m_queue, CL_QUEUE_CONTEXT, sizeof(param_value), &param_value, 0));
+        return std::auto_ptr<context>(
+            new context(param_value, /*retain*/ true));
+      }
+
 #if PYOPENCL_CL_VERSION < 0x1010
       cl_command_queue_properties set_property(
           cl_command_queue_properties prop,

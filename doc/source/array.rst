@@ -108,10 +108,6 @@ Under the hood, the complex types are simply `float2` and `double2`.
 The :class:`Array` Class
 ------------------------
 
-.. class:: DefaultAllocator(context, flags=pyopencl.mem_flags.READ_WRITE)
-
-    An alias for :class:`pyopencl.tools.CLAllocator`.
-
 .. class:: Array(cqa, shape, dtype, order="C", *, allocator=None, base=None, data=None)
 
     A :class:`numpy.ndarray` work-alike that stores its data and performs its
@@ -126,7 +122,8 @@ The :class:`Array` Class
 
     *allocator* may be `None` or a callable that, upon being called with an
     argument of the number of bytes to be allocated, returns an
-    :class:`pyopencl.Buffer` object.  (See :class:`DefaultAllocator`.)
+    :class:`pyopencl.Buffer` object. (A :class:`pyopencl.tools.MemoryPool`
+    instance is one useful example of an object to pass here.)
 
     .. versionchanged:: 2011.1
         Renamed *context* to *cqa*, made it general-purpose.

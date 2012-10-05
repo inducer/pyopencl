@@ -58,7 +58,7 @@ namespace PYGPU_PACKAGE
       container_t m_container;
       typedef typename container_t::value_type bin_pair_t;
 
-      Allocator m_allocator;
+      std::auto_ptr<Allocator> m_allocator;
 
       // A held block is one that's been released by the application, but that
       // we are keeping around to dish out again.
@@ -71,8 +71,16 @@ namespace PYGPU_PACKAGE
 
     public:
       memory_pool(Allocator const &alloc=Allocator())
-        : m_allocator(alloc), m_held_blocks(0), m_active_blocks(0), m_stop_holding(false)
+        : m_allocator(alloc.copy()),
+        m_held_blocks(0), m_active_blocks(0), m_stop_holding(false)
       {
+        if (m_allocator->is_deferred())
+        {
+          PyErr_WarnEx(PyExc_UserWarning, "Memory pools expect non-deferred "
+              "semantics from their allocators. You passed a deferred "
+              "allocator, i.e. an allocator whose allocations can turn out to "
+              "be unavailable long after allocation.", 1);
+        }
       }
 
       ~memory_pool()
@@ -163,7 +171,7 @@ namespace PYGPU_PACKAGE
             throw;
         }
 
-        m_allocator.try_release_blocks();
+        m_allocator->try_release_blocks();
         if (bin.size())
           return pop_block_from_bin(bin, size);
 
@@ -198,7 +206,7 @@ namespace PYGPU_PACKAGE
           get_bin(bin_number(size)).push_back(p);
         }
         else
-          m_allocator.free(p);
+          m_allocator->free(p);
       }
 
       void free_held()
@@ -209,7 +217,7 @@ namespace PYGPU_PACKAGE
 
           while (bin.size())
           {
-            m_allocator.free(bin.back());
+            m_allocator->free(bin.back());
             bin.pop_back();
 
             dec_held_blocks();
@@ -241,7 +249,7 @@ namespace PYGPU_PACKAGE
 
           if (bin.size())
           {
-            m_allocator.free(bin.back());
+            m_allocator->free(bin.back());
             bin.pop_back();
 
             dec_held_blocks();
@@ -256,7 +264,7 @@ namespace PYGPU_PACKAGE
     private:
       pointer_type get_from_allocator(size_type alloc_sz)
       {
-        pointer_type result = m_allocator.allocate(alloc_sz);
+        pointer_type result = m_allocator->allocate(alloc_sz);
         ++m_active_blocks;
 
         return result;

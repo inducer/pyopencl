@@ -30,10 +30,25 @@ the available memory.
     memory is returned to the pool. This supports the same interface
     as :class:`pyopencl.Buffer`.
 
-.. class:: CLAllocator(context, mem_flags=pyopencl.mem_flags.READ_WRITE)
+.. class:: DeferredAllocator(context, mem_flags=pyopencl.mem_flags.READ_WRITE)
 
     *mem_flags* takes its values from :class:`pyopencl.mem_flags` and corresponds
-    to the *flags* argument of :class:`pyopencl.Buffer`.
+    to the *flags* argument of :class:`pyopencl.Buffer`. DeferredAllocator
+    has the same semantics as regular OpenCL buffer allocation, i.e. it may
+    promise memory to be available that later on (in any call to a buffer-using
+    CL function).
+
+    .. method:: __call__(size)
+
+        Allocate a :class:`pyopencl.Buffer` of the given *size*.
+
+.. class:: ImmediateAllocator(queue, mem_flags=pyopencl.mem_flags.READ_WRITE)
+
+    *mem_flags* takes its values from :class:`pyopencl.mem_flags` and corresponds
+    to the *flags* argument of :class:`pyopencl.Buffer`. DeferredAllocator
+    has the same semantics as regular OpenCL buffer allocation, i.e. it may
+    promise memory to be available that later on (in any call to a buffer-using
+    CL function).
 
     .. method:: __call__(size)
 

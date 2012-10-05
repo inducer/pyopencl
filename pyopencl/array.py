@@ -191,9 +191,14 @@ def elwise_kernel_runner(kernel_getter):
 
 
 
-
-
-DefaultAllocator = cl.CLAllocator
+class DefaultAllocator(cl.DeferredAllocator):
+    def __init__(self, *args, **kwargs):
+        from warnings import warn
+        warn("pyopencl.array.DefaultAllocator is deprecated. "
+                "It will be continue to exist throughout the 2013.x "
+                "versions of PyOpenCL.",
+                DeprecationWarning, 2)
+        cl.DeferredAllocator.__init__(self, *args, **kwargs)
 
 # }}}
 
