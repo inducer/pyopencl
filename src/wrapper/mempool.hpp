@@ -68,11 +68,13 @@ namespace PYGPU_PACKAGE
       unsigned m_active_blocks;
 
       bool m_stop_holding;
+      int m_trace;
 
     public:
       memory_pool(Allocator const &alloc=Allocator())
         : m_allocator(alloc.copy()),
-        m_held_blocks(0), m_active_blocks(0), m_stop_holding(false)
+        m_held_blocks(0), m_active_blocks(0), m_stop_holding(false),
+        m_trace(false)
       {
         if (m_allocator->is_deferred())
         {
@@ -97,6 +99,14 @@ namespace PYGPU_PACKAGE
           throw std::runtime_error("memory_pool::bin_number: bitlog2 fault");
         size_type chopped = shifted & mantissa_mask;
         return l << mantissa_bits | chopped;
+      }
+
+      void set_trace(bool flag)
+      {
+        if (flag)
+          ++m_trace;
+        else
+          --m_trace;
       }
 
       static size_type alloc_size(bin_nr_t bin)
@@ -158,11 +168,20 @@ namespace PYGPU_PACKAGE
         bin_t &bin = get_bin(bin_nr);
 
         if (bin.size())
+        {
+          if (m_trace)
+            std::cout
+              << "[pool] allocation of size " << size << " served from bin " << bin_nr
+              << " which contained " << bin.size() << " entries" << std::endl;
           return pop_block_from_bin(bin, size);
+        }
 
         size_type alloc_sz = alloc_size(bin_nr);
 
         assert(bin_number(alloc_sz) == bin_nr);
+
+        if (m_trace)
+          std::cout << "[pool] allocation of size " << size << " required new memory" << std::endl;
 
         try { return get_from_allocator(alloc_sz); }
         catch (PYGPU_PACKAGE::error &e)
@@ -171,9 +190,15 @@ namespace PYGPU_PACKAGE
             throw;
         }
 
+        if (m_trace)
+          std::cout << "[pool] allocation triggered OOM, running GC" << std::endl;
+
         m_allocator->try_release_blocks();
         if (bin.size())
           return pop_block_from_bin(bin, size);
+
+        if (m_trace)
+          std::cout << "[pool] allocation still OOM after GC" << std::endl;
 
         while (try_to_free_memory())
         {
@@ -199,11 +224,17 @@ namespace PYGPU_PACKAGE
       void free(pointer_type p, size_type size)
       {
         --m_active_blocks;
+        bin_nr_t bin_nr = bin_number(size);
 
         if (!m_stop_holding)
         {
           inc_held_blocks();
-          get_bin(bin_number(size)).push_back(p);
+          get_bin(bin_nr).push_back(p);
+
+          if (m_trace)
+            std::cout << "[pool] block of size " << size << " returned to bin "
+              << bin_nr << " which now contains " << get_bin(bin_nr).size()
+              << " entries" << std::endl;
         }
         else
           m_allocator->free(p);

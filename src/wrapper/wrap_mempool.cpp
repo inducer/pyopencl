@@ -260,11 +260,11 @@ void pyopencl_expose_mempool()
   }
 
   {
-    typedef pyopencl::memory_pool<cl_allocator_base> cl;
+    typedef pyopencl::memory_pool<cl_allocator_base> cls;
 
     py::class_<
-      cl, boost::noncopyable,
-      boost::shared_ptr<cl> > wrapper("MemoryPool",
+      cls, boost::noncopyable,
+      boost::shared_ptr<cls> > wrapper("MemoryPool",
           py::init<cl_allocator_base const &>()
           );
     wrapper
@@ -272,6 +272,8 @@ void pyopencl_expose_mempool()
           py::return_value_policy<py::manage_new_object>())
       .def("__call__", device_pool_allocate,
           py::return_value_policy<py::manage_new_object>())
+      // undoc for now
+      .DEF_SIMPLE_METHOD(set_trace)
       ;
 
     expose_memory_pool(wrapper);

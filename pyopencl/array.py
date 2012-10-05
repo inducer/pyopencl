@@ -322,7 +322,7 @@ class Array(object):
 
                     self.data = cl.Buffer(context, cl.mem_flags.READ_WRITE, nbytes)
                 else:
-                    self.data = self.allocator(self.size * self.dtype.itemsize)
+                    self.data = self.allocator(nbytes)
             else:
                 self.data = None
         else:
