@@ -112,23 +112,21 @@ The :class:`Array` Class
 
     An alias for :class:`pyopencl.tools.CLAllocator`.
 
-.. class:: Array(cqa, shape, dtype, order="C", *, allocator=None, base=None, data=None, queue=None)
+.. class:: Array(cqa, shape, dtype, order="C", *, allocator=None, base=None, data=None)
 
     A :class:`numpy.ndarray` work-alike that stores its data and performs its
     computations on the compute device.  *shape* and *dtype* work exactly as in
     :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
     broadcasting of scalars. (e.g. `array+5`)
 
-    *cqa* can be a :class:`pyopencl.Context`, :class:`pyopencl.CommandQueue`
-    or an allocator, as described below. If it is either of the latter two, the *queue*
-    or *allocator* arguments may not be passed.
+    *cqa* must be a :class:`pyopencl.CommandQueue`. *cqa*
+    specifies the queue in which the array carries out its
+    computations by default. *cqa* will at some point be renamed *queue*,
+    so it should be considered 'positional-only'.
 
-    *queue* (or *cqa*, as the case may be) specifies the queue in which the array
-    carries out its computations by default.
-
-    *allocator* is a callable that, upon being called with an argument of the number
-    of bytes to be allocated, returns an :class:`pyopencl.Buffer` object.
-    (See :class:`DefaultAllocator`.)
+    *allocator* may be `None` or a callable that, upon being called with an
+    argument of the number of bytes to be allocated, returns an
+    :class:`pyopencl.Buffer` object.  (See :class:`DefaultAllocator`.)
 
     .. versionchanged:: 2011.1
         Renamed *context* to *cqa*, made it general-purpose.

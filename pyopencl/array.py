@@ -195,18 +195,6 @@ def elwise_kernel_runner(kernel_getter):
 
 DefaultAllocator = cl.CLAllocator
 
-
-
-
-def _should_be_cqa(what):
-    from warnings import warn
-    warn("'%s' should be specified as the frst"
-            "('cqa') argument, "
-            "not in the '%s' keyword argument. "
-            "This will be continue to be accepted througout "
-            "versions 2011.x of PyOpenCL." % (what, what),
-            DeprecationWarning, 3)
-
 # }}}
 
 # {{{ array class
@@ -221,7 +209,15 @@ class Array(object):
 
     def __init__(self, cqa, shape, dtype, order="C", allocator=None,
             data=None, queue=None, strides=None):
-        # {{{ backward compatibility for pre-cqa days
+        # {{{ backward compatibility
+
+        from warnings import warn
+        if queue is not None:
+            warn("Passing the queue to the array through anything but the "
+                    "first argument of the Array constructor is deprecated. "
+                    "This will be continue to be accepted throughout the 2013.[0-6] "
+                    "versions of PyOpenCL.",
+                    DeprecationWarning, 2)
 
         if isinstance(cqa, cl.CommandQueue):
             if queue is not None:
@@ -229,26 +225,36 @@ class Array(object):
                         "'queue' arguments")
             queue = cqa
 
-            if allocator is None:
-                context = queue.context
-                allocator = DefaultAllocator(context)
-
         elif isinstance(cqa, cl.Context):
-            if queue is not None:
-                _should_be_cqa("queue")
+            warn("Passing a context for the 'cqa' parameter is deprecated. "
+                    "This usage will be continue to be accepted throughout the 2013.[0-6] "
+                    "versions of PyOpenCL.",
+                    DeprecationWarning, 2)
 
+            if queue is not None:
+                raise TypeError("may not pass a context and a queue "
+                        "(just pass the queue)")
             if allocator is not None:
-                _should_be_cqa("allocator")
-            else:
-                allocator = DefaultAllocator(cqa)
+                raise TypeError("may not pass a context and an allocator "
+                        "(just pass the queue)")
 
         else:
             # cqa is assumed to be an allocator
+            warn("Passing an allocator for the 'cqa' parameter is deprecated. "
+                    "This usage will be continue to be accepted throughout the 2013.[0-6] "
+                    "versions of PyOpenCL.",
+                    DeprecationWarning, 2)
             if allocator is not None:
                 raise TypeError("can't specify allocator in 'cqa' and "
                         "'allocator' arguments")
 
             allocator = cqa
+
+        if queue is None:
+            warn("Queue-less arrays are deprecated. "
+                    "They will continue to work throughout the 2013.[0-6] "
+                    "versions of PyOpenCL.",
+                    DeprecationWarning, 2)
 
         # }}}
 
@@ -298,12 +304,20 @@ class Array(object):
         self.strides = strides
 
         self.size = s
-        self.nbytes = self.dtype.itemsize * self.size
+        nbytes = self.nbytes = self.dtype.itemsize * self.size
 
         self.allocator = allocator
+
         if data is None:
             if self.size:
-                self.data = self.allocator(self.size * self.dtype.itemsize)
+                if allocator is None:
+                    # FIXME remove me when queues become required
+                    if queue is not None:
+                        context = queue.context
+
+                    self.data = cl.Buffer(context, cl.mem_flags.READ_WRITE, nbytes)
+                else:
+                    self.data = self.allocator(self.size * self.dtype.itemsize)
             else:
                 self.data = None
         else:
@@ -858,52 +872,30 @@ def as_strided(ary, shape=None, strides=None):
 
 # {{{ creation helpers
 
-def to_device(*args, **kwargs):
+def to_device(queue, ary, allocator=None, async=False):
     """Converts a numpy array to a :class:`Array`."""
 
-    def _to_device(queue, ary, allocator=None, async=False):
-        if ary.dtype == object:
-            raise RuntimeError("to_device does not work on object arrays.")
+    if ary.dtype == object:
+        raise RuntimeError("to_device does not work on object arrays.")
 
-        result = Array(queue, ary.shape, ary.dtype,
-                        allocator=allocator, strides=ary.strides)
-        result.set(ary, async=async)
-        return result
-
-    if isinstance(args[0], cl.Context):
-        from warnings import warn
-        warn("Passing a context as first argument is deprecated. "
-            "This will be continue to be accepted througout "
-            "versions 2011.x of PyOpenCL.",
-            DeprecationWarning, 2)
-        args = args[1:]
-
-    return _to_device(*args, **kwargs)
+    result = Array(queue, ary.shape, ary.dtype,
+                    allocator=allocator, strides=ary.strides)
+    result.set(ary, async=async)
+    return result
 
 
 
 
 empty = Array
 
-def zeros(*args, **kwargs):
+def zeros(queue, shape, dtype, order="C", allocator=None):
     """Returns an array of the given shape and dtype filled with 0's."""
 
-    def _zeros(queue, shape, dtype, order="C", allocator=None):
-        result = Array(queue, shape, dtype,
-                order=order, allocator=allocator)
-        zero = np.zeros((), dtype)
-        result.fill(zero)
-        return result
-
-    if isinstance(args[0], cl.Context):
-        from warnings import warn
-        warn("Passing a context as first argument is deprecated. "
-            "This will be continue to be accepted througout "
-            "versions 2011.x of PyOpenCL.",
-            DeprecationWarning, 2)
-        args = args[1:]
-
-    return _zeros(*args, **kwargs)
+    result = Array(queue, shape, dtype,
+            order=order, allocator=allocator)
+    zero = np.zeros((), dtype)
+    result.fill(zero)
+    return result
 
 def empty_like(ary):
     return ary._new_with_changes(data=None)
@@ -920,7 +912,15 @@ def _arange_knl(result, start, step):
     return elementwise.get_arange_kernel(
             result.context, result.dtype)
 
-def _arange(queue, *args, **kwargs):
+def arange(queue, *args, **kwargs):
+    """Create an array filled with numbers spaced `step` apart,
+    starting from `start` and ending at `stop`.
+
+    For floating point arguments, the length of the result is
+    `ceil((stop - start)/step)`.  This rule may result in the last
+    element of the result being greater than stop.
+    """
+
     # argument processing -----------------------------------------------------
 
     # Yuck. Thanks, numpy developers. ;)
@@ -991,28 +991,6 @@ def _arange(queue, *args, **kwargs):
     result = Array(queue, (size,), dtype, allocator=inf.allocator)
     _arange_knl(result, start, step, queue=queue)
     return result
-
-
-
-
-def arange(*args, **kwargs):
-    """Create an array filled with numbers spaced `step` apart,
-    starting from `start` and ending at `stop`.
-
-    For floating point arguments, the length of the result is
-    `ceil((stop - start)/step)`.  This rule may result in the last
-    element of the result being greater than stop.
-    """
-
-    if isinstance(args[0], cl.Context):
-        from warnings import warn
-        warn("Passing a context as first argument is deprecated. "
-            "This will be continue to be accepted througout "
-            "versions 2011.x of PyOpenCL.",
-            DeprecationWarning, 2)
-        args = args[1:]
-
-    return _arange(*args, **kwargs)
 
 # }}}
 

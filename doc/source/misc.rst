@@ -89,6 +89,8 @@ Version 2012.2
   `their programming guide <http://developer.amd.com/sdks/AMDAPPSDK/assets/AMD_Accelerated_Parallel_Processing_OpenCL_Programming_Guide.pdf>`_.
 * Deprecated :func:`pyopencl.tools.register_dtype` in favor of
   :func:`pyopencl.tools.get_or_register_dtype`.
+* Clean up the :class:`pyopencl.array.Array` constructor interface. Deprecate
+  arrays with :attr:`pyopencl.array.Array.queue` equal to *None*.
 
 Version 2012.1
 --------------
