@@ -9,7 +9,6 @@ b = numpy.random.rand(50000).astype(numpy.float32)
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
-mf = cl.mem_flags
 a_dev = cl_array.to_device(queue, a)
 b_dev = cl_array.to_device(queue, b)
 dest_dev = cl_array.empty_like(a_dev)
