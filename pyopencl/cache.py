@@ -387,10 +387,11 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
         prg_bins = prg.get_info(_cl.program_info.BINARIES)
         prg_logs = prg._get_build_logs()
 
-        for i, dest_index in enumerate(to_be_built_indices):
-            assert prg_devs[i] == devices[dest_index]
-            binaries[dest_index] = prg_bins[i]
-            _, logs[dest_index] = prg_logs[i]
+        for dest_index in to_be_built_indices:
+            dev = devices[dest_index]
+            src_index = prg_devs.index(dev)
+            binaries[dest_index] = prg_bins[src_index]
+            _, logs[dest_index] = prg_logs[src_index]
 
         if len(to_be_built_indices) == len(devices):
             # Important special case: if code for all devices was built,
