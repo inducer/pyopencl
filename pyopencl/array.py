@@ -285,6 +285,10 @@ class Array(object):
             s = shape
             shape = (shape,)
 
+        if isinstance(s, np.integer):
+            # bombs if s is a Python integer
+            s = np.asscalar(s)
+
         if strides is None:
             if order == "F":
                 strides = _f_contiguous_strides(

@@ -1114,6 +1114,14 @@ def test_sort(ctx_factory):
 # {{{ misc
 
 @pytools.test.mark_test.opencl
+def test_numpy_integer_shape(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    cl_array.empty(queue, np.int32(17), np.float32)
+    cl_array.empty(queue, (np.int32(17), np.int32(17)), np.float32)
+
+@pytools.test.mark_test.opencl
 def test_len(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
