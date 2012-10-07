@@ -368,6 +368,15 @@ Buffers
 
     :class:`Buffer` is a subclass of :class:`MemoryObject`.
 
+    Note that actual memory allocation in OpenCL may be deferred.
+    Buffers are attached to a :class:`Context` and are only
+    moved to a device once the buffer is used on that device.
+    That is also the point when out-of-memory errors will occur.
+    If you'd like to be sure that there's enough memory for
+    your allocation, either use :func:`enqueue_migrate_mem_objects`
+    (if available) or simply perform a small transfer to the
+    buffer. See also :class:`pyopencl.tools.ImmediateAllocator`.
+
     .. method:: get_sub_region(origin, size, flags=0)
 
         Only available in OpenCL 1.1 and newer.

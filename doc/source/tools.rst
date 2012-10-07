@@ -35,8 +35,14 @@ the available memory.
     *mem_flags* takes its values from :class:`pyopencl.mem_flags` and corresponds
     to the *flags* argument of :class:`pyopencl.Buffer`. DeferredAllocator
     has the same semantics as regular OpenCL buffer allocation, i.e. it may
-    promise memory to be available that later on (in any call to a buffer-using
-    CL function).
+    promise memory to be available that may (in any call to a buffer-using
+    CL function) turn out to not exist later on. (Allocations in CL are
+    bound to contexts, not devices, and memory availability depends on which
+    device the buffer is used with.)
+
+    .. versionchanged::
+        In version 2012.2, :class:`CLAllocator` was deprecated and replaced
+        by :class:`DeferredAllocator`.
 
     .. method:: __call__(size)
 
@@ -50,13 +56,19 @@ the available memory.
     promise memory to be available that later on (in any call to a buffer-using
     CL function).
 
+    .. versionadded:: 2012.2
+
     .. method:: __call__(size)
 
         Allocate a :class:`pyopencl.Buffer` of the given *size*.
 
-.. class:: MemoryPool(allocator=CLAllocator())
+.. class:: MemoryPool(allocator)
 
-    A memory pool for OpenCL device memory.
+    A memory pool for OpenCL device memory. *allocator* must be an instance of
+    one of the above classes, and should be an :class:`ImmediateAllocator`.
+    The memory pool assumes that allocation failures are reported
+    by the allocator immediately, and not in the OpenCL-typical
+    deferred manner.
 
     .. attribute:: held_blocks
 
