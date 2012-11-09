@@ -975,7 +975,6 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         trip_count = 0
 
-
         if self.devices[0].type == cl.device_type.CPU:
             # (about the widest vector a CPU can support, also taking
             # into account that CPUs don't hide latency by large work groups
@@ -1001,6 +1000,19 @@ class GenericScanKernel(_GenericScanKernelBase):
                 if (self.get_local_mem_use(
                     wg_size, k_group_size) + 256  <= avail_local_mem):
                     solutions.append((wg_size*k_group_size, k_group_size, wg_size))
+
+        if self.devices[0].type == cl.device_type.GPU:
+            from pytools import any
+            for wg_size_floor in [256, 192, 128]:
+                have_sol_above_floor = any(wg_size >= wg_size_floor
+                        for _, _, wg_size in solutions)
+
+                if have_sol_above_floor:
+                    # delete all the others
+                    solutions = [(total, k_group_size, wg_size)
+                            for total, k_group_size, wg_size in solutions
+                            if wg_size >= wg_size_floor]
+                    break
 
         _, k_group_size, max_scan_wg_size = max(solutions)
 
@@ -1139,7 +1151,6 @@ class GenericScanKernel(_GenericScanKernelBase):
         # Thrust says that 128 is big enough for GT200
         wg_size = _round_down_to_power_of_2(
                 min(max_wg_size, 128))
-
 
         scan_tpl = _make_template(SCAN_INTERVALS_SOURCE)
         scan_src = str(scan_tpl.render(
