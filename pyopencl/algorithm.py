@@ -339,7 +339,7 @@ class RadixSort(object):
     on the compute device.
     """
     def __init__(self, context, arguments, key_expr, sort_arg_names,
-            bits_at_a_time=3, index_dtype=np.int32, key_dtype=np.uint32,
+            bits_at_a_time=2, index_dtype=np.int32, key_dtype=np.uint32,
             options=[]):
         """
         :arg arguments: A string of comma-separated C argument declarations.
