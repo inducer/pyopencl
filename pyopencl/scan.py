@@ -157,7 +157,7 @@ void ${name_prefix}_scan_intervals(
         index_type first_segment_start_in_k_group, first_segment_start_in_subtree;
     %endif
 
-    // {{{ set up local data for input_fetch_exprs if any of them are stenciled
+    // {{{ declare local data for input_fetch_exprs if any of them are stenciled
 
     <%
         fetch_expr_offsets = {}
