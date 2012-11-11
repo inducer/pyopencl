@@ -275,26 +275,12 @@ def fill_rand(result, queue=None, luxury=4, a=0, b=1):
 
 
 
-def rand(*args, **kwargs):
-    def inner_rand(queue, shape, dtype, luxury=None, a=0, b=1):
-        from pyopencl.array import Array
-        luxury = kwargs.pop("luxury", None)
-
-        gen = _get_generator(queue, luxury)
-        result = Array(queue, shape, dtype)
-        gen.fill_uniform(result, a=a, b=b)
-        return result
-
-    if isinstance(args[0], cl.Context):
-        from warnings import warn
-        warn("Passing a context as first argument is deprecated. "
-            "This will be continue to be accepted througout "
-            "versions 2011.x of PyOpenCL.",
-            DeprecationWarning, 2)
-        args = args[1:]
-
-    return inner_rand(*args, **kwargs)
-
+def rand(queue, shape, dtype, luxury=None, a=0, b=1):
+    from pyopencl.array import Array
+    gen = _get_generator(queue, luxury)
+    result = Array(queue, shape, dtype)
+    gen.fill_uniform(result, a=a, b=b)
+    return result
 
 
 
