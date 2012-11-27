@@ -151,13 +151,15 @@ void pyopencl_expose_part_2()
   py::def("enqueue_map_buffer", enqueue_map_buffer,
       (py::args("queue", "buf", "flags",
                 "offset",
-                "shape", "dtype", "order"),
+                "shape", "dtype"),
+       py::arg("order")="C",
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=true));
   py::def("enqueue_map_image", enqueue_map_image,
       (py::args("queue", "img", "flags",
                 "origin", "region",
-                "shape", "dtype", "order"),
+                "shape", "dtype"),
+       py::arg("order")="C",
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=true));
 

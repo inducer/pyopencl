@@ -601,7 +601,7 @@ Mapping Memory into Host Address Space
 
     .. method:: release(queue=None, wait_for=None)
 
-.. function:: enqueue_map_buffer(queue, buf, flags, offset, shape, dtype, order, wait_for=None, is_blocking=True)
+.. function:: enqueue_map_buffer(queue, buf, flags, offset, shape, dtype, order="C", wait_for=None, is_blocking=True)
 
     |explain-waitfor|
     *shape*, *dtype*, and *order* have the same meaning
@@ -616,7 +616,10 @@ Mapping Memory into Host Address Space
     .. versionchanged:: 2011.1
         *is_blocking* now defaults to True.
 
-.. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order, wait_for=None, is_blocking=True)
+    .. versionchanged:: 2012.2
+        *order* now defaults to "C".
+
+.. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order="C", wait_for=None, is_blocking=True)
 
     |explain-waitfor|
     *shape*, *dtype*, and *order* have the same meaning
@@ -631,6 +634,8 @@ Mapping Memory into Host Address Space
     .. versionchanged:: 2011.1
         *is_blocking* now defaults to True.
 
+    .. versionchanged:: 2012.2
+        *order* now defaults to "C".
 
 Samplers
 ^^^^^^^^
@@ -829,6 +834,19 @@ Programs and Kernels
         local size. (which makes the behavior more like Nvidia CUDA) In this case,
         *global_size* and *local_size* also do not have to have the same number
         of dimensions.
+
+        .. note::
+
+            :meth:`__call__` is *not* thread-safe. It sets the arguments using :meth:`set_args`
+            and then runs :func:`enqueue_nd_range_kernel`. Another thread could race it
+            in doing the same things, with undefined outcome. This issue is inherited
+            from the C-level OpenCL API. The recommended solution is to make a kernel
+            (i.e. access `prg.kernel_name`, which corresponds to making a new kernel)
+            for every thread that may enqueue calls to the kernel.
+
+            A solution involving implicit locks was discussed and decided against on the
+            mailing list in `October 2012
+            <http://lists.tiker.net/pipermail/pyopencl/2012-October/001311.html>`_.
 
         .. versionchanged:: 0.92
             *local_size* was promoted to third positional argument from being a
