@@ -1,6 +1,6 @@
 [submodule "bpl-subset"]
 	path = bpl-subset
-	url = git://github.com/inducer/bpl-subset.git
+	url = ../bpl-subset.git
 [submodule "pyopencl/compyte"]
 	path = pyopencl/compyte
-	url = git://github.com/inducer/compyte.git
+	url = ../compyte.git
