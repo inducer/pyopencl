@@ -500,8 +500,9 @@ void ${name_prefix}_scan_intervals(
 
             // {{{ write data
 
-            // work hard with index math to achieve contiguous 32-bit stores
+            %if is_gpu:
             {
+                // work hard with index math to achieve contiguous 32-bit stores
                 __global int *dest = (__global int *) (partial_scan_buffer + unit_base);
 
                 <%
@@ -539,6 +540,21 @@ void ${name_prefix}_scan_intervals(
                     }
                 %endfor
             }
+            %else:
+            for (index_type k = 0; k < K; k++)
+            {
+                const index_type offset = k*WG_SIZE + LID_0;
+
+                %if is_tail:
+                if (unit_base + offset < interval_end)
+                %endif
+                {
+                    pycl_printf(("write: %d\n", unit_base + offset));
+                    partial_scan_buffer[unit_base + offset] =
+                        ldata[offset % K][offset / K].value;
+                }
+            }
+            %endif
 
             pycl_printf(("after write\n"));
 
@@ -1036,30 +1052,30 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         trip_count = 0
 
+        avail_local_mem = min(
+                dev.local_mem_size
+                for dev in self.devices)
+
         if self.devices[0].type == cl.device_type.CPU:
             # (about the widest vector a CPU can support, also taking
             # into account that CPUs don't hide latency by large work groups
             max_scan_wg_size = 16
-            wg_size_multiples = 16
+            wg_size_multiples = 4
         else:
             max_scan_wg_size = min(dev.max_work_group_size for dev in self.devices)
             wg_size_multiples = 64
-
-        avail_local_mem = min(
-                dev.local_mem_size
-                for dev in self.devices)
 
         # k_group_size should be a power of two because of in-kernel
         # division by that number.
 
         solutions = []
-        for k_exp in range(0, 7):
+        for k_exp in range(0, 9):
             for wg_size in range(wg_size_multiples, max_scan_wg_size+1,
                     wg_size_multiples):
 
                 k_group_size = 2**k_exp
-                if (self.get_local_mem_use(
-                    wg_size, k_group_size) + 256  <= avail_local_mem):
+                lmem_use = self.get_local_mem_use(wg_size, k_group_size)
+                if lmem_use + 256  <= avail_local_mem:
                     solutions.append((wg_size*k_group_size, k_group_size, wg_size))
 
         if self.devices[0].type == cl.device_type.GPU:
