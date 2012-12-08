@@ -144,7 +144,7 @@ void ${name_prefix}_scan_intervals(
     )
 {
     // index K in first dimension used for carry storage
-    %if scan_dtype.itemsize > 4 and scan_dtype.itemsize % 8 == 0:
+    %if scan_dtype.itemsize > 4 and scan_dtype.itemsize % 8 == 0 and is_gpu:
         // Avoid bank conflicts by adding a single 32-bit value to the size of
         // the scan type.
         struct __attribute__ ((__packed__)) wrapped_scan_type
@@ -756,7 +756,8 @@ _PREFIX_WORDS = set("""
         first_seg_start_in_interval g_segment_start_flags
         group_base seg_end my_val DEBUG ARGS
         ints_to_store ints_per_wg scan_types_per_int linear_index
-        linear_scan_data_idx dest src store_base
+        linear_scan_data_idx dest src store_base wrapped_scan_type
+        dummy
 
         LID_2 LID_1 LID_0
         LDIM_0 LDIM_1 LDIM_2
@@ -765,11 +766,11 @@ _PREFIX_WORDS = set("""
         """.split())
 
 _IGNORED_WORDS = set("""
-        4 32
+        4 8 32
 
         typedef for endfor if void while endwhile endfor endif else const printf
         None return bool n char true false ifdef pycl_printf str xrange assert
-        np iinfo max itemsize
+        np iinfo max itemsize __packed__ struct
 
         set iteritems len setdefault
 
@@ -802,7 +803,7 @@ _IGNORED_WORDS = set("""
         branch workgroup complicated granularity phase remainder than simpler
         We smaller look ifs lots self behind allow barriers whole loop
         after already Observe achieve contiguous stores hard go with by math
-        size won t way divisible bit so
+        size won t way divisible bit so Avoid declare adding single type
 
         is_tail is_first_level input_expr argument_signature preamble
         double_support neutral output_statement
@@ -813,6 +814,7 @@ _IGNORED_WORDS = set("""
         update_loop_lookbehind update_loop_plain update_loop
         use_lookbehind_update store_segment_start_flags
         update_loop first_seg scan_dtype dtype_to_ctype
+        is_gpu
 
         a b prev_item i last_item prev_value
         N NO_SEG_BOUNDARY across_seg_boundary
@@ -1010,6 +1012,7 @@ class _GenericScanKernelBase(object):
             arg_ctypes=arg_ctypes,
             scan_expr=_process_code_for_macro(scan_expr),
             neutral=_process_code_for_macro(neutral),
+            is_gpu=self.devices[0].type == cl.device_type.GPU,
             double_support=all(
                 has_double_support(dev) for dev in devices),
             )
