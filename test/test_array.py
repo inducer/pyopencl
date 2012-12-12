@@ -1171,7 +1171,7 @@ def test_nan_arithmetic(ctx_factory):
 def test_mem_pool_with_arrays(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
-    mem_pool = cl_tools.MemoryPool(cl_tools.CLAllocator(context))
+    mem_pool = cl_tools.MemoryPool(cl_tools.ImmediateAllocator(queue))
 
     a_dev = cl_array.arange(queue, 2000, dtype=np.float32, allocator=mem_pool)
     b_dev = cl_array.to_device(queue, np.arange(2000), allocator=mem_pool) + 4000
