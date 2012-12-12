@@ -356,8 +356,8 @@ class RadixSort(object):
 
         # {{{ arg processing
 
-        from pyopencl.scan import _parse_args
-        self.arguments = _parse_args(arguments)
+        from pyopencl.tools import parse_arg_list
+        self.arguments = parse_arg_list(arguments)
         del arguments
 
         self.sort_arg_names = sort_arg_names

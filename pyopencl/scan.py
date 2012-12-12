@@ -34,7 +34,8 @@ import numpy as np
 import pyopencl as cl
 import pyopencl.array
 from pyopencl.tools import (dtype_to_ctype, bitlog2,
-        KernelTemplateBase, _process_code_for_macro)
+        KernelTemplateBase, _process_code_for_macro,
+        get_arg_list_scalar_arg_dtypes)
 import pyopencl._mymako as mako
 from pyopencl._cluda import CLUDA_PREAMBLE
 
@@ -730,31 +731,6 @@ def _round_down_to_power_of_2(val):
     assert result <= val
     return result
 
-def _parse_args(arguments):
-    if isinstance(arguments, str):
-        arguments = arguments.split(",")
-
-    def parse_single_arg(obj):
-        if isinstance(obj, str):
-            from pyopencl.tools import parse_c_arg
-            return parse_c_arg(obj)
-        else:
-            return obj
-
-    return [parse_single_arg(arg) for arg in arguments]
-
-def _get_scalar_arg_dtypes(arg_types):
-    result = []
-
-    from pyopencl.tools import ScalarArg
-    for arg_type in arg_types:
-        if isinstance(arg_type, ScalarArg):
-            result.append(arg_type.dtype)
-        else:
-            result.append(None)
-
-    return result
-
 _PREFIX_WORDS = set("""
         ldata partial_scan_buffer global scan_offset
         segment_start_in_k_group carry
@@ -982,7 +958,8 @@ class _GenericScanKernelBase(object):
         self.devices = devices
         self.options = options
 
-        self.parsed_args = _parse_args(arguments)
+        from pyopencl.tools import parse_arg_list
+        self.parsed_args = parse_arg_list(arguments)
         from pyopencl.tools import VectorArg
         self.first_array_idx = [
                 i for i, arg in enumerate(self.parsed_args)
@@ -1183,7 +1160,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                 final_update_prg,
                 self.name_prefix+"_final_update")
         update_scalar_arg_dtypes = (
-                _get_scalar_arg_dtypes(self.parsed_args)
+                get_arg_list_scalar_arg_dtypes(self.parsed_args)
                 + [self.index_dtype, self.index_dtype, None, None])
         if self.is_segmented:
             update_scalar_arg_dtypes.append(None) # g_first_segment_start_in_interval
@@ -1223,7 +1200,7 @@ class GenericScanKernel(_GenericScanKernelBase):
     def build_scan_kernel(self, max_wg_size, arguments, input_expr,
             is_segment_start_expr, input_fetch_exprs, is_first_level,
             store_segment_start_flags, k_group_size):
-        scalar_arg_dtypes = _get_scalar_arg_dtypes(arguments)
+        scalar_arg_dtypes = get_arg_list_scalar_arg_dtypes(arguments)
 
         # Empirically found on Nv hardware: no need to be bigger than this size
         wg_size = _round_down_to_power_of_2(
@@ -1437,7 +1414,7 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         self.kernel = getattr(
                 scan_prg, self.name_prefix+"_debug_scan")
         scalar_arg_dtypes = (
-                _get_scalar_arg_dtypes(self.parsed_args)
+                get_arg_list_scalar_arg_dtypes(self.parsed_args)
                 + [self.index_dtype])
         self.kernel.set_scalar_arg_dtypes(scalar_arg_dtypes)
 

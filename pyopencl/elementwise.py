@@ -100,11 +100,9 @@ def get_elwise_program(context, arguments, operation,
 def get_elwise_kernel_and_types(context, arguments, operation,
         name="elwise_kernel", options=[], preamble="", use_range=False,
         **kwargs):
-    if isinstance(arguments, str):
-        from pyopencl.tools import parse_c_arg
-        parsed_args = [parse_c_arg(arg) for arg in arguments.split(",")]
-    else:
-        parsed_args = arguments
+
+    from pyopencl.tools import parse_arg_list
+    parsed_args = parse_arg_list(arguments)
 
     auto_preamble = kwargs.pop("auto_preamble", True)
 
@@ -143,15 +141,10 @@ def get_elwise_kernel_and_types(context, arguments, operation,
         name=name, options=options, preamble=preamble,
         use_range=use_range, **kwargs)
 
-    scalar_arg_dtypes = []
-    for arg in parsed_args:
-        if isinstance(arg, ScalarArg):
-            scalar_arg_dtypes.append(arg.dtype)
-        else:
-            scalar_arg_dtypes.append(None)
+    from pyopencl.tools import get_arg_list_scalar_arg_dtypes
 
     kernel = getattr(prg, name)
-    kernel.set_scalar_arg_dtypes(scalar_arg_dtypes)
+    kernel.set_scalar_arg_dtypes(get_arg_list_scalar_arg_dtypes(parsed_args))
 
     return kernel, parsed_args
 

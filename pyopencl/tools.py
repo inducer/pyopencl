@@ -236,7 +236,10 @@ def pytest_generate_tests_for_pyopencl(metafunc):
 
 # {{{ C argument lists
 
-class Argument:
+class Argument(object):
+    pass
+
+class DtypedArgument(Argument):
     def __init__(self, dtype, name):
         self.dtype = np.dtype(dtype)
         self.name = name
@@ -247,26 +250,65 @@ class Argument:
                 self.name,
                 self.dtype)
 
-class VectorArg(Argument):
+class VectorArg(DtypedArgument):
     def declarator(self):
         return "__global %s *%s" % (dtype_to_ctype(self.dtype), self.name)
 
-class ScalarArg(Argument):
+class ScalarArg(DtypedArgument):
     def declarator(self):
         return "%s %s" % (dtype_to_ctype(self.dtype), self.name)
+
+class OtherArgument(Argument):
+    def __init__(self, declarator):
+        self.declarator = declarator
+
+    def declarator(self):
+        return self.declarator
 
 
 
 
 
 def parse_c_arg(c_arg):
-    c_arg = (c_arg
-            .replace("__global", "")
-            .replace("__local", "")
-            .replace("__constant", ""))
+    for aspace in ["__local", "__constant"]:
+        if aspace in c_arg:
+            raise RuntimeError("cannot deal with local or constant "
+                    "OpenCL address spaces in C argument lists ")
+
+    c_arg = c_arg.replace("__global", "")
 
     from pyopencl.compyte.dtypes import parse_c_arg_backend
     return parse_c_arg_backend(c_arg, ScalarArg, VectorArg)
+
+def parse_arg_list(arguments):
+    """Parse a list of kernel arguments. *arguments* may be a comma-separate list
+    of C declarators in a string, a list of strings representing C declarators,
+    or :class:`Argument` objects.
+    """
+
+    if isinstance(arguments, str):
+        arguments = arguments.split(",")
+
+    def parse_single_arg(obj):
+        if isinstance(obj, str):
+            from pyopencl.tools import parse_c_arg
+            return parse_c_arg(obj)
+        else:
+            return obj
+
+    return [parse_single_arg(arg) for arg in arguments]
+
+def get_arg_list_scalar_arg_dtypes(arg_types):
+    result = []
+
+    from pyopencl.tools import ScalarArg
+    for arg_type in arg_types:
+        if isinstance(arg_type, ScalarArg):
+            result.append(arg_type.dtype)
+        else:
+            result.append(None)
+
+    return result
 
 # }}}
 
