@@ -168,6 +168,7 @@ latex_documents = [
 intersphinx_mapping = {
         'http://docs.python.org/dev': None,
         'http://docs.scipy.org/doc/numpy/': None,
+        #'http://makotemplates.org/en/latest/': None,
         }
 
 autoclass_content = "both"
