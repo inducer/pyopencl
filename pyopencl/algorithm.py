@@ -63,6 +63,8 @@ def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
     :returns: a tuple *(out, count)* where *out* is the output array and *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied *predicate*.
+
+    .. versionadded:: 2012.2
     """
     if len(ary) > np.iinfo(np.int32).max:
         scan_dtype = np.int64
@@ -96,6 +98,8 @@ def remove_if(ary, predicate, extra_args=[], queue=None, preamble=""):
     :returns: a tuple *(out, count)* where *out* is the output array and *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements did not satisfy *predicate*.
+
+    .. versionadded:: 2012.2
     """
     return copy_if(ary, "!(%s)" % predicate, extra_args=extra_args, queue=queue,
             preamble=preamble)
@@ -132,6 +136,8 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
     :returns: a tuple *(out_true, out_false, count)* where *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied the predicate.
+
+    .. versionadded:: 2012.2
     """
     if len(ary) > np.iinfo(np.uint32).max:
         scan_dtype = np.uint64
@@ -188,6 +194,8 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
     :returns: a tuple *(out, count)* where *out* is the output array and *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied the predicate.
+
+    .. versionadded:: 2012.2
     """
 
     if len(ary) > np.iinfo(np.uint32).max:
@@ -337,6 +345,8 @@ RADIX_SORT_OUTPUT_STMT_TPL = Template(r"""//CL//
 class RadixSort(object):
     """Provides a general `radix sort <https://en.wikipedia.org/wiki/Radix_sort>`_
     on the compute device.
+
+    .. versionadded:: 2012.2
     """
     def __init__(self, context, arguments, key_expr, sort_arg_names,
             bits_at_a_time=2, index_dtype=np.int32, key_dtype=np.uint32,
