@@ -258,12 +258,13 @@ class ScalarArg(DtypedArgument):
     def declarator(self):
         return "%s %s" % (dtype_to_ctype(self.dtype), self.name)
 
-class OtherArgument(Argument):
-    def __init__(self, declarator):
-        self.declarator = declarator
+class OtherArg(Argument):
+    def __init__(self, declarator, name):
+        self.decl = declarator
+        self.name = name
 
     def declarator(self):
-        return self.declarator
+        return self.decl
 
 
 
