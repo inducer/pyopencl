@@ -943,7 +943,7 @@ class _GenericScanKernelBase(object):
             from warnings import warn
             warn("not specifying 'neutral' is deprecated and will lead to "
                     "wrong results if your scan is not in-place or your "
-                    "'output_statement' otherwise does something non-trivial",
+                    "'output_statement' does something otherwise non-trivial",
                     stacklevel=2)
 
         if dtype.itemsize % 4 != 0:
