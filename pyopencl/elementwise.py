@@ -47,7 +47,7 @@ def get_elwise_program(context, arguments, operation,
         body = r"""//CL//
           if (step < 0)
           {
-            for (i = start + (work_item_start + lid)*step;
+            for (i = start + (work_group_start + lid)*step;
               i > stop; i += gsize*step)
             {
               %(operation)s;
@@ -55,7 +55,7 @@ def get_elwise_program(context, arguments, operation,
           }
           else
           {
-            for (i = start + (work_item_start + lid)*step;
+            for (i = start + (work_group_start + lid)*step;
               i < stop; i += gsize*step)
             {
               %(operation)s;
@@ -64,7 +64,7 @@ def get_elwise_program(context, arguments, operation,
           """
     else:
         body = """//CL//
-          for (i = work_item_start + lid; i < n; i += gsize)
+          for (i = work_group_start + lid; i < n; i += gsize)
           {
             %(operation)s;
           }
@@ -77,7 +77,7 @@ def get_elwise_program(context, arguments, operation,
         {
           int lid = get_local_id(0);
           int gsize = get_global_size(0);
-          int work_item_start = get_local_size(0)*get_group_id(0);
+          int work_group_start = get_local_size(0)*get_group_id(0);
           long i;
 
           %(loop_prep)s;
