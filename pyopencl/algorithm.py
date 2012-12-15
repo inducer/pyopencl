@@ -30,10 +30,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 import numpy as np
 import pyopencl as cl
 import pyopencl.array
-from pyopencl.scan import GenericScanKernel, ScanTemplate
+from pyopencl.scan import ScanTemplate
 from pyopencl.tools import dtype_to_ctype
-from pyopencl.tools import context_dependent_memoize
-from pytools import memoize
+from pytools import memoize, memoize_method, Record
+import pyopencl._mymako as mako
 from mako.template import Template
 
 
@@ -63,6 +63,8 @@ def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
     :returns: a tuple *(out, count)* where *out* is the output array and *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied *predicate*.
+
+    .. versionadded:: 2012.2
     """
     if len(ary) > np.iinfo(np.int32).max:
         scan_dtype = np.int64
@@ -96,6 +98,8 @@ def remove_if(ary, predicate, extra_args=[], queue=None, preamble=""):
     :returns: a tuple *(out, count)* where *out* is the output array and *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements did not satisfy *predicate*.
+
+    .. versionadded:: 2012.2
     """
     return copy_if(ary, "!(%s)" % predicate, extra_args=extra_args, queue=queue,
             preamble=preamble)
@@ -132,6 +136,8 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
     :returns: a tuple *(out_true, out_false, count)* where *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied the predicate.
+
+    .. versionadded:: 2012.2
     """
     if len(ary) > np.iinfo(np.uint32).max:
         scan_dtype = np.uint64
@@ -188,6 +194,8 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
     :returns: a tuple *(out, count)* where *out* is the output array and *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied the predicate.
+
+    .. versionadded:: 2012.2
     """
 
     if len(ary) > np.iinfo(np.uint32).max:
@@ -337,6 +345,8 @@ RADIX_SORT_OUTPUT_STMT_TPL = Template(r"""//CL//
 class RadixSort(object):
     """Provides a general `radix sort <https://en.wikipedia.org/wiki/Radix_sort>`_
     on the compute device.
+
+    .. versionadded:: 2012.2
     """
     def __init__(self, context, arguments, key_expr, sort_arg_names,
             bits_at_a_time=2, index_dtype=np.int32, key_dtype=np.uint32,
@@ -356,8 +366,8 @@ class RadixSort(object):
 
         # {{{ arg processing
 
-        from pyopencl.scan import _parse_args
-        self.arguments = _parse_args(arguments)
+        from pyopencl.tools import parse_arg_list
+        self.arguments = parse_arg_list(arguments)
         del arguments
 
         self.sort_arg_names = sort_arg_names
@@ -482,6 +492,452 @@ class RadixSort(object):
         # }}}
 
 # }}}
+
+# }}}
+
+# {{{ generic parallel list builder
+
+# {{{ kernel template
+
+_LIST_BUILDER_TEMPLATE = Template("""//CL//
+${preamble}
+
+// {{{ declare helper macros for user interface
+
+typedef ${index_type} index_type;
+
+%if is_count_stage:
+    %for name, dtype in list_names_and_dtypes:
+        %if name in count_sharing:
+            #define APPEND_${name}(value) /* nothing */
+        %else:
+            #define APPEND_${name}(value) ++(*plb_loc_${name}_count);
+        %endif
+    %endfor
+%else:
+    %for name, dtype in list_names_and_dtypes:
+        %if name in count_sharing:
+            #define APPEND_${name}(value) \
+                plb_${name}_list[(*plb_${count_sharing[name]}_index) - 1] = value;
+        %else:
+            #define APPEND_${name}(value) \
+                plb_${name}_list[(*plb_${name}_index)++] = value;
+        %endif
+    %endfor
+%endif
+
+#define LIST_ARG_DECL ${user_list_arg_decl}
+#define LIST_ARGS ${user_list_args}
+#define USER_ARG_DECL ${user_arg_decl}
+#define USER_ARGS ${user_args}
+
+// }}}
+
+${generate_template}
+
+// {{{ kernel entry point
+
+__kernel void ${kernel_name}(${kernel_list_arg_decl} USER_ARG_DECL index_type n)
+{
+    int lid = get_local_id(0);
+    index_type gsize = get_global_size(0);
+    index_type work_group_start = get_local_size(0)*get_group_id(0);
+    for (index_type i = work_group_start + lid; i < n; i += gsize)
+    {
+        %if is_count_stage:
+            %for name, dtype in list_names_and_dtypes:
+                %if name not in count_sharing:
+                    index_type plb_loc_${name}_count = 0;
+                %endif
+            %endfor
+        %else:
+            %for name, dtype in list_names_and_dtypes:
+                %if name not in count_sharing:
+                    index_type plb_${name}_index =
+                        plb_${name}_start_index[i];
+                %endif
+            %endfor
+        %endif
+
+        generate(${kernel_list_arg_values} USER_ARGS i);
+
+        %if is_count_stage:
+            %for name, dtype in list_names_and_dtypes:
+                %if name not in count_sharing:
+                    plb_${name}_count[i] = plb_loc_${name}_count;
+                %endif
+            %endfor
+        %endif
+    }
+}
+
+// }}}
+
+""", strict_undefined=True)
+
+# }}}
+
+def _get_arg_decl(arg_list):
+    result = ""
+    for arg in arg_list:
+        result += arg.declarator() + ", "
+
+    return result
+
+def _get_arg_list(arg_list, prefix=""):
+    result = ""
+    for arg in arg_list:
+        result += prefix + arg.name + ", "
+
+    return result
+
+
+
+class BuiltList(Record):
+    pass
+
+
+
+class ListOfListsBuilder:
+    """Generates and executes code to produce a large number of variable-size
+    lists, simply.
+
+    .. note:: This functionality is provided as a preview. Its interface
+        is subject to change until this notice is removed.
+
+    .. versionadded:: 2012.2
+
+    Here's a usage example::
+
+        from pyopencl.algorithm import ListOfListsBuilder
+        builder = ListOfListsBuilder(context, [("mylist", np.int32)], \"\"\"
+                void generate(USER_ARG_DECL LIST_ARG_DECL index_type i)
+                {
+                    int count = i % 4;
+                    for (int j = 0; j < count; ++j)
+                    {
+                        APPEND_mylist(count);
+                    }
+                }
+                \"\"\", arg_decls=[])
+
+        result = builder(queue, 2000)
+
+        inf = result["mylist"]
+        assert inf.count == 3000
+        assert (inf.list.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
+
+    The function `generate` above is called once for each "input object".
+    Each input object can then generate zero or more list entries.
+    The number of these input objects is given to :meth:`__call__` as *n_objects*.
+    List entries are generated by calls to `APPEND_<list name>(value)`.
+    Multiple lists may be generated at once.
+
+    """
+    def __init__(self, context, list_names_and_dtypes, generate_template,
+            arg_decls, count_sharing=None, devices=None, name_prefix="plb_build_list",
+            options=[], preamble=""):
+        """
+        :arg context: A :class:`pyopencl.Context`.
+        :arg list_names_and_dtypes: a list of `(name, dtype)` tuples
+            indicating the lists to be built.
+        :arg generate_template: a snippet of C as described below
+        :arg arg_decls: A string of comma-separated C argument declarations.
+        :arg count_sharing: A mapping consisting of `(child, mother)`
+            indicating that `mother` and `child` will always have the
+            same number of indices, and the `APPEND` to `mother`
+            will always happen *before* the `APPEND` to the child.
+        :arg name_prefix: the name prefix to use for the compiled kernels
+        :arg options: OpenCL compilation options for kernels using
+            *generate_template*.
+
+        *generate_template* may use the following C macros/identifiers:
+
+        * `index_type`: expands to C identifier for the index type used
+          for the calculation
+        * `USER_ARG_DECL`: expands to the C declarator for `arg_decls`
+        * `USER_ARGS`: a list of C argument values corresponding to
+          `user_arg_decl`
+        * `LIST_ARG_DECL`: expands to a C argument list representing the
+          data for the output lists. These are escaped prefixed with
+          `"plg_"` so as to not interfere with user-provided names.
+        * `LIST_ARGS`: a list of C argument values corresponding to
+          `LIST_ARG_DECL`
+        * `APPEND_name(entry)`: inserts `entry` into the list `name`.
+          Both arguments are Python strings, the latter representing
+          a valid C expression of the correct dtype.
+
+        All argument-list related macros have a trailing comma included
+        if they are non-empty.
+
+        *generate_template* must supply a function:
+
+        .. code-block:: c
+
+            void generate(USER_ARG_DECL LIST_ARG_DECL index_type i)
+            {
+                APPEND(mylist, 5);
+            }
+
+        Internally, the `kernel_template` is expanded (at least) twice. Once,
+        for a 'counting' stage where the size of all the lists is determined,
+        and a second time, for a 'generation' stage where the lists are
+        actually filled. A `generate` function that has side effects beyond
+        calling `append` is therefore ill-formed.
+        """
+
+        if devices is None:
+            devices = context.devices
+
+        if count_sharing is None:
+            count_sharing = {}
+
+        self.context = context
+        self.devices = devices
+
+        self.list_names_and_dtypes = list_names_and_dtypes
+        self.generate_template = generate_template
+
+        from pyopencl.tools import parse_arg_list
+        self.arg_decls = parse_arg_list(arg_decls)
+
+        self.count_sharing = count_sharing
+
+        self.name_prefix = name_prefix
+        self.preamble = preamble
+        self.options = options
+
+    # {{{ kernel generators
+
+    @memoize_method
+    def get_scan_kernel(self, index_dtype):
+        from pyopencl.scan import GenericScanKernel
+        return GenericScanKernel(
+                self.context, index_dtype,
+                arguments="__global %s *ary" % dtype_to_ctype(index_dtype),
+                input_expr="ary[i]",
+                scan_expr="a+b", neutral="0",
+                output_statement="ary[i+1] = item;",
+                devices=self.devices)
+
+    @memoize_method
+    def get_count_kernel(self, index_dtype):
+        index_ctype = dtype_to_ctype(index_dtype)
+        from pyopencl.tools import VectorArg, OtherArg
+        kernel_list_args = [
+                VectorArg(index_dtype, "plb_%s_count" % name)
+                    for name, dtype in self.list_names_and_dtypes
+                    if name not in self.count_sharing]
+
+        user_list_args = []
+        for name, dtype in self.list_names_and_dtypes:
+            if name in self.count_sharing:
+                continue
+
+            name = "plb_loc_%s_count" % name
+            user_list_args.append(OtherArg("%s *%s" % (
+                index_ctype, name), name))
+
+        kernel_name = self.name_prefix+"_count"
+        src = _LIST_BUILDER_TEMPLATE.render(
+                is_count_stage=True,
+                kernel_name=kernel_name,
+
+                kernel_list_arg_decl=_get_arg_decl(kernel_list_args),
+                kernel_list_arg_values=_get_arg_list(user_list_args, prefix="&"),
+                user_list_arg_decl=_get_arg_decl(user_list_args),
+                user_list_args=_get_arg_list(user_list_args),
+                user_arg_decl=_get_arg_decl(self.arg_decls),
+                user_args=_get_arg_list(self.arg_decls),
+
+                list_names_and_dtypes=self.list_names_and_dtypes,
+                count_sharing=self.count_sharing,
+                name_prefix=self.name_prefix,
+                generate_template=self.generate_template,
+                preamble=self.preamble,
+
+                index_type=index_ctype,
+                )
+
+        src = str(src)
+
+        prg = cl.Program(self.context, src).build(self.options)
+        knl = getattr(prg, kernel_name)
+
+        from pyopencl.tools import get_arg_list_scalar_arg_dtypes
+        knl.set_scalar_arg_dtypes(get_arg_list_scalar_arg_dtypes(
+            kernel_list_args+self.arg_decls) + [index_dtype])
+
+        return knl
+
+    @memoize_method
+    def get_write_kernel(self, index_dtype):
+        index_ctype = dtype_to_ctype(index_dtype)
+        from pyopencl.tools import VectorArg, OtherArg
+        kernel_list_args = []
+        kernel_list_arg_values = ""
+        user_list_args = []
+
+        for name, dtype in self.list_names_and_dtypes:
+            list_name = "plb_%s_list" % name
+            list_arg =  VectorArg(dtype, list_name)
+
+            kernel_list_args.append(list_arg)
+
+            if name in self.count_sharing:
+                continue
+
+            kernel_list_args.append(
+                    VectorArg(index_dtype, "plb_%s_start_index" % name))
+
+            user_list_args.append(list_arg)
+            index_name = "plb_%s_index" % name
+            user_list_args.append(OtherArg("%s *%s" % (
+                index_ctype, index_name), index_name))
+
+            kernel_list_arg_values += "%s, &%s, " % (list_name, index_name)
+
+        kernel_name = self.name_prefix+"_write"
+        src = _LIST_BUILDER_TEMPLATE.render(
+                is_count_stage=False,
+                kernel_name=kernel_name,
+
+                kernel_list_arg_decl=_get_arg_decl(kernel_list_args),
+                kernel_list_arg_values=kernel_list_arg_values,
+                user_list_arg_decl=_get_arg_decl(user_list_args),
+                user_list_args=_get_arg_list(user_list_args),
+                user_arg_decl=_get_arg_decl(self.arg_decls),
+                user_args=_get_arg_list(self.arg_decls),
+
+                list_names_and_dtypes=self.list_names_and_dtypes,
+                count_sharing=self.count_sharing,
+                name_prefix=self.name_prefix,
+                generate_template=self.generate_template,
+                preamble=self.preamble,
+
+                index_type=index_ctype,
+                )
+
+        src = str(src)
+
+        prg = cl.Program(self.context, src).build(self.options)
+        knl = getattr(prg, kernel_name)
+
+        from pyopencl.tools import get_arg_list_scalar_arg_dtypes
+        knl.set_scalar_arg_dtypes(get_arg_list_scalar_arg_dtypes(
+            kernel_list_args+self.arg_decls) + [index_dtype])
+
+        return knl
+
+    # }}}
+
+    # {{{ driver
+
+    def __call__(self, queue, n_objects, *args, **kwargs):
+        """
+        :arg args: arguments corresponding to arg_decls in the constructor.
+            :class:`pyopencl.array.Array` are not allowed directly and should
+            be passed as their :attr:`pyopencl.array.Array.data` attribute instead.
+        :arg allocator: optionally, the allocator to use to allocate new
+            arrays.
+        :returns: a mapping from names to objects which have attributes
+
+            * `lists` for the array containing all lists
+            * `starts` for the array of starting indices in `lists`.
+              `starts` is built so that it has n+1 entries, so that
+              the *i*'th entry is the start of the *i*'th list, and the
+              *i*'th entry is the index one past the *i*'th list's end,
+              even for the last list.
+        """
+        if n_objects >= int(np.iinfo(np.int32).max):
+            index_dtype = np.int64
+        else:
+            index_dtype = np.int32
+        index_dtype = np.dtype(index_dtype)
+
+        allocator = kwargs.pop("allocator", None)
+        if kwargs:
+            raise TypeError("invalid keyword arguments: '%s'" % ", ".join(kwargs))
+
+        result = {}
+        count_list_args = []
+
+        count_kernel = self.get_count_kernel(index_dtype)
+        write_kernel = self.get_write_kernel(index_dtype)
+        scan_kernel = self.get_scan_kernel(index_dtype)
+
+        # {{{ allocate memory for counts
+
+        for name, dtype in self.list_names_and_dtypes:
+            if name in self.count_sharing:
+                continue
+
+            counts = cl.array.empty(queue,
+                    (n_objects + 1), index_dtype, allocator=allocator)
+
+            # The scan will turn the "counts" array into the "starts" array
+            # in-place.
+            result[name] = BuiltList(starts=counts)
+            count_list_args.append(counts.data)
+
+        # }}}
+
+        count_kernel(queue, (n_objects,), None,
+                *(tuple(count_list_args) + args + (n_objects,)))
+
+        # {{{ run scans
+
+        for name, dtype in self.list_names_and_dtypes:
+            if name in self.count_sharing:
+                continue
+
+            info_record = result[name]
+            starts_ary = info_record.starts
+            scan_kernel(starts_ary)
+
+            # set first entry to zero
+            cl.enqueue_copy(queue, starts_ary.data, index_dtype.type(0))
+
+            # retrieve count
+            count = np.array(1, index_dtype)
+            cl.enqueue_copy(queue, count, starts_ary.data,
+                    device_offset=index_dtype.itemsize*n_objects)
+
+            info_record.count = int(count)
+
+        # }}}
+
+        # {{{ deal with count-sharing lists, allocate memory for lists
+
+        write_list_args = []
+        for name, dtype in self.list_names_and_dtypes:
+            if name in self.count_sharing:
+                sharing_from = self.count_sharing[name]
+
+                info_record = result[name] = BuiltList(
+                        count=result[sharing_from].count,
+                        starts=result[sharing_from].starts,
+                        )
+
+            else:
+                info_record = result[name]
+
+            info_record.list = cl.array.empty(queue,
+                    info_record.count, dtype, allocator=allocator)
+            write_list_args.append(info_record.list.data)
+
+            if name not in self.count_sharing:
+                write_list_args.append(info_record.starts.data)
+
+        # }}}
+
+
+        write_kernel(queue, (n_objects,), None,
+                *(tuple(write_list_args) + args + (n_objects,)))
+
+        return result
+
+    # }}}
 
 # }}}
 

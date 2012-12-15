@@ -1108,6 +1108,28 @@ def test_sort(ctx_factory):
                 1e-6*n/dev_elapsed, 1e-6*n/numpy_elapsed, numpy_elapsed/dev_elapsed))
         assert (a_dev_sorted.get() == a_sorted).all()
 
+@pytools.test.mark_test.opencl
+def test_list_builder(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.algorithm import ListOfListsBuilder
+    builder = ListOfListsBuilder(context, [("mylist", np.int32)], """//CL//
+            void generate(USER_ARG_DECL LIST_ARG_DECL index_type i)
+            {
+                int count = i % 4;
+                for (int j = 0; j < count; ++j)
+                {
+                    APPEND_mylist(count);
+                }
+            }
+            """, arg_decls=[])
+
+    result = builder(queue, 2000)
+
+    inf = result["mylist"]
+    assert inf.count == 3000
+    assert (inf.list.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
 
 # }}}
 
@@ -1171,7 +1193,7 @@ def test_nan_arithmetic(ctx_factory):
 def test_mem_pool_with_arrays(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
-    mem_pool = cl_tools.MemoryPool(cl_tools.CLAllocator(context))
+    mem_pool = cl_tools.MemoryPool(cl_tools.ImmediateAllocator(queue))
 
     a_dev = cl_array.arange(queue, 2000, dtype=np.float32, allocator=mem_pool)
     b_dev = cl_array.to_device(queue, np.arange(2000), allocator=mem_pool) + 4000

@@ -140,9 +140,9 @@ KERNEL = """//CL//
 
 
 
-def  get_reduction_source(
+def  _get_reduction_source(
          ctx, out_type, out_type_size,
-         neutral, reduce_expr, map_expr, arguments,
+         neutral, reduce_expr, map_expr, parsed_args,
          name="reduce_kernel", preamble="",
          device=None, max_group_size=None):
 
@@ -198,7 +198,7 @@ def  get_reduction_source(
     from pyopencl.characterize import has_double_support, has_amd_double_support
     src = str(Template(KERNEL).render(
         out_type=out_type,
-        arguments=arguments,
+        arguments=", ".join(arg.declarator() for arg in parsed_args),
         group_size=group_size,
         no_sync_size=no_sync_size,
         neutral=neutral,
@@ -236,33 +236,30 @@ def get_reduction_kernel(stage,
             map_expr = "in[i]"
 
     if stage == 2:
-        in_arg = "__global const %s *pyopencl_reduction_inp" % out_type
+        in_arg = "const %s *pyopencl_reduction_inp" % out_type
         if arguments:
             arguments = in_arg + ", " + arguments
         else:
             arguments = in_arg
 
-    inf = get_reduction_source(
+    from pyopencl.tools import parse_arg_list, get_arg_list_scalar_arg_dtypes
+    parsed_args = parse_arg_list(arguments)
+
+    inf = _get_reduction_source(
             ctx, out_type, out_type_size,
-            neutral, reduce_expr, map_expr, arguments,
+            neutral, reduce_expr, map_expr, parsed_args,
             name, preamble, device, max_group_size)
 
     inf.program = cl.Program(ctx, inf.source)
     inf.program.build(options)
     inf.kernel = getattr(inf.program, name)
 
-    from pyopencl.tools import parse_c_arg, ScalarArg
+    inf.arg_types = parsed_args
 
-    inf.arg_types = [parse_c_arg(arg) for arg in arguments.split(",")]
-    scalar_arg_dtypes = [None]
-    for arg_type in inf.arg_types:
-        if isinstance(arg_type, ScalarArg):
-            scalar_arg_dtypes.append(arg_type.dtype)
-        else:
-            scalar_arg_dtypes.append(None)
-    scalar_arg_dtypes.extend([np.uint32]*2)
-
-    inf.kernel.set_scalar_arg_dtypes(scalar_arg_dtypes)
+    inf.kernel.set_scalar_arg_dtypes(
+            [None]
+            + get_arg_list_scalar_arg_dtypes(inf.arg_types)
+            + [np.uint32]*2)
 
     return inf
 
@@ -390,7 +387,7 @@ def get_sum_kernel(ctx, dtype_out, dtype_in):
         dtype_out = dtype_in
 
     return ReductionKernel(ctx, dtype_out, "0", "a+b",
-            arguments="__global const %(tp)s *in"
+            arguments="const %(tp)s *in"
             % {"tp": dtype_to_ctype(dtype_in)})
 
 
@@ -450,8 +447,8 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None):
     return ReductionKernel(ctx, dtype_out, neutral="0",
             reduce_expr="a+b", map_expr=map_expr,
             arguments=
-            "__global const %(tp_a)s *a, "
-            "__global const %(tp_b)s *b" % {
+            "const %(tp_a)s *a, "
+            "const %(tp_b)s *b" % {
                 "tp_a": dtype_to_ctype(dtype_a),
                 "tp_b": dtype_to_ctype(dtype_b),
                 })
@@ -477,9 +474,9 @@ def get_subset_dot_kernel(ctx, dtype_out, dtype_subset, dtype_a=None, dtype_b=No
     return ReductionKernel(ctx, dtype_out, neutral="0",
             reduce_expr="a+b", map_expr="a[lookup_tbl[i]]*b[lookup_tbl[i]]",
             arguments=
-            "__global const %(tp_lut)s *lookup_tbl, "
-            "__global const %(tp_a)s *a, "
-            "__global const %(tp_b)s *b" % {
+            "const %(tp_lut)s *lookup_tbl, "
+            "const %(tp_a)s *a, "
+            "const %(tp_b)s *b" % {
             "tp_lut": dtype_to_ctype(dtype_subset),
             "tp_a": dtype_to_ctype(dtype_a),
             "tp_b": dtype_to_ctype(dtype_b),
@@ -520,7 +517,7 @@ def get_minmax_kernel(ctx, what, dtype):
     return ReductionKernel(ctx, dtype,
             neutral=get_minmax_neutral(what, dtype),
             reduce_expr="%(reduce_expr)s" % {"reduce_expr": reduce_expr},
-            arguments="__global const %(tp)s *in" % {
+            arguments="const %(tp)s *in" % {
                 "tp": dtype_to_ctype(dtype),
                 }, preamble="#define MY_INFINITY (1./0)")
 
@@ -541,8 +538,8 @@ def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
             reduce_expr="%(reduce_expr)s" % {"reduce_expr": reduce_expr},
             map_expr="in[lookup_tbl[i]]",
             arguments=
-            "__global const %(tp_lut)s *lookup_tbl, "
-            "__global const %(tp)s *in"  % {
+            "const %(tp_lut)s *lookup_tbl, "
+            "const %(tp)s *in"  % {
             "tp": dtype_to_ctype(dtype),
             "tp_lut": dtype_to_ctype(dtype_subset),
             }, preamble="#define MY_INFINITY (1./0)")

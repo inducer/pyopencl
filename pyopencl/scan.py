@@ -34,7 +34,8 @@ import numpy as np
 import pyopencl as cl
 import pyopencl.array
 from pyopencl.tools import (dtype_to_ctype, bitlog2,
-        KernelTemplateBase, _process_code_for_macro)
+        KernelTemplateBase, _process_code_for_macro,
+        get_arg_list_scalar_arg_dtypes)
 import pyopencl._mymako as mako
 from pyopencl._cluda import CLUDA_PREAMBLE
 
@@ -144,7 +145,7 @@ void ${name_prefix}_scan_intervals(
     )
 {
     // index K in first dimension used for carry storage
-    %if scan_dtype.itemsize > 4 and scan_dtype.itemsize % 8 == 0:
+    %if scan_dtype.itemsize > 4 and scan_dtype.itemsize % 8 == 0 and is_gpu:
         // Avoid bank conflicts by adding a single 32-bit value to the size of
         // the scan type.
         struct __attribute__ ((__packed__)) wrapped_scan_type
@@ -500,8 +501,9 @@ void ${name_prefix}_scan_intervals(
 
             // {{{ write data
 
-            // work hard with index math to achieve contiguous 32-bit stores
+            %if is_gpu:
             {
+                // work hard with index math to achieve contiguous 32-bit stores
                 __global int *dest = (__global int *) (partial_scan_buffer + unit_base);
 
                 <%
@@ -539,6 +541,21 @@ void ${name_prefix}_scan_intervals(
                     }
                 %endfor
             }
+            %else:
+            for (index_type k = 0; k < K; k++)
+            {
+                const index_type offset = k*WG_SIZE + LID_0;
+
+                %if is_tail:
+                if (unit_base + offset < interval_end)
+                %endif
+                {
+                    pycl_printf(("write: %d\n", unit_base + offset));
+                    partial_scan_buffer[unit_base + offset] =
+                        ldata[offset % K][offset / K].value;
+                }
+            }
+            %endif
 
             pycl_printf(("after write\n"));
 
@@ -714,31 +731,6 @@ def _round_down_to_power_of_2(val):
     assert result <= val
     return result
 
-def _parse_args(arguments):
-    if isinstance(arguments, str):
-        arguments = arguments.split(",")
-
-    def parse_single_arg(obj):
-        if isinstance(obj, str):
-            from pyopencl.tools import parse_c_arg
-            return parse_c_arg(obj)
-        else:
-            return obj
-
-    return [parse_single_arg(arg) for arg in arguments]
-
-def _get_scalar_arg_dtypes(arg_types):
-    result = []
-
-    from pyopencl.tools import ScalarArg
-    for arg_type in arg_types:
-        if isinstance(arg_type, ScalarArg):
-            result.append(arg_type.dtype)
-        else:
-            result.append(None)
-
-    return result
-
 _PREFIX_WORDS = set("""
         ldata partial_scan_buffer global scan_offset
         segment_start_in_k_group carry
@@ -756,7 +748,8 @@ _PREFIX_WORDS = set("""
         first_seg_start_in_interval g_segment_start_flags
         group_base seg_end my_val DEBUG ARGS
         ints_to_store ints_per_wg scan_types_per_int linear_index
-        linear_scan_data_idx dest src store_base
+        linear_scan_data_idx dest src store_base wrapped_scan_type
+        dummy
 
         LID_2 LID_1 LID_0
         LDIM_0 LDIM_1 LDIM_2
@@ -765,11 +758,11 @@ _PREFIX_WORDS = set("""
         """.split())
 
 _IGNORED_WORDS = set("""
-        4 32
+        4 8 32
 
         typedef for endfor if void while endwhile endfor endif else const printf
         None return bool n char true false ifdef pycl_printf str xrange assert
-        np iinfo max itemsize
+        np iinfo max itemsize __packed__ struct
 
         set iteritems len setdefault
 
@@ -802,7 +795,7 @@ _IGNORED_WORDS = set("""
         branch workgroup complicated granularity phase remainder than simpler
         We smaller look ifs lots self behind allow barriers whole loop
         after already Observe achieve contiguous stores hard go with by math
-        size won t way divisible bit so
+        size won t way divisible bit so Avoid declare adding single type
 
         is_tail is_first_level input_expr argument_signature preamble
         double_support neutral output_statement
@@ -813,6 +806,7 @@ _IGNORED_WORDS = set("""
         update_loop_lookbehind update_loop_plain update_loop
         use_lookbehind_update store_segment_start_flags
         update_loop first_seg scan_dtype dtype_to_ctype
+        is_gpu
 
         a b prev_item i last_item prev_value
         N NO_SEG_BOUNDARY across_seg_boundary
@@ -949,7 +943,7 @@ class _GenericScanKernelBase(object):
             from warnings import warn
             warn("not specifying 'neutral' is deprecated and will lead to "
                     "wrong results if your scan is not in-place or your "
-                    "'output_statement' otherwise does something non-trivial",
+                    "'output_statement' does something otherwise non-trivial",
                     stacklevel=2)
 
         if dtype.itemsize % 4 != 0:
@@ -964,7 +958,8 @@ class _GenericScanKernelBase(object):
         self.devices = devices
         self.options = options
 
-        self.parsed_args = _parse_args(arguments)
+        from pyopencl.tools import parse_arg_list
+        self.parsed_args = parse_arg_list(arguments)
         from pyopencl.tools import VectorArg
         self.first_array_idx = [
                 i for i, arg in enumerate(self.parsed_args)
@@ -1010,6 +1005,7 @@ class _GenericScanKernelBase(object):
             arg_ctypes=arg_ctypes,
             scan_expr=_process_code_for_macro(scan_expr),
             neutral=_process_code_for_macro(neutral),
+            is_gpu=self.devices[0].type == cl.device_type.GPU,
             double_support=all(
                 has_double_support(dev) for dev in devices),
             )
@@ -1033,30 +1029,30 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         trip_count = 0
 
+        avail_local_mem = min(
+                dev.local_mem_size
+                for dev in self.devices)
+
         if self.devices[0].type == cl.device_type.CPU:
             # (about the widest vector a CPU can support, also taking
             # into account that CPUs don't hide latency by large work groups
             max_scan_wg_size = 16
-            wg_size_multiples = 16
+            wg_size_multiples = 4
         else:
             max_scan_wg_size = min(dev.max_work_group_size for dev in self.devices)
             wg_size_multiples = 64
-
-        avail_local_mem = min(
-                dev.local_mem_size
-                for dev in self.devices)
 
         # k_group_size should be a power of two because of in-kernel
         # division by that number.
 
         solutions = []
-        for k_exp in range(0, 7):
+        for k_exp in range(0, 9):
             for wg_size in range(wg_size_multiples, max_scan_wg_size+1,
                     wg_size_multiples):
 
                 k_group_size = 2**k_exp
-                if (self.get_local_mem_use(
-                    wg_size, k_group_size) + 256  <= avail_local_mem):
+                lmem_use = self.get_local_mem_use(wg_size, k_group_size)
+                if lmem_use + 256  <= avail_local_mem:
                     solutions.append((wg_size*k_group_size, k_group_size, wg_size))
 
         if self.devices[0].type == cl.device_type.GPU:
@@ -1164,7 +1160,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                 final_update_prg,
                 self.name_prefix+"_final_update")
         update_scalar_arg_dtypes = (
-                _get_scalar_arg_dtypes(self.parsed_args)
+                get_arg_list_scalar_arg_dtypes(self.parsed_args)
                 + [self.index_dtype, self.index_dtype, None, None])
         if self.is_segmented:
             update_scalar_arg_dtypes.append(None) # g_first_segment_start_in_interval
@@ -1204,7 +1200,7 @@ class GenericScanKernel(_GenericScanKernelBase):
     def build_scan_kernel(self, max_wg_size, arguments, input_expr,
             is_segment_start_expr, input_fetch_exprs, is_first_level,
             store_segment_start_flags, k_group_size):
-        scalar_arg_dtypes = _get_scalar_arg_dtypes(arguments)
+        scalar_arg_dtypes = get_arg_list_scalar_arg_dtypes(arguments)
 
         # Empirically found on Nv hardware: no need to be bigger than this size
         wg_size = _round_down_to_power_of_2(
@@ -1418,7 +1414,7 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         self.kernel = getattr(
                 scan_prg, self.name_prefix+"_debug_scan")
         scalar_arg_dtypes = (
-                _get_scalar_arg_dtypes(self.parsed_args)
+                get_arg_list_scalar_arg_dtypes(self.parsed_args)
                 + [self.index_dtype])
         self.kernel.set_scalar_arg_dtypes(scalar_arg_dtypes)
 

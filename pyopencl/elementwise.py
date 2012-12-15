@@ -47,7 +47,7 @@ def get_elwise_program(context, arguments, operation,
         body = r"""//CL//
           if (step < 0)
           {
-            for (i = start + (work_item_start + lid)*step;
+            for (i = start + (work_group_start + lid)*step;
               i > stop; i += gsize*step)
             {
               %(operation)s;
@@ -55,7 +55,7 @@ def get_elwise_program(context, arguments, operation,
           }
           else
           {
-            for (i = start + (work_item_start + lid)*step;
+            for (i = start + (work_group_start + lid)*step;
               i < stop; i += gsize*step)
             {
               %(operation)s;
@@ -64,7 +64,7 @@ def get_elwise_program(context, arguments, operation,
           """
     else:
         body = """//CL//
-          for (i = work_item_start + lid; i < n; i += gsize)
+          for (i = work_group_start + lid; i < n; i += gsize)
           {
             %(operation)s;
           }
@@ -77,7 +77,7 @@ def get_elwise_program(context, arguments, operation,
         {
           int lid = get_local_id(0);
           int gsize = get_global_size(0);
-          int work_item_start = get_local_size(0)*get_group_id(0);
+          int work_group_start = get_local_size(0)*get_group_id(0);
           long i;
 
           %(loop_prep)s;
@@ -100,11 +100,9 @@ def get_elwise_program(context, arguments, operation,
 def get_elwise_kernel_and_types(context, arguments, operation,
         name="elwise_kernel", options=[], preamble="", use_range=False,
         **kwargs):
-    if isinstance(arguments, str):
-        from pyopencl.tools import parse_c_arg
-        parsed_args = [parse_c_arg(arg) for arg in arguments.split(",")]
-    else:
-        parsed_args = arguments
+
+    from pyopencl.tools import parse_arg_list
+    parsed_args = parse_arg_list(arguments)
 
     auto_preamble = kwargs.pop("auto_preamble", True)
 
@@ -143,15 +141,10 @@ def get_elwise_kernel_and_types(context, arguments, operation,
         name=name, options=options, preamble=preamble,
         use_range=use_range, **kwargs)
 
-    scalar_arg_dtypes = []
-    for arg in parsed_args:
-        if isinstance(arg, ScalarArg):
-            scalar_arg_dtypes.append(arg.dtype)
-        else:
-            scalar_arg_dtypes.append(None)
+    from pyopencl.tools import get_arg_list_scalar_arg_dtypes
 
     kernel = getattr(prg, name)
-    kernel.set_scalar_arg_dtypes(scalar_arg_dtypes)
+    kernel.set_scalar_arg_dtypes(get_arg_list_scalar_arg_dtypes(parsed_args))
 
     return kernel, parsed_args
 
