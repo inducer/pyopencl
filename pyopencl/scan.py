@@ -1246,8 +1246,8 @@ class GenericScanKernel(_GenericScanKernelBase):
         queue = kwargs.get("queue")
 
         if len(args) != len(self.parsed_args):
-            raise TypeError("invalid number of arguments in "
-                    "custom-arguments mode")
+            raise TypeError("expected %d arguments, got %d" %
+                    (len(self.parsed_args), len(args)))
 
         first_array = args[self.first_array_idx]
         allocator = allocator or first_array.allocator
@@ -1425,8 +1425,8 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         queue = kwargs.get("queue")
 
         if len(args) != len(self.parsed_args):
-            raise TypeError("invalid number of arguments in "
-                    "custom-arguments mode")
+            raise TypeError("expected %d arguments, got %d" %
+                    (len(self.parsed_args), len(args)))
 
         first_array = args[self.first_array_idx]
         allocator = allocator or first_array.allocator
