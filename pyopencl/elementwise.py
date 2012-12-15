@@ -239,7 +239,10 @@ class ElementwiseKernel:
                 queue.device)
 
         if range_ is not None:
-            invocation_args.append(range_.start)
+            start = range_.start
+            if start is None:
+                start = 0
+            invocation_args.append(start)
             invocation_args.append(range_.stop)
             if range_.step is None:
                 step = 1
@@ -250,7 +253,7 @@ class ElementwiseKernel:
 
             from pyopencl.array import splay
             gs, ls = splay(queue,
-                    abs(range_.stop - range_.start)//step,
+                    abs(range_.stop - start)//step,
                     max_wg_size)
         else:
             invocation_args.append(repr_vec.size)
