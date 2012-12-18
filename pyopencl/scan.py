@@ -129,18 +129,18 @@ KERNEL
 REQD_WG_SIZE(WG_SIZE, 1, 1)
 void ${name_prefix}_scan_intervals(
     ${argument_signature},
-    GLOBAL_MEM scan_type *partial_scan_buffer,
+    GLOBAL_MEM scan_type *restrict partial_scan_buffer,
     const index_type N,
     const index_type interval_size
     %if is_first_level:
-        , GLOBAL_MEM scan_type *interval_results
+        , GLOBAL_MEM scan_type *restrict interval_results
     %endif
     %if is_segmented and is_first_level:
         // NO_SEG_BOUNDARY if no segment boundary in interval.
-        , GLOBAL_MEM index_type *g_first_segment_start_in_interval
+        , GLOBAL_MEM index_type *restrict g_first_segment_start_in_interval
     %endif
     %if store_segment_start_flags:
-        , GLOBAL_MEM char *g_segment_start_flags
+        , GLOBAL_MEM char *restrict g_segment_start_flags
     %endif
     )
 {
@@ -591,13 +591,13 @@ void ${name_prefix}_final_update(
     ${argument_signature},
     const index_type N,
     const index_type interval_size,
-    GLOBAL_MEM scan_type *interval_results,
-    GLOBAL_MEM scan_type *partial_scan_buffer
+    GLOBAL_MEM scan_type *restrict interval_results,
+    GLOBAL_MEM scan_type *restrict partial_scan_buffer
     %if is_segmented:
-        , GLOBAL_MEM index_type *g_first_segment_start_in_interval
+        , GLOBAL_MEM index_type *restrict g_first_segment_start_in_interval
     %endif
     %if is_segmented and use_lookbehind_update:
-        , GLOBAL_MEM char *g_segment_start_flags
+        , GLOBAL_MEM char *restrict g_segment_start_flags
     %endif
     )
 {
@@ -762,7 +762,7 @@ _IGNORED_WORDS = set("""
 
         typedef for endfor if void while endwhile endfor endif else const printf
         None return bool n char true false ifdef pycl_printf str xrange assert
-        np iinfo max itemsize __packed__ struct
+        np iinfo max itemsize __packed__ struct restrict
 
         set iteritems len setdefault
 
