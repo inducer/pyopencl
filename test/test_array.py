@@ -1115,7 +1115,7 @@ def test_list_builder(ctx_factory):
 
     from pyopencl.algorithm import ListOfListsBuilder
     builder = ListOfListsBuilder(context, [("mylist", np.int32)], """//CL//
-            void generate(USER_ARG_DECL LIST_ARG_DECL index_type i)
+            void generate(LIST_ARG_DECL USER_ARG_DECL index_type i)
             {
                 int count = i % 4;
                 for (int j = 0; j < count; ++j)
