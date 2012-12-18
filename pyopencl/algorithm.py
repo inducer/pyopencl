@@ -258,9 +258,6 @@ RADIX_SORT_PREAMBLE_TPL = Template(r"""//CL//
         #define dbg_printf(ARGS) /* */
     #endif
 
-    <%
-    %>
-
     index_t get_count(scan_t s, int mnr)
     {
         return ${get_count_branch("")};
@@ -500,6 +497,13 @@ class RadixSort(object):
 # {{{ kernel template
 
 _LIST_BUILDER_TEMPLATE = Template("""//CL//
+% if double_support:
+    #pragma OPENCL EXTENSION cl_khr_fp64: enable
+    #define PYOPENCL_DEFINE_CDOUBLE
+% endif
+
+#include <pyopencl-complex.h>
+
 ${preamble}
 
 // {{{ declare helper macros for user interface
@@ -509,19 +513,19 @@ typedef ${index_type} index_type;
 %if is_count_stage:
     %for name, dtype in list_names_and_dtypes:
         %if name in count_sharing:
-            #define APPEND_${name}(value) /* nothing */
+            #define APPEND_${name}(value) { /* nothing */ }
         %else:
-            #define APPEND_${name}(value) ++(*plb_loc_${name}_count);
+            #define APPEND_${name}(value) { ++(*plb_loc_${name}_count); }
         %endif
     %endfor
 %else:
     %for name, dtype in list_names_and_dtypes:
         %if name in count_sharing:
             #define APPEND_${name}(value) \
-                plb_${name}_list[(*plb_${count_sharing[name]}_index) - 1] = value;
+                { plb_${name}_list[(*plb_${count_sharing[name]}_index) - 1] = value; }
         %else:
             #define APPEND_${name}(value) \
-                plb_${name}_list[(*plb_${name}_index)++] = value;
+                { plb_${name}_list[(*plb_${name}_index)++] = value; }
         %endif
     %endfor
 %endif
