@@ -51,9 +51,6 @@ KERNEL = """//CL//
     % if double_support:
         #pragma OPENCL EXTENSION cl_khr_fp64: enable
         #define PYOPENCL_DEFINE_CDOUBLE
-    % elif amd_double_support:
-        #pragma OPENCL EXTENSION cl_amd_fp64: enable
-        #define PYOPENCL_DEFINE_CDOUBLE
     % endif
 
     #include <pyopencl-complex.h>
@@ -195,7 +192,7 @@ def  _get_reduction_source(
 
     from mako.template import Template
     from pytools import all
-    from pyopencl.characterize import has_double_support, has_amd_double_support
+    from pyopencl.characterize import has_double_support
     src = str(Template(KERNEL).render(
         out_type=out_type,
         arguments=", ".join(arg.declarator() for arg in parsed_args),
@@ -206,10 +203,7 @@ def  _get_reduction_source(
         map_expr=map_expr,
         name=name,
         preamble=preamble,
-        double_support=all(
-            has_double_support(dev) for dev in devices),
-        amd_double_support=all(
-            has_amd_double_support(dev) for dev in devices)
+        double_support=all(has_double_support(dev) for dev in devices),
         ))
 
     from pytools import Record
