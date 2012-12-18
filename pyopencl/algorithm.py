@@ -541,12 +541,25 @@ ${generate_template}
 
 // {{{ kernel entry point
 
-__kernel void ${kernel_name}(${kernel_list_arg_decl} USER_ARG_DECL index_type n)
+__kernel
+%if do_not_vectorize:
+__attribute__((reqd_work_group_size(1, 1, 1)))
+%endif
+void ${kernel_name}(${kernel_list_arg_decl} USER_ARG_DECL index_type n)
+
 {
-    int lid = get_local_id(0);
-    index_type gsize = get_global_size(0);
-    index_type work_group_start = get_local_size(0)*get_group_id(0);
-    for (index_type i = work_group_start + lid; i < n; i += gsize)
+    %if not do_not_vectorize:
+        int lid = get_local_id(0);
+        index_type gsize = get_global_size(0);
+        index_type work_group_start = get_local_size(0)*get_group_id(0);
+        for (index_type i = work_group_start + lid; i < n; i += gsize)
+    %else:
+        const int chunk_size = 128;
+        index_type chunk_base = get_global_id(0)*chunk_size;
+        index_type gsize = get_global_size(0);
+        for (; chunk_base < n; chunk_base += gsize*chunk_size)
+        for (index_type i = chunk_base; i < min(n, chunk_base+chunk_size); ++i)
+    %endif
     {
         %if is_count_stage:
             %for name, dtype in list_names_and_dtypes:
@@ -640,7 +653,7 @@ class ListOfListsBuilder:
     """
     def __init__(self, context, list_names_and_dtypes, generate_template,
             arg_decls, count_sharing=None, devices=None, name_prefix="plb_build_list",
-            options=[], preamble=""):
+            options=[], preamble="", debug=False, complex_kernel=False):
         """
         :arg context: A :class:`pyopencl.Context`.
         :arg list_names_and_dtypes: a list of `(name, dtype)` tuples
@@ -654,6 +667,7 @@ class ListOfListsBuilder:
         :arg name_prefix: the name prefix to use for the compiled kernels
         :arg options: OpenCL compilation options for kernels using
             *generate_template*.
+        :arg complex_kernel: If `True`, prevents vectorization on CPUs.
 
         *generate_template* may use the following C macros/identifiers:
 
@@ -711,6 +725,10 @@ class ListOfListsBuilder:
         self.preamble = preamble
         self.options = options
 
+        self.debug = debug
+
+        self.complex_kernel = complex_kernel
+
     # {{{ kernel generators
 
     @memoize_method
@@ -723,6 +741,12 @@ class ListOfListsBuilder:
                 scan_expr="a+b", neutral="0",
                 output_statement="ary[i+1] = item;",
                 devices=self.devices)
+
+    def do_not_vectorize(self):
+        from pytools import any
+        return (self.complex_kernel
+                and any(dev.type == cl.device_type.CPU
+                    for dev in self.context.devices))
 
     @memoize_method
     def get_count_kernel(self, index_dtype):
@@ -743,9 +767,15 @@ class ListOfListsBuilder:
                 index_ctype, name), name))
 
         kernel_name = self.name_prefix+"_count"
+
+        from pyopencl.characterize import has_double_support
         src = _LIST_BUILDER_TEMPLATE.render(
                 is_count_stage=True,
                 kernel_name=kernel_name,
+                double_support=all(has_double_support(dev) for dev in
+                    self.context.devices),
+                debug=self.debug,
+                do_not_vectorize=self.do_not_vectorize(),
 
                 kernel_list_arg_decl=_get_arg_decl(kernel_list_args),
                 kernel_list_arg_values=_get_arg_list(user_list_args, prefix="&"),
@@ -802,9 +832,15 @@ class ListOfListsBuilder:
             kernel_list_arg_values += "%s, &%s, " % (list_name, index_name)
 
         kernel_name = self.name_prefix+"_write"
+
+        from pyopencl.characterize import has_double_support
         src = _LIST_BUILDER_TEMPLATE.render(
                 is_count_stage=False,
                 kernel_name=kernel_name,
+                double_support=all(has_double_support(dev) for dev in
+                    self.context.devices),
+                debug=self.debug,
+                do_not_vectorize=self.do_not_vectorize(),
 
                 kernel_list_arg_decl=_get_arg_decl(kernel_list_args),
                 kernel_list_arg_values=kernel_list_arg_values,
@@ -846,12 +882,15 @@ class ListOfListsBuilder:
             arrays.
         :returns: a mapping from names to objects which have attributes
 
-            * `lists` for the array containing all lists
+            * `count` for the total number of entries in all lists combined
+            * `lists` for the array containing all lists.
             * `starts` for the array of starting indices in `lists`.
               `starts` is built so that it has n+1 entries, so that
               the *i*'th entry is the start of the *i*'th list, and the
               *i*'th entry is the index one past the *i*'th list's end,
               even for the last list.
+
+              This implies that all lists are contiguous.
         """
         if n_objects >= int(np.iinfo(np.int32).max):
             index_dtype = np.int64
@@ -886,7 +925,17 @@ class ListOfListsBuilder:
 
         # }}}
 
-        count_kernel(queue, (n_objects,), None,
+        if self.debug:
+            gsize = (1,)
+            lsize = (1,)
+        elif self.complex_kernel and queue.device.type == cl.device_type.CPU:
+            gsize = (4*queue.device.max_compute_units,)
+            lsize = (1,)
+        else:
+            from pyopencl.array import splay
+            gsize, lsize = splay(queue, n_objects)
+
+        count_kernel(queue, gsize, lsize,
                 *(tuple(count_list_args) + args + (n_objects,)))
 
         # {{{ run scans
@@ -935,8 +984,7 @@ class ListOfListsBuilder:
 
         # }}}
 
-
-        write_kernel(queue, (n_objects,), None,
+        write_kernel(queue, gsize, lsize,
                 *(tuple(write_list_args) + args + (n_objects,)))
 
         return result
