@@ -193,10 +193,12 @@ Making Custom Scan Kernels
 
 .. autoclass:: GenericScanKernel
 
-    .. method:: __call__(*args, allocator=None, queue=None)
+    .. method:: __call__(*args, allocator=None, queue=None, size=None)
 
         *queue* and *allocator* default to the ones provided on the first
-        :class:`pyopencl.array.Array` in *args*.
+        :class:`pyopencl.array.Array` in *args*. *size* may specify the
+        length of the scan to be carried out. If not given, this length
+        is inferred from the first array argument passed.
 
 Debugging aids
 ~~~~~~~~~~~~~~

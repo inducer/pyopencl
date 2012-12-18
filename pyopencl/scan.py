@@ -1258,6 +1258,7 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         allocator = kwargs.get("allocator")
         queue = kwargs.get("queue")
+        n = kwargs.get("size")
 
         if len(args) != len(self.parsed_args):
             raise TypeError("expected %d arguments, got %d" %
@@ -1267,7 +1268,8 @@ class GenericScanKernel(_GenericScanKernelBase):
         allocator = allocator or first_array.allocator
         queue = queue or first_array.queue
 
-        n, = first_array.shape
+        if n is None:
+            n, = first_array.shape
 
         data_args = []
         from pyopencl.tools import VectorArg
