@@ -141,8 +141,7 @@ def splay(queue, n, kernel_specific_max_wg_size=None):
         work_items_per_group = max_work_items
 
     #print "n:%d gc:%d wipg:%d" % (n, group_count, work_items_per_group)
-    return (group_count*work_items_per_group, 1, 1), \
-            (work_items_per_group, 1, 1)
+    return (group_count*work_items_per_group,), (work_items_per_group,)
 
 
 
