@@ -817,14 +817,15 @@ class ListOfListsBuilder:
             list_arg =  VectorArg(dtype, list_name)
 
             kernel_list_args.append(list_arg)
+            user_list_args.append(list_arg)
 
             if name in self.count_sharing:
+                kernel_list_arg_values += "%s, " % list_name
                 continue
 
             kernel_list_args.append(
                     VectorArg(index_dtype, "plb_%s_start_index" % name))
 
-            user_list_args.append(list_arg)
             index_name = "plb_%s_index" % name
             user_list_args.append(OtherArg("%s *%s" % (
                 index_ctype, index_name), index_name))
