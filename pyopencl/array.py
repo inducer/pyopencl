@@ -312,22 +312,23 @@ class Array(object):
         self.strides = strides
 
         self.size = s
-        nbytes = self.nbytes = self.dtype.itemsize * self.size
+        alloc_nbytes = self.nbytes = self.dtype.itemsize * self.size
 
         self.allocator = allocator
 
         if data is None:
-            if self.size:
-                if allocator is None:
-                    # FIXME remove me when queues become required
-                    if queue is not None:
-                        context = queue.context
+            if not alloc_nbytes:
+                # Work around CL not allowing zero-sized buffers.
+                alloc_nbytes = 1
 
-                    self.data = cl.Buffer(context, cl.mem_flags.READ_WRITE, nbytes)
-                else:
-                    self.data = self.allocator(nbytes)
+            if allocator is None:
+                # FIXME remove me when queues become required
+                if queue is not None:
+                    context = queue.context
+
+                self.data = cl.Buffer(context, cl.mem_flags.READ_WRITE, alloc_nbytes)
             else:
-                self.data = None
+                self.data = self.allocator(alloc_nbytes)
         else:
             self.data = data
 
