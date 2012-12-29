@@ -1129,7 +1129,7 @@ def test_list_builder(ctx_factory):
 
     inf = result["mylist"]
     assert inf.count == 3000
-    assert (inf.list.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
+    assert (inf.lists.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
 
 # }}}
 
