@@ -511,6 +511,8 @@ ${preamble}
 typedef ${index_type} index_type;
 
 %if is_count_stage:
+    #define PLB_COUNT_STAGE
+
     %for name, dtype in list_names_and_dtypes:
         %if name in count_sharing:
             #define APPEND_${name}(value) { /* nothing */ }
@@ -519,6 +521,8 @@ typedef ${index_type} index_type;
         %endif
     %endfor
 %else:
+    #define PLB_WRITE_STAGE
+
     %for name, dtype in list_names_and_dtypes:
         %if name in count_sharing:
             #define APPEND_${name}(value) \
@@ -976,9 +980,9 @@ class ListOfListsBuilder:
             else:
                 info_record = result[name]
 
-            info_record.list = cl.array.empty(queue,
+            info_record.lists = cl.array.empty(queue,
                     info_record.count, dtype, allocator=allocator)
-            write_list_args.append(info_record.list.data)
+            write_list_args.append(info_record.lists.data)
 
             if name not in self.count_sharing:
                 write_list_args.append(info_record.starts.data)
