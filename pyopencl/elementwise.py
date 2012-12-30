@@ -380,7 +380,7 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
             + "\n".join("dest%d[dest_idx] = src%d[i];" % (i, i)
                 for i in range(vec_count)))
 
-    return get_elwise_kernel(args, body, name="put")
+    return get_elwise_kernel(context, args, body, name="put")
 
 
 @context_dependent_memoize

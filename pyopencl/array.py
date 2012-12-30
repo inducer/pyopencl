@@ -1181,8 +1181,8 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
 
     def make_func_for_chunk_size(chunk_size):
         knl = elementwise.get_put_kernel(
+                context,
                 a_dtype, dest_indices.dtype, vec_count=chunk_size)
-        knl.set_block_shape(*dest_indices._block)
         return knl
 
     knl = make_func_for_chunk_size(chunk_size)
