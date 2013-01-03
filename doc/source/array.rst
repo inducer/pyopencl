@@ -44,11 +44,11 @@ about them using this function:
 
 .. exception:: TypeNameNotKnown
 
-    .. versionadded:: 2012.2
+    .. versionadded:: 2013.1
 
 .. function:: register_dtype(dtype, name)
 
-    .. versionchanged:: 2012.2
+    .. versionchanged:: 2013.1
         This function has been deprecated. It is recommended that you develop
         against the new interface, :func:`get_or_register_dtype`.
 
@@ -56,7 +56,7 @@ about them using this function:
 
     Returns a C name registered for *dtype*.
 
-    .. versionadded: 2012.2
+    .. versionadded: 2013.1
 
 This function helps with producing C/OpenCL declarations for structured
 :class:`numpy.dtype` instances:
@@ -196,7 +196,7 @@ The :class:`Array` Class
 
     .. method :: copy(queue=None)
 
-        .. versionadded:: 2012.2
+        .. versionadded:: 2013.1
 
     .. method :: __str__()
     .. method :: __repr__()
@@ -485,7 +485,7 @@ Generating Arrays of Random Numbers
 
     .. versionadded:: 2011.2
 
-    .. versionchanged:: 2012.2
+    .. versionchanged:: 2013.1
         Added default value for `num_work_items`.
 
     .. attribute:: state

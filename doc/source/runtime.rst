@@ -550,7 +550,7 @@ Mapping Memory into Host Address Space
     .. versionchanged:: 2011.1
         *is_blocking* now defaults to True.
 
-    .. versionchanged:: 2012.2
+    .. versionchanged:: 2013.1
         *order* now defaults to "C".
 
 .. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order="C", wait_for=None, is_blocking=True)
@@ -568,7 +568,7 @@ Mapping Memory into Host Address Space
     .. versionchanged:: 2011.1
         *is_blocking* now defaults to True.
 
-    .. versionchanged:: 2012.2
+    .. versionchanged:: 2013.1
         *order* now defaults to "C".
 
 Samplers
@@ -630,7 +630,7 @@ Programs and Kernels
         .. versionchanged:: 2011.1
             *options* may now also be a :class:`list` of :class:`str`.
 
-        .. versionchanged:: 2012.2
+        .. versionchanged:: 2013.1
             Added :envvar:`PYOPENCL_NO_CACHE`.
 
     .. method:: compile(self, options=[], devices=None, headers=[])

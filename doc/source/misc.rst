@@ -72,7 +72,7 @@ C interface to Python:
 User-visible Changes
 ====================
 
-Version 2012.2
+Version 2013.1
 --------------
 .. note::
 

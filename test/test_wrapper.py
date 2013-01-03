@@ -256,9 +256,9 @@ class TestCL:
             from py.test import skip
             skip("images not supported on %s" % device)
 
-        if device.platform.vendor == "Intel(R) Corporation":
-            from py.test import skip
-            skip("images crashy on %s" % device)
+        #if device.platform.vendor == "Intel(R) Corporation":
+            #from py.test import skip
+            #skip("images crashy on %s" % device)
 
         prg = cl.Program(context, """
             __kernel void copy_image(

@@ -418,7 +418,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     the given *device* to ensure that :mod:`numpy` and C offsets and
     sizes match.)
 
-    .. versionadded: 2012.2
+    .. versionadded: 2013.1
 
     This example explains the use of this function::
 

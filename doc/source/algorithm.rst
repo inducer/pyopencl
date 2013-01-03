@@ -189,7 +189,7 @@ in PyOpenCL:
 Making Custom Scan Kernels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded: 2012.2
+.. versionadded: 2013.1
 
 .. autoclass:: GenericScanKernel
 
@@ -237,7 +237,7 @@ Simple / Legacy Interface
 
     Works like :class:`ExclusiveScanKernel`.
 
-    .. versionchanged:: 2012.2
+    .. versionchanged:: 2013.1
         *neutral* is now always required.
 
 For the array `[1,2,3]`, inclusive scan results in `[1,3,6]`, and exclusive

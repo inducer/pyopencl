@@ -41,7 +41,7 @@ the available memory.
     device the buffer is used with.)
 
     .. versionchanged::
-        In version 2012.2, :class:`CLAllocator` was deprecated and replaced
+        In version 2013.1, :class:`CLAllocator` was deprecated and replaced
         by :class:`DeferredAllocator`.
 
     .. method:: __call__(size)
@@ -56,7 +56,7 @@ the available memory.
     promise memory to be available that later on (in any call to a buffer-using
     CL function).
 
-    .. versionadded:: 2012.2
+    .. versionadded:: 2013.1
 
     .. method:: __call__(size)
 

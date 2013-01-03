@@ -64,7 +64,7 @@ def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied *predicate*.
 
-    .. versionadded:: 2012.2
+    .. versionadded:: 2013.1
     """
     if len(ary) > np.iinfo(np.int32).max:
         scan_dtype = np.int64
@@ -99,7 +99,7 @@ def remove_if(ary, predicate, extra_args=[], queue=None, preamble=""):
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements did not satisfy *predicate*.
 
-    .. versionadded:: 2012.2
+    .. versionadded:: 2013.1
     """
     return copy_if(ary, "!(%s)" % predicate, extra_args=extra_args, queue=queue,
             preamble=preamble)
@@ -137,7 +137,7 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied the predicate.
 
-    .. versionadded:: 2012.2
+    .. versionadded:: 2013.1
     """
     if len(ary) > np.iinfo(np.uint32).max:
         scan_dtype = np.uint64
@@ -195,7 +195,7 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied the predicate.
 
-    .. versionadded:: 2012.2
+    .. versionadded:: 2013.1
     """
 
     if len(ary) > np.iinfo(np.uint32).max:
@@ -343,7 +343,7 @@ class RadixSort(object):
     """Provides a general `radix sort <https://en.wikipedia.org/wiki/Radix_sort>`_
     on the compute device.
 
-    .. versionadded:: 2012.2
+    .. versionadded:: 2013.1
     """
     def __init__(self, context, arguments, key_expr, sort_arg_names,
             bits_at_a_time=2, index_dtype=np.int32, key_dtype=np.uint32,
@@ -626,7 +626,7 @@ class ListOfListsBuilder:
     .. note:: This functionality is provided as a preview. Its interface
         is subject to change until this notice is removed.
 
-    .. versionadded:: 2012.2
+    .. versionadded:: 2013.1
 
     Here's a usage example::
 
