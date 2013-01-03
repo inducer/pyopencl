@@ -228,7 +228,7 @@ void pyopencl_expose_part_1()
       py::return_value_policy<py::manage_new_object>());
   py::def("_enqueue_copy_buffer", enqueue_copy_buffer,
       (py::args("queue", "src", "dst"),
-       py::arg("byte_count")=0,
+       py::arg("byte_count")=-1,
        py::arg("src_offset")=0,
        py::arg("dst_offset")=0,
        py::arg("wait_for")=py::object()

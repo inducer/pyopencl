@@ -526,73 +526,7 @@ Images
 Transfers
 ^^^^^^^^^
 
-.. function:: enqueue_copy(queue, dest, src, **kwargs)
-
-    Copy from :class:`Image`, :class:`Buffer` or the host to 
-    :class:`Image`, :class:`Buffer` or the host. (Note: host-to-host
-    copies are unsupported.)
-
-    The following keyword arguments are available:
-
-    :arg wait_for: (optional, default empty)
-    :arg is_blocking: Wait for completion. Defaults to *True*. 
-      (Available on any copy involving host memory)
-
-    :return: A :class:`NannyEvent` if the transfer involved a
-        host-side buffer, otherwise an :class:`Event`.
-
-    :class:`Buffer` ↔ host transfers:
-
-    :arg device_offset: offset in bytes (optional)
-
-    :class:`Buffer` ↔ :class:`Buffer` transfers:
-
-    :arg byte_count: (optional)
-    :arg src_offset: (optional)
-    :arg dest_offset: (optional)
-
-    Rectangular :class:`Buffer` ↔  host transfers (CL 1.1 and newer):
-
-    :arg buffer_origin: :class:`tuple` of :class:`int` of length
-        three or shorter. (mandatory)
-    :arg host_origin: :class:`tuple` of :class:`int` of length
-        three or shorter. (mandatory)
-    :arg region: :class:`tuple` of :class:`int` of length
-        three or shorter. (mandatory)
-    :arg buffer_pitches: :class:`tuple` of :class:`int` of length
-        two or shorter. (optional, "tightly-packed" if unspecified)
-    :arg host_pitches: :class:`tuple` of :class:`int` of length
-        two or shorter. (optional, "tightly-packed" if unspecified)
-
-    :class:`Image` ↔ host transfers:
-
-    :arg origin: :class:`tuple` of :class:`int` of length
-        three or shorter. (mandatory)
-    :arg region: :class:`tuple` of :class:`int` of length
-        three or shorter. (mandatory)
-    :arg pitches: :class:`tuple` of :class:`int` of length
-        two or shorter. (optional)
-
-    :class:`Buffer` ↔ :class:`Image` transfers:
-
-    :arg offset: offset in buffer (mandatory)
-    :arg origin: :class:`tuple` of :class:`int` of length
-        three or shorter. (mandatory)
-    :arg region: :class:`tuple` of :class:`int` of length
-        three or shorter. (mandatory)
-
-    :class:`Image` ↔ :class:`Image` transfers:
-
-    :arg src_origin: :class:`tuple` of :class:`int` of length
-        three or shorter. (mandatory)
-    :arg dest_origin: :class:`tuple` of :class:`int` of length
-        three or shorter. (mandatory)
-    :arg region: :class:`tuple` of :class:`int` of length
-        three or shorter. (mandatory)
-
-    |std-enqueue-blurb|
-
-    .. versionadded:: 2011.1
+.. autofunction:: enqueue_copy(queue, dest, src, **kwargs)
 
 Mapping Memory into Host Address Space
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

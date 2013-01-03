@@ -1845,17 +1845,22 @@ namespace pyopencl
       command_queue &cq,
       memory_object_holder &src,
       memory_object_holder &dst,
-      size_t byte_count,
+      ptrdiff_t byte_count,
       size_t src_offset,
       size_t dst_offset,
       py::object py_wait_for)
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
-    if (byte_count == 0)
+    if (byte_count < 0)
     {
+      size_t byte_count_src = 0;
+      size_t byte_count_dst = 0;
       PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
-          (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count, 0));
+          (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_src, 0));
+      PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+          (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_dst, 0));
+      byte_count = std::min(byte_count_src, byte_count_dst);
     }
 
     cl_event evt;

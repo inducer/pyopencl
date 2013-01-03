@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -420,7 +422,7 @@ def _add_functionality():
                 pass
 
             what = e.what + "\n\n" + (75*"="+"\n").join(
-                    "Build on %s:\n\n%s" % (dev, log) 
+                    "Build on %s:\n\n%s" % (dev, log)
                     for dev, log in self._get_build_logs())
             code = e.code
             routine = e.routine
@@ -580,7 +582,7 @@ def _add_functionality():
 
     def image_format_repr(self):
         return "ImageFormat(%s, %s)" % (
-                channel_order.to_string(self.channel_order, 
+                channel_order.to_string(self.channel_order,
                     "<unknown channel order 0x%x>"),
                 channel_type.to_string(self.channel_data_type,
                     "<unknown channel data type 0x%x>"))
@@ -598,7 +600,7 @@ def _add_functionality():
         except AttributeError:
             return str(val)
         else:
-            result = "%s failed: %s" % (val.routine(), 
+            result = "%s failed: %s" % (val.routine(),
                     status_code.to_string(val.code(), "<unknown error %d>")
                     .lower().replace("_", " "))
             if val.what():
@@ -809,6 +811,76 @@ if _cl.get_cl_header_version() >= (1,1):
     enqueue_copy_buffer_rect = _mark_copy_deprecated(_cl._enqueue_copy_buffer_rect)
 
 def enqueue_copy(queue, dest, src, **kwargs):
+    """Copy from :class:`Image`, :class:`Buffer` or the host to
+    :class:`Image`, :class:`Buffer` or the host. (Note: host-to-host
+    copies are unsupported.)
+
+    The following keyword arguments are available:
+
+    :arg wait_for: (optional, default empty)
+    :arg is_blocking: Wait for completion. Defaults to *True*.
+      (Available on any copy involving host memory)
+
+    :return: A :class:`NannyEvent` if the transfer involved a
+        host-side buffer, otherwise an :class:`Event`.
+
+    :class:`Buffer` ↔ host transfers:
+
+    :arg device_offset: offset in bytes (optional)
+
+    :class:`Buffer` ↔ :class:`Buffer` transfers:
+
+    :arg byte_count: (optional) If not specified, defaults to the
+        size of the source in versions 2012.x and earlier,
+        and to the minimum of the size of the source and target
+        from 2013.1 on.
+    :arg src_offset: (optional)
+    :arg dest_offset: (optional)
+
+    Rectangular :class:`Buffer` ↔  host transfers (CL 1.1 and newer):
+
+    :arg buffer_origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg host_origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg region: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg buffer_pitches: :class:`tuple` of :class:`int` of length
+        two or shorter. (optional, "tightly-packed" if unspecified)
+    :arg host_pitches: :class:`tuple` of :class:`int` of length
+        two or shorter. (optional, "tightly-packed" if unspecified)
+
+    :class:`Image` ↔ host transfers:
+
+    :arg origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg region: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg pitches: :class:`tuple` of :class:`int` of length
+        two or shorter. (optional)
+
+    :class:`Buffer` ↔ :class:`Image` transfers:
+
+    :arg offset: offset in buffer (mandatory)
+    :arg origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg region: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+
+    :class:`Image` ↔ :class:`Image` transfers:
+
+    :arg src_origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg dest_origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg region: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+
+    |std-enqueue-blurb|
+
+    .. versionadded:: 2011.1
+    """
+
     if isinstance(dest, MemoryObjectHolder):
         if dest.type == mem_object_type.BUFFER:
             if isinstance(src, MemoryObjectHolder):
