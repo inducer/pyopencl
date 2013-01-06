@@ -281,3 +281,6 @@ Building many variable-size lists
 
     .. automethod:: __call__
 
+.. autoclass:: KeyValueSorter
+
+    .. automethod:: __call__

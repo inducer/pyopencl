@@ -759,6 +759,34 @@ def test_list_builder(ctx_factory):
     assert inf.count == 3000
     assert (inf.lists.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
 
+@pytools.test.mark_test.opencl
+def test_key_value_sorter(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    n = 10**5
+    nkeys = 2000
+    from pyopencl.clrandom import rand as clrand
+    keys = clrand(queue, n, np.int32, b=nkeys)
+    values = clrand(queue, n, np.int32, b=n).astype(np.int64)
+
+    assert np.max(keys.get()) < nkeys
+
+    from pyopencl.algorithm import KeyValueSorter
+    kvs = KeyValueSorter(context)
+    starts, lists = kvs(queue, keys, values, nkeys, starts_dtype=np.int32)
+
+    starts = starts.get()
+    lists = lists.get()
+
+    mydict = dict()
+    for k, v in zip(keys.get(), values.get()):
+        mydict.setdefault(k, []).append(v)
+
+    for i in xrange(nkeys):
+        start, end = starts[i:i+2]
+        assert sorted(mydict[i]) == sorted(lists[start:end])
+
 # }}}
 
 

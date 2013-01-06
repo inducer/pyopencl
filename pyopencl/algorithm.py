@@ -998,4 +998,122 @@ class ListOfListsBuilder:
 
 # }}}
 
+# {{{ key-value sorting
+
+class _KernelInfo(Record):
+    pass
+
+def _make_cl_int_literal(value, dtype):
+    iinfo = np.iinfo(dtype)
+    result = str(int(value))
+    if dtype.itemsize == 8:
+        result += "l"
+    if int(iinfo.min) < 0:
+        result += "u"
+
+    return result
+
+class KeyValueSorter(object):
+    """Given arrays *values* and *keys* of equal length
+    and a number *nkeys* of keys, returns a tuple `(starts,
+    lists)`, as follows: *values* and *keys* are sorted
+    by *keys*, and the sorted *values* is returned as
+    *lists*. Then for each index *i* in `range(nkeys)`,
+    *starts[i]* is written to indicating where the
+    group of *values* belonging to the key with index
+    *i* begins. It implicitly ends at *starts[i+1]*.
+
+    `starts` is built so that it has `nkeys+1` entries, so that
+    the *i*'th entry is the start of the *i*'th list, and the
+    *i*'th entry is the index one past the *i*'th list's end,
+    even for the last list.
+
+    This implies that all lists are contiguous.
+
+    .. note:: This functionality is provided as a preview. Its
+        interface is subject to change until this notice is removed.
+
+    .. versionadded:: 2013.1
+    """
+
+    def __init__(self, context):
+        self.context = context
+
+    @memoize_method
+    def get_kernels(self, key_dtype, value_dtype, starts_dtype):
+        from pyopencl.algorithm import RadixSort
+        from pyopencl.tools import VectorArg, ScalarArg
+
+        by_target_sorter = RadixSort(
+                self.context, [
+                    VectorArg(value_dtype, "values"),
+                    VectorArg(key_dtype, "keys"),
+                    ],
+                key_expr="keys[i]",
+                sort_arg_names=["values", "keys"])
+
+        from pyopencl.elementwise import ElementwiseTemplate
+        start_finder = ElementwiseTemplate(
+                arguments="""//CL//
+                starts_t *key_group_starts,
+                key_t *keys_sorted_by_key,
+                """,
+
+                operation=r"""//CL//
+                key_t my_key = keys_sorted_by_key[i];
+
+                if (i == 0 || my_key != keys_sorted_by_key[i-1])
+                    key_group_starts[my_key] = i;
+                """,
+                name="find_starts").build(self.context,
+                        type_values=(
+                            ("key_t", starts_dtype),
+                            ("starts_t", starts_dtype),
+                            ),
+                        var_values=())
+
+        from pyopencl.scan import GenericScanKernel
+        bound_propagation_scan = GenericScanKernel(
+                self.context, starts_dtype,
+                arguments=[
+                    VectorArg(starts_dtype, "starts"),
+                    # starts has length n+1
+                    ScalarArg(key_dtype, "nkeys"),
+                    ],
+                input_expr="starts[nkeys-i]",
+                scan_expr="min(a, b)",
+                neutral=_make_cl_int_literal(
+                    np.iinfo(starts_dtype).max, starts_dtype),
+                output_statement="starts[nkeys-i] = item;")
+
+        return _KernelInfo(
+                by_target_sorter=by_target_sorter,
+                start_finder=start_finder,
+                bound_propagation_scan=bound_propagation_scan)
+
+    def __call__(self, queue, keys, values, nkeys,
+            starts_dtype, allocator=None):
+        if allocator is None:
+            allocator = values.allocator
+
+        knl_info = self.get_kernels(keys.dtype, values.dtype,
+                starts_dtype)
+
+        (values_sorted_by_key, keys_sorted_by_key
+                ) = knl_info.by_target_sorter(
+                values, keys, queue=queue)
+
+        starts = cl.array.empty(queue, (nkeys+1), starts_dtype,
+                allocator=allocator) \
+                        .fill(len(values_sorted_by_key))
+
+        knl_info.start_finder(starts, keys_sorted_by_key,
+                range=slice(len(keys_sorted_by_key)))
+
+        knl_info.bound_propagation_scan(starts, nkeys, queue=queue)
+
+        return starts, values_sorted_by_key
+
+# }}}
+
 # vim: filetype=pyopencl:fdm=marker
