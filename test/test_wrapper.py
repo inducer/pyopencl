@@ -140,7 +140,6 @@ class TestCL:
 
         cl.unload_compiler() # just for the heck of it
 
-        mf = cl.mem_flags
         n = 2000
         a_buf = cl.Buffer(ctx, 0, n*4)
 
