@@ -1370,7 +1370,7 @@ class GenericScanKernel(_GenericScanKernelBase):
 
 # {{{ debug kernel
 
-DEBUG_SCAN_TEMPLATE = SHARED_PREAMBLE + """//CL//
+DEBUG_SCAN_TEMPLATE = SHARED_PREAMBLE + r"""//CL//
 
 KERNEL
 REQD_WG_SIZE(1, 1, 1)
