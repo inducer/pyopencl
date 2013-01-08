@@ -270,7 +270,7 @@ void ${name_prefix}_scan_intervals(
 
                     const index_type o_mod_k = offset % K;
                     const index_type o_div_k = offset / K;
-                    ldata[o_mod_k][offset / K].value = scan_value;
+                    ldata[o_mod_k][o_div_k].value = scan_value;
 
                     %if is_segmented:
                         bool is_seg_start = IS_SEG_START(read_i, scan_value);
@@ -1086,7 +1086,8 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         while True:
             candidate_scan_info = self.build_scan_kernel(
-                    max_scan_wg_size, self.parsed_args, self.input_expr,
+                    max_scan_wg_size, self.parsed_args,
+                    _process_code_for_macro(self.input_expr),
                     self.is_segment_start_expr,
                     input_fetch_exprs=self.input_fetch_exprs,
                     is_first_level=True,
@@ -1439,6 +1440,7 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
 
         allocator = kwargs.get("allocator")
         queue = kwargs.get("queue")
+        n = kwargs.get("size")
 
         if len(args) != len(self.parsed_args):
             raise TypeError("expected %d arguments, got %d" %
@@ -1448,7 +1450,8 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         allocator = allocator or first_array.allocator
         queue = queue or first_array.queue
 
-        n, = first_array.shape
+        if n is None:
+            n, = first_array.shape
 
         data_args = []
         from pyopencl.tools import VectorArg
