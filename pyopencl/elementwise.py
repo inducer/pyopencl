@@ -163,8 +163,9 @@ def get_elwise_kernel(context, arguments, operation,
 
     return func
 
+# }}}
 
-
+# {{{ ElementwiseKernel driver
 
 class ElementwiseKernel:
     def __init__(self, context, arguments, operation,
