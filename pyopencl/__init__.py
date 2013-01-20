@@ -745,7 +745,7 @@ def create_some_context(interactive=True, answers=None):
         for i, dev in enumerate(devices):
             if choice in dev.name.lower():
                 return dev
-        raise RuntimeError("input did not match any platform")
+        raise RuntimeError("input did not match any device")
 
     if not devices:
         raise Error("no devices found")
@@ -768,6 +768,11 @@ def create_some_context(interactive=True, answers=None):
             user_inputs = pre_provided_answers + user_inputs
         print("Set the environment variable PYOPENCL_CTX='%s' to "
                 "avoid being asked again." % ":".join(user_inputs))
+
+    if answers:
+        raise RuntimeError("not all provided choices were used by "
+                "create_some_context. (left over: '%s')" % ":".join(answers))
+
     return Context(devices)
 
 _csc = create_some_context
