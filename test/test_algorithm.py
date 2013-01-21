@@ -470,7 +470,7 @@ scan_test_counts = [
     2 ** 20 + 1,
     2 ** 20,
     2 ** 23 + 3,
-    2 ** 24 + 5
+    # larger sizes cause out of memory on low-end AMD APUs
     ]
 
 @pytools.test.mark_test.opencl
@@ -536,6 +536,8 @@ def test_partition(ctx_factory):
 
     from pyopencl.clrandom import rand as clrand
     for n in scan_test_counts:
+        print "part", n
+
         a_dev = clrand(queue, (n,), dtype=np.int32, a=0, b=1000)
         a = a_dev.get()
 
@@ -714,7 +716,8 @@ def test_sort(ctx_factory):
 
     from time import time
 
-    for n in scan_test_counts:
+    # intermediate arrays for largest size cause out-of-memory on low-end GPUs
+    for n in scan_test_counts[:-1]:
         print(n)
 
         print("  rng")
