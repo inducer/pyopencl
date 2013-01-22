@@ -536,7 +536,7 @@ def test_partition(ctx_factory):
 
     from pyopencl.clrandom import rand as clrand
     for n in scan_test_counts:
-        print "part", n
+        print("part", n)
 
         a_dev = clrand(queue, (n,), dtype=np.int32, a=0, b=1000)
         a = a_dev.get()
