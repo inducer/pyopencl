@@ -122,8 +122,8 @@ if have_cl():
             (-math.pi/2 + 0.1, math.pi/2 - 0.1), 2e-5, use_complex=True)
     test_atan = make_unary_function_test("atan", (-10, 10), 2e-7)
 
-    test_sinh = make_unary_function_test("sinh", (-3, 3), 1e-6, use_complex=2e-3)
-    test_cosh = make_unary_function_test("cosh", (-3, 3), 1e-6, use_complex=2e-3)
+    test_sinh = make_unary_function_test("sinh", (-3, 3), 2e-6, use_complex=2e-3)
+    test_cosh = make_unary_function_test("cosh", (-3, 3), 2e-6, use_complex=2e-3)
     test_tanh = make_unary_function_test("tanh", (-3, 3), 2e-6, use_complex=True)
 
 
