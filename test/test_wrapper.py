@@ -201,7 +201,7 @@ def test_nonempty_supported_image_formats(device, ctx_factory):
         assert len(cl.get_supported_image_formats(
                 context, cl.mem_flags.READ_ONLY, cl.mem_object_type.IMAGE2D)) > 0
     else:
-        from py.test import skip
+        from pytest import skip
         skip("images not supported on %s" % device.name)
 
 @pytools.test.mark_test.opencl
@@ -243,11 +243,11 @@ def test_image_2d(ctx_factory):
     device, = context.devices
 
     if not device.image_support:
-        from py.test import skip
+        from pytest import skip
         skip("images not supported on %s" % device)
 
     if "Intel" in device.vendor and "31360.31426" in device.version:
-        from py.test import skip
+        from pytest import skip
         skip("images crashy on %s" % device)
 
     prg = cl.Program(context, """
@@ -281,7 +281,7 @@ def test_image_2d(ctx_factory):
         import sys
         exc = sys.exc_info()[1]
         if exc.code == cl.status_code.IMAGE_FORMAT_NOT_SUPPORTED:
-            from py.test import skip
+            from pytest import skip
             skip("required image format not supported on %s" % device.name)
         else:
             raise
@@ -313,11 +313,11 @@ def test_image_3d(ctx_factory):
     device, = context.devices
 
     if not device.image_support:
-        from py.test import skip
+        from pytest import skip
         skip("images not supported on %s" % device)
 
     if device.platform.vendor == "Intel(R) Corporation":
-        from py.test import skip
+        from pytest import skip
         skip("images crashy on %s" % device)
 
     prg = cl.Program(context, """
@@ -352,7 +352,7 @@ def test_image_3d(ctx_factory):
         import sys
         exc = sys.exc_info()[1]
         if exc.code == cl.status_code.IMAGE_FORMAT_NOT_SUPPORTED:
-            from py.test import skip
+            from pytest import skip
             skip("required image format not supported on %s" % device.name)
         else:
             raise
@@ -516,5 +516,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
     else:
-        from py.test.cmdline import main
+        from pytest.cmdline import main
         main([__file__])

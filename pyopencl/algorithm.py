@@ -80,7 +80,10 @@ def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
             more_preamble=preamble, more_arguments=extra_args_types)
     out = cl.array.empty_like(ary)
     count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
-    knl(ary, out, count, *extra_args_values, queue=queue)
+
+    # **dict is a Py2.5 workaround
+    knl(ary, out, count, *extra_args_values, **dict(queue=queue))
+
     return out, count
 
 # }}}

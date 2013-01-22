@@ -216,7 +216,7 @@ def test_astype(ctx_factory):
     from pyopencl.clrandom import rand as clrand
 
     if not has_double_support(context.devices[0]):
-        from py.test import skip
+        from pytest import skip
         skip("double precision not supported on %s" % context.devices[0])
 
     a_gpu = clrand(queue, (2000,), dtype=np.float32)
@@ -241,6 +241,9 @@ def test_astype(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_sum(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -258,6 +261,9 @@ def test_sum(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_minmax(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -281,6 +287,9 @@ def test_minmax(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_subset_minmax(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -321,6 +330,9 @@ def test_subset_minmax(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_dot(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -360,6 +372,9 @@ def make_mmc_dtype(device):
 
 @pytools.test.mark_test.opencl
 def test_struct_reduce(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -418,6 +433,9 @@ def test_struct_reduce(ctx_factory):
 # {{{ scan-related
 
 def summarize_error(obtained, desired, orig, thresh=1e-5):
+    from pytest import importorskip
+    importorskip("mako")
+
     err = obtained - desired
     ok_count = 0
     bad_count = 0
@@ -475,6 +493,9 @@ scan_test_counts = [
 
 @pytools.test.mark_test.opencl
 def test_scan(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -511,6 +532,9 @@ def test_scan(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_copy_if(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -578,6 +602,9 @@ def test_unique(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_index_preservation(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -608,6 +635,9 @@ def test_index_preservation(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_segmented_scan(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -702,6 +732,9 @@ def test_segmented_scan(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_sort(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -741,6 +774,9 @@ def test_sort(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_list_builder(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -764,6 +800,9 @@ def test_list_builder(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_key_value_sorter(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -804,7 +843,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
     else:
-        from py.test.cmdline import main
+        from pytest.cmdline import main
         main([__file__])
 
 # vim: filetype=pyopencl:fdm=marker

@@ -206,7 +206,7 @@ def test_bessel(ctx_factory):
     try:
         import scipy.special as spec
     except ImportError:
-        from py.test import skip
+        from pytest import skip
         skip("scipy not present--cannot test Bessel function")
 
 
@@ -214,7 +214,7 @@ def test_bessel(ctx_factory):
     queue = cl.CommandQueue(ctx)
 
     if not has_double_support(ctx.devices[0]):
-        from py.test import skip
+        from pytest import skip
         skip("no double precision support--cannot test bessel function")
 
     nterms = 30
@@ -299,5 +299,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
     else:
-        from py.test.cmdline import main
+        from pytest.cmdline import main
         main([__file__])

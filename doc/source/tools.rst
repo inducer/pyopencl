@@ -117,7 +117,7 @@ Testing
         from pyopencl.tools import pytest_generate_tests_for_pyopencl \
                 as pytest_generate_tests
 
-    in your `py.test <http://pytest.org>`_ test scripts allows you to use the
+    in your `pytest <http://pytest.org>`_ test scripts allows you to use the
     arguments *ctx_factory*, *device*, or *platform* in your test functions,
     and they will automatically be run for each OpenCL device/platform in the
     system, as appropriate.

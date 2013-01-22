@@ -174,7 +174,7 @@ def test_pow_neg1_vs_inv(ctx_factory):
 
     device = ctx.devices[0]
     if not has_double_support(device):
-        from py.test import skip
+        from pytest import skip
         skip("double precision not supported on %s" % device)
 
     a_dev = make_random_array(queue, np.complex128, 20000)
@@ -508,10 +508,8 @@ def test_mem_pool_with_arrays(ctx_factory):
     a_dev = cl_array.arange(queue, 2000, dtype=np.float32, allocator=mem_pool)
     b_dev = cl_array.to_device(queue, np.arange(2000), allocator=mem_pool) + 4000
 
-    result = cl_array.dot(a_dev, b_dev)
     assert a_dev.allocator is mem_pool
     assert b_dev.allocator is mem_pool
-    assert result.allocator is mem_pool
 
 @pytools.test.mark_test.opencl
 def test_view(ctx_factory):
@@ -569,7 +567,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
     else:
-        from py.test.cmdline import main
+        from pytest.cmdline import main
         main([__file__])
 
 # vim: filetype=pyopencl:fdm=marker
