@@ -786,7 +786,7 @@ def test_key_value_sorter(ctx_factory):
     for k, v in zip(keys.get(), values.get()):
         mydict.setdefault(k, []).append(v)
 
-    for i in xrange(nkeys):
+    for i in range(nkeys):
         start, end = starts[i:i+2]
         assert sorted(mydict[i]) == sorted(lists[start:end])
 
