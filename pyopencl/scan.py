@@ -517,7 +517,7 @@ void ${name_prefix}_scan_intervals(
 
                 const index_type scan_types_per_int = ${scan_dtype.itemsize//4};
 
-                %for store_base in xrange(0, ints_to_store, ints_per_wg):
+                %for store_base in range(0, ints_to_store, ints_per_wg):
                     <%
 
                     # Observe that ints_to_store is divisible by the work group size already,
@@ -761,7 +761,7 @@ _IGNORED_WORDS = set("""
         4 8 32
 
         typedef for endfor if void while endwhile endfor endif else const printf
-        None return bool n char true false ifdef pycl_printf str xrange assert
+        None return bool n char true false ifdef pycl_printf str range assert
         np iinfo max itemsize __packed__ struct restrict
 
         set iteritems len setdefault
