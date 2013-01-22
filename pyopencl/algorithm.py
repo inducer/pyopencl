@@ -159,7 +159,10 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
     out_true = cl.array.empty_like(ary)
     out_false = cl.array.empty_like(ary)
     count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
-    knl(ary, out_true, out_false, count, *extra_args_values, queue=queue)
+
+    # **dict is a Py2.5 workaround
+    knl(ary, out_true, out_false, count, *extra_args_values, **dict(queue=queue))
+
     return out_true, out_false, count
 
 # }}}
@@ -217,7 +220,10 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
 
     out = cl.array.empty_like(ary)
     count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
-    knl(ary, out, count, *extra_args_values, queue=queue)
+
+    # **dict is a Py2.5 workaround
+    knl(ary, out, count, *extra_args_values, **dict(queue=queue))
+
     return out, count
 
 # }}}
