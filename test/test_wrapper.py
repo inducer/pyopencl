@@ -189,9 +189,13 @@ class TestCL:
         except AttributeError:
             pass
         except RuntimeError:
-            raise RuntimeError("weird exception from OpenCL implementation "
-                    "on invalid kernel name--are you using "
-                    "Intel's implementation? (if so, known bug in Intel CL)")
+            if "Intel" in device.platform.vendor:
+                from pytest import xfail
+                xfail("weird exception from OpenCL implementation "
+                        "on invalid kernel name--are you using "
+                        "Intel's implementation? (if so, known bug in Intel CL)")
+            else:
+                raise
 
     @pytools.test.mark_test.opencl
     def test_image_format_constructor(self):
@@ -255,9 +259,9 @@ class TestCL:
             from py.test import skip
             skip("images not supported on %s" % device)
 
-        #if device.platform.vendor == "Intel(R) Corporation":
-            #from py.test import skip
-            #skip("images crashy on %s" % device)
+        if "Intel" in device.vendor and "31360.31426" in device.version:
+            from py.test import skip
+            skip("images crashy on %s" % device)
 
         prg = cl.Program(context, """
             __kernel void copy_image(
