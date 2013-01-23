@@ -836,7 +836,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
     else:
-        from pytest.cmdline import main
+        from py.test.cmdline import main
         main([__file__])
 
 # vim: filetype=pyopencl:fdm=marker
