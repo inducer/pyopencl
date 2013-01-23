@@ -224,7 +224,7 @@ class Image(_cl._ImageBase):
         if hostbuf is None and pitches is not None:
             raise Error("'pitches' may only be given if 'hostbuf' is given")
 
-        if get_cl_header_version() >= (1,2):
+        if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
             if buffer is not None and is_array:
                     raise ValueError("'buffer' and 'is_array' are mutually exclusive")
 
@@ -387,11 +387,26 @@ def _add_functionality():
     # }}}
 
     # {{{ Context
+
     def context_repr(self):
         return "<pyopencl.Context at 0x%x on %s>" % (self.obj_ptr,
                 ", ".join(repr(dev) for dev in self.devices))
 
+    def context_get_cl_version(self):
+        import re
+        platform = self.devices[0].platform
+        plat_version_string = platform.version
+        match = re.match(r"^OpenCL ([0-9]+)\.([0-9]+) .*$",
+                plat_version_string)
+        if match is None:
+            raise RuntimeError("platform %s returned non-conformant "
+                    "platform version string '%s'" % (platform, plat_version_string))
+
+        return int(match.group(1)), int(match.group(2))
+
     Context.__repr__ = context_repr
+    from pytools import memoize_method
+    Context._get_cl_version = memoize_method(context_get_cl_version)
 
     # }}}
 
