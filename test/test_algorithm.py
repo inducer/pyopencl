@@ -546,6 +546,9 @@ def test_copy_if(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_partition(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
