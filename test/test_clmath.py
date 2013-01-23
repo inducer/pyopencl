@@ -118,8 +118,8 @@ if have_cl():
     test_cos = make_unary_function_test("cos", (-10, 10), 2e-7, use_complex=2e-2)
     test_asin = make_unary_function_test("asin", (-0.9, 0.9), 5e-7)
     test_acos = make_unary_function_test("acos", (-0.9, 0.9), 5e-7)
-    test_tan = make_unary_function_test("tan", 
-            (-math.pi/2 + 0.1, math.pi/2 - 0.1), 2e-5, use_complex=True)
+    test_tan = make_unary_function_test("tan",
+            (-math.pi/2 + 0.1, math.pi/2 - 0.1), 4e-5, use_complex=True)
     test_atan = make_unary_function_test("atan", (-10, 10), 2e-7)
 
     test_sinh = make_unary_function_test("sinh", (-3, 3), 2e-6, use_complex=2e-3)

@@ -29,21 +29,12 @@ import pytools.test
 from pytools import memoize
 from test_array import general_clrand
 
-
-def have_cl():
-    try:
-        import pyopencl
-        return True
-    except:
-        return False
-
-if have_cl():
-    import pyopencl as cl
-    import pyopencl.array as cl_array
-    import pyopencl.tools as cl_tools
-    from pyopencl.tools import pytest_generate_tests_for_pyopencl \
-            as pytest_generate_tests
-    from pyopencl.characterize import has_double_support
+import pyopencl as cl
+import pyopencl.array as cl_array
+import pyopencl.tools as cl_tools
+from pyopencl.tools import pytest_generate_tests_for_pyopencl \
+        as pytest_generate_tests
+from pyopencl.characterize import has_double_support
 
 
 
@@ -579,6 +570,9 @@ def test_partition(ctx_factory):
 
 @pytools.test.mark_test.opencl
 def test_unique(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -835,10 +829,6 @@ def test_key_value_sorter(ctx_factory):
 
 
 if __name__ == "__main__":
-    # make sure that import failures get reported, instead of skipping the
-    # tests.
-    import pyopencl as cl
-
     import sys
     if len(sys.argv) > 1:
         exec(sys.argv[1])
