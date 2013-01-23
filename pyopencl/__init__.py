@@ -497,10 +497,8 @@ def _add_functionality():
     # }}}
 
     # {{{ Kernel
-    def kernel_call(self, queue, global_size, *args, **kwargs):
+    def kernel_call(self, queue, global_size, local_size, *args, **kwargs):
         global_offset = kwargs.pop("global_offset", None)
-        had_local_size = "local_size" in kwargs
-        local_size = kwargs.pop("local_size", None)
         g_times_l = kwargs.pop("g_times_l", False)
         wait_for = kwargs.pop("wait_for", None)
 
@@ -508,28 +506,6 @@ def _add_functionality():
             raise TypeError(
                     "Kernel.__call__ recived unexpected keyword arguments: %s"
                     % ", ".join(kwargs.keys()))
-
-        if had_local_size:
-            from warnings import warn
-            warn("The local_size keyword argument is deprecated and will be "
-                    "removed in pyopencl 2012.x. Pass the local "
-                    "size as the third positional argument instead.",
-                    DeprecationWarning, stacklevel=2)
-
-        if isinstance(args[0], (type(None), tuple)) and not had_local_size:
-            local_size = args[0]
-            args = args[1:]
-        elif not had_local_size:
-            from warnings import warn
-            warn("PyOpenCL Warning: There was an API change "
-                    "in Kernel.__call__() in pyopencl 0.92. "
-                    "local_size was moved from keyword argument to third "
-                    "positional argument in pyopencl 0.92. "
-                    "You didn't pass local_size, but you still need to insert "
-                    "'None' as a third argument. "
-                    "Your present usage is deprecated and will stop "
-                    "working in pyopencl 2012.x.",
-                    DeprecationWarning, stacklevel=2)
 
         self.set_args(*args)
 
