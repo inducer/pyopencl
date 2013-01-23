@@ -757,22 +757,16 @@ np_complex_float(char *p, PyObject *v, const formatdef *f)
 		float im = 0.0f;
 		Py_complex cplx;
 #if (PY_VERSION_HEX < 0x02060000)
+			if (PyComplex_Check(v))
+				cplx = PyComplex_AsCComplex(v);
+			else if (PyObject_HasAttrString(v, "__complex__"))
 			{
-				if (PyComplex_Check(v))
-					cplx = PyComplex_AsCComplex(v);
-				else if (PyObject_HasAttrString(v, "__complex__"))
-				{
-					PyObject *v2 = PyObject_CallMethod(v, "__complex__", "");
-					cplx = PyComplex_AsCComplex(v2);
-					Py_DECREF(v2);
-				}
-				else
-				{
-					PyErr_SetString(StructError,
-							"required argument is not a complex");
-					return -1;
-				}
+				PyObject *v2 = PyObject_CallMethod(v, "__complex__", "");
+				cplx = PyComplex_AsCComplex(v2);
+				Py_DECREF(v2);
 			}
+			else
+				cplx = PyComplex_AsCComplex(v);
 #else
 			cplx = PyComplex_AsCComplex(v);
 #endif
@@ -807,22 +801,16 @@ np_complex_double(char *p, PyObject *v, const formatdef *f)
 		double im = 0.0;
 		Py_complex cplx;
 #if (PY_VERSION_HEX < 0x02060000)
+			if (PyComplex_Check(v))
+				cplx = PyComplex_AsCComplex(v);
+			else if (PyObject_HasAttrString(v, "__complex__"))
 			{
-				if (PyComplex_Check(v))
-					cplx = PyComplex_AsCComplex(v);
-				else if (PyObject_HasAttrString(v, "__complex__"))
-				{
-					PyObject *v2 = PyObject_CallMethod(v, "__complex__", "");
-					cplx = PyComplex_AsCComplex(v2);
-					Py_DECREF(v2);
-				}
-				else
-				{
-					PyErr_SetString(StructError,
-							"required argument is not a complex");
-					return -1;
-				}
+				PyObject *v2 = PyObject_CallMethod(v, "__complex__", "");
+				cplx = PyComplex_AsCComplex(v2);
+				Py_DECREF(v2);
 			}
+			else
+				cplx = PyComplex_AsCComplex(v);
 #else
 			cplx = PyComplex_AsCComplex(v);
 #endif
