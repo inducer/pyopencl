@@ -756,7 +756,7 @@ np_complex_float(char *p, PyObject *v, const formatdef *f)
 		float re = 0.0f;
 		float im = 0.0f;
 		Py_complex cplx;
-#if (PY_VERSION_HEX < 0x02050000)
+#if (PY_VERSION_HEX < 0x02060000)
 			{
 				if (PyComplex_Check(v))
 					cplx = PyComplex_AsCComplex(v);
@@ -806,7 +806,7 @@ np_complex_double(char *p, PyObject *v, const formatdef *f)
 		double re = 0.0;
 		double im = 0.0;
 		Py_complex cplx;
-#if (PY_VERSION_HEX < 0x02050000)
+#if (PY_VERSION_HEX < 0x02060000)
 			{
 				if (PyComplex_Check(v))
 					cplx = PyComplex_AsCComplex(v);
