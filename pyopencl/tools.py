@@ -324,7 +324,7 @@ def get_gl_sharing_context_properties():
     props = []
 
     import sys
-    if sys.platform == "linux2":
+    if sys.platform in ["linux", "linux2"]:
         props.append(
             (ctx_props.GL_CONTEXT_KHR, gl_platform.GetCurrentContext()))
         props.append(
