@@ -166,7 +166,11 @@ class Program(object):
                 finally:
                     srcfile.close()
 
-                what = e.what + "\n(source saved as %s)" % srcfile.name
+                what = e.what
+                if options:
+                    what = what + "\n(options: %s)" % " ".join(options)
+                what = what + "\n(source saved as %s)" % srcfile.name
+
                 code = e.code
                 routine = e.routine
 
@@ -628,34 +632,8 @@ _add_functionality()
 # {{{ find pyopencl shipped source code
 
 def _find_pyopencl_include_path():
-    from imp import find_module
-    import sys
-    file, pathname, descr = find_module("pyopencl")
-
-    # Who knew Python installation is so uniform and predictable?
-    from os.path import join, exists
-    possible_include_paths = [
-            join(pathname, "..", "include", "pyopencl"),
-            join(pathname, "..", "src", "cl"),
-            join(pathname, "..", "..", "..", "src", "cl"),
-            join(pathname, "..", "..", "..", "..", "include", "pyopencl"),
-            join(pathname, "..", "..", "..", "include", "pyopencl"),
-            ]
-
-    if sys.platform in ("linux2", "darwin"):
-        possible_include_paths.extend([
-            join(sys.prefix, "include" , "pyopencl"),
-            "/usr/include/pyopencl",
-            "/usr/local/include/pyopencl"
-            ])
-
-    for inc_path in possible_include_paths:
-        if exists(inc_path):
-            return inc_path
-
-    raise RuntimeError("could not find path to PyOpenCL's CL"
-            " header files, searched in : %s"
-            % '\n'.join(possible_include_paths))
+    from pkg_resources import Requirement, resource_filename
+    return resource_filename(Requirement.parse("pyopencl"), "pyopencl/cl")
 
 # }}}
 
