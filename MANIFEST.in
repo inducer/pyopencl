@@ -1,5 +1,5 @@
-include src/cl/*.h
-include src/cl/*.cl
+include pyopencl/cl/*.h
+include pyopencl/cl/*.cl
 
 include src/wrapper/*.hpp
 include src/wrapper/*.cpp

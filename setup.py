@@ -178,7 +178,14 @@ def main():
               'Natural Language :: English',
               'Programming Language :: C++',
               'Programming Language :: Python',
+              'Programming Language :: Python :: 2',
+              'Programming Language :: Python :: 2.4',
+              'Programming Language :: Python :: 2.5',
+              'Programming Language :: Python :: 2.6',
+              'Programming Language :: Python :: 2.7',
               'Programming Language :: Python :: 3',
+              'Programming Language :: Python :: 3.2',
+              'Programming Language :: Python :: 3.3',
               'Topic :: Scientific/Engineering',
               'Topic :: Scientific/Engineering :: Mathematics',
               'Topic :: Scientific/Engineering :: Physics',
@@ -228,7 +235,8 @@ def main():
                     },
 
             # 2to3 invocation
-            cmdclass={'build_py': build_py})
+            cmdclass={'build_py': build_py},
+            zip_safe=False)
 
 
 
