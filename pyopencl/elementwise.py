@@ -70,8 +70,19 @@ def get_elwise_program(context, arguments, operation,
           }
           """
 
+    import re
+    return_match = re.search(r"\breturn\b", operation);
+    if return_match is not None:
+        from warnings import warn
+        warn("Using a 'return' statement in an element-wise operation will likely "
+                "lead to incorrect results. Use PYOPENCL_ELWISE_CONTINUE instead.",
+                stacklevel=3)
+
+
     source = ("""//CL//
         %(preamble)s
+
+        #define PYOPENCL_ELWISE_CONTINUE continue
 
         __kernel void %(name)s(%(arguments)s)
         {
@@ -168,6 +179,28 @@ def get_elwise_kernel(context, arguments, operation,
 # {{{ ElementwiseKernel driver
 
 class ElementwiseKernel:
+    """
+    A kernel that takes a number of scalar or vector *arguments* and performs
+    an *operation* specified as a snippet of C on these arguments.
+
+    :arg arguments: a string formatted as a C argument list.
+    :arg operation: a snippet of C that carries out the desired 'map' operation.
+        The current index is available as the variable *i*.
+        *operation* may contain the statement ``PYOPENCL_ELWISE_CONTINUE``, which
+        will terminate processing for the current element.
+    :arg name: the function name as which the kernel is compiled
+    :arg options: passed unmodified to :meth:`pyopencl.Program.build`.
+    :arg preamble: a piece of C source code that gets inserted outside of the
+        function context in the elementwise operation's kernel source code.
+
+    .. warning :: Using a `return` statement in *operation* will lead to incorrect
+        results, as some elements may never get processed. Use ``PYOPENCL_ELWISE_CONTINUE``
+        instead.
+
+    .. versionchanged:: 2013.1
+        Added ``PYOPENCL_ELWISE_CONTINUE``.
+    """
+
     def __init__(self, context, arguments, operation,
             name="elwise_kernel", options=[], **kwargs):
         self.context = context

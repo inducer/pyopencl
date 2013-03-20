@@ -12,21 +12,7 @@ is created for each intermediate result. The functionality in the module
 :mod:`pyopencl.elementwise` contains tools to help generate kernels that
 evaluate multi-stage expressions on one or several operands in a single pass.
 
-.. class:: ElementwiseKernel(context, arguments, operation, name="kernel", preamble="", options=[])
-
-    Generate a kernel that takes a number of scalar or vector *arguments*
-    and performs the scalar *operation* on each entry of its arguments, if that
-    argument is a vector.
-
-    *arguments* is specified as a string formatted as a C argument list.
-    *operation* is specified as a C assignment statement, without a semicolon.
-    Vectors in *operation* should be indexed by the variable *i*.
-
-    *name* specifies the name as which the kernel is compiled, 
-    and *options* are passed unmodified to :meth:`pyopencl.Program.build`.
-
-    *preamble* is a piece of C source code that gets inserted outside of the
-    function context in the elementwise operation's kernel source code.
+.. autoclass:: ElementwiseKernel(context, arguments, operation, name="kernel", preamble="", options=[])
 
     .. method:: __call__(*args, wait_for=None)
 
