@@ -226,7 +226,7 @@ def test_bessel(ctx_factory):
     else:
         use_pyfmmlib = True
 
-    print "PYFMMLIB", use_pyfmmlib
+    print("PYFMMLIB", use_pyfmmlib)
 
     if use_pyfmmlib:
         a = np.logspace(-3, 3, 10**6)
