@@ -452,7 +452,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     for field_name, (field_dtype, offset) in fields:
         c_fields.append("  %s %s;" % (dtype_to_ctype(field_dtype), field_name))
 
-    c_decl = "typedef struct {\n%s\n} %s;" % (
+    c_decl = "typedef struct {\n%s\n} %s;\n\n" % (
             "\n".join(c_fields),
             name)
 
@@ -663,8 +663,8 @@ class _TemplateRenderer(object):
 
         for arg_list in arg_lists:
             if isinstance(arg_list, str):
-                if arg_list.startswith("//CL//"):
-                    arg_list = arg_list[6:]
+                arg_list = str(
+                        self.template.get_text_template(arg_list).render(self.var_dict))
                 arg_list = self._C_COMMENT_FINDER.sub("", arg_list)
                 arg_list = arg_list.replace("\n", " ")
 
