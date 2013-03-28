@@ -1538,18 +1538,18 @@ class ScanTemplate(KernelTemplateBase):
         self.name_prefix = name_prefix
         self.preamble = preamble
 
-    def build_inner(self, context, type_values, var_values,
+    def build_inner(self, context, type_aliases, var_values,
             more_preamble="", more_arguments=(), declare_types=(),
             options=(), devices=None, scan_cls=GenericScanKernel):
-        renderer = self.get_renderer(type_values, var_values, context, options)
+        renderer = self.get_renderer(type_aliases, var_values, context, options)
 
-        return scan_cls(context, renderer.type_dict["scan_t"],
+        return scan_cls(context, renderer.type_aliases["scan_t"],
             renderer.render_argument_list(self.arguments, more_arguments),
             renderer(self.input_expr), renderer(self.scan_expr), renderer(self.neutral),
             renderer(self.output_statement),
             is_segment_start_expr=renderer(self.is_segment_start_expr),
             input_fetch_exprs=self.input_fetch_exprs,
-            index_dtype=renderer.type_dict.get("index_t", np.int32),
+            index_dtype=renderer.type_aliases.get("index_t", np.int32),
             name_prefix=renderer(self.name_prefix), options=list(options),
             preamble=renderer(more_preamble+"\n"+self.preamble), devices=devices)
 

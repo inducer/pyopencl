@@ -371,7 +371,12 @@ class _CDeclList:
         if dtype in self.declared_dtypes:
             return
 
-        for name, (field_dtype, offset) in dtype.fields.iteritems():
+        from pyopencl.array import vec
+        if dtype in vec.type_to_scalar_and_count:
+            return
+
+        for name, field_data in dtype.fields.iteritems():
+            field_dtype, offset = field_data[:2]
             self.add_dtype(field_dtype)
 
         _, cdecl = match_dtype_to_c_struct(self.device, dtype_to_ctype(dtype), dtype)
@@ -391,15 +396,15 @@ class _CDeclList:
     def get_declarations(self):
         result = "\n\n".join(self.declarations)
 
+        if self.saw_complex:
+            result = (
+                    "#include <pyopencl-complex.h>\n\n"
+                    + result)
+
         if self.saw_double:
             result = (
                     "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n"
                     "#define PYOPENCL_DEFINE_CDOUBLE\n"
-                    + result)
-
-        if self.saw_complex:
-            result = (
-                    "#include <pyopencl-complex.h>\n\n"
                     + result)
 
         return result
@@ -607,9 +612,9 @@ class _ScalarArgPlaceholder(_ArgumentPlaceholder):
 
 
 class _TemplateRenderer(object):
-    def __init__(self, template, type_values, var_values, context=None, options=[]):
+    def __init__(self, template, type_aliases, var_values, context=None, options=[]):
         self.template = template
-        self.type_dict = dict(type_values)
+        self.type_aliases = dict(type_aliases)
         self.var_dict = dict(var_values)
 
         for name in self.var_dict:
@@ -625,10 +630,6 @@ class _TemplateRenderer(object):
 
         result = self.template.get_text_template(txt).render(self.var_dict)
 
-        # substitute in types
-        for name, dtype in self.type_dict.iteritems():
-            result = re.sub(r"\b%s\b" % name, dtype_to_ctype(dtype), result)
-
         return str(result)
 
     def get_rendered_kernel(self, txt, kernel_name):
@@ -643,7 +644,7 @@ class _TemplateRenderer(object):
     def parse_type(self, typename):
         if isinstance(typename, str):
             try:
-                return self.type_dict[typename]
+                return self.type_aliases[typename]
             except KeyError:
                 from pyopencl.compyte.dtypes import NAME_TO_DTYPE
                 return NAME_TO_DTYPE[typename]
@@ -702,8 +703,15 @@ class _TemplateRenderer(object):
         if arguments is not None:
             cdl.visit_arguments(arguments)
 
-        return cdl.get_declarations()
+        for tv in self.type_aliases.itervalues():
+            cdl.add_dtype(tv)
 
+        type_alias_decls = [
+                "typedef %s %s;" % (dtype_to_ctype(val), name)
+                for name, val in self.type_aliases.iteritems()
+                ]
+
+        return cdl.get_declarations() + "\n" + "\n".join(type_alias_decls)
 
 
 
@@ -741,8 +749,8 @@ class KernelTemplateBase(object):
         else:
             raise RuntimeError("unknown template processor '%s'" % proc_match.group(1))
 
-    def get_renderer(self, type_values, var_values, context=None, options=[]):
-        return _TemplateRenderer(self, type_values, var_values)
+    def get_renderer(self, type_aliases, var_values, context=None, options=[]):
+        return _TemplateRenderer(self, type_aliases, var_values)
 
     def build(self, context, *args, **kwargs):
         """Provide caching for an :meth:`build_inner`."""

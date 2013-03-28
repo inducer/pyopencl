@@ -312,10 +312,10 @@ class ElementwiseTemplate(KernelTemplateBase):
         self.name = name
         self.preamble = preamble
 
-    def build_inner(self, context, type_values, var_values,
+    def build_inner(self, context, type_aliases, var_values,
             more_preamble="", more_arguments=(), declare_types=(),
             options=()):
-        renderer = self.get_renderer(type_values, var_values, context, options)
+        renderer = self.get_renderer(type_aliases, var_values, context, options)
 
         arg_list = renderer.render_argument_list(self.arguments, more_arguments)
         type_decl_preamble = renderer.get_type_decl_preamble(
@@ -327,7 +327,7 @@ class ElementwiseTemplate(KernelTemplateBase):
             preamble=(
                 type_decl_preamble
                 + "\n" + renderer(self.preamble + "\n" + more_preamble)),
-            auto_preamble=True)
+            auto_preamble=False)
 
 # }}}
 

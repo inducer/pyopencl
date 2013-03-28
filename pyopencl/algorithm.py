@@ -75,7 +75,7 @@ def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
     extra_args_values = tuple(val for name, val in extra_args)
 
     knl = _copy_if_template.build(ary.context,
-            type_values=(("scan_t", scan_dtype), ("item_t", ary.dtype)),
+            type_aliases=(("scan_t", scan_dtype), ("item_t", ary.dtype)),
             var_values=(("predicate", predicate),),
             more_preamble=preamble, more_arguments=extra_args_types)
     out = cl.array.empty_like(ary)
@@ -152,7 +152,7 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
 
     knl = _partition_template.build(
             ary.context,
-            type_values=(("item_t", ary.dtype), ("scan_t", scan_dtype)),
+            type_aliases=(("item_t", ary.dtype), ("scan_t", scan_dtype)),
             var_values=(("predicate", predicate),),
             more_preamble=preamble, more_arguments=extra_args_types)
 
@@ -214,7 +214,7 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
 
     knl = _unique_template.build(
             ary.context,
-            type_values=(("item_t", ary.dtype), ("scan_t", scan_dtype)),
+            type_aliases=(("item_t", ary.dtype), ("scan_t", scan_dtype)),
             var_values=(("macro_is_equal_expr", is_equal_expr),),
             more_preamble=preamble, more_arguments=extra_args_types)
 
@@ -1075,7 +1075,7 @@ class KeyValueSorter(object):
                     key_group_starts[my_key] = i;
                 """,
                 name="find_starts").build(self.context,
-                        type_values=(
+                        type_aliases=(
                             ("key_t", starts_dtype),
                             ("starts_t", starts_dtype),
                             ),
