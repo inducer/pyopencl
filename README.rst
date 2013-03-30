@@ -30,5 +30,5 @@ spirit of its sister project `PyCUDA <http://mathema.tician.de/software/pycuda>`
 
 Like PyOpenCL? (And perhaps use it for `bitcoin
 <http://bitcoin.org>`_ mining?) Leave a (bitcoin) tip:
-1HGPQitv27CdENBcH1bstu5B3zeqXRDwtY
+1AwrFPb8sR6h9czi8qj68CxC9pwUKvMGfB
 
