@@ -326,7 +326,8 @@ class ElementwiseTemplate(KernelTemplateBase):
             name=renderer(self.name), options=list(options),
             preamble=(
                 type_decl_preamble
-                + "\n" + renderer(self.preamble + "\n" + more_preamble)),
+                + "\n"
+                + renderer(self.preamble + "\n" + more_preamble)),
             auto_preamble=False)
 
 # }}}

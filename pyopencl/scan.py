@@ -1543,6 +1543,11 @@ class ScanTemplate(KernelTemplateBase):
             options=(), devices=None, scan_cls=GenericScanKernel):
         renderer = self.get_renderer(type_aliases, var_values, context, options)
 
+        arg_list = renderer.render_argument_list(self.arguments, more_arguments)
+
+        type_decl_preamble = renderer.get_type_decl_preamble(
+                context.devices[0], declare_types, arg_list)
+
         return scan_cls(context, renderer.type_aliases["scan_t"],
             renderer.render_argument_list(self.arguments, more_arguments),
             renderer(self.input_expr), renderer(self.scan_expr), renderer(self.neutral),
@@ -1551,7 +1556,11 @@ class ScanTemplate(KernelTemplateBase):
             input_fetch_exprs=self.input_fetch_exprs,
             index_dtype=renderer.type_aliases.get("index_t", np.int32),
             name_prefix=renderer(self.name_prefix), options=list(options),
-            preamble=renderer(more_preamble+"\n"+self.preamble), devices=devices)
+            preamble=(
+                type_decl_preamble
+                + "\n"
+                + renderer(self.preamble + "\n" + more_preamble)),
+            devices=devices)
 
 # }}}
 
