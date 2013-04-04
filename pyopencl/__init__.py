@@ -138,14 +138,15 @@ class Program(object):
         options = options + ["-I", _find_pyopencl_include_path()]
 
         import os
+        forced_options = os.environ.get("PYOPENCL_BUILD_OPTIONS")
+        if forced_options:
+            options = options + forced_options.split()
+
         if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
             self._prg = _cl._Program(self._context, self._source)
 
         if self._prg is not None:
-            if isinstance(options, list):
-                options = " ".join(options)
-
-            self._prg._build(options, devices)
+            self._prg._build(" ".join(options), devices)
         else:
             from pyopencl.cache import create_built_program_from_source_cached
 
