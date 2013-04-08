@@ -154,6 +154,9 @@ class Program(object):
                     lambda: self._prg.build(" ".join(options), devices),
                     options=options)
 
+            if hasattr(self, "_source"):
+                del self._source
+
         else:
             # cached
 
@@ -164,8 +167,8 @@ class Program(object):
                         cache_dir=cache_dir),
                     options=options)
 
-        del self._context
-        del self._source
+            del self._context
+            del self._source
 
         return self
 
