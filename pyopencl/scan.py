@@ -1272,6 +1272,10 @@ class GenericScanKernel(_GenericScanKernelBase):
         if n is None:
             n, = first_array.shape
 
+        if n == 0:
+            # We're done here.
+            return
+
         data_args = []
         from pyopencl.tools import VectorArg
         for arg_descr, arg_val in zip(self.parsed_args, args):
