@@ -144,8 +144,11 @@ class Program(object):
         if forced_options:
             options = options + forced_options.split()
 
+        do_del_source = False
         if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
             self._prg = _cl._Program(self._context, self._source)
+
+            do_del_source = True
 
         if self._prg is not None:
             # uncached
@@ -153,9 +156,6 @@ class Program(object):
             self._build_and_catch_errors(
                     lambda: self._prg.build(" ".join(options), devices),
                     options=options)
-
-            if hasattr(self, "_source"):
-                del self._source
 
         else:
             # cached
@@ -168,6 +168,9 @@ class Program(object):
                     options=options)
 
             del self._context
+            do_del_source = True
+
+        if do_del_source:
             del self._source
 
         return self
