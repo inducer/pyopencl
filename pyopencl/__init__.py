@@ -131,6 +131,8 @@ class Program(object):
             raise AttributeError("'%s' was not found as a program "
                     "info attribute or as a kernel name" % attr)
 
+    # {{{ build
+
     def build(self, options=[], devices=None, cache_dir=None):
         if isinstance(options, str):
             options = [options]
@@ -146,20 +148,40 @@ class Program(object):
             self._prg = _cl._Program(self._context, self._source)
 
         if self._prg is not None:
-            self._prg._build(" ".join(options), devices)
+            # uncached
+
+            self._build_and_catch_errors(
+                    lambda: self._prg.build(" ".join(options), devices),
+                    options=options)
+
         else:
+            # cached
+
             from pyopencl.cache import create_built_program_from_source_cached
-
-            err = None
-            try:
-                self._prg = create_built_program_from_source_cached(
+            self._prg = self._build_and_catch_errors(
+                    lambda: create_built_program_from_source_cached(
                         self._context, self._source, options, devices,
-                        cache_dir=cache_dir)
-            except _cl.RuntimeError, e:
-                from pytools import Record
-                class ErrorRecord(Record):
-                    pass
+                        cache_dir=cache_dir),
+                    options=options)
 
+        del self._context
+        del self._source
+
+        return self
+
+    def _build_and_catch_errors(self, build_func, options):
+        try:
+            return build_func()
+        except _cl.RuntimeError, e:
+            from pytools import Record
+            class ErrorRecord(Record):
+                pass
+
+            what = e.what
+            if options:
+                what = what + "\n(options: %s)" % " ".join(options)
+
+            if self._source is not None:
                 from tempfile import NamedTemporaryFile
                 srcfile = NamedTemporaryFile(mode="wt", delete=False, suffix=".cl")
                 try:
@@ -167,33 +189,28 @@ class Program(object):
                 finally:
                     srcfile.close()
 
-                what = e.what
-                if options:
-                    what = what + "\n(options: %s)" % " ".join(options)
                 what = what + "\n(source saved as %s)" % srcfile.name
 
-                code = e.code
-                routine = e.routine
+            code = e.code
+            routine = e.routine
 
-                err = _cl.RuntimeError(
-                        ErrorRecord(
-                            what=lambda : what,
-                            code=lambda : code,
-                            routine=lambda : routine))
+            err = _cl.RuntimeError(
+                    ErrorRecord(
+                        what=lambda : what,
+                        code=lambda : code,
+                        routine=lambda : routine))
 
-            if err is not None:
-                # Python 3.2 outputs the whole list of currently active exceptions
-                # This serves to remove one (redundant) level from that nesting.
-                raise err
+        # Python 3.2 outputs the whole list of currently active exceptions
+        # This serves to remove one (redundant) level from that nesting.
+        raise err
 
-            del self._context
-            del self._source
-
-        return self
+    # }}}
 
     def compile(self, options=[], devices=None, headers=[]):
         options = " ".join(options)
         return self._prg().compile(options, devices, headers)
+
+
 
 
 def create_program_with_built_in_kernels(context, devices, kernel_names):
