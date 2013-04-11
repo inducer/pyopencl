@@ -36,12 +36,14 @@ None of the original source code remains.
 import pyopencl as cl
 from pyopencl.tools import (
         context_dependent_memoize,
-        dtype_to_ctype)
+        dtype_to_ctype, KernelTemplateBase,
+        _process_code_for_macro)
 import numpy as np
-import pyopencl._mymako as mako
 
 
 
+
+# {{{ kernel source
 
 KERNEL = """//CL//
     #define GROUP_SIZE ${group_size}
@@ -134,8 +136,9 @@ KERNEL = """//CL//
     }
     """
 
+# }}}
 
-
+# {{{ internal codegen frontends
 
 def  _get_reduction_source(
          ctx, out_type, out_type_size,
@@ -199,8 +202,8 @@ def  _get_reduction_source(
         group_size=group_size,
         no_sync_size=no_sync_size,
         neutral=neutral,
-        reduce_expr=reduce_expr,
-        map_expr=map_expr,
+        reduce_expr=_process_code_for_macro(reduce_expr),
+        map_expr=_process_code_for_macro(map_expr),
         name=name,
         preamble=preamble,
         double_support=all(has_double_support(dev) for dev in devices),
@@ -219,7 +222,7 @@ def  _get_reduction_source(
 
 
 def get_reduction_kernel(stage,
-         ctx, out_type, out_type_size,
+         ctx, dtype_out,
          neutral, reduce_expr, map_expr=None, arguments=None,
          name="reduce_kernel", preamble="",
          device=None, options=[], max_group_size=None):
@@ -229,26 +232,26 @@ def get_reduction_kernel(stage,
         else:
             map_expr = "in[i]"
 
-    if stage == 2:
-        in_arg = "const %s *pyopencl_reduction_inp" % out_type
-        if arguments:
-            arguments = in_arg + ", " + arguments
-        else:
-            arguments = in_arg
+    from pyopencl.tools import (
+            parse_arg_list, get_arg_list_scalar_arg_dtypes,
+            VectorArg)
 
-    from pyopencl.tools import parse_arg_list, get_arg_list_scalar_arg_dtypes
-    parsed_args = parse_arg_list(arguments)
+    if arguments is not None:
+        arguments = parse_arg_list(arguments)
+
+    if stage == 2 and arguments is not None:
+        arguments = [VectorArg(dtype_out, "pyopencl_reduction_inp")] + arguments
 
     inf = _get_reduction_source(
-            ctx, out_type, out_type_size,
-            neutral, reduce_expr, map_expr, parsed_args,
+            ctx, dtype_to_ctype(dtype_out), dtype_out.itemsize,
+            neutral, reduce_expr, map_expr, arguments,
             name, preamble, device, max_group_size)
 
     inf.program = cl.Program(ctx, inf.source)
     inf.program.build(options)
     inf.kernel = getattr(inf.program, name)
 
-    inf.arg_types = parsed_args
+    inf.arg_types = arguments
 
     inf.kernel.set_scalar_arg_dtypes(
             [None]
@@ -257,8 +260,9 @@ def get_reduction_kernel(stage,
 
     return inf
 
+# }}}
 
-
+# {{{ main reduction kernel
 
 class ReductionKernel:
     def __init__(self, ctx, dtype_out,
@@ -272,7 +276,7 @@ class ReductionKernel:
 
         while True:
             self.stage_1_inf = get_reduction_kernel(1, ctx,
-                    dtype_to_ctype(dtype_out), dtype_out.itemsize,
+                    dtype_out,
                     neutral, reduce_expr, map_expr, arguments,
                     name=name+"_stage1", options=options, preamble=preamble,
                     max_group_size=max_group_size)
@@ -290,7 +294,7 @@ class ReductionKernel:
             assert trip_count <= 2
 
         self.stage_2_inf = get_reduction_kernel(2, ctx,
-                dtype_to_ctype(dtype_out), dtype_out.itemsize,
+                dtype_out,
                 neutral, reduce_expr, arguments=arguments,
                 name=name+"_stage2", options=options, preamble=preamble,
                 max_group_size=max_group_size)
@@ -372,8 +376,47 @@ class ReductionKernel:
                 stage_inf = self.stage_2_inf
                 args = (result,) + stage1_args
 
+# }}}
 
+# {{{ template
 
+class ReductionTemplate(KernelTemplateBase):
+    def __init__(self,
+            arguments, neutral, reduce_expr, map_expr=None,
+            is_segment_start_expr=None, input_fetch_exprs=[],
+            name_prefix="reduce", preamble="", template_processor=None):
+
+        KernelTemplateBase.__init__(self, template_processor=template_processor)
+        self.arguments = arguments
+        self.reduce_expr = reduce_expr
+        self.neutral = neutral
+        self.map_expr = map_expr
+        self.name_prefix = name_prefix
+        self.preamble = preamble
+
+    def build_inner(self, context, type_aliases=(), var_values=(),
+            more_preamble="", more_arguments=(), declare_types=(),
+            options=(), devices=None):
+        renderer = self.get_renderer(type_aliases, var_values, context, options)
+
+        arg_list = renderer.render_argument_list(self.arguments, more_arguments)
+
+        type_decl_preamble = renderer.get_type_decl_preamble(
+                context.devices[0], declare_types, arg_list)
+
+        return ReductionKernel(context, renderer.type_aliases["reduction_t"],
+                renderer(self.neutral), renderer(self.reduce_expr),
+                renderer(self.map_expr),
+                renderer.render_argument_list(self.arguments, more_arguments),
+                name=renderer(self.name_prefix), options=list(options),
+                preamble=(
+                    type_decl_preamble
+                    + "\n"
+                    + renderer(self.preamble + "\n" + more_preamble)))
+
+# }}}
+
+# {{{ array reduction kernel getters
 
 @context_dependent_memoize
 def get_sum_kernel(ctx, dtype_out, dtype_in):
@@ -537,5 +580,7 @@ def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
             "tp": dtype_to_ctype(dtype),
             "tp_lut": dtype_to_ctype(dtype_subset),
             }, preamble="#define MY_INFINITY (1./0)")
+
+# }}}
 
 # vim: filetype=pyopencl:fdm=marker

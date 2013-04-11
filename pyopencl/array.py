@@ -1175,7 +1175,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
             raise ValueError("out and arrays must have the same length")
 
     if len(dest_indices.shape) != 1:
-        raise ValueError("src_indices must be 1D")
+        raise ValueError("dest_indices must be 1D")
 
     chunk_size = _builtin_min(vec_count, 10)
 

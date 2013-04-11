@@ -1542,7 +1542,7 @@ class ScanTemplate(KernelTemplateBase):
         self.name_prefix = name_prefix
         self.preamble = preamble
 
-    def build_inner(self, context, type_aliases, var_values,
+    def build_inner(self, context, type_aliases=(), var_values=(),
             more_preamble="", more_arguments=(), declare_types=(),
             options=(), devices=None, scan_cls=GenericScanKernel):
         renderer = self.get_renderer(type_aliases, var_values, context, options)
