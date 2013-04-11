@@ -38,12 +38,23 @@ import re
 
 from pyopencl.compyte.dtypes import (
         get_or_register_dtype, TypeNameNotKnown,
-        register_dtype, _fill_dtype_registry,
-        dtype_to_ctype)
+        register_dtype, dtype_to_ctype)
 
-_fill_dtype_registry(respect_windows=False, include_bool=False)
-get_or_register_dtype("cfloat_t", np.complex64)
-get_or_register_dtype("cdouble_t", np.complex128)
+
+def _register_types():
+    from pyopencl.compyte.dtypes import _fill_dtype_registry
+
+    _fill_dtype_registry(respect_windows=False, include_bool=False)
+
+    get_or_register_dtype("cfloat_t", np.complex64)
+    get_or_register_dtype("cdouble_t", np.complex128)
+
+    is_64_bit = tuple.__itemsize__ * 8 == 64
+    if not is_64_bit:
+        get_or_register_dtype(["unsigned long", "unsigned long int"], np.uint64)
+        get_or_register_dtype(["signed long", "signed long int", "long int"], np.int64)
+
+_register_types()
 
 
 
