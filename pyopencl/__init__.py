@@ -826,6 +826,15 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
     :arg device_offset: offset in bytes (optional)
 
+    .. note::
+
+        The size of the transfer is controlled by the size of the
+        of the host-side buffer. If the host-side buffer
+        is a :class:`numpy.ndarray`, you can control the transfer size by
+        transfering into a smaller 'view' of the target array, like this::
+
+            cl.enqueue_copy(queue, large_dest_numpy_array[:15], src_buffer)
+
     :class:`Buffer` ↔ :class:`Buffer` transfers:
 
     :arg byte_count: (optional) If not specified, defaults to the
