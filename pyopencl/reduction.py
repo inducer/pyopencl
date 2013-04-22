@@ -316,6 +316,8 @@ class ReductionKernel:
         stage_inf = self.stage_1_inf
 
         queue = kwargs.pop("queue", None)
+        wait_for = kwargs.pop("wait_for", None)
+        return_event = kwargs.pop("return_event", False)
 
         if kwargs:
             raise TypeError("invalid keyword argument to reduction kernel")
@@ -364,14 +366,19 @@ class ReductionKernel:
                         (group_count,), self.dtype_out,
                         allocator=repr_vec.allocator)
 
-            stage_inf.kernel(
+            last_evt = stage_inf.kernel(
                     use_queue,
                     (group_count*stage_inf.group_size,),
                     (stage_inf.group_size,),
-                    *([result.data]+invocation_args+[seq_count, sz]))
+                    *([result.data]+invocation_args+[seq_count, sz]),
+                    **dict(wait_for=wait_for))
+            wait_for = [last_evt]
 
             if group_count == 1:
-                return result
+                if return_event:
+                    return result, last_evt
+                else:
+                    return result
             else:
                 stage_inf = self.stage_2_inf
                 args = (result,) + stage1_args

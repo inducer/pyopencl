@@ -157,6 +157,7 @@ def elwise_kernel_runner(kernel_getter):
     def kernel_runner(*args, **kwargs):
         repr_ary = args[0]
         queue = kwargs.pop("queue", None) or repr_ary.queue
+        wait_for = kwargs.pop("wait_for", None)
 
         knl = kernel_getter(*args)
 
@@ -178,7 +179,7 @@ def elwise_kernel_runner(kernel_getter):
                 actual_args.append(arg)
         actual_args.append(repr_ary.size)
 
-        return knl(queue, gs, ls, *actual_args)
+        return knl(queue, gs, ls, *actual_args, **dict(wait_for=wait_for))
 
     try:
        from functools import update_wrapper
@@ -717,10 +718,14 @@ class Array(object):
 
     __rtruediv__ = __rdiv__
 
-    def fill(self, value, queue=None):
-        """fills the array with the specified value"""
-        self._fill(self, value, queue=queue)
+    def fill(self, value, queue=None, wait_for=None, return_event=False):
+        """Fills the array with the specified value."""
+        self._fill(self, value, queue=queue, wait_for=wait_for)
         return self
+
+    def fill_and_return_event(self, value, queue=None, wait_for=None, return_event=False):
+        """Fills the array with the specified value."""
+        return self._fill(self, value, queue=queue, wait_for=wait_for)
 
     def __len__(self):
         """Return the size of the leading dimension of self."""

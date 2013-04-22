@@ -1260,6 +1260,7 @@ class GenericScanKernel(_GenericScanKernelBase):
         allocator = kwargs.get("allocator")
         queue = kwargs.get("queue")
         n = kwargs.get("size")
+        wait_for = kwargs.get("wait_for")
 
         if len(args) != len(self.parsed_args):
             raise TypeError("expected %d arguments, got %d" %
@@ -1329,9 +1330,9 @@ class GenericScanKernel(_GenericScanKernelBase):
         if self.store_segment_start_flags:
             scan1_args.append(segment_start_flags.data)
 
-        l1_info.kernel(
+        l1_evt = l1_info.kernel(
                 queue, (num_intervals,), (l1_info.wg_size,),
-                *scan1_args, **dict(g_times_l=True))
+                *scan1_args, **dict(g_times_l=True, wait_for=wait_for))
 
         # }}}
 
@@ -1349,9 +1350,9 @@ class GenericScanKernel(_GenericScanKernelBase):
                 interval_results.data, # partial_scan_buffer
                 num_intervals, interval_size]
 
-        l2_info.kernel(
+        l2_evt = l2_info.kernel(
                 queue, (1,), (l1_info.wg_size,),
-                *scan2_args, **dict(g_times_l=True))
+                *scan2_args, **dict(g_times_l=True, wait_for=[l1_evt]))
 
         # }}}
 
@@ -1364,9 +1365,9 @@ class GenericScanKernel(_GenericScanKernelBase):
         if self.store_segment_start_flags:
             upd_args.append(segment_start_flags.data)
 
-        self.final_update_knl(
+        return self.final_update_knl(
                 queue, (num_intervals,), (self.update_wg_size,),
-                *upd_args, **dict(g_times_l=True))
+                *upd_args, **dict(g_times_l=True, wait_for=[l2_evt]))
 
         # }}}
 
@@ -1445,6 +1446,7 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         allocator = kwargs.get("allocator")
         queue = kwargs.get("queue")
         n = kwargs.get("size")
+        wait_for = kwargs.get("wait_for")
 
         if len(args) != len(self.parsed_args):
             raise TypeError("expected %d arguments, got %d" %
@@ -1467,7 +1469,7 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
 
         # }}}
 
-        self.kernel(queue, (1,), (1,), *(data_args + [n]))
+        return self.kernel(queue, (1,), (1,), *(data_args + [n]), **dict(wait_for=wait_for))
 
 # }}}
 

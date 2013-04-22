@@ -1,6 +1,8 @@
 Parallel Algorithms
 ===================
 
+.. include:: subst.rst
+
 Element-wise expression evalution ("map")
 -----------------------------------------
 
@@ -18,6 +20,8 @@ evaluate multi-stage expressions on one or several operands in a single pass.
 
         Invoke the generated scalar kernel. The arguments may either be scalars or
         :class:`GPUArray` instances.
+
+        |std-enqueue-blurb|
 
 Here's a usage example::
 
@@ -82,7 +86,17 @@ Sums and counts ("reduce")
     :meth:`pyopencl.Program.build`. *preamble* specifies a string of code that
     is inserted before the actual kernels.
 
-    .. method:: __call__(*args, queue=None)
+    .. method:: __call__(*args, queue=None, wait_for=None, return_event=False)
+
+        |explain-waitfor|
+
+        :return: the resulting scalar as a single-entry :class:`pyopencl.array.Array`
+            if *return_event* is *False*, otherwise a tuple ``(scalar_array, event)``.
+
+        .. note::
+
+            The returned :class:`pyopencl.Event` corresponds only to part of the
+            execution of the reduction. It is not suitable for profiling.
 
     .. versionadded: 2011.1
 
@@ -179,12 +193,19 @@ Making Custom Scan Kernels
 
 .. autoclass:: GenericScanKernel
 
-    .. method:: __call__(*args, allocator=None, queue=None, size=None)
+    .. method:: __call__(*args, allocator=None, queue=None, size=None, wait_for=None)
 
         *queue* and *allocator* default to the ones provided on the first
         :class:`pyopencl.array.Array` in *args*. *size* may specify the
         length of the scan to be carried out. If not given, this length
         is inferred from the first array argument passed.
+
+        |std-enqueue-blurb|
+
+        .. note::
+
+            The returned :class:`pyopencl.Event` corresponds only to part of the
+            execution of the scan. It is not suitable for profiling.
 
 Debugging aids
 ~~~~~~~~~~~~~~
@@ -264,9 +285,5 @@ Building many variable-size lists
 ---------------------------------
 
 .. autoclass:: ListOfListsBuilder
-
-    .. automethod:: __call__
-
-.. autoclass:: KeyValueSorter
 
     .. automethod:: __call__

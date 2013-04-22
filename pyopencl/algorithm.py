@@ -52,7 +52,7 @@ _copy_if_template = ScanTemplate(
         template_processor="printf")
 
 
-def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
+def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
     """Copy the elements of *ary* satisfying *predicate* to an output array.
 
     :arg predicate: a C expression evaluating to a `bool`, represented as a string.
@@ -60,9 +60,11 @@ def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
         to `true`, then this value ends up in the output.
     :arg extra_args: |scan_extra_args|
     :arg preamble: |preamble|
-    :returns: a tuple *(out, count)* where *out* is the output array and *count*
+    :arg wait_for: |explain-waitfor|
+    :returns: a tuple *(out, count, event)* where *out* is the output array, *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
-        how many elements satisfied *predicate*.
+        how many elements satisfied *predicate*, and *event* is a
+        :class:`pyopencl.Event` for dependency management.
 
     .. versionadded:: 2013.1
     """
@@ -82,15 +84,15 @@ def copy_if(ary, predicate, extra_args=[], queue=None, preamble=""):
     count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
 
     # **dict is a Py2.5 workaround
-    knl(ary, out, count, *extra_args_values, **dict(queue=queue))
+    evt = knl(ary, out, count, *extra_args_values, **dict(queue=queue, wait_for=wait_for))
 
-    return out, count
+    return out, count, evt
 
 # }}}
 
 # {{{ remove_if
 
-def remove_if(ary, predicate, extra_args=[], queue=None, preamble=""):
+def remove_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
     """Copy the elements of *ary* not satisfying *predicate* to an output array.
 
     :arg predicate: a C expression evaluating to a `bool`, represented as a string.
@@ -98,14 +100,16 @@ def remove_if(ary, predicate, extra_args=[], queue=None, preamble=""):
         to `false`, then this value ends up in the output.
     :arg extra_args: |scan_extra_args|
     :arg preamble: |preamble|
-    :returns: a tuple *(out, count)* where *out* is the output array and *count*
+    :arg wait_for: |explain-waitfor|
+    :returns: a tuple *(out, count, event)* where *out* is the output array, *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
-        how many elements did not satisfy *predicate*.
+        how many elements did not satisfy *predicate*, and *event* is a
+        :class:`pyopencl.Event` for dependency management.
 
     .. versionadded:: 2013.1
     """
-    return copy_if(ary, "!(%s)" % predicate, extra_args=extra_args, queue=queue,
-            preamble=preamble)
+    return copy_if(ary, "!(%s)" % predicate, extra_args=extra_args,
+            preamble=preamble, queue=queue, wait_for=wait_for)
 
 # }}}
 
@@ -128,7 +132,7 @@ _partition_template = ScanTemplate(
 
 
 
-def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
+def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
     """Copy the elements of *ary* into one of two arrays depending on whether
     they satisfy *predicate*.
 
@@ -136,9 +140,11 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
         The value to test is available as `ary[i]`.
     :arg extra_args: |scan_extra_args|
     :arg preamble: |preamble|
-    :returns: a tuple *(out_true, out_false, count)* where *count*
+    :arg wait_for: |explain-waitfor|
+    :returns: a tuple *(out_true, out_false, count, event)* where *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
-        how many elements satisfied the predicate.
+        how many elements satisfied the predicate, and *event* is a
+        :class:`pyopencl.Event` for dependency management.
 
     .. versionadded:: 2013.1
     """
@@ -161,9 +167,10 @@ def partition(ary, predicate, extra_args=[], queue=None, preamble=""):
     count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
 
     # **dict is a Py2.5 workaround
-    knl(ary, out_true, out_false, count, *extra_args_values, **dict(queue=queue))
+    evt = knl(ary, out_true, out_false, count, *extra_args_values,
+            **dict(queue=queue, wait_for=wait_for))
 
-    return out_true, out_false, count
+    return out_true, out_false, count, evt
 
 # }}}
 
@@ -185,7 +192,7 @@ _unique_template = ScanTemplate(
         template_processor="printf")
 
 
-def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
+def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="", queue=None, wait_for=None):
     """Copy the elements of *ary* into the output if *is_equal_expr*, applied to the
     array element and its predecessor, yields false.
 
@@ -197,9 +204,11 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
         yields `false`, the two are considered distinct.
     :arg extra_args: |scan_extra_args|
     :arg preamble: |preamble|
-    :returns: a tuple *(out, count)* where *out* is the output array and *count*
+    :arg wait_for: |explain-waitfor|
+    :returns: a tuple *(out, count, event)* where *out* is the output array, *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
-        how many elements satisfied the predicate.
+        how many elements satisfied the predicate, and *event* is a
+        :class:`pyopencl.Event` for dependency management.
 
     .. versionadded:: 2013.1
     """
@@ -222,9 +231,9 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], queue=None, preamble=""):
     count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
 
     # **dict is a Py2.5 workaround
-    knl(ary, out, count, *extra_args_values, **dict(queue=queue))
+    evt = knl(ary, out, count, *extra_args_values, **dict(queue=queue, wait_for=wait_for))
 
-    return out, count
+    return out, count, evt
 
 # }}}
 
@@ -446,12 +455,16 @@ class RadixSort(object):
 
         :arg key_bits: specify how many bits (starting from least-significant)
             there are in the key.
+        :arg allocator: See the *allocator* argument of :func:`pyopencl.array.empty`.
         :arg queue: A :class:`pyopencl.CommandQueue`, defaulting to the
             one from the first argument array.
-        :arg allocator: See the *allocator* argument of :func:`pyopencl.array.empty`.
-        :returns: Sorted copies of the arrays named in *sorted_args*, in the order
-            of that list.
+        :arg wait_for: |explain-waitfor|
+        :returns: A tuple ``(sorted, event)``. *sorted* consists of sorted
+            copies of the arrays named in *sorted_args*, in the order of that
+            list. *event* is a :class:`pyopencl.Event` for dependency management.
         """
+
+        wait_for = kwargs.pop("wait_for", None)
 
         # {{{ run control
 
@@ -471,8 +484,6 @@ class RadixSort(object):
 
         args = list(args)
 
-        kwargs = dict(queue=queue)
-
         base_bit = 0
         while base_bit < key_bits:
             sorted_args = [
@@ -482,7 +493,8 @@ class RadixSort(object):
 
             scan_args = args + sorted_args + [base_bit]
 
-            self.scan_kernel(*scan_args, **kwargs)
+            last_evt = self.scan_kernel(*scan_args, **dict(queue=queue, wait_for=wait_for))
+            wait_for = [last_evt]
 
             # substitute sorted
             for i, arg_descr in enumerate(self.arguments):
@@ -493,7 +505,7 @@ class RadixSort(object):
 
         return [arg_val
                 for arg_descr, arg_val in zip(self.arguments, args)
-                if arg_descr.name in self.sort_arg_names]
+                if arg_descr.name in self.sort_arg_names], last_evt
 
         # }}}
 
@@ -894,7 +906,9 @@ class ListOfListsBuilder:
             be passed as their :attr:`pyopencl.array.Array.data` attribute instead.
         :arg allocator: optionally, the allocator to use to allocate new
             arrays.
-        :returns: a mapping from names to objects which have attributes
+        :arg wait_for: |explain-waitfor|
+        :returns: a tuple ``(lists, event)``, where
+            *lists* a mapping from (built) list names to objects which have attributes
 
             * `count` for the total number of entries in all lists combined
             * `lists` for the array containing all lists.
@@ -905,6 +919,8 @@ class ListOfListsBuilder:
               even for the last list.
 
               This implies that all lists are contiguous.
+
+              *event* is a :class:`pyopencl.Event` for dependency management.
         """
         if n_objects >= int(np.iinfo(np.int32).max):
             index_dtype = np.int64
@@ -913,6 +929,7 @@ class ListOfListsBuilder:
         index_dtype = np.dtype(index_dtype)
 
         allocator = kwargs.pop("allocator", None)
+        wait_for = kwargs.pop("wait_for", None)
         if kwargs:
             raise TypeError("invalid keyword arguments: '%s'" % ", ".join(kwargs))
 
@@ -949,10 +966,14 @@ class ListOfListsBuilder:
             from pyopencl.array import splay
             gsize, lsize = splay(queue, n_objects)
 
-        count_kernel(queue, gsize, lsize,
-                *(tuple(count_list_args) + args + (n_objects,)))
+        count_event = count_kernel(queue, gsize, lsize,
+                *(tuple(count_list_args) + args + (n_objects,)),
+                wait_for=wait_for)
+
 
         # {{{ run scans
+
+        scan_events = []
 
         for name, dtype in self.list_names_and_dtypes:
             if name in self.count_sharing:
@@ -960,10 +981,12 @@ class ListOfListsBuilder:
 
             info_record = result[name]
             starts_ary = info_record.starts
-            scan_kernel(starts_ary)
+            evt = scan_kernel(starts_ary, wait_for=[count_event])
 
             # set first entry to zero
-            cl.enqueue_copy(queue, starts_ary.data, index_dtype.type(0))
+            evt = cl.enqueue_copy(queue, starts_ary.data, index_dtype.type(0),
+                    wait_for=[evt])
+            scan_events.append(evt)
 
             # retrieve count
             count = np.array(1, index_dtype)
@@ -998,10 +1021,11 @@ class ListOfListsBuilder:
 
         # }}}
 
-        write_kernel(queue, gsize, lsize,
-                *(tuple(write_list_args) + args + (n_objects,)))
+        evt = write_kernel(queue, gsize, lsize,
+                *(tuple(write_list_args) + args + (n_objects,)),
+                **dict(wait_for=scan_events))
 
-        return result
+        return result, evt
 
     # }}}
 
@@ -1101,27 +1125,26 @@ class KeyValueSorter(object):
                 bound_propagation_scan=bound_propagation_scan)
 
     def __call__(self, queue, keys, values, nkeys,
-            starts_dtype, allocator=None):
+            starts_dtype, allocator=None, wait_for=None):
         if allocator is None:
             allocator = values.allocator
 
         knl_info = self.get_kernels(keys.dtype, values.dtype,
                 starts_dtype)
 
-        (values_sorted_by_key, keys_sorted_by_key
-                ) = knl_info.by_target_sorter(
-                values, keys, queue=queue)
+        (values_sorted_by_key, keys_sorted_by_key), evt = knl_info.by_target_sorter(
+                values, keys, queue=queue, wait_for=wait_for)
 
-        starts = cl.array.empty(queue, (nkeys+1), starts_dtype,
-                allocator=allocator) \
-                        .fill(len(values_sorted_by_key))
+        starts = cl.array.empty(queue, (nkeys+1), starts_dtype, allocator=allocator)
+        evt = starts.fill_and_return_event(len(values_sorted_by_key), wait_for=[evt])
 
-        knl_info.start_finder(starts, keys_sorted_by_key,
-                range=slice(len(keys_sorted_by_key)))
+        evt = knl_info.start_finder(starts, keys_sorted_by_key,
+                range=slice(len(keys_sorted_by_key)),
+                wait_for=[evt])
 
-        knl_info.bound_propagation_scan(starts, nkeys, queue=queue)
+        evt = knl_info.bound_propagation_scan(starts, nkeys, queue=queue, wait_for=[evt])
 
-        return starts, values_sorted_by_key
+        return starts, values_sorted_by_key, evt
 
 # }}}
 

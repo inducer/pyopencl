@@ -538,7 +538,7 @@ def test_copy_if(ctx_factory):
 
         crit = a_dev.dtype.type(300)
         selected = a[a>crit]
-        selected_dev, count_dev = copy_if(a_dev, "ary[i] > myval", [("myval", crit)])
+        selected_dev, count_dev, evt = copy_if(a_dev, "ary[i] > myval", [("myval", crit)])
 
         assert (selected_dev.get()[:count_dev.get()] == selected).all()
         from gc import collect
@@ -564,7 +564,7 @@ def test_partition(ctx_factory):
         false_host = a[a<=crit]
 
         from pyopencl.algorithm import partition
-        true_dev, false_dev, count_true_dev = partition(a_dev, "ary[i] > myval", [("myval", crit)])
+        true_dev, false_dev, count_true_dev, evt = partition(a_dev, "ary[i] > myval", [("myval", crit)])
 
         count_true_dev = count_true_dev.get()
 
@@ -589,7 +589,7 @@ def test_unique(ctx_factory):
         a_unique_host = np.unique(a)
 
         from pyopencl.algorithm import unique
-        a_unique_dev, count_unique_dev = unique(a_dev)
+        a_unique_dev, count_unique_dev, evt = unique(a_dev)
 
         count_unique_dev = count_unique_dev.get()
 
@@ -756,7 +756,7 @@ def test_sort(ctx_factory):
 
         dev_start = time()
         print("  device")
-        a_dev_sorted, = sort(a_dev, key_bits=16)
+        (a_dev_sorted,), evt = sort(a_dev, key_bits=16)
         queue.finish()
         dev_end = time()
         print("  numpy")
@@ -789,7 +789,7 @@ def test_list_builder(ctx_factory):
             }
             """, arg_decls=[])
 
-    result = builder(queue, 2000)
+    result, evt = builder(queue, 2000)
 
     inf = result["mylist"]
     assert inf.count == 3000
@@ -813,7 +813,7 @@ def test_key_value_sorter(ctx_factory):
 
     from pyopencl.algorithm import KeyValueSorter
     kvs = KeyValueSorter(context)
-    starts, lists = kvs(queue, keys, values, nkeys, starts_dtype=np.int32)
+    starts, lists, evt = kvs(queue, keys, values, nkeys, starts_dtype=np.int32)
 
     starts = starts.get()
     lists = lists.get()
