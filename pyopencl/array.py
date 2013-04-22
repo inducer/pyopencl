@@ -152,12 +152,18 @@ def elwise_kernel_runner(kernel_getter):
 
     Assumes that the zeroth entry in *args* is an :class:`Array`.
     """
-    #(Note that the 'return a function' bit is done by @decorator.)
+    # (Note that the 'return a function' bit is done by @decorator.)
 
     def kernel_runner(*args, **kwargs):
         repr_ary = args[0]
         queue = kwargs.pop("queue", None) or repr_ary.queue
         wait_for = kwargs.pop("wait_for", None)
+
+        # wait_for must be a copy, because we modify it in-place below
+        if wait_for is None:
+            wait_for = []
+        else:
+            wait_for = list(wait_for)
 
         knl = kernel_getter(*args)
 
@@ -175,6 +181,7 @@ def elwise_kernel_runner(kernel_getter):
                     raise RuntimeError("only contiguous arrays may "
                             "be used as arguments to this operation")
                 actual_args.append(arg.data)
+                wait_for.extend(arg.events)
             else:
                 actual_args.append(arg)
         actual_args.append(repr_ary.size)
@@ -358,6 +365,7 @@ class Array(object):
         self.shape = shape
         self.dtype = dtype
         self.strides = strides
+        self.events = []
 
         self.size = s
         alloc_nbytes = self.nbytes = self.dtype.itemsize * self.size
@@ -783,15 +791,10 @@ class Array(object):
 
         :returns: *self*.
         """
-        self._fill(self, value, queue=queue, wait_for=wait_for)
+        self.events.append(
+                self._fill(self, value, queue=queue, wait_for=wait_for))
+
         return self
-
-    def fill_evt(self, value, queue=None, wait_for=None):
-        """Fills the array with the specified value.
-
-        :returns: A :class:`pyopencl.Event`.
-        """
-        return self._fill(self, value, queue=queue, wait_for=wait_for)
 
     def __len__(self):
         """Returns the size of the leading dimension of *self*."""
@@ -946,6 +949,10 @@ class Array(object):
 
     # }}
 
+    def finish(self):
+        # undoc
+        cl.wait_for_events(self.events)
+
 # }}}
 
 def as_strided(ary, shape=None, strides=None):
@@ -1058,6 +1065,7 @@ def arange(queue, *args, **kwargs):
     inf.step = None
     inf.dtype = None
     inf.allocator = None
+    inf.wait_for = []
 
     if isinstance(args[-1], np.dtype):
         dtype = args[-1]
@@ -1103,15 +1111,17 @@ def arange(queue, *args, **kwargs):
     start = dtype.type(inf.start)
     step = dtype.type(inf.step)
     stop = dtype.type(inf.stop)
+    wait_for = inf.wait_for
 
     if not explicit_dtype:
-        raise TypeError("arange requires dtype argument")
+        raise TypeError("arange requires a dtype argument")
 
     from math import ceil
     size = int(ceil((stop-start)/step))
 
     result = Array(queue, (size,), dtype, allocator=inf.allocator)
-    _arange_knl(result, start, step, queue=queue)
+    result.events.append(
+            _arange_knl(result, start, step, queue=queue, wait_for=wait_for))
     return result
 
 # }}}
