@@ -1136,7 +1136,7 @@ class KeyValueSorter(object):
                 values, keys, queue=queue, wait_for=wait_for)
 
         starts = cl.array.empty(queue, (nkeys+1), starts_dtype, allocator=allocator)
-        evt = starts.fill_and_return_event(len(values_sorted_by_key), wait_for=[evt])
+        evt = starts.fill_evt(len(values_sorted_by_key), wait_for=[evt])
 
         evt = knl_info.start_finder(starts, keys_sorted_by_key,
                 range=slice(len(keys_sorted_by_key)),

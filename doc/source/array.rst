@@ -108,247 +108,75 @@ Under the hood, the complex types are simply `float2` and `double2`.
 The :class:`Array` Class
 ------------------------
 
-.. class:: Array(cqa, shape, dtype, order="C", *, allocator=None, base=None, data=None)
+.. autoclass:: Array
 
-    A :class:`numpy.ndarray` work-alike that stores its data and performs its
-    computations on the compute device.  *shape* and *dtype* work exactly as in
-    :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
-    broadcasting of scalars. (e.g. `array+5`)
+    .. automethod :: __len__
+    .. automethod :: reshape
+    .. automethod :: ravel
+    .. automethod :: view
+    .. automethod :: set
+    .. automethod :: get
+    .. automethod :: copy
 
-    *cqa* must be a :class:`pyopencl.CommandQueue`. *cqa*
-    specifies the queue in which the array carries out its
-    computations by default. *cqa* will at some point be renamed *queue*,
-    so it should be considered 'positional-only'.
+    .. automethod :: __str__
+    .. automethod :: __repr__
 
-    *allocator* may be `None` or a callable that, upon being called with an
-    argument of the number of bytes to be allocated, returns an
-    :class:`pyopencl.Buffer` object. (A :class:`pyopencl.tools.MemoryPool`
-    instance is one useful example of an object to pass here.)
+    .. automethod :: mul_add
+    .. automethod :: __add__
+    .. automethod :: __sub__
+    .. automethod :: __iadd__
+    .. automethod :: __isub__
+    .. automethod :: __neg__
+    .. automethod :: __mul__
+    .. automethod :: __div__
+    .. automethod :: __rdiv__
+    .. automethod :: __pow__
 
-    .. versionchanged:: 2011.1
-        Renamed *context* to *cqa*, made it general-purpose.
-
-        All arguments beyond *order* should be considered keyword-only.
-
-    .. attribute :: data
-
-        The :class:`pyopencl.MemoryObject` instance created for the memory that backs
-        this :class:`Array`.
-
-    .. attribute :: shape
-
-        The tuple of lengths of each dimension in the array.
-
-    .. attribute :: dtype
-
-        The :class:`numpy.dtype` of the items in the GPU array.
-
-    .. attribute :: size
-
-        The number of meaningful entries in the array. Can also be computed by
-        multiplying up the numbers in :attr:`shape`.
-
-    .. attribute :: nbytes
-
-        The size of the entire array in bytes. Computed as :attr:`size` times
-        ``dtype.itemsize``.
-
-    .. attribute :: strides
-
-        Tuple of bytes to step in each dimension when traversing an array.
-
-    .. attribute :: flags
-
-        Return an object with attributes `c_contiguous`, `f_contiguous` and `forc`,
-        which may be used to query contiguity properties in analogy to
-        :attr:`numpy.ndarray.flags`.
-
-    .. method :: __len__()
-
-        Returns the size of the leading dimension of *self*.
-
-    .. method :: reshape(shape)
-
-        Returns an array containing the same data with a new shape.
-
-    .. method :: ravel()
-
-        Returns flattened array containing the same data.
-
-    .. method :: view(dtype=None)
-
-        Returns view of array with the same data. If *dtype* is different from
-        current dtype, the actual bytes of memory will be reinterpreted.
-
-    .. method :: set(ary, queue=None, async=False)
-
-        Transfer the contents the :class:`numpy.ndarray` object *ary*
-        onto the device.
-
-        *ary* must have the same dtype and size (not necessarily shape) as *self*.
-
-
-    .. method :: get(queue=None, ary=None, async=False)
-
-        Transfer the contents of *self* into *ary* or a newly allocated
-        :mod:`numpy.ndarray`. If *ary* is given, it must have the right
-        size (not necessarily shape) and dtype.
-
-    .. method :: copy(queue=None)
-
-        .. versionadded:: 2013.1
-
-    .. method :: __str__()
-    .. method :: __repr__()
-
-    .. method :: mul_add(self, selffac, other, otherfac, queue=None):
-
-        Return `selffac*self + otherfac*other`.
-
-    .. method :: __add__(other)
-    .. method :: __sub__(other)
-    .. method :: __iadd__(other)
-    .. method :: __isub__(other)
-    .. method :: __neg__(other)
-    .. method :: __mul__(other)
-    .. method :: __div__(other)
-    .. method :: __rdiv__(other)
-    .. method :: __pow__(other)
-
-    .. method :: __abs__()
-
-        Return a :class:`Array` containing the absolute value of each
-        element of *self*.
+    .. automethod :: __abs__
 
     .. UNDOC reverse()
 
-    .. method :: fill(scalar, queue=None)
+    .. automethod :: fill
 
-        Fill the array with *scalar*.
+    .. automethod :: astype
 
-    .. method :: astype(dtype, queue=None)
-
-        Return *self*, cast to *dtype*.
-
-    .. attribute :: real
-
-        .. versionadded:: 2012.1
-
-    .. attribute :: imag
-
-        .. versionadded:: 2012.1
-
-    .. method :: conj()
-
-        .. versionadded:: 2012.1
+    .. autoattribute :: real
+    .. autoattribute :: imag
+    .. automethod :: conj
 
 Constructing :class:`Array` Instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. function:: to_device(queue, ary, allocator=None, async=False)
-
-    Return a :class:`Array` that is an exact copy of the :class:`numpy.ndarray`
-    instance *ary*.
-
-    See :class:`Array` for the meaning of *allocator*.
-
-    .. versionchanged:: 2011.1
-        *context* argument was deprecated.
-
+.. autofunction:: to_device
 .. function:: empty(queue, shape, dtype, order="C", allocator=None, data=None)
 
     A synonym for the :class:`Array` constructor.
 
-.. function:: zeros(queue, shape, dtype, order="C", allocator=None)
-
-    Same as :func:`empty`, but the :class:`Array` is zero-initialized before
-    being returned.
-
-    .. versionchanged:: 2011.1
-        *context* argument was deprecated.
-
-.. function:: empty_like(other_ary)
-
-    Make a new, uninitialized :class:`Array` having the same properties
-    as *other_ary*.
-
-.. function:: zeros_like(other_ary)
-
-    Make a new, zero-initialized :class:`Array` having the same properties
-    as *other_ary*.
-
-.. function:: arange(queue, start, stop, step, dtype=None, allocator=None)
-
-    Create a :class:`Array` filled with numbers spaced `step` apart,
-    starting from `start` and ending at `stop`.
-
-    For floating point arguments, the length of the result is
-    `ceil((stop - start)/step)`.  This rule may result in the last
-    element of the result being greater than `stop`.
-
-    *dtype*, if not specified, is taken as the largest common type
-    of *start*, *stop* and *step*.
-
-    .. versionchanged:: 2011.1
-        *context* argument was deprecated.
-
-    .. versionchanged:: 2011.2
-        *allocator* keyword argument was added.
-
-.. function:: take(a, indices, out=None, queue=None)
-
-    Return the :class:`Array` ``[a[indices[0]], ..., a[indices[n]]]``.
-    For the moment, *a* must be a type that can be bound to a texture.
+.. autofunction:: zeros
+.. autofunction:: empty_like
+.. autofunction:: zeros_like
+.. autofunction:: arange
+.. autofunction:: take
 
 Conditionals
 ^^^^^^^^^^^^
 
-.. function:: if_positive(criterion, then_, else_, out=None, queue=None)
-
-    Return an array like *then_*, which, for the element at index *i*,
-    contains *then_[i]* if *criterion[i]>0*, else *else_[i]*.
-
-.. function:: maximum(a, b, out=None, queue=None)
-
-    Return the elementwise maximum of *a* and *b*.
-
-.. function:: minimum(a, b, out=None, queue=None)
-
-    Return the elementwise minimum of *a* and *b*.
+.. autofunction:: if_positive
+.. autofunction:: maximum
+.. autofunction:: minimum
 
 .. _reductions:
-
 
 Reductions
 ^^^^^^^^^^
 
-.. function:: sum(a, dtype=None, queue=None)
-
-    .. versionadded: 2011.1
-
-.. function:: dot(a, b, dtype=None, queue=None)
-
-    .. versionadded: 2011.1
-
-.. function:: subset_dot(subset, a, b, dtype=None, queue=None)
-
-    .. versionadded: 2011.1
-
-.. function:: max(a, queue=None)
-
-    .. versionadded: 2011.1
-
-.. function:: min(a, queue=None)
-
-    .. versionadded: 2011.1
-
-.. function:: subset_max(subset, a, queue=None)
-
-    .. versionadded: 2011.1
-
-.. function:: subset_min(subset, a, queue=None)
-
-    .. versionadded: 2011.1
+.. autofunction:: sum
+.. autofunction:: dot
+.. autofunction:: subset_dot
+.. autofunction:: max
+.. autofunction:: min
+.. autofunction:: subset_max
+.. autofunction:: subset_min
 
 See also :ref:`custom-reductions`.
 
@@ -464,93 +292,18 @@ functions available in the OpenCL standard. (See table 6.8 in the spec.)
 Generating Arrays of Random Numbers
 -----------------------------------
 
-.. module:: pyopencl.clrandom
+.. automodule:: pyopencl.clrandom
 
-.. class:: RanluxGenerator(self, queue, num_work_items=None,  luxury=2, seed=None, max_work_items=None)
+    .. autoclass:: RanluxGenerator
 
-    :param queue: :class:`pyopencl.CommandQueue`, only used for initialization
-    :param luxury: the "luxury value" of the generator, and should be 0-4, where 0 is fastest
-        and 4 produces the best numbers. It can also be >=24, in which case it directly
-        sets the p-value of RANLUXCL.
-    :param num_work_items: is the number of generators to initialize, usually corresponding
-        to the number of work-items in the NDRange RANLUXCL will be used with.
-        May be `None`, in which case a default value is used.
-    :param max_work_items: should reflect the maximum number of work-items that will be used
-        on any parallel instance of RANLUXCL. So for instance if we are launching 5120
-        work-items on GPU1 and 10240 work-items on GPU2, GPU1's RANLUXCLTab would be
-        generated by calling ranluxcl_intialization with numWorkitems = 5120 while
-        GPU2's RANLUXCLTab would use numWorkitems = 10240. However maxWorkitems must
-        be at least 10240 for both GPU1 and GPU2, and it must be set to the same value
-        for both. (may be `None`)
+        .. automethod:: fill_uniform
+        .. automethod:: uniform
+        .. automethod:: fill_normal
+        .. automethod:: normal
+        .. automethod:: synchronize
 
-    .. versionadded:: 2011.2
-
-    .. versionchanged:: 2013.1
-        Added default value for `num_work_items`.
-
-    .. attribute:: state
-
-        A :class:`pyopencl.array.Array` containing the state of the generator.
-
-    .. attribute:: nskip
-
-        nskip is an integer which can (optionally) be defined in the kernel code
-        as RANLUXCL_NSKIP. If this is done the generator will be faster for luxury setting
-        0 and 1, or when the p-value is manually set to a multiple of 24.
-
-    .. method:: fill_uniform(ary, a=0, b=1, queue=None)
-
-        Fill *ary* with uniformly distributed random numbers in the interval
-        *(a, b)*, endpoints excluded.
-
-    .. method:: uniform(queue, shape, dtype, order="C", allocator=None, base=None, data=None, a=0, b=1)
-
-        Make a new empty array, apply :meth:`fill_uniform` to it.
-
-    .. method:: fill_normal(ary, mu=0, sigma=1, queue=None):
-
-        Fill *ary* with normally distributed numbers with mean *mu* and
-        standard deviation *sigma*.
-
-    .. method:: normal(queue, shape, dtype, order="C", allocator=None, base=None, data=None, mu=0, sigma=1)
-
-        Make a new empty array, apply :meth:`fill_normal` to it.
-
-    .. method:: synchronize()
-
-        The generator gets inefficient when different work items invoke
-        the generator a differing number of times. This function
-        ensures efficiency.
-
-.. function:: rand(queue, shape, dtype, a=0, b=1)
-
-    Return an array of `shape` filled with random values of `dtype`
-    in the range [a,b).
-
-.. function:: fill_rand(result, queue=None, a=0, b=1)
-
-    Fill *result* with random values of `dtype` in the range [0,1).
-
-PyOpenCL now includes and uses the `RANLUXCL random number generator
-<https://bitbucket.org/ivarun/ranluxcl/>`_ by Ivar Ursin Nikolaisen.  In
-addition to being usable through the convenience functions above, it is
-available in any piece of code compiled through PyOpenCL by::
-
-    #include <pyopencl-ranluxcl.cl>
-
-See the `source <https://github.com/inducer/pyopencl/blob/master/src/cl/pyopencl-ranluxcl.cl>`_
-for some documentation if you're planning on using RANLUXCL directly.
-
-The RANLUX generator is described in the following two articles. If you use the
-generator for scientific purposes, please consider citing them:
-
-* Martin Lüscher, A portable high-quality random number generator for lattice
-  field theory simulations, `Computer Physics Communications 79 (1994) 100-110
-  <http://dx.doi.org/10.1016/0010-4655(94)90232-1>`_
-
-* F. James, RANLUX: A Fortran implementation of the high-quality pseudorandom
-  number generator of Lüscher, `Computer Physics Communications 79 (1994) 111-114
-  <http://dx.doi.org/10.1016/0010-4655(94)90233-X>`_
+    .. autofunction:: rand
+    .. autofunction:: fill_rand
 
 Fast Fourier Transforms
 -----------------------

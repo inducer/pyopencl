@@ -205,11 +205,58 @@ class DefaultAllocator(cl.tools.DeferredAllocator):
 # {{{ array class
 
 class Array(object):
-    """A :mod:`pyopencl` Array is used to do array-based calculation on
-    a compute device.
+    """A :class:`numpy.ndarray` work-alike that stores its data and performs its
+    computations on the compute device.  *shape* and *dtype* work exactly as in
+    :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
+    broadcasting of scalars. (e.g. `array+5`)
 
-    This is mostly supposed to be a :mod:`numpy`-workalike. Operators
-    work on an element-by-element basis, just like :class:`numpy.ndarray`.
+    *cqa* must be a :class:`pyopencl.CommandQueue`. *cqa*
+    specifies the queue in which the array carries out its
+    computations by default. *cqa* will at some point be renamed *queue*,
+    so it should be considered 'positional-only'.
+
+    *allocator* may be `None` or a callable that, upon being called with an
+    argument of the number of bytes to be allocated, returns an
+    :class:`pyopencl.Buffer` object. (A :class:`pyopencl.tools.MemoryPool`
+    instance is one useful example of an object to pass here.)
+
+    .. versionchanged:: 2011.1
+        Renamed *context* to *cqa*, made it general-purpose.
+
+        All arguments beyond *order* should be considered keyword-only.
+
+    .. attribute :: data
+
+        The :class:`pyopencl.MemoryObject` instance created for the memory that backs
+        this :class:`Array`.
+
+    .. attribute :: shape
+
+        The tuple of lengths of each dimension in the array.
+
+    .. attribute :: dtype
+
+        The :class:`numpy.dtype` of the items in the GPU array.
+
+    .. attribute :: size
+
+        The number of meaningful entries in the array. Can also be computed by
+        multiplying up the numbers in :attr:`shape`.
+
+    .. attribute :: nbytes
+
+        The size of the entire array in bytes. Computed as :attr:`size` times
+        ``dtype.itemsize``.
+
+    .. attribute :: strides
+
+        Tuple of bytes to step in each dimension when traversing an array.
+
+    .. attribute :: flags
+
+        Return an object with attributes `c_contiguous`, `f_contiguous` and `forc`,
+        which may be used to query contiguity properties in analogy to
+        :attr:`numpy.ndarray.flags`.
     """
 
     def __init__(self, cqa, shape, dtype, order="C", allocator=None,
@@ -375,6 +422,12 @@ class Array(object):
                 kernel_specific_max_wg_size=kernel_specific_max_wg_size)
 
     def set(self, ary, queue=None, async=False):
+        """Transfer the contents the :class:`numpy.ndarray` object *ary*
+        onto the device.
+
+        *ary* must have the same dtype and size (not necessarily shape) as *self*.
+        """
+
         assert ary.size == self.size
         assert ary.dtype == self.dtype
 
@@ -394,6 +447,11 @@ class Array(object):
                     is_blocking=not async)
 
     def get(self, queue=None, ary=None, async=False):
+        """Transfer the contents of *self* into *ary* or a newly allocated
+        :mod:`numpy.ndarray`. If *ary* is given, it must have the right
+        size (not necessarily shape) and dtype.
+        """
+
         if ary is None:
             ary = np.empty(self.shape, self.dtype)
 
@@ -413,6 +471,8 @@ class Array(object):
         return ary
 
     def copy(self, queue=None):
+        """.. versionadded:: 2013.1"""
+
         queue = queue or self.queue
         result = self._new_like_me()
         cl.enqueue_copy(queue, result.data, self.data, byte_count=self.nbytes)
@@ -427,7 +487,8 @@ class Array(object):
     def __hash__(self):
         raise TypeError("pyopencl arrays are not hashable.")
 
-    # kernel invocation wrappers ----------------------------------------------
+    # {{{ kernel invocation wrappers
+
     @staticmethod
     @elwise_kernel_runner
     def _axpbyz(out, afac, a, bfac, b, queue=None):
@@ -568,7 +629,10 @@ class Array(object):
             return self.__class__(self.context, self.shape, dtype,
                     strides=strides)
 
-    # operators ---------------------------------------------------------------
+    # }}}
+
+    # {{{ operators
+
     def mul_add(self, selffac, other, otherfac, queue=None):
         """Return `selffac * self + otherfac*other`.
         """
@@ -678,9 +742,7 @@ class Array(object):
         return self
 
     def __div__(self, other):
-        """Divides an array by an array or a scalar::
-
-           x = self / n
+        """Divides an array by an array or a scalar, i.e. ``self / other``.
         """
         if isinstance(other, Array):
             result = self._new_like_me(_get_common_dtype(self, other, self.queue))
@@ -700,9 +762,7 @@ class Array(object):
     __truediv__ = __div__
 
     def __rdiv__(self,other):
-        """Divides an array by a scalar or an array::
-
-           x = n / self
+        """Divides an array by a scalar or an array, i.e. ``other / self``.
         """
 
         if isinstance(other, Array):
@@ -718,17 +778,23 @@ class Array(object):
 
     __rtruediv__ = __rdiv__
 
-    def fill(self, value, queue=None, wait_for=None, return_event=False):
-        """Fills the array with the specified value."""
+    def fill(self, value, queue=None, wait_for=None):
+        """Fill the array with *scalar*.
+
+        :returns: *self*.
+        """
         self._fill(self, value, queue=queue, wait_for=wait_for)
         return self
 
-    def fill_and_return_event(self, value, queue=None, wait_for=None, return_event=False):
-        """Fills the array with the specified value."""
+    def fill_evt(self, value, queue=None, wait_for=None):
+        """Fills the array with the specified value.
+
+        :returns: A :class:`pyopencl.Event`.
+        """
         return self._fill(self, value, queue=queue, wait_for=wait_for)
 
     def __len__(self):
-        """Return the size of the leading dimension of self."""
+        """Returns the size of the leading dimension of *self*."""
         if len(self.shape):
             return self.shape[0]
         else:
@@ -736,7 +802,7 @@ class Array(object):
 
     def __abs__(self):
         """Return a `Array` of the absolute values of the elements
-        of `self`.
+        of *self*.
         """
 
         result = self._new_like_me(self.dtype.type(0).real.dtype)
@@ -766,6 +832,8 @@ class Array(object):
         self._rpow_scalar(result, common_dtype.type(other), self)
         return result
 
+    # }}}
+
     def reverse(self, queue=None):
         """Return this array in reversed order. The array is treated
         as one-dimensional.
@@ -776,6 +844,7 @@ class Array(object):
         return result
 
     def astype(self, dtype, queue=None):
+        """Return *self*, cast to *dtype*."""
         if dtype == self.dtype:
             return self
 
@@ -783,7 +852,8 @@ class Array(object):
         self._copy(result, self, queue=queue)
         return result
 
-    # rich comparisons (or rather, lack thereof) ------------------------------
+    # {{{ rich comparisons (or rather, lack thereof)
+
     def __eq__(self, other):
         raise NotImplementedError
 
@@ -802,9 +872,10 @@ class Array(object):
     def __gt__(self, other):
         raise NotImplementedError
 
+    # }}}
+
     # {{{ complex-valued business
 
-    @property
     def real(self):
         if self.dtype.kind == "c":
             result = self._new_like_me(self.dtype.type(0).real.dtype)
@@ -812,8 +883,8 @@ class Array(object):
             return result
         else:
             return self
+    real = property(real, doc=".. versionadded:: 2012.1")
 
-    @property
     def imag(self):
         if self.dtype.kind == "c":
             result = self._new_like_me(self.dtype.type(0).real.dtype)
@@ -821,8 +892,10 @@ class Array(object):
             return result
         else:
             return zeros_like(self)
+    imag = property(imag, doc=".. versionadded:: 2012.1")
 
     def conj(self):
+        """.. versionadded:: 2012.1"""
         if self.dtype.kind == "c":
             result = self._new_like_me()
             self._conj(result, self)
@@ -835,6 +908,7 @@ class Array(object):
     # {{{ views
 
     def reshape(self, *shape):
+        """Returns an array containing the same data with a new shape."""
         # TODO: add more error-checking, perhaps
         if isinstance(shape[0], tuple) or isinstance(shape[0], list):
             shape = tuple(shape[0])
@@ -845,9 +919,14 @@ class Array(object):
         return self._new_with_changes(data=self.data, shape=shape)
 
     def ravel(self):
+        """Returns flattened array containing the same data."""
         return self.reshape(self.size)
 
     def view(self, dtype=None):
+        """Returns view of array with the same data. If *dtype* is different from
+        current dtype, the actual bytes of memory will be reinterpreted.
+        """
+
         if dtype is None:
             dtype = self.dtype
 
@@ -887,7 +966,14 @@ def as_strided(ary, shape=None, strides=None):
 # {{{ creation helpers
 
 def to_device(queue, ary, allocator=None, async=False):
-    """Converts a numpy array to a :class:`Array`."""
+    """Return a :class:`Array` that is an exact copy of the :class:`numpy.ndarray`
+    instance *ary*.
+
+    See :class:`Array` for the meaning of *allocator*.
+
+    .. versionchanged:: 2011.1
+        *context* argument was deprecated.
+    """
 
     if ary.dtype == object:
         raise RuntimeError("to_device does not work on object arrays.")
@@ -903,7 +989,12 @@ def to_device(queue, ary, allocator=None, async=False):
 empty = Array
 
 def zeros(queue, shape, dtype, order="C", allocator=None):
-    """Returns an array of the given shape and dtype filled with 0's."""
+    """Same as :func:`empty`, but the :class:`Array` is zero-initialized before
+    being returned.
+
+    .. versionchanged:: 2011.1
+        *context* argument was deprecated.
+    """
 
     result = Array(queue, shape, dtype,
             order=order, allocator=allocator)
@@ -912,9 +1003,17 @@ def zeros(queue, shape, dtype, order="C", allocator=None):
     return result
 
 def empty_like(ary):
+    """Make a new, uninitialized :class:`Array` having the same properties
+    as *other_ary*.
+    """
+
     return ary._new_with_changes(data=None)
 
 def zeros_like(ary):
+    """Make a new, zero-initialized :class:`Array` having the same properties
+    as *other_ary*.
+    """
+
     result = empty_like(ary)
     zero = np.zeros((), ary.dtype)
     result.fill(zero)
@@ -927,12 +1026,21 @@ def _arange_knl(result, start, step):
             result.context, result.dtype)
 
 def arange(queue, *args, **kwargs):
-    """Create an array filled with numbers spaced `step` apart,
+    """Create a :class:`Array` filled with numbers spaced `step` apart,
     starting from `start` and ending at `stop`.
 
     For floating point arguments, the length of the result is
     `ceil((stop - start)/step)`.  This rule may result in the last
-    element of the result being greater than stop.
+    element of the result being greater than `stop`.
+
+    *dtype*, if not specified, is taken as the largest common type
+    of *start*, *stop* and *step*.
+
+    .. versionchanged:: 2011.1
+        *context* argument was deprecated.
+
+    .. versionchanged:: 2011.2
+        *allocator* keyword argument was added.
     """
 
     # argument processing -----------------------------------------------------
@@ -1019,6 +1127,10 @@ def _take(result, ary, indices):
 
 
 def take(a, indices, out=None, queue=None):
+    """Return the :class:`Array` ``[a[indices[0]], ..., a[indices[n]]]``.
+    For the moment, *a* must be a type that can be bound to a texture.
+    """
+
     queue = queue or a.queue
     if out is None:
         out = Array(queue, indices.shape, a.dtype, allocator=a.allocator)
@@ -1224,33 +1336,30 @@ def _if_positive(result, criterion, then_, else_):
 
 
 def if_positive(criterion, then_, else_, out=None, queue=None):
+    """Return an array like *then_*, which, for the element at index *i*,
+    contains *then_[i]* if *criterion[i]>0*, else *else_[i]*.
+    """
+
     if not (criterion.shape == then_.shape == else_.shape):
         raise ValueError("shapes do not match")
 
     if not (then_.dtype == else_.dtype):
         raise ValueError("dtypes do not match")
 
-    knl = elementwise.get_if_positive_kernel(
-            criterion.context,
-            criterion.dtype, then_.dtype)
-
     if out is None:
         out = empty_like(then_)
     _if_positive(out, criterion, then_, else_)
     return out
 
-
-
-
 def maximum(a, b, out=None, queue=None):
+    """Return the elementwise maximum of *a* and *b*."""
+
     # silly, but functional
     return if_positive(a.mul_add(1, b, -1, queue=queue), a, b,
             queue=queue, out=out)
 
-
-
-
 def minimum(a, b, out=None, queue=None):
+    """Return the elementwise minimum of *a* and *b*."""
     # silly, but functional
     return if_positive(a.mul_add(1, b, -1, queue=queue), b, a,
             queue=queue, out=out)
@@ -1262,16 +1371,25 @@ _builtin_min = min
 _builtin_max = max
 
 def sum(a, dtype=None, queue=None):
+    """
+    .. versionadded:: 2011.1
+    """
     from pyopencl.reduction import get_sum_kernel
     krnl = get_sum_kernel(a.context, dtype, a.dtype)
     return krnl(a, queue=queue)
 
 def dot(a, b, dtype=None, queue=None):
+    """
+    .. versionadded:: 2011.1
+    """
     from pyopencl.reduction import get_dot_kernel
     krnl = get_dot_kernel(a.context, dtype, a.dtype, b.dtype)
     return krnl(a, b, queue=queue)
 
 def subset_dot(subset, a, b, dtype=None, queue=None):
+    """
+    .. versionadded:: 2011.1
+    """
     from pyopencl.reduction import get_subset_dot_kernel
     krnl = get_subset_dot_kernel(a.context, dtype, subset.dtype, a.dtype, b.dtype)
     return krnl(subset, a, b, queue=queue)
@@ -1285,7 +1403,14 @@ def _make_minmax_kernel(what):
     return f
 
 min = _make_minmax_kernel("min")
+min.__doc__ = """
+    .. versionadded:: 2011.1
+    """
+
 max = _make_minmax_kernel("max")
+max.__doc__ = """
+    .. versionadded:: 2011.1
+    """
 
 def _make_subset_minmax_kernel(what):
     def f(subset, a, queue=None):
@@ -1296,7 +1421,9 @@ def _make_subset_minmax_kernel(what):
     return f
 
 subset_min = _make_subset_minmax_kernel("min")
+subset_min.__doc__ = """.. versionadded:: 2011.1"""
 subset_max = _make_subset_minmax_kernel("max")
+subset_max.__doc__ = """.. versionadded:: 2011.1"""
 
 # }}}
 
