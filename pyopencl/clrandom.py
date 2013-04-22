@@ -25,7 +25,7 @@ THE SOFTWARE.
 
 # {{{ documentation
 
-__doc__ = """
+__doc__ = u"""
 PyOpenCL now includes and uses the `RANLUXCL random number generator
 <https://bitbucket.org/ivarun/ranluxcl/>`_ by Ivar Ursin Nikolaisen.  In
 addition to being usable through the convenience functions above, it is
