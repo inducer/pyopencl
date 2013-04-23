@@ -952,6 +952,7 @@ class Array(object):
     def finish(self):
         # undoc
         cl.wait_for_events(self.events)
+        del self.events[:]
 
 # }}}
 
@@ -1136,7 +1137,7 @@ def _take(result, ary, indices):
 
 
 
-def take(a, indices, out=None, queue=None):
+def take(a, indices, out=None, queue=None, wait_for=None):
     """Return the :class:`Array` ``[a[indices[0]], ..., a[indices[n]]]``.
     For the moment, *a* must be a type that can be bound to a texture.
     """
@@ -1146,7 +1147,8 @@ def take(a, indices, out=None, queue=None):
         out = Array(queue, indices.shape, a.dtype, allocator=a.allocator)
 
     assert len(indices.shape) == 1
-    _take(out, a, indices, queue=queue)
+    out.events.append(
+            _take(out, a, indices, queue=queue, wait_for=wait_for))
     return out
 
 
