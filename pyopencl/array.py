@@ -207,6 +207,14 @@ class DefaultAllocator(cl.tools.DeferredAllocator):
                 DeprecationWarning, 2)
         cl.tools.DeferredAllocator.__init__(self, *args, **kwargs)
 
+def _make_strides(itemsize, shape, order):
+    if order == "F":
+        return _f_contiguous_strides(itemsize, shape)
+    elif order == "C":
+        return _c_contiguous_strides(itemsize, shape)
+    else:
+        raise ValueError("invalid order: %s" % order)
+
 # }}}
 
 # {{{ array class
@@ -344,14 +352,7 @@ class Array(object):
             s = np.asscalar(s)
 
         if strides is None:
-            if order == "F":
-                strides = _f_contiguous_strides(
-                        dtype.itemsize, shape)
-            elif order == "C":
-                strides = _c_contiguous_strides(
-                        dtype.itemsize, shape)
-            else:
-                raise ValueError("invalid order: %s" % order)
+            strides = _make_strides(dtype.itemsize, shape, order)
 
         else:
             # FIXME: We should possibly perform some plausibility
@@ -910,8 +911,14 @@ class Array(object):
 
     # {{{ views
 
-    def reshape(self, *shape):
+    def reshape(self, *shape, **kwargs):
         """Returns an array containing the same data with a new shape."""
+
+        order = kwargs.pop("order", "C")
+        if kwargs:
+            raise TypeError("unexpected keyword arguments: %s"
+                    % kwargs.keys())
+
         # TODO: add more error-checking, perhaps
         if isinstance(shape[0], tuple) or isinstance(shape[0], list):
             shape = tuple(shape[0])
@@ -919,7 +926,8 @@ class Array(object):
         if size != self.size:
             raise ValueError("total size of new array must be unchanged")
 
-        return self._new_with_changes(data=self.data, shape=shape)
+        return self._new_with_changes(data=self.data, shape=shape,
+                strides=_make_strides(self.dtype.itemsize, shape, order))
 
     def ravel(self):
         """Returns flattened array containing the same data."""
