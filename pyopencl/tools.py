@@ -87,10 +87,11 @@ _first_arg_dependent_caches = []
 
 @decorator
 def first_arg_dependent_memoize(func, cl_object, *args):
-    """Provides memoization for things that get created inside
-    a context, i.e. mainly programs and kernels. Assumes that
+    """Provides memoization for a function. Typically used to cache
+    things that get created inside
+    a :class:`pyopencl.Context`, e.g. programs and kernels. Assumes that
     the first argument of the decorated function is an OpenCL
-    object that might go away, such as a context or a queue,
+    object that might go away, such as a :class:`pyopencl.Context` or a :class:`pyopencl.CommandQueue`,
     and based on which we might want to clear the cache.
 
     .. versionadded:: 2011.2
@@ -101,17 +102,67 @@ def first_arg_dependent_memoize(func, cl_object, *args):
         # FIXME: This may keep contexts alive longer than desired.
         # But I guess since the memory in them is freed, who cares.
         ctx_dict = func._pyopencl_first_arg_dep_memoize_dic = {}
+        _first_arg_dependent_caches.append(ctx_dict)
 
     try:
         return ctx_dict[cl_object][args]
     except KeyError:
-        _first_arg_dependent_caches.append(ctx_dict)
         arg_dict = ctx_dict.setdefault(cl_object, {})
         result = func(cl_object, *args)
         arg_dict[args] = result
         return result
 
 context_dependent_memoize = first_arg_dependent_memoize
+
+
+
+
+def first_arg_dependent_memoize_nested(nested_func):
+    """Provides memoization for nested functions. Typically used to cache
+    things that get created inside a :class:`pyopencl.Context`, e.g. programs
+    and kernels. Assumes that the first argument of the decorated function is
+    an OpenCL object that might go away, such as a :class:`pyopencl.Context` or
+    a :class:`pyopencl.CommandQueue`, and will therefore respond to
+    :func:`clear_first_arg_caches`.
+
+    .. versionadded:: 2013.1
+
+    Requires Python 2.5 or newer.
+    """
+
+    from functools import wraps
+    cache_dict_name = intern("_memoize_inner_dic_%s_%s_%d"
+            % (nested_func.__name__, nested_func.func_code.co_filename,
+                nested_func.func_code.co_firstlineno))
+
+    from inspect import currentframe
+    # prevent ref cycle
+    try:
+        caller_frame = currentframe().f_back
+        cache_context = caller_frame.f_globals[
+                caller_frame.f_code.co_name]
+    finally:
+        #del caller_frame
+        pass
+
+    try:
+        cache_dict = getattr(cache_context, cache_dict_name)
+    except AttributeError:
+        cache_dict = {}
+        _first_arg_dependent_caches.append(cache_dict)
+        setattr(cache_context, cache_dict_name, cache_dict)
+
+    @wraps(nested_func)
+    def new_nested_func(cl_object, *args):
+        try:
+            return cache_dict[cl_object][args]
+        except KeyError:
+            arg_dict = cache_dict.setdefault(cl_object, {})
+            result = nested_func(cl_object, *args)
+            arg_dict[args] = result
+            return result
+
+    return new_nested_func
 
 
 
