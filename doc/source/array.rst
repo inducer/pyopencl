@@ -1,5 +1,5 @@
-Multi-dimensional arrays on the Compute Device
-==============================================
+Multi-dimensional arrays
+========================
 
 .. module:: pyopencl.array
 
