@@ -1400,6 +1400,7 @@ def minimum(a, b, out=None, queue=None):
 # }}}
 
 # {{{ reductions
+_builtin_sum = sum
 _builtin_min = min
 _builtin_max = max
 
@@ -1457,6 +1458,31 @@ subset_min = _make_subset_minmax_kernel("min")
 subset_min.__doc__ = """.. versionadded:: 2011.1"""
 subset_max = _make_subset_minmax_kernel("max")
 subset_max.__doc__ = """.. versionadded:: 2011.1"""
+
+# }}}
+
+# {{{ scans
+
+def cumsum(a, output_dtype=None, queue=None, wait_for=None, return_event=False):
+    # undocumented for now
+
+    """
+    .. versionadded:: 2013.1
+    """
+
+    if output_dtype is None:
+        output_dtype = a.dtype
+
+    result = a._new_like_me(output_dtype)
+
+    from pyopencl.scan import get_cumsum_kernel
+    krnl = get_cumsum_kernel(a.context, a.dtype, output_dtype)
+    evt = krnl(a, result, queue=queue, wait_for=wait_for)
+
+    if return_event:
+        return evt, result
+    else:
+        return result
 
 # }}}
 

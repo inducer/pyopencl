@@ -35,7 +35,9 @@ import pyopencl as cl
 import pyopencl.array
 from pyopencl.tools import (dtype_to_ctype, bitlog2,
         KernelTemplateBase, _process_code_for_macro,
-        get_arg_list_scalar_arg_dtypes)
+        get_arg_list_scalar_arg_dtypes,
+        context_dependent_memoize,
+        )
 import pyopencl._mymako as mako
 from pyopencl._cluda import CLUDA_PREAMBLE
 
@@ -1567,6 +1569,25 @@ class ScanTemplate(KernelTemplateBase):
                 + "\n"
                 + renderer(self.preamble + "\n" + more_preamble)),
             devices=devices)
+
+# }}}
+
+# {{{ 'canned' scan kernels
+
+@context_dependent_memoize
+def get_cumsum_kernel(context, input_dtype, output_dtype):
+    from pyopencl.tools import VectorArg
+    return GenericScanKernel(
+        context, output_dtype,
+        arguments=[
+            VectorArg(input_dtype, "input"),
+            VectorArg(output_dtype, "output"),
+            ],
+        input_expr="input[i]",
+        scan_expr="a+b", neutral="0",
+        output_statement="""
+            output[i] = item;
+            """)
 
 # }}}
 
