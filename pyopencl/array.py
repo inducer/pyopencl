@@ -479,6 +479,19 @@ class Array(object):
 
         return ary
 
+    def get_item(self, index, queue=None, wait_for=None):
+        if not isinstance(index, tuple):
+            index = (index,)
+        if len(index) != len(self.shape):
+            raise ValueError("incorrect number of indices")
+
+        tgt = np.empty((), self.dtype)
+        cl.enqueue_copy(queue or self.queue, tgt, self.data,
+                is_blocking=True, wait_for=wait_for,
+                device_offset=_builtin_sum(i*s for i, s in zip(index, self.strides)))
+
+        return tgt[()]
+
     def copy(self, queue=None):
         """.. versionadded:: 2013.1"""
 
