@@ -669,19 +669,12 @@ def create_some_context(interactive=True, answers=None):
         answers = ctx_spec.split(":")
 
     if answers is not None:
-        pre_provided_answers = answers[:]
+        pre_provided_answers = answers
+        answers = answers[:]
     else:
         pre_provided_answers = None
 
     user_inputs = []
-
-    def get_input(prompt):
-        if answers:
-            return str(answers.pop(0))
-        else:
-            user_input = raw_input(prompt)
-            user_inputs.append(user_input)
-            return user_input
 
     try:
         import sys
@@ -690,12 +683,24 @@ def create_some_context(interactive=True, answers=None):
     except:
         interactive = False
 
+    def get_input(prompt):
+        if answers:
+            return str(answers.pop(0))
+        elif not interactive:
+            return ''
+        else:
+            user_input = raw_input(prompt)
+            user_inputs.append(user_input)
+            return user_input
+
+    # {{{ pick a platform
+
     platforms = get_platforms()
 
     if not platforms:
         raise Error("no platforms found")
-    elif len(platforms) == 1 or not interactive:
-        platform = platforms[0]
+    elif len(platforms) == 1:
+        platform, = platforms
     else:
         if not answers:
             print "Choose platform:"
@@ -723,6 +728,10 @@ def create_some_context(interactive=True, answers=None):
                 if platform is None:
                     raise RuntimeError("input did not match any platform")
 
+    # }}}
+
+    # {{{ pick a device
+
     devices = platform.get_devices()
 
     def parse_device(choice):
@@ -742,7 +751,7 @@ def create_some_context(interactive=True, answers=None):
 
     if not devices:
         raise Error("no devices found")
-    elif len(devices) == 1 or not interactive:
+    elif len(devices) == 1:
         pass
     else:
         if not answers:
@@ -755,6 +764,8 @@ def create_some_context(interactive=True, answers=None):
             devices = [devices[0]]
         else:
             devices = [parse_device(i) for i in answer.split(",")]
+
+    # }}}
 
     if user_inputs:
         if pre_provided_answers is not None:
