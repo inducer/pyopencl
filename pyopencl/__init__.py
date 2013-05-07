@@ -822,7 +822,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
     :return: A :class:`NannyEvent` if the transfer involved a
         host-side buffer, otherwise an :class:`Event`.
 
-    :class:`Buffer` ↔ host transfers:
+    .. ------------------------------------------------------------------------
+    .. rubric :: Transfer :class:`Buffer` ↔ host
+    .. ------------------------------------------------------------------------
 
     :arg device_offset: offset in bytes (optional)
 
@@ -835,7 +837,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
             cl.enqueue_copy(queue, large_dest_numpy_array[:15], src_buffer)
 
-    :class:`Buffer` ↔ :class:`Buffer` transfers:
+    .. ------------------------------------------------------------------------
+    .. rubric :: Transfer :class:`Buffer` ↔ :class:`Buffer`
+    .. ------------------------------------------------------------------------
 
     :arg byte_count: (optional) If not specified, defaults to the
         size of the source in versions 2012.x and earlier,
@@ -844,7 +848,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
     :arg src_offset: (optional)
     :arg dest_offset: (optional)
 
-    Rectangular :class:`Buffer` ↔  host transfers (CL 1.1 and newer):
+    .. ------------------------------------------------------------------------
+    .. rubric :: Rectangular :class:`Buffer` ↔  host transfers (CL 1.1 and newer)
+    .. ------------------------------------------------------------------------
 
     :arg buffer_origin: :class:`tuple` of :class:`int` of length
         three or shorter. (mandatory)
@@ -857,7 +863,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
     :arg host_pitches: :class:`tuple` of :class:`int` of length
         two or shorter. (optional, "tightly-packed" if unspecified)
 
-    :class:`Image` ↔ host transfers:
+    .. ------------------------------------------------------------------------
+    .. rubric :: Transfer :class:`Image` ↔ host
+    .. ------------------------------------------------------------------------
 
     :arg origin: :class:`tuple` of :class:`int` of length
         three or shorter. (mandatory)
@@ -866,7 +874,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
     :arg pitches: :class:`tuple` of :class:`int` of length
         two or shorter. (optional)
 
-    :class:`Buffer` ↔ :class:`Image` transfers:
+    .. ------------------------------------------------------------------------
+    .. rubric :: Transfer :class:`Buffer` ↔ :class:`Image`
+    .. ------------------------------------------------------------------------
 
     :arg offset: offset in buffer (mandatory)
     :arg origin: :class:`tuple` of :class:`int` of length
@@ -874,7 +884,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
     :arg region: :class:`tuple` of :class:`int` of length
         three or shorter. (mandatory)
 
-    :class:`Image` ↔ :class:`Image` transfers:
+    .. ------------------------------------------------------------------------
+    .. rubric :: Transfer :class:`Image` ↔ :class:`Image`
+    .. ------------------------------------------------------------------------
 
     :arg src_origin: :class:`tuple` of :class:`int` of length
         three or shorter. (mandatory)
