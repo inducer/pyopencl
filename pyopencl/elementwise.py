@@ -493,8 +493,8 @@ def complex_dtype_to_name(dtype):
     else:
         raise RuntimeError("invalid complex type")
 
-
-
+def real_dtype(dtype):
+    return dtype.type(0).real.dtype
 
 @context_dependent_memoize
 def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
@@ -533,7 +533,6 @@ def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
 
 @context_dependent_memoize
 def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
-
     a_is_complex = dtype_a.kind == "c"
     x_is_complex = dtype_x.kind == "c"
     b_is_complex = dtype_b.kind == "c"
@@ -551,6 +550,14 @@ def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
             x = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), x)
 
         ax = "%s_mul(%s, %s)" % (complex_dtype_to_name(dtype_z), a, x)
+
+    # The following two are workarounds for Apple on OS X 10.8.
+    # They're not really necessary.
+
+    elif a_is_complex and not x_is_complex:
+        ax = "a*((%s) x[i])" % dtype_to_ctype(real_dtype(dtype_a))
+    elif not a_is_complex and x_is_complex:
+        ax = "((%s) a)*x[i]" % dtype_to_ctype(real_dtype(dtype_x))
 
     b = "b"
     if z_is_complex and not b_is_complex:
