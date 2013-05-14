@@ -294,12 +294,12 @@ Version 0.90
 
 .. _license:
 
-Licensing
-=========
+License
+=======
 
 PyOpenCL is licensed to you under the MIT/X Consortium license:
 
-Copyright (c) 2009-11 Andreas Klöckner and Contributors.
+Copyright (c) 2009-13 Andreas Klöckner and Contributors.
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
