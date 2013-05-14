@@ -66,7 +66,10 @@ def compiler_output(text):
 
 class Kernel(_cl._Kernel):
     def __init__(self, prg, name):
-        _cl._Kernel.__init__(self, prg._get_prg(), name)
+        if not isinstance(prg, _cl._Program):
+            prg = prg._get_prg()
+
+        _cl._Kernel.__init__(self, prg, name)
 
 # }}}
 
