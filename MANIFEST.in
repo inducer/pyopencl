@@ -6,10 +6,13 @@ include src/wrapper/*.cpp
 include test/*.py
 include test/*.h
 include examples/*.py
+
 include doc/source/*.rst
 include doc/Makefile
 include doc/*.py
 include doc/source/conf.py
+include doc/source/_static/*.css
+include doc/source/_templates/*.html
 
 include distribute_setup.py
 include configure.py
