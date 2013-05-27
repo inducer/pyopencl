@@ -168,7 +168,7 @@ class Program(object):
                     lambda: create_built_program_from_source_cached(
                         self._context, self._source, options, devices,
                         cache_dir=cache_dir),
-                    options=options)
+                    options=options, source=self._source)
 
             del self._context
             do_del_source = True
@@ -178,7 +178,7 @@ class Program(object):
 
         return self
 
-    def _build_and_catch_errors(self, build_func, options):
+    def _build_and_catch_errors(self, build_func, options, source=None):
         try:
             return build_func()
         except _cl.RuntimeError, e:
@@ -190,11 +190,11 @@ class Program(object):
             if options:
                 what = what + "\n(options: %s)" % " ".join(options)
 
-            if self._source is not None:
+            if source is not None:
                 from tempfile import NamedTemporaryFile
                 srcfile = NamedTemporaryFile(mode="wt", delete=False, suffix=".cl")
                 try:
-                    srcfile.write(self._source)
+                    srcfile.write(source)
                 finally:
                     srcfile.close()
 
