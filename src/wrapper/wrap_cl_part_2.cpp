@@ -231,7 +231,6 @@ void pyopencl_expose_part_2()
       ;
   }
 
-  py::def("unload_compiler", unload_compiler);
 #if PYOPENCL_CL_VERSION >= 0x1020
   py::def("unload_platform_compiler", unload_platform_compiler);
 #endif

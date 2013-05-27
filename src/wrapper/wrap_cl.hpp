@@ -3192,14 +3192,6 @@ namespace pyopencl
 #endif
 
 
-  inline
-  void unload_compiler()
-  {
-    PYOPENCL_DEPRECATED("unload_compiler", "2013.1", );
-
-    PYOPENCL_CALL_GUARDED(clUnloadCompiler, ());
-  }
-
 #if PYOPENCL_CL_VERSION >= 0x1020
   inline
   void unload_platform_compiler(platform &plat)

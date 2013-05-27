@@ -125,8 +125,6 @@ def test_get_info(platform, device):
             lambda info: prg.get_build_info(device, info),
             try_attr_form=False)
 
-    cl.unload_compiler() # just for the heck of it
-
     n = 2000
     a_buf = cl.Buffer(ctx, 0, n*4)
 
