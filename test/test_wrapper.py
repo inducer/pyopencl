@@ -36,17 +36,31 @@ from pyopencl.tools import pytest_generate_tests_for_pyopencl \
 
 
 
-
 @pytools.test.mark_test.opencl
 def test_get_info(platform, device):
     failure_count = [0]
 
+    pocl_quirks = [
+            (cl.Buffer, cl.mem_info.OFFSET),
+            ]
     CRASH_QUIRKS = [
             (("NVIDIA Corporation", "NVIDIA CUDA",
                 "OpenCL 1.0 CUDA 3.0.1"),
                 [
                 (cl.Event, cl.event_info.COMMAND_QUEUE),
                 ]),
+            (("The pocl project", "Portable Computing Language",
+                "OpenCL 1.2 pocl 0.8-pre"),
+                pocl_quirks
+                ),
+            (("The pocl project", "Portable Computing Language",
+                "OpenCL 1.2 pocl 0.8"),
+                pocl_quirks
+                ),
+            (("The pocl project", "Portable Computing Language",
+                "OpenCL 1.2 pocl 0.9-pre"),
+                pocl_quirks
+                ),
             ]
     QUIRKS = []
 
@@ -143,8 +157,11 @@ def test_get_info(platform, device):
                 try_attr_form=False)
 
     # crashes on intel...
-    if device.image_support and platform.vendor != "Intel(R) Corporation":
-        smp = cl.Sampler(ctx, True,
+    if device.image_support and platform.vendor not in [
+            "Intel(R) Corporation",
+            "The pocl project",
+            ]:
+        smp = cl.Sampler(ctx, False,
                 cl.addressing_mode.CLAMP,
                 cl.filter_mode.NEAREST)
         do_test(smp, cl.sampler_info)
@@ -161,12 +178,20 @@ def test_get_info(platform, device):
                 lambda info: img.get_image_info(info))
 
 @pytools.test.mark_test.opencl
-def test_invalid_kernel_names_cause_failures(device):
-    ctx = cl.Context([device])
+def test_invalid_kernel_names_cause_failures(ctx_factory):
+    ctx = ctx_factory()
+    device = ctx.devices[0]
     prg = cl.Program(ctx, """
         __kernel void sum(__global float *a)
         { a[get_global_id(0)] *= 2; }
         """).build()
+
+
+    if ctx.devices[0].platform.vendor == "The pocl project":
+        # https://bugs.launchpad.net/pocl/+bug/1184464
+
+        import pytest
+        pytest.skip("pocl doesn't like invalid kernel names")
 
     try:
         prg.sam
@@ -192,8 +217,10 @@ def test_image_format_constructor():
     assert not iform.__dict__
 
 @pytools.test.mark_test.opencl
-def test_nonempty_supported_image_formats(device, ctx_factory):
+def test_nonempty_supported_image_formats(ctx_factory):
     context = ctx_factory()
+
+    device = context.devices[0]
 
     if device.image_support:
         assert len(cl.get_supported_image_formats(
@@ -245,6 +272,12 @@ def test_image_2d(ctx_factory):
         skip("images not supported on %s" % device)
 
     if "Intel" in device.vendor and "31360.31426" in device.version:
+        from pytest import skip
+        skip("images crashy on %s" % device)
+    if "pocl" in device.platform.vendor and (
+            "0.8" in device.platform.version or
+            "0.9" in device.platform.version
+            ):
         from pytest import skip
         skip("images crashy on %s" % device)
 
