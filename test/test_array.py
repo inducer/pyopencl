@@ -72,8 +72,8 @@ def make_random_array(queue, dtype, size):
     if dtype.kind == "c":
         real_dtype = TO_REAL[dtype]
         return (rand(queue, shape=(size,), dtype=real_dtype).astype(dtype)
-                + dtype.type(1j)
-                * rand(queue, shape=(size,), dtype=real_dtype).astype(dtype))
+                + rand(queue, shape=(size,), dtype=real_dtype).astype(dtype)
+                * dtype.type(1j))
     else:
         return rand(queue, shape=(size,), dtype=dtype)
 
@@ -91,11 +91,11 @@ def test_basic_complex(ctx_factory):
     size = 500
 
     ary =  (rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64)
-            + 1j* rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64))
+            + rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64) * 1j)
     c = np.complex64(5+7j)
 
     host_ary = ary.get()
-    assert la.norm((c*ary).get() - c*host_ary) < 1e-5 * la.norm(host_ary)
+    assert la.norm((ary*c).get() - c*host_ary) < 1e-5 * la.norm(host_ary)
 
 @pytools.test.mark_test.opencl
 def test_mix_complex(ctx_factory):

@@ -94,6 +94,14 @@ Version 2013.1
 * Deprecate :class:`pyopencl.array.DefaultAllocator`.
 * Deprecate :class:`pyopencl.tools.CLAllocator`.
 * Introudce :class:`pyopencl.tools.DeferredAllocator`, :class:`pyopencl.tools.ImmediateAllocator`.
+* Allow arrays whose beginning does not coincide with the beginning of their
+  :attr:`pyopencl.array.Array.data` :class:`pyopencl.Buffer`.
+  See :attr:`pyopencl.array.Array.base_data` and :attr:`pyopencl.array.Array.offset`.
+  Note that not all functions in PyOpenCL support such arrays just yet. These
+  will fail with :exc:`pyopencl.array.ArrayHasOffsetError`.
+* Add :meth:`pyopencl.array.Array.__getitem__`, supporting generic slicing.
+  Note that many (most) operations on sliced arrays will fail for now.
+  This will be fixed in a future release.
 
 Version 2012.1
 --------------

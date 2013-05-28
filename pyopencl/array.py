@@ -219,6 +219,11 @@ def _make_strides(itemsize, shape, order):
 
 # {{{ array class
 
+class ArrayHasOffsetError(ValueError):
+    """
+    .. versionadded:: 2013.1
+    """
+
 class Array(object):
     """A :class:`numpy.ndarray` work-alike that stores its data and performs its
     computations on the compute device.  *shape* and *dtype* work exactly as in
@@ -244,6 +249,29 @@ class Array(object):
 
         The :class:`pyopencl.MemoryObject` instance created for the memory that backs
         this :class:`Array`.
+
+        .. versionchanged:: 2013.1
+
+            If a non-zero :attr:`offset` has been specified for this array,
+            this will fail with :exc:`ArrayHasOffsetError`.
+
+    .. attribute :: base_data
+
+        The :class:`pyopencl.MemoryObject` instance created for the memory that backs
+        this :class:`Array`. Unlike :attr:`data`, the base address of *base_data*
+        is allowed to be different from the beginning of the array. The actual
+        beginning is the base address of *base_data* plus :attr:`offset` in units
+        of :attr:`dtype`.
+
+        Unlike :attr:`data`, retrieving :attr:`base_data` always succeeds.
+
+        .. versionadded:: 2013.1
+
+    .. attribute :: offset
+
+        See :attr:`base_data`.
+
+        .. versionadded:: 2013.1
 
     .. attribute :: shape
 
@@ -274,8 +302,10 @@ class Array(object):
         :attr:`numpy.ndarray.flags`.
     """
 
+    __array_priority__ = 10
+
     def __init__(self, cqa, shape, dtype, order="C", allocator=None,
-            data=None, queue=None, strides=None):
+            data=None, offset=0, queue=None, strides=None, events=None):
         # {{{ backward compatibility
 
         from warnings import warn
@@ -366,7 +396,10 @@ class Array(object):
         self.shape = shape
         self.dtype = dtype
         self.strides = strides
-        self.events = []
+        if events is None:
+            self.events = []
+        else:
+            self.events = events
 
         self.size = s
         alloc_nbytes = self.nbytes = self.dtype.itemsize * self.size
@@ -383,45 +416,55 @@ class Array(object):
                 if queue is not None:
                     context = queue.context
 
-                self.data = cl.Buffer(context, cl.mem_flags.READ_WRITE, alloc_nbytes)
+                self.base_data = cl.Buffer(context, cl.mem_flags.READ_WRITE, alloc_nbytes)
             else:
-                self.data = self.allocator(alloc_nbytes)
+                self.base_data = self.allocator(alloc_nbytes)
         else:
-            self.data = data
+            self.base_data = data
+
+        self.offset = offset
 
     @property
     def context(self):
-        return self.data.context
+        return self.base_data.context
+
+    @property
+    def data(self):
+        if self.offset:
+            raise ArrayHasOffsetError()
+        else:
+            return self.base_data
 
     @property
     @memoize_method
     def flags(self):
         return _ArrayFlags(self)
 
-    @property
-    def mem_size(self):
-        from warnings import warn
-        warn("Array.mem_size is deprecated. Use Array.size",
-                DeprecationWarning, stacklevel=2)
-
-    def _new_with_changes(self, data, shape=None, dtype=None, strides=None, queue=None):
+    def _new_with_changes(self, data, shape=None, dtype=None,
+            strides=None, offset=None, queue=None):
         if shape is None:
             shape = self.shape
         if dtype is None:
             dtype = self.dtype
         if strides is None:
             strides = self.strides
+        if offset is None:
+            offset = self.offset
         if queue is None:
             queue = self.queue
 
         if queue is not None:
-            return Array(queue, shape, dtype,
-                    allocator=self.allocator, strides=strides, data=data)
+            return Array(queue, shape, dtype, allocator=self.allocator,
+                    strides=strides, data=data, offset=offset,
+                    events=self.events)
         elif self.allocator is not None:
             return Array(self.allocator, shape, dtype, queue=queue,
-                    strides=strides, data=data)
+                    strides=strides, data=data, offset=offset,
+                    events=self.events)
         else:
-            return Array(self.context, shape, dtype, strides=strides, data=data)
+            return Array(self.context, shape, dtype,
+                    strides=strides, data=data, offset=offset,
+                    events=self.events)
 
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue, kernel_specific_max_wg_size=None):
@@ -452,7 +495,8 @@ class Array(object):
                     stacklevel=2)
 
         if self.size:
-            cl.enqueue_copy(queue or self.queue, self.data, ary,
+            cl.enqueue_copy(queue or self.queue, self.base_data, ary,
+                    device_offset=self.offset,
                     is_blocking=not async)
 
     def get(self, queue=None, ary=None, async=False):
@@ -467,37 +511,27 @@ class Array(object):
             ary = _as_strided(ary, strides=self.strides)
         else:
             if ary.size != self.size:
-                raise TypeError("'ary' has non-matching type")
-            if ary.dtype != self.dtype:
                 raise TypeError("'ary' has non-matching size")
+            if ary.dtype != self.dtype:
+                raise TypeError("'ary' has non-matching type")
 
         assert self.flags.forc, "Array in get() must be contiguous"
 
         if self.size:
-            cl.enqueue_copy(queue or self.queue, ary, self.data,
+            cl.enqueue_copy(queue or self.queue, ary, self.base_data,
+                    device_offset=self.offset,
                     is_blocking=not async)
 
         return ary
-
-    def get_item(self, index, queue=None, wait_for=None):
-        if not isinstance(index, tuple):
-            index = (index,)
-        if len(index) != len(self.shape):
-            raise ValueError("incorrect number of indices")
-
-        tgt = np.empty((), self.dtype)
-        cl.enqueue_copy(queue or self.queue, tgt, self.data,
-                is_blocking=True, wait_for=wait_for,
-                device_offset=_builtin_sum(i*s for i, s in zip(index, self.strides)))
-
-        return tgt[()]
 
     def copy(self, queue=None):
         """.. versionadded:: 2013.1"""
 
         queue = queue or self.queue
         result = self._new_like_me()
-        cl.enqueue_copy(queue, result.data, self.data, byte_count=self.nbytes)
+        cl.enqueue_copy(queue, result.base_data, self.base_data,
+                src_offset=self.offset, byte_count=self.nbytes)
+
         return result
 
     def __str__(self):
@@ -815,7 +849,7 @@ class Array(object):
         if len(self.shape):
             return self.shape[0]
         else:
-            return 1
+            return TypeError("scalar has no len()")
 
     def __abs__(self):
         """Return a `Array` of the absolute values of the elements
@@ -974,6 +1008,47 @@ class Array(object):
         # undoc
         cl.wait_for_events(self.events)
         del self.events[:]
+
+    def __getitem__(self, index):
+        if not isinstance(index, tuple):
+            index = (index,)
+
+        if len(index) > len(self.shape):
+            raise IndexError("too many axes in index (have: %d, got: %d)" % (len(self.shape), len(index)))
+
+        new_shape = []
+        new_offset = self.offset
+        new_strides = []
+
+        for i, (subidx, shape_i, strides_i) in enumerate(
+                zip(index, self.shape, self.strides)):
+            if isinstance(subidx, slice):
+                start, stop, stride = subidx.indices(shape_i)
+                new_shape.append((stop-start)//stride)
+                new_strides.append(stride)
+                new_offset += strides_i*start
+            elif isinstance(subidx, (int, np.integer)):
+                if subidx < 0:
+                    subidx += shape_i
+
+                if not (0 <= subidx < shape_i):
+                    raise IndexError("subindex in axis %d out of range" % i)
+
+                new_offset += strides_i*subidx
+            else:
+                raise IndexError("invalid subindex in axis %d" % i)
+
+        while i + 1 < len(self.shape):
+            i += 1
+            new_shape.append(self.shape[i])
+            new_strides.append(self.strides[i])
+
+        return self._new_with_changes(
+                data=self.base_data,
+                shape=tuple(new_shape),
+                strides=tuple(new_strides),
+                offset=new_offset,
+                )
 
 # }}}
 

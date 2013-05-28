@@ -110,6 +110,8 @@ The :class:`Array` Class
 
 .. autoclass:: Array
 
+    .. rubric:: Methods
+
     .. automethod :: __len__
     .. automethod :: reshape
     .. automethod :: ravel
@@ -143,6 +145,10 @@ The :class:`Array` Class
     .. autoattribute :: real
     .. autoattribute :: imag
     .. automethod :: conj
+
+    .. automethod :: __getitem__
+
+.. autoexception:: ArrayHasOffsetError
 
 Constructing :class:`Array` Instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
