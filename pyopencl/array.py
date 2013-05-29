@@ -487,10 +487,11 @@ class Array(object):
     def flags(self):
         return _ArrayFlags(self)
 
-    def _new_with_changes(self, data=None, shape=None, dtype=None,
+    def _new_with_changes(self, data, shape=None, dtype=None,
             strides=None, offset=None, queue=None):
-        if data is None:
-            data = self.data
+        """
+        :arg data: *None* means alocate a new array.
+        """
         if shape is None:
             shape = self.shape
         if dtype is None:
@@ -519,7 +520,7 @@ class Array(object):
         """Return a copy of *self* with the default queue set to *queue*."""
 
         assert queue.context == self.context
-        return self._new_with_changes(queue=queue)
+        return self._new_with_changes(self.data, queue=queue)
 
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue, kernel_specific_max_wg_size=None):
