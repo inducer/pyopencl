@@ -110,44 +110,6 @@ The :class:`Array` Class
 
 .. autoclass:: Array
 
-    .. rubric:: Methods
-
-    .. automethod :: __len__
-    .. automethod :: reshape
-    .. automethod :: ravel
-    .. automethod :: view
-    .. automethod :: set
-    .. automethod :: get
-    .. automethod :: copy
-
-    .. automethod :: __str__
-    .. automethod :: __repr__
-
-    .. automethod :: mul_add
-    .. automethod :: __add__
-    .. automethod :: __sub__
-    .. automethod :: __iadd__
-    .. automethod :: __isub__
-    .. automethod :: __neg__
-    .. automethod :: __mul__
-    .. automethod :: __div__
-    .. automethod :: __rdiv__
-    .. automethod :: __pow__
-
-    .. automethod :: __abs__
-
-    .. UNDOC reverse()
-
-    .. automethod :: fill
-
-    .. automethod :: astype
-
-    .. autoattribute :: real
-    .. autoattribute :: imag
-    .. automethod :: conj
-
-    .. automethod :: __getitem__
-
 .. autoexception:: ArrayHasOffsetError
 
 Constructing :class:`Array` Instances
