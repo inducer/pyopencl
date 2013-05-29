@@ -1025,7 +1025,7 @@ class Array(object):
             if isinstance(subidx, slice):
                 start, stop, stride = subidx.indices(shape_i)
                 new_shape.append((stop-start)//stride)
-                new_strides.append(stride)
+                new_strides.append(stride*strides_i)
                 new_offset += strides_i*start
             elif isinstance(subidx, (int, np.integer)):
                 if subidx < 0:
