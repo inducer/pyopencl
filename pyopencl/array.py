@@ -224,6 +224,11 @@ class ArrayHasOffsetError(ValueError):
     .. versionadded:: 2013.1
     """
 
+    def __init__(self, val="The operation you are attempting does not (yet?) "
+                "support arrays that start at an offset from the beginning of their "
+                "buffer."):
+        ValueError.__init__(self, val)
+
 class Array(object):
     """A :class:`numpy.ndarray` work-alike that stores its data and performs its
     computations on the compute device.  *shape* and *dtype* work exactly as in
@@ -482,8 +487,10 @@ class Array(object):
     def flags(self):
         return _ArrayFlags(self)
 
-    def _new_with_changes(self, data, shape=None, dtype=None,
+    def _new_with_changes(self, data=None, shape=None, dtype=None,
             strides=None, offset=None, queue=None):
+        if data is None:
+            data = self.data
         if shape is None:
             shape = self.shape
         if dtype is None:
