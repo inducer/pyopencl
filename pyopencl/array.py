@@ -230,10 +230,14 @@ class Array(object):
     :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
     broadcasting of scalars. (e.g. `array+5`)
 
-    *cqa* must be a :class:`pyopencl.CommandQueue`. *cqa*
-    specifies the queue in which the array carries out its
-    computations by default. *cqa* will at some point be renamed *queue*,
-    so it should be considered 'positional-only'.
+    *cqa* must be a :class:`pyopencl.CommandQueue` or a:class:`Context`.
+
+    If it is a queue, *cqa* specifies the queue in which the array carries out
+    its computations by default. If a default queue (and thereby overloaded
+    operators and many other niceties) are not desired, pass a :class:`Context`.
+
+    *cqa* will at some point be renamed *cq*, so it should be considered
+    'positional-only'.
 
     *allocator* may be `None` or a callable that, upon being called with an
     argument of the number of bytes to be allocated, returns an
@@ -300,6 +304,47 @@ class Array(object):
         Return an object with attributes `c_contiguous`, `f_contiguous` and `forc`,
         which may be used to query contiguity properties in analogy to
         :attr:`numpy.ndarray.flags`.
+
+    .. rubric:: Methods
+
+    .. automethod :: with_queue
+
+    .. automethod :: __len__
+    .. automethod :: reshape
+    .. automethod :: ravel
+    .. automethod :: view
+    .. automethod :: set
+    .. automethod :: get
+    .. automethod :: copy
+
+    .. automethod :: __str__
+    .. automethod :: __repr__
+
+    .. automethod :: mul_add
+    .. automethod :: __add__
+    .. automethod :: __sub__
+    .. automethod :: __iadd__
+    .. automethod :: __isub__
+    .. automethod :: __neg__
+    .. automethod :: __mul__
+    .. automethod :: __div__
+    .. automethod :: __rdiv__
+    .. automethod :: __pow__
+
+    .. automethod :: __abs__
+
+    .. UNDOC reverse()
+
+    .. automethod :: fill
+
+    .. automethod :: astype
+
+    .. autoattribute :: real
+    .. autoattribute :: imag
+    .. automethod :: conj
+
+    .. automethod :: __getitem__
+
     """
 
     __array_priority__ = 10
@@ -323,10 +368,7 @@ class Array(object):
             queue = cqa
 
         elif isinstance(cqa, cl.Context):
-            warn("Passing a context for the 'cqa' parameter is deprecated. "
-                    "This usage will be continue to be accepted throughout the 2013.[0-6] "
-                    "versions of PyOpenCL.",
-                    DeprecationWarning, 2)
+            context = cqa
 
             if queue is not None:
                 raise TypeError("may not pass a context and a queue "
@@ -347,11 +389,11 @@ class Array(object):
 
             allocator = cqa
 
-        if queue is None:
-            warn("Queue-less arrays are deprecated. "
-                    "They will continue to work throughout the 2013.[0-6] "
-                    "versions of PyOpenCL.",
-                    DeprecationWarning, 2)
+        # Queue-less arrays do have a purpose in life.
+        # They don't do very much, but at least they don't run kernels
+        # in random queues.
+        #
+        # See also :meth:`with_queue`.
 
         # }}}
 
@@ -465,6 +507,12 @@ class Array(object):
             return Array(self.context, shape, dtype,
                     strides=strides, data=data, offset=offset,
                     events=self.events)
+
+    def with_queue(self, queue):
+        """Return a copy of *self* with the default queue set to *queue*."""
+
+        assert queue.context == self.context
+        return self._new_with_changes(queue=queue)
 
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue, kernel_specific_max_wg_size=None):
