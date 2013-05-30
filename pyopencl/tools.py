@@ -28,7 +28,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-
 import numpy as np
 from decorator import decorator
 import pyopencl as cl
@@ -36,7 +35,7 @@ from pytools import memoize, memoize_method
 
 import re
 
-from pyopencl.compyte.dtypes import (
+from pyopencl.compyte.dtypes import (  # noqa
         get_or_register_dtype, TypeNameNotKnown,
         register_dtype, dtype_to_ctype)
 
@@ -51,20 +50,24 @@ def _register_types():
 
     is_64_bit = tuple.__itemsize__ * 8 == 64
     if not is_64_bit:
-        get_or_register_dtype(["unsigned long", "unsigned long int"], np.uint64)
-        get_or_register_dtype(["signed long", "signed long int", "long int"], np.int64)
+        get_or_register_dtype(
+                ["unsigned long", "unsigned long int"], np.uint64)
+        get_or_register_dtype(
+                ["signed long", "signed long int", "long int"], np.int64)
 
 _register_types()
 
 
-
+# {{{ imported names
 
 bitlog2 = cl.bitlog2
 
 PooledBuffer = cl.PooledBuffer
 
 from pyopencl._cl import _tools_DeferredAllocator as DeferredAllocator
-from pyopencl._cl import _tools_ImmediateAllocator as ImmediateAllocator
+from pyopencl._cl import (  # noqa
+        _tools_ImmediateAllocator as ImmediateAllocator)
+
 
 class CLAllocator(DeferredAllocator):
     def __init__(self, *args, **kwargs):
@@ -77,22 +80,22 @@ class CLAllocator(DeferredAllocator):
 
 MemoryPool = cl.MemoryPool
 
+# }}}
 
 
+# {{{ first-arg caches
 
 _first_arg_dependent_caches = []
-
-
 
 
 @decorator
 def first_arg_dependent_memoize(func, cl_object, *args):
     """Provides memoization for a function. Typically used to cache
-    things that get created inside
-    a :class:`pyopencl.Context`, e.g. programs and kernels. Assumes that
-    the first argument of the decorated function is an OpenCL
-    object that might go away, such as a :class:`pyopencl.Context` or a :class:`pyopencl.CommandQueue`,
-    and based on which we might want to clear the cache.
+    things that get created inside a :class:`pyopencl.Context`, e.g. programs
+    and kernels. Assumes that the first argument of the decorated function is
+    an OpenCL object that might go away, such as a :class:`pyopencl.Context` or
+    a :class:`pyopencl.CommandQueue`, and based on which we might want to clear
+    the cache.
 
     .. versionadded:: 2011.2
     """
@@ -113,8 +116,6 @@ def first_arg_dependent_memoize(func, cl_object, *args):
         return result
 
 context_dependent_memoize = first_arg_dependent_memoize
-
-
 
 
 def first_arg_dependent_memoize_nested(nested_func):
@@ -165,8 +166,6 @@ def first_arg_dependent_memoize_nested(nested_func):
     return new_nested_func
 
 
-
-
 def clear_first_arg_caches():
     """Empties all first-argument-dependent memoization caches. Also releases
     all held reference contexts. If it is important to you that the
@@ -181,7 +180,7 @@ def clear_first_arg_caches():
 import atexit
 atexit.register(clear_first_arg_caches)
 
-
+# }}}
 
 
 def get_test_platforms_and_devices(plat_dev_string=None):
@@ -227,7 +226,9 @@ def get_test_platforms_and_devices(plat_dev_string=None):
                 platform = find_cl_obj(cl.get_platforms(), plat_str)
                 devs = platform.get_devices()
                 result.append(
-                        (platform, [find_cl_obj(devs, dev_id) for dev_id in dev_strs.split(",")]))
+                        (platform,
+                            [find_cl_obj(devs, dev_id)
+                                for dev_id in dev_strs.split(",")]))
 
         return result
 
@@ -235,8 +236,6 @@ def get_test_platforms_and_devices(plat_dev_string=None):
         return [
                 (platform, platform.get_devices())
                 for platform in cl.get_platforms()]
-
-
 
 
 def pytest_generate_tests_for_pyopencl(metafunc):
@@ -279,7 +278,8 @@ def pytest_generate_tests_for_pyopencl(metafunc):
 
                 if "ctx_getter" in metafunc.funcargnames:
                     from warnings import warn
-                    warn("The 'ctx_getter' arg is deprecated in favor of 'ctx_factory'.",
+                    warn("The 'ctx_getter' arg is deprecated in "
+                            "favor of 'ctx_factory'.",
                             DeprecationWarning)
                     arg_dict["ctx_getter"] = ContextFactory(device)
 
@@ -294,12 +294,11 @@ def pytest_generate_tests_for_pyopencl(metafunc):
                     id=str(platform))
 
 
-
-
 # {{{ C argument lists
 
 class Argument(object):
     pass
+
 
 class DtypedArgument(Argument):
     def __init__(self, dtype, name):
@@ -312,13 +311,16 @@ class DtypedArgument(Argument):
                 self.name,
                 self.dtype)
 
+
 class VectorArg(DtypedArgument):
     def declarator(self):
         return "__global %s *%s" % (dtype_to_ctype(self.dtype), self.name)
 
+
 class ScalarArg(DtypedArgument):
     def declarator(self):
         return "%s %s" % (dtype_to_ctype(self.dtype), self.name)
+
 
 class OtherArg(Argument):
     def __init__(self, declarator, name):
@@ -327,9 +329,6 @@ class OtherArg(Argument):
 
     def declarator(self):
         return self.decl
-
-
-
 
 
 def parse_c_arg(c_arg):
@@ -343,10 +342,11 @@ def parse_c_arg(c_arg):
     from pyopencl.compyte.dtypes import parse_c_arg_backend
     return parse_c_arg_backend(c_arg, ScalarArg, VectorArg)
 
+
 def parse_arg_list(arguments):
-    """Parse a list of kernel arguments. *arguments* may be a comma-separate list
-    of C declarators in a string, a list of strings representing C declarators,
-    or :class:`Argument` objects.
+    """Parse a list of kernel arguments. *arguments* may be a comma-separate
+    list of C declarators in a string, a list of strings representing C
+    declarators, or :class:`Argument` objects.
     """
 
     if isinstance(arguments, str):
@@ -360,6 +360,7 @@ def parse_arg_list(arguments):
             return obj
 
     return [parse_single_arg(arg) for arg in arguments]
+
 
 def get_arg_list_scalar_arg_dtypes(arg_types):
     result = []
@@ -376,8 +377,6 @@ def get_arg_list_scalar_arg_dtypes(arg_types):
 # }}}
 
 
-
-
 def get_gl_sharing_context_properties():
     ctx_props = cl.context_properties
 
@@ -390,24 +389,23 @@ def get_gl_sharing_context_properties():
         props.append(
             (ctx_props.GL_CONTEXT_KHR, gl_platform.GetCurrentContext()))
         props.append(
-                (ctx_props.GLX_DISPLAY_KHR, 
+                (ctx_props.GLX_DISPLAY_KHR,
                     GLX.glXGetCurrentDisplay()))
     elif sys.platform == "win32":
         props.append(
             (ctx_props.GL_CONTEXT_KHR, gl_platform.GetCurrentContext()))
         props.append(
-                (ctx_props.WGL_HDC_KHR, 
+                (ctx_props.WGL_HDC_KHR,
                     WGL.wglGetCurrentDC()))
     elif sys.platform == "darwin":
         props.append(
-            (ctx_props.CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE, cl.get_apple_cgl_share_group()))
+            (ctx_props.CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
+                cl.get_apple_cgl_share_group()))
     else:
-        raise NotImplementedError("platform '%s' not yet supported" 
+        raise NotImplementedError("platform '%s' not yet supported"
                 % sys.platform)
 
     return props
-
-
 
 
 class _CDeclList:
@@ -441,7 +439,8 @@ class _CDeclList:
             field_dtype, offset = field_data[:2]
             self.add_dtype(field_dtype)
 
-        _, cdecl = match_dtype_to_c_struct(self.device, dtype_to_ctype(dtype), dtype)
+        _, cdecl = match_dtype_to_c_struct(
+                self.device, dtype_to_ctype(dtype), dtype)
 
         self.declarations.append(cdecl)
         self.declared_dtypes.add(dtype)
@@ -492,8 +491,10 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
         >>> import numpy as np
         >>> import pyopencl as cl
         >>> import pyopencl.tools
+        >>> ctx = cl.create_some_context()
         >>> dtype = np.dtype([("id", np.uint32), ("value", np.float32)])
-        >>> dtype, c_decl = pyopencl.tools.match_dtype_to_c_struct(ctx.devices[0], 'id_val', dtype)
+        >>> dtype, c_decl = pyopencl.tools.match_dtype_to_c_struct(
+        ...     ctx.devices[0], 'id_val', dtype)
         >>> print c_decl
         typedef struct {
           unsigned id;
@@ -501,10 +502,11 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
         } id_val;
         >>> print dtype
         [('id', '<u4'), ('value', '<f4')]
-        >>> dtype_cl.tools.get_or_register_dtype('id_val', dtype)
+        >>> cl.tools.get_or_register_dtype('id_val', dtype)
 
-    As this example shows, it is important to call :func:`get_or_register_dtype` on
-    the modified `dtype` returned by this function, not the original one.
+    As this example shows, it is important to call
+    :func:`get_or_register_dtype` on the modified `dtype` returned by this
+    function, not the original one.
     """
 
     fields = sorted(dtype.fields.iteritems(),
@@ -530,7 +532,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     src = r"""
         #define pycl_offsetof(st, m) \
-                 ((size_t) ((__local char *) &(dummy.m) - (__local char *)&dummy ))
+                 ((size_t) ((__local char *) &(dummy.m) \
+                 - (__local char *)&dummy ))
 
         %(pre_decls)s
 
@@ -556,7 +559,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     prg = cl.Program(context, src)
     knl = prg.build(devices=[device]).get_size_and_offsets
 
-    import pyopencl.array
+    import pyopencl.array  # noqa
     result_buf = cl.array.empty(queue, 1+len(fields), np.uintp)
     knl(queue, (1,), (1,), result_buf.data)
     queue.finish()
@@ -574,7 +577,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
             offsets = [offset
                     for field_name, (field_dtype, offset) in fields]
         else:
-            raise RuntimeError("cannot discover struct layout on '%s'" % device)
+            raise RuntimeError(
+                    "cannot discover struct layout on '%s'" % device)
 
     result_buf.data.release()
     del knl
@@ -584,7 +588,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     dtype_arg_dict = dict(
             names=[field_name for field_name, (field_dtype, offset) in fields],
-            formats=[field_dtype for field_name, (field_dtype, offset) in fields],
+            formats=[field_dtype
+                for field_name, (field_dtype, offset) in fields],
             offsets=[int(x) for x in offsets],
             itemsize=int(size_and_offsets[0]),
             )
@@ -600,8 +605,6 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     assert dtype.itemsize == size_and_offsets[0]
 
     return dtype, c_decl
-
-
 
 
 @memoize
@@ -622,7 +625,6 @@ def dtype_to_c_struct(device, dtype):
     return c_decl
 
 
-
 # {{{ code generation/templating helper
 
 def _process_code_for_macro(code):
@@ -634,6 +636,7 @@ def _process_code_for_macro(code):
 
     return code.replace("\n", " \\\n")
 
+
 class _SimpleTextTemplate:
     def __init__(self, txt):
         self.txt = txt
@@ -641,12 +644,14 @@ class _SimpleTextTemplate:
     def render(self, context):
         return self.txt
 
+
 class _PrintfTextTemplate:
     def __init__(self, txt):
         self.txt = txt
 
     def render(self, context):
         return self.txt % context
+
 
 class _MakoTextTemplate:
     def __init__(self, txt):
@@ -657,31 +662,31 @@ class _MakoTextTemplate:
         return self.template.render(**context)
 
 
-
-
 class _ArgumentPlaceholder:
     def __init__(self, typename, name):
         self.typename = typename
         self.name = name
 
+
 class _VectorArgPlaceholder(_ArgumentPlaceholder):
     target_class = VectorArg
+
 
 class _ScalarArgPlaceholder(_ArgumentPlaceholder):
     target_class = ScalarArg
 
 
-
-
 class _TemplateRenderer(object):
-    def __init__(self, template, type_aliases, var_values, context=None, options=[]):
+    def __init__(self, template, type_aliases, var_values, context=None,
+            options=[]):
         self.template = template
         self.type_aliases = dict(type_aliases)
         self.var_dict = dict(var_values)
 
         for name in self.var_dict:
             if name.startswith("macro_"):
-                self.var_dict[name] = _process_code_for_macro(self.var_dict[name])
+                self.var_dict[name] = _process_code_for_macro(
+                        self.var_dict[name])
 
         self.context = context
         self.options = options
@@ -726,7 +731,8 @@ class _TemplateRenderer(object):
         for arg_list in arg_lists:
             if isinstance(arg_list, str):
                 arg_list = str(
-                        self.template.get_text_template(arg_list).render(self.var_dict))
+                        self.template
+                        .get_text_template(arg_list).render(self.var_dict))
                 arg_list = self._C_COMMENT_FINDER.sub("", arg_list)
                 arg_list = arg_list.replace("\n", " ")
 
@@ -776,8 +782,6 @@ class _TemplateRenderer(object):
         return cdl.get_declarations() + "\n" + "\n".join(type_alias_decls)
 
 
-
-
 class KernelTemplateBase(object):
     def __init__(self, template_processor=None):
         self.template_processor = template_processor
@@ -809,7 +813,8 @@ class KernelTemplateBase(object):
         elif tpl_processor == "mako":
             return _MakoTextTemplate(txt)
         else:
-            raise RuntimeError("unknown template processor '%s'" % proc_match.group(1))
+            raise RuntimeError(
+                    "unknown template processor '%s'" % proc_match.group(1))
 
     def get_renderer(self, type_aliases, var_values, context=None, options=[]):
         return _TemplateRenderer(self, type_aliases, var_values)
