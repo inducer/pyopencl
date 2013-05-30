@@ -1585,12 +1585,23 @@ def dot(a, b, dtype=None, queue=None):
     krnl = get_dot_kernel(a.context, dtype, a.dtype, b.dtype)
     return krnl(a, b, queue=queue)
 
+def vdot(a, b, dtype=None, queue=None):
+    """Like :func:`numpy.vdot`.
+
+    .. versionadded:: 2013.1
+    """
+    from pyopencl.reduction import get_dot_kernel
+    krnl = get_dot_kernel(a.context, dtype, a.dtype, b.dtype,
+            conjugate_first=True)
+    return krnl(a, b, queue=queue)
+
 def subset_dot(subset, a, b, dtype=None, queue=None):
     """
     .. versionadded:: 2011.1
     """
     from pyopencl.reduction import get_subset_dot_kernel
-    krnl = get_subset_dot_kernel(a.context, dtype, subset.dtype, a.dtype, b.dtype)
+    krnl = get_subset_dot_kernel(
+            a.context, dtype, subset.dtype, a.dtype, b.dtype)
     return krnl(subset, a, b, queue=queue)
 
 def _make_minmax_kernel(what):

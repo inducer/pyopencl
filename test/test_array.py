@@ -26,23 +26,13 @@ import numpy as np
 import numpy.linalg as la
 import sys
 import pytools.test
-from pytools import memoize
 
-
-def have_cl():
-    try:
-        import pyopencl
-        return True
-    except:
-        return False
-
-if have_cl():
-    import pyopencl as cl
-    import pyopencl.array as cl_array
-    import pyopencl.tools as cl_tools
-    from pyopencl.tools import pytest_generate_tests_for_pyopencl \
-            as pytest_generate_tests
-    from pyopencl.characterize import has_double_support
+import pyopencl as cl
+import pyopencl.array as cl_array
+import pyopencl.tools as cl_tools
+from pyopencl.tools import pytest_generate_tests_for_pyopencl \
+        as pytest_generate_tests
+from pyopencl.characterize import has_double_support
 
 
 

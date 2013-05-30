@@ -483,8 +483,6 @@ def get_linear_combination_kernel(summand_descriptors,
     return func, tex_src
 
 
-
-
 def complex_dtype_to_name(dtype):
     if dtype == np.complex128:
         return "cdouble"
@@ -493,8 +491,10 @@ def complex_dtype_to_name(dtype):
     else:
         raise RuntimeError("invalid complex type")
 
+
 def real_dtype(dtype):
     return dtype.type(0).real.dtype
+
 
 @context_dependent_memoize
 def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):

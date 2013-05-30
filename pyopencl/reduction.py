@@ -31,16 +31,12 @@ None of the original source code remains.
 """
 
 
-
-
 import pyopencl as cl
 from pyopencl.tools import (
         context_dependent_memoize,
         dtype_to_ctype, KernelTemplateBase,
         _process_code_for_macro)
 import numpy as np
-
-
 
 
 # {{{ kernel source
@@ -138,6 +134,7 @@ KERNEL = """//CL//
 
 # }}}
 
+
 # {{{ internal codegen frontends
 
 def  _get_reduction_source(
@@ -210,6 +207,7 @@ def  _get_reduction_source(
         ))
 
     from pytools import Record
+
     class ReductionInfo(Record):
         pass
 
@@ -217,8 +215,6 @@ def  _get_reduction_source(
             context=ctx,
             source=src,
             group_size=group_size)
-
-
 
 
 def get_reduction_kernel(stage,
@@ -240,7 +236,9 @@ def get_reduction_kernel(stage,
         arguments = parse_arg_list(arguments)
 
     if stage == 2 and arguments is not None:
-        arguments = [VectorArg(dtype_out, "pyopencl_reduction_inp")] + arguments
+        arguments = (
+                [VectorArg(dtype_out, "pyopencl_reduction_inp")]
+                + arguments)
 
     inf = _get_reduction_source(
             ctx, dtype_to_ctype(dtype_out), dtype_out.itemsize,
@@ -261,6 +259,7 @@ def get_reduction_kernel(stage,
     return inf
 
 # }}}
+
 
 # {{{ main reduction kernel
 
@@ -393,7 +392,8 @@ class ReductionTemplate(KernelTemplateBase):
             is_segment_start_expr=None, input_fetch_exprs=[],
             name_prefix="reduce", preamble="", template_processor=None):
 
-        KernelTemplateBase.__init__(self, template_processor=template_processor)
+        KernelTemplateBase.__init__(
+                self, template_processor=template_processor)
         self.arguments = arguments
         self.reduce_expr = reduce_expr
         self.neutral = neutral
@@ -404,9 +404,11 @@ class ReductionTemplate(KernelTemplateBase):
     def build_inner(self, context, type_aliases=(), var_values=(),
             more_preamble="", more_arguments=(), declare_types=(),
             options=(), devices=None):
-        renderer = self.get_renderer(type_aliases, var_values, context, options)
+        renderer = self.get_renderer(
+                type_aliases, var_values, context, options)
 
-        arg_list = renderer.render_argument_list(self.arguments, more_arguments)
+        arg_list = renderer.render_argument_list(
+                self.arguments, more_arguments)
 
         type_decl_preamble = renderer.get_type_decl_preamble(
                 context.devices[0], declare_types, arg_list)
@@ -423,6 +425,7 @@ class ReductionTemplate(KernelTemplateBase):
 
 # }}}
 
+
 # {{{ array reduction kernel getters
 
 @context_dependent_memoize
@@ -435,10 +438,8 @@ def get_sum_kernel(ctx, dtype_out, dtype_in):
             % {"tp": dtype_to_ctype(dtype_in)})
 
 
-
-
-@context_dependent_memoize
-def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None):
+def _get_dot_expr(dtype_out, dtype_a, dtype_b, conjugate_first,
+        has_double_support, index_expr="i"):
     if dtype_b is None:
         if dtype_a is None:
             dtype_b = dtype_out
@@ -447,9 +448,9 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None):
 
     if dtype_out is None:
         from pyopencl.compyte.array import get_common_dtype
-        from pyopencl.characterize import has_double_support
         dtype_out = get_common_dtype(
-                dtype_a.type(0), dtype_b.type(0), has_double_support(ctx.devices[0]))
+                dtype_a.type(0), dtype_b.type(0),
+                has_double_support)
 
     a_real_dtype = dtype_a.type(0).real.dtype
     b_real_dtype = dtype_b.type(0).real.dtype
@@ -462,18 +463,22 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None):
     from pyopencl.elementwise import complex_dtype_to_name
 
     if a_is_complex and b_is_complex:
-        a = "a[i]"
-        b = "b[i]"
+        a = "a[%s]" % index_expr
+        b = "b[%s]" % index_expr
         if dtype_a != dtype_out:
             a = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), a)
         if dtype_b != dtype_out:
             b = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), b)
 
+        if conjugate_first and a_is_complex:
+            a = "%s_conj(%s)" % (
+                    complex_dtype_to_name(dtype_out), a)
+
         map_expr = "%s_mul(%s, %s)" % (
                 complex_dtype_to_name(dtype_out), a, b)
     else:
-        a = "a[i]"
-        b = "b[i]"
+        a = "a[%s]" % index_expr
+        b = "b[%s]" % index_expr
 
         if out_is_complex:
             if a_is_complex and dtype_a != dtype_out:
@@ -486,7 +491,21 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None):
             if not b_is_complex and b_real_dtype != out_real_dtype:
                 b = "(%s) (%s)" % (dtype_to_ctype(out_real_dtype), b)
 
+        if conjugate_first and a_is_complex:
+            a = "%s_conj(%s)" % (
+                    complex_dtype_to_name(dtype_out), a)
+
         map_expr = "%s*%s" % (a, b)
+
+    return map_expr, dtype_out, dtype_b
+
+
+@context_dependent_memoize
+def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None, conjugate_first=False):
+    from pyopencl.characterize import has_double_support
+    map_expr, dtype_out, dtype_b = _get_dot_expr(
+            dtype_out, dtype_a, dtype_b, conjugate_first,
+            has_double_support=has_double_support(ctx.devices[0]))
 
     return ReductionKernel(ctx, dtype_out, neutral="0",
             reduce_expr="a+b", map_expr=map_expr,
@@ -501,22 +520,17 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None):
 
 
 @context_dependent_memoize
-def get_subset_dot_kernel(ctx, dtype_out, dtype_subset, dtype_a=None, dtype_b=None):
-    if dtype_out is None:
-        dtype_out = dtype_a
-
-    if dtype_b is None:
-        if dtype_a is None:
-            dtype_b = dtype_out
-        else:
-            dtype_b = dtype_a
-
-    if dtype_a is None:
-        dtype_a = dtype_out
+def get_subset_dot_kernel(ctx, dtype_out, dtype_subset, dtype_a=None, dtype_b=None,
+        conjugate_first=False):
+    from pyopencl.characterize import has_double_support
+    map_expr, dtype_out, dtype_b = _get_dot_expr(
+            dtype_out, dtype_a, dtype_b, conjugate_first,
+            has_double_support=has_double_support(ctx.devices[0]),
+            index_expr="lookup_tbl[i]")
 
     # important: lookup_tbl must be first--it controls the length
     return ReductionKernel(ctx, dtype_out, neutral="0",
-            reduce_expr="a+b", map_expr="a[lookup_tbl[i]]*b[lookup_tbl[i]]",
+            reduce_expr="a+b", map_expr=map_expr,
             arguments=
             "const %(tp_lut)s *lookup_tbl, "
             "const %(tp_a)s *a, "

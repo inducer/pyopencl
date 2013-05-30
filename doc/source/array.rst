@@ -140,6 +140,7 @@ Reductions
 
 .. autofunction:: sum
 .. autofunction:: dot
+.. autofunction:: vdot
 .. autofunction:: subset_dot
 .. autofunction:: max
 .. autofunction:: min

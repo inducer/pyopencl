@@ -30,8 +30,7 @@ from pytools import memoize
 from test_array import general_clrand
 
 import pyopencl as cl
-import pyopencl.array as cl_array
-import pyopencl.tools as cl_tools
+import pyopencl.array as cl_array # noqa
 from pyopencl.tools import pytest_generate_tests_for_pyopencl \
         as pytest_generate_tests
 from pyopencl.characterize import has_double_support
@@ -340,10 +339,14 @@ def test_dot(ctx_factory):
             b = b_gpu.get()
 
             dot_ab = np.dot(a, b)
-
             dot_ab_gpu = cl_array.dot(a_gpu, b_gpu).get()
 
             assert abs(dot_ab_gpu - dot_ab) / abs(dot_ab) < 1e-4
+
+            vdot_ab = np.vdot(a, b)
+            vdot_ab_gpu = cl_array.vdot(a_gpu, b_gpu).get()
+
+            assert abs(vdot_ab_gpu - vdot_ab) / abs(vdot_ab) < 1e-4
 
 @memoize
 def make_mmc_dtype(device):
