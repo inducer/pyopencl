@@ -832,4 +832,41 @@ class KernelTemplateBase(object):
 
 # }}}
 
+
+# {{{ array_module
+
+class _CLFakeArrayModule:
+    def __init__(self, queue):
+        self.queue = queue
+
+    @property
+    def ndarray(self):
+        from pyopencl.array import Array
+        return Array
+
+    def dot(self, x, y):
+        from pyopencl.array import dot
+        return dot(x, y, queue=self.queue).get()
+
+    def vdot(self, x, y):
+        from pyopencl.array import vdot
+        return vdot(x, y, queue=self.queue).get()
+
+    def empty(self, shape, dtype, order="C"):
+        from pyopencl.array import empty
+        return empty(self.queue, shape, dtype, order=order)
+
+
+def array_module(a):
+    if isinstance(a, np.ndarray):
+        return np
+    else:
+        from pyopencl.array import Array
+        if isinstance(a, Array):
+            return _CLFakeArrayModule(a.queue)
+        else:
+            raise TypeError("array type not understood: %s" % type(a))
+
+# }}}
+
 # vim: foldmethod=marker
