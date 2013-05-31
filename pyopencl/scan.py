@@ -23,26 +23,22 @@ limitations under the License.
 Derived from thrust/detail/backend/cuda/detail/fast_scan.inl
 within the Thrust project, https://code.google.com/p/thrust/
 
-Direct browse link:
-https://code.google.com/p/thrust/source/browse/thrust/detail/backend/cuda/detail/fast_scan.inl
 """
 
-
+# Direct link to thrust source:
+# https://code.google.com/p/thrust/source/browse/thrust/detail/backend/cuda/detail/fast_scan.inl # noqa
 
 import numpy as np
 
 import pyopencl as cl
-import pyopencl.array
+import pyopencl.array  # noqa
 from pyopencl.tools import (dtype_to_ctype, bitlog2,
         KernelTemplateBase, _process_code_for_macro,
         get_arg_list_scalar_arg_dtypes,
-        context_dependent_memoize,
-        )
+        context_dependent_memoize)
+
 import pyopencl._mymako as mako
 from pyopencl._cluda import CLUDA_PREAMBLE
-
-
-
 
 
 # {{{ preamble
@@ -300,7 +296,8 @@ void ${name_prefix}_scan_intervals(
 
             if (LID_0 == 0 && unit_base != interval_begin)
             {
-                ldata[0][0].value = SCAN_EXPR(ldata[K][WG_SIZE - 1].value, ldata[0][0].value,
+                ldata[0][0].value = SCAN_EXPR(
+                    ldata[K][WG_SIZE - 1].value, ldata[0][0].value,
                     %if is_segmented:
                         (l_segment_start_flags[0][0])
                     %else:
@@ -357,11 +354,13 @@ void ${name_prefix}_scan_intervals(
 
             // }}}
 
-            // store carry in out-of-bounds (padding) array entry (index K) in the K direction
+            // store carry in out-of-bounds (padding) array entry (index K) in
+            // the K direction
             ldata[K][LID_0].value = sum;
 
             %if is_segmented:
-                l_first_segment_start_in_subtree[LID_0] = first_segment_start_in_k_group;
+                l_first_segment_start_in_subtree[LID_0] =
+                    first_segment_start_in_k_group;
             %endif
 
             local_barrier();
@@ -396,7 +395,8 @@ void ${name_prefix}_scan_intervals(
                     {
                         val = SCAN_EXPR(tmp, val,
                             %if is_segmented:
-                                (l_first_segment_start_in_subtree[LID_0] != NO_SEG_BOUNDARY)
+                                (l_first_segment_start_in_subtree[LID_0]
+                                    != NO_SEG_BOUNDARY)
                             %else:
                                 false
                             %endif
@@ -411,7 +411,8 @@ void ${name_prefix}_scan_intervals(
 
                         first_segment_start_in_subtree = min(
                             l_first_segment_start_in_subtree[LID_0],
-                            l_first_segment_start_in_subtree[LID_0 - ${scan_offset}]);
+                            l_first_segment_start_in_subtree
+                                [LID_0 - ${scan_offset}]);
                     %endif
                 }
                 %if is_segmented:
@@ -506,7 +507,8 @@ void ${name_prefix}_scan_intervals(
             %if is_gpu:
             {
                 // work hard with index math to achieve contiguous 32-bit stores
-                __global int *dest = (__global int *) (partial_scan_buffer + unit_base);
+                __global int *dest =
+                    (__global int *) (partial_scan_buffer + unit_base);
 
                 <%
 
@@ -522,22 +524,27 @@ void ${name_prefix}_scan_intervals(
                 %for store_base in range(0, ints_to_store, ints_per_wg):
                     <%
 
-                    # Observe that ints_to_store is divisible by the work group size already,
-                    # so we won't go out of bounds that way.
+                    # Observe that ints_to_store is divisible by the work group
+                    # size already, so we won't go out of bounds that way.
                     assert store_base + ints_per_wg <= ints_to_store
 
                     %>
 
                     %if is_tail:
-                    if (${store_base} + LID_0 < scan_types_per_int*(interval_end - unit_base))
+                    if (${store_base} + LID_0 <
+                        scan_types_per_int*(interval_end - unit_base))
                     %endif
                     {
                         index_type linear_index = ${store_base} + LID_0;
-                        index_type linear_scan_data_idx = linear_index / scan_types_per_int;
-                        index_type remainder = linear_index - linear_scan_data_idx * scan_types_per_int;
+                        index_type linear_scan_data_idx =
+                            linear_index / scan_types_per_int;
+                        index_type remainder =
+                            linear_index - linear_scan_data_idx * scan_types_per_int;
 
                         __local int *src = (__local int *) &(
-                            ldata[linear_scan_data_idx % K][linear_scan_data_idx / K].value);
+                            ldata
+                                [linear_scan_data_idx % K]
+                                [linear_scan_data_idx / K].value);
 
                         dest[linear_index] = src[remainder];
                     }
@@ -574,7 +581,8 @@ void ${name_prefix}_scan_intervals(
         {
             interval_results[GID_0] = partial_scan_buffer[interval_end - 1];
             %if is_segmented:
-                g_first_segment_start_in_interval[GID_0] = first_segment_start_in_interval;
+                g_first_segment_start_in_interval[GID_0] =
+                    first_segment_start_in_interval;
             %endif
         }
     %endif
@@ -721,6 +729,7 @@ void ${name_prefix}_final_update(
 
 # }}}
 
+
 # {{{ driver
 
 # {{{ helpers
@@ -728,7 +737,7 @@ void ${name_prefix}_final_update(
 def _round_down_to_power_of_2(val):
     result = 2**bitlog2(val)
     if result > val:
-        result >>=1
+        result >>= 1
 
     assert result <= val
     return result
@@ -814,6 +823,7 @@ _IGNORED_WORDS = set("""
         N NO_SEG_BOUNDARY across_seg_boundary
         """.split())
 
+
 def _make_template(s):
     leftovers = set()
 
@@ -840,13 +850,17 @@ def _make_template(s):
     return mako.template.Template(s, strict_undefined=True)
 
 from pytools import Record
+
+
 class _ScanKernelInfo(Record):
     pass
 
 # }}}
 
+
 class ScanPerformanceWarning(UserWarning):
     pass
+
 
 class _GenericScanKernelBase(object):
     # {{{ constructor, argument processing
@@ -1018,6 +1032,7 @@ class _GenericScanKernelBase(object):
 
     # }}}
 
+
 class GenericScanKernel(_GenericScanKernelBase):
     """Generates and executes code that performs prefix sums ("scans") on
     arbitrary types, with many possible tweaks.
@@ -1068,7 +1083,7 @@ class GenericScanKernel(_GenericScanKernelBase):
 
                 k_group_size = 2**k_exp
                 lmem_use = self.get_local_mem_use(wg_size, k_group_size)
-                if lmem_use + 256  <= avail_local_mem:
+                if lmem_use + 256 <= avail_local_mem:
                     solutions.append((wg_size*k_group_size, k_group_size, wg_size))
 
         if self.devices[0].type == cl.device_type.GPU:
@@ -1132,9 +1147,10 @@ class GenericScanKernel(_GenericScanKernelBase):
                         "g_first_segment_start_in_interval_input"))
 
             # is_segment_start_expr answers the question "should previous sums
-            # spill over into this item". And since g_first_segment_start_in_interval_input
-            # answers the question if a segment boundary was found in an interval of data,
-            # then if not, it's ok to spill over.
+            # spill over into this item". And since
+            # g_first_segment_start_in_interval_input answers the question if a
+            # segment boundary was found in an interval of data, then if not,
+            # it's ok to spill over.
             second_level_build_kwargs["is_segment_start_expr"] = \
                     "g_first_segment_start_in_interval_input[i] != NO_SEG_BOUNDARY"
         else:
@@ -1166,13 +1182,15 @@ class GenericScanKernel(_GenericScanKernelBase):
         final_update_src = str(final_update_tpl.render(
             wg_size=self.update_wg_size,
             output_statement=self.output_statement,
-            argument_signature=", ".join(arg.declarator() for arg in self.parsed_args),
+            argument_signature=", ".join(
+                arg.declarator() for arg in self.parsed_args),
             is_segment_start_expr=self.is_segment_start_expr,
             input_expr=_process_code_for_macro(self.input_expr),
             use_lookbehind_update=use_lookbehind_update,
             **self.code_variables))
 
-        final_update_prg = cl.Program(self.context, final_update_src).build(self.options)
+        final_update_prg = cl.Program(
+                self.context, final_update_src).build(self.options)
         self.final_update_knl = getattr(
                 final_update_prg,
                 self.name_prefix+"_final_update")
@@ -1180,9 +1198,10 @@ class GenericScanKernel(_GenericScanKernelBase):
                 get_arg_list_scalar_arg_dtypes(self.parsed_args)
                 + [self.index_dtype, self.index_dtype, None, None])
         if self.is_segmented:
-            update_scalar_arg_dtypes.append(None) # g_first_segment_start_in_interval
+            # g_first_segment_start_in_interval
+            update_scalar_arg_dtypes.append(None)
         if self.store_segment_start_flags:
-            update_scalar_arg_dtypes.append(None) # g_segment_start_flags
+            update_scalar_arg_dtypes.append(None)  # g_segment_start_flags
         self.final_update_knl.set_scalar_arg_dtypes(update_scalar_arg_dtypes)
 
         # }}}
@@ -1212,7 +1231,6 @@ class GenericScanKernel(_GenericScanKernelBase):
                     arg_dtypes[arg_name].itemsize
                     for arg_name, ife_offsets in fetch_expr_offsets.items()
                     if -1 in ife_offsets or len(ife_offsets) > 1))
-
 
     def build_scan_kernel(self, max_wg_size, arguments, input_expr,
             is_segment_start_expr, input_fetch_exprs, is_first_level,
@@ -1244,11 +1262,11 @@ class GenericScanKernel(_GenericScanKernelBase):
         scalar_arg_dtypes.extend(
                 (None, self.index_dtype, self. index_dtype))
         if is_first_level:
-            scalar_arg_dtypes.append(None) # interval_results
+            scalar_arg_dtypes.append(None)  # interval_results
         if self.is_segmented and is_first_level:
-            scalar_arg_dtypes.append(None) # g_first_segment_start_in_interval
+            scalar_arg_dtypes.append(None)  # g_first_segment_start_in_interval
         if store_segment_start_flags:
-            scalar_arg_dtypes.append(None) # g_segment_start_flags
+            scalar_arg_dtypes.append(None)  # g_segment_start_flags
         knl.set_scalar_arg_dtypes(scalar_arg_dtypes)
 
         return _ScanKernelInfo(
@@ -1293,7 +1311,7 @@ class GenericScanKernel(_GenericScanKernelBase):
         l2_info = self.second_level_scan_info
 
         # see CL source above for terminology
-        unit_size  = l1_info.wg_size * l1_info.k_group_size
+        unit_size = l1_info.wg_size * l1_info.k_group_size
         max_intervals = 3*max(dev.max_compute_units for dev in self.devices)
 
         from pytools import uniform_interval_splitting
@@ -1344,12 +1362,12 @@ class GenericScanKernel(_GenericScanKernelBase):
         assert interval_size >= num_intervals
 
         scan2_args = data_args + [
-                interval_results.data, # interval_sums
+                interval_results.data,  # interval_sums
                 ]
         if self.is_segmented:
             scan2_args.append(first_segment_start_in_interval.data)
         scan2_args = scan2_args + [
-                interval_results.data, # partial_scan_buffer
+                interval_results.data,  # partial_scan_buffer
                 num_intervals, interval_size]
 
         l2_evt = l2_info.kernel(
@@ -1422,12 +1440,14 @@ void ${name_prefix}_debug_scan(
 }
 """
 
+
 class GenericDebugScanKernel(_GenericScanKernelBase):
     def finish_setup(self):
         scan_tpl = _make_template(DEBUG_SCAN_TEMPLATE)
         scan_src = str(scan_tpl.render(
             output_statement=self.output_statement,
-            argument_signature=", ".join(arg.declarator() for arg in self.parsed_args),
+            argument_signature=", ".join(
+                arg.declarator() for arg in self.parsed_args),
             is_segment_start_expr=self.is_segment_start_expr,
             input_expr=_process_code_for_macro(self.input_expr),
             input_fetch_exprs=self.input_fetch_exprs,
@@ -1471,9 +1491,11 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
 
         # }}}
 
-        return self.kernel(queue, (1,), (1,), *(data_args + [n]), **dict(wait_for=wait_for))
+        return self.kernel(queue, (1,), (1,),
+                *(data_args + [n]), **dict(wait_for=wait_for))
 
 # }}}
+
 
 # {{{ compatibility interface
 
@@ -1519,13 +1541,16 @@ class _LegacyScanKernelBase(GenericScanKernel):
 
         return output_ary
 
+
 class InclusiveScanKernel(_LegacyScanKernelBase):
     ary_output_statement = "output_ary[i] = item;"
+
 
 class ExclusiveScanKernel(_LegacyScanKernelBase):
     ary_output_statement = "output_ary[i] = prev_item;"
 
 # }}}
+
 
 # {{{ template
 
@@ -1558,8 +1583,8 @@ class ScanTemplate(KernelTemplateBase):
 
         return scan_cls(context, renderer.type_aliases["scan_t"],
             renderer.render_argument_list(self.arguments, more_arguments),
-            renderer(self.input_expr), renderer(self.scan_expr), renderer(self.neutral),
-            renderer(self.output_statement),
+            renderer(self.input_expr), renderer(self.scan_expr),
+            renderer(self.neutral), renderer(self.output_statement),
             is_segment_start_expr=renderer(self.is_segment_start_expr),
             input_fetch_exprs=self.input_fetch_exprs,
             index_dtype=renderer.type_aliases.get("index_t", np.int32),
@@ -1571,6 +1596,7 @@ class ScanTemplate(KernelTemplateBase):
             devices=devices)
 
 # }}}
+
 
 # {{{ 'canned' scan kernels
 
