@@ -71,13 +71,13 @@ def get_elwise_program(context, arguments, operation,
           """
 
     import re
-    return_match = re.search(r"\breturn\b", operation);
+    return_match = re.search(r"\breturn\b", operation)
     if return_match is not None:
         from warnings import warn
-        warn("Using a 'return' statement in an element-wise operation will likely "
-                "lead to incorrect results. Use PYOPENCL_ELWISE_CONTINUE instead.",
+        warn("Using a 'return' statement in an element-wise operation will "
+                "likely lead to incorrect results. Use "
+                "PYOPENCL_ELWISE_CONTINUE instead.",
                 stacklevel=3)
-
 
     source = ("""//CL//
         %(preamble)s
@@ -101,7 +101,7 @@ def get_elwise_program(context, arguments, operation,
             "preamble": preamble,
             "loop_prep": loop_prep,
             "after_loop": after_loop,
-            "body": body %  dict(operation=operation),
+            "body": body % dict(operation=operation),
             })
 
     from pyopencl import Program
@@ -160,9 +160,6 @@ def get_elwise_kernel_and_types(context, arguments, operation,
     return kernel, parsed_args
 
 
-
-
-
 def get_elwise_kernel(context, arguments, operation,
         name="elwise_kernel", options=[], **kwargs):
     """Return a L{pyopencl.Kernel} that performs the same scalar operation
@@ -176,6 +173,7 @@ def get_elwise_kernel(context, arguments, operation,
 
 # }}}
 
+
 # {{{ ElementwiseKernel driver
 
 class ElementwiseKernel:
@@ -184,18 +182,18 @@ class ElementwiseKernel:
     an *operation* specified as a snippet of C on these arguments.
 
     :arg arguments: a string formatted as a C argument list.
-    :arg operation: a snippet of C that carries out the desired 'map' operation.
-        The current index is available as the variable *i*.
-        *operation* may contain the statement ``PYOPENCL_ELWISE_CONTINUE``, which
-        will terminate processing for the current element.
+    :arg operation: a snippet of C that carries out the desired 'map'
+        operation.  The current index is available as the variable *i*.
+        *operation* may contain the statement ``PYOPENCL_ELWISE_CONTINUE``,
+        which will terminate processing for the current element.
     :arg name: the function name as which the kernel is compiled
     :arg options: passed unmodified to :meth:`pyopencl.Program.build`.
     :arg preamble: a piece of C source code that gets inserted outside of the
         function context in the elementwise operation's kernel source code.
 
-    .. warning :: Using a `return` statement in *operation* will lead to incorrect
-        results, as some elements may never get processed. Use ``PYOPENCL_ELWISE_CONTINUE``
-        instead.
+    .. warning :: Using a `return` statement in *operation* will lead to
+        incorrect results, as some elements may never get processed. Use
+        ``PYOPENCL_ELWISE_CONTINUE`` instead.
 
     .. versionchanged:: 2013.1
         Added ``PYOPENCL_ELWISE_CONTINUE``.
@@ -299,6 +297,7 @@ class ElementwiseKernel:
 
 # }}}
 
+
 # {{{ template
 
 class ElementwiseTemplate(KernelTemplateBase):
@@ -306,7 +305,8 @@ class ElementwiseTemplate(KernelTemplateBase):
             arguments, operation, name="elwise", preamble="",
             template_processor=None):
 
-        KernelTemplateBase.__init__(self, template_processor=template_processor)
+        KernelTemplateBase.__init__(self,
+                template_processor=template_processor)
         self.arguments = arguments
         self.operation = operation
         self.name = name
@@ -315,9 +315,11 @@ class ElementwiseTemplate(KernelTemplateBase):
     def build_inner(self, context, type_aliases=(), var_values=(),
             more_preamble="", more_arguments=(), declare_types=(),
             options=()):
-        renderer = self.get_renderer(type_aliases, var_values, context, options)
+        renderer = self.get_renderer(
+                type_aliases, var_values, context, options)
 
-        arg_list = renderer.render_argument_list(self.arguments, more_arguments)
+        arg_list = renderer.render_argument_list(
+                self.arguments, more_arguments)
         type_decl_preamble = renderer.get_type_decl_preamble(
                 context.devices[0], declare_types, arg_list)
 
@@ -331,6 +333,7 @@ class ElementwiseTemplate(KernelTemplateBase):
             auto_preamble=False)
 
 # }}}
+
 
 # {{{ kernels supporting array functionality
 
@@ -349,8 +352,8 @@ def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
     body = (
             ("%(idx_tp)s src_idx = idx[i];\n" % ctx)
             + "\n".join(
-            "dest%d[i] = src%d[src_idx];" % (i, i)
-            for i in range(vec_count)))
+                "dest%d[i] = src%d[src_idx];" % (i, i)
+                for i in range(vec_count)))
 
     return get_elwise_kernel(context, args, body, name="take")
 
@@ -366,14 +369,14 @@ def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
             VectorArg(dtype, "dest%d" % i)
                 for i in range(vec_count)
             ] + [
-            VectorArg(idx_dtype, "gmem_dest_idx"),
-            VectorArg(idx_dtype, "gmem_src_idx"),
+                VectorArg(idx_dtype, "gmem_dest_idx"),
+                VectorArg(idx_dtype, "gmem_src_idx"),
             ] + [
-            VectorArg(dtype, "src%d" % i)
+                VectorArg(dtype, "src%d" % i)
                 for i in range(vec_count)
             ] + [
-            ScalarArg(idx_dtype, "offset%d" % i)
-                for i in range(vec_count) if with_offsets
+                ScalarArg(idx_dtype, "offset%d" % i)
+                    for i in range(vec_count) if with_offsets
             ]
 
     if with_offsets:
@@ -404,9 +407,9 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
             VectorArg(dtype, "dest%d" % i)
                 for i in range(vec_count)
             ] + [
-            VectorArg(idx_dtype, "gmem_dest_idx"),
+                VectorArg(idx_dtype, "gmem_dest_idx"),
             ] + [
-            VectorArg(dtype, "src%d" % i)
+                VectorArg(dtype, "src%d" % i)
                 for i in range(vec_count)
             ]
 
