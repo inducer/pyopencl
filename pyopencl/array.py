@@ -518,7 +518,7 @@ class Array(object):
 
         assert queue.context == self.context
         return self._new_with_changes(self.base_data, self.offset,
-                offset=self.offset, queue=queue)
+                queue=queue)
 
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue, kernel_specific_max_wg_size=None):
