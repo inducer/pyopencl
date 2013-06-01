@@ -29,14 +29,11 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 import numpy as np
 import pyopencl as cl
-import pyopencl.array
+import pyopencl.array  # noqa
 from pyopencl.scan import ScanTemplate
 from pyopencl.tools import dtype_to_ctype
 from pytools import memoize, memoize_method, Record
-import pyopencl._mymako as mako
 from mako.template import Template
-
-
 
 
 # {{{ copy_if
@@ -81,14 +78,17 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
             var_values=(("predicate", predicate),),
             more_preamble=preamble, more_arguments=extra_args_types)
     out = cl.array.empty_like(ary)
-    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
+    count = ary._new_with_changes(data=None, offset=0,
+            shape=(), strides=(), dtype=scan_dtype)
 
     # **dict is a Py2.5 workaround
-    evt = knl(ary, out, count, *extra_args_values, **dict(queue=queue, wait_for=wait_for))
+    evt = knl(ary, out, count, *extra_args_values,
+            **dict(queue=queue, wait_for=wait_for))
 
     return out, count, evt
 
 # }}}
+
 
 # {{{ remove_if
 
@@ -131,7 +131,6 @@ _partition_template = ScanTemplate(
         template_processor="printf")
 
 
-
 def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
     """Copy the elements of *ary* into one of two arrays depending on whether
     they satisfy *predicate*.
@@ -164,7 +163,8 @@ def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
 
     out_true = cl.array.empty_like(ary)
     out_false = cl.array.empty_like(ary)
-    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
+    count = ary._new_with_changes(data=None, offset=0,
+            shape=(), strides=(), dtype=scan_dtype)
 
     # **dict is a Py2.5 workaround
     evt = knl(ary, out_true, out_false, count, *extra_args_values,
@@ -173,6 +173,7 @@ def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
     return out_true, out_false, count, evt
 
 # }}}
+
 
 # {{{ unique
 
@@ -192,16 +193,18 @@ _unique_template = ScanTemplate(
         template_processor="printf")
 
 
-def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="", queue=None, wait_for=None):
+def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
+        queue=None, wait_for=None):
     """Copy the elements of *ary* into the output if *is_equal_expr*, applied to the
     array element and its predecessor, yields false.
 
-    Works like the UNIX command :program:`uniq`, with a potentially custom comparison.
-    This operation is often used on sorted sequences.
+    Works like the UNIX command :program:`uniq`, with a potentially custom
+    comparison.  This operation is often used on sorted sequences.
 
-    :arg is_equal_expr: a C expression evaluating to a `bool`, represented as a string.
-        The elements being compared are available as `a` and `b`. If this expression
-        yields `false`, the two are considered distinct.
+    :arg is_equal_expr: a C expression evaluating to a `bool`,
+        represented as a string.  The elements being compared are
+        available as `a` and `b`. If this expression yields `false`, the
+        two are considered distinct.
     :arg extra_args: |scan_extra_args|
     :arg preamble: |preamble|
     :arg wait_for: |explain-waitfor|
@@ -231,11 +234,13 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="", queue=None, 
     count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
 
     # **dict is a Py2.5 workaround
-    evt = knl(ary, out, count, *extra_args_values, **dict(queue=queue, wait_for=wait_for))
+    evt = knl(ary, out, count, *extra_args_values,
+            **dict(queue=queue, wait_for=wait_for))
 
     return out, count, evt
 
 # }}}
+
 
 # {{{ radix_sort
 
@@ -244,6 +249,7 @@ def _padded_bin(i, l):
     while len(s) < l:
         s = '0' + s
     return s
+
 
 @memoize
 def _make_sort_scan_type(device, bits, index_dtype):
@@ -355,6 +361,7 @@ RADIX_SORT_OUTPUT_STMT_TPL = Template(r"""//CL//
 
 # }}}
 
+
 # {{{ driver
 
 class RadixSort(object):
@@ -404,7 +411,7 @@ class RadixSort(object):
                 list(self.arguments)
                 + [VectorArg(arg.dtype, "sorted_"+arg.name) for arg in self.arguments
                     if arg.name in sort_arg_names]
-                + [ ScalarArg(np.int32, "base_bit") ])
+                + [ScalarArg(np.int32, "base_bit")])
 
         def get_count_branch(known_bits):
             if len(known_bits) == self.bits:
@@ -430,7 +437,8 @@ class RadixSort(object):
                 )
 
         preamble = scan_t_cdecl+RADIX_SORT_PREAMBLE_TPL.render(**codegen_args)
-        scan_preamble = preamble + RADIX_SORT_SCAN_PREAMBLE_TPL.render(**codegen_args)
+        scan_preamble = preamble \
+                + RADIX_SORT_SCAN_PREAMBLE_TPL.render(**codegen_args)
 
         from pyopencl.scan import GenericScanKernel
         self.scan_kernel = GenericScanKernel(
@@ -493,7 +501,8 @@ class RadixSort(object):
 
             scan_args = args + sorted_args + [base_bit]
 
-            last_evt = self.scan_kernel(*scan_args, **dict(queue=queue, wait_for=wait_for))
+            last_evt = self.scan_kernel(*scan_args,
+                    **dict(queue=queue, wait_for=wait_for))
             wait_for = [last_evt]
 
             # substitute sorted
@@ -547,7 +556,8 @@ typedef ${index_type} index_type;
     %for name, dtype in list_names_and_dtypes:
         %if name in count_sharing:
             #define APPEND_${name}(value) \
-                { plb_${name}_list[(*plb_${count_sharing[name]}_index) - 1] = value; }
+                { plb_${name}_list[(*plb_${count_sharing[name]}_index) - 1] \
+                    = value; }
         %else:
             #define APPEND_${name}(value) \
                 { plb_${name}_list[(*plb_${name}_index)++] = value; }
@@ -619,12 +629,14 @@ void ${kernel_name}(${kernel_list_arg_decl} USER_ARG_DECL index_type n)
 
 # }}}
 
+
 def _get_arg_decl(arg_list):
     result = ""
     for arg in arg_list:
         result += arg.declarator() + ", "
 
     return result
+
 
 def _get_arg_list(arg_list, prefix=""):
     result = ""
@@ -634,10 +646,8 @@ def _get_arg_list(arg_list, prefix=""):
     return result
 
 
-
 class BuiltList(Record):
     pass
-
 
 
 class ListOfListsBuilder:
@@ -677,8 +687,9 @@ class ListOfListsBuilder:
 
     """
     def __init__(self, context, list_names_and_dtypes, generate_template,
-            arg_decls, count_sharing=None, devices=None, name_prefix="plb_build_list",
-            options=[], preamble="", debug=False, complex_kernel=False):
+            arg_decls, count_sharing=None, devices=None,
+            name_prefix="plb_build_list", options=[], preamble="",
+            debug=False, complex_kernel=False):
         """
         :arg context: A :class:`pyopencl.Context`.
         :arg list_names_and_dtypes: a list of `(name, dtype)` tuples
@@ -839,7 +850,7 @@ class ListOfListsBuilder:
 
         for name, dtype in self.list_names_and_dtypes:
             list_name = "plb_%s_list" % name
-            list_arg =  VectorArg(dtype, list_name)
+            list_arg = VectorArg(dtype, list_name)
 
             kernel_list_args.append(list_arg)
             user_list_args.append(list_arg)
@@ -908,7 +919,8 @@ class ListOfListsBuilder:
             arrays.
         :arg wait_for: |explain-waitfor|
         :returns: a tuple ``(lists, event)``, where
-            *lists* a mapping from (built) list names to objects which have attributes
+            *lists* a mapping from (built) list names to objects which
+            have attributes
 
             * `count` for the total number of entries in all lists combined
             * `lists` for the array containing all lists.
@@ -970,7 +982,6 @@ class ListOfListsBuilder:
                 *(tuple(count_list_args) + args + (n_objects,)),
                 wait_for=wait_for)
 
-
         # {{{ run scans
 
         scan_events = []
@@ -1031,10 +1042,12 @@ class ListOfListsBuilder:
 
 # }}}
 
+
 # {{{ key-value sorting
 
 class _KernelInfo(Record):
     pass
+
 
 def _make_cl_int_literal(value, dtype):
     iinfo = np.iinfo(dtype)
@@ -1045,6 +1058,7 @@ def _make_cl_int_literal(value, dtype):
         result += "u"
 
     return result
+
 
 class KeyValueSorter(object):
     """Given arrays *values* and *keys* of equal length
@@ -1143,7 +1157,8 @@ class KeyValueSorter(object):
                 range=slice(len(keys_sorted_by_key)),
                 wait_for=[evt])
 
-        evt = knl_info.bound_propagation_scan(starts, nkeys, queue=queue, wait_for=[evt])
+        evt = knl_info.bound_propagation_scan(starts, nkeys,
+                queue=queue, wait_for=[evt])
 
         return starts, values_sorted_by_key, evt
 

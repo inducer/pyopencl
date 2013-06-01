@@ -486,8 +486,8 @@ class Array(object):
     def flags(self):
         return _ArrayFlags(self)
 
-    def _new_with_changes(self, data, shape=None, dtype=None,
-            strides=None, offset=None, queue=None):
+    def _new_with_changes(self, data, offset, shape=None, dtype=None,
+            strides=None, queue=None):
         """
         :arg data: *None* means alocate a new array.
         """
@@ -497,8 +497,6 @@ class Array(object):
             dtype = self.dtype
         if strides is None:
             strides = self.strides
-        if offset is None:
-            offset = self.offset
         if queue is None:
             queue = self.queue
 
@@ -519,7 +517,8 @@ class Array(object):
         """Return a copy of *self* with the default queue set to *queue*."""
 
         assert queue.context == self.context
-        return self._new_with_changes(self.data, queue=queue)
+        return self._new_with_changes(self.base_data, self.offset,
+                offset=self.offset, queue=queue)
 
     #@memoize_method FIXME: reenable
     def get_sizes(self, queue, kernel_specific_max_wg_size=None):
@@ -1043,7 +1042,8 @@ class Array(object):
         if size != self.size:
             raise ValueError("total size of new array must be unchanged")
 
-        return self._new_with_changes(data=self.data, shape=shape,
+        return self._new_with_changes(
+                data=self.base_data, offset=self.offset, shape=shape,
                 strides=_make_strides(self.dtype.itemsize, shape, order))
 
     def ravel(self):
@@ -1069,7 +1069,9 @@ class Array(object):
                 s * itemsize // old_itemsize
                 for s in self.strides)
 
-        return self._new_with_changes(data=self.data, shape=shape, dtype=dtype,
+        return self._new_with_changes(
+                self.base_data, self.offset,
+                shape=shape, dtype=dtype,
                 strides=strides)
 
     # }}
@@ -1151,11 +1153,9 @@ class Array(object):
             array_axis += 1
 
         return self._new_with_changes(
-                data=self.base_data,
+                self.base_data, offset=new_offset,
                 shape=tuple(new_shape),
-                strides=tuple(new_strides),
-                offset=new_offset,
-                )
+                strides=tuple(new_strides))
 
 # }}}
 
@@ -1220,7 +1220,7 @@ def empty_like(ary):
     as *other_ary*.
     """
 
-    return ary._new_with_changes(data=None)
+    return ary._new_with_changes(data=None, offset=0)
 
 
 def zeros_like(ary):
@@ -1584,6 +1584,7 @@ def minimum(a, b, out=None, queue=None):
             queue=queue, out=out)
 
 # }}}
+
 
 # {{{ reductions
 _builtin_sum = sum
