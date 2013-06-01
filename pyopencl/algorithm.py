@@ -231,7 +231,8 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
             more_preamble=preamble, more_arguments=extra_args_types)
 
     out = cl.array.empty_like(ary)
-    count = ary._new_with_changes(data=None, shape=(), strides=(), dtype=scan_dtype)
+    count = ary._new_with_changes(data=None, offset=0,
+            shape=(), strides=(), dtype=scan_dtype)
 
     # **dict is a Py2.5 workaround
     evt = knl(ary, out, count, *extra_args_values,
