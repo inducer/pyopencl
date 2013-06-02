@@ -195,6 +195,15 @@ Command Queues and Events
     if *device* is None, one of the devices in *context* is chosen
     in an implementation-defined manner.
 
+    A :class:`CommandQueue` may be used as a context manager, like this::
+
+        with cl.CommandQueue(self.cl_context) as queue:
+            enqueue_stuff(queue, ...)
+
+    .. versionadded:: 2013.1
+
+        Context manager capability.
+
     .. attribute:: info
 
         Lower case versions of the :class:`command_queue_info` constants

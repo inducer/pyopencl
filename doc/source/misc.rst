@@ -102,6 +102,7 @@ Version 2013.1
 * Add :meth:`pyopencl.array.Array.__getitem__`, supporting generic slicing.
   Note that many (most) operations on sliced arrays will fail for now.
   This will be fixed in a future release.
+* :class:`pyopencl.CommandQueue` may be used as a context manager (in a ``with`` statement)
 
 Version 2012.1
 --------------
