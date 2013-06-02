@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT
+from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
 try:
     import pyopencl._cl as _cl
@@ -36,9 +36,8 @@ except ImportError:
     raise
 
 
-
 import numpy as np
-from pyopencl._cl import *
+from pyopencl._cl import *  # noqa
 import inspect as _inspect
 
 CONSTANT_CLASSES = [
@@ -46,8 +45,10 @@ CONSTANT_CLASSES = [
         if _inspect.isclass(getattr(_cl, name))
         and name[0].islower()]
 
+
 class CompilerWarning(UserWarning):
     pass
+
 
 def compiler_output(text):
     import os
@@ -60,8 +61,6 @@ def compiler_output(text):
                 "to see more.", CompilerWarning)
 
 
-
-
 # {{{ Kernel
 
 class Kernel(_cl._Kernel):
@@ -72,6 +71,7 @@ class Kernel(_cl._Kernel):
         _cl._Kernel.__init__(self, prg, name)
 
 # }}}
+
 
 # {{{ Program (including caching support)
 
@@ -107,7 +107,8 @@ class Program(object):
         else:
             # "no program" can only happen in from-source case.
             from warnings import warn
-            warn("Pre-build attribute access defeats compiler caching.", stacklevel=3)
+            warn("Pre-build attribute access defeats compiler caching.",
+                    stacklevel=3)
 
             self._prg = _cl._Program(self._context, self._source)
             del self._context
@@ -183,6 +184,7 @@ class Program(object):
             return build_func()
         except _cl.RuntimeError, e:
             from pytools import Record
+
             class ErrorRecord(Record):
                 pass
 
@@ -205,9 +207,9 @@ class Program(object):
 
             err = _cl.RuntimeError(
                     ErrorRecord(
-                        what=lambda : what,
-                        code=lambda : code,
-                        routine=lambda : routine))
+                        what=lambda: what,
+                        code=lambda: code,
+                        routine=lambda: routine))
 
         # Python 3.2 outputs the whole list of currently active exceptions
         # This serves to remove one (redundant) level from that nesting.
@@ -220,8 +222,6 @@ class Program(object):
         return self._prg().compile(options, devices, headers)
 
 
-
-
 def create_program_with_built_in_kernels(context, devices, kernel_names):
     if not isinstance(kernel_names, str):
         kernel_names = ":".join(kernel_names)
@@ -229,11 +229,13 @@ def create_program_with_built_in_kernels(context, devices, kernel_names):
     return Program(_Program.create_with_built_in_kernels(
         context, devices, kernel_names))
 
+
 def link_program(context, programs, options=[], devices=None):
     options = " ".join(options)
     return Program(_Program.link(context, programs, options, devices))
 
 # }}}
+
 
 # {{{ Image
 
@@ -257,11 +259,13 @@ class Image(_cl._ImageBase):
 
         if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
             if buffer is not None and is_array:
-                    raise ValueError("'buffer' and 'is_array' are mutually exclusive")
+                    raise ValueError(
+                            "'buffer' and 'is_array' are mutually exclusive")
 
             if len(shape) == 3:
                 if buffer is not None:
-                    raise TypeError("'buffer' argument is not supported for 3D arrays")
+                    raise TypeError(
+                            "'buffer' argument is not supported for 3D arrays")
                 elif is_array:
                     image_type = mem_object_type.IMAGE2D_ARRAY
                 else:
@@ -269,7 +273,8 @@ class Image(_cl._ImageBase):
 
             elif len(shape) == 2:
                 if buffer is not None:
-                    raise TypeError("'buffer' argument is not supported for 2D arrays")
+                    raise TypeError(
+                            "'buffer' argument is not supported for 2D arrays")
                 elif is_array:
                     image_type = mem_object_type.IMAGE1D_ARRAY
                 else:
@@ -289,15 +294,15 @@ class Image(_cl._ImageBase):
             desc = ImageDescriptor()
 
             desc.image_type = image_type
-            desc.shape = shape # also sets desc.array_size
+            desc.shape = shape  # also sets desc.array_size
 
             if pitches is None:
                 desc.pitches = (0, 0)
             else:
                 desc.pitches = pitches
 
-            desc.num_mip_levels = 0 # per CL 1.2 spec
-            desc.num_samples = 0 # per CL 1.2 spec
+            desc.num_mip_levels = 0  # per CL 1.2 spec
+            desc.num_samples = 0  # per CL 1.2 spec
             desc.buffer = buffer
 
             _cl._ImageBase.__init__(self, context, flags, format, desc, hostbuf)
@@ -306,13 +311,16 @@ class Image(_cl._ImageBase):
             if is_array:
                 raise TypeError("'is_array=True' is not supported for CL < 1.2")
             #if num_mip_levels is not None:
-                #raise TypeError("'num_mip_levels' argument is not supported for CL < 1.2")
+                #raise TypeError(
+                #      "'num_mip_levels' argument is not supported for CL < 1.2")
             #if num_samples is not None:
-                #raise TypeError("'num_samples' argument is not supported for CL < 1.2")
+                #raise TypeError(
+                #       "'num_samples' argument is not supported for CL < 1.2")
             if buffer is not None:
                 raise TypeError("'buffer' argument is not supported for CL < 1.2")
 
-            _cl._ImageBase.__init__(self, context, flags, format, shape, pitches, hostbuf)
+            _cl._ImageBase.__init__(self, context, flags, format, shape,
+                    pitches, hostbuf)
 
     class _ImageInfoGetter:
         def __init__(self, event):
@@ -344,6 +352,7 @@ class Image(_cl._ImageBase):
 
 # }}}
 
+
 def _add_functionality():
     cls_to_info_cls = {
             _cl.Platform:
@@ -357,7 +366,7 @@ def _add_functionality():
             _cl.Event:
                 (_cl.Event.get_info, _cl.event_info),
             _cl.MemoryObjectHolder:
-                (MemoryObjectHolder.get_info,_cl.mem_info),
+                (MemoryObjectHolder.get_info, _cl.mem_info),
             Image:
                 (_cl._ImageBase.get_image_info, _cl.image_info),
             Program:
@@ -464,6 +473,7 @@ def _add_functionality():
             self._build(options=options, devices=devices)
         except Exception, e:
             from pytools import Record
+
             class ErrorRecord(Record):
                 pass
 
@@ -475,9 +485,9 @@ def _add_functionality():
 
             err = _cl.RuntimeError(
                     ErrorRecord(
-                        what=lambda : what,
-                        code=lambda : code,
-                        routine=lambda : routine))
+                        what=lambda: what,
+                        code=lambda: code,
+                        routine=lambda: routine))
 
         if err is not None:
             # Python 3.2 outputs the whole list of currently active exceptions
@@ -586,7 +596,8 @@ def _add_functionality():
                 advice = ""
                 from pyopencl.array import Array
                 if isinstance(args[i], Array):
-                    advice = " (perhaps you meant to pass 'array.data' instead of the array itself?)"
+                    advice = " (perhaps you meant to pass 'array.data' " \
+                        "instead of the array itself?)"
 
                 raise LogicError(
                         "when processing argument #%d (1-based): %s%s"
@@ -655,7 +666,6 @@ def _add_functionality():
 _add_functionality()
 
 
-
 # {{{ find pyopencl shipped source code
 
 def _find_pyopencl_include_path():
@@ -663,6 +673,7 @@ def _find_pyopencl_include_path():
     return resource_filename(Requirement.parse("pyopencl"), "pyopencl/cl")
 
 # }}}
+
 
 # {{{ convenience -------------------------------------------------------------
 def create_some_context(interactive=True, answers=None):
@@ -785,8 +796,6 @@ def create_some_context(interactive=True, answers=None):
 _csc = create_some_context
 
 
-
-
 def _mark_copy_deprecated(func):
     def new_func(*args, **kwargs):
         from warnings import warn
@@ -811,16 +820,20 @@ def _mark_copy_deprecated(func):
 enqueue_read_image = _mark_copy_deprecated(_cl._enqueue_read_image)
 enqueue_write_image = _mark_copy_deprecated(_cl._enqueue_write_image)
 enqueue_copy_image = _mark_copy_deprecated(_cl._enqueue_copy_image)
-enqueue_copy_image_to_buffer = _mark_copy_deprecated(_cl._enqueue_copy_image_to_buffer)
-enqueue_copy_buffer_to_image = _mark_copy_deprecated(_cl._enqueue_copy_buffer_to_image)
+enqueue_copy_image_to_buffer = _mark_copy_deprecated(
+        _cl._enqueue_copy_image_to_buffer)
+enqueue_copy_buffer_to_image = _mark_copy_deprecated(
+        _cl._enqueue_copy_buffer_to_image)
 enqueue_read_buffer = _mark_copy_deprecated(_cl._enqueue_read_buffer)
 enqueue_write_buffer = _mark_copy_deprecated(_cl._enqueue_write_buffer)
 enqueue_copy_buffer = _mark_copy_deprecated(_cl._enqueue_copy_buffer)
 
-if _cl.get_cl_header_version() >= (1,1):
+
+if _cl.get_cl_header_version() >= (1, 1):
     enqueue_read_buffer_rect = _mark_copy_deprecated(_cl._enqueue_read_buffer_rect)
     enqueue_write_buffer_rect = _mark_copy_deprecated(_cl._enqueue_write_buffer_rect)
     enqueue_copy_buffer_rect = _mark_copy_deprecated(_cl._enqueue_copy_buffer_rect)
+
 
 def enqueue_copy(queue, dest, src, **kwargs):
     """Copy from :class:`Image`, :class:`Buffer` or the host to
@@ -919,12 +932,14 @@ def enqueue_copy(queue, dest, src, **kwargs):
             if isinstance(src, MemoryObjectHolder):
                 if src.type == mem_object_type.BUFFER:
                     if "src_origin" in kwargs:
-                        return _cl._enqueue_copy_buffer_rect(queue, src, dest, **kwargs)
+                        return _cl._enqueue_copy_buffer_rect(
+                                queue, src, dest, **kwargs)
                     else:
                         kwargs["dst_offset"] = kwargs.pop("dest_offset", 0)
                         return _cl._enqueue_copy_buffer(queue, src, dest, **kwargs)
                 elif src.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
-                    return _cl._enqueue_copy_image_to_buffer(queue, src, dest, **kwargs)
+                    return _cl._enqueue_copy_image_to_buffer(
+                            queue, src, dest, **kwargs)
                 else:
                     raise ValueError("invalid src mem object type")
             else:
@@ -937,7 +952,8 @@ def enqueue_copy(queue, dest, src, **kwargs):
         elif dest.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
             if isinstance(src, MemoryObjectHolder):
                 if src.type == mem_object_type.BUFFER:
-                    return _cl._enqueue_copy_buffer_to_image(queue, src, dest, **kwargs)
+                    return _cl._enqueue_copy_buffer_to_image(
+                            queue, src, dest, **kwargs)
                 elif src.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
                     return _cl._enqueue_copy_image(queue, src, dest, **kwargs)
                 else:
@@ -947,13 +963,14 @@ def enqueue_copy(queue, dest, src, **kwargs):
                 origin = kwargs.pop("origin")
                 region = kwargs.pop("region")
 
-                pitches = kwargs.pop("pitches", (0,0))
+                pitches = kwargs.pop("pitches", (0, 0))
                 if len(pitches) == 1:
                     kwargs["row_pitch"], = pitches
                 else:
                     kwargs["row_pitch"], kwargs["slice_pitch"] = pitches
 
-                return _cl._enqueue_write_image(queue, dest, origin, region, src, **kwargs)
+                return _cl._enqueue_write_image(
+                        queue, dest, origin, region, src, **kwargs)
         else:
             raise ValueError("invalid dest mem object type")
 
@@ -970,13 +987,14 @@ def enqueue_copy(queue, dest, src, **kwargs):
                 origin = kwargs.pop("origin")
                 region = kwargs.pop("region")
 
-                pitches = kwargs.pop("pitches", (0,0))
+                pitches = kwargs.pop("pitches", (0, 0))
                 if len(pitches) == 1:
                     kwargs["row_pitch"], = pitches
                 else:
                     kwargs["row_pitch"], kwargs["slice_pitch"] = pitches
 
-                return _cl._enqueue_read_image(queue, src, origin, region, dest, **kwargs)
+                return _cl._enqueue_read_image(
+                        queue, src, origin, region, dest, **kwargs)
             else:
                 raise ValueError("invalid src mem object type")
         else:
@@ -1009,6 +1027,7 @@ DTYPE_TO_CHANNEL_TYPE_NORM = {
     np.dtype(np.uint16): channel_type.UNORM_INT16,
     np.dtype(np.uint8): channel_type.UNORM_INT8,
     }
+
 
 def image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False):
     if not ary.flags.c_contiguous:
