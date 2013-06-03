@@ -30,11 +30,9 @@ import pytools.test
 import pyopencl as cl
 import pyopencl.array as cl_array
 import pyopencl.tools as cl_tools
-from pyopencl.tools import pytest_generate_tests_for_pyopencl \
-        as pytest_generate_tests
+from pyopencl.tools import (  # noqa
+        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support
-
-
 
 
 # {{{ helpers
@@ -43,6 +41,7 @@ TO_REAL = {
         np.dtype(np.complex64): np.float32,
         np.dtype(np.complex128): np.float64
         }
+
 
 def general_clrand(queue, shape, dtype):
     from pyopencl.clrandom import rand as clrand
@@ -69,6 +68,7 @@ def make_random_array(queue, dtype, size):
 
 # }}}
 
+
 # {{{ dtype-related
 
 @pytools.test.mark_test.opencl
@@ -80,12 +80,13 @@ def test_basic_complex(ctx_factory):
 
     size = 500
 
-    ary =  (rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64)
+    ary = (rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64)
             + rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64) * 1j)
     c = np.complex64(5+7j)
 
     host_ary = ary.get()
     assert la.norm((ary*c).get() - c*host_ary) < 1e-5 * la.norm(host_ary)
+
 
 @pytools.test.mark_test.opencl
 def test_mix_complex(ctx_factory):
@@ -157,6 +158,7 @@ def test_mix_complex(ctx_factory):
 
                     assert correct
 
+
 @pytools.test.mark_test.opencl
 def test_pow_neg1_vs_inv(ctx_factory):
     ctx = ctx_factory()
@@ -189,14 +191,20 @@ def test_vector_fill(ctx_factory):
 
     a_gpu = cl_array.zeros(queue, 100, dtype=cl_array.vec.float4)
 
+
 @pytools.test.mark_test.opencl
 def test_absrealimag(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    def real(x): return x.real
-    def imag(x): return x.imag
-    def conj(x): return x.conj()
+    def real(x):
+        return x.real
+
+    def imag(x):
+        return x.imag
+
+    def conj(x):
+        return x.conj()
 
     n = 111
     for func in [abs, real, imag, conj]:
@@ -216,7 +224,8 @@ def test_absrealimag(ctx_factory):
 
 # }}}
 
-# {{{ operands
+
+# {{{ operators
 
 @pytools.test.mark_test.opencl
 def test_pow_array(ctx_factory):
@@ -254,9 +263,9 @@ def test_multiply(ctx_factory):
 
     for sz in [10, 50000]:
         for dtype, scalars in [
-            (np.float32, [2]),
-            (np.complex64, [2j]),
-            ]:
+                (np.float32, [2]),
+                (np.complex64, [2j]),
+                ]:
             for scalar in scalars:
                 a_gpu = make_random_array(queue, dtype, sz)
                 a = a_gpu.get()
@@ -390,6 +399,7 @@ def test_divide_array(ctx_factory):
 
 # }}}
 
+
 # {{{ RNG
 
 @pytools.test.mark_test.opencl
@@ -433,6 +443,7 @@ def test_random(ctx_factory):
 
 # }}}
 
+
 # {{{ misc
 
 @pytools.test.mark_test.opencl
@@ -443,6 +454,7 @@ def test_numpy_integer_shape(ctx_factory):
     cl_array.empty(queue, np.int32(17), np.float32)
     cl_array.empty(queue, (np.int32(17), np.int32(17)), np.float32)
 
+
 @pytools.test.mark_test.opencl
 def test_len(ctx_factory):
     context = ctx_factory()
@@ -451,6 +463,7 @@ def test_len(ctx_factory):
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
     a_cpu = cl_array.to_device(queue, a)
     assert len(a_cpu) == 10
+
 
 @pytools.test.mark_test.opencl
 def test_stride_preservation(ctx_factory):
@@ -463,6 +476,7 @@ def test_stride_preservation(ctx_factory):
     AT_GPU = cl_array.to_device(queue, AT)
     print(AT_GPU.flags.f_contiguous, AT_GPU.flags.c_contiguous)
     assert np.allclose(AT_GPU.get(), AT)
+
 
 @pytools.test.mark_test.opencl
 def test_nan_arithmetic(ctx_factory):
@@ -489,6 +503,7 @@ def test_nan_arithmetic(ctx_factory):
 
     assert (np.isnan(ab) == np.isnan(ab_gpu)).all()
 
+
 @pytools.test.mark_test.opencl
 def test_mem_pool_with_arrays(ctx_factory):
     context = ctx_factory()
@@ -500,6 +515,7 @@ def test_mem_pool_with_arrays(ctx_factory):
 
     assert a_dev.allocator is mem_pool
     assert b_dev.allocator is mem_pool
+
 
 @pytools.test.mark_test.opencl
 def test_view(ctx_factory):
@@ -523,37 +539,32 @@ def test_view(ctx_factory):
 
 # }}}
 
+
 @pytools.test.mark_test.opencl
-def no_test_slice(ctx_factory):
+def test_slice(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
     from pyopencl.clrandom import rand as clrand
 
     l = 20000
-    a_gpu = clrand(queue, (l,))
+    a_gpu = clrand(queue, (l,), dtype=np.float32)
     a = a_gpu.get()
 
     from random import randrange
-    for i in range(200):
+    for i in range(20):
         start = randrange(l)
         end = randrange(start, l)
 
-        a_gpu_slice = a_gpu[start:end]
-        a_slice = a[start:end]
+        a_gpu_slice = 2*a_gpu[start:end]
+        a_slice = 2*a[start:end]
 
         assert la.norm(a_gpu_slice.get() - a_slice) == 0
-
-
-
 
 
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
     # tests.
-    import pyopencl as cl
-
-    import sys
     if len(sys.argv) > 1:
         exec(sys.argv[1])
     else:

@@ -112,8 +112,8 @@ def get_elwise_kernel_and_types(context, arguments, operation,
         name="elwise_kernel", options=[], preamble="", use_range=False,
         **kwargs):
 
-    from pyopencl.tools import parse_arg_list
-    parsed_args = parse_arg_list(arguments)
+    from pyopencl.tools import parse_arg_list, get_arg_offset_adjuster_code
+    parsed_args = parse_arg_list(arguments, with_offset=True)
 
     auto_preamble = kwargs.pop("auto_preamble", True)
 
@@ -147,10 +147,12 @@ def get_elwise_kernel_and_types(context, arguments, operation,
     else:
         parsed_args.append(ScalarArg(np.intp, "n"))
 
+    loop_prep = kwargs.pop("loop_prep", "")
+    loop_prep = get_arg_offset_adjuster_code(parsed_args) + loop_prep
     prg = get_elwise_program(
         context, parsed_args, operation,
         name=name, options=options, preamble=preamble,
-        use_range=use_range, **kwargs)
+        use_range=use_range, loop_prep=loop_prep, **kwargs)
 
     from pyopencl.tools import get_arg_list_scalar_arg_dtypes
 
@@ -215,6 +217,15 @@ class ElementwiseKernel:
             name=self.name, options=self.options,
             use_range=use_range, **self.kwargs)
 
+        for arg in arg_descrs:
+            if isinstance(arg, VectorArg) and not arg.with_offset:
+                from warnings import warn
+                warn("ElementwiseKernel '%s' used with VectorArgs that do not "
+                        "have offset support enabled. This usage is deprecated. "
+                        "Just pass with_offset=True to VectorArg, everything should "
+                        "sort itself out automatically." % self.name,
+                        DeprecationWarning)
+
         if not [i for i, arg in enumerate(arg_descrs)
                 if isinstance(arg, VectorArg)]:
             raise RuntimeError(
@@ -244,7 +255,9 @@ class ElementwiseKernel:
                 if repr_vec is None:
                     repr_vec = arg
 
-                invocation_args.append(arg.data)
+                invocation_args.append(arg.base_data)
+                if arg_descr.with_offset:
+                    invocation_args.append(arg.offset)
             else:
                 invocation_args.append(arg)
 
@@ -319,7 +332,7 @@ class ElementwiseTemplate(KernelTemplateBase):
                 type_aliases, var_values, context, options)
 
         arg_list = renderer.render_argument_list(
-                self.arguments, more_arguments)
+                self.arguments, more_arguments, with_offset=True)
         type_decl_preamble = renderer.get_type_decl_preamble(
                 context.devices[0], declare_types, arg_list)
 
@@ -344,11 +357,11 @@ def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
             "tp": dtype_to_ctype(dtype),
             }
 
-    args = ([VectorArg(dtype, "dest" + str(i))
+    args = ([VectorArg(dtype, "dest" + str(i), with_offset=True)
              for i in range(vec_count)]
-            + [VectorArg(dtype, "src" + str(i))
+            + [VectorArg(dtype, "src" + str(i), with_offset=True)
                for i in range(vec_count)]
-            + [VectorArg(idx_dtype, "idx")])
+            + [VectorArg(idx_dtype, "idx", with_offset=True)])
     body = (
             ("%(idx_tp)s src_idx = idx[i];\n" % ctx)
             + "\n".join(
@@ -369,10 +382,10 @@ def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
             VectorArg(dtype, "dest%d" % i)
                 for i in range(vec_count)
             ] + [
-                VectorArg(idx_dtype, "gmem_dest_idx"),
-                VectorArg(idx_dtype, "gmem_src_idx"),
+                VectorArg(idx_dtype, "gmem_dest_idx", with_offset=True),
+                VectorArg(idx_dtype, "gmem_src_idx", with_offset=True),
             ] + [
-                VectorArg(dtype, "src%d" % i)
+                VectorArg(dtype, "src%d" % i, with_offset=True)
                 for i in range(vec_count)
             ] + [
                 ScalarArg(idx_dtype, "offset%d" % i)
@@ -404,12 +417,12 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
             }
 
     args = [
-            VectorArg(dtype, "dest%d" % i)
+            VectorArg(dtype, "dest%d" % i, with_offset=True)
                 for i in range(vec_count)
             ] + [
-                VectorArg(idx_dtype, "gmem_dest_idx"),
+                VectorArg(idx_dtype, "gmem_dest_idx", with_offset=True),
             ] + [
-                VectorArg(dtype, "src%d" % i)
+                VectorArg(dtype, "src%d" % i, with_offset=True)
                 for i in range(vec_count)
             ]
 
@@ -458,18 +471,18 @@ def get_linear_combination_kernel(summand_descriptors,
             preamble.append(
                     "texture <%s, 1, cudaReadModeElementType> tex_a%d;"
                     % (dtype_to_ctype(scalar_dtype, with_fp_tex_hack=True), i))
-            args.append(VectorArg(vector_dtype, "x%d" % i))
+            args.append(VectorArg(vector_dtype, "x%d" % i, with_offset=True))
             tex_names.append("tex_a%d" % i)
             loop_prep.append(
                     "%s a%d = fp_tex1Dfetch(tex_a%d, 0)"
                     % (dtype_to_ctype(scalar_dtype), i, i))
         else:
             args.append(ScalarArg(scalar_dtype, "a%d" % i))
-            args.append(VectorArg(vector_dtype, "x%d" % i))
+            args.append(VectorArg(vector_dtype, "x%d" % i, with_offset=True))
 
         summands.append("a%d*x%d[i]" % (i, i))
 
-    args.append(VectorArg(dtype_z, "z"))
+    args.append(VectorArg(dtype_z, "z", with_offset=True))
     args.append(ScalarArg(np.uintp, "n"))
 
     mod = get_elwise_module(args,
@@ -831,10 +844,10 @@ def get_unary_func_kernel(context, func_name, in_dtype, out_dtype=None):
 @context_dependent_memoize
 def get_if_positive_kernel(context, crit_dtype, dtype):
     return get_elwise_kernel(context, [
-            VectorArg(dtype, "result"),
-            VectorArg(crit_dtype, "crit"),
-            VectorArg(dtype, "then_"),
-            VectorArg(dtype, "else_"),
+            VectorArg(dtype, "result", with_offset=True),
+            VectorArg(crit_dtype, "crit", with_offset=True),
+            VectorArg(dtype, "then_", with_offset=True),
+            VectorArg(dtype, "else_", with_offset=True),
             ],
             "result[i] = crit[i] > 0 ? then_[i] : else_[i]",
             name="if_positive")

@@ -176,7 +176,8 @@ def elwise_kernel_runner(kernel_getter):
                 if not arg.flags.forc:
                     raise RuntimeError("only contiguous arrays may "
                             "be used as arguments to this operation")
-                actual_args.append(arg.data)
+                actual_args.append(arg.base_data)
+                actual_args.append(arg.offset)
                 wait_for.extend(arg.events)
             else:
                 actual_args.append(arg)
@@ -220,7 +221,7 @@ class ArrayHasOffsetError(ValueError):
     .. versionadded:: 2013.1
     """
 
-    def __init__(self, val="The operation you are attempting does not (yet?) "
+    def __init__(self, val="The operation you are attempting does not yet "
                 "support arrays that start at an offset from the beginning "
                 "of their buffer."):
         ValueError.__init__(self, val)
@@ -1477,10 +1478,16 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
+        from pytools import flatten
         knl(queue, gs, ls,
                 *([o.data for o in out[chunk_slice]]
-                    + [dest_indices.data, src_indices.data]
-                    + [i.data for i in arrays[chunk_slice]]
+                    + [dest_indices.base_data,
+                        dest_indices.offset,
+                        src_indices.base_data,
+                        src_indices.offset]
+                    + list(flatten(
+                        (i.base_data, i.offset)
+                        for i in arrays[chunk_slice]))
                     + src_offsets_list[chunk_slice]
                     + [src_indices.size]))
 

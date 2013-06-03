@@ -113,6 +113,7 @@ def remove_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
 
 # }}}
 
+
 # {{{ partition
 
 _partition_template = ScanTemplate(
@@ -522,6 +523,7 @@ class RadixSort(object):
 # }}}
 
 # }}}
+
 
 # {{{ generic parallel list builder
 

@@ -313,8 +313,19 @@ class DtypedArgument(Argument):
 
 
 class VectorArg(DtypedArgument):
+    def __init__(self, dtype, name, with_offset=False):
+        DtypedArgument.__init__(self, dtype, name)
+        self.with_offset = with_offset
+
     def declarator(self):
-        return "__global %s *%s" % (dtype_to_ctype(self.dtype), self.name)
+        if self.with_offset:
+            # Two underscores -> less likelihood of a name clash.
+            return "__global %s *%s__base, long %s__offset" % (
+                    dtype_to_ctype(self.dtype), self.name, self.name)
+        else:
+            result = "__global %s *%s" % (dtype_to_ctype(self.dtype), self.name)
+
+        return result
 
 
 class ScalarArg(DtypedArgument):
@@ -331,7 +342,7 @@ class OtherArg(Argument):
         return self.decl
 
 
-def parse_c_arg(c_arg):
+def parse_c_arg(c_arg, with_offset=False):
     for aspace in ["__local", "__constant"]:
         if aspace in c_arg:
             raise RuntimeError("cannot deal with local or constant "
@@ -339,11 +350,17 @@ def parse_c_arg(c_arg):
 
     c_arg = c_arg.replace("__global", "")
 
+    if with_offset:
+        vec_arg_factory = lambda dtype, name: \
+                VectorArg(dtype, name, with_offset=True)
+    else:
+        vec_arg_factory = VectorArg
+
     from pyopencl.compyte.dtypes import parse_c_arg_backend
-    return parse_c_arg_backend(c_arg, ScalarArg, VectorArg)
+    return parse_c_arg_backend(c_arg, ScalarArg, vec_arg_factory)
 
 
-def parse_arg_list(arguments):
+def parse_arg_list(arguments, with_offset=False):
     """Parse a list of kernel arguments. *arguments* may be a comma-separate
     list of C declarators in a string, a list of strings representing C
     declarators, or :class:`Argument` objects.
@@ -355,7 +372,7 @@ def parse_arg_list(arguments):
     def parse_single_arg(obj):
         if isinstance(obj, str):
             from pyopencl.tools import parse_c_arg
-            return parse_c_arg(obj)
+            return parse_c_arg(obj, with_offset=with_offset)
         else:
             return obj
 
@@ -365,14 +382,33 @@ def parse_arg_list(arguments):
 def get_arg_list_scalar_arg_dtypes(arg_types):
     result = []
 
-    from pyopencl.tools import ScalarArg
     for arg_type in arg_types:
         if isinstance(arg_type, ScalarArg):
             result.append(arg_type.dtype)
-        else:
+        elif isinstance(arg_type, VectorArg):
             result.append(None)
+            if arg_type.with_offset:
+                result.append(np.int64)
+        else:
+            raise RuntimeError("arg type not understood: %s" % type(arg_type))
 
     return result
+
+
+def get_arg_offset_adjuster_code(arg_types):
+    result = []
+
+    for arg_type in arg_types:
+        if isinstance(arg_type, VectorArg) and arg_type.with_offset:
+            result.append("__global %(type)s *%(name)s = "
+                    "(__global %(type)s *) "
+                    "((__global char *) %(name)s__base + %(name)s__offset);"
+                    % dict(
+                        type=dtype_to_ctype(arg_type.dtype),
+                        name=arg_type.name))
+
+    return "\n".join(result)
+
 
 # }}}
 
@@ -663,9 +699,19 @@ class _MakoTextTemplate:
 
 
 class _ArgumentPlaceholder:
-    def __init__(self, typename, name):
+    """A placeholder for subclasses of :class:`DtypedArgument`. This is needed
+    because the concrete dtype of the argument is not known at template
+    creation time--it may be a type alias that will only be filled in
+    at run time. These types take the place of these proto-arguments until
+    all types are known.
+
+    See also :class:`_TemplateRenderer.render_arg`.
+    """
+
+    def __init__(self, typename, name, **extra_kwargs):
         self.typename = typename
         self.name = name
+        self.extra_kwargs = extra_kwargs
 
 
 class _VectorArgPlaceholder(_ArgumentPlaceholder):
@@ -721,11 +767,16 @@ class _TemplateRenderer(object):
     def render_arg(self, arg_placeholder):
         return arg_placeholder.target_class(
                 self.parse_type(arg_placeholder.typename),
-                arg_placeholder.name)
+                arg_placeholder.name,
+                **arg_placeholder.extra_kwargs)
 
     _C_COMMENT_FINDER = re.compile(r"/\*.*?\*/")
 
-    def render_argument_list(self, *arg_lists):
+    def render_argument_list(self, *arg_lists, **kwargs):
+        with_offset = kwargs.pop("with_offset", False)
+        if kwargs:
+            raise TypeError("unrecognized kwargs: " + ", ".join(kwargs))
+
         all_args = []
 
         for arg_list in arg_lists:
@@ -740,6 +791,12 @@ class _TemplateRenderer(object):
             else:
                 all_args.extend(arg_list)
 
+        if with_offset:
+            vec_arg_factory = lambda typename, name: \
+                    _VectorArgPlaceholder(typename, name, with_offset=True)
+        else:
+            vec_arg_factory = _VectorArgPlaceholder
+
         from pyopencl.compyte.dtypes import parse_c_arg_backend
         parsed_args = []
         for arg in all_args:
@@ -749,7 +806,7 @@ class _TemplateRenderer(object):
                     continue
 
                 ph = parse_c_arg_backend(arg,
-                        _ScalarArgPlaceholder, _VectorArgPlaceholder,
+                        _ScalarArgPlaceholder, vec_arg_factory,
                         name_to_dtype=lambda x: x)
                 parsed_arg = self.render_arg(ph)
 
