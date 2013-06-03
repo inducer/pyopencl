@@ -456,7 +456,7 @@ def _add_functionality():
         return self
 
     def command_queue_exit(self, exc_type, exc_val, exc_tb):
-        return self
+        self.finish()
 
     CommandQueue.__enter__ = command_queue_enter
     CommandQueue.__exit__ = command_queue_exit

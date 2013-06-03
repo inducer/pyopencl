@@ -200,6 +200,8 @@ Command Queues and Events
         with cl.CommandQueue(self.cl_context) as queue:
             enqueue_stuff(queue, ...)
 
+    :meth:`finish` is automatically called at the end of the context.
+
     .. versionadded:: 2013.1
 
         Context manager capability.
