@@ -1540,10 +1540,16 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
+        from pytools import flatten
         knl(queue, gs, ls,
-                *([o.data for o in out[chunk_slice]]
-                    + [dest_indices.data]
-                    + [i.data for i in arrays[chunk_slice]]
+                *(
+                    list(flatten(
+                        (o.base_data, o.offset)
+                        for o in out[chunk_slice]))
+                    + [dest_indices.base_data, dest_indices.offset]
+                    + list(flatten(
+                        (i.base_data, i.offset)
+                        for i in arrays[chunk_slice]))
                     + [dest_indices.size]))
 
     return out
