@@ -39,14 +39,13 @@ except ImportError:
     new_hash = md5.new
 
 
-
-
 def _erase_dir(dir):
     from os import listdir, unlink, rmdir
     from os.path import join
     for name in listdir(dir):
         unlink(join(dir, name))
     rmdir(dir)
+
 
 def update_checksum(checksum, obj):
     if isinstance(obj, unicode):
@@ -55,13 +54,11 @@ def update_checksum(checksum, obj):
         checksum.update(obj)
 
 
-
-
-
 # {{{ cleanup
 
 class CleanupBase(object):
     pass
+
 
 class CleanupManager(CleanupBase):
     def __init__(self):
@@ -77,6 +74,7 @@ class CleanupManager(CleanupBase):
     def error_clean_up(self):
         for c in self.cleanups:
             c.error_clean_up()
+
 
 class CacheLockManager(CleanupBase):
     def __init__(self, cleanup_m, cache_dir):
@@ -112,6 +110,7 @@ class CacheLockManager(CleanupBase):
     def error_clean_up(self):
         pass
 
+
 class ModuleCacheDirManager(CleanupBase):
     def __init__(self, cleanup_m, path):
         from os import mkdir
@@ -141,10 +140,12 @@ class ModuleCacheDirManager(CleanupBase):
 
 # }}}
 
+
 # {{{ #include dependency handling
 
 C_INCLUDE_RE = re.compile(r'^\s*\#\s*include\s+[<"](.+)[">]\s*$',
         re.MULTILINE)
+
 
 def get_dependencies(src, include_path):
     result = {}
@@ -170,7 +171,8 @@ def get_dependencies(src, include_path):
                     finally:
                         src_file.close()
 
-                    # prevent infinite recursion if some header file appears to include itself
+                    # jrevent infinite recursion if some header file appears to
+                    # include itself
                     result[included_file_name] = None
 
                     checksum = new_hash()
@@ -183,7 +185,7 @@ def get_dependencies(src, include_path):
                             )
 
                     found = True
-                    break # stop searching the include path
+                    break  # stop searching the include path
 
             if not found:
                 pass
@@ -194,8 +196,6 @@ def get_dependencies(src, include_path):
     result.sort()
 
     return result
-
-
 
 
 def get_file_md5sum(fname):
@@ -209,13 +209,11 @@ def get_file_md5sum(fname):
     return checksum.hexdigest()
 
 
-
-
 def check_dependencies(deps):
     for name, date, md5sum in deps:
         try:
             possibly_updated = os.stat(name).st_mtime != date
-        except OSError, e:
+        except OSError:
             return False
         else:
             if possibly_updated and md5sum != get_file_md5sum(name):
@@ -224,6 +222,7 @@ def check_dependencies(deps):
     return True
 
 # }}}
+
 
 # {{{ key generation
 
@@ -235,8 +234,6 @@ def get_device_cache_id(device):
             device.vendor, device.name, device.version, device.driver_version)
 
 
-
-
 def get_cache_key(device, options, src):
     checksum = new_hash()
     update_checksum(checksum, src)
@@ -245,9 +242,6 @@ def get_cache_key(device, options, src):
     return checksum.hexdigest()
 
 # }}}
-
-
-
 
 
 def retrieve_from_cache(cache_dir, cache_key):
@@ -316,13 +310,15 @@ def retrieve_from_cache(cache_dir, cache_key):
     finally:
         cleanup_m.clean_up()
 
+
 # {{{ top-level driver
 
 class _SourceInfo(Record):
     pass
 
+
 def _create_built_program_from_source_cached(ctx, src, options, devices, cache_dir):
-    from os.path import join # required in multiple places below
+    from os.path import join  # required in multiple places below
 
     include_path = ["."]
 
@@ -471,12 +467,10 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
     return result, already_built
 
 
-
-
 def create_built_program_from_source_cached(ctx, src, options=[], devices=None,
         cache_dir=None):
     try:
-        if cache_dir != False:
+        if cache_dir is not False:
             prg, already_built = _create_built_program_from_source_cached(
                     ctx, src, options, devices, cache_dir)
         else:
