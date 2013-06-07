@@ -438,6 +438,9 @@ class Array(object):
 
         # }}}
 
+        if dtype == np.object:
+            raise TypeError("object arrays on the compute device are not allowed")
+
         self.queue = queue
         self.shape = shape
         self.dtype = dtype
