@@ -461,6 +461,8 @@ def _add_functionality():
     CommandQueue.__enter__ = command_queue_enter
     CommandQueue.__exit__ = command_queue_exit
 
+    # }}}
+
     # {{{ _Program (the internal, non-caching version)
 
     def program_get_build_logs(self):

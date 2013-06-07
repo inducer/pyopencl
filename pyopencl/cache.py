@@ -318,7 +318,7 @@ class _SourceInfo(Record):
 
 
 def _create_built_program_from_source_cached(ctx, src, options, devices, cache_dir):
-    from os.path import join  # required in multiple places below
+    from os.path import join
 
     include_path = ["."]
 
