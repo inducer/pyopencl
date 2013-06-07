@@ -348,6 +348,7 @@ class Array(object):
     .. automethod :: conj
 
     .. automethod :: __getitem__
+    .. automethod :: __setitem__
 
     """
 
@@ -1086,6 +1087,9 @@ class Array(object):
         del self.events[:]
 
     def __getitem__(self, index):
+        """
+        .. versionadded:: 2013.1
+        """
         if not isinstance(index, tuple):
             index = (index,)
 
@@ -1160,6 +1164,50 @@ class Array(object):
                 self.base_data, offset=new_offset,
                 shape=tuple(new_shape),
                 strides=tuple(new_strides))
+
+    def __setitem__(self, subscript, value):
+        """Set the slice of *self* identified *subscript* to *value*.
+
+        *value* is allowed to be:
+
+        * A :class:`Array` of the same :attr:`shape` and (for now) :attr:`strides`,
+          but with potentially different :attr:`dtype`.
+        * A :class:`numpy.ndarray` of the same :attr:`shape` and (for now)
+          :attr:`strides`, but with potentially different :attr:`dtype`.
+        * A scalar.
+
+        Non-scalar broadcasting is not currently supported.
+
+        .. versionadded:: 2013.1
+        """
+
+        subarray = self[subscript]
+
+        if isinstance(value, np.ndarray):
+            if subarray.shape == value.shape and subarray.strides == value.strides:
+                self.events.append(
+                        cl.enqueue_copy(self.queue, subarray.base_data,
+                            value, device_offset=subarray.offset))
+                return
+            else:
+                value = to_device(self.queue, value, self.allocator)
+
+        if isinstance(value, Array):
+            if len(subarray.shape) != len(value.shape):
+                raise NotImplementedError("broadcasting is not "
+                        "supported in __setitem__")
+            if subarray.shape != value.shape:
+                raise ValueError("cannot assign between arrays of "
+                        "differing shapes")
+            if subarray.strides != value.strides:
+                raise ValueError("cannot assign between arrays of "
+                        "differing strides")
+
+            self._copy(subarray, value)
+
+        else:
+            # Let's assume it's a scalar
+            subarray.fill(value)
 
 # }}}
 

@@ -549,7 +549,9 @@ def test_slice(ctx_factory):
 
     l = 20000
     a_gpu = clrand(queue, (l,), dtype=np.float32)
+    b_gpu = clrand(queue, (l,), dtype=np.float32)
     a = a_gpu.get()
+    b = b_gpu.get()
 
     from random import randrange
     for i in range(20):
@@ -560,6 +562,24 @@ def test_slice(ctx_factory):
         a_slice = 2*a[start:end]
 
         assert la.norm(a_gpu_slice.get() - a_slice) == 0
+
+    for i in range(20):
+        start = randrange(l)
+        end = randrange(start, l)
+
+        a_gpu[start:end] = 2*b[start:end]
+        a[start:end] = 2*b[start:end]
+
+        assert la.norm(a_gpu.get() - a) == 0
+
+    for i in range(20):
+        start = randrange(l)
+        end = randrange(start, l)
+
+        a_gpu[start:end] = 2*b_gpu[start:end]
+        a[start:end] = 2*b[start:end]
+
+        assert la.norm(a_gpu.get() - a) == 0
 
 
 if __name__ == "__main__":
