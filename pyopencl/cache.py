@@ -331,7 +331,7 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
                     include_path.append(options[option_idx+1])
                 option_idx += 2
             else:
-                include_path.append(option[2:])
+                include_path.append(option[2:].lstrip())
                 option_idx += 1
         else:
             option_idx += 1
