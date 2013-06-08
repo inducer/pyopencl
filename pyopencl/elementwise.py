@@ -842,6 +842,17 @@ def get_unary_func_kernel(context, func_name, in_dtype, out_dtype=None):
 
 
 @context_dependent_memoize
+def get_binary_func_kernel(context, func_name, x_dtype, y_dtype, out_dtype):
+    return get_elwise_kernel(context, [
+        VectorArg(out_dtype, "z", with_offset=True),
+        VectorArg(x_dtype, "x", with_offset=True),
+        VectorArg(y_dtype, "y", with_offset=True),
+        ],
+        "z[i] = %s(x[i], y[i])" % func_name,
+        name="%s_kernel" % func_name)
+
+
+@context_dependent_memoize
 def get_if_positive_kernel(context, crit_dtype, dtype):
     return get_elwise_kernel(context, [
             VectorArg(dtype, "result", with_offset=True),

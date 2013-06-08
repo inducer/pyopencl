@@ -104,6 +104,7 @@ Version 2013.1
   Note that some operations (specifically, reductions and scans) on sliced
   arrays will fail for now.  This will be fixed in a future release.
 * :class:`pyopencl.CommandQueue` may be used as a context manager (in a ``with`` statement)
+* Add :func:`pyopencl.clmath.atan2`, :func:`pyopencl.clmath.atan2pi`.
 
 Version 2012.1
 --------------

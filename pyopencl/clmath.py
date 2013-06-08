@@ -22,6 +22,8 @@ THE SOFTWARE.
 
 import pyopencl.array as cl_array
 import pyopencl.elementwise as elementwise
+from pyopencl.array import _get_common_dtype
+
 
 def _make_unary_array_func(name):
     @cl_array.elwise_kernel_runner
@@ -51,11 +53,45 @@ asin = _make_unary_array_func("asin")
 asinh = _make_unary_array_func("asinh")
 asinpi = _make_unary_array_func("asinpi")
 
+
+@cl_array.elwise_kernel_runner
+def _atan2(result, arg1, arg2):
+    return elementwise.get_binary_func_kernel(result.context, "atan2",
+            arg1.dtype, arg2.dtype, result.dtype)
+
+
+@cl_array.elwise_kernel_runner
+def _atan2pi(result, arg1, arg2):
+    return elementwise.get_binary_func_kernel(result.context, "atan2pi",
+            arg1.dtype, arg2.dtype, result.dtype)
+
+
 atan = _make_unary_array_func("atan")
-# TODO: atan2
+
+
+def atan2(y, x, queue=None):
+    """
+    .. versionadded:: 2013.1
+    """
+    queue = queue or y.queue
+    result = y._new_like_me(_get_common_dtype(y, x, queue))
+    _atan2(result, y, x, queue=queue)
+    return result
+
+
 atanh = _make_unary_array_func("atanh")
 atanpi = _make_unary_array_func("atanpi")
-# TODO: atan2pi
+
+
+def atan2pi(y, x, queue=None):
+    """
+    .. versionadded:: 2013.1
+    """
+    queue = queue or y.queue
+    result = y._new_like_me(_get_common_dtype(y, x, queue))
+    _atan2pi(result, y, x, queue=queue)
+    return result
+
 
 cbrt = _make_unary_array_func("cbrt")
 ceil = _make_unary_array_func("ceil")
@@ -79,9 +115,11 @@ floor = _make_unary_array_func("floor")
 # TODO: fmax
 # TODO: fmin
 
+
 @cl_array.elwise_kernel_runner
 def _fmod(result, arg, mod):
     return elementwise.get_fmod_kernel(result.context)
+
 
 def fmod(arg, mod, queue=None):
     """Return the floating point remainder of the division `arg/mod`,
@@ -92,9 +130,11 @@ def fmod(arg, mod, queue=None):
 
 # TODO: fract
 
+
 @cl_array.elwise_kernel_runner
 def _frexp(sig, expt, arg):
     return elementwise.get_frexp_kernel(sig.context)
+
 
 def frexp(arg, queue=None):
     """Return a tuple `(significands, exponents)` such that
@@ -107,11 +147,14 @@ def frexp(arg, queue=None):
 
 # TODO: hypot
 
+
 ilogb = _make_unary_array_func("ilogb")
+
 
 @cl_array.elwise_kernel_runner
 def _ldexp(result, sig, exp):
     return elementwise.get_ldexp_kernel(result.context)
+
 
 def ldexp(significand, exponent, queue=None):
     """Return a new array of floating point values composed from the
@@ -135,9 +178,11 @@ logb = _make_unary_array_func("logb")
 # TODO: maxmag
 # TODO: minmag
 
+
 @cl_array.elwise_kernel_runner
 def _modf(intpart, fracpart, arg):
     return elementwise.get_modf_kernel(intpart.context)
+
 
 def modf(arg, queue=None):
     """Return a tuple `(fracpart, intpart)` of arrays containing the
@@ -181,14 +226,17 @@ trunc = _make_unary_array_func("trunc")
 def _bessel_jn(result, sig, exp):
     return elementwise.get_bessel_kernel(result.context, "j")
 
+
 @cl_array.elwise_kernel_runner
 def _bessel_yn(result, sig, exp):
     return elementwise.get_bessel_kernel(result.context, "y")
+
 
 def bessel_jn(n, x, queue=None):
     result = x._new_like_me(queue=queue)
     _bessel_jn(result, n, x)
     return result
+
 
 def bessel_yn(n, x, queue=None):
     result = x._new_like_me(queue=queue)

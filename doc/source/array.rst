@@ -166,10 +166,10 @@ functions available in the OpenCL standard. (See table 6.8 in the spec.)
 .. function:: asinpi(array, queue=None)
 
 .. function:: atan(array, queue=None)
-.. TODO: atan2
+.. autofunction:: atan2
 .. function:: atanh(array, queue=None)
 .. function:: atanpi(array, queue=None)
-.. TODO: atan2pi
+.. autofunction:: atan2pi
 
 .. function:: cbrt(array, queue=None)
 .. function:: ceil(array, queue=None)
