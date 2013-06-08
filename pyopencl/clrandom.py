@@ -187,7 +187,7 @@ class RanluxGenerator(object):
         return "\n".join(lines)
 
     @memoize_method
-    def get_gen_kernel(self, dtype, flavor=""):
+    def get_gen_kernel(self, dtype, distribution="uniform"):
         size_multiplier = 1
         arg_dtype = dtype
 
@@ -212,16 +212,19 @@ class RanluxGenerator(object):
             size_multiplier = 4
             arg_dtype = np.float32
         elif dtype == np.int32:
-            assert flavor == ""
+            assert distribution == "uniform"
             bits = 32
             c_type = "int"
             rng_expr = ("(shift "
-                    "+ convert_int4(scale * gen) "
-                    "+ convert_int4((scale / (1<<24)) * gen))")
+                    "+ convert_int4((float) scale * gen) "
+                    "+ convert_int4((float) (scale / (1<<24)) * gen))")
         else:
             raise TypeError("unsupported RNG data type '%s'" % dtype)
 
-        rl_flavor = "%d%s" % (bits, flavor)
+        rl_flavor = "%d%s" % (bits, {
+                "uniform": "",
+                "normal": "norm"
+                }[distribution])
 
         src = """//CL//
             %(defines)s
@@ -231,7 +234,7 @@ class RanluxGenerator(object):
             typedef %(output_t)s output_t;
             typedef %(output_t)s4 output_vec_t;
             #define NUM_WORKITEMS %(num_work_items)d
-            #define RANLUX_FUNC ranluxcl##%(rlflavor)s
+            #define RANLUX_FUNC ranluxcl%(rlflavor)s
             #define GET_RANDOM_NUM(gen) %(rng_expr)s
 
             kernel void generate(
@@ -290,7 +293,7 @@ class RanluxGenerator(object):
         if queue is None:
             queue = ary.queue
 
-        knl, size_multiplier = self.get_gen_kernel(ary.dtype, "")
+        knl, size_multiplier = self.get_gen_kernel(ary.dtype, "uniform")
         knl(queue,
                 (self.num_work_items,), None,
                 self.state.data, ary.data, ary.size*size_multiplier,
@@ -315,7 +318,7 @@ class RanluxGenerator(object):
         if queue is None:
             queue = ary.queue
 
-        knl, size_multiplier = self.get_gen_kernel(ary.dtype, "norm")
+        knl, size_multiplier = self.get_gen_kernel(ary.dtype, "normal")
         knl(queue,
                 (self.num_work_items,), self.wg_size,
                 self.state.data, ary.data, ary.size*size_multiplier, sigma, mu)

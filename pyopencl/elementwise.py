@@ -721,12 +721,18 @@ def get_reverse_kernel(context, dtype):
 
 @context_dependent_memoize
 def get_arange_kernel(context, dtype):
-    return get_elwise_kernel(context,
-            "%(tp)s *z, %(tp)s start, %(tp)s step" % {
-                "tp": dtype_to_ctype(dtype),
-                },
-            "z[i] = start + i*step",
-            name="arange")
+    if dtype.kind == "c":
+        i = "%s_fromreal(i)" % complex_dtype_to_name(dtype)
+    else:
+        i = "(%s) i" % dtype_to_ctype(dtype)
+
+    return get_elwise_kernel(context, [
+        VectorArg(dtype, "z", with_offset=True),
+        ScalarArg(dtype, "start"),
+        ScalarArg(dtype, "step"),
+        ],
+        "z[i] = start + %s*step" % i,
+        name="arange")
 
 
 @context_dependent_memoize
