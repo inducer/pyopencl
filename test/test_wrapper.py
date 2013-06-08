@@ -27,13 +27,18 @@ import numpy.linalg as la
 import pytools.test
 
 
-
-
 import pyopencl as cl
 import pyopencl.array as cl_array
-from pyopencl.tools import pytest_generate_tests_for_pyopencl \
-        as pytest_generate_tests
+from pyopencl.tools import (  # noqa
+        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 
+# Are CL implementations crashy? You be the judge. :)
+try:
+    import faulthandler  # noqa
+except ImportError:
+    pass
+else:
+    faulthandler.enable()
 
 
 @pytools.test.mark_test.opencl
@@ -47,20 +52,17 @@ def test_get_info(platform, device):
             (("NVIDIA Corporation", "NVIDIA CUDA",
                 "OpenCL 1.0 CUDA 3.0.1"),
                 [
-                (cl.Event, cl.event_info.COMMAND_QUEUE),
-                ]),
+                    (cl.Event, cl.event_info.COMMAND_QUEUE),
+                    ]),
             (("The pocl project", "Portable Computing Language",
                 "OpenCL 1.2 pocl 0.8-pre"),
-                pocl_quirks
-                ),
+                    pocl_quirks),
             (("The pocl project", "Portable Computing Language",
                 "OpenCL 1.2 pocl 0.8"),
-                pocl_quirks
-                ),
+                pocl_quirks),
             (("The pocl project", "Portable Computing Language",
                 "OpenCL 1.2 pocl 0.9-pre"),
-                pocl_quirks
-                ),
+                pocl_quirks),
             ]
     QUIRKS = []
 
@@ -177,6 +179,7 @@ def test_get_info(platform, device):
         do_test(img, cl.image_info,
                 lambda info: img.get_image_info(info))
 
+
 @pytools.test.mark_test.opencl
 def test_invalid_kernel_names_cause_failures(ctx_factory):
     ctx = ctx_factory()
@@ -185,7 +188,6 @@ def test_invalid_kernel_names_cause_failures(ctx_factory):
         __kernel void sum(__global float *a)
         { a[get_global_id(0)] *= 2; }
         """).build()
-
 
     if ctx.devices[0].platform.vendor == "The pocl project":
         # https://bugs.launchpad.net/pocl/+bug/1184464
@@ -207,6 +209,7 @@ def test_invalid_kernel_names_cause_failures(ctx_factory):
         else:
             raise
 
+
 @pytools.test.mark_test.opencl
 def test_image_format_constructor():
     # doesn't need image support to succeed
@@ -215,6 +218,7 @@ def test_image_format_constructor():
     assert iform.channel_order == cl.channel_order.RGBA
     assert iform.channel_data_type == cl.channel_type.FLOAT
     assert not iform.__dict__
+
 
 @pytools.test.mark_test.opencl
 def test_nonempty_supported_image_formats(ctx_factory):
@@ -228,6 +232,7 @@ def test_nonempty_supported_image_formats(ctx_factory):
     else:
         from pytest import skip
         skip("images not supported on %s" % device.name)
+
 
 @pytools.test.mark_test.opencl
 def test_that_python_args_fail(ctx_factory):
@@ -260,6 +265,7 @@ def test_that_python_args_fail(ctx_factory):
 
     a_result = np.empty_like(a)
     cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
+
 
 @pytools.test.mark_test.opencl
 def test_image_2d(ctx_factory):
@@ -303,7 +309,7 @@ def test_image_2d(ctx_factory):
     num_channels = 1
     a = np.random.rand(1024, 512, num_channels).astype(np.float32)
     if num_channels == 1:
-        a = a[:,:,0]
+        a = a[:, :, 0]
 
     queue = cl.CommandQueue(context)
     try:
@@ -332,9 +338,11 @@ def test_image_2d(ctx_factory):
     if not good:
         if queue.device.type == cl.device_type.CPU:
             assert good, ("The image implementation on your CPU CL platform '%s' "
-                    "returned bad values. This is bad, but common." % queue.device.platform)
+                    "returned bad values. This is bad, but common."
+                    % queue.device.platform)
         else:
             assert good
+
 
 @pytools.test.mark_test.opencl
 def test_image_3d(ctx_factory):
@@ -368,13 +376,14 @@ def test_image_3d(ctx_factory):
             | CLK_ADDRESS_CLAMP
             | CLK_FILTER_NEAREST;
             */
-          dest[d0*stride0 + d1*stride1 + d2] = read_imagef(src, samp, (float4)(d2, d1, d0, 0)).xy;
+          dest[d0*stride0 + d1*stride1 + d2] = read_imagef(
+                src, samp, (float4)(d2, d1, d0, 0)).xy;
         }
         """).build()
 
     num_channels = 2
-    shape = (3,4,2)
-    a = np.random.random( shape + (num_channels,)).astype(np.float32)
+    shape = (3, 4, 2)
+    a = np.random.random(shape + (num_channels,)).astype(np.float32)
 
     queue = cl.CommandQueue(context)
     try:
@@ -405,7 +414,8 @@ def test_image_3d(ctx_factory):
     if not good:
         if queue.device.type == cl.device_type.CPU:
             assert good, ("The image implementation on your CPU CL platform '%s' "
-                    "returned bad values. This is bad, but common." % queue.device.platform)
+                    "returned bad values. This is bad, but common."
+                    % queue.device.platform)
         else:
             assert good
 
@@ -427,6 +437,7 @@ def test_copy_buffer(ctx_factory):
     cl.enqueue_read_buffer(queue, buf2, b).wait()
 
     assert la.norm(a - b) == 0
+
 
 @pytools.test.mark_test.opencl
 def test_mempool(ctx_factory):
