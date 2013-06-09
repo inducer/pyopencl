@@ -246,8 +246,20 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
 
 # {{{ radix_sort
 
+def to_bin(n):
+    # Py 2.5 has no built-in bin()
+    digs = []
+    while True:
+        digs.append(str(n % 2))
+        n /= 2
+        if not n:
+            break
+    digs.reverse()
+    return ''.join(digs)
+
+
 def _padded_bin(i, l):
-    s = bin(i)[2:]
+    s = to_bin(i)
     while len(s) < l:
         s = '0' + s
     return s
