@@ -983,7 +983,7 @@ class ListOfListsBuilder:
 
         count_event = count_kernel(queue, gsize, lsize,
                 *(tuple(count_list_args) + args + (n_objects,)),
-                wait_for=wait_for)
+                **dict(wait_for=wait_for))
 
         # {{{ run scans
 
