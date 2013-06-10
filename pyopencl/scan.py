@@ -1166,12 +1166,6 @@ class GenericScanKernel(_GenericScanKernelBase):
                 k_group_size=k_group_size,
                 **second_level_build_kwargs)
 
-        assert min(
-                candidate_scan_info.kernel.get_work_group_info(
-                    cl.kernel_work_group_info.WORK_GROUP_SIZE,
-                    dev)
-                for dev in self.devices) >= max_scan_wg_size
-
         # }}}
 
         # {{{ build final update kernel
