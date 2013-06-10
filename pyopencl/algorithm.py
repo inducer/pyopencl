@@ -249,13 +249,11 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
 def to_bin(n):
     # Py 2.5 has no built-in bin()
     digs = []
-    while True:
+    while n:
         digs.append(str(n % 2))
-        n /= 2
-        if not n:
-            break
-    digs.reverse()
-    return ''.join(digs)
+        n >>= 1
+
+    return ''.join(digs[::-1])
 
 
 def _padded_bin(i, l):
