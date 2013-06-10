@@ -29,6 +29,8 @@ import pytools.test
 from pytools import memoize
 from test_array import general_clrand
 
+import pytest
+
 import pyopencl as cl
 import pyopencl.array as cl_array # noqa
 from pyopencl.tools import pytest_generate_tests_for_pyopencl \
@@ -366,11 +368,15 @@ def make_mmc_dtype(device):
 
 @pytools.test.mark_test.opencl
 def test_struct_reduce(ctx_factory):
-    from pytest import importorskip
-    importorskip("mako")
+    pytest.importorskip("mako")
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+
+    dev, = context.devices
+    if (dev.vendor == "NVIDIA" and dev.platform.vendor == "Apple"
+            and dev.driver_version == "8.12.47 310.40.00.05f01"):
+        pytest.skip("causes a compiler hang on Apple/Nv GPU")
 
     mmc_dtype, mmc_c_decl = make_mmc_dtype(context.devices[0])
 
