@@ -63,6 +63,11 @@ def test_get_info(platform, device):
             (("The pocl project", "Portable Computing Language",
                 "OpenCL 1.2 pocl 0.9-pre"),
                 pocl_quirks),
+            (("Apple", "Apple",
+                "OpenCL 1.2 (Apr 25 2013 18:32:06)"),
+                [
+                    (cl.Program, cl.program_info.SOURCE),
+                    ]),
             ]
     QUIRKS = []
 
