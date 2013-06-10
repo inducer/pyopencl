@@ -22,7 +22,10 @@ def print_info(obj, info_cls):
                     cl.device_partition_property_ext.to_string(v,
                         "<unknown device partition property %d>") for v in info_value]))
             else:
-                print("%s: %s" % (info_name, info_value))
+                try:
+                    print("%s: %s" % (info_name, info_value))
+                except:
+                    print("%s: <error>") % info_name
 
 for platform in cl.get_platforms():
     print(75*"=")
