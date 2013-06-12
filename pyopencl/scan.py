@@ -1021,7 +1021,7 @@ class _GenericScanKernelBase(object):
             arg_ctypes=arg_ctypes,
             scan_expr=_process_code_for_macro(scan_expr),
             neutral=_process_code_for_macro(neutral),
-            is_gpu=self.devices[0].type == cl.device_type.GPU,
+            is_gpu=bool(self.devices[0].type & cl.device_type.GPU),
             double_support=all(
                 has_double_support(dev) for dev in devices),
             )
@@ -1086,7 +1086,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                 if lmem_use + 256 <= avail_local_mem:
                     solutions.append((wg_size*k_group_size, k_group_size, wg_size))
 
-        if self.devices[0].type == cl.device_type.GPU:
+        if self.devices[0].type & cl.device_type.GPU:
             from pytools import any
             for wg_size_floor in [256, 192, 128]:
                 have_sol_above_floor = any(wg_size >= wg_size_floor

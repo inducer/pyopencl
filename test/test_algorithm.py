@@ -628,7 +628,7 @@ def test_index_preservation(ctx_factory):
     classes = [GenericScanKernel]
 
     dev = context.devices[0]
-    if dev.type == cl.device_type.CPU:
+    if dev.type & cl.device_type.CPU:
         classes.append(GenericDebugScanKernel)
 
     for cls in classes:

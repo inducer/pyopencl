@@ -341,7 +341,7 @@ def test_image_2d(ctx_factory):
 
     good = la.norm(a_result - a) == 0
     if not good:
-        if queue.device.type == cl.device_type.CPU:
+        if queue.device.type & cl.device_type.CPU:
             assert good, ("The image implementation on your CPU CL platform '%s' "
                     "returned bad values. This is bad, but common."
                     % queue.device.platform)
@@ -417,7 +417,7 @@ def test_image_3d(ctx_factory):
 
     good = la.norm(a_result - a) == 0
     if not good:
-        if queue.device.type == cl.device_type.CPU:
+        if queue.device.type & cl.device_type.CPU:
             assert good, ("The image implementation on your CPU CL platform '%s' "
                     "returned bad values. This is bad, but common."
                     % queue.device.platform)

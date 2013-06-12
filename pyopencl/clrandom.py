@@ -105,7 +105,7 @@ class RanluxGenerator(object):
             luxury = 4
 
         if num_work_items is None:
-            if queue.device.type == cl.device_type.CPU:
+            if queue.device.type & cl.device_type.CPU:
                 num_work_items = 8 * queue.device.max_compute_units
             else:
                 num_work_items = 64 * queue.device.max_compute_units
@@ -151,7 +151,7 @@ class RanluxGenerator(object):
         if ("darwin" in sys.platform
                 and "Apple" in queue.device.platform.vendor
                 and platform.mac_ver()[0].startswith("10.7")
-                and queue.device.type == cl.device_type.CPU):
+                and queue.device.type & cl.device_type.CPU):
             wg_size = (1,)
 
         self.wg_size = wg_size

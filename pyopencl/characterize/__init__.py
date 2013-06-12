@@ -119,13 +119,13 @@ def simultaneous_work_items_on_local_access(dev):
 
             return 32
 
-    if dev.type == cl.device_type.GPU:
+    if dev.type & cl.device_type.GPU:
         from warnings import warn
         warn("wildly guessing conflicting local access size on '%s'"
                 % dev,
                 CLCharacterizationWarning)
         return 16
-    elif dev.type == cl.device_type.CPU:
+    elif dev.type & cl.device_type.CPU:
         return 1
     else:
         from warnings import warn
@@ -157,13 +157,13 @@ def local_memory_bank_count(dev):
 
             return 32
 
-    if dev.type == cl.device_type.GPU:
+    if dev.type & cl.device_type.GPU:
         from warnings import warn
         warn("wildly guessing local memory bank count on '%s'"
                 % dev,
                 CLCharacterizationWarning)
         return 16
-    elif dev.type == cl.device_type.CPU:
+    elif dev.type & cl.device_type.CPU:
         if dev.local_mem_type == cl.device_local_mem_type.GLOBAL:
             raise RuntimeError("asking for a bank count is "
                     "meaningless for cache-based lmem")
@@ -284,7 +284,7 @@ def get_simd_group_size(dev, type_size):
         return 32
 
     if ("advanced micro" in lc_vendor or "ati" in lc_vendor):
-        if dev.type == cl.device_type.GPU:
+        if dev.type & cl.device_type.GPU:
             # Tomasz Rybak says, in response to reduction mishbehaving on the AMD
             # 'Loveland' APU:
             #
@@ -303,12 +303,12 @@ def get_simd_group_size(dev, type_size):
             # This is therefore our best guess as to the SIMD group size.
 
             return reasonable_work_group_size_multiple(dev)
-        elif dev.type == cl.device_type.CPU:
+        elif dev.type & cl.device_type.CPU:
             return 1
         else:
             raise RuntimeError("unexpected AMD device type")
 
-    if dev.type == cl.device_type.CPU:
+    if dev.type & cl.device_type.CPU:
         # implicit assumption: Impl. will vectorize
 
         if type_size == 1:
