@@ -23,11 +23,12 @@ THE SOFTWARE.
 """
 
 import pyopencl as cl
-import numpy as np
 from pytools import memoize
+
 
 class CLCharacterizationWarning(UserWarning):
     pass
+
 
 @memoize
 def has_double_support(dev):
@@ -37,8 +38,6 @@ def has_double_support(dev):
     return False
 
 
-
-
 def has_amd_double_support(dev):
     """"Fix to allow incomplete amd double support in low end boards"""
 
@@ -46,8 +45,6 @@ def has_amd_double_support(dev):
         if ext == "cl_amd_fp64":
             return True
     return False
-
-
 
 
 def reasonable_work_group_size_multiple(dev, ctx=None):
@@ -70,8 +67,6 @@ def reasonable_work_group_size_multiple(dev, ctx=None):
             dev)
 
 
-
-
 def nv_compute_capability(dev):
     """If *dev* is an Nvidia GPU :class:`pyopencl.Device`, return a tuple
     *(major, minor)* indicating the device's compute capability.
@@ -84,8 +79,6 @@ def nv_compute_capability(dev):
         return None
 
 
-
-
 def usable_local_mem_size(dev, nargs=None):
     """Return an estimate of the usable local memory size.
     :arg nargs: Number of 32-bit arguments passed.
@@ -96,7 +89,7 @@ def usable_local_mem_size(dev, nargs=None):
     nv_compute_cap = nv_compute_capability(dev)
 
     if (nv_compute_cap is not None
-            and nv_compute_cap < (2,0)):
+            and nv_compute_cap < (2, 0)):
         # pre-Fermi use local mem for parameter passing
         if nargs is None:
             # assume maximum
@@ -107,8 +100,6 @@ def usable_local_mem_size(dev, nargs=None):
     return usable_local_mem_size
 
 
-
-
 def simultaneous_work_items_on_local_access(dev):
     """Return the number of work items that access local
     memory simultaneously and thereby may conflict with
@@ -117,10 +108,10 @@ def simultaneous_work_items_on_local_access(dev):
     nv_compute_cap = nv_compute_capability(dev)
 
     if nv_compute_cap is not None:
-        if nv_compute_cap < (2,0):
+        if nv_compute_cap < (2, 0):
             return 16
         else:
-            if nv_compute_cap >= (3,0):
+            if nv_compute_cap >= (3, 0):
                 from warnings import warn
                 warn("wildly guessing conflicting local access size on '%s'"
                         % dev,
@@ -144,14 +135,9 @@ def simultaneous_work_items_on_local_access(dev):
         return 16
 
 
-
-
-
 def local_memory_access_granularity(dev):
     """Return the number of bytes per bank in local memory."""
     return 4
-
-
 
 
 def local_memory_bank_count(dev):
@@ -160,10 +146,10 @@ def local_memory_bank_count(dev):
     nv_compute_cap = nv_compute_capability(dev)
 
     if nv_compute_cap is not None:
-        if nv_compute_cap < (2,0):
+        if nv_compute_cap < (2, 0):
             return 16
         else:
-            if nv_compute_cap >= (3,0):
+            if nv_compute_cap >= (3, 0):
                 from warnings import warn
                 warn("wildly guessing local memory bank count on '%s'"
                         % dev,
@@ -179,14 +165,14 @@ def local_memory_bank_count(dev):
         return 16
     elif dev.type == cl.device_type.CPU:
         if dev.local_mem_type == cl.device_local_mem_type.GLOBAL:
-            raise RuntimeError("asking for a bank count is meaningless for cache-based lmem")
+            raise RuntimeError("asking for a bank count is "
+                    "meaningless for cache-based lmem")
 
     from warnings import warn
     warn("wildly guessing conflicting local access size on '%s'"
             % dev,
             CLCharacterizationWarning)
     return 16
-
 
 
 def why_not_local_access_conflict_free(dev, itemsize,
@@ -271,16 +257,12 @@ def why_not_local_access_conflict_free(dev, itemsize,
         return 1, None
 
 
-
-
 def get_fast_inaccurate_build_options(dev):
     """Return a list of flags valid on device *dev* that enable fast, but
     potentially inaccurate floating point math.
     """
     return ["-cl-mad-enable", "-cl-fast-relaxed-math",
         "-cl-no-signed-zeros", "-cl-strict-aliasing"]
-
-
 
 
 def get_simd_group_size(dev, type_size):
