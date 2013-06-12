@@ -137,11 +137,11 @@ KERNEL = """//CL//
 
 # {{{ internal codegen frontends
 
-def  _get_reduction_source(
-         ctx, out_type, out_type_size,
-         neutral, reduce_expr, map_expr, parsed_args,
-         name="reduce_kernel", preamble="",
-         device=None, max_group_size=None):
+def _get_reduction_source(
+        ctx, out_type, out_type_size,
+        neutral, reduce_expr, map_expr, parsed_args,
+        name="reduce_kernel", preamble="",
+        device=None, max_group_size=None):
 
     if device is not None:
         devices = [device]
@@ -303,8 +303,8 @@ class ReductionKernel:
         assert any(
                 isinstance(arg_tp, VectorArg)
                 for arg_tp in self.stage_1_inf.arg_types), \
-                "ReductionKernel can only be used with functions that have at least one " \
-                "vector argument"
+                "ReductionKernel can only be used with functions " \
+                "that have at least one vector argument"
 
     def __call__(self, *args, **kwargs):
         MAX_GROUP_COUNT = 1024
@@ -383,6 +383,7 @@ class ReductionKernel:
                 args = (result,) + stage1_args
 
 # }}}
+
 
 # {{{ template
 
@@ -501,7 +502,8 @@ def _get_dot_expr(dtype_out, dtype_a, dtype_b, conjugate_first,
 
 
 @context_dependent_memoize
-def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None, conjugate_first=False):
+def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None,
+        conjugate_first=False):
     from pyopencl.characterize import has_double_support
     map_expr, dtype_out, dtype_b = _get_dot_expr(
             dtype_out, dtype_a, dtype_b, conjugate_first,
@@ -515,8 +517,6 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None, conjugate_first=F
                 "tp_a": dtype_to_ctype(dtype_a),
                 "tp_b": dtype_to_ctype(dtype_b),
                 })
-
-
 
 
 @context_dependent_memoize
@@ -541,8 +541,6 @@ def get_subset_dot_kernel(ctx, dtype_out, dtype_subset, dtype_a=None, dtype_b=No
             })
 
 
-
-
 def get_minmax_neutral(what, dtype):
     dtype = np.dtype(dtype)
     if issubclass(dtype.type, np.inexact):
@@ -559,8 +557,6 @@ def get_minmax_neutral(what, dtype):
             return str(np.iinfo(dtype).min)
         else:
             raise ValueError("what is not min or max.")
-
-
 
 
 @context_dependent_memoize
@@ -580,8 +576,6 @@ def get_minmax_kernel(ctx, what, dtype):
                 }, preamble="#define MY_INFINITY (1./0)")
 
 
-
-
 @context_dependent_memoize
 def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
     if dtype.kind == "f":
@@ -597,7 +591,7 @@ def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
             map_expr="in[lookup_tbl[i]]",
             arguments=
             "const %(tp_lut)s *lookup_tbl, "
-            "const %(tp)s *in"  % {
+            "const %(tp)s *in" % {
             "tp": dtype_to_ctype(dtype),
             "tp_lut": dtype_to_ctype(dtype_subset),
             }, preamble="#define MY_INFINITY (1./0)")
