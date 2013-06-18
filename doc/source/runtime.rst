@@ -332,7 +332,7 @@ Memory
 
     .. method:: get_host_array(shape, dtype, order="C")
 
-        Return the memory object's associated host memory 
+        Return the memory object's associated host memory
         area as a :class:`numpy.ndarray` of the given *shape*,
         *dtype* and *order*.
 
@@ -443,7 +443,7 @@ Images
 
     See :class:`mem_flags` for values of *flags*.
     *shape* is a 2- or 3-tuple. *format* is an instance of :class:`ImageFormat`.
-    *pitches* is a 1-tuple for 2D images and a 2-tuple for 3D images, indicating 
+    *pitches* is a 1-tuple for 2D images and a 2-tuple for 3D images, indicating
     the distance in bytes from one scan line to the next, and from one 2D image
     slice to the next.
 
@@ -454,8 +454,8 @@ Images
 
     .. note::
 
-        If you want to load images from :mod:`numpy.ndarray` instances or read images 
-        back into them, be aware that OpenCL images expect the *x* dimension to vary 
+        If you want to load images from :mod:`numpy.ndarray` instances or read images
+        back into them, be aware that OpenCL images expect the *x* dimension to vary
         fastest, whereas in the default (C) order of :mod:`numpy` arrays, the last index
         varies fastest. If your array is arranged in the wrong order in memory,
         there are two possible fixes for this:
@@ -736,7 +736,7 @@ Programs and Kernels
         :class:`Kernel` arguments. For each argument,
         *arg_dtypes* contains an entry. For non-scalars,
         this must be *None*. For scalars, it must be an
-        object acceptable to the :class:`numpy.dtype` 
+        object acceptable to the :class:`numpy.dtype`
         constructor, indicating that the corresponding
         scalar argument is of that type.
 
@@ -744,7 +744,7 @@ Programs and Kernels
         most suitable number types will automatically be
         cast to the right type for kernel invocation.
 
-        .. note :: 
+        .. note ::
 
             The information set by this rountine is attached to a single kernel
             instance. A new kernel instance is created every time you use
@@ -809,10 +809,10 @@ Programs and Kernels
 
         The size of local buffer in bytes to be provided.
 
-.. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=True)
+.. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False)
 
     |std-enqueue-blurb|
-    
+
     If *g_times_l* is specified, the global size will be multiplied by the
     local size. (which makes the behavior more like Nvidia CUDA) In this case,
     *global_size* and *local_size* also do not have to have the same number
