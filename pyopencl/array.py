@@ -350,6 +350,8 @@ class Array(object):
     .. automethod :: __getitem__
     .. automethod :: __setitem__
 
+    .. automethod :: setitem
+
     """
 
     __array_priority__ = 10
@@ -1171,7 +1173,13 @@ class Array(object):
                 shape=tuple(new_shape),
                 strides=tuple(new_strides))
 
-    def _setitem(self, subscript, value, queue=None):
+    def setitem(self, subscript, value, queue=None):
+        """Like :meth:`__setitem__`, but with the ability to specify
+        a *queue* for execution.
+
+        .. versionadded:: 2013.1
+        """
+
         queue = queue or self.queue or value.queue
 
         subarray = self[subscript]
@@ -1217,7 +1225,7 @@ class Array(object):
 
         .. versionadded:: 2013.1
         """
-        self._setitem(subscript, value)
+        self.setitem(subscript, value)
 
 # }}}
 
@@ -1656,7 +1664,7 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
     base_idx = 0
     for ary in arrays:
         my_len = ary.shape[axis]
-        result._setitem(
+        result.setitem(
                 full_slice[:axis]
                 + (slice(base_idx, base_idx+my_len),)
                 + full_slice[axis+1:],
