@@ -1617,6 +1617,9 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
 
 
 def concatenate(arrays, axis=0, queue=None, allocator=None):
+    """
+    .. versionadded:: 2013.1
+    """
     # {{{ find properties of result array
 
     shape = None
