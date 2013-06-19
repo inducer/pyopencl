@@ -582,6 +582,26 @@ def test_slice(ctx_factory):
         assert la.norm(a_gpu.get() - a) == 0
 
 
+@pytools.test.mark_test.opencl
+def test_concatenate(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+
+    a_dev = clrand(queue, (5, 15, 20), dtype=np.float32)
+    b_dev = clrand(queue, (4, 15, 20), dtype=np.float32)
+    c_dev = clrand(queue, (3, 15, 20), dtype=np.float32)
+    a = a_dev.get()
+    b = b_dev.get()
+    c = c_dev.get()
+
+    cat_dev = cl.array.concatenate((a_dev, b_dev, c_dev))
+    cat = np.concatenate((a, b, c))
+
+    assert la.norm(cat - cat_dev.get()) == 0
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
     # tests.

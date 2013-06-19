@@ -167,8 +167,9 @@ htmlhelp_basename = 'PyCudadoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('index', 'pyopencl.tex', 'PyOpenCL Documentation', 'Andreas Kloeckner', 'manual'),
-]
+        ('index', 'pyopencl.tex', 'PyOpenCL Documentation',
+            'Andreas Kloeckner', 'manual'),
+        ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.

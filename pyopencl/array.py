@@ -519,9 +519,15 @@ class Array(object):
                     events=self.events)
 
     def with_queue(self, queue):
-        """Return a copy of *self* with the default queue set to *queue*."""
+        """Return a copy of *self* with the default queue set to *queue*.
 
-        assert queue.context == self.context
+        *None* is allowed as a value for *queue*.
+
+        .. versionadded:: 2013.1
+        """
+
+        if queue is not None:
+            assert queue.context == self.context
         return self._new_with_changes(self.base_data, self.offset,
                 queue=queue)
 
@@ -1165,6 +1171,37 @@ class Array(object):
                 shape=tuple(new_shape),
                 strides=tuple(new_strides))
 
+    def _setitem(self, subscript, value, queue=None):
+        queue = queue or self.queue or value.queue
+
+        subarray = self[subscript]
+
+        if isinstance(value, np.ndarray):
+            if subarray.shape == value.shape and subarray.strides == value.strides:
+                self.events.append(
+                        cl.enqueue_copy(queue, subarray.base_data,
+                            value, device_offset=subarray.offset))
+                return
+            else:
+                value = to_device(queue, value, self.allocator)
+
+        if isinstance(value, Array):
+            if len(subarray.shape) != len(value.shape):
+                raise NotImplementedError("broadcasting is not "
+                        "supported in __setitem__")
+            if subarray.shape != value.shape:
+                raise ValueError("cannot assign between arrays of "
+                        "differing shapes")
+            if subarray.strides != value.strides:
+                raise ValueError("cannot assign between arrays of "
+                        "differing strides")
+
+            self._copy(subarray, value, queue=queue)
+
+        else:
+            # Let's assume it's a scalar
+            subarray.fill(value, queue=queue)
+
     def __setitem__(self, subscript, value):
         """Set the slice of *self* identified *subscript* to *value*.
 
@@ -1180,34 +1217,7 @@ class Array(object):
 
         .. versionadded:: 2013.1
         """
-
-        subarray = self[subscript]
-
-        if isinstance(value, np.ndarray):
-            if subarray.shape == value.shape and subarray.strides == value.strides:
-                self.events.append(
-                        cl.enqueue_copy(self.queue, subarray.base_data,
-                            value, device_offset=subarray.offset))
-                return
-            else:
-                value = to_device(self.queue, value, self.allocator)
-
-        if isinstance(value, Array):
-            if len(subarray.shape) != len(value.shape):
-                raise NotImplementedError("broadcasting is not "
-                        "supported in __setitem__")
-            if subarray.shape != value.shape:
-                raise ValueError("cannot assign between arrays of "
-                        "differing shapes")
-            if subarray.strides != value.strides:
-                raise ValueError("cannot assign between arrays of "
-                        "differing strides")
-
-            self._copy(subarray, value)
-
-        else:
-            # Let's assume it's a scalar
-            subarray.fill(value)
+        self._setitem(subscript, value)
 
 # }}}
 
@@ -1604,6 +1614,54 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
                     + [dest_indices.size]))
 
     return out
+
+
+def concatenate(arrays, axis=0, queue=None, allocator=None):
+    # {{{ find properties of result array
+
+    shape = None
+
+    for i_ary, ary in enumerate(arrays):
+        queue = queue or ary.queue
+        allocator = allocator or ary.allocator
+
+        if shape is None:
+            # first array
+            shape = list(ary.shape)
+        else:
+            if len(ary.shape) != len(shape):
+                raise ValueError("%d'th array has different number of axes "
+                        "(shold have %d, has %d)"
+                        % (i_ary, len(ary.shape), len(shape)))
+
+            ary_shape_list = list(ary.shape)
+            if (ary_shape_list[:axis] != shape[:axis]
+                    or ary_shape_list[axis+1:] != shape[axis+1:]):
+                raise ValueError("%d'th array has residual not matching "
+                        "other arrays" % i_ary)
+
+            shape[axis] += ary.shape[axis]
+
+    # }}}
+
+    shape = tuple(shape)
+    dtype = np.find_common_type([ary.dtype for ary in arrays], [])
+    result = empty(queue, shape, dtype, allocator=allocator)
+
+    full_slice = (slice(None),) * len(shape)
+
+    base_idx = 0
+    for ary in arrays:
+        my_len = ary.shape[axis]
+        result._setitem(
+                full_slice[:axis]
+                + (slice(base_idx, base_idx+my_len),)
+                + full_slice[axis+1:],
+                ary)
+
+        base_idx += my_len
+
+    return result
 
 # }}}
 

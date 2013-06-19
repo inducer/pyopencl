@@ -125,6 +125,7 @@ Constructing :class:`Array` Instances
 .. autofunction:: zeros_like
 .. autofunction:: arange
 .. autofunction:: take
+.. autofunction:: concatenate
 
 Conditionals
 ^^^^^^^^^^^^
