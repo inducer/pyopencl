@@ -2,8 +2,8 @@
 
 .. include:: subst.rst
 
-OpenCL Platform/Runtime Documentation
-=====================================
+OpenCL Runtime
+==============
 
 Version Queries
 ---------------
