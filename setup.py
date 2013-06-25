@@ -2,7 +2,6 @@
 # -*- coding: latin-1 -*-
 
 
-
 def get_config_schema():
     from aksetup_helper import ConfigSchema, Option, \
             IncludeDir, LibraryDir, Libraries, BoostLibraries, \
@@ -15,7 +14,8 @@ def get_config_schema():
         osx_ver = '.'.join(osx_ver.split('.')[:2])
 
         sysroot_paths = [
-                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk" % osx_ver,
+                "/Applications/Xcode.app/Contents/Developer/Platforms/"
+                "MacOSX.platform/Developer/SDKs/MacOSX%s.sdk" % osx_ver,
                 "/Developer/SDKs/MacOSX%s.sdk" % osx_ver
                 ]
 
@@ -42,24 +42,23 @@ def get_config_schema():
 
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
-        Switch("CL_ENABLE_DEVICE_FISSION", True, "Enable device fission extension, if present"),
-        Option("CL_PRETEND_VERSION", None, "Dotted CL version (e.g. 1.2) which you'd like to use."),
+        Switch("CL_ENABLE_DEVICE_FISSION", True,
+            "Enable device fission extension, if present"),
+        Option("CL_PRETEND_VERSION", None,
+            "Dotted CL version (e.g. 1.2) which you'd like to use."),
 
         IncludeDir("CL", []),
         LibraryDir("CL", []),
         Libraries("CL", default_libs),
 
-        StringListOption("CXXFLAGS", default_cxxflags, 
+        StringListOption("CXXFLAGS", default_cxxflags,
             help="Any extra C++ compiler options to include"),
-        StringListOption("LDFLAGS", default_ldflags, 
+        StringListOption("LDFLAGS", default_ldflags,
             help="Any extra linker options to include"),
         ])
 
 
-
-
 def main():
-    import glob
     from aksetup_helper import (hack_distutils, get_config, setup,
             NumpyExtension, set_up_shipped_boost_if_requested,
             check_git_submodules)
@@ -69,7 +68,8 @@ def main():
     hack_distutils()
     conf = get_config(get_config_schema(),
             warn_about_no_config=False)
-    EXTRA_OBJECTS, EXTRA_DEFINES = set_up_shipped_boost_if_requested("pyopencl", conf)
+    EXTRA_OBJECTS, EXTRA_DEFINES = \
+            set_up_shipped_boost_if_requested("pyopencl", conf)
 
     LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
     LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
@@ -92,9 +92,11 @@ def main():
     if conf["CL_PRETEND_VERSION"]:
         try:
             major, minor = [int(x) for x in conf["CL_PRETEND_VERSION"].split(".")]
-            EXTRA_DEFINES["PYOPENCL_PRETEND_CL_VERSION"] = 0x1000*major + 0x10 * minor
+            EXTRA_DEFINES["PYOPENCL_PRETEND_CL_VERSION"] = \
+                    0x1000*major + 0x10 * minor
         except:
-            print("CL_PRETEND_VERSION must be of the form M.N, with two integers M and N")
+            print("CL_PRETEND_VERSION must be of the form M.N, "
+                    "with two integers M and N")
             raise
 
     ver_dic = {}
@@ -106,6 +108,7 @@ def main():
 
     exec(compile(version_file_contents, "pyopencl/version.py", 'exec'), ver_dic)
 
+    SEPARATOR = "-"*75
     try:
         from distutils.command.build_py import build_py_2to3 as build_py
     except ImportError:
@@ -113,21 +116,22 @@ def main():
         from distutils.command.build_py import build_py
 
     try:
-        import mako
+        import mako  # noqa
     except ImportError:
-        print("-------------------------------------------------------------------------")
+        print(SEPARATOR)
         print("Mako is not installed.")
-        print("-------------------------------------------------------------------------")
-        print("That is not a problem, as most of PyOpenCL will be just fine without it.")
-        print("Some higher-level parts of pyopencl (such as pyopencl.reduction)")
-        print("will not function without the templating engine Mako [1] being installed.")
-        print("If you would like this functionality to work, you might want to install")
-        print("Mako after you finish installing PyOpenCL.")
+        print(SEPARATOR)
+        print("That is not a problem, as most of PyOpenCL will be just fine ")
+        print("without it.Some higher-level parts of pyopencl (such as ")
+        print("pyopencl.reduction) will not function without the templating engine ")
+        print("Mako [1] being installed. If you would like this functionality to ")
+        print("work, you might want to install Mako after you finish ")
+        print("installing PyOpenCL.")
         print("")
         print("[1] http://www.makotemplates.org/")
-        print("-------------------------------------------------------------------------")
+        print(SEPARATOR)
         print("Hit Ctrl-C now if you'd like to think about the situation.")
-        print("-------------------------------------------------------------------------")
+        print(SEPARATOR)
 
         from aksetup_helper import count_down_delay
         count_down_delay(delay=5)
@@ -139,16 +143,18 @@ def main():
             might_be_cuda = True
 
     if might_be_cuda and conf["CL_ENABLE_DEVICE_FISSION"]:
-        print("-------------------------------------------------------------------------")
-        print("You might be compiling against Nvidia CUDA with device fission enabled.")
-        print("-------------------------------------------------------------------------")
-        print("That is not a problem on CUDA 4.0 and newer. If you are using CUDA 3.2,")
+        print(SEPARATOR)
+        print("You might be compiling against Nvidia CUDA with device "
+                "fission enabled.")
+        print(SEPARATOR)
+        print("That is not a problem on CUDA 4.0 and newer. If you are "
+                "using CUDA 3.2,")
         print("your build will break, because Nvidia shipped a broken CL header in")
         print("in your version. The fix is to set CL_ENABLE_DEVICE_FISSION to False")
         print("in your PyOpenCL configuration.")
-        print("-------------------------------------------------------------------------")
+        print(SEPARATOR)
         print("Hit Ctrl-C now if you'd like to think about the situation.")
-        print("-------------------------------------------------------------------------")
+        print(SEPARATOR)
 
         from aksetup_helper import count_down_delay
         count_down_delay(delay=5)
@@ -166,30 +172,30 @@ def main():
             long_description=open("README.rst", "rt").read(),
             author="Andreas Kloeckner",
             author_email="inform@tiker.net",
-            license = "MIT",
+            license="MIT",
             url="http://mathema.tician.de/software/pyopencl",
             classifiers=[
-              'Environment :: Console',
-              'Development Status :: 5 - Production/Stable',
-              'Intended Audience :: Developers',
-              'Intended Audience :: Other Audience',
-              'Intended Audience :: Science/Research',
-              'License :: OSI Approved :: MIT License',
-              'Natural Language :: English',
-              'Programming Language :: C++',
-              'Programming Language :: Python',
-              'Programming Language :: Python :: 2',
-              'Programming Language :: Python :: 2.4',
-              'Programming Language :: Python :: 2.5',
-              'Programming Language :: Python :: 2.6',
-              'Programming Language :: Python :: 2.7',
-              'Programming Language :: Python :: 3',
-              'Programming Language :: Python :: 3.2',
-              'Programming Language :: Python :: 3.3',
-              'Topic :: Scientific/Engineering',
-              'Topic :: Scientific/Engineering :: Mathematics',
-              'Topic :: Scientific/Engineering :: Physics',
-              ],
+                'Environment :: Console',
+                'Development Status :: 5 - Production/Stable',
+                'Intended Audience :: Developers',
+                'Intended Audience :: Other Audience',
+                'Intended Audience :: Science/Research',
+                'License :: OSI Approved :: MIT License',
+                'Natural Language :: English',
+                'Programming Language :: C++',
+                'Programming Language :: Python',
+                'Programming Language :: Python :: 2',
+                'Programming Language :: Python :: 2.4',
+                'Programming Language :: Python :: 2.5',
+                'Programming Language :: Python :: 2.6',
+                'Programming Language :: Python :: 2.7',
+                'Programming Language :: Python :: 3',
+                'Programming Language :: Python :: 3.2',
+                'Programming Language :: Python :: 3.3',
+                'Topic :: Scientific/Engineering',
+                'Topic :: Scientific/Engineering :: Mathematics',
+                'Topic :: Scientific/Engineering :: Physics',
+                ],
 
             # build info
             packages=["pyopencl", "pyopencl.characterize", "pyopencl.compyte"],
@@ -203,15 +209,15 @@ def main():
 
             ext_package="pyopencl",
             ext_modules=[
-                NumpyExtension("_cl", 
+                NumpyExtension("_cl",
                     [
-                        "src/wrapper/wrap_cl.cpp", 
-                        "src/wrapper/wrap_cl_part_1.cpp", 
-                        "src/wrapper/wrap_cl_part_2.cpp", 
-                        "src/wrapper/wrap_constants.cpp", 
-                        "src/wrapper/wrap_mempool.cpp", 
-                        "src/wrapper/bitlog.cpp", 
-                        ]+EXTRA_OBJECTS, 
+                        "src/wrapper/wrap_cl.cpp",
+                        "src/wrapper/wrap_cl_part_1.cpp",
+                        "src/wrapper/wrap_cl_part_2.cpp",
+                        "src/wrapper/wrap_constants.cpp",
+                        "src/wrapper/wrap_mempool.cpp",
+                        "src/wrapper/bitlog.cpp",
+                        ]+EXTRA_OBJECTS,
                     include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
                     library_dirs=LIBRARY_DIRS + conf["CL_LIB_DIR"],
                     libraries=LIBRARIES + conf["CL_LIBNAME"],
@@ -237,8 +243,6 @@ def main():
             # 2to3 invocation
             cmdclass={'build_py': build_py},
             zip_safe=False)
-
-
 
 
 if __name__ == '__main__':
