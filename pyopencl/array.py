@@ -1098,6 +1098,20 @@ class Array(object):
         """
         .. versionadded:: 2013.1
         """
+
+        if isinstance(index, Array):
+            if index.dtype.kind != "i":
+                raise TypeError(
+                        "fancy indexing is only allowed with integers")
+            if len(index.shape) != 1:
+                raise NotImplementedError(
+                        "multidimensional fancy indexing is not supported")
+            if len(self.shape) != 1:
+                raise NotImplementedError(
+                        "fancy indexing into a multi-d array is supported")
+
+            return take(self, index)
+
         if not isinstance(index, tuple):
             index = (index,)
 
@@ -1179,6 +1193,20 @@ class Array(object):
 
         .. versionadded:: 2013.1
         """
+
+        if isinstance(subscript, Array):
+            if subscript.dtype.kind != "i":
+                raise TypeError(
+                        "fancy indexing is only allowed with integers")
+            if len(subscript.shape) != 1:
+                raise NotImplementedError(
+                        "multidimensional fancy indexing is not supported")
+            if len(self.shape) != 1:
+                raise NotImplementedError(
+                        "fancy indexing into a multi-d array is supported")
+
+            multi_put([value], subscript, out=[self], queue=self.queue)
+            return
 
         queue = queue or self.queue or value.queue
 
@@ -1576,7 +1604,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
     vec_count = len(arrays)
 
     if out is None:
-        out = [Array(context, dest_shape, a_dtype,
+        out = [Array(queue, dest_shape, a_dtype,
             allocator=a_allocator, queue=queue)
             for i in range(vec_count)]
     else:
