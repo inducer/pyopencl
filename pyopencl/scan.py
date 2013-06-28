@@ -1288,8 +1288,8 @@ class GenericScanKernel(_GenericScanKernelBase):
             n, = first_array.shape
 
         if n == 0:
-            # We're done here.
-            return
+            # We're done here. (But pretend to return an event.)
+            return cl.enqueue_marker(queue, wait_for=wait_for)
 
         data_args = []
         from pyopencl.tools import VectorArg
