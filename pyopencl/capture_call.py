@@ -90,8 +90,14 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
                 kernel_args.append("np.%s(%s)" % (
                     arg.dtype.type.__name__, repr(complex(arg))))
             else:
-                raise RuntimeError("cannot capture: "
-                        "unsupported arg nr %d (0-based)" % i)
+                try:
+                    arg_buf = buffer(arg)
+                except:
+                    raise RuntimeError("cannot capture: "
+                            "unsupported arg nr %d (0-based)" % i)
+
+                arg_data.append(("arg%d_data" % i, arg_buf))
+                kernel_args.append("decompress(b64decode(arg%d_data))" % i)
 
         cg("")
 
