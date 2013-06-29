@@ -106,6 +106,7 @@ Version 2013.1
 * :class:`pyopencl.CommandQueue` may be used as a context manager (in a ``with`` statement)
 * Add :func:`pyopencl.clmath.atan2`, :func:`pyopencl.clmath.atan2pi`.
 * Add :func:`pyopencl.array.concatenate`.
+* Add :meth:`pyopencl.Kernel.capture_call`.
 
 Version 2012.1
 --------------

@@ -797,6 +797,28 @@ Programs and Kernels
         .. versionchanged:: 2011.1
             Added the *g_times_l* keyword arg.
 
+    .. method:: capture_call(filename, queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
+
+        This method supports the exact same interface as :meth:`__call__`, but
+        instead of invoking the kernel, it writes a self-contained PyOpenCL program
+        to *filename* that reproduces this invocation. Data and kernel source code
+        will be packaged up in *filename*'s source code.
+
+        This is mainly intended as a debugging aid. For example, it can be used
+        to automate the task of creating a small, self-contained test case for
+        an observed problem. It can also help separate a misbehaving kernel from
+        a potentially large or time-consuming outer code.
+
+        To use, simply change::
+
+            evt = my_kernel(queue, gsize, lsize, arg1, arg2, ...)
+
+        to::
+
+            evt = my_kernel.capture_call("bug.py", queue, gsize, lsize, arg1, arg2, ...)
+
+        .. versionadded:: 2013.1
+
     |comparable|
 
 .. class:: LocalMemory(size)

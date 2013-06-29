@@ -69,6 +69,13 @@ class Kernel(_cl._Kernel):
             prg = prg._get_prg()
 
         _cl._Kernel.__init__(self, prg, name)
+        self._source = getattr(prg, "_source", None)
+
+    def capture_call(self, filename, queue, global_size, local_size,
+            *args, **kwargs):
+        from pyopencl.capture_call import capture_kernel_call
+        capture_kernel_call(self, filename, queue, global_size, local_size,
+                *args, **kwargs)
 
 # }}}
 
