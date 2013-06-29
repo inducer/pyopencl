@@ -112,7 +112,6 @@ class Program(object):
 
             self._prg = _cl._Program(self._context, self._source)
             del self._context
-            del self._source
             return self._prg
 
     def get_info(self, arg):
@@ -130,6 +129,7 @@ class Program(object):
             # Nvidia does not raise errors even for invalid names,
             # but this will give an error if the kernel is invalid.
             knl.num_args
+            knl._source = getattr(self, "_source", None)
             return knl
         except LogicError:
             raise AttributeError("'%s' was not found as a program "
@@ -148,11 +148,8 @@ class Program(object):
         if forced_options:
             options = options + forced_options.split()
 
-        do_del_source = False
         if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
             self._prg = _cl._Program(self._context, self._source)
-
-            do_del_source = True
 
         if self._prg is not None:
             # uncached
@@ -172,10 +169,6 @@ class Program(object):
                     options=options, source=self._source)
 
             del self._context
-            do_del_source = True
-
-        if do_del_source:
-            del self._source
 
         return self
 
