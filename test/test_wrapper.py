@@ -47,6 +47,8 @@ def test_get_info(platform, device):
 
     pocl_quirks = [
             (cl.Buffer, cl.mem_info.OFFSET),
+            (cl.Program, cl.program_info.KERNEL_NAMES),
+            (cl.Program, cl.program_info.NUM_KERNELS),
             ]
     CRASH_QUIRKS = [
             (("NVIDIA Corporation", "NVIDIA CUDA",
@@ -93,6 +95,7 @@ def test_get_info(platform, device):
 
         for info_name in dir(info_cls):
             if not info_name.startswith("_") and info_name != "to_string":
+                print(info_cls, info_name)
                 info = getattr(info_cls, info_name)
 
                 if find_quirk(CRASH_QUIRKS, cl_obj, info):
