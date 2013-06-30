@@ -440,6 +440,9 @@ def get_copy_kernel(context, dtype_dest, dtype_src):
     if dtype_dest.kind == "c" != dtype_src.kind:
         src = "%s_fromreal(%s)" % (complex_dtype_to_name(dtype_dest), src)
 
+    if dtype_dest.kind == "c" and dtype_src != dtype_dest:
+        src = "%s_cast(%s)" % (complex_dtype_to_name(dtype_dest), src),
+
     return get_elwise_kernel(context,
             "%(tp_dest)s *dest, %(tp_src)s *src" % {
                 "tp_dest": dtype_to_ctype(dtype_dest),
