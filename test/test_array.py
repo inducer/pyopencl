@@ -228,6 +228,21 @@ def test_absrealimag(ctx_factory):
 # {{{ operators
 
 @pytools.test.mark_test.opencl
+def test_rmul_yields_right_type(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
+    a_gpu = cl_array.to_device(queue, a)
+
+    two_a = 2*a_gpu
+    assert isinstance(two_a, cl_array.Array)
+
+    two_a = np.float32(2)*a_gpu
+    assert isinstance(two_a, cl_array.Array)
+
+
+@pytools.test.mark_test.opencl
 def test_pow_array(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
