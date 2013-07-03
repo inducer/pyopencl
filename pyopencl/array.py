@@ -354,7 +354,7 @@ class Array(object):
 
     """
 
-    __array_priority__ = 10
+    __array_priority__ = 100
 
     def __init__(self, cqa, shape, dtype, order="C", allocator=None,
             data=None, offset=0, queue=None, strides=None, events=None):
