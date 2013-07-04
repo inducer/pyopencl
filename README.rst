@@ -28,11 +28,6 @@ spirit of its sister project `PyCUDA <http://mathema.tician.de/software/pycuda>`
 * Broad support. PyOpenCL was tested and works with Apple's, AMD's, and Nvidia's 
   CL implementations.
 
-To use PyOpenCL, you just need `numpy <http://numpy.org>` and an OpenCL
+To use PyOpenCL, you just need `numpy <http://numpy.org>`_ and an OpenCL
 implementation.
 (See this `howto <http://wiki.tiker.net/OpenCLHowTo>`_ for how to get one.)
-
-Like PyOpenCL? Leave a tip:
-
-* `gittip <https://www.gittip.com/inducer/>`_
-* Bitcoin address: 1AwrFPb8sR6h9czi8qj68CxC9pwUKvMGfB
