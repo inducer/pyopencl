@@ -72,12 +72,15 @@ C interface to Python:
 User-visible Changes
 ====================
 
-Version 2013.1
+Version 2013.2
 --------------
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
+
+Version 2013.1
+--------------
 
 * Vastly improved :ref:`custom-scan`.
 * Add :func:`pyopencl.tools.match_dtype_to_c_struct`,
