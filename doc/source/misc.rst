@@ -101,12 +101,47 @@ Version 2013.1
   will fail with :exc:`pyopencl.array.ArrayHasOffsetError`.
 * Add :meth:`pyopencl.array.Array.__getitem__` and :meth:`pyopencl.array.Array.__setitem__`,
   supporting generic slicing.
-  Note that some operations (specifically, reductions and scans) on sliced
-  arrays will fail for now.  This will be fixed in a future release.
+
+  It is *possible* to create non-contiguous arrays using this functionality.
+  Most operations (elementwise etc.) will not work on such arrays.
+
+  Note also that some operations (specifically, reductions and scans) on sliced
+  arrays that start past the beginning of the original array will fail for now.
+  This will be fixed in a future release.
+
 * :class:`pyopencl.CommandQueue` may be used as a context manager (in a ``with`` statement)
 * Add :func:`pyopencl.clmath.atan2`, :func:`pyopencl.clmath.atan2pi`.
 * Add :func:`pyopencl.array.concatenate`.
 * Add :meth:`pyopencl.Kernel.capture_call`.
+
+.. note::
+
+    The addition of :meth:`pyopencl.array.Array.__getitem__` has an unintended
+    consequence due to `numpy bug 3375
+    <https://github.com/numpy/numpy/issues/3375>`_.  For instance, this
+    expression::
+
+        numpy.float32(5) * some_pyopencl_array
+
+    may take a very long time to execute. This is because :mod:`numpy` first
+    builds an object array of (compute-device) scalars (!) before it decided that
+    that's probably not such a bright idea and finally calls
+    :meth:`pyopencl.array.Array.__rmul__`.
+
+    Note that only left arithmetic operations of :class:`pyopencl.array.Array`
+    by :mod:`numpy` scalars are affected. Python's number types (:class:`float` etc.)
+    are unaffected, as are right multiplications.
+
+    If a program that used to run fast suddenly runs extremely slowly, it is
+    likely that this bug is to blame.
+
+    Here's what you can do:
+
+    * Use Python scalars instead of :mod:`numpy` scalars.
+    * Switch to right multiplications if possible.
+    * Use a patched :mod:`numpy`. See the bug report linked above for a pull
+      request with a fix.
+    * Switch to a fixed version of :mod:`numpy` when available.
 
 Version 2012.1
 --------------
