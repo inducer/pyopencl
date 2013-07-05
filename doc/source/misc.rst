@@ -87,9 +87,9 @@ Version 2013.1
   for better integration of the CL and :mod:`numpy` type systems.
 * More/improved Bessel functions.
   See `the source <https://github.com/inducer/pyopencl/tree/master/src/cl>`_.
-* Add :envvar:`PYOPENCL_NO_CACHE` environment variable to aid debugging
+* Add :envvar:`PYOPENCL_NO_CACHE` environment variable to aid debugging.
   (e.g. with AMD's CPU implementation, see
-  `their programming guide <http://developer.amd.com/sdks/AMDAPPSDK/assets/AMD_Accelerated_Parallel_Processing_OpenCL_Programming_Guide.pdf>`_.
+  `their programming guide <http://developer.amd.com/sdks/AMDAPPSDK/assets/AMD_Accelerated_Parallel_Processing_OpenCL_Programming_Guide.pdf>`_)
 * Deprecated :func:`pyopencl.tools.register_dtype` in favor of
   :func:`pyopencl.tools.get_or_register_dtype`.
 * Clean up the :class:`pyopencl.array.Array` constructor interface. Deprecate
@@ -127,7 +127,7 @@ Version 2013.1
         numpy.float32(5) * some_pyopencl_array
 
     may take a very long time to execute. This is because :mod:`numpy` first
-    builds an object array of (compute-device) scalars (!) before it decided that
+    builds an object array of (compute-device) scalars (!) before it decides that
     that's probably not such a bright idea and finally calls
     :meth:`pyopencl.array.Array.__rmul__`.
 
