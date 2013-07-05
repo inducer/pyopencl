@@ -35,7 +35,7 @@ import pyopencl as cl
 from pyopencl.tools import (
         context_dependent_memoize,
         dtype_to_ctype, KernelTemplateBase,
-        _process_code_for_macro)
+        _process_code_for_macro, VectorArg)
 import numpy as np
 
 
@@ -229,8 +229,7 @@ def get_reduction_kernel(stage,
             map_expr = "in[i]"
 
     from pyopencl.tools import (
-            parse_arg_list, get_arg_list_scalar_arg_dtypes,
-            VectorArg)
+            parse_arg_list, get_arg_list_scalar_arg_dtypes)
 
     if arguments is not None:
         arguments = parse_arg_list(arguments)
@@ -299,7 +298,6 @@ class ReductionKernel:
                 max_group_size=max_group_size)
 
         from pytools import any
-        from pyopencl.tools import VectorArg
         assert any(
                 isinstance(arg_tp, VectorArg)
                 for arg_tp in self.stage_1_inf.arg_types), \
@@ -327,7 +325,6 @@ class ReductionKernel:
             invocation_args = []
             vectors = []
 
-            from pyopencl.tools import VectorArg
             for arg, arg_tp in zip(args, stage_inf.arg_types):
                 if isinstance(arg_tp, VectorArg):
                     if not arg.flags.forc:
@@ -428,6 +425,20 @@ class ReductionTemplate(KernelTemplateBase):
 
 
 # {{{ array reduction kernel getters
+
+@context_dependent_memoize
+def get_any_kernel(ctx, dtype_in):
+    return ReductionKernel(ctx, np.int8, "false", "a || b",
+            map_expr="(bool) (in[i])",
+            arguments=[VectorArg(dtype_in, "in")])
+
+
+@context_dependent_memoize
+def get_all_kernel(ctx, dtype_in):
+    return ReductionKernel(ctx, np.int8, "true", "a && b",
+            map_expr="(bool) (in[i])",
+            arguments=[VectorArg(dtype_in, "in")])
+
 
 @context_dependent_memoize
 def get_sum_kernel(ctx, dtype_out, dtype_in):

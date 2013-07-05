@@ -787,6 +787,28 @@ def get_pow_kernel(context, dtype_x, dtype_y, dtype_z,
 
 
 @context_dependent_memoize
+def get_array_scalar_comparison_kernel(context, operator, dtype_a):
+    return get_elwise_kernel(context, [
+        VectorArg(np.int8, "out", with_offset=True),
+        VectorArg(dtype_a, "a", with_offset=True),
+        ScalarArg(dtype_a, "b"),
+        ],
+        "out[i] = a[i] %s b" % operator,
+        name="scalar_comparison_kernel")
+
+
+@context_dependent_memoize
+def get_array_comparison_kernel(context, operator, dtype_a, dtype_b):
+    return get_elwise_kernel(context, [
+        VectorArg(np.int8, "out", with_offset=True),
+        VectorArg(dtype_a, "a", with_offset=True),
+        VectorArg(dtype_b, "b", with_offset=True),
+        ],
+        "out[i] = a[i] %s b[i]" % operator,
+        name="comparison_kernel")
+
+
+@context_dependent_memoize
 def get_fmod_kernel(context):
     return get_elwise_kernel(context,
             "float *z, float *arg, float *mod",

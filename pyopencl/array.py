@@ -161,7 +161,7 @@ def elwise_kernel_runner(kernel_getter):
         else:
             wait_for = list(wait_for)
 
-        knl = kernel_getter(*args)
+        knl = kernel_getter(*args, **kwargs)
 
         gs, ls = repr_ary.get_sizes(queue,
                 knl.get_work_group_info(
@@ -352,6 +352,26 @@ class Array(object):
 
     .. automethod :: setitem
 
+    .. rubric:: Comparisons, conditionals, any, all
+
+    .. versionadded:: 2013.2
+
+    Boolean arrays are stored as :class:`numpy.int8` because ``bool``
+    has an unspecified size in the OpenCL spec.
+
+    .. automethod :: __bool__
+
+        Only works for device scalars. (i.e. "arrays" with ``shape == ()``.)
+
+    .. automethod :: any
+    .. automethod :: all
+
+    .. automethod :: __eq__
+    .. automethod :: __ne__
+    .. automethod :: __lt__
+    .. automethod :: __le__
+    .. automethod :: __gt__
+    .. automethod :: __ge__
     """
 
     __array_priority__ = 100
@@ -985,25 +1005,98 @@ class Array(object):
         self._copy(result, self, queue=queue)
         return result
 
-    # {{{ rich comparisons (or rather, lack thereof)
+    # {{{ rich comparisons, any, all
+
+    def __nonzero__(self):
+        if self.shape == ():
+            return bool(self.get())
+        else:
+            raise ValueError("The truth value of an array with "
+                    "more than one element is ambiguous. Use a.any() or a.all()")
+
+    def any(self, queue=None, wait_for=None):
+        from pyopencl.reduction import get_any_kernel
+        krnl = get_any_kernel(self.context, self.dtype)
+        return krnl(self, queue=queue, wait_for=wait_for)
+
+    def all(self, queue=None, wait_for=None):
+        from pyopencl.reduction import get_all_kernel
+        krnl = get_all_kernel(self.context, self.dtype)
+        return krnl(self, queue=queue, wait_for=wait_for)
+
+    @staticmethod
+    @elwise_kernel_runner
+    def _scalar_comparison(out, a, b, queue=None, op=None):
+        return elementwise.get_array_scalar_comparison_kernel(
+                out.context, op, a.dtype)
+
+    @staticmethod
+    @elwise_kernel_runner
+    def _array_comparison(out, a, b, queue=None, op=None):
+        if a.shape != b.shape:
+            raise ValueError("shapes of comparison arguments do not match")
+        return elementwise.get_array_comparison_kernel(
+                out.context, op, a.dtype, b.dtype)
 
     def __eq__(self, other):
-        raise NotImplementedError
+        if isinstance(other, Array):
+            result = self._new_like_me(np.int8)
+            self._array_comparison(result, self, other, op="==")
+            return result
+        else:
+            result = self._new_like_me(np.int8)
+            self._scalar_comparison(result, self, other, op="==")
+            return result
 
     def __ne__(self, other):
-        raise NotImplementedError
+        if isinstance(other, Array):
+            result = self._new_like_me(np.int8)
+            self._array_comparison(result, self, other, op="!=")
+            return result
+        else:
+            result = self._new_like_me(np.int8)
+            self._scalar_comparison(result, self, other, op="!=")
+            return result
 
     def __le__(self, other):
-        raise NotImplementedError
+        if isinstance(other, Array):
+            result = self._new_like_me(np.int8)
+            self._array_comparison(result, self, other, op="<=")
+            return result
+        else:
+            result = self._new_like_me(np.int8)
+            self._scalar_comparison(result, self, other, op="<=")
+            return result
 
     def __ge__(self, other):
-        raise NotImplementedError
+        if isinstance(other, Array):
+            result = self._new_like_me(np.int8)
+            self._array_comparison(result, self, other, op=">=")
+            return result
+        else:
+            result = self._new_like_me(np.int8)
+            self._scalar_comparison(result, self, other, op=">=")
+            return result
 
     def __lt__(self, other):
-        raise NotImplementedError
+        if isinstance(other, Array):
+            result = self._new_like_me(np.int8)
+            self._array_comparison(result, self, other, op="<")
+            return result
+        else:
+            result = self._new_like_me(np.int8)
+            self._scalar_comparison(result, self, other, op="<")
+            return result
 
     def __gt__(self, other):
-        raise NotImplementedError
+        if isinstance(other, Array):
+            result = self._new_like_me(np.int8)
+            self._array_comparison(result, self, other, op=">")
+            return result
+        else:
+            result = self._new_like_me(np.int8)
+            self._scalar_comparison(result, self, other, op=">")
+            return result
 
     # }}}
 

@@ -555,6 +555,8 @@ def test_view(ctx_factory):
 # }}}
 
 
+# {{{ slices, concatenation
+
 @pytools.test.mark_test.opencl
 def test_slice(ctx_factory):
     context = ctx_factory()
@@ -615,6 +617,66 @@ def test_concatenate(ctx_factory):
     cat = np.concatenate((a, b, c))
 
     assert la.norm(cat - cat_dev.get()) == 0
+
+# }}}
+
+
+# {{{ conditionals, any, all
+
+@pytools.test.mark_test.opencl
+def test_comparisons(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+
+    l = 20000
+    a_dev = clrand(queue, (l,), dtype=np.float32)
+    b_dev = clrand(queue, (l,), dtype=np.float32)
+
+    a = a_dev.get()
+    b = b_dev.get()
+
+    import operator as o
+    for op in [o.eq, o.ne, o.le, o.lt, o.ge, o.gt]:
+        res_dev = op(a_dev, b_dev)
+        res = op(a, b)
+
+        assert (res_dev.get() == res).all()
+
+        res_dev = op(a_dev, 0)
+        res = op(a, 0)
+
+        assert (res_dev.get() == res).all()
+
+        res_dev = op(0, b_dev)
+        res = op(0, b)
+
+        assert (res_dev.get() == res).all()
+
+
+@pytools.test.mark_test.opencl
+def test_any_all(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    l = 20000
+    a_dev = cl_array.zeros(queue, (l,), dtype=np.int8)
+
+    assert not a_dev.all()
+    assert not a_dev.any()
+
+    a_dev[15213] = 1
+
+    assert not a_dev.all()
+    assert a_dev.any()
+
+    a_dev.fill(1)
+
+    assert a_dev.all()
+    assert a_dev.any()
+
+# }}}
 
 
 if __name__ == "__main__":
