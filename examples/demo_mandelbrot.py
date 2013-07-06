@@ -108,8 +108,7 @@ calc_fractal = calc_fractal_opencl
 
 if __name__ == '__main__':
     import Tkinter as tk
-    import Image          # PIL
-    import ImageTk        # PIL
+    from PIL import Image, ImageTk
 
 
     class Mandelbrot(object):
