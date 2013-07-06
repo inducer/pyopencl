@@ -686,7 +686,7 @@ class ListOfListsBuilder:
                 }
                 \"\"\", arg_decls=[])
 
-        result = builder(queue, 2000)
+        result, event = builder(queue, 2000)
 
         inf = result["mylist"]
         assert inf.count == 3000
