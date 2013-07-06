@@ -934,9 +934,9 @@ class ListOfListsBuilder:
             *lists* a mapping from (built) list names to objects which
             have attributes
 
-            * `count` for the total number of entries in all lists combined
-            * `lists` for the array containing all lists.
-            * `starts` for the array of starting indices in `lists`.
+            * ``count`` for the total number of entries in all lists combined
+            * ``lists`` for the array containing all lists.
+            * ``starts`` for the array of starting indices in `lists`.
               `starts` is built so that it has n+1 entries, so that
               the *i*'th entry is the start of the *i*'th list, and the
               *i*'th entry is the index one past the *i*'th list's end,
