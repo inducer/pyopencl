@@ -731,8 +731,7 @@ class ListOfListsBuilder:
         * `LIST_ARGS`: a list of C argument values corresponding to
           `LIST_ARG_DECL`
         * `APPEND_name(entry)`: inserts `entry` into the list `name`.
-          Both arguments are Python strings, the latter representing
-          a valid C expression of the correct dtype.
+          *entry* must be a valid C expression of the correct type.
 
         All argument-list related macros have a trailing comma included
         if they are non-empty.
@@ -743,7 +742,7 @@ class ListOfListsBuilder:
 
             void generate(USER_ARG_DECL LIST_ARG_DECL index_type i)
             {
-                APPEND(mylist, 5);
+                APPEND_mylist(5);
             }
 
         Internally, the `kernel_template` is expanded (at least) twice. Once,
