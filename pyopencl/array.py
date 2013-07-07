@@ -148,7 +148,6 @@ def elwise_kernel_runner(kernel_getter):
 
     Assumes that the zeroth entry in *args* is an :class:`Array`.
     """
-    # (Note that the 'return a function' bit is done by @decorator.)
 
     def kernel_runner(*args, **kwargs):
         repr_ary = args[0]
@@ -1201,7 +1200,7 @@ class Array(object):
                         "multidimensional fancy indexing is not supported")
             if len(self.shape) != 1:
                 raise NotImplementedError(
-                        "fancy indexing into a multi-d array is supported")
+                        "fancy indexing into a multi-d array is not supported")
 
             return take(self, index)
 
