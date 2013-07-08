@@ -149,7 +149,8 @@ difficult to parallelize because of loop-carried dependencies.
 Usage Example
 ^^^^^^^^^^^^^
 
-This example illustrates the implementation of a simplified version of :func:`copy_if`,
+This example illustrates the implementation of a simplified version of
+:func:`pyopencl.algorithm.copy_if`,
 which copies integers from an array into the (variable-size) output if they are
 greater than 300::
 
