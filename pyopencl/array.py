@@ -1183,8 +1183,9 @@ class Array(object):
 
     def finish(self):
         # undoc
-        cl.wait_for_events(self.events)
-        del self.events[:]
+        if self.events:
+            cl.wait_for_events(self.events)
+            del self.events[:]
 
     def __getitem__(self, index):
         """
