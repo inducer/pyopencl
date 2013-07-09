@@ -92,11 +92,10 @@ Version 2013.1
   `their programming guide <http://developer.amd.com/sdks/AMDAPPSDK/assets/AMD_Accelerated_Parallel_Processing_OpenCL_Programming_Guide.pdf>`_)
 * Deprecated :func:`pyopencl.tools.register_dtype` in favor of
   :func:`pyopencl.tools.get_or_register_dtype`.
-* Clean up the :class:`pyopencl.array.Array` constructor interface. Deprecate
-  arrays with :attr:`pyopencl.array.Array.queue` equal to *None*.
+* Clean up the :class:`pyopencl.array.Array` constructor interface.
 * Deprecate :class:`pyopencl.array.DefaultAllocator`.
 * Deprecate :class:`pyopencl.tools.CLAllocator`.
-* Introudce :class:`pyopencl.tools.DeferredAllocator`, :class:`pyopencl.tools.ImmediateAllocator`.
+* Introduce :class:`pyopencl.tools.DeferredAllocator`, :class:`pyopencl.tools.ImmediateAllocator`.
 * Allow arrays whose beginning does not coincide with the beginning of their
   :attr:`pyopencl.array.Array.data` :class:`pyopencl.Buffer`.
   See :attr:`pyopencl.array.Array.base_data` and :attr:`pyopencl.array.Array.offset`.

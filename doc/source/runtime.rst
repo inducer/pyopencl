@@ -625,7 +625,7 @@ Programs and Kernels
         returned by :func:`tempfile.gettempdir`.  By setting the environment
         variable :envvar:`PYOPENCL_NO_CACHE` to any non-empty value, this
         caching is suppressed.  Any options found in the environment variable
-        :envvar:`PYOPENCL_BUILD_OPTIONS` will be appened to *options*.
+        :envvar:`PYOPENCL_BUILD_OPTIONS` will be appended to *options*.
 
         .. versionchanged:: 2011.1
             *options* may now also be a :class:`list` of :class:`str`.
