@@ -48,3 +48,4 @@ setuptools.pth
 distribute-*.tar.gz
 core
 *.sess
+_build

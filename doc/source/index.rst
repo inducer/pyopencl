@@ -75,6 +75,7 @@ is on the web, thanks to Ian Johnson.
     runtime
     array
     algorithm
+    howto
     tools
     misc
 
