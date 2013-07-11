@@ -454,18 +454,18 @@ def test_mempool(ctx_factory):
     context = ctx_factory()
 
     pool = MemoryPool(CLAllocator(context))
-    maxlen = 10
     queue = []
 
     e0 = 12
 
     for e in range(e0-6, e0-4):
         for i in range(100):
-            queue.append(pool.allocate(1<<e))
+            queue.append(pool.allocate(1 << e))
             if len(queue) > 10:
                 queue.pop(0)
     del queue
     pool.stop_holding()
+
 
 @pytools.test.mark_test.opencl
 def test_mempool_2():
@@ -473,13 +473,14 @@ def test_mempool_2():
     from random import randrange
 
     for i in range(2000):
-        s = randrange(1<<31) >> randrange(32)
+        s = randrange(1 << 31) >> randrange(32)
         bin_nr = MemoryPool.bin_number(s)
         asize = MemoryPool.alloc_size(bin_nr)
 
         assert asize >= s, s
         assert MemoryPool.bin_number(asize) == bin_nr, s
         assert asize < asize*(1+1/8)
+
 
 @pytools.test.mark_test.opencl
 def test_vector_args(ctx_factory):
@@ -491,7 +492,7 @@ def test_vector_args(ctx_factory):
         { dest[get_global_id(0)] = x; }
         """).build()
 
-    x = cl_array.vec.make_float4(1,2,3,4)
+    x = cl_array.vec.make_float4(1, 2, 3, 4)
     dest = np.empty(50000, cl_array.vec.float4)
     mf = cl.mem_flags
     dest_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=dest)
@@ -502,12 +503,13 @@ def test_vector_args(ctx_factory):
 
     assert (dest == x).all()
 
+
 @pytools.test.mark_test.opencl
 def test_header_dep_handling(ctx_factory):
     context = ctx_factory()
 
     from os.path import exists
-    assert exists("empty-header.h") # if this fails, change dir to pyopencl/test
+    assert exists("empty-header.h")  # if this fails, change dir to pyopencl/test
 
     kernel_src = """
     #include <empty-header.h>
@@ -521,6 +523,7 @@ def test_header_dep_handling(ctx_factory):
 
     cl.Program(context, kernel_src).build(["-I", os.getcwd()])
     cl.Program(context, kernel_src).build(["-I", os.getcwd()])
+
 
 @pytools.test.mark_test.opencl
 def test_context_dep_memoize(ctx_factory):
@@ -539,6 +542,7 @@ def test_context_dep_memoize(ctx_factory):
 
     assert counter[0] == 1
 
+
 @pytools.test.mark_test.opencl
 def test_can_build_binary(ctx_factory):
     ctx = ctx_factory()
@@ -556,11 +560,9 @@ def test_can_build_binary(ctx_factory):
     foo.build()
 
 
-
-
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
-    import pyopencl
+    import pyopencl  # noqa
 
     import sys
     if len(sys.argv) > 1:
