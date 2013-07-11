@@ -710,6 +710,10 @@ def create_some_context(interactive=True, answers=None):
     except:
         interactive = False
 
+    def cc_print(s):
+        if interactive:
+            print s
+
     def get_input(prompt):
         if answers:
             return str(answers.pop(0))
@@ -730,9 +734,9 @@ def create_some_context(interactive=True, answers=None):
         platform, = platforms
     else:
         if not answers:
-            print "Choose platform:"
+            cc_print("Choose platform:")
             for i, pf in enumerate(platforms):
-                print "[%d] %s" % (i, pf)
+                cc_print("[%d] %s" % (i, pf))
 
         answer = get_input("Choice [0]:")
         if not answer:
@@ -782,9 +786,9 @@ def create_some_context(interactive=True, answers=None):
         pass
     else:
         if not answers:
-            print "Choose device(s):"
+            cc_print("Choose device(s):")
             for i, dev in enumerate(devices):
-                print "[%d] %s" % (i, dev)
+                cc_print("[%d] %s" % (i, dev))
 
         answer = get_input("Choice, comma-separated [0]:")
         if not answer:
@@ -797,7 +801,7 @@ def create_some_context(interactive=True, answers=None):
     if user_inputs:
         if pre_provided_answers is not None:
             user_inputs = pre_provided_answers + user_inputs
-        print("Set the environment variable PYOPENCL_CTX='%s' to "
+        cc_print("Set the environment variable PYOPENCL_CTX='%s' to "
                 "avoid being asked again." % ":".join(user_inputs))
 
     if answers:
