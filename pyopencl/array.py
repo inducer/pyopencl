@@ -351,6 +351,8 @@ class Array(object):
 
     .. automethod :: setitem
 
+    .. automethod :: map_to_host
+
     .. rubric:: Comparisons, conditionals, any, all
 
     .. versionadded:: 2013.2

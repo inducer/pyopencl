@@ -79,6 +79,10 @@ Version 2013.2
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
 
+* Add :meth:`pyopencl.array.Array.map_to_host`.
+* Support *strides* on :func:`pyopencl.enqueue_map_buffer` and
+  :func:`pyopencl.enqueue_map_image`.
+
 Version 2013.1
 --------------
 
