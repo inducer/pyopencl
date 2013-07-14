@@ -27,6 +27,7 @@ nv_devattr = ("cl_nv_device_attribute_query", "0.92")
 gl_sharing = ("cl_khr_gl_sharing", "0.92")
 cl_11 = ("CL_1.1", "0.92")
 cl_12 = ("CL_1.2", "2011.2")
+amd_devattr = ("cl_amd_device_attribute_query", "2013.2")
 
 
 def get_extra_lines(tup):
@@ -95,8 +96,22 @@ const_ext_lookup = {
             "HALF_FP_CONFIG":
             ("cl_khr_fp16", "2011.1"),
 
-            "PROFILING_TIMER_OFFSET_AMD":
-            ("cl_amd_device_attribute_query", "2011.1"),
+            "PROFILING_TIMER_OFFSET_AMD": amd_devattr,
+            "TOPOLOGY_AMD": amd_devattr,
+            "BOARD_NAME_AMD": amd_devattr,
+            "GLOBAL_FREE_MEMORY_AMD": amd_devattr,
+            "SIMD_PER_COMPUTE_UNIT_AMD": amd_devattr,
+            "SIMD_WIDTH_AMD": amd_devattr,
+            "SIMD_INSTRUCTION_WIDTH_AMD": amd_devattr,
+            "WAVEFRONT_WIDTH_AMD": amd_devattr,
+            "GLOBAL_MEM_CHANNELS_AMD": amd_devattr,
+            "GLOBAL_MEM_CHANNEL_BANKS_AMD": amd_devattr,
+            "GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD": amd_devattr,
+            "LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD": amd_devattr,
+            "LOCAL_MEM_BANKS_AMD": amd_devattr,
+
+            "MAX_ATOMIC_COUNTERS_EXT":
+            ("cl_ext_atomic_counters_64", "2013.2"),
 
             "PARENT_DEVICE_EXT":
             fission,

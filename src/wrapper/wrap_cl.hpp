@@ -720,6 +720,62 @@ namespace pyopencl
           case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC: DEV_GET_INT_INF(cl_bool);
           case CL_DEVICE_PRINTF_BUFFER_SIZE: DEV_GET_INT_INF(cl_bool);
 #endif
+// {{{ AMD dev attrs
+//
+// types of AMD dev attrs divined from
+// https://www.khronos.org/registry/cl/api/1.2/cl.hpp
+#ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
+          case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD: DEV_GET_INT_INF(cl_ulong);
+#endif
+/* FIXME
+#ifdef CL_DEVICE_TOPOLOGY_AMD
+          case CL_DEVICE_TOPOLOGY_AMD:
+#endif
+*/
+#ifdef CL_DEVICE_BOARD_NAME_AMD
+          case CL_DEVICE_BOARD_NAME_AMD: ;
+            PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+#endif
+#ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
+          case CL_DEVICE_GLOBAL_FREE_MEMORY_AMD:
+            {
+              std::vector<size_t> result;
+              PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+              PYOPENCL_RETURN_VECTOR(size_t, result);
+            }
+#endif
+#ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
+          case CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_SIMD_WIDTH_AMD
+          case CL_DEVICE_SIMD_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD
+          case CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_WAVEFRONT_WIDTH_AMD
+          case CL_DEVICE_WAVEFRONT_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD
+          case CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD
+          case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD
+          case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD
+          case CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
+          case CL_DEVICE_LOCAL_MEM_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+// }}}
+
+#ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
+          case CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT: DEV_GET_INT_INF(cl_uint);
+#endif
 
           default:
             throw error("Device.get_info", CL_INVALID_VALUE);

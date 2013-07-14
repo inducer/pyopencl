@@ -232,7 +232,7 @@ class Array(object):
     as in :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
     broadcasting of scalars. (e.g. `array+5`)
 
-    *cqa* must be a :class:`pyopencl.CommandQueue` or a:class:`Context`.
+    *cqa* must be a :class:`pyopencl.CommandQueue` or a :class:`pyopencl.Context`.
 
     If it is a queue, *cqa* specifies the queue in which the array carries out
     its computations by default. If a default queue (and thereby overloaded
@@ -240,7 +240,8 @@ class Array(object):
     :class:`Context`.
 
     *cqa* will at some point be renamed *cq*, so it should be considered
-    'positional-only'.
+    'positional-only'. Arguments starting from 'order' should be considered
+    keyword-only.
 
     *allocator* may be `None` or a callable that, upon being called with an
     argument of the number of bytes to be allocated, returns an
