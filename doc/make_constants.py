@@ -28,6 +28,7 @@ gl_sharing = ("cl_khr_gl_sharing", "0.92")
 cl_11 = ("CL_1.1", "0.92")
 cl_12 = ("CL_1.2", "2011.2")
 
+
 def get_extra_lines(tup):
     ext_name, pyopencl_ver = tup
     if ext_name is not None:
@@ -139,7 +140,7 @@ const_ext_lookup = {
             "WGL_HDC_KHR": gl_sharing,
             "CGL_SHAREGROUP_KHR": gl_sharing,
 
-            "OFFLINE_DEVICES_AMD": 
+            "OFFLINE_DEVICES_AMD":
             ("cl_amd_offline_devices", "2011.1"),
             },
 
@@ -243,7 +244,7 @@ const_ext_lookup = {
             },
 
         cl.mem_flags: {
-            "USE_PERSISTENT_MEM_AMD": 
+            "USE_PERSISTENT_MEM_AMD":
             ("cl_amd_device_memory_flags", "2011.1"),
             "HOST_WRITE_ONLY": cl_12,
             },
@@ -318,7 +319,8 @@ def doc_class(cls):
     print ".. class :: %s" % cls.__name__
     print
     if cls.__name__.startswith("gl_"):
-        print "    Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`."
+        print "    Only available when PyOpenCL is compiled with GL support."
+        print "    See :func:`have_gl`."
         print
 
     if cls in cls_ext_lookup:
@@ -327,9 +329,8 @@ def doc_class(cls):
 
     cls_const_ext = const_ext_lookup.get(cls, {})
     for name in sorted(dir(cls)):
-        if not name.startswith("_")  and not name in ["to_string", "names", "values"]:
+        if not name.startswith("_") and not name in ["to_string", "names", "values"]:
             print "    .. attribute :: %s" % name
-            value = getattr(cls, name)
 
             if name in cls_const_ext:
                 for l in get_extra_lines(cls_const_ext[name]):
