@@ -109,7 +109,7 @@ namespace py = boost::python;
       COPY_PY_LIST(npy_intp, shape); \
     \
     NPY_ORDER order = PyArray_CORDER; \
-    PyArray_OrderConverter(order_py.ptr(), &order); \
+    PyArray_OrderConverter(py_order.ptr(), &order); \
     \
     int ary_flags = 0; \
     if (order == PyArray_FORTRANORDER) \
@@ -118,6 +118,12 @@ namespace py = boost::python;
       ary_flags |= NPY_CARRAY; \
     else \
       throw std::runtime_error("unrecognized order specifier"); \
+    \
+    std::vector<npy_intp> strides; \
+    if (py_strides.ptr() != Py_None) \
+    { \
+      COPY_PY_LIST(npy_intp, strides); \
+    }
 
 #define PYOPENCL_RETURN_VECTOR(ITEMTYPE, NAME) \
   { \

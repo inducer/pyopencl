@@ -534,12 +534,13 @@ Mapping Memory into Host Address Space
 
     .. method:: release(queue=None, wait_for=None)
 
-.. function:: enqueue_map_buffer(queue, buf, flags, offset, shape, dtype, order="C", wait_for=None, is_blocking=True)
+.. function:: enqueue_map_buffer(queue, buf, flags, offset, shape, dtype, order="C", strides=None, wait_for=None, is_blocking=True)
 
     |explain-waitfor|
     *shape*, *dtype*, and *order* have the same meaning
     as in :func:`numpy.empty`.
     See :class:`map_flags` for possible values of *flags*.
+    *strides*, if given, overrides *order*.
 
     :return: a tuple *(array, event)*. *array* is a
         :class:`numpy.ndarray` representing the host side
@@ -552,12 +553,16 @@ Mapping Memory into Host Address Space
     .. versionchanged:: 2013.1
         *order* now defaults to "C".
 
-.. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order="C", wait_for=None, is_blocking=True)
+    .. versionchanged:: 2013.2
+        Added *strides* argument.
+
+.. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order="C", strides=None, wait_for=None, is_blocking=True)
 
     |explain-waitfor|
     *shape*, *dtype*, and *order* have the same meaning
     as in :func:`numpy.empty`.
     See :class:`map_flags` for possible values of *flags*.
+    *strides*, if given, overrides *order*.
 
     :return: a tuple *(array, event)*. *array* is a
         :class:`numpy.ndarray` representing the host side
@@ -569,6 +574,9 @@ Mapping Memory into Host Address Space
 
     .. versionchanged:: 2013.1
         *order* now defaults to "C".
+
+    .. versionchanged:: 2013.2
+        Added *strides* argument.
 
 Samplers
 ^^^^^^^^

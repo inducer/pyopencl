@@ -153,6 +153,7 @@ void pyopencl_expose_part_2()
                 "offset",
                 "shape", "dtype"),
        py::arg("order")="C",
+       py::arg("strides")=py::object(),
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=true));
   py::def("enqueue_map_image", enqueue_map_image,
@@ -160,6 +161,7 @@ void pyopencl_expose_part_2()
                 "origin", "region",
                 "shape", "dtype"),
        py::arg("order")="C",
+       py::arg("strides")=py::object(),
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=true));
 

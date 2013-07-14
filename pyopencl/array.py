@@ -1179,13 +1179,44 @@ class Array(object):
                 shape=shape, dtype=dtype,
                 strides=strides)
 
-    # }}
+    # }}}
 
     def finish(self):
         # undoc
         if self.events:
             cl.wait_for_events(self.events)
             del self.events[:]
+
+    def map_to_host(self, queue=None, flags=None, is_blocking=True, wait_for=None):
+        """If *is_blocking*, return a :class:`numpy.ndarray` corresponding to the
+        same memory as *self*.
+
+        If *is_blocking* is not true, return a tuple ``(ary, evt)``, where
+        *ary* is the above-mentioned array.
+
+        The host array is obtained using :func:`pyopencl.enqueue_map_buffer`.
+        See there for further details.
+
+        :arg flags: A combination of :class:`pyopencl.map_flags`.
+            Defaults to read-write.
+
+        .. versionadded :: 2013.2
+        """
+
+        if flags is None:
+            flags = cl.map_flags.READ | cl.map_flags.WRITE
+
+        ary, evt = cl.enqueue_map_buffer(
+                queue or self.queue, self.base_data, flags, self.offset,
+                self.shape, self.dtype, strides=self.strides, wait_for=wait_for,
+                is_blocking=is_blocking)
+
+        if is_blocking:
+            return ary
+        else:
+            return ary, evt
+
+    # {{{ getitem/setitem
 
     def __getitem__(self, index):
         """
@@ -1347,6 +1378,8 @@ class Array(object):
         .. versionadded:: 2013.1
         """
         self.setitem(subscript, value)
+
+    # }}}
 
 # }}}
 

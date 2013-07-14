@@ -679,6 +679,24 @@ def test_any_all(ctx_factory):
 # }}}
 
 
+@pytools.test.mark_test.opencl
+def test_map_to_host(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a_dev = cl_array.zeros(queue, (5, 6, 7,), dtype=np.float32)
+    a_host = a_dev.map_to_host()
+    a_host[1, 2, 3] = 10
+    a_dev[3, 2, 1] = 10
+
+    a_dev.finish()
+
+    a_host_saved = a_host.copy()
+
+    assert (a_host_saved == a_dev.get()).all()
+    assert (a_host == a_dev.get()).all()
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
     # tests.

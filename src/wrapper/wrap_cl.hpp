@@ -2618,7 +2618,8 @@ namespace pyopencl
       memory_object_holder &buf,
       cl_map_flags flags,
       size_t offset,
-      py::object py_shape, py::object dtype, py::object order_py,
+      py::object py_shape, py::object dtype,
+      py::object py_order, py::object py_strides,
       py::object py_wait_for,
       bool is_blocking
       )
@@ -2656,12 +2657,14 @@ namespace pyopencl
     {
       result = py::handle<>(PyArray_NewFromDescr(
           &PyArray_Type, tp_descr,
-          shape.size(), shape.empty( ) ? NULL : &shape.front(), /*strides*/ NULL,
+          shape.size(),
+          shape.empty() ? NULL : &shape.front(),
+          strides.empty() ? NULL : &strides.front(),
           mapped, ary_flags, /*obj*/NULL));
 
       if (size_in_bytes != (npy_uintp) PyArray_NBYTES(result.get()))
         throw pyopencl::error("enqueue_map_buffer", CL_INVALID_VALUE,
-            "miscalculated numpy array size");
+            "miscalculated numpy array size (not contiguous?)");
 
        map = std::auto_ptr<memory_map>(new memory_map(cq, buf, mapped));
     }
@@ -2691,7 +2694,8 @@ namespace pyopencl
       cl_map_flags flags,
       py::object py_origin,
       py::object py_region,
-      py::object py_shape, py::object dtype, py::object order_py,
+      py::object py_shape, py::object dtype,
+      py::object py_order, py::object py_strides,
       py::object py_wait_for,
       bool is_blocking
       )
@@ -2734,7 +2738,9 @@ namespace pyopencl
 
     py::handle<> result = py::handle<>(PyArray_NewFromDescr(
         &PyArray_Type, tp_descr,
-        shape.size(), shape.empty( ) ? NULL : &shape.front(), /*strides*/ NULL,
+        shape.size(),
+        shape.empty() ? NULL : &shape.front(),
+        strides.empty() ? NULL : &strides.front(),
         mapped, ary_flags, /*obj*/NULL));
 
     py::handle<> map_py(handle_from_new_ptr(map.release()));
