@@ -684,7 +684,14 @@ def test_map_to_host(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    a_dev = cl_array.zeros(queue, (5, 6, 7,), dtype=np.float32)
+    if context.devices[0].type & cl.device_type.GPU:
+        mf = cl.mem_flags
+        allocator = cl_tools.DeferredAllocator(
+                context, mf.READ_WRITE | mf.ALLOC_HOST_PTR)
+    else:
+        allocator = None
+
+    a_dev = cl_array.zeros(queue, (5, 6, 7,), dtype=np.float32, allocator=allocator)
     a_host = a_dev.map_to_host()
     a_host[1, 2, 3] = 10
     a_dev[3, 2, 1] = 10
