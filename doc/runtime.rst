@@ -278,11 +278,6 @@ Command Queues and Events
     .. versionchanged:: 2011.2
         Takes *wait_for*.
 
-.. function:: enqueue_wait_for_events(queue, events)
-
-    **Note:** This function is deprecated as of PyOpenCL 2011.2.
-        Use :func:`enqueue_marker` instead.
-
 .. class:: UserEvent(context)
 
     A subclass of :class:`Event`. Only available with OpenCL 1.1 and newer.

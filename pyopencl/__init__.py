@@ -458,8 +458,12 @@ def _add_functionality():
     def command_queue_exit(self, exc_type, exc_val, exc_tb):
         self.finish()
 
+    def command_queue_get_cl_version(self):
+        return self.context._get_cl_version()
+
     CommandQueue.__enter__ = command_queue_enter
     CommandQueue.__exit__ = command_queue_exit
+    CommandQueue._get_cl_version = memoize_method(command_queue_get_cl_version)
 
     # }}}
 
@@ -688,7 +692,8 @@ def _find_pyopencl_include_path():
 # }}}
 
 
-# {{{ convenience -------------------------------------------------------------
+# {{{ convenience
+
 def create_some_context(interactive=True, answers=None):
     import os
     if answers is None and "PYOPENCL_CTX" in os.environ:
@@ -1102,6 +1107,38 @@ def image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False):
 # }}}
 
 
+# {{{ enqueue_* compatibility shims
+
+def enqueue_marker(queue, wait_for=None):
+    if queue._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
+        return _cl._enqueue_marker_with_wait_list(queue, wait_for)
+    else:
+        if wait_for:
+            _cl._enqueue_wait_for_events(queue, wait_for)
+        return _cl._enqueue_marker(queue)
+
+
+def enqueue_barrier(queue, wait_for=None):
+    if queue._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
+        return _cl._enqueue_barrier_with_wait_list(queue, wait_for)
+    else:
+        _cl._enqueue_barrier(queue)
+        if wait_for:
+            _cl._enqueue_wait_for_events(queue, wait_for)
+        return _cl._enqueue_marker(queue)
+
+
+def enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
+    if not (queue._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2)):
+        from warnings import warn
+        warn("The context for this queue does not declare OpenCL 1.2 support, so "
+                "the next thing you might see is a crash")
+    return _cl.enqueue_fill_buffer(queue, mem, pattern, offset,
+            size, wait_for=None)
+
+
+
+# }}}
 
 
 # vim: foldmethod=marker

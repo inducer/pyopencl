@@ -118,14 +118,24 @@ void pyopencl_expose_part_1()
   }
 
   DEF_SIMPLE_FUNCTION(wait_for_events);
-  py::def("enqueue_marker", enqueue_marker,
-      (py::arg("queue"), py::arg("wait_for")=py::object()),
-      py::return_value_policy<py::manage_new_object>());
-  py::def("enqueue_barrier", enqueue_barrier,
-      (py::arg("queue"), py::arg("wait_for")=py::object()),
-      py::return_value_policy<py::manage_new_object>());
 
-  DEF_SIMPLE_FUNCTION(enqueue_wait_for_events);
+#if PYOPENCL_CL_VERSION >= 0x1020
+  py::def("_enqueue_marker_with_wait_list", enqueue_marker_with_wait_list,
+      (py::arg("queue"), py::arg("wait_for")=py::object()),
+      py::return_value_policy<py::manage_new_object>());
+#endif
+  py::def("_enqueue_marker", enqueue_marker,
+      (py::arg("queue")),
+      py::return_value_policy<py::manage_new_object>());
+  py::def("_enqueue_wait_for_events", enqueue_wait_for_events,
+      (py::arg("queue"), py::arg("wait_for")=py::object()));
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+  py::def("_enqueue_barrier_with_wait_list", enqueue_barrier_with_wait_list,
+      (py::arg("queue"), py::arg("wait_for")=py::object()),
+      py::return_value_policy<py::manage_new_object>());
+#endif
+  py::def("_enqueue_barrier", enqueue_barrier, py::arg("queue"));
 
 #if PYOPENCL_CL_VERSION >= 0x1010
   {
@@ -273,7 +283,7 @@ void pyopencl_expose_part_1()
   // }}}
 
 #if PYOPENCL_CL_VERSION >= 0x1020
-  py::def("enqueue_fill_buffer", enqueue_fill_buffer,
+  py::def("_enqueue_fill_buffer", enqueue_fill_buffer,
       (py::args("queue", "mem", "pattern", "offset", "size"),
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());

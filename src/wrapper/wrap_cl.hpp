@@ -1377,68 +1377,51 @@ namespace pyopencl
 
 
 
+#if PYOPENCL_CL_VERSION >= 0x1020
   inline
-  event *enqueue_marker(command_queue &cq,
+  event *enqueue_marker_with_wait_list(command_queue &cq,
       py::object py_wait_for)
   {
     PYOPENCL_PARSE_WAIT_FOR;
     cl_event evt;
 
-#if PYOPENCL_CL_VERSION >= 0x1020
     PYOPENCL_CALL_GUARDED(clEnqueueMarkerWithWaitList, (
           cq.data(), PYOPENCL_WAITLIST_ARGS, &evt));
-#else
-    if (num_events_in_wait_list)
-    {
-      PYOPENCL_CALL_GUARDED(clEnqueueWaitForEvents, (
-            cq.data(), PYOPENCL_WAITLIST_ARGS));
-    }
-    PYOPENCL_CALL_GUARDED(clEnqueueMarker, (
-          cq.data(), &evt));
-#endif
 
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
-
-
-
-
   inline
-  event *enqueue_barrier(command_queue &cq,
+  event *enqueue_barrier_with_wait_list(command_queue &cq,
       py::object py_wait_for)
   {
     PYOPENCL_PARSE_WAIT_FOR;
     cl_event evt;
 
-#if PYOPENCL_CL_VERSION >= 0x1020
     PYOPENCL_CALL_GUARDED(clEnqueueBarrierWithWaitList,
         (cq.data(), PYOPENCL_WAITLIST_ARGS, &evt));
 
-#else
-    if (num_events_in_wait_list)
-    {
-      PYOPENCL_CALL_GUARDED(clEnqueueWaitForEvents, (
-            cq.data(), PYOPENCL_WAITLIST_ARGS));
-    }
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+#endif
 
-    PYOPENCL_CALL_GUARDED(clEnqueueBarrier, (cq.data()));
+
+  // {{{ used internally for pre-OpenCL-1.2 contexts
+
+  inline
+  event *enqueue_marker(command_queue &cq)
+  {
+    cl_event evt;
 
     PYOPENCL_CALL_GUARDED(clEnqueueMarker, (
           cq.data(), &evt));
-#endif
 
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
-
-
-
 
   inline
   void enqueue_wait_for_events(command_queue &cq, py::object py_events)
   {
-    PYOPENCL_DEPRECATED("enqueue_wait_for_events", "2013.1", );
-
     cl_uint num_events = 0;
     std::vector<cl_event> event_list(len(py_events));
 
@@ -1450,7 +1433,13 @@ namespace pyopencl
           cq.data(), num_events, event_list.empty( ) ? NULL : &event_list.front()));
   }
 
+  inline
+  void enqueue_barrier(command_queue &cq)
+  {
+    PYOPENCL_CALL_GUARDED(clEnqueueBarrier, (cq.data()));
+  }
 
+  // }}}
 
 
 #if PYOPENCL_CL_VERSION >= 0x1010
