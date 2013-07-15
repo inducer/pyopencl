@@ -78,12 +78,21 @@ def _create_vector_types():
             name = "%s%d" % (base_name, count)
 
             titles = field_names[:count]
-            if len(titles) < count:
-                titles.extend((count-len(titles))*[None])
+
+            padded_count = count
+            if count == 3:
+                padded_count = 4
+
+            names = ["s%d" % i for i in range(count)]
+            while len(names) < padded_count:
+                names.append("padding%d" % (len(names)-count))
+
+            if len(titles) < len(names):
+                titles.extend((len(names)-len(titles))*[None])
 
             dtype = np.dtype(dict(
-                names=["s%d" % i for i in range(count)],
-                formats=[base_type]*count,
+                names=names,
+                formats=[base_type]*padded_count,
                 titles=titles))
 
             get_or_register_dtype(name, dtype)
