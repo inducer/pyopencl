@@ -700,8 +700,8 @@ def test_map_to_host(ctx_factory):
     a_dev.finish()
 
     a_host_saved = a_host.copy()
-    print "DEV[HOST_WRITE]", a_dev.get()[1,2,3]
-    print "HOST[DEV_WRITE]", a_host_saved[3,2,1]
+    print("DEV[HOST_WRITE]", a_dev.get()[1, 2, 3])
+    print("HOST[DEV_WRITE]", a_host_saved[3, 2, 1])
 
     assert (a_host_saved == a_dev.get()).all()
     assert (a_host == a_dev.get()).all()
