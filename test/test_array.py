@@ -692,13 +692,16 @@ def test_map_to_host(ctx_factory):
         allocator = None
 
     a_dev = cl_array.zeros(queue, (5, 6, 7,), dtype=np.float32, allocator=allocator)
+    a_dev[3, 2, 1] = 10
     a_host = a_dev.map_to_host()
     a_host[1, 2, 3] = 10
-    a_dev[3, 2, 1] = 10
+    a_host.base.release(queue)
 
     a_dev.finish()
 
     a_host_saved = a_host.copy()
+    print "DEV[HOST_WRITE]", a_dev.get()[1,2,3]
+    print "HOST[DEV_WRITE]", a_host_saved[3,2,1]
 
     assert (a_host_saved == a_dev.get()).all()
     assert (a_host == a_dev.get()).all()
