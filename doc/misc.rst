@@ -82,6 +82,7 @@ Version 2013.2
 * Add :meth:`pyopencl.array.Array.map_to_host`.
 * Support *strides* on :func:`pyopencl.enqueue_map_buffer` and
   :func:`pyopencl.enqueue_map_image`.
+* :class:`pyopencl.ImageFormat` was made comparable and hashable.
 
 Version 2013.1
 --------------

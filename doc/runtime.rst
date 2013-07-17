@@ -398,8 +398,6 @@ Image Formats
 
 .. class:: ImageFormat([channel_order, channel_type])
 
-    .. versionchanged:: 0.91
-        Constructor arguments added.
 
     .. attribute:: channel_order
 
@@ -426,6 +424,16 @@ Image Formats
         Returns a :class:`str` representation of the image format.
 
         .. versionadded:: 0.91
+
+    |comparable|
+
+    .. versionchanged:: 0.91
+
+        Constructor arguments added.
+
+    .. versionchanged:: 2013.2
+
+        :class:`ImageFormat` was made comparable and hashable
 
 .. function:: get_supported_image_formats(context, flags, image_type)
 
