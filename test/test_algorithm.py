@@ -245,10 +245,16 @@ def test_sum(ctx_factory):
 
         a = a_gpu.get()
 
-        sum_a = np.sum(a)
-        sum_a_gpu = cl_array.sum(a_gpu).get()
+        for slc in [
+                slice(None),
+                slice(1000, 3000),
+                slice(1000, -3000),
+                slice(1000, None),
+                ]:
+            sum_a = np.sum(a[slc])
+            sum_a_gpu = cl_array.sum(a_gpu[slc]).get()
 
-        assert abs(sum_a_gpu - sum_a) / abs(sum_a) < 1e-4
+            assert abs(sum_a_gpu - sum_a) / abs(sum_a) < 1e-4
 
 
 @pytools.test.mark_test.opencl
