@@ -35,7 +35,7 @@ import pyopencl as cl
 from pyopencl.tools import (
         context_dependent_memoize,
         dtype_to_ctype, KernelTemplateBase,
-        _process_code_for_macro, VectorArg)
+        _process_code_for_macro)
 import numpy as np
 
 
@@ -61,6 +61,8 @@ KERNEL = """//CL//
       __global out_type *out, ${arguments},
       unsigned int seq_count, unsigned int n)
     {
+       ${arg_prep}
+
         __local out_type ldata[GROUP_SIZE];
 
         unsigned int lid = get_local_id(0);
@@ -140,7 +142,7 @@ KERNEL = """//CL//
 def _get_reduction_source(
         ctx, out_type, out_type_size,
         neutral, reduce_expr, map_expr, parsed_args,
-        name="reduce_kernel", preamble="",
+        name="reduce_kernel", preamble="", arg_prep="",
         device=None, max_group_size=None):
 
     if device is not None:
@@ -203,6 +205,7 @@ def _get_reduction_source(
         map_expr=_process_code_for_macro(map_expr),
         name=name,
         preamble=preamble,
+        arg_prep=arg_prep,
         double_support=all(has_double_support(dev) for dev in devices),
         ))
 
@@ -222,6 +225,7 @@ def get_reduction_kernel(stage,
          neutral, reduce_expr, map_expr=None, arguments=None,
          name="reduce_kernel", preamble="",
          device=None, options=[], max_group_size=None):
+
     if map_expr is None:
         if stage == 2:
             map_expr = "pyopencl_reduction_inp[i]"
@@ -229,12 +233,16 @@ def get_reduction_kernel(stage,
             map_expr = "in[i]"
 
     from pyopencl.tools import (
-            parse_arg_list, get_arg_list_scalar_arg_dtypes)
+            parse_arg_list, get_arg_list_scalar_arg_dtypes,
+            get_arg_offset_adjuster_code, VectorArg)
 
-    if arguments is not None:
-        arguments = parse_arg_list(arguments)
+    arg_prep = ""
+    if stage == 1 and arguments is not None:
+        arguments = parse_arg_list(arguments, with_offset=True)
+        arg_prep = get_arg_offset_adjuster_code(arguments)
 
     if stage == 2 and arguments is not None:
+        arguments = parse_arg_list(arguments)
         arguments = (
                 [VectorArg(dtype_out, "pyopencl_reduction_inp")]
                 + arguments)
@@ -242,7 +250,7 @@ def get_reduction_kernel(stage,
     inf = _get_reduction_source(
             ctx, dtype_to_ctype(dtype_out), dtype_out.itemsize,
             neutral, reduce_expr, map_expr, arguments,
-            name, preamble, device, max_group_size)
+            name, preamble, arg_prep, device, max_group_size)
 
     inf.program = cl.Program(ctx, inf.source)
     inf.program.build(options)
@@ -298,6 +306,7 @@ class ReductionKernel:
                 max_group_size=max_group_size)
 
         from pytools import any
+        from pyopencl.tools import VectorArg
         assert any(
                 isinstance(arg_tp, VectorArg)
                 for arg_tp in self.stage_1_inf.arg_types), \
@@ -325,6 +334,7 @@ class ReductionKernel:
             invocation_args = []
             vectors = []
 
+            from pyopencl.tools import VectorArg
             for arg, arg_tp in zip(args, stage_inf.arg_types):
                 if isinstance(arg_tp, VectorArg):
                     if not arg.flags.forc:
@@ -332,7 +342,9 @@ class ReductionKernel:
                                 "deal with non-contiguous arrays")
 
                     vectors.append(arg)
-                    invocation_args.append(arg.data)
+                    invocation_args.append(arg.base_data)
+                    if arg_tp.with_offset:
+                        invocation_args.append(arg.offset)
                 else:
                     invocation_args.append(arg)
 
