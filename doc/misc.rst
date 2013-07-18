@@ -83,6 +83,8 @@ Version 2013.2
 * Support *strides* on :func:`pyopencl.enqueue_map_buffer` and
   :func:`pyopencl.enqueue_map_image`.
 * :class:`pyopencl.ImageFormat` was made comparable and hashable.
+* :mod:`pyopencl.reduction` supports slicing (contributed by Alex Nitz)
+* Bug fixes
 
 Version 2013.1
 --------------
