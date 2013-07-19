@@ -440,6 +440,7 @@ class ReductionTemplate(KernelTemplateBase):
 
 @context_dependent_memoize
 def get_any_kernel(ctx, dtype_in):
+    from pyopencl.tools import VectorArg
     return ReductionKernel(ctx, np.int8, "false", "a || b",
             map_expr="(bool) (in[i])",
             arguments=[VectorArg(dtype_in, "in")])
@@ -447,6 +448,7 @@ def get_any_kernel(ctx, dtype_in):
 
 @context_dependent_memoize
 def get_all_kernel(ctx, dtype_in):
+    from pyopencl.tools import VectorArg
     return ReductionKernel(ctx, np.int8, "true", "a && b",
             map_expr="(bool) (in[i])",
             arguments=[VectorArg(dtype_in, "in")])
