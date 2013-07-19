@@ -1838,7 +1838,7 @@ namespace pyopencl
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
-      PYOPENCL_CALL_GUARDED(clEnqueueReadBuffer, (
+      PYOPENCL_CALL_GUARDED_THREADED(clEnqueueReadBuffer, (
             cq.data(),
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
@@ -1871,7 +1871,7 @@ namespace pyopencl
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
-      PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
+      PYOPENCL_CALL_GUARDED_THREADED(clEnqueueWriteBuffer, (
             cq.data(),
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
@@ -1956,7 +1956,7 @@ namespace pyopencl
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
-      PYOPENCL_CALL_GUARDED(clEnqueueReadBufferRect, (
+      PYOPENCL_CALL_GUARDED_THREADED(clEnqueueReadBufferRect, (
             cq.data(),
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
@@ -2002,7 +2002,7 @@ namespace pyopencl
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
-      PYOPENCL_CALL_GUARDED(clEnqueueWriteBufferRect, (
+      PYOPENCL_CALL_GUARDED_THREADED(clEnqueueWriteBufferRect, (
             cq.data(),
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
@@ -2685,12 +2685,14 @@ namespace pyopencl
 
     PYOPENCL_RETRY_IF_MEM_ERROR(
         {
+          Py_BEGIN_ALLOW_THREADS
           mapped = clEnqueueMapBuffer(
                 cq.data(), buf.data(),
                 PYOPENCL_CAST_BOOL(is_blocking), flags,
                 offset, size_in_bytes,
                 PYOPENCL_WAITLIST_ARGS, &evt,
                 &status_code);
+          Py_END_ALLOW_THREADS
           if (status_code != CL_SUCCESS)
             throw pyopencl::error("clEnqueueMapBuffer", status_code);
         } );
@@ -2757,12 +2759,14 @@ namespace pyopencl
     void *mapped;
     PYOPENCL_RETRY_IF_MEM_ERROR(
       {
+        Py_BEGIN_ALLOW_THREADS
         mapped = clEnqueueMapImage(
               cq.data(), img.data(),
               PYOPENCL_CAST_BOOL(is_blocking), flags,
               origin, region, &row_pitch, &slice_pitch,
               PYOPENCL_WAITLIST_ARGS, &evt,
               &status_code);
+        Py_END_ALLOW_THREADS
         if (status_code != CL_SUCCESS)
           throw pyopencl::error("clEnqueueMapImage", status_code);
       } );
