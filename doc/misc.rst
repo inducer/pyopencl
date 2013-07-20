@@ -69,6 +69,25 @@ C interface to Python:
   to guess which one should get a method for the operation.
   Instead, simply leave that command to be a function.
 
+.. _interoperability:
+
+Interoperability with other OpenCL software
+-------------------------------------------
+
+Just about every object in :mod:`pyopncl` supports the following
+interface (here shown as an example for :class:`pyopencl.MemoryObject`,
+from which :class:`pyopencl.Buffer` and :class:`pyopencl.Image` inherit):
+
+* :meth:`pyopencl.MemoryObject.from_int_ptr`
+* :attr:`pyopencl.MemoryObject.int_ptr`
+
+This allows retrieving the C-level pointer to an OpenCL object as a Python
+integer, which may then be passed to other C libraries whose interfaces expose
+OpenCL objects. It also allows turning C-level OpenCL objects obtained from
+other software to be turned into the corresponding :mod:`pyopencl` objects.
+
+.. versionadded:: 2013.2
+
 User-visible Changes
 ====================
 
@@ -84,6 +103,7 @@ Version 2013.2
   :func:`pyopencl.enqueue_map_image`.
 * :class:`pyopencl.ImageFormat` was made comparable and hashable.
 * :mod:`pyopencl.reduction` supports slicing (contributed by Alex Nitz)
+* Added :ref:`interoperability`
 * Bug fixes
 
 Version 2013.1

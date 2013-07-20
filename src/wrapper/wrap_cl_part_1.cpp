@@ -10,6 +10,9 @@ using namespace pyopencl;
 
 void pyopencl_expose_part_1()
 {
+  py::docstring_options doc_op;
+  doc_op.disable_cpp_signatures();
+
   py::def("get_cl_header_version", get_cl_header_version);
 
   // {{{ platform
@@ -21,10 +24,10 @@ void pyopencl_expose_part_1()
       .DEF_SIMPLE_METHOD(get_info)
       .def("get_devices", &cls::get_devices,
           py::arg("device_type")=CL_DEVICE_TYPE_ALL)
-      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
+      PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_platform_id)
       ;
   }
 
@@ -35,7 +38,6 @@ void pyopencl_expose_part_1()
     typedef device cls;
     py::class_<cls, boost::noncopyable>("Device", py::no_init)
       .DEF_SIMPLE_METHOD(get_info)
-      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
@@ -45,6 +47,7 @@ void pyopencl_expose_part_1()
 #if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(create_sub_devices)
 #endif
+      PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_device_id)
       ;
   }
 
@@ -54,7 +57,7 @@ void pyopencl_expose_part_1()
 
   {
     typedef context cls;
-    py::class_<cls, boost::noncopyable, 
+    py::class_<cls, boost::noncopyable,
       boost::shared_ptr<cls> >("Context", py::no_init)
       .def("__init__", make_constructor(create_context,
             py::default_call_policies(),
@@ -63,10 +66,10 @@ void pyopencl_expose_part_1()
              py::arg("dev_type")=py::object()
             )))
       .DEF_SIMPLE_METHOD(get_info)
-      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
+      PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_context)
       ;
   }
 
@@ -85,10 +88,10 @@ void pyopencl_expose_part_1()
 #endif
       .DEF_SIMPLE_METHOD(flush)
       .DEF_SIMPLE_METHOD(finish)
-      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
+      PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_command_queue)
       ;
   }
 
@@ -101,12 +104,14 @@ void pyopencl_expose_part_1()
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_profiling_info)
       .DEF_SIMPLE_METHOD(wait)
-      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
-      .def("from_cl_event_as_int", create_event_wrapper_from_int,
-	   py::args("cl_event_as_int"))
+      PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_event)
+
+      // deprecated, remove in 2015.x.
+      .def("from_cl_event_as_int", from_int_ptr<cls, cl_event>,
+          py::return_value_policy<py::manage_new_object>())
       .staticmethod("from_cl_event_as_int")
       ;
   }
@@ -162,6 +167,12 @@ void pyopencl_expose_part_1()
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
+
+      .add_property("int_ptr", to_int_ptr<cls>,
+          "Return an integer corresponding to the pointer value "
+          "of the underlying :c:type:`cl_mem`. "
+          "Use :meth:`from_int_ptr` to turn back into a Python object."
+          "\n\n.. versionadded:: 2013.2\n")
       ;
   }
   {
@@ -169,10 +180,18 @@ void pyopencl_expose_part_1()
     py::class_<cls, boost::noncopyable, py::bases<memory_object_holder> >(
         "MemoryObject", py::no_init)
       .DEF_SIMPLE_METHOD(release)
-      .add_property("obj_ptr", &cls::obj_ptr)
       .add_property("hostbuf", &cls::hostbuf)
-      .def("from_cl_mem_as_int", memory_object_from_int,
-          py::args("cl_mem_as_int"))
+
+      .def("from_int_ptr", memory_object_from_int,
+        "(static method) Return a new Python object referencing the C-level " \
+        ":c:type:`cl_mem` object at the location pointed to " \
+        "by *int_ptr_value*. The relevant :c:func:`clRetain*` function " \
+        "will be called." \
+        "\n\n.. versionadded:: 2013.2\n") \
+      .staticmethod("from_int_ptr")
+
+      // deprecated, remove in 2015.x
+      .def("from_cl_mem_as_int", memory_object_from_int)
       .staticmethod("from_cl_mem_as_int")
       ;
   }

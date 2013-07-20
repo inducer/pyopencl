@@ -141,9 +141,35 @@ namespace
     return boost::python::handle<>(
         typename boost::python::manage_new_object::apply<T *>::type()(ptr));
   }
+
+  template <typename T, typename ClType>
+  inline T *from_int_ptr(intptr_t obj_ref)
+  {
+    ClType clobj = (ClType) obj_ref;
+    return new T(clobj, /* retain */ true);
+  }
+
+  template <typename T>
+  inline intptr_t to_int_ptr(T const &obj)
+  {
+    return (intptr_t) obj.data();
+  }
 }
 
-
-
+#define PYOPENCL_EXPOSE_TO_FROM_INT_PTR(CL_TYPENAME) \
+  .def("from_int_ptr", from_int_ptr<cls, CL_TYPENAME>, \
+      py::return_value_policy<py::manage_new_object>(), \
+      py::arg("int_ptr_value"), \
+      "(static method) Return a new Python object referencing the C-level " \
+      ":c:type:`" #CL_TYPENAME "` object at the location pointed to " \
+      "by *int_ptr_value*. The relevant :c:func:`clRetain*` function " \
+      "will be called." \
+      "\n\n.. versionadded:: 2013.2\n") \
+  .staticmethod("from_int_ptr") \
+  .add_property("int_ptr", to_int_ptr<cls>, \
+      "Return an integer corresponding to the pointer value " \
+      "of the underlying :c:type:`" #CL_TYPENAME "`. " \
+      "Use :meth:`from_int_ptr` to turn back into a Python object." \
+      "\n\n.. versionadded:: 2013.2\n") \
 
 #endif

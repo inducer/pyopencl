@@ -42,7 +42,11 @@ else:
 
 
 @pytools.test.mark_test.opencl
-def test_get_info(platform, device):
+def test_get_info(ctx_factory):
+    ctx = ctx_factory()
+    device, = ctx.devices
+    platform = device.platform
+
     failure_count = [0]
 
     pocl_quirks = [
@@ -125,10 +129,7 @@ def test_get_info(platform, device):
                             failure_count[0] += 1
 
     do_test(platform, cl.platform_info)
-
     do_test(device, cl.device_info)
-
-    ctx = cl.Context([device])
     do_test(ctx, cl.context_info)
 
     props = 0
@@ -186,6 +187,55 @@ def test_get_info(platform, device):
         img.image.depth
         do_test(img, cl.image_info,
                 lambda info: img.get_image_info(info))
+
+
+@pytools.test.mark_test.opencl
+def test_int_ptr(ctx_factory):
+    def do_test(obj):
+        new_obj = type(obj).from_int_ptr(obj.int_ptr)
+        assert obj == new_obj
+        assert type(obj) is type(new_obj)
+
+    ctx = ctx_factory()
+    device, = ctx.devices
+    platform = device.platform
+    do_test(device)
+    do_test(platform)
+    do_test(ctx)
+
+    queue = cl.CommandQueue(ctx)
+    do_test(queue)
+
+    evt = cl.enqueue_marker(queue)
+    do_test(evt)
+
+    prg = cl.Program(ctx, """
+        __kernel void sum(__global float *a)
+        { a[get_global_id(0)] *= 2; }
+        """).build()
+
+    do_test(prg)
+    do_test(prg.sum)
+
+    n = 2000
+    a_buf = cl.Buffer(ctx, 0, n*4)
+    do_test(a_buf)
+
+    # crashes on intel...
+    if device.image_support and platform.vendor not in [
+            "Intel(R) Corporation",
+            "The pocl project",
+            ]:
+        smp = cl.Sampler(ctx, False,
+                cl.addressing_mode.CLAMP,
+                cl.filter_mode.NEAREST)
+        do_test(smp)
+
+        img_format = cl.get_supported_image_formats(
+                ctx, cl.mem_flags.READ_ONLY, cl.mem_object_type.IMAGE2D)[0]
+
+        img = cl.Image(ctx, cl.mem_flags.READ_ONLY, img_format, (128, 256))
+        do_test(img)
 
 
 @pytools.test.mark_test.opencl

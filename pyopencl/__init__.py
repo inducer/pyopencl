@@ -61,25 +61,6 @@ def compiler_output(text):
                 "to see more.", CompilerWarning)
 
 
-# {{{ Kernel
-
-class Kernel(_cl._Kernel):
-    def __init__(self, prg, name):
-        if not isinstance(prg, _cl._Program):
-            prg = prg._get_prg()
-
-        _cl._Kernel.__init__(self, prg, name)
-        self._source = getattr(prg, "_source", None)
-
-    def capture_call(self, filename, queue, global_size, local_size,
-            *args, **kwargs):
-        from pyopencl.capture_call import capture_kernel_call
-        capture_kernel_call(self, filename, queue, global_size, local_size,
-                *args, **kwargs)
-
-# }}}
-
-
 # {{{ Program (including caching support)
 
 class Program(object):
@@ -129,6 +110,15 @@ class Program(object):
 
     def all_kernels(self):
         return self._get_prg().all_kernels()
+
+    def int_ptr(self):
+        return self._get_prg().int_ptr
+    int_ptr = property(int_ptr, doc=_cl._Program.int_ptr.__doc__)
+
+    def from_int_ptr(int_ptr_value):
+        return Program(_cl._Program.from_int_ptr(int_ptr_value))
+    from_int_ptr.__doc__ = _cl._Program.from_int_ptr.__doc__
+    from_int_ptr = staticmethod(from_int_ptr)
 
     def __getattr__(self, attr):
         try:
@@ -221,6 +211,15 @@ class Program(object):
         options = " ".join(options)
         return self._prg().compile(options, devices, headers)
 
+    def __eq__(self, other):
+        return self._get_prg() == other._get_prg()
+
+    def __ne__(self, other):
+        return self._get_prg() == other._get_prg()
+
+    def __hash__(self):
+        return hash(self._get_prg())
+
 
 def create_program_with_built_in_kernels(context, devices, kernel_names):
     if not isinstance(kernel_names, str):
@@ -233,122 +232,6 @@ def create_program_with_built_in_kernels(context, devices, kernel_names):
 def link_program(context, programs, options=[], devices=None):
     options = " ".join(options)
     return Program(_Program.link(context, programs, options, devices))
-
-# }}}
-
-
-# {{{ Image
-
-class Image(_cl._ImageBase):
-    def __init__(self, context, flags, format, shape=None, pitches=None,
-            hostbuf=None, is_array=False, buffer=None):
-
-        if shape is None and hostbuf is None:
-            raise Error("'shape' must be passed if 'hostbuf' is not given")
-
-        if shape is None and hostbuf is not None:
-            shape = hostbuf.shape
-
-        if hostbuf is not None and not \
-                (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
-            from warnings import warn
-            warn("'hostbuf' was passed, but no memory flags to make use of it.")
-
-        if hostbuf is None and pitches is not None:
-            raise Error("'pitches' may only be given if 'hostbuf' is given")
-
-        if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
-            if buffer is not None and is_array:
-                    raise ValueError(
-                            "'buffer' and 'is_array' are mutually exclusive")
-
-            if len(shape) == 3:
-                if buffer is not None:
-                    raise TypeError(
-                            "'buffer' argument is not supported for 3D arrays")
-                elif is_array:
-                    image_type = mem_object_type.IMAGE2D_ARRAY
-                else:
-                    image_type = mem_object_type.IMAGE3D
-
-            elif len(shape) == 2:
-                if buffer is not None:
-                    raise TypeError(
-                            "'buffer' argument is not supported for 2D arrays")
-                elif is_array:
-                    image_type = mem_object_type.IMAGE1D_ARRAY
-                else:
-                    image_type = mem_object_type.IMAGE2D
-
-            elif len(shape) == 1:
-                if buffer is not None:
-                    image_type = mem_object_type.IMAGE1D_BUFFER
-                elif is_array:
-                    raise TypeError("array of zero-dimensional images not supported")
-                else:
-                    image_type = mem_object_type.IMAGE1D
-
-            else:
-                raise ValueError("images cannot have more than three dimensions")
-
-            desc = ImageDescriptor()
-
-            desc.image_type = image_type
-            desc.shape = shape  # also sets desc.array_size
-
-            if pitches is None:
-                desc.pitches = (0, 0)
-            else:
-                desc.pitches = pitches
-
-            desc.num_mip_levels = 0  # per CL 1.2 spec
-            desc.num_samples = 0  # per CL 1.2 spec
-            desc.buffer = buffer
-
-            _cl._ImageBase.__init__(self, context, flags, format, desc, hostbuf)
-        else:
-            # legacy init for CL 1.1 and older
-            if is_array:
-                raise TypeError("'is_array=True' is not supported for CL < 1.2")
-            #if num_mip_levels is not None:
-                #raise TypeError(
-                #      "'num_mip_levels' argument is not supported for CL < 1.2")
-            #if num_samples is not None:
-                #raise TypeError(
-                #       "'num_samples' argument is not supported for CL < 1.2")
-            if buffer is not None:
-                raise TypeError("'buffer' argument is not supported for CL < 1.2")
-
-            _cl._ImageBase.__init__(self, context, flags, format, shape,
-                    pitches, hostbuf)
-
-    class _ImageInfoGetter:
-        def __init__(self, event):
-            from warnings import warn
-            warn("Image.image.attr is deprecated. "
-                    "Use Image.attr directly, instead.")
-
-            self.event = event
-
-        def __getattr__(self, name):
-            try:
-                inf_attr = getattr(_cl.image_info, name.upper())
-            except AttributeError:
-                raise AttributeError("%s has no attribute '%s'"
-                        % (type(self), name))
-            else:
-                return self.event.get_image_info(inf_attr)
-
-    image = property(_ImageInfoGetter)
-
-    @property
-    def shape(self):
-        if self.type == mem_object_type.IMAGE2D:
-            return (self.width, self.height)
-        elif self.type == mem_object_type.IMAGE3D:
-            return (self.width, self.height, self.depth)
-        else:
-            raise LogicError("only images have shapes")
 
 # }}}
 
@@ -368,7 +251,7 @@ def _add_functionality():
             _cl.MemoryObjectHolder:
                 (MemoryObjectHolder.get_info, _cl.mem_info),
             Image:
-                (_cl._ImageBase.get_image_info, _cl.image_info),
+                (_cl.Image.get_image_info, _cl.image_info),
             Program:
                 (Program.get_info, _cl.program_info),
             Kernel:
@@ -410,17 +293,19 @@ def _add_functionality():
     # }}}
 
     # {{{ Platform
+
     def platform_repr(self):
-        return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.obj_ptr)
+        return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
 
     Platform.__repr__ = platform_repr
 
     # }}}
 
     # {{{ Device
+
     def device_repr(self):
         return "<pyopencl.Device '%s' on '%s' at 0x%x>" % (
-                self.name.strip(), self.platform.name.strip(), self.obj_ptr)
+                self.name.strip(), self.platform.name.strip(), self.int_ptr)
 
     Device.__repr__ = device_repr
 
@@ -555,6 +440,16 @@ def _add_functionality():
     # }}}
 
     # {{{ Kernel
+
+    kernel_old_init = Kernel.__init__
+
+    def kernel_init(self, prg, name):
+        if not isinstance(prg, _cl._Program):
+            prg = prg._get_prg()
+
+        kernel_old_init(self, prg, name)
+        self._source = getattr(prg, "_source", None)
+
     def kernel_call(self, queue, global_size, local_size, *args, **kwargs):
         global_offset = kwargs.pop("global_offset", None)
         g_times_l = kwargs.pop("g_times_l", False)
@@ -622,9 +517,17 @@ def _add_functionality():
             else:
                 raise
 
+    def kernel_capture_call(self, filename, queue, global_size, local_size,
+            *args, **kwargs):
+        from pyopencl.capture_call import capture_kernel_call
+        capture_kernel_call(self, filename, queue, global_size, local_size,
+                *args, **kwargs)
+
+    Kernel.__init__ = kernel_init
     Kernel.__call__ = kernel_call
     Kernel.set_scalar_arg_dtypes = kernel_set_scalar_arg_dtypes
     Kernel.set_args = kernel_set_args
+    Kernel.capture_call = kernel_capture_call
 
     # }}}
 
@@ -651,6 +554,123 @@ def _add_functionality():
     ImageFormat.__eq__ = image_format_eq
     ImageFormat.__ne__ = image_format_ne
     ImageFormat.__hash__ = image_format_hash
+
+    # }}}
+
+    # {{{ Image
+
+    image_old_init = Image.__init__
+
+    def image_init(self, context, flags, format, shape=None, pitches=None,
+            hostbuf=None, is_array=False, buffer=None):
+
+        if shape is None and hostbuf is None:
+            raise Error("'shape' must be passed if 'hostbuf' is not given")
+
+        if shape is None and hostbuf is not None:
+            shape = hostbuf.shape
+
+        if hostbuf is not None and not \
+                (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
+            from warnings import warn
+            warn("'hostbuf' was passed, but no memory flags to make use of it.")
+
+        if hostbuf is None and pitches is not None:
+            raise Error("'pitches' may only be given if 'hostbuf' is given")
+
+        if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
+            if buffer is not None and is_array:
+                    raise ValueError(
+                            "'buffer' and 'is_array' are mutually exclusive")
+
+            if len(shape) == 3:
+                if buffer is not None:
+                    raise TypeError(
+                            "'buffer' argument is not supported for 3D arrays")
+                elif is_array:
+                    image_type = mem_object_type.IMAGE2D_ARRAY
+                else:
+                    image_type = mem_object_type.IMAGE3D
+
+            elif len(shape) == 2:
+                if buffer is not None:
+                    raise TypeError(
+                            "'buffer' argument is not supported for 2D arrays")
+                elif is_array:
+                    image_type = mem_object_type.IMAGE1D_ARRAY
+                else:
+                    image_type = mem_object_type.IMAGE2D
+
+            elif len(shape) == 1:
+                if buffer is not None:
+                    image_type = mem_object_type.IMAGE1D_BUFFER
+                elif is_array:
+                    raise TypeError("array of zero-dimensional images not supported")
+                else:
+                    image_type = mem_object_type.IMAGE1D
+
+            else:
+                raise ValueError("images cannot have more than three dimensions")
+
+            desc = ImageDescriptor()
+
+            desc.image_type = image_type
+            desc.shape = shape  # also sets desc.array_size
+
+            if pitches is None:
+                desc.pitches = (0, 0)
+            else:
+                desc.pitches = pitches
+
+            desc.num_mip_levels = 0  # per CL 1.2 spec
+            desc.num_samples = 0  # per CL 1.2 spec
+            desc.buffer = buffer
+
+            image_old_init(self, context, flags, format, desc, hostbuf)
+        else:
+            # legacy init for CL 1.1 and older
+            if is_array:
+                raise TypeError("'is_array=True' is not supported for CL < 1.2")
+            #if num_mip_levels is not None:
+                #raise TypeError(
+                #      "'num_mip_levels' argument is not supported for CL < 1.2")
+            #if num_samples is not None:
+                #raise TypeError(
+                #       "'num_samples' argument is not supported for CL < 1.2")
+            if buffer is not None:
+                raise TypeError("'buffer' argument is not supported for CL < 1.2")
+
+            image_old_init(self, context, flags, format, shape,
+                    pitches, hostbuf)
+
+    class _ImageInfoGetter:
+        def __init__(self, event):
+            from warnings import warn
+            warn("Image.image.attr is deprecated. "
+                    "Use Image.attr directly, instead.")
+
+            self.event = event
+
+        def __getattr__(self, name):
+            try:
+                inf_attr = getattr(_cl.image_info, name.upper())
+            except AttributeError:
+                raise AttributeError("%s has no attribute '%s'"
+                        % (type(self), name))
+            else:
+                return self.event.get_image_info(inf_attr)
+
+    def image_shape(self):
+        if self.type == mem_object_type.IMAGE2D:
+            return (self.width, self.height)
+        elif self.type == mem_object_type.IMAGE3D:
+            return (self.width, self.height, self.depth)
+        else:
+            raise LogicError("only images have shapes")
+
+    Image.__init__ = image_init
+    Image.image = property(_ImageInfoGetter)
+    Image.shape = property(image_shape)
 
     # }}}
 

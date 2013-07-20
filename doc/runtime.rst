@@ -78,6 +78,9 @@ Platforms, Devices and Contexts
         Return a list of devices matching *device_type*.
         See :class:`device_type` for values of *device_type*.
 
+    .. automethod:: from_int_ptr
+    .. autoattribute:: int_ptr
+
     |comparable|
 
 .. class:: Device
@@ -91,6 +94,9 @@ Platforms, Devices and Contexts
     .. method:: get_info(param)
 
         See :class:`device_info` for values of *param*.
+
+    .. automethod:: from_int_ptr
+    .. autoattribute:: int_ptr
 
     Two instances of this class may be compared using *=="* and *"!="*.
 
@@ -173,6 +179,9 @@ Platforms, Devices and Contexts
 
         .. versionadded:: 2011.1
 
+    .. automethod:: from_int_ptr
+    .. autoattribute:: int_ptr
+
     |comparable|
 
 .. function:: create_some_context(interactive=True)
@@ -226,6 +235,9 @@ Command Queues and Events
     .. method:: flush()
     .. method:: finish()
 
+    .. automethod:: from_int_ptr
+    .. autoattribute:: int_ptr
+
     |comparable|
 
 .. class:: Event
@@ -256,6 +268,9 @@ Command Queues and Events
         the same information.
 
     .. method:: wait()
+
+    .. automethod:: from_int_ptr
+    .. autoattribute:: int_ptr
 
     |comparable|
 
@@ -331,6 +346,9 @@ Memory
         area as a :class:`numpy.ndarray` of the given *shape*,
         *dtype* and *order*.
 
+    .. automethod:: from_int_ptr
+    .. autoattribute:: int_ptr
+
     |comparable|
 
 .. function:: enqueue_migrate_mem_objects(queue, mem_objects, flags=0, wait_for=None)
@@ -360,7 +378,7 @@ Buffers
     If *hostbuf* is specified, *size* defaults to the size of
     the specified buffer if it is passed as zero.
 
-    :class:`Buffer` is a subclass of :class:`MemoryObject`.
+    :class:`Buffer` inherits from :class:`MemoryObject`.
 
     Note that actual memory allocation in OpenCL may be deferred.
     Buffers are attached to a :class:`Context` and are only
@@ -453,7 +471,7 @@ Images
     If *hostbuf* is given and *shape* is `None`, then *hostbuf.shape* is
     used as the *shape* parameter.
 
-    :class:`Image` is a subclass of :class:`MemoryObject`.
+    :class:`Image` inherits from :class:`MemoryObject`.
 
     .. note::
 
@@ -602,6 +620,9 @@ Samplers
 
         See :class:`sampler_info` for values of *param*.
 
+    .. automethod:: from_int_ptr
+    .. autoattribute:: int_ptr
+
     |comparable|
 
 Programs and Kernels
@@ -664,11 +685,14 @@ Programs and Kernels
             in the same name space and take precedence over
             :class:`Kernel` names.
 
-    |comparable|
-
     .. method:: all_kernels()
 
         Returns a list of all :class:`Kernel` objects in the :class:`Program`.
+
+    .. automethod:: from_int_ptr
+    .. autoattribute:: int_ptr
+
+    |comparable|
 
 .. function:: create_program_with_built_in_kernels(context, devices, kernel_names)
 
@@ -830,6 +854,9 @@ Programs and Kernels
 
         .. versionadded:: 2013.1
 
+    .. automethod:: from_int_ptr
+    .. autoattribute:: int_ptr
+
     |comparable|
 
 .. class:: LocalMemory(size)
@@ -889,20 +916,20 @@ with GL support. See :func:`have_gl`.
 
 .. class:: GLBuffer(context, flags, bufobj)
 
-    :class:`GLBuffer` is a subclass of :class:`MemoryObject`.
+    :class:`GLBuffer` inherits from :class:`MemoryObject`.
 
     .. attribute:: gl_object
 
 .. class:: GLRenderBuffer(context, flags, bufobj)
 
-    :class:`GLRenderBuffer` is a subclass of :class:`MemoryObject`.
+    :class:`GLRenderBuffer` inherits from :class:`MemoryObject`.
 
     .. attribute:: gl_object
 
 .. class:: GLTexture(context, flags, texture_target, miplevel, texture, dims)
 
     *dims* is either 2 or 3.
-    :class:`GLTexture` is a subclass of :class:`Image`.
+    :class:`GLTexture` inherits from :class:`Image`.
 
     .. attribute:: gl_object
 

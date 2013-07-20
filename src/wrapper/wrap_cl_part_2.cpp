@@ -47,6 +47,9 @@ using namespace pyopencl;
 
 void pyopencl_expose_part_2()
 {
+  py::docstring_options doc_op;
+  doc_op.disable_cpp_signatures();
+
   // {{{ image
 
 #if PYOPENCL_CL_VERSION >= 0x1020
@@ -67,7 +70,7 @@ void pyopencl_expose_part_2()
   {
     typedef image cls;
     py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
-        "_ImageBase", py::no_init)
+        "Image", py::no_init)
       .def("__init__", make_constructor(create_image,
             py::default_call_policies(),
             (py::args("context", "flags", "format"),
@@ -173,10 +176,10 @@ void pyopencl_expose_part_2()
     py::class_<cls, boost::noncopyable>("Sampler",
         py::init<context const &, bool, cl_addressing_mode, cl_filter_mode>())
       .DEF_SIMPLE_METHOD(get_info)
-      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
+      PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_sampler)
       ;
   }
 
@@ -225,11 +228,11 @@ void pyopencl_expose_part_2()
           py::return_value_policy<py::manage_new_object>())
       .staticmethod("link")
 #endif
-      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
       .def("all_kernels", create_kernels_in_program)
+      PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_program)
       ;
   }
 
@@ -243,7 +246,7 @@ void pyopencl_expose_part_2()
 
   {
     typedef kernel cls;
-    py::class_<cls, boost::noncopyable>("_Kernel",
+    py::class_<cls, boost::noncopyable>("Kernel",
         py::init<const program &, std::string const &>())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
@@ -251,10 +254,10 @@ void pyopencl_expose_part_2()
 #if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(get_arg_info)
 #endif
-      .add_property("obj_ptr", &cls::obj_ptr)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
+      PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_kernel)
       ;
   }
 

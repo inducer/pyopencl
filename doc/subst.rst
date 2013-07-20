@@ -11,4 +11,3 @@
 
 .. |copy-depr| replace:: **Note:** This function is deprecated as of PyOpenCL 2011.1.
         Use :func:`enqueue_copy` instead.
-

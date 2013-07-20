@@ -432,11 +432,6 @@ namespace pyopencl
         return m_platform;
       }
 
-      npy_intp obj_ptr() const
-      {
-        return (npy_intp) data();
-      }
-
       PYOPENCL_EQUALITY_TESTS(platform);
 
       py::object get_info(cl_platform_info param_name) const
@@ -568,11 +563,6 @@ namespace pyopencl
       cl_device_id data() const
       {
         return m_device;
-      }
-
-      npy_intp obj_ptr() const
-      {
-        return (npy_intp) data();
       }
 
       PYOPENCL_EQUALITY_TESTS(device);
@@ -902,11 +892,6 @@ namespace pyopencl
         return m_context;
       }
 
-      npy_intp obj_ptr() const
-      {
-        return (npy_intp) data();
-      }
-
       PYOPENCL_EQUALITY_TESTS(context);
 
       py::object get_info(cl_context_info param_name) const
@@ -1186,11 +1171,6 @@ namespace pyopencl
       const cl_command_queue data() const
       { return m_queue; }
 
-      npy_intp obj_ptr() const
-      {
-        return (npy_intp) data();
-      }
-
       PYOPENCL_EQUALITY_TESTS(command_queue);
 
       py::object get_info(cl_command_queue_info param_name) const
@@ -1270,11 +1250,6 @@ namespace pyopencl
 
       const cl_event data() const
       { return m_event; }
-
-      npy_intp obj_ptr() const
-      {
-        return (npy_intp) data();
-      }
 
       PYOPENCL_EQUALITY_TESTS(event);
 
@@ -1559,11 +1534,6 @@ namespace pyopencl
 
       const cl_mem data() const
       { return m_mem; }
-
-      npy_intp obj_ptr() const
-      {
-        return (npy_intp) data();
-      }
 
   };
 
@@ -2825,6 +2795,13 @@ namespace pyopencl
           throw pyopencl::error("Sampler", status_code);
       }
 
+      sampler(cl_sampler samp, bool retain)
+        : m_sampler(samp)
+      {
+        if (retain)
+          PYOPENCL_CALL_GUARDED(clRetainSampler, (samp));
+      }
+
       ~sampler()
       {
         PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseSampler, (m_sampler));
@@ -2833,11 +2810,6 @@ namespace pyopencl
       cl_sampler data() const
       {
         return m_sampler;
-      }
-
-      npy_intp obj_ptr() const
-      {
-        return (npy_intp) data();
       }
 
       PYOPENCL_EQUALITY_TESTS(sampler);
@@ -2902,11 +2874,6 @@ namespace pyopencl
       program_kind_type kind() const
       {
         return m_program_kind;
-      }
-
-      npy_intp obj_ptr() const
-      {
-        return (npy_intp) data();
       }
 
       PYOPENCL_EQUALITY_TESTS(program);
@@ -3307,11 +3274,6 @@ namespace pyopencl
       cl_kernel data() const
       {
         return m_kernel;
-      }
-
-      npy_intp obj_ptr() const
-      {
-        return (npy_intp) data();
       }
 
       PYOPENCL_EQUALITY_TESTS(kernel);
@@ -3882,11 +3844,6 @@ namespace pyopencl
   // }}}
 
   // {{{ deferred implementation bits
-
-  inline py::object create_event_wrapper_from_int(intptr_t cl_event_as_int)
-  {
-    return py::object(handle_from_new_ptr(new event((cl_event)cl_event_as_int, true)));
-  }
 
   inline py::object create_mem_object_wrapper(cl_mem mem)
   {
