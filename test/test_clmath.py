@@ -23,7 +23,6 @@ THE SOFTWARE.
 """
 import math
 import numpy as np
-import pytools.test
 
 def have_cl():
     try:
@@ -41,12 +40,7 @@ if have_cl():
     from pyopencl.characterize import has_double_support
 
 
-
-
-
 sizes = [10, 128, 1<<10, 1<<11, 1<<13]
-
-
 
 
 numpy_func_names = {
@@ -54,8 +48,6 @@ numpy_func_names = {
         "acos": "arccos",
         "atan": "arctan",
         }
-
-
 
 
 def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False):
@@ -100,7 +92,7 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False
                 assert (max_err <= my_threshold).all(), \
                         (max_err, name, dtype)
 
-    return pytools.test.mark_test.opencl(test)
+    return test
 
 
 
@@ -129,7 +121,6 @@ if have_cl():
 
 
 
-@pytools.test.mark_test.opencl
 def test_fmod(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -146,7 +137,6 @@ def test_fmod(ctx_factory):
         for i in range(s):
             assert math.fmod(a[i], a2[i]) == b[i]
 
-@pytools.test.mark_test.opencl
 def test_ldexp(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -163,7 +153,6 @@ def test_ldexp(ctx_factory):
         for i in range(s):
             assert math.ldexp(a[i], int(a2[i])) == b[i]
 
-@pytools.test.mark_test.opencl
 def test_modf(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -182,7 +171,6 @@ def test_modf(ctx_factory):
             assert intpart_true == intpart[i]
             assert abs(fracpart_true - fracpart[i]) < 1e-4
 
-@pytools.test.mark_test.opencl
 def test_frexp(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -201,7 +189,6 @@ def test_frexp(ctx_factory):
             assert sig_true == significands[i]
             assert ex_true == exponents[i]
 
-@pytools.test.mark_test.opencl
 def test_bessel(ctx_factory):
     try:
         import scipy.special as spec

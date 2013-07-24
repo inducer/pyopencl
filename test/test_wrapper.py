@@ -24,8 +24,6 @@ THE SOFTWARE.
 
 import numpy as np
 import numpy.linalg as la
-import pytools.test
-
 
 import pyopencl as cl
 import pyopencl.array as cl_array
@@ -41,7 +39,6 @@ else:
     faulthandler.enable()
 
 
-@pytools.test.mark_test.opencl
 def test_get_info(ctx_factory):
     ctx = ctx_factory()
     device, = ctx.devices
@@ -189,7 +186,6 @@ def test_get_info(ctx_factory):
                 lambda info: img.get_image_info(info))
 
 
-@pytools.test.mark_test.opencl
 def test_int_ptr(ctx_factory):
     def do_test(obj):
         new_obj = type(obj).from_int_ptr(obj.int_ptr)
@@ -238,7 +234,6 @@ def test_int_ptr(ctx_factory):
         do_test(img)
 
 
-@pytools.test.mark_test.opencl
 def test_invalid_kernel_names_cause_failures(ctx_factory):
     ctx = ctx_factory()
     device = ctx.devices[0]
@@ -268,7 +263,6 @@ def test_invalid_kernel_names_cause_failures(ctx_factory):
             raise
 
 
-@pytools.test.mark_test.opencl
 def test_image_format_constructor():
     # doesn't need image support to succeed
     iform = cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT)
@@ -278,7 +272,6 @@ def test_image_format_constructor():
     assert not iform.__dict__
 
 
-@pytools.test.mark_test.opencl
 def test_nonempty_supported_image_formats(ctx_factory):
     context = ctx_factory()
 
@@ -292,7 +285,6 @@ def test_nonempty_supported_image_formats(ctx_factory):
         skip("images not supported on %s" % device.name)
 
 
-@pytools.test.mark_test.opencl
 def test_that_python_args_fail(ctx_factory):
     context = ctx_factory()
 
@@ -325,7 +317,6 @@ def test_that_python_args_fail(ctx_factory):
     cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
 
 
-@pytools.test.mark_test.opencl
 def test_image_2d(ctx_factory):
     context = ctx_factory()
 
@@ -402,7 +393,6 @@ def test_image_2d(ctx_factory):
             assert good
 
 
-@pytools.test.mark_test.opencl
 def test_image_3d(ctx_factory):
     #test for image_from_array for 3d image of float2
     context = ctx_factory()
@@ -478,7 +468,6 @@ def test_image_3d(ctx_factory):
             assert good
 
 
-@pytools.test.mark_test.opencl
 def test_copy_buffer(ctx_factory):
     context = ctx_factory()
 
@@ -497,7 +486,6 @@ def test_copy_buffer(ctx_factory):
     assert la.norm(a - b) == 0
 
 
-@pytools.test.mark_test.opencl
 def test_mempool(ctx_factory):
     from pyopencl.tools import MemoryPool, CLAllocator
 
@@ -517,7 +505,6 @@ def test_mempool(ctx_factory):
     pool.stop_holding()
 
 
-@pytools.test.mark_test.opencl
 def test_mempool_2():
     from pyopencl.tools import MemoryPool
     from random import randrange
@@ -532,7 +519,6 @@ def test_mempool_2():
         assert asize < asize*(1+1/8)
 
 
-@pytools.test.mark_test.opencl
 def test_vector_args(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -554,7 +540,6 @@ def test_vector_args(ctx_factory):
     assert (dest == x).all()
 
 
-@pytools.test.mark_test.opencl
 def test_header_dep_handling(ctx_factory):
     context = ctx_factory()
 
@@ -575,7 +560,6 @@ def test_header_dep_handling(ctx_factory):
     cl.Program(context, kernel_src).build(["-I", os.getcwd()])
 
 
-@pytools.test.mark_test.opencl
 def test_context_dep_memoize(ctx_factory):
     context = ctx_factory()
 
@@ -593,7 +577,6 @@ def test_context_dep_memoize(ctx_factory):
     assert counter[0] == 1
 
 
-@pytools.test.mark_test.opencl
 def test_can_build_binary(ctx_factory):
     ctx = ctx_factory()
     device, = ctx.devices
