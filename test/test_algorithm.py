@@ -486,44 +486,39 @@ scan_test_counts = [
     ]
 
 
-def test_scan(ctx_factory):
+@pytest.mark.parametrize("dtype", [np.int32, np.int64])
+@pytest.mark.parametrize("scan_cls", [InclusiveScanKernel, ExclusiveScanKernel])
+def test_scan(ctx_factory, dtype, scan_cls):
     from pytest import importorskip
     importorskip("mako")
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
+    knl = scan_cls(context, dtype, "a+b", "0")
 
-    dtype = np.int32
-    for cls in [
-            InclusiveScanKernel,
-            ExclusiveScanKernel
-            ]:
-        knl = cls(context, dtype, "a+b", "0")
+    for n in scan_test_counts:
+        host_data = np.random.randint(0, 10, n).astype(dtype)
+        dev_data = cl_array.to_device(queue, host_data)
 
-        for n in scan_test_counts:
-            host_data = np.random.randint(0, 10, n).astype(dtype)
-            dev_data = cl_array.to_device(queue, host_data)
+        # /!\ fails on Nv GT2?? for some drivers
+        assert (host_data == dev_data.get()).all()
 
-            # /!\ fails on Nv GT2?? for some drivers
-            assert (host_data == dev_data.get()).all()
+        knl(dev_data)
 
-            knl(dev_data)
+        desired_result = np.cumsum(host_data, axis=0)
+        if scan_cls is ExclusiveScanKernel:
+            desired_result -= host_data
 
-            desired_result = np.cumsum(host_data, axis=0)
-            if cls is ExclusiveScanKernel:
-                desired_result -= host_data
+        is_ok = (dev_data.get() == desired_result).all()
+        if 1 and not is_ok:
+            print("something went wrong, summarizing error...")
+            print(summarize_error(dev_data.get(), desired_result, host_data))
 
-            is_ok = (dev_data.get() == desired_result).all()
-            if 1 and not is_ok:
-                print("something went wrong, summarizing error...")
-                print(summarize_error(dev_data.get(), desired_result, host_data))
-
-            print("n:%d %s worked:%s" % (n, cls, is_ok))
-            assert is_ok
-            from gc import collect
-            collect()
+        print("dtype:%s n:%d %s worked:%s" % (dtype, n, scan_cls, is_ok))
+        assert is_ok
+        from gc import collect
+        collect()
 
 
 def test_copy_if(ctx_factory):
