@@ -817,7 +817,7 @@ _IGNORED_WORDS = set("""
         update_loop_lookbehind update_loop_plain update_loop
         use_lookbehind_update store_segment_start_flags
         update_loop first_seg scan_dtype dtype_to_ctype
-        is_gpu
+        is_gpu use_bank_conflict_avoidance
 
         a b prev_item i last_item prev_value
         N NO_SEG_BOUNDARY across_seg_boundary
