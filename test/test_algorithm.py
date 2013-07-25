@@ -25,7 +25,6 @@ THE SOFTWARE.
 import numpy as np
 import numpy.linalg as la
 import sys
-import pytools.test
 from pytools import memoize
 from test_array import general_clrand
 
@@ -36,11 +35,11 @@ import pyopencl.array as cl_array  # noqa
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support
+from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
 
 
 # {{{ elementwise
 
-@pytools.test.mark_test.opencl
 def test_elwise_kernel(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -62,7 +61,6 @@ def test_elwise_kernel(ctx_factory):
     assert la.norm((c_gpu - (5 * a_gpu + 6 * b_gpu)).get()) < 1e-5
 
 
-@pytools.test.mark_test.opencl
 def test_elwise_kernel_with_options(ctx_factory):
     from pyopencl.clrandom import rand as clrand
     from pyopencl.elementwise import ElementwiseKernel
@@ -94,7 +92,6 @@ def test_elwise_kernel_with_options(ctx_factory):
     assert la.norm(gv - gt) < 1e-5
 
 
-@pytools.test.mark_test.opencl
 def test_ranged_elwise_kernel(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -119,7 +116,6 @@ def test_ranged_elwise_kernel(ctx_factory):
         assert (a_cpu == a_gpu.get()).all()
 
 
-@pytools.test.mark_test.opencl
 def test_take(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -130,7 +126,6 @@ def test_take(ctx_factory):
     assert ((3 * idx).get() == result.get()).all()
 
 
-@pytools.test.mark_test.opencl
 def test_arange(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -140,7 +135,6 @@ def test_arange(ctx_factory):
     assert (np.arange(n, dtype=np.float32) == a.get()).all()
 
 
-@pytools.test.mark_test.opencl
 def test_reverse(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -154,7 +148,6 @@ def test_reverse(ctx_factory):
     assert (a[::-1] == a_gpu.get()).all()
 
 
-@pytools.test.mark_test.opencl
 def test_if_positive(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -177,7 +170,6 @@ def test_if_positive(ctx_factory):
     assert la.norm(min_a_b_gpu.get() - np.minimum(a, b)) == 0
 
 
-@pytools.test.mark_test.opencl
 def test_take_put(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -199,7 +191,6 @@ def test_take_put(ctx_factory):
                 dest_shape=(96,))
 
 
-@pytools.test.mark_test.opencl
 def test_astype(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -231,7 +222,6 @@ def test_astype(ctx_factory):
 
 # {{{ reduction
 
-@pytools.test.mark_test.opencl
 def test_sum(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -257,7 +247,6 @@ def test_sum(ctx_factory):
             assert abs(sum_a_gpu - sum_a) / abs(sum_a) < 1e-4
 
 
-@pytools.test.mark_test.opencl
 def test_minmax(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -283,7 +272,6 @@ def test_minmax(ctx_factory):
             assert op_a_gpu == op_a, (op_a_gpu, op_a, dtype, what)
 
 
-@pytools.test.mark_test.opencl
 def test_subset_minmax(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -326,7 +314,6 @@ def test_subset_minmax(ctx_factory):
         assert min_a_gpu == min_a
 
 
-@pytools.test.mark_test.opencl
 def test_dot(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -374,7 +361,6 @@ def make_mmc_dtype(device):
     return dtype, c_decl
 
 
-@pytools.test.mark_test.opencl
 def test_struct_reduce(ctx_factory):
     pytest.importorskip("mako")
 
@@ -500,48 +486,41 @@ scan_test_counts = [
     ]
 
 
-@pytools.test.mark_test.opencl
-def test_scan(ctx_factory):
+@pytest.mark.parametrize("dtype", [np.int32, np.int64])
+@pytest.mark.parametrize("scan_cls", [InclusiveScanKernel, ExclusiveScanKernel])
+def test_scan(ctx_factory, dtype, scan_cls):
     from pytest import importorskip
     importorskip("mako")
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
+    knl = scan_cls(context, dtype, "a+b", "0")
 
-    dtype = np.int32
-    for cls in [
-            InclusiveScanKernel,
-            ExclusiveScanKernel
-            ]:
-        knl = cls(context, dtype, "a+b", "0")
+    for n in scan_test_counts:
+        host_data = np.random.randint(0, 10, n).astype(dtype)
+        dev_data = cl_array.to_device(queue, host_data)
 
-        for n in scan_test_counts:
-            host_data = np.random.randint(0, 10, n).astype(dtype)
-            dev_data = cl_array.to_device(queue, host_data)
+        # /!\ fails on Nv GT2?? for some drivers
+        assert (host_data == dev_data.get()).all()
 
-            # /!\ fails on Nv GT2?? for some drivers
-            assert (host_data == dev_data.get()).all()
+        knl(dev_data)
 
-            knl(dev_data)
+        desired_result = np.cumsum(host_data, axis=0)
+        if scan_cls is ExclusiveScanKernel:
+            desired_result -= host_data
 
-            desired_result = np.cumsum(host_data, axis=0)
-            if cls is ExclusiveScanKernel:
-                desired_result -= host_data
+        is_ok = (dev_data.get() == desired_result).all()
+        if 1 and not is_ok:
+            print("something went wrong, summarizing error...")
+            print(summarize_error(dev_data.get(), desired_result, host_data))
 
-            is_ok = (dev_data.get() == desired_result).all()
-            if 1 and not is_ok:
-                print("something went wrong, summarizing error...")
-                print(summarize_error(dev_data.get(), desired_result, host_data))
-
-            print("n:%d %s worked:%s" % (n, cls, is_ok))
-            assert is_ok
-            from gc import collect
-            collect()
+        print("dtype:%s n:%d %s worked:%s" % (dtype, n, scan_cls, is_ok))
+        assert is_ok
+        from gc import collect
+        collect()
 
 
-@pytools.test.mark_test.opencl
 def test_copy_if(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -566,7 +545,6 @@ def test_copy_if(ctx_factory):
         collect()
 
 
-@pytools.test.mark_test.opencl
 def test_partition(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -595,7 +573,6 @@ def test_partition(ctx_factory):
         assert (false_dev.get()[:n-count_true_dev] == false_host).all()
 
 
-@pytools.test.mark_test.opencl
 def test_unique(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -622,7 +599,6 @@ def test_unique(ctx_factory):
         collect()
 
 
-@pytools.test.mark_test.opencl
 def test_index_preservation(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -656,7 +632,6 @@ def test_index_preservation(ctx_factory):
             collect()
 
 
-@pytools.test.mark_test.opencl
 def test_segmented_scan(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -755,7 +730,6 @@ def test_segmented_scan(ctx_factory):
             print("%d excl:%s done" % (n, is_exclusive))
 
 
-@pytools.test.mark_test.opencl
 def test_sort(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -798,7 +772,6 @@ def test_sort(ctx_factory):
         assert (a_dev_sorted.get() == a_sorted).all()
 
 
-@pytools.test.mark_test.opencl
 def test_list_builder(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -825,7 +798,6 @@ def test_list_builder(ctx_factory):
     assert (inf.lists.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
 
 
-@pytools.test.mark_test.opencl
 def test_key_value_sorter(ctx_factory):
     from pytest import importorskip
     importorskip("mako")

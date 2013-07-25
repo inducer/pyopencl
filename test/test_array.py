@@ -25,7 +25,6 @@ THE SOFTWARE.
 import numpy as np
 import numpy.linalg as la
 import sys
-import pytools.test
 
 import pyopencl as cl
 import pyopencl.array as cl_array
@@ -71,7 +70,6 @@ def make_random_array(queue, dtype, size):
 
 # {{{ dtype-related
 
-@pytools.test.mark_test.opencl
 def test_basic_complex(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -88,7 +86,6 @@ def test_basic_complex(ctx_factory):
     assert la.norm((ary*c).get() - c*host_ary) < 1e-5 * la.norm(host_ary)
 
 
-@pytools.test.mark_test.opencl
 def test_mix_complex(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -159,7 +156,6 @@ def test_mix_complex(ctx_factory):
                     assert correct
 
 
-@pytools.test.mark_test.opencl
 def test_pow_neg1_vs_inv(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
@@ -179,7 +175,6 @@ def test_pow_neg1_vs_inv(ctx_factory):
     assert la.norm(res2-ref, np.inf) / la.norm(ref) < 1e-13
 
 
-@pytools.test.mark_test.opencl
 def test_vector_fill(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -192,7 +187,6 @@ def test_vector_fill(ctx_factory):
     a_gpu = cl_array.zeros(queue, 100, dtype=cl_array.vec.float4)
 
 
-@pytools.test.mark_test.opencl
 def test_absrealimag(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -227,7 +221,6 @@ def test_absrealimag(ctx_factory):
 
 # {{{ operators
 
-@pytools.test.mark_test.opencl
 def test_rmul_yields_right_type(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -242,7 +235,6 @@ def test_rmul_yields_right_type(ctx_factory):
     assert isinstance(two_a, cl_array.Array)
 
 
-@pytools.test.mark_test.opencl
 def test_pow_array(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -257,7 +249,6 @@ def test_pow_array(ctx_factory):
     assert (np.abs(pow(a, a) - result) < 1e-3).all()
 
 
-@pytools.test.mark_test.opencl
 def test_pow_number(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -269,7 +260,6 @@ def test_pow_number(ctx_factory):
     assert (np.abs(a ** 2 - result) < 1e-3).all()
 
 
-@pytools.test.mark_test.opencl
 def test_multiply(ctx_factory):
     """Test the muliplication of an array with a scalar. """
 
@@ -289,7 +279,6 @@ def test_multiply(ctx_factory):
                 assert (a * scalar == a_mult).all()
 
 
-@pytools.test.mark_test.opencl
 def test_multiply_array(ctx_factory):
     """Test the multiplication of two arrays."""
 
@@ -306,7 +295,6 @@ def test_multiply_array(ctx_factory):
     assert (a * a == a_squared).all()
 
 
-@pytools.test.mark_test.opencl
 def test_addition_array(ctx_factory):
     """Test the addition of two arrays."""
 
@@ -320,7 +308,6 @@ def test_addition_array(ctx_factory):
     assert (a + a == a_added).all()
 
 
-@pytools.test.mark_test.opencl
 def test_addition_scalar(ctx_factory):
     """Test the addition of an array and a scalar."""
 
@@ -334,7 +321,6 @@ def test_addition_scalar(ctx_factory):
     assert (7 + a == a_added).all()
 
 
-@pytools.test.mark_test.opencl
 def test_substract_array(ctx_factory):
     """Test the substraction of two arrays."""
     #test data
@@ -355,7 +341,6 @@ def test_substract_array(ctx_factory):
     assert (b - a == result).all()
 
 
-@pytools.test.mark_test.opencl
 def test_substract_scalar(ctx_factory):
     """Test the substraction of an array and a scalar."""
 
@@ -375,7 +360,6 @@ def test_substract_scalar(ctx_factory):
     assert (7 - a == result).all()
 
 
-@pytools.test.mark_test.opencl
 def test_divide_scalar(ctx_factory):
     """Test the division of an array and a scalar."""
 
@@ -392,7 +376,6 @@ def test_divide_scalar(ctx_factory):
     assert (np.abs(2 / a - result) < 1e-5).all()
 
 
-@pytools.test.mark_test.opencl
 def test_divide_array(ctx_factory):
     """Test the division of an array and a scalar. """
 
@@ -417,7 +400,6 @@ def test_divide_array(ctx_factory):
 
 # {{{ RNG
 
-@pytools.test.mark_test.opencl
 def test_random(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -461,7 +443,6 @@ def test_random(ctx_factory):
 
 # {{{ misc
 
-@pytools.test.mark_test.opencl
 def test_numpy_integer_shape(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -470,7 +451,6 @@ def test_numpy_integer_shape(ctx_factory):
     cl_array.empty(queue, (np.int32(17), np.int32(17)), np.float32)
 
 
-@pytools.test.mark_test.opencl
 def test_len(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -480,7 +460,6 @@ def test_len(ctx_factory):
     assert len(a_cpu) == 10
 
 
-@pytools.test.mark_test.opencl
 def test_stride_preservation(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -493,7 +472,6 @@ def test_stride_preservation(ctx_factory):
     assert np.allclose(AT_GPU.get(), AT)
 
 
-@pytools.test.mark_test.opencl
 def test_nan_arithmetic(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -519,7 +497,6 @@ def test_nan_arithmetic(ctx_factory):
     assert (np.isnan(ab) == np.isnan(ab_gpu)).all()
 
 
-@pytools.test.mark_test.opencl
 def test_mem_pool_with_arrays(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -532,7 +509,6 @@ def test_mem_pool_with_arrays(ctx_factory):
     assert b_dev.allocator is mem_pool
 
 
-@pytools.test.mark_test.opencl
 def test_view(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -557,7 +533,6 @@ def test_view(ctx_factory):
 
 # {{{ slices, concatenation
 
-@pytools.test.mark_test.opencl
 def test_slice(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -599,7 +574,6 @@ def test_slice(ctx_factory):
         assert la.norm(a_gpu.get() - a) == 0
 
 
-@pytools.test.mark_test.opencl
 def test_concatenate(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -623,7 +597,6 @@ def test_concatenate(ctx_factory):
 
 # {{{ conditionals, any, all
 
-@pytools.test.mark_test.opencl
 def test_comparisons(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -655,7 +628,6 @@ def test_comparisons(ctx_factory):
         assert (res_dev.get() == res).all()
 
 
-@pytools.test.mark_test.opencl
 def test_any_all(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -679,7 +651,6 @@ def test_any_all(ctx_factory):
 # }}}
 
 
-@pytools.test.mark_test.opencl
 def test_map_to_host(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
