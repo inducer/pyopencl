@@ -275,8 +275,9 @@ Generating Arrays of Random Numbers
     .. autofunction:: rand
     .. autofunction:: fill_rand
 
-Fast Fourier Transforms
------------------------
+GPGPU Algorithms
+----------------
 
-Bogdan Opanchuk's `pyfft <http://pypi.python.org/pypi/pyfft>`_ package offers a
-variety of GPU-based FFT implementations.
+Bogdan Opanchuk's `reikna <http://pypi.python.org/pypi/reikna>`_ offers a
+variety of GPU-based algorithms (FFT, RNG, matrix multiplication) designed to work with
+:class:`pyopencl.array.Array` objects.
