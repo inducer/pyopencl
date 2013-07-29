@@ -7,6 +7,7 @@ parser.add_option("-s", "--short", action="store_true",
 
 (options, args) = parser.parse_args()
 
+
 def print_info(obj, info_cls):
     for info_name in sorted(dir(info_cls)):
         if not info_name.startswith("_") and info_name != "to_string":
@@ -20,7 +21,8 @@ def print_info(obj, info_cls):
                     and isinstance(info_value, list)):
                 print("%s: %s" % (info_name, [
                     cl.device_partition_property_ext.to_string(v,
-                        "<unknown device partition property %d>") for v in info_value]))
+                        "<unknown device partition property %d>")
+                    for v in info_value]))
             else:
                 try:
                     print("%s: %s" % (info_name, info_value))
@@ -42,9 +44,15 @@ for platform in cl.get_platforms():
             print(75*"-")
             print_info(device, cl.device_info)
             ctx = cl.Context([device])
-            #for mf in [cl.mem_flags.READ_ONLY, cl.mem_flags.READ_WRITE, cl.mem_flags.WRITE_ONLY]:
-            for mf in [cl.mem_flags.READ_ONLY]:
-                for itype in [cl.mem_object_type.IMAGE2D, cl.mem_object_type.IMAGE3D]:
+            for mf in [
+                    cl.mem_flags.READ_ONLY,
+                    #cl.mem_flags.READ_WRITE,
+                    #cl.mem_flags.WRITE_ONLY
+                    ]:
+                for itype in [
+                        cl.mem_object_type.IMAGE2D,
+                        cl.mem_object_type.IMAGE3D
+                        ]:
                     try:
                         formats = cl.get_supported_image_formats(ctx, mf, itype)
                     except:
