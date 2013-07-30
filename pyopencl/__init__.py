@@ -138,7 +138,7 @@ class Program(object):
         if isinstance(options, str):
             options = [options]
 
-        options = options + ["-I", _find_pyopencl_include_path()]
+        options = options + ["-I", '"%s"' % _find_pyopencl_include_path()]
 
         import os
         forced_options = os.environ.get("PYOPENCL_BUILD_OPTIONS")
