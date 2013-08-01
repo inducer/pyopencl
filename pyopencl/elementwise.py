@@ -884,6 +884,16 @@ def get_binary_func_kernel(context, func_name, x_dtype, y_dtype, out_dtype):
 
 
 @context_dependent_memoize
+def get_diff_kernel(context, dtype):
+    return get_elwise_kernel(context, [
+            VectorArg(dtype, "result", with_offset=True),
+            VectorArg(dtype, "array", with_offset=True),
+            ],
+            "result[i] = array[i+1] - array[i]",
+            name="diff")
+
+
+@context_dependent_memoize
 def get_if_positive_kernel(context, crit_dtype, dtype):
     return get_elwise_kernel(context, [
             VectorArg(dtype, "result", with_offset=True),

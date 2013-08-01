@@ -1573,7 +1573,7 @@ def arange(queue, *args, **kwargs):
 # }}}
 
 
-# {{{ take/put
+# {{{ take/put/concatenate/diff
 
 @elwise_kernel_runner
 def _take(result, ary, indices):
@@ -1840,6 +1840,29 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
 
     return result
 
+
+@elwise_kernel_runner
+def _diff(result, array):
+    return elementwise.get_diff_kernel(array.context, array.dtype)
+
+
+def diff(array, queue=None, allocator=None):
+    """
+    .. versionadded:: 2013.2
+    """
+
+    if len(array.shape) != 1:
+        raise ValueError("multi-D arrays are not supported")
+
+    n, = array.shape
+
+    queue = queue or array.queue
+    allocator = allocator or array.allocator
+
+    result = empty(queue, (n-1,), array.dtype, allocator=allocator)
+    _diff(result, array, queue=queue)
+    return result
+
 # }}}
 
 
@@ -1864,7 +1887,7 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
 
     if out is None:
         out = empty_like(then_)
-    _if_positive(out, criterion, then_, else_)
+    _if_positive(out, criterion, then_, else_, queue=queue)
     return out
 
 

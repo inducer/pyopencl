@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+from __future__ import division
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -527,6 +528,21 @@ def test_view(ctx_factory):
     # smaller dtype
     view = a_dev.view(np.int16)
     assert view.shape == (8, 32) and view.dtype == np.int16
+
+
+def test_diff(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+
+    l = 20000
+    a_dev = clrand(queue, (l,), dtype=np.float32)
+    a = a_dev.get()
+
+    err = la.norm(
+            (cl.array.diff(a_dev).get() - np.diff(a)))
+    assert err < 1e-4
 
 # }}}
 
