@@ -235,6 +235,10 @@ class ArrayHasOffsetError(ValueError):
         ValueError.__init__(self, val)
 
 
+class _copy_queue:
+    pass
+
+
 class Array(object):
     """A :class:`numpy.ndarray` work-alike that stores its data and performs
     its computations on the compute device.  *shape* and *dtype* work exactly
@@ -525,7 +529,7 @@ class Array(object):
         return _ArrayFlags(self)
 
     def _new_with_changes(self, data, offset, shape=None, dtype=None,
-            strides=None, queue=None):
+            strides=None, queue=_copy_queue):
         """
         :arg data: *None* means alocate a new array.
         """
@@ -535,7 +539,7 @@ class Array(object):
             dtype = self.dtype
         if strides is None:
             strides = self.strides
-        if queue is None:
+        if queue is _copy_queue:
             queue = self.queue
 
         if queue is not None:
@@ -561,6 +565,7 @@ class Array(object):
 
         if queue is not None:
             assert queue.context == self.context
+
         return self._new_with_changes(self.base_data, self.offset,
                 queue=queue)
 
