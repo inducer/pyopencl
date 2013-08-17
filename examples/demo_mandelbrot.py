@@ -1,6 +1,9 @@
 # I found this example for PyCuda here:
 # http://wiki.tiker.net/PyCuda/Examples/Mandelbrot
 #
+# An improved sequential/pure Python code was contributed
+# by CRVSADER//KY <crusaderky@gmail.com>.
+#
 # I adapted it for PyOpenCL. Hopefully it is useful to someone.
 # July 2010, HolgerRapp@gmx.net
 #
@@ -25,8 +28,8 @@ import pyopencl as cl
 # Speed notes are listed in the same place
 
 # set width and height of window, more pixels take longer to calculate
-w = 512
-h = 512
+w = 2048
+h = 2048
 
 
 def calc_fractal_opencl(q, maxiter):
@@ -70,19 +73,17 @@ def calc_fractal_opencl(q, maxiter):
 
 
 def calc_fractal_serial(q, maxiter):
-    # calculate z using numpy
-    # this routine unrolls calc_fractal_numpy as an intermediate
-    # step to the creation of calc_fractal_opencl
-    # it runs slower than calc_fractal_numpy
-    z = np.zeros(q.shape, np.complex64)
+    # calculate z using pure python on a numpy array
+    # note that, unlike the other two implementations,
+    # the number of iterations per point is NOT constant
+    z = np.zeros(q.shape, complex)
     output = np.resize(np.array(0,), q.shape)
     for i in range(len(q)):
-        for it in range(maxiter):
+        for iter in range(maxiter):
             z[i] = z[i]*z[i] + q[i]
             if abs(z[i]) > 2.0:
-                q[i] = 0+0j
-                z[i] = 0+0j
-                output[i] = it
+                output[i] = iter
+                break
     return output
 
 
