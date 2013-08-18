@@ -1183,18 +1183,27 @@ class Array(object):
         old_itemsize = self.dtype.itemsize
         itemsize = np.dtype(dtype).itemsize
 
-        if self.shape[-1] * old_itemsize % itemsize != 0:
+        from pytools import argmin2
+        min_stride_axis = argmin2(
+                (axis, abs(stride))
+                for axis, stride in enumerate(self.strides))
+
+        if self.shape[min_stride_axis] * old_itemsize % itemsize != 0:
             raise ValueError("new type not compatible with array")
 
-        shape = self.shape[:-1] + (self.shape[-1] * old_itemsize // itemsize,)
-        strides = tuple(
-                s * itemsize // old_itemsize
-                for s in self.strides)
+        new_shape = (
+                self.shape[:min_stride_axis]
+                + (self.shape[min_stride_axis] * old_itemsize // itemsize,)
+                + self.shape[min_stride_axis+1:])
+        new_strides = (
+                self.strides[:min_stride_axis]
+                + (self.strides[min_stride_axis] * itemsize // old_itemsize,)
+                + self.strides[min_stride_axis+1:])
 
         return self._new_with_changes(
                 self.base_data, self.offset,
-                shape=shape, dtype=dtype,
-                strides=strides)
+                shape=new_shape, dtype=dtype,
+                strides=new_strides)
 
     # }}}
 

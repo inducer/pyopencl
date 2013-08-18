@@ -694,6 +694,24 @@ def test_map_to_host(ctx_factory):
     assert (a_host_saved == a_dev.get()).all()
 
 
+def test_view_and_strides(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+
+    X = clrand(queue, (5, 10), dtype=np.float32)
+    Y = X[:3, :5]
+    y = Y.view()
+
+    assert y.shape == Y.shape
+    assert y.strides == Y.strides
+
+    import pytest
+    with pytest.raises(AssertionError):
+        assert (y.get() == X.get()[:3, :5]).all()
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
     # tests.
