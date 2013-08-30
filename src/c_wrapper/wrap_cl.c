@@ -2148,7 +2148,268 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
+  void get_constants(constant** out, uint32_t *num_constants) {
+#define ADD_ATTR(TYPE, PREFIX, NAME)					\
+    constants.push_back((constant){TYPE, #NAME, CL_##PREFIX##NAME});
+    
+    std::vector<constant> constants;
+    
+    // PLATFORM
+    ADD_ATTR("platform_info", PLATFORM_, PROFILE);
+    ADD_ATTR("platform_info", PLATFORM_, VERSION);
+    ADD_ATTR("platform_info", PLATFORM_, NAME);
+    ADD_ATTR("platform_info", PLATFORM_, VENDOR);
+#if !(defined(CL_PLATFORMNVIDIA) && CL_PLATFORMNVIDIA == 0x3001)
+    ADD_ATTR("platform_info", PLATFORM_, EXTENSIONS);
+#endif
+    
+    // DEVICE_TYPE
+    ADD_ATTR("device_type", DEVICE_TYPE_, DEFAULT);
+    ADD_ATTR("device_type", DEVICE_TYPE_, CPU);
+    ADD_ATTR("device_type", DEVICE_TYPE_, GPU);
+    ADD_ATTR("device_type", DEVICE_TYPE_, ACCELERATOR);
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR("device_type", DEVICE_TYPE_, CUSTOM);
+#endif
+    ADD_ATTR("device_type", DEVICE_TYPE_, ALL);
+    
+    // DEVICE
+    ADD_ATTR("device_type", DEVICE_, TYPE);
+    ADD_ATTR("device_type", DEVICE_, VENDOR_ID);
+    ADD_ATTR("device_type", DEVICE_, MAX_COMPUTE_UNITS);
+    ADD_ATTR("device_type", DEVICE_, MAX_WORK_ITEM_DIMENSIONS);
+    ADD_ATTR("device_type", DEVICE_, MAX_WORK_GROUP_SIZE);
+    ADD_ATTR("device_type", DEVICE_, MAX_WORK_ITEM_SIZES);
+    ADD_ATTR("device_type", DEVICE_, PREFERRED_VECTOR_WIDTH_CHAR);
+    ADD_ATTR("device_type", DEVICE_, PREFERRED_VECTOR_WIDTH_SHORT);
+    ADD_ATTR("device_type", DEVICE_, PREFERRED_VECTOR_WIDTH_INT);
+    ADD_ATTR("device_type", DEVICE_, PREFERRED_VECTOR_WIDTH_LONG);
+    ADD_ATTR("device_type", DEVICE_, PREFERRED_VECTOR_WIDTH_FLOAT);
+    ADD_ATTR("device_type", DEVICE_, PREFERRED_VECTOR_WIDTH_DOUBLE);
+    ADD_ATTR("device_type", DEVICE_, MAX_CLOCK_FREQUENCY);
+    ADD_ATTR("device_type", DEVICE_, ADDRESS_BITS);
+    ADD_ATTR("device_type", DEVICE_, MAX_READ_IMAGE_ARGS);
+    ADD_ATTR("device_type", DEVICE_, MAX_WRITE_IMAGE_ARGS);
+    ADD_ATTR("device_type", DEVICE_, MAX_MEM_ALLOC_SIZE);
+    ADD_ATTR("device_type", DEVICE_, IMAGE2D_MAX_WIDTH);
+    ADD_ATTR("device_type", DEVICE_, IMAGE2D_MAX_HEIGHT);
+    ADD_ATTR("device_type", DEVICE_, IMAGE3D_MAX_WIDTH);
+    ADD_ATTR("device_type", DEVICE_, IMAGE3D_MAX_HEIGHT);
+    ADD_ATTR("device_type", DEVICE_, IMAGE3D_MAX_DEPTH);
+    ADD_ATTR("device_type", DEVICE_, IMAGE_SUPPORT);
+    ADD_ATTR("device_type", DEVICE_, MAX_PARAMETER_SIZE);
+    ADD_ATTR("device_type", DEVICE_, MAX_SAMPLERS);
+    ADD_ATTR("device_type", DEVICE_, MEM_BASE_ADDR_ALIGN);
+    ADD_ATTR("device_type", DEVICE_, MIN_DATA_TYPE_ALIGN_SIZE);
+    ADD_ATTR("device_type", DEVICE_, SINGLE_FP_CONFIG);
+#ifdef CL_DEVICEDOUBLE_FP_CONFIG
+    ADD_ATTR("device_type", DEVICE_, DOUBLE_FP_CONFIG);
+#endif
+#ifdef CL_DEVICEHALF_FP_CONFIG
+    ADD_ATTR("device_type", DEVICE_, HALF_FP_CONFIG);
+#endif
+    ADD_ATTR("device_type", DEVICE_, GLOBAL_MEM_CACHE_TYPE);
+    ADD_ATTR("device_type", DEVICE_, GLOBAL_MEM_CACHELINE_SIZE);
+    ADD_ATTR("device_type", DEVICE_, GLOBAL_MEM_CACHE_SIZE);
+    ADD_ATTR("device_type", DEVICE_, GLOBAL_MEM_SIZE);
+    ADD_ATTR("device_type", DEVICE_, MAX_CONSTANT_BUFFER_SIZE);
+    ADD_ATTR("device_type", DEVICE_, MAX_CONSTANT_ARGS);
+    ADD_ATTR("device_type", DEVICE_, LOCAL_MEM_TYPE);
+    ADD_ATTR("device_type", DEVICE_, LOCAL_MEM_SIZE);
+    ADD_ATTR("device_type", DEVICE_, ERROR_CORRECTION_SUPPORT);
+    ADD_ATTR("device_type", DEVICE_, PROFILING_TIMER_RESOLUTION);
+    ADD_ATTR("device_type", DEVICE_, ENDIAN_LITTLE);
+    ADD_ATTR("device_type", DEVICE_, AVAILABLE);
+    ADD_ATTR("device_type", DEVICE_, COMPILER_AVAILABLE);
+    ADD_ATTR("device_type", DEVICE_, EXECUTION_CAPABILITIES);
+    ADD_ATTR("device_type", DEVICE_, QUEUE_PROPERTIES);
+    ADD_ATTR("device_type", DEVICE_, NAME);
+    ADD_ATTR("device_type", DEVICE_, VENDOR);
+    ADD_ATTR("device_type", , DRIVER_VERSION);
+    ADD_ATTR("device_type", DEVICE_, VERSION);
+    ADD_ATTR("device_type", DEVICE_, PROFILE);
+    ADD_ATTR("device_type", DEVICE_, VERSION);
+    ADD_ATTR("device_type", DEVICE_, EXTENSIONS);
+    ADD_ATTR("device_type", DEVICE_, PLATFORM);
+#if PYOPENCL_CL_VERSION >= 0x1010
+    ADD_ATTR("device_type", DEVICE_, PREFERRED_VECTOR_WIDTH_HALF);
+    ADD_ATTR("device_type", DEVICE_, HOST_UNIFIED_MEMORY);
+    ADD_ATTR("device_type", DEVICE_, NATIVE_VECTOR_WIDTH_CHAR);
+    ADD_ATTR("device_type", DEVICE_, NATIVE_VECTOR_WIDTH_SHORT);
+    ADD_ATTR("device_type", DEVICE_, NATIVE_VECTOR_WIDTH_INT);
+    ADD_ATTR("device_type", DEVICE_, NATIVE_VECTOR_WIDTH_LONG);
+    ADD_ATTR("device_type", DEVICE_, NATIVE_VECTOR_WIDTH_FLOAT);
+    ADD_ATTR("device_type", DEVICE_, NATIVE_VECTOR_WIDTH_DOUBLE);
+    ADD_ATTR("device_type", DEVICE_, NATIVE_VECTOR_WIDTH_HALF);
+    ADD_ATTR("device_type", DEVICE_, OPENCL_C_VERSION);
+#endif
+    // support for cl_nv_DEVICEattribute_query
+#ifdef CL_DEVICECOMPUTE_CAPABILITY_MAJOR_NV
+    ADD_ATTR("device_type", DEVICE_, COMPUTE_CAPABILITY_MAJOR_NV);
+    ADD_ATTR("device_type", DEVICE_, COMPUTE_CAPABILITY_MINOR_NV);
+    ADD_ATTR("device_type", DEVICE_, REGISTERS_PER_BLOCK_NV);
+    ADD_ATTR("device_type", DEVICE_, WARP_SIZE_NV);
+    ADD_ATTR("device_type", DEVICE_, GPU_OVERLAP_NV);
+    ADD_ATTR("device_type", DEVICE_, KERNEL_EXEC_TIMEOUT_NV);
+    ADD_ATTR("device_type", DEVICE_, INTEGRATED_MEMORY_NV);
+#endif
+    // {{{ cl_amd_DEVICEattribute_query
+#ifdef CL_DEVICEPROFILING_TIMER_OFFSET_AMD
+    ADD_ATTR("device_type", DEVICE_, PROFILING_TIMER_OFFSET_AMD);
+#endif
+#ifdef CL_DEVICETOPOLOGY_AMD
+    ADD_ATTR("device_type", DEVICE_, TOPOLOGY_AMD);
+#endif
+#ifdef CL_DEVICEBOARD_NAME_AMD
+    ADD_ATTR("device_type", DEVICE_, BOARD_NAME_AMD);
+#endif
+#ifdef CL_DEVICEGLOBAL_FREE_MEMORY_AMD
+    ADD_ATTR("device_type", DEVICE_, GLOBAL_FREE_MEMORY_AMD);
+#endif
+#ifdef CL_DEVICESIMD_PER_COMPUTE_UNIT_AMD
+    ADD_ATTR("device_type", DEVICE_, SIMD_PER_COMPUTE_UNIT_AMD);
+#endif
+#ifdef CL_DEVICESIMD_WIDTH_AMD
+    ADD_ATTR("device_type", DEVICE_, SIMD_WIDTH_AMD);
+#endif
+#ifdef CL_DEVICESIMD_INSTRUCTION_WIDTH_AMD
+    ADD_ATTR("device_type", DEVICE_, SIMD_INSTRUCTION_WIDTH_AMD);
+#endif
+#ifdef CL_DEVICEWAVEFRONT_WIDTH_AMD
+    ADD_ATTR("device_type", DEVICE_, WAVEFRONT_WIDTH_AMD);
+#endif
+#ifdef CL_DEVICEGLOBAL_MEM_CHANNELS_AMD
+    ADD_ATTR("device_type", DEVICE_, GLOBAL_MEM_CHANNELS_AMD);
+#endif
+#ifdef CL_DEVICEGLOBAL_MEM_CHANNEL_BANKS_AMD
+    ADD_ATTR("device_type", DEVICE_, GLOBAL_MEM_CHANNEL_BANKS_AMD);
+#endif
+#ifdef CL_DEVICEGLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD
+    ADD_ATTR("device_type", DEVICE_, GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD);
+#endif
+#ifdef CL_DEVICELOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD
+    ADD_ATTR("device_type", DEVICE_, LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD);
+#endif
+#ifdef CL_DEVICELOCAL_MEM_BANKS_AMD
+    ADD_ATTR("device_type", DEVICE_, LOCAL_MEM_BANKS_AMD);
+#endif
+    // }}}
+#ifdef CL_DEVICEMAX_ATOMIC_COUNTERS_EXT
+    ADD_ATTR("device_type", DEVICE_, MAX_ATOMIC_COUNTERS_EXT);
+#endif
+#if defined(cl_ext_DEVICEfission) && defined(PYOPENCL_USE_DEVICEFISSION)
+    ADD_ATTR("device_type", DEVICE_, PARENT_DEVICEEXT);
+    ADD_ATTR("device_type", DEVICE_, PARTITION_TYPES_EXT);
+    ADD_ATTR("device_type", DEVICE_, AFFINITY_DOMAINS_EXT);
+    ADD_ATTR("device_type", DEVICE_, REFERENCE_COUNT_EXT);
+    ADD_ATTR("device_type", DEVICE_, PARTITION_STYLE_EXT);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR("device_type", DEVICE_, LINKER_AVAILABLE);
+    ADD_ATTR("device_type", DEVICE_, BUILT_IN_KERNELS);
+    ADD_ATTR("device_type", DEVICE_, IMAGE_MAX_BUFFER_SIZE);
+    ADD_ATTR("device_type", DEVICE_, IMAGE_MAX_ARRAY_SIZE);
+    ADD_ATTR("device_type", DEVICE_, PARENT_DEVICE);
+    ADD_ATTR("device_type", DEVICE_, PARTITION_MAX_SUB_DEVICES);
+    ADD_ATTR("device_type", DEVICE_, PARTITION_PROPERTIES);
+    ADD_ATTR("device_type", DEVICE_, PARTITION_AFFINITY_DOMAIN);
+    ADD_ATTR("device_type", DEVICE_, PARTITION_TYPE);
+    ADD_ATTR("device_type", DEVICE_, REFERENCE_COUNT);
+    ADD_ATTR("device_type", DEVICE_, PREFERRED_INTEROP_USER_SYNC);
+    ADD_ATTR("device_type", DEVICE_, PRINTF_BUFFER_SIZE);
+#endif
+#ifdef cl_khr_image2d_from_buffer
+    ADD_ATTR("device_type", DEVICE_, IMAGE_PITCH_ALIGNMENT);
+    ADD_ATTR("device_type", DEVICE_, IMAGE_BASE_ADDRESS_ALIGNMENT);
+#endif
 
+    // mem_flags
+    ADD_ATTR("mem_flags", MEM_, READ_WRITE);
+    ADD_ATTR("mem_flags", MEM_, WRITE_ONLY);
+    ADD_ATTR("mem_flags", MEM_, READ_ONLY);
+    ADD_ATTR("mem_flags", MEM_, USE_HOST_PTR);
+    ADD_ATTR("mem_flags", MEM_, ALLOC_HOST_PTR);
+    ADD_ATTR("mem_flags", MEM_, COPY_HOST_PTR);
+#ifdef cl_amd_device_memory_flags
+    ADD_ATTR("mem_flags", MEM_, USE_PERSISTENT_MEM_AMD);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR("mem_flags", MEM_, HOST_WRITE_ONLY);
+    ADD_ATTR("mem_flags", MEM_, HOST_READ_ONLY);
+    ADD_ATTR("mem_flags", MEM_, HOST_NO_ACCESS);
+#endif
+
+    // mem_info
+    ADD_ATTR("mem_info", MEM_, TYPE);
+    ADD_ATTR("mem_info", MEM_, FLAGS);
+    ADD_ATTR("mem_info", MEM_, SIZE);
+    ADD_ATTR("mem_info", MEM_, HOST_PTR);
+    ADD_ATTR("mem_info", MEM_, MAP_COUNT);
+    ADD_ATTR("mem_info", MEM_, REFERENCE_COUNT);
+    ADD_ATTR("mem_info", MEM_, CONTEXT);
+#if PYOPENCL_CL_VERSION >= 0x1010
+    ADD_ATTR("mem_info", MEM_, ASSOCIATED_MEMOBJECT);
+    ADD_ATTR("mem_info", MEM_, OFFSET);
+#endif
+
+    // mem_object_type
+    ADD_ATTR("mem_object_type", MEM_OBJECT_, BUFFER);
+    ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE2D);
+    ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE3D);
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE2D_ARRAY);
+    ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE1D);
+    ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE1D_ARRAY);
+    ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE1D_BUFFER);
+#endif
+
+    // program_info
+    ADD_ATTR("program_info", PROGRAM_, REFERENCE_COUNT);
+    ADD_ATTR("program_info", PROGRAM_, CONTEXT);
+    ADD_ATTR("program_info", PROGRAM_, NUM_DEVICES);
+    ADD_ATTR("program_info", PROGRAM_, DEVICES);
+    ADD_ATTR("program_info", PROGRAM_, SOURCE);
+    ADD_ATTR("program_info", PROGRAM_, BINARY_SIZES);
+    ADD_ATTR("program_info", PROGRAM_, BINARIES);
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR("program_info", PROGRAM_, NUM_KERNELS);
+    ADD_ATTR("program_info", PROGRAM_, KERNEL_NAMES);
+#endif
+
+    // program_build_info
+    ADD_ATTR("program_build_info", PROGRAM_BUILD_, STATUS);
+    ADD_ATTR("program_build_info", PROGRAM_BUILD_, OPTIONS);
+    ADD_ATTR("program_build_info", PROGRAM_BUILD_, LOG);
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR("program_build_info", PROGRAM_, BINARY_TYPE);
+#endif
+    
+    // program_binary_type    
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR("program_binary_type", PROGRAM_BINARY_TYPE_, NONE);
+    ADD_ATTR("program_binary_type", PROGRAM_BINARY_TYPE_, COMPILED_OBJECT);
+    ADD_ATTR("program_binary_type", PROGRAM_BINARY_TYPE_, LIBRARY);
+    ADD_ATTR("program_binary_type", PROGRAM_BINARY_TYPE_, EXECUTABLE);
+#endif
+
+    // kernel_info
+    ADD_ATTR("kernel_info", KERNEL_, FUNCTION_NAME);
+    ADD_ATTR("kernel_info", KERNEL_, NUM_ARGS);
+    ADD_ATTR("kernel_info", KERNEL_, REFERENCE_COUNT);
+    ADD_ATTR("kernel_info", KERNEL_, CONTEXT);
+    ADD_ATTR("kernel_info", KERNEL_, PROGRAM);
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR("kernel_info", KERNEL_, ATTRIBUTES);
+#endif
+    
+    MALLOC(constant, c, constants.size());
+    for(std::vector<constant>::size_type i = 0; i < constants.size(); ++i) {
+      c[i] = constants[i];
+    }
+    *out = c;
+    *num_constants = constants.size();
+  }
+  
 }
 
 

@@ -1,5 +1,5 @@
 
-from pyopencl._cl import device_info, context_info, command_queue_info, Event, event_info, mem_info, Image, image_info, program_info, Kernel, ImageFormat, GLBuffer, kernel_info, sampler_info, Sampler, have_gl, _enqueue_read_image, _enqueue_write_image, GLTexture, channel_type, _enqueue_copy_image, _enqueue_copy_image_to_buffer, _enqueue_copy_buffer_to_image, _enqueue_write_buffer, _enqueue_copy_buffer, get_cl_header_version, _enqueue_read_buffer_rect, _enqueue_write_buffer_rect, _enqueue_copy_buffer_rect, RuntimeError, program_kind, mem_object_type, Error, platform_info, device_type, mem_flags, LogicError
+from pyopencl._cl import context_info, command_queue_info, Event, event_info, Image, image_info, Kernel, ImageFormat, GLBuffer, kernel_info, sampler_info, Sampler, have_gl, _enqueue_read_image, _enqueue_write_image, GLTexture, channel_type, _enqueue_copy_image, _enqueue_copy_image_to_buffer, _enqueue_copy_buffer_to_image, _enqueue_write_buffer, _enqueue_copy_buffer, _enqueue_read_buffer_rect, _enqueue_write_buffer_rect, _enqueue_copy_buffer_rect, RuntimeError, program_kind, Error, LogicError
 
 import warnings
 
@@ -90,7 +90,7 @@ typedef cl_uint             cl_profiling_info;
 #define CL_MEM_COPY_HOST_PTR  ...
 #define CL_MEM_HOST_WRITE_ONLY  ...
 #define CL_MEM_HOST_READ_ONLY  ...
-#define CL_MEM_HOST_NO_ACCESS  ...
+#define CL_MEM_HOST_NO_ACCESS ...
 
 
 """
@@ -99,7 +99,7 @@ with open(os.path.join(current_directory, 'wrap_cl_core.h')) as _f:
     _wrap_cl_header = _f.read()
 
 _ffi.cdef('%s\n%s' % (_cl_header, _wrap_cl_header))
-print current_directory
+
 _lib = _ffi.verify(
     """
     #include <wrap_cl.h>
@@ -129,59 +129,33 @@ class CLRuntimeError(RuntimeError):
         self.routine = routine
         self.code = code
 
+class NoInit(object):
+    def __init__(self):
+        raise CLRuntimeError("This class cannot be instantiated.")
+
+def get_cl_header_version():
+    v = _lib.get_cl_version()
+    return (v >> (3*4),
+            (v >> (1*4)) & 0xff)
         
-# plats = _ffi.new("void**")
-# print _lib.get_platforms(plats)
-# print _ffi.cast('int**', plats)[0][1]
-# exit()
+_CL_VERSION = get_cl_header_version()
 
+_constants = PP(_ffi.new('constant**'))
+_lib.get_constants(_constants.ptr, _constants.size)
 
+def _create_constants_class(name):
+    return type(name, (NoInit,), dict((_ffi.string(c.name), c.value) for c in _constants if _ffi.string(c.type) == name))
 
-# _platform_info_constants = {
-#     'PROFILE': _lib.CL_PLATFORM_PROFILE,
-#     'VERSION': _lib.CL_PLATFORM_VERSION,
-#     'NAME': _lib.CL_PLATFORM_NAME,
-#     'VENDOR': _lib.CL_PLATFORM_VENDOR,
-# }
-
-# # re-implementation
-# platform_info = type("platform_info", (NOINIT,), _platform_info_constants)
-
-# _device_type_constants = {
-#     'DEFAULT': _lib.CL_DEVICE_TYPE_DEFAULT,
-#     'CPU': _lib.CL_DEVICE_TYPE_CPU,
-#     'GPU': _lib.CL_DEVICE_TYPE_GPU,
-#     'ACCELERATOR': _lib.CL_DEVICE_TYPE_ACCELERATOR,
-#     'ALL': _lib.CL_DEVICE_TYPE_ALL,
-#     }
-# if _CL_VERSION >= (1, 2):
-#     _device_type_constants['CUSTOM'] = _lib.CL_DEVICE_TYPE_CUSTOM
-
-# # re-implementation
-# device_type = type("device_type", (NOINIT,), _device_type_constants)
-
-# _mem_flags_constants = {
-#     'READ_WRITE': _lib.CL_MEM_READ_WRITE, 
-#     'WRITE_ONLY': _lib.CL_MEM_WRITE_ONLY, 
-#     'READ_ONLY': _lib.CL_MEM_READ_ONLY, 
-#     'USE_HOST_PTR': _lib.CL_MEM_USE_HOST_PTR, 
-#     'ALLOC_HOST_PTR': _lib.CL_MEM_ALLOC_HOST_PTR, 
-#     'COPY_HOST_PTR': _lib.CL_MEM_COPY_HOST_PTR,
-#     # TODO_PLAT
-#     # #ifdef cl_amd_device_memory_flags
-#     #     'USE_PERSISTENT_MEM_AMD': _lib.CL_MEM_USE_PERSISTENT_MEM_AMD, 
-#     # #endif
-#     }
-# if _CL_VERSION >= (1, 2):
-#     _mem_flags_constants.update({
-#         'HOST_WRITE_ONLY': _lib.CL_MEM_HOST_WRITE_ONLY, 
-#         'HOST_READ_ONLY': _lib.CL_MEM_HOST_READ_ONLY, 
-#         'HOST_NO_ACCESS': _lib.CL_MEM_HOST_NO_ACCESS,
-#     })
-
-# # re-implementation
-# mem_flags = type("mem_flags", (NOINIT,), _mem_flags_constants)
-
+platform_info = _create_constants_class("platform_info")
+device_type = _create_constants_class("device_type")
+device_info = _create_constants_class("device_info")
+mem_flags = _create_constants_class("mem_flags")
+mem_info = _create_constants_class("mem_info")
+mem_object_type = _create_constants_class("mem_object_type")
+program_info = _create_constants_class("program_info")
+program_build_info = _create_constants_class("program_build_info")
+program_binary_type = _create_constants_class("program_binary_type")
+kernel_info = _create_constants_class("kernel_info")
 class EQUALITY_TESTS(object):
     def __eq__(self, other):
         return hash(self) == hash(other)
