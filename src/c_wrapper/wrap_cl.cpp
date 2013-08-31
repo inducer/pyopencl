@@ -1955,7 +1955,7 @@ inline event *enqueue_nd_range_kernel(
 
   
 
-  void *get_platforms(void **ptr_platforms, uint32_t *num_platforms) {
+  ::error *get_platforms(void **ptr_platforms, uint32_t *num_platforms) {
     C_HANDLE_ERROR(
     *num_platforms = 0;
     PYOPENCL_CALL_GUARDED(clGetPlatformIDs, (0, 0, num_platforms));
@@ -1984,14 +1984,14 @@ inline event *enqueue_nd_range_kernel(
     }
   }
 
-  void *platform__get_info(void *ptr_platform, cl_platform_info param, generic_info *out) {
+  ::error *platform__get_info(void *ptr_platform, cl_platform_info param, generic_info *out) {
     C_HANDLE_ERROR(
     *out = static_cast<platform*>(ptr_platform)->get_info(param);
 		   )
     return 0;
   }
 
-  void *platform__get_devices(void *ptr_platform, void **ptr_devices, uint32_t *num_devices, cl_device_type devtype) {
+  ::error *platform__get_devices(void *ptr_platform, void **ptr_devices, uint32_t *num_devices, cl_device_type devtype) {
     typedef std::vector<cl_device_id> vec;
     C_HANDLE_ERROR(
     vec devices = static_cast<platform*>(ptr_platform)->get_devices(devtype);
@@ -2011,14 +2011,14 @@ inline event *enqueue_nd_range_kernel(
   }
 
 
-  void *device__get_info(void *ptr_device, cl_device_info param, generic_info *out) {
+  ::error *device__get_info(void *ptr_device, cl_device_info param, generic_info *out) {
     C_HANDLE_ERROR(
     *out = static_cast<device*>(ptr_device)->get_info(param);
 		   )
     return 0;
   }
 
-  void *_create_context(void **ptr_ctx, cl_context_properties *properties, cl_uint num_devices, void **ptr_devices) {
+  ::error *_create_context(void **ptr_ctx, cl_context_properties *properties, cl_uint num_devices, void **ptr_devices) {
     C_HANDLE_ERROR(
     cl_int status_code;
     std::vector<cl_device_id> devices(num_devices);
@@ -2037,7 +2037,7 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
-  void *_create_command_queue(void **ptr_command_queue, void *ptr_context, void *ptr_device, cl_command_queue_properties properties) {
+  ::error *_create_command_queue(void **ptr_command_queue, void *ptr_context, void *ptr_device, cl_command_queue_properties properties) {
     context *ctx = static_cast<context*>(ptr_context);
     device *dev = static_cast<device*>(ptr_device);
     C_HANDLE_ERROR(
@@ -2046,7 +2046,7 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
-  void *_create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, size_t size, void *hostbuf) {
+  ::error *_create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, size_t size, void *hostbuf) {
     context *ctx = static_cast<context*>(ptr_context);
     C_HANDLE_ERROR(
     *ptr_buffer = create_buffer_py(*ctx, flags, size, hostbuf);
@@ -2054,7 +2054,7 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
-  void *_create_program_with_source(void **ptr_program, void *ptr_context, char *src) {
+  ::error *_create_program_with_source(void **ptr_program, void *ptr_context, char *src) {
     context *ctx = static_cast<context*>(ptr_context);
     C_HANDLE_ERROR(
     *ptr_program = create_program_with_source(*ctx, src);
@@ -2062,7 +2062,7 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
-  void *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries) {
+  ::error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries) {
     context *ctx = static_cast<context*>(ptr_context);
     C_HANDLE_ERROR(
     *ptr_program = create_program_with_binary(*ctx, num_devices, ptr_devices, num_binaries, binaries);
@@ -2077,14 +2077,14 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
-  void *program__kind(void *ptr_program, int *kind) {
+  ::error *program__kind(void *ptr_program, int *kind) {
     C_HANDLE_ERROR(
 		   *kind = static_cast<program*>(ptr_program)->kind();
 		   )
     return 0;
   }
 
-  void *program__get_info__devices(void *ptr_program, void **ptr_devices, uint32_t *num_devices) {
+  ::error *program__get_info__devices(void *ptr_program, void **ptr_devices, uint32_t *num_devices) {
     typedef std::vector<cl_device_id> vec;
 
     // todo: refactor, same as get_devices()
@@ -2103,7 +2103,7 @@ inline event *enqueue_nd_range_kernel(
     
   }
 
-  void *program__get_info__binaries(void *ptr_program, char ***ptr_binaries, uint32_t *num_binaries) {
+  ::error *program__get_info__binaries(void *ptr_program, char ***ptr_binaries, uint32_t *num_binaries) {
     C_HANDLE_ERROR(
     *ptr_binaries = static_cast<program*>(ptr_program)->get_info__binaries(num_binaries);
 		   )
@@ -2139,7 +2139,7 @@ inline event *enqueue_nd_range_kernel(
     return static_cast<kernel*>(ptr_kernel)->hash();
   }
   
-  void *_create_kernel(void **ptr_kernel, void *ptr_program, char *name) {
+  ::error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name) {
     program *prg = static_cast<program*>(ptr_program);
     C_HANDLE_ERROR(
     *ptr_kernel = new kernel(*prg, name);
@@ -2147,14 +2147,14 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
-  void *kernel__get_info(void *ptr_kernel, cl_kernel_info param, generic_info *out) {
+  ::error *kernel__get_info(void *ptr_kernel, cl_kernel_info param, generic_info *out) {
     C_HANDLE_ERROR(
     *out = static_cast<kernel*>(ptr_kernel)->get_info(param);
 		   )
     return 0;
   }
 
-  void *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer) {
+  ::error *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer) {
     buffer *buf = static_cast<buffer*>(ptr_buffer);
     C_HANDLE_ERROR(
     static_cast<kernel*>(ptr_kernel)->set_arg_mem(arg_index, *buf);
@@ -2162,7 +2162,7 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
-  void *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size) {
+  ::error *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size) {
     C_HANDLE_ERROR(
     *ptr_event = enqueue_nd_range_kernel(*static_cast<command_queue*>(ptr_command_queue),
 					 *static_cast<kernel*>(ptr_kernel),
@@ -2175,7 +2175,7 @@ inline event *enqueue_nd_range_kernel(
   }
 
 
-  void *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, int is_blocking) {
+  ::error *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, int is_blocking) {
     C_HANDLE_ERROR(
     *ptr_event = enqueue_read_buffer(*static_cast<command_queue*>(ptr_command_queue),
 				     *static_cast<memory_object_holder*>(ptr_memory_object_holder),
@@ -2184,7 +2184,7 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
   
-  void *memory_object_holder__get_info(void *ptr_memory_object_holder, cl_mem_info param, generic_info *out) {
+  ::error *memory_object_holder__get_info(void *ptr_memory_object_holder, cl_mem_info param, generic_info *out) {
     C_HANDLE_ERROR(
     *out = static_cast<memory_object_holder*>(ptr_memory_object_holder)->get_info(param);
 		   )

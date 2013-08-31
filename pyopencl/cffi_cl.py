@@ -263,13 +263,18 @@ class MemoryObject(MemoryObjectHolder):
     pass
         
 class Buffer(MemoryObjectHolder):
+    @classmethod
+    def _c_buffer_from_obj(cls, obj):
+        # assume numpy array for now
+        return _ffi.cast('void *', obj.__array_interface__['data'][0])
+        
     def __init__(self, context, flags, size=0, hostbuf=None):
         if hostbuf is not None and not (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
             warnings.warn("'hostbuf' was passed, but no memory flags to make use of it.")
         c_hostbuf = _ffi.NULL
         if hostbuf is not None:
             # todo: buffer protocol; for now hostbuf is assumed to be a numpy array
-            c_hostbuf = _ffi.cast('void *', hostbuf.ctypes.data)
+            c_hostbuf = self._c_buffer_from_obj(hostbuf)
             hostbuf_size = hostbuf.nbytes
             if size > hostbuf_size:
                 raise RuntimeError("Buffer", status_code.INVALID_VALUE, "specified size is greater than host buffer size")
@@ -483,7 +488,7 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, gl
 
 def _enqueue_read_buffer(cq, mem, buf, device_offset=0, is_blocking=True):
     # assume numpy
-    c_buf = _ffi.cast('void *', buf.ctypes.data)
+    c_buf = Buffer._c_buffer_from_obj(buf)
     size = buf.nbytes
     ptr_event = _ffi.new('void **')
     _handle_error(_lib._enqueue_read_buffer(
