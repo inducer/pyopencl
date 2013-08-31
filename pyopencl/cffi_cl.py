@@ -1,5 +1,3 @@
-#from pyopencl._cl import RuntimeError
-
 import warnings
 
 import os.path
@@ -114,24 +112,20 @@ class _CArrays(_CArray):
         _lib._free2(_ffi.cast('void**', self.ptr[0]), self.size[0])
         super(_CArrays, self).__del__()
 
-class CLRuntimeError(RuntimeError):
-    def __init__(self, routine, code, msg=""):
-        super(CLRuntimeError, self).__init__(msg)
-        self.routine = routine
-        self.code = code
-
 class NoInit(object):
     def __init__(self):
-        raise CLRuntimeError("This class cannot be instantiated.")
+        raise RuntimeError("This class cannot be instantiated.")
 
 def get_cl_header_version():
     v = _lib.get_cl_version()
     return (v >> (3*4),
             (v >> (1*4)) & 0xff)
-        
+
+
+
 # {{{ expose constants classes like platform_info, device_type, ...
 _constants = {}
-@_ffi.callback('void(const char*, const char* name, unsigned int value)')
+@_ffi.callback('void(const char*, const char* name, long value)')
 def _constant_callback(type_, name, value):
     s_type = _ffi.string(type_)
     _constants.setdefault(s_type, {})
@@ -140,6 +134,37 @@ _lib.populate_constants(_constant_callback)
 
 for type_, d in _constants.iteritems():
     locals()[type_] = type(type_, (NoInit,), d)
+# }}}
+
+
+# {{{ exceptions
+
+class Error(Exception):
+    def __init__(self, routine, code, msg=""):
+        self.routine = routine
+        self.code = code
+        self.what = msg
+        super(Error, self).__init__(self, msg)
+        
+class MemoryError(Error):
+    pass
+class LogicError(Error):
+    pass
+class RuntimeError(Error):
+    pass
+
+def _handle_error(error):
+    if error == _ffi.NULL:
+        return
+    if error.code == status_code.MEM_OBJECT_ALLOCATION_FAILURE:
+        klass = MemoryError
+    elif error.code <= status_code.INVALID_VALUE:
+        klass = LogicError
+    elif status_code.INVALID_VALUE < error.code < status_code.SUCCESS:
+        klass = RuntimeError
+    else:
+        klass = Error
+    raise klass(_ffi.string(error.routine), error.code, _ffi.string(error.msg))
 # }}}
 
 class EQUALITY_TESTS(object):
@@ -159,7 +184,7 @@ class Device(EQUALITY_TESTS):
         if param == 4145:
             return self.__dict__["platform"] # TODO HACK
         info = _ffi.new('generic_info *')
-        _lib.device__get_info(self.ptr, param, info)
+        _handle_error(_lib.device__get_info(self.ptr, param, info))
         return _generic_info_to_python(info)
 
 def _create_device(ptr):
@@ -174,14 +199,14 @@ def _parse_context_properties(properties):
 
     for prop_tuple in properties:
         if len(prop_tuple) != 2:
-            raise CLRuntimeError("Context", _lib.CL_INVALID_VALUE, "property tuple must have length 2")
+            raise RuntimeError("Context", status_code.INVALID_VALUE, "property tuple must have length 2")
         prop, value = prop_tuple
         props.append(prop)
         if prop == _lib.CL_CONTEXT_PLATFORM:
             props.append(_ffi.cast('cl_context_properties', value.data()))
             
         else: # TODO_PLAT CL_WGL_HDC_KHR and morecc
-            raise CLRuntimeError("Context", _lib.CL_INVALID_VALUE, "invalid context property")
+            raise RuntimeError("Context", status_code.INVALID_VALUE, "invalid context property")
     props.append(0)
     return _ffi.new('cl_context_properties[]', props)
 
@@ -194,10 +219,10 @@ class Context(EQUALITY_TESTS):
         # from device list
         if devices is not None:
             if dev_type is not None:
-                raise CLRuntimeError("Context", _lib.CL_INVALID_VALUE, "one of 'devices' or 'dev_type' must be None")
+                raise RuntimeError("Context", status_code.INVALID_VALUE, "one of 'devices' or 'dev_type' must be None")
             ptr_devices = _ffi.new('cl_device_id[]', [device.ptr for device in devices])
             ptr_ctx = _ffi.new('void **')
-            _lib._create_context(ptr_ctx, c_props, len(ptr_devices), _ffi.cast('void**', ptr_devices))
+            _handle_error(_lib._create_context(ptr_ctx, c_props, len(ptr_devices), _ffi.cast('void**', ptr_devices)))
             
         else: # from dev_type
             raise NotImplementedError()
@@ -215,7 +240,7 @@ class CommandQueue(EQUALITY_TESTS):
         if properties is None:
             properties = 0
         ptr_command_queue = _ffi.new('void **')
-        _lib._create_command_queue(ptr_command_queue, context.ptr, _ffi.NULL if device is None else device.ptr, properties)
+        _handle_error(_lib._create_command_queue(ptr_command_queue, context.ptr, _ffi.NULL if device is None else device.ptr, properties))
         self.ptr = ptr_command_queue[0]
 
     def __hash__(self):
@@ -228,7 +253,7 @@ class CommandQueue(EQUALITY_TESTS):
 class MemoryObjectHolder(EQUALITY_TESTS):
     def get_info(self, param):
         info = _ffi.new('generic_info *')
-        _lib.memory_object_holder__get_info(self.ptr, param, info)
+        _handle_error(_lib.memory_object_holder__get_info(self.ptr, param, info))
         return _generic_info_to_python(info)
 
     def __hash__(self):
@@ -247,12 +272,12 @@ class Buffer(MemoryObjectHolder):
             c_hostbuf = _ffi.cast('void *', hostbuf.ctypes.data)
             hostbuf_size = hostbuf.nbytes
             if size > hostbuf_size:
-                raise CLRuntimeError("Buffer", _lib.CL_INVALID_VALUE, "specified size is greater than host buffer size")
+                raise RuntimeError("Buffer", status_code.INVALID_VALUE, "specified size is greater than host buffer size")
             if size == 0:
                 size = hostbuf_size
 
         ptr_buffer = _ffi.new('void **')
-        _lib._create_buffer(ptr_buffer, context.ptr, flags, size, c_hostbuf)
+        _handle_error(_lib._create_buffer(ptr_buffer, context.ptr, flags, size, c_hostbuf))
         self.ptr = ptr_buffer[0]
 
 class _Program(object):
@@ -273,24 +298,24 @@ class _Program(object):
             
     def _init_source(self, context, src):
         ptr_program = _ffi.new('void **')
-        _lib._create_program_with_source(ptr_program, context.ptr, _ffi.new('char[]', src))
+        _handle_error(_lib._create_program_with_source(ptr_program, context.ptr, _ffi.new('char[]', src)))
         self.ptr = ptr_program[0]
 
     def _init_binary(self, context, devices, binaries):
         if len(devices) != len(binaries):
-            raise CLRuntimeError("create_program_with_binary", _lib.CL_INVALID_VALUE, "device and binary counts don't match")
+            raise RuntimeError("create_program_with_binary", status_code.INVALID_VALUE, "device and binary counts don't match")
             
         ptr_program = _ffi.new('void **')
         ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
         ptr_binaries = _ffi.new('char*[]', len(binaries))
         for i, binary in enumerate(binaries):
             ptr_binaries[i] = _ffi.new('char[]', binary)
-        _lib._create_program_with_binary(ptr_program, context.ptr, len(ptr_devices), ptr_devices, len(ptr_binaries), ptr_binaries)
+        _handle_error(_lib._create_program_with_binary(ptr_program, context.ptr, len(ptr_devices), ptr_devices, len(ptr_binaries), ptr_binaries))
         self.ptr = ptr_program[0]
 
     def kind(self):
         kind = _ffi.new('int *')
-        _lib.program__kind(self.ptr, kind)
+        _handle_error(_lib.program__kind(self.ptr, kind))
         return kind[0]
 
     def _build(self, options=None, devices=None):
@@ -299,13 +324,14 @@ class _Program(object):
         if options is None:
             options = ""
         ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
-        _lib.program__build(self.ptr, _ffi.new('char[]', options), len(ptr_devices), _ffi.cast('void**', ptr_devices))
+        
+        _handle_error(_lib.program__build(self.ptr, _ffi.new('char[]', options), len(ptr_devices), _ffi.cast('void**', ptr_devices)))
 
     def get_info(self, param):
         if param == program_info.DEVICES:
             # todo: refactor, same code as in get_devices 
             devices = _CArray(_ffi.new('void**'))
-            _lib.program__get_info__devices(self.ptr, devices.ptr, devices.size)
+            _handle_error(_lib.program__get_info__devices(self.ptr, devices.ptr, devices.size))
             result = []
             for i in xrange(devices.size[0]):
                 # TODO why is the cast needed? 
@@ -314,7 +340,7 @@ class _Program(object):
             return result
         elif param == program_info.BINARIES:
             ptr_binaries = _CArrays(_ffi.new('char***'))
-            _lib.program__get_info__binaries(self.ptr, ptr_binaries.ptr, ptr_binaries.size)
+            _handle_error(_lib.program__get_info__binaries(self.ptr, ptr_binaries.ptr, ptr_binaries.size))
             return map(_ffi.string, ptr_binaries)
         print param
         raise NotImplementedError()
@@ -330,12 +356,12 @@ class Platform(EQUALITY_TESTS):
 
     def get_info(self, param):
         info = _ffi.new('generic_info *')
-        _lib.platform__get_info(self.ptr, param, info)
+        _handle_error(_lib.platform__get_info(self.ptr, param, info))
         return _generic_info_to_python(info)
     
     def get_devices(self, device_type=device_type.ALL):
         devices = _CArray(_ffi.new('void**'))
-        _lib.platform__get_devices(self.ptr, devices.ptr, devices.size, device_type)
+        _handle_error(_lib.platform__get_devices(self.ptr, devices.ptr, devices.size, device_type))
         result = []
         for i in xrange(devices.size[0]):
             # TODO why is the cast needed? 
@@ -364,7 +390,7 @@ def _generic_info_to_python(info):
 class Kernel(object):
     def __init__(self, program, name):
         ptr_kernel = _ffi.new('void **')
-        _lib._create_kernel(ptr_kernel, program.ptr, name)
+        _handle_error(_lib._create_kernel(ptr_kernel, program.ptr, name))
         self.ptr = ptr_kernel[0]
 
     def __hash__(self):
@@ -372,19 +398,19 @@ class Kernel(object):
         
     def get_info(self, param):
         info = _ffi.new('generic_info *')
-        _lib.kernel__get_info(self.ptr, param, info)
+        _handle_error(_lib.kernel__get_info(self.ptr, param, info))
         return _generic_info_to_python(info)
         #raise NotImplementedError()
 
     def set_arg(self, arg_index, arg):
         if isinstance(arg, Buffer):
-            _lib.kernel__set_arg_mem_buffer(self.ptr, arg_index, arg.ptr)
+            _handle_error(_lib.kernel__set_arg_mem_buffer(self.ptr, arg_index, arg.ptr))
         else:
             raise NotImplementedError()
     
 def get_platforms():
     platforms = _CArray(_ffi.new('void**'))
-    _lib.get_platforms(platforms.ptr, platforms.size)
+    _handle_error(_lib.get_platforms(platforms.ptr, platforms.size))
     result = []
     for i in xrange(platforms.size[0]):
         # TODO why is the cast needed? 
@@ -419,7 +445,7 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, gl
         if g_times_l:
             work_dim = max(work_dim, len(local_work_size))
         elif work_dim != len(local_work_size):
-            raise CLRuntimeError("enqueue_nd_range_kernel", _lib.CL_INVALID_VALUE,
+            raise RuntimeError("enqueue_nd_range_kernel", status_code.INVALID_VALUE,
                                  "global/local work sizes have differing dimensions")
         
         local_work_size = list(local_work_size)
@@ -444,7 +470,7 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, gl
         c_local_work_size = _ffi.new('const size_t[]', local_work_size)
 
     ptr_event = _ffi.new('void **')
-    _lib._enqueue_nd_range_kernel(
+    _handle_error(_lib._enqueue_nd_range_kernel(
         ptr_event,
         queue.ptr,
         kernel.ptr,
@@ -452,7 +478,7 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, gl
         c_global_work_offset,
         c_global_work_size,
         c_local_work_size
-    )
+    ))
     return _create_event(ptr_event[0])
 
 def _enqueue_read_buffer(cq, mem, buf, device_offset=0, is_blocking=True):
@@ -460,7 +486,7 @@ def _enqueue_read_buffer(cq, mem, buf, device_offset=0, is_blocking=True):
     c_buf = _ffi.cast('void *', buf.ctypes.data)
     size = buf.nbytes
     ptr_event = _ffi.new('void **')
-    _lib._enqueue_read_buffer(
+    _handle_error(_lib._enqueue_read_buffer(
         ptr_event,
         cq.ptr,
         mem.ptr,
@@ -468,8 +494,5 @@ def _enqueue_read_buffer(cq, mem, buf, device_offset=0, is_blocking=True):
         size,
         device_offset,
         bool(is_blocking)
-    )
+    ))
     return _create_event(ptr_event[0])
-
-
-

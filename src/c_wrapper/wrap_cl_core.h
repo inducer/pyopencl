@@ -15,6 +15,12 @@ typedef struct {
   } value;
 } generic_info;
 
+typedef struct {
+  const char *routine;
+  const char *msg;
+  cl_int code;
+} error;
+
 int get_cl_version(void);
 void *get_platforms(void **ptr_platforms, uint32_t *num_platforms);
 void *platform__get_info(void *ptr_platform, cl_platform_info param_name, generic_info *out);
@@ -30,7 +36,7 @@ void *_create_command_queue(void **ptr_command_queue, void *ptr_context, void *p
 void *_create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, size_t size, void *hostbuf);
 void *_create_program_with_source(void **ptr_program, void *ptr_context, char *src);
 void *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries);
-void *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices);
+error *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices);
 void *program__kind(void *ptr_program, int *kind);
 void *program__get_info__devices(void *ptr_program, void **ptr_devices, uint32_t *num_devices);
 void *program__get_info__binaries(void *ptr_program, char ***ptr_binaries, uint32_t *num_binaries);
@@ -43,7 +49,7 @@ void *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *
 void *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, int is_blocking);
 void *memory_object_holder__get_info(void *ptr_memory_object_holder, cl_mem_info param, generic_info *out);
 long memory_object_holder__hash(void *ptr_memory_object_holder);
-void populate_constants(void(*add)(const char*, const char*, unsigned int value));
+void populate_constants(void(*add)(const char*, const char*, long value));
 void _free(void*);
 void _free2(void**, uint32_t size);
 

@@ -178,11 +178,6 @@ class Program(object):
         try:
             return build_func()
         except _cl.RuntimeError, e:
-            from pytools import Record
-
-            class ErrorRecord(Record):
-                pass
-
             what = e.what
             if options:
                 what = what + "\n(options: %s)" % " ".join(options)
@@ -200,11 +195,7 @@ class Program(object):
             code = e.code
             routine = e.routine
 
-            err = _cl.RuntimeError(
-                    ErrorRecord(
-                        what=lambda: what,
-                        code=lambda: code,
-                        routine=lambda: routine))
+            err = _cl.RuntimeError(routine, code, what)
 
         # Python 3.2 outputs the whole list of currently active exceptions
         # This serves to remove one (redundant) level from that nesting.
@@ -381,22 +372,13 @@ def _add_functionality():
         try:
             self._build(options=options, devices=devices)
         except Exception, e:
-            from pytools import Record
-
-            class ErrorRecord(Record):
-                pass
-
             what = e.what + "\n\n" + (75*"="+"\n").join(
                     "Build on %s:\n\n%s" % (dev, log)
                     for dev, log in self._get_build_logs())
             code = e.code
             routine = e.routine
 
-            err = _cl.RuntimeError(
-                    ErrorRecord(
-                        what=lambda: what,
-                        code=lambda: code,
-                        routine=lambda: routine))
+            err = _cl.RuntimeError(routine, code, what)
 
         if err is not None:
             # Python 3.2 outputs the whole list of currently active exceptions

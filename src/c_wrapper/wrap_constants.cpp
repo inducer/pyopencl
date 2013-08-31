@@ -1,8 +1,9 @@
 #include "wrap_cl.h"
+#include <iostream>
 
 extern "C"
 namespace pyopencl {
-  void populate_constants(void(*add)(const char*, const char*, unsigned int value)) {
+  void populate_constants(void(*add)(const char*, const char*, long value)) {
 #define ADD_ATTR(TYPE, PREFIX, NAME)		\
     add(TYPE, #NAME, CL_##PREFIX##NAME)
 
