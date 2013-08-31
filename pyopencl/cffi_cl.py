@@ -167,16 +167,25 @@ def _handle_error(error):
     raise klass(_ffi.string(error.routine), error.code, _ffi.string(error.msg))
 # }}}
 
-class EQUALITY_TESTS(object):
+class _Common(object):
     def __eq__(self, other):
         return hash(self) == hash(other)
 
-class Device(EQUALITY_TESTS):
-    def __init__(self):
-        pass
-
     def __hash__(self):
-        return _lib.device__hash(self.ptr)
+        return getattr(_lib, '%s__hash' % self._id)(self.ptr)
+
+    @property
+    def int_ptr(self):
+        return getattr(_lib, '%s__int_ptr' % self._id)(self.ptr)
+
+    @classmethod
+    def from_int_ptr(cls, int_ptr_value):
+        ptr = _ffi.new('void **')
+        getattr(_lib, '%s__from_int_ptr' % cls._id)(ptr, int_ptr_value)
+        return _create_instance(cls, ptr[0])
+        
+class Device(_Common):
+    _id = 'device'
 
     # todo: __del__
 
@@ -186,11 +195,6 @@ class Device(EQUALITY_TESTS):
         info = _ffi.new('generic_info *')
         _handle_error(_lib.device__get_info(self.ptr, param, info))
         return _generic_info_to_python(info)
-
-def _create_device(ptr):
-    device = Device()
-    device.ptr = ptr
-    return device
 
 def _parse_context_properties(properties):
     props = []
@@ -211,7 +215,9 @@ def _parse_context_properties(properties):
     return _ffi.new('cl_context_properties[]', props)
 
         
-class Context(EQUALITY_TESTS):
+class Context(_Common):
+    _id = 'context'
+
     def __init__(self, devices=None, properties=None, dev_type=None):
         c_props = _parse_context_properties(properties)
         status_code = _ffi.new('cl_int *')
@@ -228,14 +234,12 @@ class Context(EQUALITY_TESTS):
             raise NotImplementedError()
 
         self.ptr = ptr_ctx[0]
-
-    def __hash__(self):
-        return _lib.context__hash(self.ptr)
         
     def get_info(self, param):
         return 'TODO'
 
-class CommandQueue(EQUALITY_TESTS):
+class CommandQueue(_Common):
+    _id = 'command_queue'
     def __init__(self, context, device=None, properties=None):
         if properties is None:
             properties = 0
@@ -243,14 +247,11 @@ class CommandQueue(EQUALITY_TESTS):
         _handle_error(_lib._create_command_queue(ptr_command_queue, context.ptr, _ffi.NULL if device is None else device.ptr, properties))
         self.ptr = ptr_command_queue[0]
 
-    def __hash__(self):
-        return _lib.command_queue__hash(self.ptr)
-
     def get_info(self, param):
         print param
         raise NotImplementedError()
 
-class MemoryObjectHolder(EQUALITY_TESTS):
+class MemoryObjectHolder(_Common):
     def get_info(self, param):
         info = _ffi.new('generic_info *')
         _handle_error(_lib.memory_object_holder__get_info(self.ptr, param, info))
@@ -263,6 +264,8 @@ class MemoryObject(MemoryObjectHolder):
     pass
         
 class Buffer(MemoryObjectHolder):
+    _id = 'buffer'
+    
     @classmethod
     def _c_buffer_from_obj(cls, obj):
         # assume numpy array for now
@@ -285,22 +288,14 @@ class Buffer(MemoryObjectHolder):
         _handle_error(_lib._create_buffer(ptr_buffer, context.ptr, flags, size, c_hostbuf))
         self.ptr = ptr_buffer[0]
 
-class _Program(object):
+class _Program(_Common):
+    _id = 'program'
     def __init__(self, *args):
         if len(args) == 2:
             self._init_source(*args)
         else:
             self._init_binary(*args)
 
-    def __hash__(self):
-        return _lib.program__hash(self.ptr)
-
-    def int_ptr(self):
-        raise NotImplementedError()
-
-    def from_int_ptr(self, int_ptr_value):
-        raise NotImplementedError()
-            
     def _init_source(self, context, src):
         ptr_program = _ffi.new('void **')
         _handle_error(_lib._create_program_with_source(ptr_program, context.ptr, _ffi.new('char[]', src)))
@@ -348,7 +343,7 @@ class _Program(object):
             for i in xrange(devices.size[0]):
                 # TODO why is the cast needed? 
                 device_ptr = _ffi.cast('void**', devices.ptr[0])[i]
-                result.append(_create_device(device_ptr))
+                result.append(_create_instance(Device, device_ptr))
             return result
         elif param == program_info.BINARIES:
             ptr_binaries = _CArrays(_ffi.new('char***'))
@@ -361,13 +356,8 @@ class _Program(object):
         return _generic_info_to_python(info)
 
         
-class Platform(EQUALITY_TESTS):
-    def __init__(self):
-        pass
-
-    def __hash__(self):
-        return _lib.platform__hash(self.ptr)
-
+class Platform(_Common):
+    _id = 'platform'
     # todo: __del__
 
     def get_info(self, param):
@@ -382,17 +372,13 @@ class Platform(EQUALITY_TESTS):
         for i in xrange(devices.size[0]):
             # TODO why is the cast needed? 
             device_ptr = _ffi.cast('void**', devices.ptr[0])[i]
-            result.append(_create_device(device_ptr))
+            result.append(_create_instance(Device, device_ptr))
         # TODO remove, should be done via get_info(PLATFORM)
         for r in result:
             r.__dict__["platform"] = self
         return result
 
-def _create_platform(ptr):
-    platform = Platform()
-    platform.ptr = ptr
-    return platform
-
+        
 def _generic_info_to_python(info):
     if info.type == _lib.generic_info_type_chars:
         return _ffi.string(info.value._chars)
@@ -411,13 +397,12 @@ def _generic_info_to_python(info):
     raise NotImplementedError(info.type)
 
 class Kernel(object):
+    _id = 'kernel'
+    
     def __init__(self, program, name):
         ptr_kernel = _ffi.new('void **')
         _handle_error(_lib._create_kernel(ptr_kernel, program.ptr, name))
         self.ptr = ptr_kernel[0]
-
-    def __hash__(self):
-        return _lib.kernel__hash(self.ptr)
         
     def get_info(self, param):
         info = _ffi.new('generic_info *')
@@ -438,25 +423,18 @@ def get_platforms():
     for i in xrange(platforms.size[0]):
         # TODO why is the cast needed? 
         platform_ptr = _ffi.cast('void**', platforms.ptr[0])[i]
-        result.append(_create_platform(platform_ptr))
+        result.append(_create_instance(Platform, platform_ptr))
         
     return result
 
-class Event(EQUALITY_TESTS):
+class Event(_Common):
+    _id = 'event'
     def __init__(self):
         pass
         
-    def __hash__(self):
-        return _lib.event__hash(self.ptr)
-
     def get_info(self, param):
         print param
         raise NotImplementedError()
-    
-def _create_event(ptr):
-    event = Event()
-    event.ptr = ptr
-    return event
 
 
 def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False):
@@ -502,7 +480,7 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, gl
         c_global_work_size,
         c_local_work_size
     ))
-    return _create_event(ptr_event[0])
+    return _create_instance(Event, ptr_event[0])
 
 def _enqueue_read_buffer(cq, mem, buf, device_offset=0, is_blocking=True):
     # assume numpy
@@ -518,4 +496,10 @@ def _enqueue_read_buffer(cq, mem, buf, device_offset=0, is_blocking=True):
         device_offset,
         bool(is_blocking)
     ))
-    return _create_event(ptr_event[0])
+    return _create_instance(Event, ptr_event[0])
+
+def _create_instance(cls, ptr):
+    ins = cls.__new__(cls)
+    ins.ptr = ptr
+    return ins
+    

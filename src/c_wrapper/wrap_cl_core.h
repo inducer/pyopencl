@@ -62,6 +62,23 @@ error *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr
 error *memory_object_holder__get_info(void *ptr_memory_object_holder, cl_mem_info param, generic_info *out);
 long memory_object_holder__hash(void *ptr_memory_object_holder);
 void populate_constants(void(*add)(const char*, const char*, long value));
+
+intptr_t platform__int_ptr(void*);
+intptr_t kernel__int_ptr(void*);
+intptr_t context__int_ptr(void*);
+intptr_t command_queue__int_ptr(void*);
+intptr_t buffer__int_ptr(void*);
+intptr_t program__int_ptr(void*);
+intptr_t event__int_ptr(void*);
+
+void *platform__from_int_ptr(void **ptr_out, intptr_t int_ptr_value);
+void *kernel__from_int_ptr(void **ptr_out, intptr_t int_ptr_value);
+void *context__from_int_ptr(void **ptr_out, intptr_t int_ptr_value);
+void *command_queue__from_int_ptr(void **ptr_out, intptr_t int_ptr_value);
+void *buffer__from_int_ptr(void **ptr_out, intptr_t int_ptr_value);
+void *program__from_int_ptr(void **ptr_out, intptr_t int_ptr_value);
+void *event__from_int_ptr(void **ptr_out, intptr_t int_ptr_value);
+
 void _free(void*);
 void _free2(void**, uint32_t size);
 

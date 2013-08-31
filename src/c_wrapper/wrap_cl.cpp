@@ -2214,12 +2214,71 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
   
-  ::error *memory_object_holder__get_info(void *ptr_memory_object_holder, cl_mem_info param, generic_info *out) {
-    C_HANDLE_ERROR(
-    *out = static_cast<memory_object_holder*>(ptr_memory_object_holder)->get_info(param);
-		   )
+::error *memory_object_holder__get_info(void *ptr_memory_object_holder, cl_mem_info param, generic_info *out) {
+  C_HANDLE_ERROR(
+		 *out = static_cast<memory_object_holder*>(ptr_memory_object_holder)->get_info(param);
+		 )
     return 0;
   }
+
+
+intptr_t platform__int_ptr(void* ptr) {
+  return (intptr_t)(static_cast<platform*>(ptr)->data());
+}
+intptr_t kernel__int_ptr(void* ptr) {
+  return (intptr_t)(static_cast<kernel*>(ptr)->data());
+}
+intptr_t context__int_ptr(void* ptr) {
+  return (intptr_t)(static_cast<context*>(ptr)->data());
+}
+intptr_t command_queue__int_ptr(void* ptr) {
+  return (intptr_t)(static_cast<command_queue*>(ptr)->data());
+}
+intptr_t buffer__int_ptr(void* ptr) {
+  return (intptr_t)(static_cast<buffer*>(ptr)->data());
+}
+intptr_t program__int_ptr(void* ptr) {
+  return (intptr_t)(static_cast<program*>(ptr)->data());
+}
+intptr_t event__int_ptr(void* ptr) {
+  return (intptr_t)(static_cast<event*>(ptr)->data());
+}
+
+void *platform__from_int_ptr(void **ptr_out, intptr_t int_ptr_value) {
+  C_HANDLE_ERROR(*ptr_out = new platform((cl_platform_id)int_ptr_value, /* retain */ true);)
+    return 0;
+}
+
+void *kernel__from_int_ptr(void **ptr_out, intptr_t int_ptr_value) {
+  C_HANDLE_ERROR(*ptr_out = new kernel((cl_kernel)int_ptr_value, /* retain */ true);)
+    return 0;
+}
+
+void *context__from_int_ptr(void **ptr_out, intptr_t int_ptr_value) {
+  C_HANDLE_ERROR(*ptr_out = new context((cl_context)int_ptr_value, /* retain */ true);)
+    return 0;
+}
+
+void *command_queue__from_int_ptr(void **ptr_out, intptr_t int_ptr_value) {
+  C_HANDLE_ERROR(*ptr_out = new command_queue((cl_command_queue)int_ptr_value, /* retain */ true);)
+    return 0;
+}
+
+void *buffer__from_int_ptr(void **ptr_out, intptr_t int_ptr_value) {
+  C_HANDLE_ERROR(*ptr_out = new buffer((cl_mem)int_ptr_value, /* retain */ true);)
+    return 0;
+}
+
+void *program__from_int_ptr(void **ptr_out, intptr_t int_ptr_value) {
+  C_HANDLE_ERROR(*ptr_out = new program((cl_program)int_ptr_value, /* retain */ true);)
+    return 0;
+}
+
+void *event__from_int_ptr(void **ptr_out, intptr_t int_ptr_value) {
+  C_HANDLE_ERROR(*ptr_out = new event((cl_event)int_ptr_value, /* retain */ true);)
+    return 0;
+}
+
   
 }
 
