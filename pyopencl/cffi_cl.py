@@ -140,22 +140,19 @@ def get_cl_header_version():
         
 _CL_VERSION = get_cl_header_version()
 
-_constants = PP(_ffi.new('constant**'))
-_lib.get_constants(_constants.ptr, _constants.size)
+# {{{ expose constants classes like platform_info, device_type, ...
+_constants = {}
+@_ffi.callback('void(const char*, const char* name, unsigned int value)')
+def _constant_callback(type_, name, value):
+    s_type = _ffi.string(type_)
+    _constants.setdefault(s_type, {})
+    _constants[s_type][_ffi.string(name)] = value
+_lib.populate_constants(_constant_callback)
 
-def _create_constants_class(name):
-    return type(name, (NoInit,), dict((_ffi.string(c.name), c.value) for c in _constants if _ffi.string(c.type) == name))
+for type_, d in _constants.iteritems():
+    locals()[type_] = type(type_, (NoInit,), d)
+# }}}
 
-platform_info = _create_constants_class("platform_info")
-device_type = _create_constants_class("device_type")
-device_info = _create_constants_class("device_info")
-mem_flags = _create_constants_class("mem_flags")
-mem_info = _create_constants_class("mem_info")
-mem_object_type = _create_constants_class("mem_object_type")
-program_info = _create_constants_class("program_info")
-program_build_info = _create_constants_class("program_build_info")
-program_binary_type = _create_constants_class("program_binary_type")
-kernel_info = _create_constants_class("kernel_info")
 class EQUALITY_TESTS(object):
     def __eq__(self, other):
         return hash(self) == hash(other)

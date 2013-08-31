@@ -37,5 +37,15 @@ void* kernel__set_arg_mem_buffer(void* ptr_kernel, cl_uint arg_index, void* ptr_
 void* _enqueue_nd_range_kernel(void **ptr_event, void* ptr_command_queue, void* ptr_kernel, cl_uint work_dim, const size_t* global_work_offset, const size_t* global_work_size, const size_t* local_work_size);
 void* _enqueue_read_buffer(void **ptr_event, void* ptr_command_queue, void* ptr_memory_object_holder, void* buffer, size_t size, size_t device_offset, int is_blocking);
 void* memory_object_holder__get_info(void* ptr_memory_object_holder, cl_mem_info param, generic_info* out);
-void get_constants(constant** out, uint32_t *num_constants);
+void get_constants(constant** out, uint32_t *num_constants, void(*)(const char*));
+void populate_constants(void(*add)(const char*, const char*, unsigned int value));
 void freem(void*);
+
+
+
+
+
+
+
+
+
