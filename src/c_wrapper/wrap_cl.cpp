@@ -96,16 +96,29 @@
   return info;								\
 }
 
-
-#define PYOPENCL_RETURN_NEW_EVENT(evt) \
-    try \
-    { \
-      return new event(evt, false); \
-    } \
-    catch (...) \
-    { \
-      clReleaseEvent(evt); \
-      throw; \
+#define PYOPENCL_GET_ARRAY_INFO(TYPE, VEC)	\
+  {						\
+    MALLOC(TYPE, ar, VEC.size());		\
+    for(uint32_t i = 0; i < VEC.size(); ++i) {	\
+      ar[i] = VEC[i];				\
+    }						\
+    generic_info info;				\
+    info.type = generic_info_type_array;	\
+    info.value._array.array = ar;		\
+    info.value._array.size = VEC.size();	\
+    info.array_element_type = #TYPE;		\
+    return info;				\
+  }
+  
+#define PYOPENCL_RETURN_NEW_EVENT(evt)		\
+  try						\
+    {						\
+      return new event(evt, false);		\
+    }						\
+  catch (...)					\
+    {						\
+      clReleaseEvent(evt);			\
+      throw;					\
     }
 
 
@@ -1376,19 +1389,19 @@ class buffer : public memory_object
       }
     
 
-      //py::object get_info(cl_program_info param_name) const
-//       {
-//         switch (param_name)
-//         {
-//           case CL_PROGRAM_REFERENCE_COUNT:
-//             PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
-//                 cl_uint);
-//           case CL_PROGRAM_CONTEXT:
-//             PYOPENCL_GET_OPAQUE_INFO(Program, m_program, param_name,
-//                 cl_context, context);
-//           case CL_PROGRAM_NUM_DEVICES:
-//             PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
-//                 cl_uint);
+      generic_info get_info(cl_program_info param_name) const
+      {
+        switch (param_name)
+        {
+          case CL_PROGRAM_REFERENCE_COUNT:
+            PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
+                cl_uint);
+          // case CL_PROGRAM_CONTEXT:
+          //   PYOPENCL_GET_OPAQUE_INFO(Program, m_program, param_name,
+          //       cl_context, context);
+          case CL_PROGRAM_NUM_DEVICES:
+            PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
+                cl_uint);
 //           case CL_PROGRAM_DEVICES:
 //             {
 //               std::vector<cl_device_id> result;
@@ -1400,14 +1413,14 @@ class buffer : public memory_object
 //                       new pyopencl::device(did)));
 //               return py_result;
 //             }
-//           case CL_PROGRAM_SOURCE:
-//             PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
-//           case CL_PROGRAM_BINARY_SIZES:
-//             {
-//               std::vector<size_t> result;
-//               PYOPENCL_GET_VEC_INFO(Program, m_program, param_name, result);
-//               PYOPENCL_RETURN_VECTOR(size_t, result);
-//             }
+          case CL_PROGRAM_SOURCE:
+            PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
+          case CL_PROGRAM_BINARY_SIZES:
+            {
+              std::vector<size_t> result;
+              PYOPENCL_GET_VEC_INFO(Program, m_program, param_name, result);
+              PYOPENCL_GET_ARRAY_INFO(size_t, result);
+            }
 //           case CL_PROGRAM_BINARIES:
 //             // {{{
 //             {
@@ -1450,46 +1463,45 @@ class buffer : public memory_object
 //               return py_result;
 //             }
 //             // }}}
-// #if PYOPENCL_CL_VERSION >= 0x1020
-//           case CL_PROGRAM_NUM_KERNELS:
-//             PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
-//                 size_t);
-//           case CL_PROGRAM_KERNEL_NAMES:
-//             PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
-// #endif
+#if PYOPENCL_CL_VERSION >= 0x1020
+          case CL_PROGRAM_NUM_KERNELS:
+            PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
+                size_t);
+          case CL_PROGRAM_KERNEL_NAMES:
+            PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
+#endif
 
-//           default:
-//             throw error("Program.get_info", CL_INVALID_VALUE);
-//         }
-//       }
+          default:
+            throw error("Program.get_info", CL_INVALID_VALUE);
+        }
+      }
 
-//       py::object get_build_info(
-//           device const &dev,
-//           cl_program_build_info param_name) const
-//       {
-//         switch (param_name)
-//         {
-// #define PYOPENCL_FIRST_ARG m_program, dev.data() // hackety hack
-//           case CL_PROGRAM_BUILD_STATUS:
-//             PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
-//                 PYOPENCL_FIRST_ARG, param_name,
-//                 cl_build_status);
-//           case CL_PROGRAM_BUILD_OPTIONS:
-//           case CL_PROGRAM_BUILD_LOG:
-//             PYOPENCL_GET_STR_INFO(ProgramBuild,
-//                 PYOPENCL_FIRST_ARG, param_name);
-// #if PYOPENCL_CL_VERSION >= 0x1020
-//           case CL_PROGRAM_BINARY_TYPE:
-//             PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
-//                 PYOPENCL_FIRST_ARG, param_name,
-//                 cl_program_binary_type);
-// #endif
-// #undef PYOPENCL_FIRST_ARG
+    generic_info get_build_info(device const &dev,
+				cl_program_build_info param_name) const
+    {
+      switch (param_name)
+        {
+#define PYOPENCL_FIRST_ARG m_program, dev.data() // hackety hack
+	case CL_PROGRAM_BUILD_STATUS:
+	  PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
+				     PYOPENCL_FIRST_ARG, param_name,
+				     cl_build_status);
+ 	case CL_PROGRAM_BUILD_OPTIONS:
+	case CL_PROGRAM_BUILD_LOG:
+	  PYOPENCL_GET_STR_INFO(ProgramBuild,
+				PYOPENCL_FIRST_ARG, param_name);
+#if PYOPENCL_CL_VERSION >= 0x1020
+	case CL_PROGRAM_BINARY_TYPE:
+	  PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
+				     PYOPENCL_FIRST_ARG, param_name,
+				     cl_program_binary_type);
+#endif
+#undef PYOPENCL_FIRST_ARG
 
-//           default:
-//             throw error("Program.get_build_info", CL_INVALID_VALUE);
-//         }
-//       }
+	default:
+	  throw error("Program.get_build_info", CL_INVALID_VALUE);
+        }
+    }
 
       void build(char *options, cl_uint num_devices, void **ptr_devices)
       { 
@@ -2084,6 +2096,15 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
+  
+  ::error *program__get_build_info(void *ptr_program, void *ptr_device, cl_program_build_info param, generic_info *out) {
+    C_HANDLE_ERROR(
+		   *out = static_cast<program*>(ptr_program)->get_build_info(*static_cast<device*>(ptr_device),
+									     param);
+		   )
+    return 0;
+  }
+
   ::error *program__get_info__devices(void *ptr_program, void **ptr_devices, uint32_t *num_devices) {
     typedef std::vector<cl_device_id> vec;
 
@@ -2109,6 +2130,15 @@ inline event *enqueue_nd_range_kernel(
 		   )
     return 0;
   }
+
+  
+  ::error *program__get_info(void *ptr_program, cl_program_info param, generic_info *out) {
+    C_HANDLE_ERROR(
+    *out = static_cast<program*>(ptr_program)->get_info(param);
+		   )
+    return 0;
+  }
+
   
 
   long device__hash(void *ptr_device) {

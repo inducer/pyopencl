@@ -3,15 +3,25 @@ typedef enum { KND_UNKNOWN, KND_SOURCE, KND_BINARY } program_kind_type;
 typedef enum {
   generic_info_type_cl_uint,
   generic_info_type_cl_mem_object_type,
+  generic_info_type_cl_build_status,
+  generic_info_type_cl_program_binary_type,
+  generic_info_type_size_t,
   generic_info_type_chars,
+  generic_info_type_array,
 } generic_info_type_t;
 
 typedef struct {
   generic_info_type_t type;
+  const char *array_element_type;
   union value_t {
     cl_uint _cl_uint;
     cl_mem_object_type _cl_mem_object_type;
+    cl_build_status _cl_build_status;
+    cl_program_binary_type _cl_program_binary_type;
+    size_t _size_t;
     char *_chars;
+    
+    struct { void *array; uint32_t size; } _array;
   } value;
 } generic_info;
 
@@ -38,6 +48,8 @@ error *_create_program_with_source(void **ptr_program, void *ptr_context, char *
 error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries);
 error *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices);
 error *program__kind(void *ptr_program, int *kind);
+error *program__get_build_info(void *ptr_program, void *ptr_device, cl_program_build_info param, generic_info *out);
+error *program__get_info(void *ptr_program, cl_program_info param, generic_info *out);
 error *program__get_info__devices(void *ptr_program, void **ptr_devices, uint32_t *num_devices);
 error *program__get_info__binaries(void *ptr_program, char ***ptr_binaries, uint32_t *num_binaries);
 long program__hash(void *ptr_program);

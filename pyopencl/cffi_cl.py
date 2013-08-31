@@ -332,6 +332,13 @@ class _Program(object):
         
         _handle_error(_lib.program__build(self.ptr, _ffi.new('char[]', options), len(ptr_devices), _ffi.cast('void**', ptr_devices)))
 
+
+    def get_build_info(self, device, param):
+        info = _ffi.new('generic_info *')
+        _handle_error(_lib.program__get_build_info(self.ptr, device.ptr, param, info))
+        return _generic_info_to_python(info)
+        
+
     def get_info(self, param):
         if param == program_info.DEVICES:
             # todo: refactor, same code as in get_devices 
@@ -347,8 +354,12 @@ class _Program(object):
             ptr_binaries = _CArrays(_ffi.new('char***'))
             _handle_error(_lib.program__get_info__binaries(self.ptr, ptr_binaries.ptr, ptr_binaries.size))
             return map(_ffi.string, ptr_binaries)
-        print param
-        raise NotImplementedError()
+
+        info = _ffi.new('generic_info *')
+        _handle_error(_lib.program__get_info(self.ptr, param, info))
+        
+        return _generic_info_to_python(info)
+
         
 class Platform(EQUALITY_TESTS):
     def __init__(self):
@@ -385,8 +396,15 @@ def _create_platform(ptr):
 def _generic_info_to_python(info):
     if info.type == _lib.generic_info_type_chars:
         return _ffi.string(info.value._chars)
+    if info.type == _lib.generic_info_type_array:
+        ar = _ffi.cast('%s[%s]' % (_ffi.string(info.array_element_type), info.value._array.size), info.value._array.array)
+        return list(ar)
+        
     for type_ in ('cl_uint',
                   'cl_mem_object_type',
+                  'cl_build_status',
+                  'cl_program_binary_type',
+                  'size_t',
                   ):
         if info.type == getattr(_lib, 'generic_info_type_%s' % type_):
             return getattr(info.value, '_%s' % type_)
