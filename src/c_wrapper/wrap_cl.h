@@ -63,7 +63,8 @@
 extern "C" {
 #endif
 
-  #include "wrap_cl_core.h"
+#include "wrap_cl_core.h"
+  
 #ifdef __cplusplus
 }
 #endif

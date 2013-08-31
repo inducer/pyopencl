@@ -6,7 +6,7 @@
 #include <string.h>
 #include <memory>
 
-#define MALLOC(TYPE, VAR, N) TYPE* VAR = reinterpret_cast<TYPE*>(malloc(sizeof(TYPE)*(N)));
+#define MALLOC(TYPE, VAR, N) TYPE *VAR = reinterpret_cast<TYPE*>(malloc(sizeof(TYPE)*(N)));
 
 // {{{ tracing and error reporting
 #ifdef PYOPENCL_TRACE
@@ -173,7 +173,7 @@ int get_cl_version(void) {
 extern "C"
 namespace pyopencl
 {
-  char* _copy_str(const std::string& str) {
+  char *_copy_str(const std::string& str) {
     MALLOC(char, cstr, str.size() + 1);
     strcpy(cstr, str.c_str());
     return cstr;
@@ -318,8 +318,7 @@ namespace pyopencl
       return m_platform;
     }
 
-    // TODO
-    // PYOPENCL_EQUALITY_TESTS(platform);
+    PYOPENCL_EQUALITY_TESTS(platform);
 
     generic_info get_info(cl_platform_info param_name) const
     {
@@ -754,7 +753,7 @@ namespace pyopencl
       return m_context;
     }
 
-    //PYOPENCL_EQUALITY_TESTS(context);
+    PYOPENCL_EQUALITY_TESTS(context);
 
     //       py::object get_info(cl_context_info param_name) const
     //       {
@@ -900,7 +899,7 @@ namespace pyopencl
     const cl_command_queue data() const
     { return m_queue; }
 
-    // PYOPENCL_EQUALITY_TESTS(command_queue);
+    PYOPENCL_EQUALITY_TESTS(command_queue);
 
     // py::object get_info(cl_command_queue_info param_name) const
     // {
@@ -966,7 +965,7 @@ namespace pyopencl
     public:
       virtual const cl_mem data() const = 0;
 
-    //PYOPENCL_EQUALITY_TESTS(memory_object_holder);
+    PYOPENCL_EQUALITY_TESTS(memory_object_holder);
 
       size_t size() const
       {
@@ -1030,10 +1029,10 @@ namespace pyopencl
     private:
       bool m_valid;
       cl_mem m_mem;
-      void* m_hostbuf;
+      void *m_hostbuf;
 
     public:
-      memory_object(cl_mem mem, bool retain, void* hostbuf=0)
+      memory_object(cl_mem mem, bool retain, void *hostbuf=0)
         : m_valid(true), m_mem(mem)
       {
         if (retain)
@@ -1071,7 +1070,7 @@ namespace pyopencl
           release();
       }
 
-      void* hostbuf()
+      void *hostbuf()
       { return m_hostbuf; }
 
       const cl_mem data() const
@@ -1276,7 +1275,7 @@ class buffer : public memory_object
       context &ctx,
       cl_mem_flags flags,
       size_t size,
-      void* py_hostbuf
+      void *py_hostbuf
       )
   {
     
@@ -1339,7 +1338,7 @@ class buffer : public memory_object
         return m_program_kind;
       }
 
-    //PYOPENCL_EQUALITY_TESTS(program);
+    PYOPENCL_EQUALITY_TESTS(program);
 
     std::vector<cl_device_id> get_info__devices()
     {
@@ -1348,7 +1347,7 @@ class buffer : public memory_object
       return result;
     }
 
-    char** get_info__binaries(uint32_t *num_binaries) {
+    char **get_info__binaries(uint32_t *num_binaries) {
       std::vector<size_t> sizes;
       PYOPENCL_GET_VEC_INFO(Program, m_program, CL_PROGRAM_BINARY_SIZES, sizes);
       
@@ -1364,20 +1363,6 @@ class buffer : public memory_object
 			    (m_program, CL_PROGRAM_BINARIES, sizes.size()*sizeof(char *),
 			     result_ptrs, 0)); \
       return result_ptrs;
-//       py::list py_result;
-//       ptr = result.get();
-//       for (unsigned i = 0; i < sizes.size(); ++i) {
-// 	py::handle<> binary_pyobj(
-// #if PY_VERSION_HEX >= 0x03000000
-// 				  PyBytes_FromStringAndSize(
-// 							    reinterpret_cast<char *>(ptr), sizes[i])
-// #else
-// 				  PyString_FromStringAndSize(
-// 							     reinterpret_cast<char *>(ptr), sizes[i])
-// #endif
-// 				  );
-// 	py_result.append(binary_pyobj);
-// 	ptr += sizes[i];
       }
     
 
@@ -1496,7 +1481,7 @@ class buffer : public memory_object
 //         }
 //       }
 
-      void build(char* options, cl_uint num_devices, void** ptr_devices)
+      void build(char *options, cl_uint num_devices, void **ptr_devices)
       { 
 	// todo: this function should get a list of device instances, not raw pointers
 	// pointers are for the cffi interface and should not be here
@@ -1782,7 +1767,7 @@ class buffer : public memory_object
   event *enqueue_read_buffer(
       command_queue &cq,
       memory_object_holder &mem,
-      void* buffer,
+      void *buffer,
       size_t size, 
       size_t device_offset,
       /*py::object py_wait_for,*/
@@ -1855,9 +1840,9 @@ inline event *enqueue_nd_range_kernel(
       command_queue &cq,
       kernel &knl,
       cl_uint work_dim,
-      const size_t* global_work_offset,
-      const size_t* global_work_size,
-      const size_t* local_work_size //,
+      const size_t *global_work_offset,
+      const size_t *global_work_size,
+      const size_t *local_work_size //,
       //py::object py_global_work_offset,
       //py::object py_wait_for,
 				      )
@@ -1915,9 +1900,9 @@ inline event *enqueue_nd_range_kernel(
   program *create_program_with_binary(
       context &ctx,
       cl_uint num_devices, 
-      void** ptr_devices,
+      void **ptr_devices,
       cl_uint num_binaries,
-      char** binaries)
+      char **binaries)
   {
     std::vector<cl_device_id> devices;
     std::vector<size_t> sizes;
@@ -1960,7 +1945,7 @@ inline event *enqueue_nd_range_kernel(
 
   
 
-  void* get_platforms(void** ptr_platforms, uint32_t *num_platforms) {
+  void *get_platforms(void **ptr_platforms, uint32_t *num_platforms) {
     *num_platforms = 0;
     PYOPENCL_CALL_GUARDED(clGetPlatformIDs, (0, 0, num_platforms));
 
@@ -1977,18 +1962,24 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
-  void freem(void* p) {
+  void _free(void *p) {
     free(p);
   }
 
-  void* platform__get_info(void* ptr_platform, cl_platform_info param, generic_info* out) {
+  void _free2(void **p, uint32_t size) {
+    for(uint32_t i = 0; i < size; ++i) {
+      _free(p[i]);
+    }
+  }
+
+  void *platform__get_info(void *ptr_platform, cl_platform_info param, generic_info *out) {
     // todo: catch error
     *out = static_cast<platform*>(ptr_platform)->get_info(param);
     //*out = _copy_str(static_cast<platform*>(ptr_platform)->get_info(param_name));
     return 0;
   }
 
-  void* platform__get_devices(void* ptr_platform, void** ptr_devices, uint32_t* num_devices, cl_device_type devtype) {
+  void *platform__get_devices(void *ptr_platform, void **ptr_devices, uint32_t *num_devices, cl_device_type devtype) {
     typedef std::vector<cl_device_id> vec;
     
     // todo: catch error
@@ -2003,14 +1994,19 @@ inline event *enqueue_nd_range_kernel(
     
     return 0;
   }
+  
+  long platform__hash(void *ptr_platform) {
+    return static_cast<platform*>(ptr_platform)->hash();
+  }
 
-  void* device__get_info(void* ptr_device, cl_device_info param, generic_info* out) {
+
+  void *device__get_info(void *ptr_device, cl_device_info param, generic_info *out) {
     // todo: catch error
     *out = static_cast<device*>(ptr_device)->get_info(param);
     return 0;
   }
 
-  void* _create_context(void** ptr_ctx, cl_context_properties* properties, cl_uint num_devices, void** ptr_devices) {
+  void *_create_context(void **ptr_ctx, cl_context_properties *properties, cl_uint num_devices, void **ptr_devices) {
   
     cl_int status_code;
     std::vector<cl_device_id> devices(num_devices);
@@ -2031,48 +2027,48 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
 
-  void* _create_command_queue(void** ptr_command_queue, void* ptr_context, void* ptr_device, cl_command_queue_properties properties) {
+  void *_create_command_queue(void **ptr_command_queue, void *ptr_context, void *ptr_device, cl_command_queue_properties properties) {
     // todo error handling
-    context* ctx = static_cast<context*>(ptr_context);
-    device* dev = static_cast<device*>(ptr_device);
+    context *ctx = static_cast<context*>(ptr_context);
+    device *dev = static_cast<device*>(ptr_device);
     *ptr_command_queue = new command_queue(*ctx, dev, properties);
     return 0;
   }
 
-  void* _create_buffer(void** ptr_buffer, void* ptr_context, cl_mem_flags flags, size_t size, void* hostbuf) {
-    context* ctx = static_cast<context*>(ptr_context);
+  void *_create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, size_t size, void *hostbuf) {
+    context *ctx = static_cast<context*>(ptr_context);
     *ptr_buffer = create_buffer_py(*ctx, flags, size, hostbuf);
     // todo error handling
     return 0;
   }
 
-  void* _create_program_with_source(void **ptr_program, void *ptr_context, char* src) {
-    context* ctx = static_cast<context*>(ptr_context);
+  void *_create_program_with_source(void **ptr_program, void *ptr_context, char *src) {
+    context *ctx = static_cast<context*>(ptr_context);
     *ptr_program = create_program_with_source(*ctx, src);
     // todo error handling
     return 0;
   }
 
-  void* _create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void** ptr_devices, cl_uint num_binaries, char** binaries) {
+  void *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries) {
     // todo: catch error
-    context* ctx = static_cast<context*>(ptr_context);
+    context *ctx = static_cast<context*>(ptr_context);
     *ptr_program = create_program_with_binary(*ctx, num_devices, ptr_devices, num_binaries, binaries);
     return 0;
   }
 
-  void* program__build(void* ptr_program, char* options, cl_uint num_devices, void** ptr_devices) {
+  void *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices) {
     // todo: catch error
     static_cast<program*>(ptr_program)->build(options, num_devices, ptr_devices);
     return 0;
   }
 
-  void* program__kind(void* ptr_program, int *kind) {
+  void *program__kind(void *ptr_program, int *kind) {
     // todo: catch error
     *kind = static_cast<program*>(ptr_program)->kind();
     return 0;
   }
 
-  void* program__get_info__devices(void* ptr_program, void** ptr_devices, uint32_t* num_devices) {
+  void *program__get_info__devices(void *ptr_program, void **ptr_devices, uint32_t *num_devices) {
 
     typedef std::vector<cl_device_id> vec;
 
@@ -2092,37 +2088,62 @@ inline event *enqueue_nd_range_kernel(
     
   }
 
-  void* program__get_info__binaries(void* ptr_program, char*** ptr_binaries, uint32_t* num_binaries) {
+  void *program__get_info__binaries(void *ptr_program, char ***ptr_binaries, uint32_t *num_binaries) {
     // todo catch error
     *ptr_binaries = static_cast<program*>(ptr_program)->get_info__binaries(num_binaries);
     return 0;
   }
+  
 
   long device__hash(void *ptr_device) {
     return static_cast<device*>(ptr_device)->hash();
   }
 
-  void* _create_kernel(void** ptr_kernel, void* ptr_program, char* name) {
-    program* prg = static_cast<program*>(ptr_program);
+  long context__hash(void *ptr_context) {
+    return static_cast<context*>(ptr_context)->hash();
+  }
+
+  long command_queue__hash(void *ptr_command_queue) {
+    return static_cast<command_queue*>(ptr_command_queue)->hash();
+  }
+
+  long event__hash(void *ptr_event) {
+    return static_cast<event*>(ptr_event)->hash();
+  }
+
+  long memory_object_holder__hash(void *ptr_memory_object_holder) {
+    return static_cast<memory_object_holder*>(ptr_memory_object_holder)->hash();
+  }
+
+  long program__hash(void *ptr_program) {
+    return static_cast<program*>(ptr_program)->hash();
+  }
+  
+  long kernel__hash(void *ptr_kernel) {
+    return static_cast<kernel*>(ptr_kernel)->hash();
+  }
+  
+  void *_create_kernel(void **ptr_kernel, void *ptr_program, char *name) {
+    program *prg = static_cast<program*>(ptr_program);
     *ptr_kernel = new kernel(*prg, name);
     // todo error handling
     return 0;
   }
 
-  void* kernel__get_info(void* ptr_kernel, cl_kernel_info param, generic_info* out) {
+  void *kernel__get_info(void *ptr_kernel, cl_kernel_info param, generic_info *out) {
     *out = static_cast<kernel*>(ptr_kernel)->get_info(param);
     // todo error handling
     return 0;
   }
 
-  void* kernel__set_arg_mem_buffer(void* ptr_kernel, cl_uint arg_index, void* ptr_buffer) {
-    buffer* buf = static_cast<buffer*>(ptr_buffer);
+  void *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer) {
+    buffer *buf = static_cast<buffer*>(ptr_buffer);
     static_cast<kernel*>(ptr_kernel)->set_arg_mem(arg_index, *buf);
     // todo error handling
     return 0;
   }
 
-  void* _enqueue_nd_range_kernel(void **ptr_event, void* ptr_command_queue, void* ptr_kernel, cl_uint work_dim, const size_t* global_work_offset, const size_t* global_work_size, const size_t* local_work_size) {
+  void *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size) {
     *ptr_event = enqueue_nd_range_kernel(*static_cast<command_queue*>(ptr_command_queue),
 					 *static_cast<kernel*>(ptr_kernel),
 					 work_dim,
@@ -2135,7 +2156,7 @@ inline event *enqueue_nd_range_kernel(
   }
 
 
-  void* _enqueue_read_buffer(void **ptr_event, void* ptr_command_queue, void* ptr_memory_object_holder, void* buffer, size_t size, size_t device_offset, int is_blocking) {
+  void *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, int is_blocking) {
     *ptr_event = enqueue_read_buffer(*static_cast<command_queue*>(ptr_command_queue),
 				     *static_cast<memory_object_holder*>(ptr_memory_object_holder),
 				     buffer, size, device_offset, (bool)is_blocking);
@@ -2143,7 +2164,7 @@ inline event *enqueue_nd_range_kernel(
     return 0;
   }
   
-  void* memory_object_holder__get_info(void* ptr_memory_object_holder, cl_mem_info param, generic_info* out) {
+  void *memory_object_holder__get_info(void *ptr_memory_object_holder, cl_mem_info param, generic_info *out) {
     *out = static_cast<memory_object_holder*>(ptr_memory_object_holder)->get_info(param);
     // todo error handling
     return 0;

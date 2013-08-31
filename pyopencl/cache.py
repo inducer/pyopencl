@@ -24,7 +24,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import pyopencl._cl as _cl
+#import pyopencl._cl as _cl
+import pyopencl.cffi_cl as _cl
 import re
 import sys
 import os
@@ -395,7 +396,6 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
         from uuid import uuid4
         src = src + "\n\n__constant int pyopencl_defeat_cache_%s = 0;" % (
                 uuid4().hex)
-
         prg = _cl._Program(ctx, src)
         prg.build(options, [devices[i] for i in to_be_built_indices])
 

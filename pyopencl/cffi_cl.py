@@ -1,4 +1,4 @@
-from pyopencl._cl import RuntimeError
+#from pyopencl._cl import RuntimeError
 
 import warnings
 
@@ -79,7 +79,6 @@ typedef cl_uint             cl_event_info;
 typedef cl_uint             cl_command_type;
 typedef cl_uint             cl_profiling_info;
 
-
 """
 
 with open(os.path.join(current_directory, 'wrap_cl_core.h')) as _f:
@@ -95,11 +94,14 @@ _lib = _ffi.verify(
     library_dirs=[current_directory],
     libraries=["wrapcl", "OpenCL"])
 
-class PP(object):
+class _CArray(object):
     def __init__(self, ptr):
         self.ptr = ptr
         self.size = _ffi.new('uint32_t *')
 
+    def __del__(self):
+        _lib._free(self.ptr[0])
+        
     def __getitem__(self, key):
         return self.ptr[0].__getitem__(key)
 
@@ -107,8 +109,10 @@ class PP(object):
         for i in xrange(self.size[0]):
             yield self[i]
 
+class _CArrays(_CArray):
     def __del__(self):
-        _lib.freem(self.ptr[0])
+        _lib._free2(_ffi.cast('void**', self.ptr[0]), self.size[0])
+        super(_CArrays, self).__del__()
 
 class CLRuntimeError(RuntimeError):
     def __init__(self, routine, code, msg=""):
@@ -125,8 +129,6 @@ def get_cl_header_version():
     return (v >> (3*4),
             (v >> (1*4)) & 0xff)
         
-_CL_VERSION = get_cl_header_version()
-
 # {{{ expose constants classes like platform_info, device_type, ...
 _constants = {}
 @_ffi.callback('void(const char*, const char* name, unsigned int value)')
@@ -184,7 +186,7 @@ def _parse_context_properties(properties):
     return _ffi.new('cl_context_properties[]', props)
 
         
-class Context(object):
+class Context(EQUALITY_TESTS):
     def __init__(self, devices=None, properties=None, dev_type=None):
         c_props = _parse_context_properties(properties)
         status_code = _ffi.new('cl_int *')
@@ -202,10 +204,13 @@ class Context(object):
 
         self.ptr = ptr_ctx[0]
 
+    def __hash__(self):
+        return _lib.context__hash(self.ptr)
+        
     def get_info(self, param):
         return 'TODO'
 
-class CommandQueue(object):
+class CommandQueue(EQUALITY_TESTS):
     def __init__(self, context, device=None, properties=None):
         if properties is None:
             properties = 0
@@ -213,16 +218,22 @@ class CommandQueue(object):
         _lib._create_command_queue(ptr_command_queue, context.ptr, _ffi.NULL if device is None else device.ptr, properties)
         self.ptr = ptr_command_queue[0]
 
+    def __hash__(self):
+        return _lib.command_queue__hash(self.ptr)
+
     def get_info(self, param):
         print param
         raise NotImplementedError()
 
-class MemoryObjectHolder(object):
+class MemoryObjectHolder(EQUALITY_TESTS):
     def get_info(self, param):
         info = _ffi.new('generic_info *')
         _lib.memory_object_holder__get_info(self.ptr, param, info)
         return _generic_info_to_python(info)
 
+    def __hash__(self):
+        return _lib.memory_object_holder__hash(self.ptr)
+        
 class MemoryObject(MemoryObjectHolder):
     pass
         
@@ -250,6 +261,9 @@ class _Program(object):
             self._init_source(*args)
         else:
             self._init_binary(*args)
+
+    def __hash__(self):
+        return _lib.program__hash(self.ptr)
 
     def int_ptr(self):
         raise NotImplementedError()
@@ -290,7 +304,7 @@ class _Program(object):
     def get_info(self, param):
         if param == program_info.DEVICES:
             # todo: refactor, same code as in get_devices 
-            devices = PP(_ffi.new('void**'))
+            devices = _CArray(_ffi.new('void**'))
             _lib.program__get_info__devices(self.ptr, devices.ptr, devices.size)
             result = []
             for i in xrange(devices.size[0]):
@@ -299,16 +313,18 @@ class _Program(object):
                 result.append(_create_device(device_ptr))
             return result
         elif param == program_info.BINARIES:
-            # TODO possible memory leak? the char arrays might not be freed
-            ptr_binaries = PP(_ffi.new('char***'))
+            ptr_binaries = _CArrays(_ffi.new('char***'))
             _lib.program__get_info__binaries(self.ptr, ptr_binaries.ptr, ptr_binaries.size)
             return map(_ffi.string, ptr_binaries)
         print param
         raise NotImplementedError()
         
-class Platform(object):
+class Platform(EQUALITY_TESTS):
     def __init__(self):
         pass
+
+    def __hash__(self):
+        return _lib.platform__hash(self.ptr)
 
     # todo: __del__
 
@@ -318,7 +334,7 @@ class Platform(object):
         return _generic_info_to_python(info)
     
     def get_devices(self, device_type=device_type.ALL):
-        devices = PP(_ffi.new('void**'))
+        devices = _CArray(_ffi.new('void**'))
         _lib.platform__get_devices(self.ptr, devices.ptr, devices.size, device_type)
         result = []
         for i in xrange(devices.size[0]):
@@ -351,6 +367,9 @@ class Kernel(object):
         _lib._create_kernel(ptr_kernel, program.ptr, name)
         self.ptr = ptr_kernel[0]
 
+    def __hash__(self):
+        return _lib.kernel__hash(self.ptr)
+        
     def get_info(self, param):
         info = _ffi.new('generic_info *')
         _lib.kernel__get_info(self.ptr, param, info)
@@ -364,7 +383,7 @@ class Kernel(object):
             raise NotImplementedError()
     
 def get_platforms():
-    platforms = PP(_ffi.new('void**'))
+    platforms = _CArray(_ffi.new('void**'))
     _lib.get_platforms(platforms.ptr, platforms.size)
     result = []
     for i in xrange(platforms.size[0]):
@@ -374,9 +393,12 @@ def get_platforms():
         
     return result
 
-class Event(object):
+class Event(EQUALITY_TESTS):
     def __init__(self):
         pass
+        
+    def __hash__(self):
+        return _lib.event__hash(self.ptr)
 
     def get_info(self, param):
         print param
