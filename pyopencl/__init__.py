@@ -38,8 +38,10 @@ except ImportError:
 # _ccl = _cl
 # import cffi_cl
 # _cl = cffi_cl
-    
-import numpy as np
+try:
+    import numpypy as np
+except:
+    import numpy as np
 #from pyopencl._cl import *  # noqa
 from pyopencl.cffi_cl import *
 import inspect as _inspect
@@ -240,10 +242,6 @@ def link_program(context, programs, options=[], devices=None):
 
 def _add_functionality():
     cls_to_info_cls = {
-            # PlatformZ:
-            #     (PlatformZ.get_info, platform_info),
-            # DeviceZ:
-            #     (DeviceZ.get_info, device_info),
             Platform:
                 (Platform.get_info, platform_info),
             Device:
@@ -256,14 +254,14 @@ def _add_functionality():
                 (Event.get_info, event_info),
             MemoryObjectHolder:
                 (MemoryObjectHolder.get_info, mem_info),
-            Image:
-                (Image.get_image_info, image_info),
+            # Image:
+            #     (Image.get_image_info, image_info),
             Program:
                 (Program.get_info, program_info),
             Kernel:
                 (Kernel.get_info, kernel_info),
-            Sampler:
-                (Sampler.get_info, sampler_info),
+            # Sampler:
+            #     (Sampler.get_info, sampler_info),
             }
 
     def to_string(cls, value, default_format=None):
@@ -540,187 +538,187 @@ def _add_functionality():
 
     # }}}
 
-    # {{{ ImageFormat
+    # # {{{ ImageFormat
 
-    def image_format_repr(self):
-        return "ImageFormat(%s, %s)" % (
-                channel_order.to_string(self.channel_order,
-                    "<unknown channel order 0x%x>"),
-                channel_type.to_string(self.channel_data_type,
-                    "<unknown channel data type 0x%x>"))
+    # def image_format_repr(self):
+    #     return "ImageFormat(%s, %s)" % (
+    #             channel_order.to_string(self.channel_order,
+    #                 "<unknown channel order 0x%x>"),
+    #             channel_type.to_string(self.channel_data_type,
+    #                 "<unknown channel data type 0x%x>"))
 
-    def image_format_eq(self, other):
-        return (self.channel_order == other.channel_order
-                and self.channel_data_type == other.channel_data_type)
+    # def image_format_eq(self, other):
+    #     return (self.channel_order == other.channel_order
+    #             and self.channel_data_type == other.channel_data_type)
 
-    def image_format_ne(self, other):
-        return not image_format_eq(self, other)
+    # def image_format_ne(self, other):
+    #     return not image_format_eq(self, other)
 
-    def image_format_hash(self):
-        return hash((type(self), self.channel_order, self.channel_data_type))
+    # def image_format_hash(self):
+    #     return hash((type(self), self.channel_order, self.channel_data_type))
 
-    ImageFormat.__repr__ = image_format_repr
-    ImageFormat.__eq__ = image_format_eq
-    ImageFormat.__ne__ = image_format_ne
-    ImageFormat.__hash__ = image_format_hash
+    # ImageFormat.__repr__ = image_format_repr
+    # ImageFormat.__eq__ = image_format_eq
+    # ImageFormat.__ne__ = image_format_ne
+    # ImageFormat.__hash__ = image_format_hash
 
-    # }}}
+    # # }}}
 
-    # {{{ Image
+    # # {{{ Image
 
-    image_old_init = Image.__init__
+    # image_old_init = Image.__init__
 
-    def image_init(self, context, flags, format, shape=None, pitches=None,
-            hostbuf=None, is_array=False, buffer=None):
+    # def image_init(self, context, flags, format, shape=None, pitches=None,
+    #         hostbuf=None, is_array=False, buffer=None):
 
-        if shape is None and hostbuf is None:
-            raise Error("'shape' must be passed if 'hostbuf' is not given")
+    #     if shape is None and hostbuf is None:
+    #         raise Error("'shape' must be passed if 'hostbuf' is not given")
 
-        if shape is None and hostbuf is not None:
-            shape = hostbuf.shape
+    #     if shape is None and hostbuf is not None:
+    #         shape = hostbuf.shape
 
-        if hostbuf is not None and not \
-                (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
-            from warnings import warn
-            warn("'hostbuf' was passed, but no memory flags to make use of it.")
+    #     if hostbuf is not None and not \
+    #             (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
+    #         from warnings import warn
+    #         warn("'hostbuf' was passed, but no memory flags to make use of it.")
 
-        if hostbuf is None and pitches is not None:
-            raise Error("'pitches' may only be given if 'hostbuf' is given")
+    #     if hostbuf is None and pitches is not None:
+    #         raise Error("'pitches' may only be given if 'hostbuf' is given")
 
-        if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
-            if buffer is not None and is_array:
-                    raise ValueError(
-                            "'buffer' and 'is_array' are mutually exclusive")
+    #     if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
+    #         if buffer is not None and is_array:
+    #                 raise ValueError(
+    #                         "'buffer' and 'is_array' are mutually exclusive")
 
-            if len(shape) == 3:
-                if buffer is not None:
-                    raise TypeError(
-                            "'buffer' argument is not supported for 3D arrays")
-                elif is_array:
-                    image_type = mem_object_type.IMAGE2D_ARRAY
-                else:
-                    image_type = mem_object_type.IMAGE3D
+    #         if len(shape) == 3:
+    #             if buffer is not None:
+    #                 raise TypeError(
+    #                         "'buffer' argument is not supported for 3D arrays")
+    #             elif is_array:
+    #                 image_type = mem_object_type.IMAGE2D_ARRAY
+    #             else:
+    #                 image_type = mem_object_type.IMAGE3D
 
-            elif len(shape) == 2:
-                if buffer is not None:
-                    raise TypeError(
-                            "'buffer' argument is not supported for 2D arrays")
-                elif is_array:
-                    image_type = mem_object_type.IMAGE1D_ARRAY
-                else:
-                    image_type = mem_object_type.IMAGE2D
+    #         elif len(shape) == 2:
+    #             if buffer is not None:
+    #                 raise TypeError(
+    #                         "'buffer' argument is not supported for 2D arrays")
+    #             elif is_array:
+    #                 image_type = mem_object_type.IMAGE1D_ARRAY
+    #             else:
+    #                 image_type = mem_object_type.IMAGE2D
 
-            elif len(shape) == 1:
-                if buffer is not None:
-                    image_type = mem_object_type.IMAGE1D_BUFFER
-                elif is_array:
-                    raise TypeError("array of zero-dimensional images not supported")
-                else:
-                    image_type = mem_object_type.IMAGE1D
+    #         elif len(shape) == 1:
+    #             if buffer is not None:
+    #                 image_type = mem_object_type.IMAGE1D_BUFFER
+    #             elif is_array:
+    #                 raise TypeError("array of zero-dimensional images not supported")
+    #             else:
+    #                 image_type = mem_object_type.IMAGE1D
 
-            else:
-                raise ValueError("images cannot have more than three dimensions")
+    #         else:
+    #             raise ValueError("images cannot have more than three dimensions")
 
-            desc = ImageDescriptor()
+    #         desc = ImageDescriptor()
 
-            desc.image_type = image_type
-            desc.shape = shape  # also sets desc.array_size
+    #         desc.image_type = image_type
+    #         desc.shape = shape  # also sets desc.array_size
 
-            if pitches is None:
-                desc.pitches = (0, 0)
-            else:
-                desc.pitches = pitches
+    #         if pitches is None:
+    #             desc.pitches = (0, 0)
+    #         else:
+    #             desc.pitches = pitches
 
-            desc.num_mip_levels = 0  # per CL 1.2 spec
-            desc.num_samples = 0  # per CL 1.2 spec
-            desc.buffer = buffer
+    #         desc.num_mip_levels = 0  # per CL 1.2 spec
+    #         desc.num_samples = 0  # per CL 1.2 spec
+    #         desc.buffer = buffer
 
-            image_old_init(self, context, flags, format, desc, hostbuf)
-        else:
-            # legacy init for CL 1.1 and older
-            if is_array:
-                raise TypeError("'is_array=True' is not supported for CL < 1.2")
-            #if num_mip_levels is not None:
-                #raise TypeError(
-                #      "'num_mip_levels' argument is not supported for CL < 1.2")
-            #if num_samples is not None:
-                #raise TypeError(
-                #       "'num_samples' argument is not supported for CL < 1.2")
-            if buffer is not None:
-                raise TypeError("'buffer' argument is not supported for CL < 1.2")
+    #         image_old_init(self, context, flags, format, desc, hostbuf)
+    #     else:
+    #         # legacy init for CL 1.1 and older
+    #         if is_array:
+    #             raise TypeError("'is_array=True' is not supported for CL < 1.2")
+    #         #if num_mip_levels is not None:
+    #             #raise TypeError(
+    #             #      "'num_mip_levels' argument is not supported for CL < 1.2")
+    #         #if num_samples is not None:
+    #             #raise TypeError(
+    #             #       "'num_samples' argument is not supported for CL < 1.2")
+    #         if buffer is not None:
+    #             raise TypeError("'buffer' argument is not supported for CL < 1.2")
 
-            image_old_init(self, context, flags, format, shape,
-                    pitches, hostbuf)
+    #         image_old_init(self, context, flags, format, shape,
+    #                 pitches, hostbuf)
 
-    class _ImageInfoGetter:
-        def __init__(self, event):
-            from warnings import warn
-            warn("Image.image.attr is deprecated. "
-                    "Use Image.attr directly, instead.")
+    # class _ImageInfoGetter:
+    #     def __init__(self, event):
+    #         from warnings import warn
+    #         warn("Image.image.attr is deprecated. "
+    #                 "Use Image.attr directly, instead.")
 
-            self.event = event
+    #         self.event = event
 
-        def __getattr__(self, name):
-            try:
-                inf_attr = getattr(_cl.image_info, name.upper())
-            except AttributeError:
-                raise AttributeError("%s has no attribute '%s'"
-                        % (type(self), name))
-            else:
-                return self.event.get_image_info(inf_attr)
+    #     def __getattr__(self, name):
+    #         try:
+    #             inf_attr = getattr(_cl.image_info, name.upper())
+    #         except AttributeError:
+    #             raise AttributeError("%s has no attribute '%s'"
+    #                     % (type(self), name))
+    #         else:
+    #             return self.event.get_image_info(inf_attr)
 
-    def image_shape(self):
-        if self.type == mem_object_type.IMAGE2D:
-            return (self.width, self.height)
-        elif self.type == mem_object_type.IMAGE3D:
-            return (self.width, self.height, self.depth)
-        else:
-            raise LogicError("only images have shapes")
+    # def image_shape(self):
+    #     if self.type == mem_object_type.IMAGE2D:
+    #         return (self.width, self.height)
+    #     elif self.type == mem_object_type.IMAGE3D:
+    #         return (self.width, self.height, self.depth)
+    #     else:
+    #         raise LogicError("only images have shapes")
 
-    Image.__init__ = image_init
-    Image.image = property(_ImageInfoGetter)
-    Image.shape = property(image_shape)
+    # Image.__init__ = image_init
+    # Image.image = property(_ImageInfoGetter)
+    # Image.shape = property(image_shape)
 
-    # }}}
+    # # }}}
 
-    # {{{ Error
+    # # {{{ Error
 
-    def error_str(self):
-        val = self.args[0]
-        try:
-            val.routine
-        except AttributeError:
-            return str(val)
-        else:
-            result = "%s failed: %s" % (val.routine(),
-                    status_code.to_string(val.code(), "<unknown error %d>")
-                    .lower().replace("_", " "))
-            if val.what():
-                result += " - " + val.what()
-            return result
+    # def error_str(self):
+    #     val = self.args[0]
+    #     try:
+    #         val.routine
+    #     except AttributeError:
+    #         return str(val)
+    #     else:
+    #         result = "%s failed: %s" % (val.routine(),
+    #                 status_code.to_string(val.code(), "<unknown error %d>")
+    #                 .lower().replace("_", " "))
+    #         if val.what():
+    #             result += " - " + val.what()
+    #         return result
 
-    def error_code(self):
-        return self.args[0].code()
+    # def error_code(self):
+    #     return self.args[0].code()
 
-    def error_routine(self):
-        return self.args[0].routine()
+    # def error_routine(self):
+    #     return self.args[0].routine()
 
-    def error_what(self):
-        return self.args[0].what()
+    # def error_what(self):
+    #     return self.args[0].what()
 
-    Error.__str__ = error_str
-    Error.code = property(error_code)
-    Error.routine = property(error_routine)
-    Error.what = property(error_what)
+    # Error.__str__ = error_str
+    # Error.code = property(error_code)
+    # Error.routine = property(error_routine)
+    # Error.what = property(error_what)
 
-    # }}}
+    # # }}}
 
-    if _cl.have_gl():
-        def gl_object_get_gl_object(self):
-            return self.get_gl_object_info()[1]
+    # if _cl.have_gl():
+    #     def gl_object_get_gl_object(self):
+    #         return self.get_gl_object_info()[1]
 
-        GLBuffer.gl_object = property(gl_object_get_gl_object)
-        GLTexture.gl_object = property(gl_object_get_gl_object)
+    #     GLBuffer.gl_object = property(gl_object_get_gl_object)
+    #     GLTexture.gl_object = property(gl_object_get_gl_object)
 
 _add_functionality()
 
@@ -881,22 +879,22 @@ def _mark_copy_deprecated(func):
     return new_func
 
 
-enqueue_read_image = _mark_copy_deprecated(_cl._enqueue_read_image)
-enqueue_write_image = _mark_copy_deprecated(_cl._enqueue_write_image)
-enqueue_copy_image = _mark_copy_deprecated(_cl._enqueue_copy_image)
-enqueue_copy_image_to_buffer = _mark_copy_deprecated(
-        _cl._enqueue_copy_image_to_buffer)
-enqueue_copy_buffer_to_image = _mark_copy_deprecated(
-        _cl._enqueue_copy_buffer_to_image)
+# enqueue_read_image = _mark_copy_deprecated(_cl._enqueue_read_image)
+# enqueue_write_image = _mark_copy_deprecated(_cl._enqueue_write_image)
+# enqueue_copy_image = _mark_copy_deprecated(_cl._enqueue_copy_image)
+# enqueue_copy_image_to_buffer = _mark_copy_deprecated(
+#         _cl._enqueue_copy_image_to_buffer)
+# enqueue_copy_buffer_to_image = _mark_copy_deprecated(
+#         _cl._enqueue_copy_buffer_to_image)
 enqueue_read_buffer = _mark_copy_deprecated(_cl._enqueue_read_buffer)
-enqueue_write_buffer = _mark_copy_deprecated(_cl._enqueue_write_buffer)
-enqueue_copy_buffer = _mark_copy_deprecated(_cl._enqueue_copy_buffer)
+# enqueue_write_buffer = _mark_copy_deprecated(_cl._enqueue_write_buffer)
+# enqueue_copy_buffer = _mark_copy_deprecated(_cl._enqueue_copy_buffer)
 
 
-if _cl.get_cl_header_version() >= (1, 1):
-    enqueue_read_buffer_rect = _mark_copy_deprecated(_cl._enqueue_read_buffer_rect)
-    enqueue_write_buffer_rect = _mark_copy_deprecated(_cl._enqueue_write_buffer_rect)
-    enqueue_copy_buffer_rect = _mark_copy_deprecated(_cl._enqueue_copy_buffer_rect)
+# if _cl.get_cl_header_version() >= (1, 1):
+#     enqueue_read_buffer_rect = _mark_copy_deprecated(_cl._enqueue_read_buffer_rect)
+#     enqueue_write_buffer_rect = _mark_copy_deprecated(_cl._enqueue_write_buffer_rect)
+#     enqueue_copy_buffer_rect = _mark_copy_deprecated(_cl._enqueue_copy_buffer_rect)
 
 
 def enqueue_copy(queue, dest, src, **kwargs):

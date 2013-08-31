@@ -5,6 +5,11 @@ namespace pyopencl {
   void populate_constants(void(*add)(const char*, const char*, unsigned int value)) {
 #define ADD_ATTR(TYPE, PREFIX, NAME)		\
     add(TYPE, #NAME, CL_##PREFIX##NAME)
+
+    // program_kind
+    add("program_kind", "UNKNOWN", KND_UNKNOWN);
+    add("program_kind", "SOURCE", KND_SOURCE);
+    add("program_kind", "BINARY", KND_BINARY);
     
     // status_code
     ADD_ATTR("status_code", , SUCCESS);

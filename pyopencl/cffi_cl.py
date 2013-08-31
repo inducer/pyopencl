@@ -1,11 +1,9 @@
-
-from pyopencl._cl import context_info, command_queue_info, Event, event_info, Image, image_info, Kernel, ImageFormat, GLBuffer, kernel_info, sampler_info, Sampler, have_gl, _enqueue_read_image, _enqueue_write_image, GLTexture, channel_type, _enqueue_copy_image, _enqueue_copy_image_to_buffer, _enqueue_copy_buffer_to_image, _enqueue_write_buffer, _enqueue_copy_buffer, _enqueue_read_buffer_rect, _enqueue_write_buffer_rect, _enqueue_copy_buffer_rect, RuntimeError, program_kind, Error, LogicError
+from pyopencl._cl import RuntimeError
 
 import warnings
 
 import os.path
 current_directory = os.path.dirname(__file__)
-
 
 
 
@@ -80,17 +78,6 @@ typedef cl_uint             cl_kernel_work_group_info;
 typedef cl_uint             cl_event_info;
 typedef cl_uint             cl_command_type;
 typedef cl_uint             cl_profiling_info;
-
-/* cl_mem_flags - bitfield */
-#define CL_MEM_READ_WRITE  ...
-#define CL_MEM_WRITE_ONLY  ...
-#define CL_MEM_READ_ONLY  ...
-#define CL_MEM_USE_HOST_PTR  ...
-#define CL_MEM_ALLOC_HOST_PTR  ...
-#define CL_MEM_COPY_HOST_PTR  ...
-#define CL_MEM_HOST_WRITE_ONLY  ...
-#define CL_MEM_HOST_READ_ONLY  ...
-#define CL_MEM_HOST_NO_ACCESS ...
 
 
 """
@@ -169,9 +156,9 @@ class Device(EQUALITY_TESTS):
     def get_info(self, param):
         if param == 4145:
             return self.__dict__["platform"] # TODO HACK
-        value = _ffi.new('char **')
-        _lib.device__get_info(self.ptr, param, value)
-        return _ffi.string(value[0])
+        info = _ffi.new('generic_info *')
+        _lib.device__get_info(self.ptr, param, info)
+        return _generic_info_to_python(info)
 
 def _create_device(ptr):
     device = Device()
@@ -241,7 +228,7 @@ class MemoryObject(MemoryObjectHolder):
         
 class Buffer(MemoryObjectHolder):
     def __init__(self, context, flags, size=0, hostbuf=None):
-        if hostbuf is not None and not (flags & (_lib.CL_MEM_USE_HOST_PTR | _lib.CL_MEM_COPY_HOST_PTR)):
+        if hostbuf is not None and not (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
             warnings.warn("'hostbuf' was passed, but no memory flags to make use of it.")
         c_hostbuf = _ffi.NULL
         if hostbuf is not None:
@@ -326,9 +313,9 @@ class Platform(object):
     # todo: __del__
 
     def get_info(self, param):
-        value = _ffi.new('char **')
-        _lib.platform__get_info(self.ptr, param, value)
-        return _ffi.string(value[0])
+        info = _ffi.new('generic_info *')
+        _lib.platform__get_info(self.ptr, param, info)
+        return _generic_info_to_python(info)
     
     def get_devices(self, device_type=device_type.ALL):
         devices = PP(_ffi.new('void**'))
@@ -349,6 +336,8 @@ def _create_platform(ptr):
     return platform
 
 def _generic_info_to_python(info):
+    if info.type == _lib.generic_info_type_chars:
+        return _ffi.string(info.value._chars)
     for type_ in ('cl_uint',
                   'cl_mem_object_type',
                   ):
