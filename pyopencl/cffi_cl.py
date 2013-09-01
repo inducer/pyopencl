@@ -168,15 +168,24 @@ def _handle_error(error):
 # }}}
 
 class _Common(object):
+    @classmethod
+    def _c_class_type(cls):
+        return getattr(_lib, 'CLASS_%s' % cls._id.upper())
+        
     def __eq__(self, other):
         return hash(self) == hash(other)
 
     def __hash__(self):
-        return _lib._hash(self.ptr, getattr(_lib, 'CLASS_%s' % self._id.upper()))
+        return _lib._hash(self.ptr, self._c_class_type())
+
+    def get_info(self, param):
+        info = _ffi.new('generic_info *')
+        _handle_error(_lib._get_info(self.ptr, self._c_class_type(), param, info))
+        return _generic_info_to_python(info)
 
     @property
     def int_ptr(self):
-        return _lib._int_ptr(self.ptr, getattr(_lib, 'CLASS_%s' % self._id.upper()))
+        return _lib._int_ptr(self.ptr, self._c_class_type())
 
     @classmethod
     def from_int_ptr(cls, int_ptr_value):
@@ -193,9 +202,7 @@ class Device(_Common):
     def get_info(self, param):
         if param == 4145:
             return self.__dict__["platform"] # TODO HACK
-        info = _ffi.new('generic_info *')
-        _handle_error(_lib.device__get_info(self.ptr, param, info))
-        return _generic_info_to_python(info)
+        return super(Device, self).get_info(param)
 
 def _parse_context_properties(properties):
     props = []
@@ -235,9 +242,6 @@ class Context(_Common):
             raise NotImplementedError()
 
         self.ptr = ptr_ctx[0]
-        
-    def get_info(self, param):
-        return 'TODO'
 
 class CommandQueue(_Common):
     _id = 'command_queue'
@@ -248,15 +252,8 @@ class CommandQueue(_Common):
         _handle_error(_lib._create_command_queue(ptr_command_queue, context.ptr, _ffi.NULL if device is None else device.ptr, properties))
         self.ptr = ptr_command_queue[0]
 
-    def get_info(self, param):
-        print param
-        raise NotImplementedError()
-
 class MemoryObjectHolder(_Common):
-    def get_info(self, param):
-        info = _ffi.new('generic_info *')
-        _handle_error(_lib.memory_object_holder__get_info(self.ptr, param, info))
-        return _generic_info_to_python(info)
+    pass
 
 class MemoryObject(MemoryObjectHolder):
     pass
@@ -347,22 +344,12 @@ class _Program(_Common):
             ptr_binaries = _CArrays(_ffi.new('char***'))
             _handle_error(_lib.program__get_info__binaries(self.ptr, ptr_binaries.ptr, ptr_binaries.size))
             return map(_ffi.string, ptr_binaries)
-
-        info = _ffi.new('generic_info *')
-        _handle_error(_lib.program__get_info(self.ptr, param, info))
-        
-        return _generic_info_to_python(info)
-
+        return super(_Program, self).get_info(param)
         
 class Platform(_Common):
     _id = 'platform'
     # todo: __del__
 
-    def get_info(self, param):
-        info = _ffi.new('generic_info *')
-        _handle_error(_lib.platform__get_info(self.ptr, param, info))
-        return _generic_info_to_python(info)
-    
     def get_devices(self, device_type=device_type.ALL):
         devices = _CArray(_ffi.new('void**'))
         _handle_error(_lib.platform__get_devices(self.ptr, devices.ptr, devices.size, device_type))
@@ -387,7 +374,7 @@ def _generic_info_to_python(info):
     _lib._free(info.value)
     return ret
 
-class Kernel(object):
+class Kernel(_Common):
     _id = 'kernel'
     
     def __init__(self, program, name):
@@ -395,12 +382,6 @@ class Kernel(object):
         _handle_error(_lib._create_kernel(ptr_kernel, program.ptr, name))
         self.ptr = ptr_kernel[0]
         
-    def get_info(self, param):
-        info = _ffi.new('generic_info *')
-        _handle_error(_lib.kernel__get_info(self.ptr, param, info))
-        return _generic_info_to_python(info)
-        #raise NotImplementedError()
-
     def set_arg(self, arg_index, arg):
         if isinstance(arg, Buffer):
             _handle_error(_lib.kernel__set_arg_mem_buffer(self.ptr, arg_index, arg.ptr))
@@ -422,10 +403,6 @@ class Event(_Common):
     _id = 'event'
     def __init__(self):
         pass
-        
-    def get_info(self, param):
-        print param
-        raise NotImplementedError()
 
 
 def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False):

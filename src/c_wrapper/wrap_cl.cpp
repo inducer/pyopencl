@@ -314,32 +314,32 @@ namespace pyopencl
 
     PYOPENCL_EQUALITY_TESTS(event);
 
-    // py::object get_info(cl_event_info param_name) const
-    //       {
-    //         switch (param_name)
-    //         {
-    //           case CL_EVENT_COMMAND_QUEUE:
-    //             PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
-    //                 cl_command_queue, command_queue);
-    //           case CL_EVENT_COMMAND_TYPE:
-    //             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
-    //                 cl_command_type);
-    //           case CL_EVENT_COMMAND_EXECUTION_STATUS:
-    //             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
-    //                 cl_int);
-    //           case CL_EVENT_REFERENCE_COUNT:
-    //             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
-    //                 cl_uint);
-    // #if PYOPENCL_CL_VERSION >= 0x1010
-    //           case CL_EVENT_CONTEXT:
-    //             PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
-    //                 cl_context, context);
-    // #endif
+    generic_info get_info(cl_event_info param_name) const
+    {
+      switch (param_name)
+	{
+	  //           case CL_EVENT_COMMAND_QUEUE:
+	  //             PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
+	  //                 cl_command_queue, command_queue);
+	  //           case CL_EVENT_COMMAND_TYPE:
+	  //             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
+	  //                 cl_command_type);
+	  //           case CL_EVENT_COMMAND_EXECUTION_STATUS:
+	  //             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
+	  //                 cl_int);
+	  //           case CL_EVENT_REFERENCE_COUNT:
+	  //             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
+	  //                 cl_uint);
+	  // #if PYOPENCL_CL_VERSION >= 0x1010
+	  //           case CL_EVENT_CONTEXT:
+	  //             PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
+	  //                 cl_context, context);
+	  // #endif
 
-    //           default:
-    //             throw error("Event.get_info", CL_INVALID_VALUE);
-    //         }
-    //       }
+	default:
+	  throw error("Event.get_info", CL_INVALID_VALUE);
+	}
+    }
 
     // py::object get_profiling_info(cl_profiling_info param_name) const
     // {
@@ -823,10 +823,10 @@ namespace pyopencl
 
     PYOPENCL_EQUALITY_TESTS(context);
 
-    //       py::object get_info(cl_context_info param_name) const
-    //       {
-    //         switch (param_name)
-    // 	  {
+    generic_info get_info(cl_context_info param_name) const
+    {
+      switch (param_name)
+	{
     //           case CL_CONTEXT_REFERENCE_COUNT:
     //             PYOPENCL_GET_INTEGRAL_INFO(
     // 				       Context, m_context, param_name, cl_uint);
@@ -896,13 +896,10 @@ namespace pyopencl
     // 				       Context, m_context, param_name, cl_uint);
     // #endif
 
-    //           default:
-    //             throw error("Context.get_info", CL_INVALID_VALUE);
-    // 	  }
-    //       }
-    //     };
-
-
+	default:
+	  throw error("Context.get_info", CL_INVALID_VALUE);
+	}
+    }
 
     // }}}
 
@@ -969,27 +966,27 @@ namespace pyopencl
 
     PYOPENCL_EQUALITY_TESTS(command_queue);
 
-    // py::object get_info(cl_command_queue_info param_name) const
-    // {
-    //   switch (param_name)
-    //   {
-    //     case CL_QUEUE_CONTEXT:
-    //       PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
-    //           cl_context, context);
-    //     case CL_QUEUE_DEVICE:
-    //       PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
-    //           cl_device_id, device);
-    //     case CL_QUEUE_REFERENCE_COUNT:
-    //       PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
-    //           cl_uint);
-    //     case CL_QUEUE_PROPERTIES:
-    //       PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
-    //           cl_command_queue_properties);
+    generic_info get_info(cl_command_queue_info param_name) const
+    {
+      switch (param_name)
+      {
+        // case CL_QUEUE_CONTEXT:
+        //   PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
+        //       cl_context, context);
+        // case CL_QUEUE_DEVICE:
+        //   PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
+        //       cl_device_id, device);
+        // case CL_QUEUE_REFERENCE_COUNT:
+        //   PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
+        //       cl_uint);
+        // case CL_QUEUE_PROPERTIES:
+        //   PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
+        //       cl_command_queue_properties);
 
-    //     default:
-    //       throw error("CommandQueue.get_info", CL_INVALID_VALUE);
-    //   }
-    // }
+        default:
+          throw error("CommandQueue.get_info", CL_INVALID_VALUE);
+      }
+    }
 
     std::auto_ptr<context> get_context() const
     {
@@ -2041,13 +2038,7 @@ namespace pyopencl
     }
   }
 
-  ::error *platform__get_info(void *ptr_platform, cl_platform_info param, generic_info *out) {
-    C_HANDLE_ERROR(
-		   *out = static_cast<platform*>(ptr_platform)->get_info(param);
-		   )
-      return 0;
-  }
-
+ 
   ::error *platform__get_devices(void *ptr_platform, void **ptr_devices, uint32_t *num_devices, cl_device_type devtype) {
     typedef std::vector<cl_device_id> vec;
     C_HANDLE_ERROR(
@@ -2063,13 +2054,6 @@ namespace pyopencl
       return 0;
   }
 
-
-  ::error *device__get_info(void *ptr_device, cl_device_info param, generic_info *out) {
-    C_HANDLE_ERROR(
-		   *out = static_cast<device*>(ptr_device)->get_info(param);
-		   )
-      return 0;
-  }
 
   ::error *_create_context(void **ptr_ctx, cl_context_properties *properties, cl_uint num_devices, void **ptr_devices) {
     C_HANDLE_ERROR(
@@ -2173,25 +2157,10 @@ namespace pyopencl
   }
 
   
-  ::error *program__get_info(void *ptr_program, cl_program_info param, generic_info *out) {
-    C_HANDLE_ERROR(
-		   *out = static_cast<program*>(ptr_program)->get_info(param);
-		   )
-      return 0;
-  }
-
-  
   ::error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name) {
     program *prg = static_cast<program*>(ptr_program);
     C_HANDLE_ERROR(
 		   *ptr_kernel = new kernel(*prg, name);
-		   )
-      return 0;
-  }
-
-  ::error *kernel__get_info(void *ptr_kernel, cl_kernel_info param, generic_info *out) {
-    C_HANDLE_ERROR(
-		   *out = static_cast<kernel*>(ptr_kernel)->get_info(param);
 		   )
       return 0;
   }
@@ -2226,13 +2195,6 @@ namespace pyopencl
       return 0;
   }
   
-  ::error *memory_object_holder__get_info(void *ptr_memory_object_holder, cl_mem_info param, generic_info *out) {
-    C_HANDLE_ERROR(
-		   *out = static_cast<memory_object_holder*>(ptr_memory_object_holder)->get_info(param);
-		   )
-      return 0;
-  }
-  
   intptr_t _int_ptr(void* ptr, class_t class_) {
 #define INT_PTR(CLSU, CLS) return (intptr_t)(static_cast<CLS*>(ptr)->data());
     SWITCHCLASS(INT_PTR);
@@ -2248,6 +2210,14 @@ namespace pyopencl
 #define HASH(CLSU, CLS)	return static_cast<CLS*>(ptr)->hash();
     SWITCHCLASS(HASH);
   }
+
+  
+  ::error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out) {
+#define GET_INFO(CLSU, CLS) C_HANDLE_ERROR(*out = static_cast<CLS*>(ptr)->get_info(param);)
+    SWITCHCLASS(GET_INFO)
+      return 0;
+  }
+ 
   
 
 }
