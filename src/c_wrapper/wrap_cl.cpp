@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string.h>
 #include <memory>
+#include <sstream>
 
 #define MALLOC(TYPE, VAR, N) TYPE *VAR = reinterpret_cast<TYPE*>(malloc(sizeof(TYPE)*(N)));
 
@@ -80,20 +81,20 @@
 			  (FIRST_ARG, SECOND_ARG, param_value_size,	\
 			   param_value, &param_value_size));		\
     generic_info info;							\
-    info.type = generic_info_type_chars;				\
-    info.value._chars = param_value;					\
+    info.type = "char*";				\
+    info.value = (void*)param_value;					\
     return info;							\
   }
 
 #define PYOPENCL_GET_INTEGRAL_INFO(WHAT, FIRST_ARG, SECOND_ARG, TYPE)	\
   {									\
-    TYPE param_value;							\
+    MALLOC(TYPE, param_value, 1);					\
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,				\
-			  (FIRST_ARG, SECOND_ARG, sizeof(param_value), &param_value, 0)); \
+			  (FIRST_ARG, SECOND_ARG, sizeof(param_value), param_value, 0)); \
     generic_info info;							\
-    info.type = generic_info_type_##TYPE;				\
-      info.value._##TYPE = param_value;					\
-	return info;							\
+    info.type = #TYPE;							\
+      info.value = (void*)param_value;					\
+      return info;							\
   }
 
 #define PYOPENCL_GET_ARRAY_INFO(TYPE, VEC)	\
@@ -103,11 +104,9 @@
       ar[i] = VEC[i];				\
     }						\
     generic_info info;				\
-    info.type = generic_info_type_array;	\
-    info.value._array.array = ar;		\
-    info.value._array.size = VEC.size();	\
-    info.array_element_type = #TYPE;		\
-      return info;				\
+    info.type = _copy_str(std::string(#TYPE"[") + tostring(VEC.size()) + "]"); \
+    info.value = (void*)ar;						\
+    return info;							\
   }
   
 #define PYOPENCL_RETURN_NEW_EVENT(evt)		\
@@ -229,6 +228,12 @@ run_python_gc(); \
     return PYOPENCL_CL_VERSION;
   }
 
+template<class T>
+std::string tostring(const T& v) {
+  std::ostringstream ostr;
+  ostr << v;
+  return ostr.str();
+}
 
 extern "C"
 namespace pyopencl
@@ -238,6 +243,8 @@ namespace pyopencl
     strcpy(cstr, str.c_str());
     return cstr;
   }
+
+  
   
   // {{{ error
   class error : public std::runtime_error

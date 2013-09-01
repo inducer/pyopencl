@@ -376,23 +376,16 @@ class Platform(_Common):
             r.__dict__["platform"] = self
         return result
 
-        
 def _generic_info_to_python(info):
-    if info.type == _lib.generic_info_type_chars:
-        return _ffi.string(info.value._chars)
-    if info.type == _lib.generic_info_type_array:
-        ar = _ffi.cast('%s[%s]' % (_ffi.string(info.array_element_type), info.value._array.size), info.value._array.array)
-        return list(ar)
-        
-    for type_ in ('cl_uint',
-                  'cl_mem_object_type',
-                  'cl_build_status',
-                  'cl_program_binary_type',
-                  'size_t',
-                  ):
-        if info.type == getattr(_lib, 'generic_info_type_%s' % type_):
-            return getattr(info.value, '_%s' % type_)
-    raise NotImplementedError(info.type)
+    type_ = _ffi.string(info.type)
+    if type_ == 'char*':
+        ret = _ffi.string(_ffi.cast(type_, info.value))
+    elif type_.endswith(']'):
+        ret = list(_ffi.cast(type_, info.value))
+    else:
+        ret = _ffi.cast('%s*' % type_, info.value)[0]
+    _lib._free(info.value)
+    return ret
 
 class Kernel(object):
     _id = 'kernel'

@@ -1,28 +1,8 @@
 typedef enum { KND_UNKNOWN, KND_SOURCE, KND_BINARY } program_kind_type;
 
-typedef enum {
-  generic_info_type_cl_uint,
-  generic_info_type_cl_mem_object_type,
-  generic_info_type_cl_build_status,
-  generic_info_type_cl_program_binary_type,
-  generic_info_type_size_t,
-  generic_info_type_chars,
-  generic_info_type_array,
-} generic_info_type_t;
-
 typedef struct {
-  generic_info_type_t type;
-  const char *array_element_type;
-  union value_t {
-    cl_uint _cl_uint;
-    cl_mem_object_type _cl_mem_object_type;
-    cl_build_status _cl_build_status;
-    cl_program_binary_type _cl_program_binary_type;
-    size_t _size_t;
-    char *_chars;
-    
-    struct { void *array; uint32_t size; } _array;
-  } value;
+  const char *type;
+  void *value;
 } generic_info;
 
 typedef struct {
