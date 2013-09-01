@@ -172,16 +172,17 @@ class _Common(object):
         return hash(self) == hash(other)
 
     def __hash__(self):
-        return getattr(_lib, '%s__hash' % self._id)(self.ptr)
+        return _lib._hash(self.ptr, getattr(_lib, 'CLASS_%s' % self._id.upper()))
 
     @property
     def int_ptr(self):
-        return getattr(_lib, '%s__int_ptr' % self._id)(self.ptr)
+        return _lib._int_ptr(self.ptr, getattr(_lib, 'CLASS_%s' % self._id.upper()))
 
     @classmethod
     def from_int_ptr(cls, int_ptr_value):
         ptr = _ffi.new('void **')
-        getattr(_lib, '%s__from_int_ptr' % cls._id)(ptr, int_ptr_value)
+        _lib._from_int_ptr(ptr, int_ptr_value, getattr(_lib, 'CLASS_%s' % cls._id.upper()))
+        #getattr(_lib, '%s__from_int_ptr' % cls._id)(ptr, int_ptr_value)
         return _create_instance(cls, ptr[0])
         
 class Device(_Common):
@@ -257,9 +258,6 @@ class MemoryObjectHolder(_Common):
         _handle_error(_lib.memory_object_holder__get_info(self.ptr, param, info))
         return _generic_info_to_python(info)
 
-    def __hash__(self):
-        return _lib.memory_object_holder__hash(self.ptr)
-        
 class MemoryObject(MemoryObjectHolder):
     pass
         
