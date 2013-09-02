@@ -164,7 +164,9 @@ def _handle_error(error):
         klass = RuntimeError
     else:
         klass = Error
-    raise klass(_ffi.string(error.routine), error.code, _ffi.string(error.msg))
+    e = klass(_ffi.string(error.routine), error.code, _ffi.string(error.msg))
+    _lib._free(error)
+    raise e
 # }}}
 
 class _Common(object):
@@ -200,8 +202,6 @@ class Device(_Common):
     # todo: __del__
 
     def get_info(self, param):
-        if param == 4145:
-            return self.__dict__["platform"] # TODO HACK
         return super(Device, self).get_info(param)
 
 def _parse_context_properties(properties):
@@ -369,6 +369,22 @@ def _generic_info_to_python(info):
         ret = _ffi.string(_ffi.cast(type_, info.value))
     elif type_.endswith(']'):
         ret = list(_ffi.cast(type_, info.value))
+    elif type_ == 'cl_platform_id':
+        return _create_instance(Platform, _ffi.cast('void *', info.value))
+    elif type_ == 'cl_device_id':
+        return _create_instance(Device, _ffi.cast('void *', info.value))
+    elif type_ == 'cl_kernel':
+        return _create_instance(Kernel, _ffi.cast('void *', info.value))
+    elif type_ == 'cl_context':
+        return _create_instance(Context, _ffi.cast('void *', info.value))
+    elif type_ == 'cl_buffer':
+        return _create_instance(Buffer, _ffi.cast('void *', info.value))
+    elif type_ == 'cl_program':
+        return _create_instance(Program, _ffi.cast('void *', info.value))
+    elif type_ == 'cl_event':
+        return _create_instance(Event, _ffi.cast('void *', info.value))
+    elif type_ == 'cl_command_queue':
+        return _create_instance(CommandQueue, _ffi.cast('void *', info.value))
     else:
         ret = _ffi.cast('%s*' % type_, info.value)[0]
     _lib._free(info.value)
