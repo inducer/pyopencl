@@ -1,17 +1,13 @@
 typedef enum { KND_UNKNOWN, KND_SOURCE, KND_BINARY } program_kind_type;
 
 typedef struct {
-  const char *type;
-  void *value;
-} generic_info;
-
-typedef struct {
   const char *routine;
   const char *msg;
   cl_int code;
 } error;
 
 typedef enum {
+  CLASS_NONE,
   CLASS_PLATFORM,
   CLASS_DEVICE,
   CLASS_KERNEL,
@@ -21,6 +17,14 @@ typedef enum {
   CLASS_EVENT,
   CLASS_COMMAND_QUEUE
 } class_t;
+
+
+typedef struct {
+  class_t opaque_class;
+  const char *type;
+  void *value;
+} generic_info;
+
 
 int get_cl_version(void);
 error *get_platforms(void **ptr_platforms, uint32_t *num_platforms);
@@ -33,8 +37,6 @@ error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uin
 error *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices);
 error *program__kind(void *ptr_program, int *kind);
 error *program__get_build_info(void *ptr_program, void *ptr_device, cl_program_build_info param, generic_info *out);
-error *program__get_info__devices(void *ptr_program, void **ptr_devices, uint32_t *num_devices);
-error *program__get_info__binaries(void *ptr_program, char ***ptr_binaries, uint32_t *num_binaries);
 
 error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name);
 error *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer);

@@ -70,20 +70,35 @@
 			   RES_VEC.empty( ) ? NULL : &RES_VEC.front(), &size)); \
   }
 
-#define PYOPENCL_GET_OPAQUE_INFO(WHAT, FIRST_ARG, SECOND_ARG, CL_TYPE, TYPE) \
+#define PYOPENCL_GET_OPAQUE_INFO(WHAT, FIRST_ARG, SECOND_ARG, CL_TYPE, TYPE, TYPEU) \
   {									\
     CL_TYPE param_value;						\
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,				\
 			  (FIRST_ARG, SECOND_ARG, sizeof(param_value), &param_value, 0)); \
     generic_info info;							\
-    info.type = #CL_TYPE;						\
-    if (param_value)							\
-      info.value = (void*)(new TYPE(param_value, /*retain*/ true));	\
-    else								\
-      info.value = NULL;						\
-    return info;							\
+    info.opaque_class = CLASS_##TYPEU;					\
+      info.type = "void *";						\
+      if (param_value)							\
+	info.value = (void*)(new TYPE(param_value, /*retain*/ true));	\
+      else								\
+	info.value = NULL;						\
+      return info;							\
   }
 
+
+#define PYOPENCL_GET_OPAQUE_ARRAY_INFO(TYPE, CLS, CLSU, VEC)		\
+  {									\
+    MALLOC(void*, ar, VEC.size());					\
+    for(uint32_t i = 0; i < VEC.size(); ++i) {				\
+      ar[i] = new pyopencl::CLS(VEC[i]);				\
+    }									\
+    generic_info info;							\
+    info.opaque_class = CLASS_##CLSU;					\
+    info.type = _copy_str(std::string("void*[") + tostring(VEC.size()) + "]"); \
+    info.value = (void**)ar;						\
+    return info;							\
+  }
+  
 
 #define PYOPENCL_GET_STR_INFO(WHAT, FIRST_ARG, SECOND_ARG)		\
   {									\
@@ -96,7 +111,8 @@
 			  (FIRST_ARG, SECOND_ARG, param_value_size,	\
 			   param_value, &param_value_size));		\
     generic_info info;							\
-    info.type = "char*";				\
+    info.opaque_class = CLASS_NONE;					\
+    info.type = "char*";						\
     info.value = (void*)param_value;					\
     return info;							\
   }
@@ -107,7 +123,8 @@
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,				\
 			  (FIRST_ARG, SECOND_ARG, sizeof(param_value), param_value, 0)); \
     generic_info info;							\
-    info.type = #TYPE;							\
+    info.opaque_class = CLASS_NONE;					\
+    info.type = #TYPE"*";						\
       info.value = (void*)param_value;					\
       return info;							\
   }
@@ -119,6 +136,7 @@
       ar[i] = VEC[i];							\
     }									\
     generic_info info;							\
+    info.opaque_class = CLASS_NONE;					\
     info.type = _copy_str(std::string(#TYPE"[") + tostring(VEC.size()) + "]"); \
     info.value = (void*)ar;						\
     return info;							\
@@ -225,9 +243,6 @@ run_python_gc(); \
 #define PYOPENCL_CL_BUFFER cl_mem
 #define PYOPENCL_CL_PROGRAM cl_program
 #define PYOPENCL_CL_EVENT cl_event
-  
-
-
 
 template<class T>
 std::string tostring(const T& v) {
@@ -508,7 +523,7 @@ namespace pyopencl
 	  PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
 	  
 	case CL_DEVICE_PLATFORM:
-	  PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_platform_id, platform);
+	  PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_platform_id, platform, PLATFORM);
 
 	  // #if PYOPENCL_CL_VERSION >= 0x1010
 	  //           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
@@ -538,7 +553,7 @@ namespace pyopencl
 	  // #endif
 	  // #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
 	  //           case CL_DEVICE_PARENT_DEVICE_EXT:
-	  //             PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device);
+	  //             PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
 	  //           case CL_DEVICE_PARTITION_TYPES_EXT:
 	  //           case CL_DEVICE_AFFINITY_DOMAINS_EXT:
 	  //           case CL_DEVICE_PARTITION_STYLE_EXT:
@@ -556,7 +571,7 @@ namespace pyopencl
 	  //           case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE: DEV_GET_INT_INF(size_t);
 	  //           case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE: DEV_GET_INT_INF(size_t);
 	  //           case CL_DEVICE_PARENT_DEVICE:
-	  //             PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device);
+	  //             PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
 	  //           case CL_DEVICE_PARTITION_MAX_SUB_DEVICES: DEV_GET_INT_INF(cl_uint);
 	  //           case CL_DEVICE_PARTITION_TYPE:
 	  //           case CL_DEVICE_PARTITION_PROPERTIES:
@@ -745,21 +760,16 @@ namespace pyopencl
     {
       switch (param_name)
 	{
-    //           case CL_CONTEXT_REFERENCE_COUNT:
-    //             PYOPENCL_GET_INTEGRAL_INFO(
-    // 				       Context, m_context, param_name, cl_uint);
+	case CL_CONTEXT_REFERENCE_COUNT:
+	  PYOPENCL_GET_INTEGRAL_INFO(Context, m_context, param_name, cl_uint);
 
-    //           case CL_CONTEXT_DEVICES:
-    //             {
-    //               std::vector<cl_device_id> result;
-    //               PYOPENCL_GET_VEC_INFO(Context, m_context, param_name, result);
-
-    //               py::list py_result;
-    //               BOOST_FOREACH(cl_device_id did, result)
-    //                 py_result.append(handle_from_new_ptr(
-    // 						     new pyopencl::device(did)));
-    //               return py_result;
-    //             }
+	case CL_CONTEXT_DEVICES:
+	  {
+	    std::vector<cl_device_id> result;
+	    PYOPENCL_GET_VEC_INFO(Context, m_context, param_name, result);
+	    PYOPENCL_GET_OPAQUE_ARRAY_INFO(cl_device_id, device, DEVICE, result);
+	    
+	  }
 
     //           case CL_CONTEXT_PROPERTIES:
     //             {
@@ -808,11 +818,10 @@ namespace pyopencl
     //               return py_result;
     //             }
 
-    // #if PYOPENCL_CL_VERSION >= 0x1010
-    //           case CL_CONTEXT_NUM_DEVICES:
-    //             PYOPENCL_GET_INTEGRAL_INFO(
-    // 				       Context, m_context, param_name, cl_uint);
-    // #endif
+#if PYOPENCL_CL_VERSION >= 0x1010
+	case CL_CONTEXT_NUM_DEVICES:
+	  PYOPENCL_GET_INTEGRAL_INFO(Context, m_context, param_name, cl_uint);
+#endif
 
 	default:
 	  throw error("Context.get_info", CL_INVALID_VALUE);
@@ -890,10 +899,10 @@ namespace pyopencl
       {
         case CL_QUEUE_CONTEXT:
           PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
-              cl_context, context);
+              cl_context, context, CONTEXT);
         case CL_QUEUE_DEVICE:
           PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
-              cl_device_id, device);
+              cl_device_id, device, DEVICE);
         case CL_QUEUE_REFERENCE_COUNT:
           PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
               cl_uint);
@@ -974,7 +983,7 @@ namespace pyopencl
 	{
 	case CL_EVENT_COMMAND_QUEUE:
 	  PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
-				   cl_command_queue, command_queue);
+				   cl_command_queue, command_queue, COMMAND_QUEUE);
 	case CL_EVENT_COMMAND_TYPE:
 	  PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
 				     cl_command_type);
@@ -987,7 +996,7 @@ namespace pyopencl
 #if PYOPENCL_CL_VERSION >= 0x1010
 	case CL_EVENT_CONTEXT:
 	  PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
-				   cl_context, context);
+				   cl_context, context, CONTEXT);
 #endif
 
 	default:
@@ -1060,7 +1069,7 @@ namespace pyopencl
 				   cl_uint);
       case CL_MEM_CONTEXT:
 	PYOPENCL_GET_OPAQUE_INFO(MemObject, data(), param_name,
-				 cl_context, context);
+				 cl_context, context, CONTEXT);
 
 #if PYOPENCL_CL_VERSION >= 0x1010
 	//       case CL_MEM_ASSOCIATED_MEMOBJECT:
@@ -1410,25 +1419,6 @@ namespace pyopencl
       return result;
     }
 
-    char **get_info__binaries(uint32_t *num_binaries) {
-      std::vector<size_t> sizes;
-      PYOPENCL_GET_VEC_INFO(Program, m_program, CL_PROGRAM_BINARY_SIZES, sizes);
-      
-      *num_binaries = sizes.size();
-      
-      MALLOC(char *, result_ptrs, sizes.size());
-      
-      for (unsigned i = 0; i < sizes.size(); ++i) {
-	result_ptrs[i] = new char[sizes[i]+1];
-	result_ptrs[i][sizes[i]] = '\0';
-      }
-      PYOPENCL_CALL_GUARDED(clGetProgramInfo,
-			    (m_program, CL_PROGRAM_BINARIES, sizes.size()*sizeof(char *),
-			     result_ptrs, 0)); \
-      return result_ptrs;
-    }
-    
-
     generic_info get_info(cl_program_info param_name) const
     {
       switch (param_name)
@@ -1438,21 +1428,16 @@ namespace pyopencl
 				     cl_uint);
 	case CL_PROGRAM_CONTEXT:
 	  PYOPENCL_GET_OPAQUE_INFO(Program, m_program, param_name,
-				   cl_context, context);
+				   cl_context, context, CONTEXT);
 	case CL_PROGRAM_NUM_DEVICES:
 	  PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
 				     cl_uint);
-	  //           case CL_PROGRAM_DEVICES:
-	  //             {
-	  //               std::vector<cl_device_id> result;
-	  //               PYOPENCL_GET_VEC_INFO(Program, m_program, param_name, result);
-
-	  //               py::list py_result;
-	  //               BOOST_FOREACH(cl_device_id did, result)
-	  //                 py_result.append(handle_from_new_ptr(
-	  //                       new pyopencl::device(did)));
-	  //               return py_result;
-	  //             }
+	case CL_PROGRAM_DEVICES:
+	  {
+	    std::vector<cl_device_id> result;
+	    PYOPENCL_GET_VEC_INFO(Program, m_program, param_name, result);
+	    PYOPENCL_GET_OPAQUE_ARRAY_INFO(cl_device_id, device, DEVICE, result);
+	  }
 	case CL_PROGRAM_SOURCE:
 	  PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
 	case CL_PROGRAM_BINARY_SIZES:
@@ -1461,48 +1446,22 @@ namespace pyopencl
 	    PYOPENCL_GET_VEC_INFO(Program, m_program, param_name, result);
 	    PYOPENCL_GET_ARRAY_INFO(size_t, result);
 	  }
-	  //           case CL_PROGRAM_BINARIES:
-	  //             // {{{
-	  //             {
-	  //               std::vector<size_t> sizes;
-	  //               PYOPENCL_GET_VEC_INFO(Program, m_program, CL_PROGRAM_BINARY_SIZES, sizes);
+	case CL_PROGRAM_BINARIES:
+	  {
+	    std::vector<size_t> sizes;
+	    PYOPENCL_GET_VEC_INFO(Program, m_program, CL_PROGRAM_BINARY_SIZES, sizes);
 
-	  //               size_t total_size = std::accumulate(sizes.begin(), sizes.end(), 0);
-
-	  //               boost::scoped_array<unsigned char> result(
-	  //                   new unsigned char[total_size]);
-	  //               std::vector<unsigned char *> result_ptrs;
-
-	  //               unsigned char *ptr = result.get();
-	  //               for (unsigned i = 0; i < sizes.size(); ++i)
-	  //               {
-	  //                 result_ptrs.push_back(ptr);
-	  //                 ptr += sizes[i];
-	  //               }
-
-	  //               PYOPENCL_CALL_GUARDED(clGetProgramInfo,
-	  //                   (m_program, param_name, sizes.size()*sizeof(unsigned char *),
-	  //                    result_ptrs.empty( ) ? NULL : &result_ptrs.front(), 0)); 
-
-	  //               py::list py_result;
-	  //               ptr = result.get();
-	  //               for (unsigned i = 0; i < sizes.size(); ++i)
-	  //               {
-	  //                 py::handle<> binary_pyobj(
-	  // #if PY_VERSION_HEX >= 0x03000000
-	  //                     PyBytes_FromStringAndSize(
-	  //                       reinterpret_cast<char *>(ptr), sizes[i])
-	  // #else
-	  //                     PyString_FromStringAndSize(
-	  //                       reinterpret_cast<char *>(ptr), sizes[i])
-	  // #endif
-	  //                     );
-	  //                 py_result.append(binary_pyobj);
-	  //                 ptr += sizes[i];
-	  //               }
-	  //               return py_result;
-	  //             }
-	  //             // }}}
+	    std::vector<char *> result_ptrs(sizes.size());
+	    for (unsigned i = 0; i < sizes.size(); ++i) {
+	      result_ptrs[i] = new char[sizes[i]+1];
+	      result_ptrs[i][sizes[i]] = '\0';
+	    }
+	    PYOPENCL_CALL_GUARDED(clGetProgramInfo,
+				  (m_program, CL_PROGRAM_BINARIES, sizes.size()*sizeof(char *),
+				   &result_ptrs.front(), 0)); 
+	    PYOPENCL_GET_ARRAY_INFO(char*, result_ptrs)
+	  }
+	  
 #if PYOPENCL_CL_VERSION >= 0x1020
 	case CL_PROGRAM_NUM_KERNELS:
 	  PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
@@ -1739,10 +1698,10 @@ namespace pyopencl
 				     cl_uint);
 	case CL_KERNEL_CONTEXT:
 	  PYOPENCL_GET_OPAQUE_INFO(Kernel, m_kernel, param_name,
-				   cl_context, context);
+				   cl_context, context, CONTEXT);
 	case CL_KERNEL_PROGRAM:
 	  PYOPENCL_GET_OPAQUE_INFO(Kernel, m_kernel, param_name,
-				   cl_program, program);
+				   cl_program, program, PROGRAM);
 #if PYOPENCL_CL_VERSION >= 0x1020
 	case CL_KERNEL_ATTRIBUTES:
 	  PYOPENCL_GET_STR_INFO(Kernel, m_kernel, param_name);
@@ -2127,33 +2086,6 @@ namespace pyopencl
 		   )
       return 0;
   }
-
-  ::error *program__get_info__devices(void *ptr_program, void **ptr_devices, uint32_t *num_devices) {
-    typedef std::vector<cl_device_id> vec;
-
-    // todo: refactor, same as get_devices()
-    C_HANDLE_ERROR(
-		   vec devices = static_cast<program*>(ptr_program)->get_info__devices();
-		   
-		   *num_devices = devices.size();
-
-		   MALLOC(device*, _ptr_devices, *num_devices);
-		   for(vec::size_type i = 0; i < devices.size(); ++i) {
-		     _ptr_devices[i] = new device(devices[i]);
-		   }
-		   *ptr_devices = _ptr_devices;
-		   )
-      return 0;
-    
-  }
-
-  ::error *program__get_info__binaries(void *ptr_program, char ***ptr_binaries, uint32_t *num_binaries) {
-    C_HANDLE_ERROR(
-		   *ptr_binaries = static_cast<program*>(ptr_program)->get_info__binaries(num_binaries);
-		   )
-      return 0;
-  }
-
   
   ::error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name) {
     program *prg = static_cast<program*>(ptr_program);

@@ -328,24 +328,6 @@ class _Program(_Common):
         _handle_error(_lib.program__get_build_info(self.ptr, device.ptr, param, info))
         return _generic_info_to_python(info)
         
-
-    def get_info(self, param):
-        if param == program_info.DEVICES:
-            # todo: refactor, same code as in get_devices 
-            devices = _CArray(_ffi.new('void**'))
-            _handle_error(_lib.program__get_info__devices(self.ptr, devices.ptr, devices.size))
-            result = []
-            for i in xrange(devices.size[0]):
-                # TODO why is the cast needed? 
-                device_ptr = _ffi.cast('void**', devices.ptr[0])[i]
-                result.append(_create_instance(Device, device_ptr))
-            return result
-        elif param == program_info.BINARIES:
-            ptr_binaries = _CArrays(_ffi.new('char***'))
-            _handle_error(_lib.program__get_info__binaries(self.ptr, ptr_binaries.ptr, ptr_binaries.size))
-            return map(_ffi.string, ptr_binaries)
-        return super(_Program, self).get_info(param)
-        
 class Platform(_Common):
     _id = 'platform'
     # todo: __del__
@@ -358,35 +340,45 @@ class Platform(_Common):
             # TODO why is the cast needed? 
             device_ptr = _ffi.cast('void**', devices.ptr[0])[i]
             result.append(_create_instance(Device, device_ptr))
-        # TODO remove, should be done via get_info(PLATFORM)
-        for r in result:
-            r.__dict__["platform"] = self
         return result
 
 def _generic_info_to_python(info):
     type_ = _ffi.string(info.type)
+    value = _ffi.cast(type_, info.value)
+    if info.opaque_class != _lib.CLASS_NONE:
+        klass = {
+            _lib.CLASS_PLATFORM: Platform,
+            _lib.CLASS_DEVICE: Device,
+            _lib.CLASS_KERNEL: Kernel, 
+            _lib.CLASS_CONTEXT: Context,
+            _lib.CLASS_BUFFER: Buffer,
+            _lib.CLASS_PROGRAM: _Program, 
+            _lib.CLASS_EVENT: Event,
+            _lib.CLASS_COMMAND_QUEUE: CommandQueue
+            }[info.opaque_class]
+
+        def ci(ptr):
+            ins = _create_instance(klass, ptr)
+            if info.opaque_class == _lib.CLASS_PROGRAM: # HACK?
+                from . import Program
+                return Program(ins)
+            return ins
+            
+        if type_.endswith(']'):
+            ret = map(ci, value)
+            _lib._free(info.value)
+            return ret
+        else:
+            return ci(value)
     if type_ == 'char*':
-        ret = _ffi.string(_ffi.cast(type_, info.value))
+        ret = _ffi.string(value)
+    elif type_.startswith('char*['):
+        ret = map(_ffi.string, value)
+        _lib._free2(info.value, len(value))
     elif type_.endswith(']'):
-        ret = list(_ffi.cast(type_, info.value))
-    elif type_ == 'cl_platform_id':
-        return _create_instance(Platform, _ffi.cast('void *', info.value))
-    elif type_ == 'cl_device_id':
-        return _create_instance(Device, _ffi.cast('void *', info.value))
-    elif type_ == 'cl_kernel':
-        return _create_instance(Kernel, _ffi.cast('void *', info.value))
-    elif type_ == 'cl_context':
-        return _create_instance(Context, _ffi.cast('void *', info.value))
-    elif type_ == 'cl_buffer':
-        return _create_instance(Buffer, _ffi.cast('void *', info.value))
-    elif type_ == 'cl_program':
-        return _create_instance(Program, _ffi.cast('void *', info.value))
-    elif type_ == 'cl_event':
-        return _create_instance(Event, _ffi.cast('void *', info.value))
-    elif type_ == 'cl_command_queue':
-        return _create_instance(CommandQueue, _ffi.cast('void *', info.value))
+        ret = list(value)
     else:
-        ret = _ffi.cast('%s*' % type_, info.value)[0]
+        ret = value[0]
     _lib._free(info.value)
     return ret
 
