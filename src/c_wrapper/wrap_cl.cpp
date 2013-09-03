@@ -448,204 +448,204 @@ namespace pyopencl
 
     PYOPENCL_EQUALITY_TESTS(device);
 
-    generic_info get_info(cl_device_info param_name) const
-    {
+generic_info get_info(cl_device_info param_name) const
+{
 #define DEV_GET_INT_INF(TYPE) PYOPENCL_GET_INTEGRAL_INFO(Device, m_device, param_name, TYPE);
 
-      switch (param_name)
-        {
-          // case CL_DEVICE_TYPE: DEV_GET_INT_INF(cl_device_type);
-	  //           case CL_DEVICE_VENDOR_ID: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_MAX_COMPUTE_UNITS: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_MAX_WORK_GROUP_SIZE: DEV_GET_INT_INF(size_t);
+  switch (param_name)
+    {
+    case CL_DEVICE_TYPE: DEV_GET_INT_INF(cl_device_type);
+    case CL_DEVICE_VENDOR_ID: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MAX_COMPUTE_UNITS: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MAX_WORK_GROUP_SIZE: DEV_GET_INT_INF(size_t);
 
-	  //           case CL_DEVICE_MAX_WORK_ITEM_SIZES:
-	  //             {
-	  //               std::vector<size_t> result;
-	  //               PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-	  //               PYOPENCL_RETURN_VECTOR(size_t, result);
-	  //             }
+    case CL_DEVICE_MAX_WORK_ITEM_SIZES:
+      {
+	std::vector<size_t> result;
+	PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+	PYOPENCL_GET_ARRAY_INFO(size_t, result);
+      }
 
-	  //           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
 
-	  //           case CL_DEVICE_MAX_CLOCK_FREQUENCY: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_ADDRESS_BITS: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_MAX_READ_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_MAX_WRITE_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_MAX_MEM_ALLOC_SIZE: DEV_GET_INT_INF(cl_ulong);
-	  //           case CL_DEVICE_IMAGE2D_MAX_WIDTH: DEV_GET_INT_INF(size_t);
-	  //           case CL_DEVICE_IMAGE2D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
-	  //           case CL_DEVICE_IMAGE3D_MAX_WIDTH: DEV_GET_INT_INF(size_t);
-	  //           case CL_DEVICE_IMAGE3D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
-	  //           case CL_DEVICE_IMAGE3D_MAX_DEPTH: DEV_GET_INT_INF(size_t);
-	  //           case CL_DEVICE_IMAGE_SUPPORT: DEV_GET_INT_INF(cl_bool);
-	  //           case CL_DEVICE_MAX_PARAMETER_SIZE: DEV_GET_INT_INF(size_t);
-	  //           case CL_DEVICE_MAX_SAMPLERS: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_MEM_BASE_ADDR_ALIGN: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_SINGLE_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
-	  // #ifdef CL_DEVICE_DOUBLE_FP_CONFIG
-	  //           case CL_DEVICE_DOUBLE_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
-	  // #endif
-	  // #ifdef CL_DEVICE_HALF_FP_CONFIG
-	  //           case CL_DEVICE_HALF_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
-	  // #endif
+    case CL_DEVICE_MAX_CLOCK_FREQUENCY: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_ADDRESS_BITS: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MAX_READ_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MAX_WRITE_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MAX_MEM_ALLOC_SIZE: DEV_GET_INT_INF(cl_ulong);
+    case CL_DEVICE_IMAGE2D_MAX_WIDTH: DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_IMAGE2D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_IMAGE3D_MAX_WIDTH: DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_IMAGE3D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_IMAGE3D_MAX_DEPTH: DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_IMAGE_SUPPORT: DEV_GET_INT_INF(cl_bool);
+    case CL_DEVICE_MAX_PARAMETER_SIZE: DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_MAX_SAMPLERS: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MEM_BASE_ADDR_ALIGN: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_SINGLE_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
+#ifdef CL_DEVICE_DOUBLE_FP_CONFIG
+    case CL_DEVICE_DOUBLE_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
+#endif
+#ifdef CL_DEVICE_HALF_FP_CONFIG
+    case CL_DEVICE_HALF_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
+#endif
 
-	  //           case CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: DEV_GET_INT_INF(cl_device_mem_cache_type);
-	  //           case CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: DEV_GET_INT_INF(cl_ulong);
-	  //           case CL_DEVICE_GLOBAL_MEM_SIZE: DEV_GET_INT_INF(cl_ulong);
+    case CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: DEV_GET_INT_INF(cl_device_mem_cache_type);
+    case CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: DEV_GET_INT_INF(cl_ulong);
+    case CL_DEVICE_GLOBAL_MEM_SIZE: DEV_GET_INT_INF(cl_ulong);
 
-	  //           case CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE: DEV_GET_INT_INF(cl_ulong);
-	  //           case CL_DEVICE_MAX_CONSTANT_ARGS: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_LOCAL_MEM_TYPE: DEV_GET_INT_INF(cl_device_local_mem_type);
-	  //           case CL_DEVICE_LOCAL_MEM_SIZE: DEV_GET_INT_INF(cl_ulong);
-	  //           case CL_DEVICE_ERROR_CORRECTION_SUPPORT: DEV_GET_INT_INF(cl_bool);
-	  //           case CL_DEVICE_PROFILING_TIMER_RESOLUTION: DEV_GET_INT_INF(size_t);
-	  //           case CL_DEVICE_ENDIAN_LITTLE: DEV_GET_INT_INF(cl_bool);
-	  //           case CL_DEVICE_AVAILABLE: DEV_GET_INT_INF(cl_bool);
-	  //           case CL_DEVICE_COMPILER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
-	  //           case CL_DEVICE_EXECUTION_CAPABILITIES: DEV_GET_INT_INF(cl_device_exec_capabilities);
-	  //           case CL_DEVICE_QUEUE_PROPERTIES: DEV_GET_INT_INF(cl_command_queue_properties);
+    case CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE: DEV_GET_INT_INF(cl_ulong);
+    case CL_DEVICE_MAX_CONSTANT_ARGS: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_LOCAL_MEM_TYPE: DEV_GET_INT_INF(cl_device_local_mem_type);
+    case CL_DEVICE_LOCAL_MEM_SIZE: DEV_GET_INT_INF(cl_ulong);
+    case CL_DEVICE_ERROR_CORRECTION_SUPPORT: DEV_GET_INT_INF(cl_bool);
+    case CL_DEVICE_PROFILING_TIMER_RESOLUTION: DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_ENDIAN_LITTLE: DEV_GET_INT_INF(cl_bool);
+    case CL_DEVICE_AVAILABLE: DEV_GET_INT_INF(cl_bool);
+    case CL_DEVICE_COMPILER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
+    case CL_DEVICE_EXECUTION_CAPABILITIES: DEV_GET_INT_INF(cl_device_exec_capabilities);
+    case CL_DEVICE_QUEUE_PROPERTIES: DEV_GET_INT_INF(cl_command_queue_properties);
 
-	case CL_DEVICE_NAME:
-	case CL_DEVICE_VENDOR:
-	case CL_DRIVER_VERSION:
-	case CL_DEVICE_PROFILE:
-	case CL_DEVICE_VERSION:
-	case CL_DEVICE_EXTENSIONS:
-	  PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+    case CL_DEVICE_NAME:
+    case CL_DEVICE_VENDOR:
+    case CL_DRIVER_VERSION:
+    case CL_DEVICE_PROFILE:
+    case CL_DEVICE_VERSION:
+    case CL_DEVICE_EXTENSIONS:
+      PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
 	  
-	case CL_DEVICE_PLATFORM:
-	  PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_platform_id, platform, PLATFORM);
+    case CL_DEVICE_PLATFORM:
+      PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_platform_id, platform, PLATFORM);
 
-	  // #if PYOPENCL_CL_VERSION >= 0x1010
-	  //           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
+#if PYOPENCL_CL_VERSION >= 0x1010
+    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
 
-	  //           case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_NATIVE_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_NATIVE_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
 
-	  //           case CL_DEVICE_HOST_UNIFIED_MEMORY: DEV_GET_INT_INF(cl_bool);
-	  //           case CL_DEVICE_OPENCL_C_VERSION:
-	  //             PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
-	  // #endif
-	  // #ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
-	  //           case CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV:
-	  //           case CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV:
-	  //           case CL_DEVICE_REGISTERS_PER_BLOCK_NV:
-	  //           case CL_DEVICE_WARP_SIZE_NV:
-	  //             DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_GPU_OVERLAP_NV:
-	  //           case CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV:
-	  //           case CL_DEVICE_INTEGRATED_MEMORY_NV:
-	  //             DEV_GET_INT_INF(cl_bool);
-	  // #endif
-	  // #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-	  //           case CL_DEVICE_PARENT_DEVICE_EXT:
-	  //             PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
-	  //           case CL_DEVICE_PARTITION_TYPES_EXT:
-	  //           case CL_DEVICE_AFFINITY_DOMAINS_EXT:
-	  //           case CL_DEVICE_PARTITION_STYLE_EXT:
-	  //             {
-	  //               std::vector<cl_device_partition_property_ext> result;
-	  //               PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-	  //               PYOPENCL_RETURN_VECTOR(cl_device_partition_property_ext, result);
-	  //             }
-	  //           case CL_DEVICE_REFERENCE_COUNT_EXT: DEV_GET_INT_INF(cl_uint);
-	  // #endif
-	  // #if PYOPENCL_CL_VERSION >= 0x1020
-	  //           case CL_DEVICE_LINKER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
-	  //           case CL_DEVICE_BUILT_IN_KERNELS:
-	  //             PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
-	  //           case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE: DEV_GET_INT_INF(size_t);
-	  //           case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE: DEV_GET_INT_INF(size_t);
-	  //           case CL_DEVICE_PARENT_DEVICE:
-	  //             PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
-	  //           case CL_DEVICE_PARTITION_MAX_SUB_DEVICES: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_PARTITION_TYPE:
-	  //           case CL_DEVICE_PARTITION_PROPERTIES:
-	  //             {
-	  //               std::vector<cl_device_partition_property> result;
-	  //               PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-	  //               PYOPENCL_RETURN_VECTOR(cl_device_partition_property, result);
-	  //             }
-	  //           case CL_DEVICE_PARTITION_AFFINITY_DOMAIN:
-	  //             {
-	  //               std::vector<cl_device_affinity_domain> result;
-	  //               PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-	  //               PYOPENCL_RETURN_VECTOR(cl_device_affinity_domain, result);
-	  //             }
-	  //           case CL_DEVICE_REFERENCE_COUNT: DEV_GET_INT_INF(cl_uint);
-	  //           case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC: DEV_GET_INT_INF(cl_bool);
-	  //           case CL_DEVICE_PRINTF_BUFFER_SIZE: DEV_GET_INT_INF(cl_bool);
-	  // #endif
-	  // // {{{ AMD dev attrs
-	  // //
-	  // // types of AMD dev attrs divined from
-	  // // https://www.khronos.org/registry/cl/api/1.2/cl.hpp
-	  // #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
-	  //           case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD: DEV_GET_INT_INF(cl_ulong);
-	  // #endif
-	  // /* FIXME
-	  // #ifdef CL_DEVICE_TOPOLOGY_AMD
-	  //           case CL_DEVICE_TOPOLOGY_AMD:
-	  // #endif
-	  // */
-	  // #ifdef CL_DEVICE_BOARD_NAME_AMD
-	  //           case CL_DEVICE_BOARD_NAME_AMD: ;
-	  //             PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
-	  // #endif
-	  // #ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
-	  //           case CL_DEVICE_GLOBAL_FREE_MEMORY_AMD:
-	  //             {
-	  //               std::vector<size_t> result;
-	  //               PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-	  //               PYOPENCL_RETURN_VECTOR(size_t, result);
-	  //             }
-	  // #endif
-	  // #ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
-	  //           case CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
-	  // #endif
-	  // #ifdef CL_DEVICE_SIMD_WIDTH_AMD
-	  //           case CL_DEVICE_SIMD_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
-	  // #endif
-	  // #ifdef CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD
-	  //           case CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
-	  // #endif
-	  // #ifdef CL_DEVICE_WAVEFRONT_WIDTH_AMD
-	  //           case CL_DEVICE_WAVEFRONT_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
-	  // #endif
-	  // #ifdef CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD
-	  //           case CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD: DEV_GET_INT_INF(cl_uint);
-	  // #endif
-	  // #ifdef CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD
-	  //           case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
-	  // #endif
-	  // #ifdef CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD
-	  //           case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
-	  // #endif
-	  // #ifdef CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD
-	  //           case CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
-	  // #endif
-	  // #ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
-	  //           case CL_DEVICE_LOCAL_MEM_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
-	  // #endif
-	  // // }}}
+    case CL_DEVICE_HOST_UNIFIED_MEMORY: DEV_GET_INT_INF(cl_bool);
+    case CL_DEVICE_OPENCL_C_VERSION:
+      PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+#endif
+#ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
+    case CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV:
+    case CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV:
+    case CL_DEVICE_REGISTERS_PER_BLOCK_NV:
+    case CL_DEVICE_WARP_SIZE_NV:
+      DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_GPU_OVERLAP_NV:
+    case CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV:
+    case CL_DEVICE_INTEGRATED_MEMORY_NV:
+      DEV_GET_INT_INF(cl_bool);
+#endif
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
+    case CL_DEVICE_PARENT_DEVICE_EXT:
+      PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
+    case CL_DEVICE_PARTITION_TYPES_EXT:
+    case CL_DEVICE_AFFINITY_DOMAINS_EXT:
+    case CL_DEVICE_PARTITION_STYLE_EXT:
+      {
+	std::vector<cl_device_partition_property_ext> result;
+	PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+	PYOPENCL_GET_ARRAY_INFO(cl_device_partition_property_ext, result);
+      }
+    case CL_DEVICE_REFERENCE_COUNT_EXT: DEV_GET_INT_INF(cl_uint);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x1020
+    case CL_DEVICE_LINKER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
+    case CL_DEVICE_BUILT_IN_KERNELS:
+      PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+    case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE: DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE: DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_PARENT_DEVICE:
+      PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
+    case CL_DEVICE_PARTITION_MAX_SUB_DEVICES: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_PARTITION_TYPE:
+    case CL_DEVICE_PARTITION_PROPERTIES:
+      {
+	std::vector<cl_device_partition_property> result;
+	PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+	PYOPENCL_GET_ARRAY_INFO(cl_device_partition_property, result);
+      }
+    case CL_DEVICE_PARTITION_AFFINITY_DOMAIN:
+      {
+	std::vector<cl_device_affinity_domain> result;
+	PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+	PYOPENCL_GET_ARRAY_INFO(cl_device_affinity_domain, result);
+      }
+    case CL_DEVICE_REFERENCE_COUNT: DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC: DEV_GET_INT_INF(cl_bool);
+    case CL_DEVICE_PRINTF_BUFFER_SIZE: DEV_GET_INT_INF(cl_bool);
+#endif
+      // {{{ AMD dev attrs
+      //
+      // types of AMD dev attrs divined from
+      // https://www.khronos.org/registry/cl/api/1.2/cl.hpp
+#ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
+    case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD: DEV_GET_INT_INF(cl_ulong);
+#endif
+      /* FIXME
+	 #ifdef CL_DEVICE_TOPOLOGY_AMD
+	 case CL_DEVICE_TOPOLOGY_AMD:
+	 #endif
+      */
+#ifdef CL_DEVICE_BOARD_NAME_AMD
+    case CL_DEVICE_BOARD_NAME_AMD: ;
+      PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+#endif
+#ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
+    case CL_DEVICE_GLOBAL_FREE_MEMORY_AMD:
+      {
+	std::vector<size_t> result;
+	PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+	PYOPENCL_GET_ARRAY_INFO(size_t, result);
+      }
+#endif
+#ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
+    case CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_SIMD_WIDTH_AMD
+    case CL_DEVICE_SIMD_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD
+    case CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_WAVEFRONT_WIDTH_AMD
+    case CL_DEVICE_WAVEFRONT_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD
+    case CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD
+    case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD
+    case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD
+    case CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
+    case CL_DEVICE_LOCAL_MEM_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+      // }}}
 
-	  // #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
-	  //           case CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT: DEV_GET_INT_INF(cl_uint);
-	  // #endif
+#ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
+    case CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT: DEV_GET_INT_INF(cl_uint);
+#endif
 
 	default:
 	  throw error("Device.get_info", CL_INVALID_VALUE);
