@@ -248,7 +248,6 @@ def get_cache_key(device, options, src):
 def retrieve_from_cache(cache_dir, cache_key):
     class _InvalidInfoFile(RuntimeError):
         pass
-
     from os.path import join, isdir
     module_cache_dir = join(cache_dir, cache_key)
     if not isdir(module_cache_dir):
@@ -390,7 +389,6 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
 
     result = None
     already_built = False
-
     if to_be_built_indices:
         # defeat implementation caches:
         from uuid import uuid4
@@ -434,7 +432,6 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
                     cache_key = cache_keys[i]
                     device = devices[i]
                     binary = binaries[i]
-
                     mod_cache_dir_m = ModuleCacheDirManager(cleanup_m,
                             join(cache_dir, cache_key))
                     info_path = mod_cache_dir_m.sub("info")
@@ -478,7 +475,6 @@ def create_built_program_from_source_cached(ctx, src, options=[], devices=None,
             already_built = False
 
     except Exception, e:
-        raise
         from pyopencl import Error
         if (isinstance(e, Error)
                 and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE):

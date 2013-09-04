@@ -33,7 +33,7 @@ error *_create_context(void **ptr_ctx, cl_context_properties *properties, cl_uin
 error *_create_command_queue(void **ptr_command_queue, void *ptr_context, void *ptr_device, cl_command_queue_properties properties);
 error *_create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, size_t size, void *hostbuf);
 error *_create_program_with_source(void **ptr_program, void *ptr_context, char *src);
-error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries);
+error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries, size_t *binary_sizes);
 error *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices);
 error *program__kind(void *ptr_program, int *kind);
 error *program__get_build_info(void *ptr_program, void *ptr_device, cl_program_build_info param, generic_info *out);

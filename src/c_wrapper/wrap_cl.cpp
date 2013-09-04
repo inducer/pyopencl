@@ -861,14 +861,13 @@ generic_info get_info(cl_device_info param_name) const
       if (py_dev)
 	dev = py_dev->data();
       else
-        {
-	  // TODO
-          // std::vector<cl_device_id> devs;
-          // PYOPENCL_GET_VEC_INFO(Context, ctx.data(), CL_CONTEXT_DEVICES, devs);
-          // if (devs.size() == 0)
-          //   throw pyopencl::error("CommandQueue", CL_INVALID_VALUE,
-          //       "context doesn't have any devices? -- don't know which one to default to");
-          // dev = devs[0];
+	{
+          std::vector<cl_device_id> devs;
+          PYOPENCL_GET_VEC_INFO(Context, ctx.data(), CL_CONTEXT_DEVICES, devs);
+          if (devs.size() == 0)
+            throw pyopencl::error("CommandQueue", CL_INVALID_VALUE,
+                "context doesn't have any devices? -- don't know which one to default to");
+	  dev = devs[0];
         }
 
       cl_int status_code;
@@ -1450,16 +1449,20 @@ generic_info get_info(cl_device_info param_name) const
 	  {
 	    std::vector<size_t> sizes;
 	    PYOPENCL_GET_VEC_INFO(Program, m_program, CL_PROGRAM_BINARY_SIZES, sizes);
-
 	    std::vector<char *> result_ptrs(sizes.size());
 	    for (unsigned i = 0; i < sizes.size(); ++i) {
-	      result_ptrs[i] = new char[sizes[i]+1];
-	      result_ptrs[i][sizes[i]] = '\0';
+	      result_ptrs[i] = new char[sizes[i]];
+	    }
+	    std::vector<generic_info> gis(sizes.size());
+	    for(unsigned i = 0; i < sizes.size(); ++i) {
+	      gis[i].opaque_class = CLASS_NONE;
+	      gis[i].type =  _copy_str(std::string("char[") + tostring(sizes[i]) + "]");
+	      gis[i].value = result_ptrs[i];
 	    }
 	    PYOPENCL_CALL_GUARDED(clGetProgramInfo,
-				  (m_program, CL_PROGRAM_BINARIES, sizes.size()*sizeof(char *),
-				   &result_ptrs.front(), 0)); 
-	    PYOPENCL_GET_ARRAY_INFO(char*, result_ptrs)
+	    			  (m_program, CL_PROGRAM_BINARIES, sizes.size()*sizeof(char *),
+	    			   &result_ptrs.front(), 0));
+	    PYOPENCL_GET_ARRAY_INFO(generic_info, gis);
 	  }
 	  
 #if PYOPENCL_CL_VERSION >= 0x1020
@@ -1918,37 +1921,32 @@ generic_info get_info(cl_device_info param_name) const
   }
 
   inline
-  program *create_program_with_binary(
-				      context &ctx,
+  program *create_program_with_binary(context &ctx,
 				      cl_uint num_devices, 
 				      void **ptr_devices,
 				      cl_uint num_binaries,
-				      char **binaries)
+				      char **binaries,
+				      size_t *binary_sizes)
   {
     std::vector<cl_device_id> devices;
-    std::vector<size_t> sizes;
-    std::vector<cl_int> binary_statuses;
-
+    std::vector<cl_int> binary_statuses(num_devices);
     for (cl_uint i = 0; i < num_devices; ++i)
       {
 	devices.push_back(static_cast<device*>(ptr_devices[i])->data());
-	sizes.push_back(strlen(const_cast<const char*>(binaries[i])));
       }
-    binary_statuses.resize(num_devices);
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBinary");
-    cl_program result = clCreateProgramWithBinary(
-						  ctx.data(), num_devices,
+    cl_program result = clCreateProgramWithBinary(ctx.data(), num_devices,
 						  devices.empty( ) ? NULL : &devices.front(),
-						  sizes.empty( ) ? NULL : &sizes.front(),
-						  reinterpret_cast<const unsigned char**>(const_cast<const char**>(binaries)), // todo: valid cast?
+						  binary_sizes,
+						  reinterpret_cast<const unsigned char**>(const_cast<const char**>(binaries)),
 						  binary_statuses.empty( ) ? NULL : &binary_statuses.front(),
 						  &status_code);
-    if (status_code != CL_SUCCESS)
-      throw pyopencl::error("clCreateProgramWithBinary", status_code);
-    
+
     // for (cl_uint i = 0; i < num_devices; ++i)
     //   std::cout << i << ":" << binary_statuses[i] << std::endl;
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("clCreateProgramWithBinary", status_code);
 
     try
       {
@@ -2056,10 +2054,10 @@ generic_info get_info(cl_device_info param_name) const
       return 0;
   }
 
-  ::error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries) {
+  ::error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries, size_t *binary_sizes) {
     context *ctx = static_cast<context*>(ptr_context);
     C_HANDLE_ERROR(
-		   *ptr_program = create_program_with_binary(*ctx, num_devices, ptr_devices, num_binaries, binaries);
+		   *ptr_program = create_program_with_binary(*ctx, num_devices, ptr_devices, num_binaries, reinterpret_cast<char **>(binaries), binary_sizes);
 		   )
       return 0;
   }

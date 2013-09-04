@@ -152,17 +152,14 @@ class Program(object):
 
         if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
             self._prg = _cl._Program(self._context, self._source)
-
         if self._prg is not None:
             # uncached
-
             self._build_and_catch_errors(
                     lambda: self._prg.build(" ".join(options), devices),
                     options=options)
 
         else:
             # cached
-
             from pyopencl.cache import create_built_program_from_source_cached
             self._prg = self._build_and_catch_errors(
                     lambda: create_built_program_from_source_cached(

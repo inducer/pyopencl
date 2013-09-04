@@ -302,10 +302,18 @@ class _Program(_Common):
             
         ptr_program = _ffi.new('void **')
         ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
-        ptr_binaries = _ffi.new('char*[]', len(binaries))
-        for i, binary in enumerate(binaries):
-            ptr_binaries[i] = _ffi.new('char[]', binary)
-        _handle_error(_lib._create_program_with_binary(ptr_program, context.ptr, len(ptr_devices), ptr_devices, len(ptr_binaries), ptr_binaries))
+        ptr_binaries = [_ffi.new('char[]', binary) for binary in binaries]
+        binary_sizes = _ffi.new('size_t[]', map(len, binaries))
+
+        _handle_error(_lib._create_program_with_binary(
+            ptr_program,
+            context.ptr,
+            len(ptr_devices),
+            ptr_devices,
+            len(ptr_binaries),
+            _ffi.new('char*[]', ptr_binaries),
+            binary_sizes))
+        
         self.ptr = ptr_program[0]
 
     def kind(self):
@@ -314,13 +322,17 @@ class _Program(_Common):
         return kind[0]
 
     def _build(self, options=None, devices=None):
-        if devices is None: raise NotImplementedError()
-        # TODO: if devices is None, create them
         if options is None:
             options = ""
-        ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
+        #if devices is None: devices = self.get_info(0x1163)
+        if devices is None:
+            num_devices = 0
+            ptr_devices = _ffi.NULL
+        else:
+            ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
+            num_devices = len(devices)
         
-        _handle_error(_lib.program__build(self.ptr, _ffi.new('char[]', options), len(ptr_devices), _ffi.cast('void**', ptr_devices)))
+        _handle_error(_lib.program__build(self.ptr, _ffi.new('char[]', options), num_devices, _ffi.cast('void**', ptr_devices)))
 
 
     def get_build_info(self, device, param):
@@ -376,7 +388,12 @@ def _generic_info_to_python(info):
         ret = map(_ffi.string, value)
         _lib._free2(info.value, len(value))
     elif type_.endswith(']'):
-        ret = list(value)
+        if type_.startswith('char['):
+            ret = ''.join(a[0] for a in value)
+        elif type_.startswith('generic_info['):
+            ret = list(map(_generic_info_to_python, value))
+        else:
+            ret = list(value)
     else:
         ret = value[0]
     _lib._free(info.value)
