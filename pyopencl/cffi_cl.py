@@ -302,7 +302,7 @@ class _Program(_Common):
             
         ptr_program = _ffi.new('void **')
         ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
-        ptr_binaries = [_ffi.new('char[]', binary) for binary in binaries]
+        ptr_binaries = [_ffi.new('char[%i]' % len(binary), binary) for binary in binaries]
         binary_sizes = _ffi.new('size_t[]', map(len, binaries))
 
         _handle_error(_lib._create_program_with_binary(
