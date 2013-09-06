@@ -55,6 +55,7 @@ void populate_constants(void(*add)(const char*, const char*, long value));
 intptr_t _int_ptr(void*, class_t);
 void* _from_int_ptr(void **ptr_out, intptr_t int_ptr_value, class_t);
 error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out);
+void _delete(void *ptr, class_t class_);
 void _free(void*);
 void _free2(void**, uint32_t size);
 

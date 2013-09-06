@@ -174,6 +174,9 @@ class _Common(object):
     @classmethod
     def _c_class_type(cls):
         return getattr(_lib, 'CLASS_%s' % cls._id.upper())
+
+    def __del__(self):
+        _lib._delete(self.ptr, self._c_class_type())
         
     def __eq__(self, other):
         return hash(self) == hash(other)

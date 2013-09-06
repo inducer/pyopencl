@@ -52,6 +52,20 @@
       throw pyopencl::error(#NAME, status_code);	\
   }
 
+#define PYOPENCL_CALL_GUARDED_CLEANUP(NAME, ARGLIST) \
+  { \
+    PYOPENCL_PRINT_CALL_TRACE(#NAME); \
+    cl_int status_code; \
+    status_code = NAME ARGLIST; \
+    if (status_code != CL_SUCCESS) \
+      std::cerr \
+        << "PyOpenCL WARNING: a clean-up operation failed (dead context maybe?)" \
+        << std::endl \
+        << #NAME " failed with code " << status_code \
+        << std::endl; \
+  }
+
+
 // }}}
 
 
@@ -761,9 +775,8 @@ namespace pyopencl
 
     ~context()
     {
-      // TODO
-      // PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseContext,
-      // 			      (m_context));
+      PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseContext,
+      			      (m_context));
     }
 
     cl_context data() const
@@ -903,9 +916,8 @@ namespace pyopencl
 
     ~command_queue()
     {
-      // TODO
-      // PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseCommandQueue,
-      //     (m_queue));
+      PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseCommandQueue,
+          (m_queue));
     }
 
     const cl_command_queue data() const
@@ -987,9 +999,8 @@ namespace pyopencl
 
     virtual ~event()
     {
-      // todo
-      // PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseEvent,
-      //     (m_event));
+      PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseEvent,
+				    (m_event));
     }
 
     const cl_event data() const
@@ -1151,8 +1162,7 @@ namespace pyopencl
       if (!m_valid)
 	throw error("MemoryObject.free", CL_INVALID_VALUE,
 		    "trying to double-unref mem object");
-      // TODO
-      //PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseMemObject, (m_mem));
+      PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseMemObject, (m_mem));
       m_valid = false;
     }
 
@@ -1414,8 +1424,7 @@ namespace pyopencl
 
     ~program()
     {
-      // TODO
-      //PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseProgram, (m_program));
+      PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseProgram, (m_program));
     }
 
     cl_program data() const
@@ -1622,8 +1631,7 @@ namespace pyopencl
 
     ~kernel()
     {
-      // todo
-      //PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseKernel, (m_kernel));
+      PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseKernel, (m_kernel));
     }
 
     cl_kernel data() const
@@ -2215,10 +2223,15 @@ long _hash(void *ptr, class_t class_) {
   
 ::error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out) {
 #define GET_INFO(CLSU, CLS) C_HANDLE_ERROR(*out = static_cast<pyopencl::CLS*>(ptr)->get_info(param);)
-  SWITCHCLASS(GET_INFO)
-    return 0;
+  SWITCHCLASS(GET_INFO);
+  return 0;
 }
- 
+
+void _delete(void *ptr, class_t class_) {
+#define DELETE(CLSU, CLS) delete static_cast<pyopencl::CLS*>(ptr);
+  SWITCHCLASS(DELETE);
+}
+
 
 int get_cl_version(void) {
   return PYOPENCL_CL_VERSION;
