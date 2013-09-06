@@ -57,7 +57,7 @@ import pyopencl.array as cl_array
 from pyopencl.tools import first_arg_dependent_memoize
 from pytools import memoize_method
 
-import numpy as np
+import pyopencl.np as np
 
 
 class RanluxGenerator(object):

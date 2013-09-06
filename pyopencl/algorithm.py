@@ -27,7 +27,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-import numpy as np
+import pyopencl.np as np
 import pyopencl as cl
 import pyopencl.array  # noqa
 from pyopencl.scan import ScanTemplate

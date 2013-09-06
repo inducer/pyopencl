@@ -28,7 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-import numpy as np
+import pyopencl.np as np
 from decorator import decorator
 import pyopencl as cl
 from pytools import memoize, memoize_method
@@ -524,7 +524,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     This example explains the use of this function::
 
-        >>> import numpy as np
+        >>> import pyopencl.np as np
         >>> import pyopencl as cl
         >>> import pyopencl.tools
         >>> ctx = cl.create_some_context()

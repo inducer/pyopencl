@@ -38,10 +38,7 @@ except ImportError:
 # _ccl = _cl
 # import cffi_cl
 # _cl = cffi_cl
-try:
-    import numpypy as np
-except:
-    import numpy as np
+import np
 #from pyopencl._cl import *  # noqa
 from pyopencl.cffi_cl import *
 import inspect as _inspect

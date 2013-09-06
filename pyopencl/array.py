@@ -28,7 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-import numpy as np
+import pyopencl.np as np
 import pyopencl.elementwise as elementwise
 import pyopencl as cl
 from pytools import memoize_method

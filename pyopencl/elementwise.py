@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 from pyopencl.tools import context_dependent_memoize
-import numpy as np
+import pyopencl.np as np
 import pyopencl as cl
 from pytools import memoize_method
 from pyopencl.tools import (dtype_to_ctype, VectorArg, ScalarArg,
