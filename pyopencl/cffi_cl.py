@@ -252,7 +252,7 @@ class Context(_Common):
         if devices is not None:
             if dev_type is not None:
                 raise RuntimeError("Context", status_code.INVALID_VALUE, "one of 'devices' or 'dev_type' must be None")
-            ptr_devices = _ffi.new('cl_device_id[]', [device.ptr for device in devices])
+            ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
             ptr_ctx = _ffi.new('void **')
             _handle_error(_lib._create_context(ptr_ctx, c_props, len(ptr_devices), _ffi.cast('void**', ptr_devices)))
             

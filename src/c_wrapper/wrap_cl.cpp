@@ -2127,7 +2127,7 @@ void _free2(void **p, uint32_t size) {
   return 0;
 }
 
-::error *event__get_profiling_info(void *ptr, cl_uint param, generic_info *out) {
+::error *event__get_profiling_info(void *ptr, cl_profiling_info param, generic_info *out) {
   C_HANDLE_ERROR(*out = static_cast<pyopencl::event*>(ptr)->get_profiling_info(param););
   return 0;
 }
@@ -2149,7 +2149,7 @@ void _free2(void **p, uint32_t size) {
   return 0;
 }
 
-::error *kernel__get_work_group_info(void *ptr, cl_uint param, void *ptr_device, generic_info *out) {
+::error *kernel__get_work_group_info(void *ptr, cl_kernel_work_group_info param, void *ptr_device, generic_info *out) {
   C_HANDLE_ERROR(*out = static_cast<pyopencl::kernel*>(ptr)->get_work_group_info(param, *static_cast<pyopencl::device*>(ptr_device)););
   return 0;
 }
