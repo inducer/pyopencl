@@ -493,9 +493,15 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, gl
     ))
     return _create_instance(Event, ptr_event[0])
 
+def _c_wait_for(wait_for=None):
+    if wait_for is None:
+        return _ffi.NULL, 0
+    return _ffi.new('void *[]', [ev.ptr for ev in wait_for]), len(wait_for)
+    
 def _enqueue_read_buffer(queue, mem, buf, device_offset=0, wait_for=None, is_blocking=True):
     c_buf, size = Buffer._c_buffer_from_obj(buf)
     ptr_event = _ffi.new('void **')
+    c_wait_for, num_wait_for = _c_wait_for(wait_for=wait_for)
     _handle_error(_lib._enqueue_read_buffer(
         ptr_event,
         queue.ptr,
@@ -503,12 +509,14 @@ def _enqueue_read_buffer(queue, mem, buf, device_offset=0, wait_for=None, is_blo
         c_buf,
         size,
         device_offset,
+        c_wait_for, num_wait_for,
         bool(is_blocking)
     ))
     return _create_instance(Event, ptr_event[0])
 
 def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0, dst_offset=0, wait_for=None):
     ptr_event = _ffi.new('void **')
+    c_wait_for, num_wait_for = _c_wait_for(wait_for=wait_for)
     _handle_error(_lib._enqueue_copy_buffer(
         ptr_event,
         queue.ptr,
@@ -516,20 +524,23 @@ def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0, dst_offse
         dst.ptr,
         byte_count,
         src_offset,
-        dst_offset
+        dst_offset,
+        c_wait_for, num_wait_for,
     ))
     return _create_instance(Event, ptr_event[0])
 
 def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=True):
     c_buf, size = Buffer._c_buffer_from_obj(hostbuf)
     ptr_event = _ffi.new('void **')
-    _handle_error(_lib._enqueue_read_buffer(
+    c_wait_for, num_wait_for = _c_wait_for(wait_for=wait_for)
+    _handle_error(_lib._enqueue_write_buffer(
         ptr_event,
         queue.ptr,
         mem.ptr,
         c_buf,
         size,
         device_offset,
+        c_wait_for, num_wait_for,
         bool(is_blocking)
     ))
     return _create_instance(Event, ptr_event[0])

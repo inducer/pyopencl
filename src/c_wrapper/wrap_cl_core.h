@@ -44,9 +44,9 @@ error *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr
 long _hash(void *ptr_platform, class_t);
 
 error *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size);
-error *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, int is_blocking);
-error *_enqueue_copy_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_src, void *ptr_dst, ptrdiff_t byte_count, size_t src_offset, size_t dst_offset);
-error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, int is_blocking);
+error *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking);
+error *_enqueue_copy_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_src, void *ptr_dst, ptrdiff_t byte_count, size_t src_offset, size_t dst_offset, void **wait_for, uint32_t num_wait_for);
+error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking);
 void populate_constants(void(*add)(const char*, const char*, long value));
 
 intptr_t _int_ptr(void*, class_t);

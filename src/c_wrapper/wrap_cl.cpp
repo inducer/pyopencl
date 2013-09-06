@@ -55,9 +55,6 @@
 // }}}
 
 
-#define PYOPENCL_WAITLIST_ARGS						\
-  num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front()
-
 #define PYOPENCL_GET_VEC_INFO(WHAT, FIRST_ARG, SECOND_ARG, RES_VEC)	\
   {									\
     size_t size;							\
@@ -147,7 +144,20 @@
     info.value = (void*)ar;						\
     return info;							\
   }
-  
+
+// {{{ event helpers --------------------------------------------------------------
+#define PYOPENCL_PARSE_WAIT_FOR						\
+  std::vector<cl_event> event_wait_list(num_wait_for);			\
+  {									\
+    for(unsigned i = 0; i < num_wait_for; ++i) {			\
+      event_wait_list[i] = static_cast<pyopencl::event*>(wait_for[i])->data(); \
+    }									\
+  }
+
+#define PYOPENCL_WAITLIST_ARGS						\
+    num_wait_for, event_wait_list.empty( ) ? NULL : &event_wait_list.front()
+
+
 #define PYOPENCL_RETURN_NEW_EVENT(evt)		\
   try						\
     {						\
@@ -159,6 +169,7 @@
       throw;					\
     }
 
+// }}}
 
 // {{{ equality testing
 #define PYOPENCL_EQUALITY_TESTS(cls)		\
@@ -1804,11 +1815,10 @@ generic_info get_info(cl_device_info param_name) const
 			     void *buffer,
 			     size_t size, 
 			     size_t device_offset,
-			     /*py::object py_wait_for,*/
+			     void **wait_for, uint32_t num_wait_for,
 			     bool is_blocking)
   {
-    // TODO
-    //PYOPENCL_PARSE_WAIT_FOR;
+    PYOPENCL_PARSE_WAIT_FOR;
 
     cl_event evt;
     // TODO
@@ -1818,8 +1828,7 @@ generic_info get_info(cl_device_info param_name) const
 				    mem.data(),
 				    PYOPENCL_CAST_BOOL(is_blocking),
 				    device_offset, size, buffer,
-				    0, NULL,
-				    //PYOPENCL_WAITLIST_ARGS,
+				    PYOPENCL_WAITLIST_ARGS,
 				    &evt
 				    ));
     //);
@@ -1834,14 +1843,11 @@ generic_info get_info(cl_device_info param_name) const
 			     memory_object_holder &dst,
 			     ptrdiff_t byte_count,
 			     size_t src_offset,
-			     size_t dst_offset
-			     // ,
-			     /*py::object py_wait_for*/
+			     size_t dst_offset,
+			     void **wait_for, uint32_t num_wait_for
 			     )
   {
-    // TODO
-    // PYOPENCL_PARSE_WAIT_FOR;
-
+    PYOPENCL_PARSE_WAIT_FOR;
     if (byte_count < 0)
       {
 	size_t byte_count_src = 0;
@@ -1860,7 +1866,7 @@ generic_info get_info(cl_device_info param_name) const
 						src.data(), dst.data(),
 						src_offset, dst_offset,
 						byte_count,
-						0, NULL, //PYOPENCL_WAITLIST_ARGS,
+						PYOPENCL_WAITLIST_ARGS,
 						&evt
 						))
       // );
@@ -1874,10 +1880,10 @@ generic_info get_info(cl_device_info param_name) const
       void *buffer,
       size_t size,
       size_t device_offset,
-      /*py::object py_wait_for,*/
+      void **wait_for, uint32_t num_wait_for, 
       bool is_blocking)
   {
-    //PYOPENCL_PARSE_WAIT_FOR;
+    PYOPENCL_PARSE_WAIT_FOR;
 
     cl_event evt;
     // TODO
@@ -1887,7 +1893,7 @@ generic_info get_info(cl_device_info param_name) const
 				    mem.data(),
 				    PYOPENCL_CAST_BOOL(is_blocking),
 				    device_offset, size, buffer,
-				    0, NULL, //PYOPENCL_WAITLIST_ARGS,
+				    PYOPENCL_WAITLIST_ARGS,
 				    &evt
 				    ));
     //);
@@ -2156,30 +2162,30 @@ generic_info get_info(cl_device_info param_name) const
   }
 
 
-  ::error *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, int is_blocking) {
-    C_HANDLE_ERROR(
-		   *ptr_event = enqueue_read_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
-						    *static_cast<pyopencl::memory_object_holder*>(ptr_memory_object_holder),
-						    buffer, size, device_offset, (bool)is_blocking);
-		   )
-      return 0;
+::error *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking) {
+  C_HANDLE_ERROR(
+		 *ptr_event = enqueue_read_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+						  *static_cast<pyopencl::memory_object_holder*>(ptr_memory_object_holder),
+						  buffer, size, device_offset, wait_for, num_wait_for, (bool)is_blocking);
+		 )
+    return 0;
   }
 
-  ::error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, int is_blocking) {
+  ::error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking) {
     C_HANDLE_ERROR(
 		   *ptr_event = enqueue_write_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
 						    *static_cast<pyopencl::memory_object_holder*>(ptr_memory_object_holder),
-						    buffer, size, device_offset, (bool)is_blocking);
+						     buffer, size, device_offset, wait_for, num_wait_for, (bool)is_blocking);
 		   )
       return 0;
   }
 
-::error *_enqueue_copy_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_src, void *ptr_dst, ptrdiff_t byte_count, size_t src_offset, size_t dst_offset) {
+::error *_enqueue_copy_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_src, void *ptr_dst, ptrdiff_t byte_count, size_t src_offset, size_t dst_offset, void **wait_for, uint32_t num_wait_for) {
   C_HANDLE_ERROR(
 		 *ptr_event = enqueue_copy_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
 						  *static_cast<pyopencl::memory_object_holder*>(ptr_src),
 						  *static_cast<pyopencl::memory_object_holder*>(ptr_dst),
-						  byte_count, src_offset, dst_offset);
+						  byte_count, src_offset, dst_offset, wait_for, num_wait_for);
 		 )
     return 0;
   }
