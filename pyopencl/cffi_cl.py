@@ -113,7 +113,7 @@ class _CArrays(_CArray):
         _lib._free2(_ffi.cast('void**', self.ptr[0]), self.size[0])
         super(_CArrays, self).__del__()
 
-class NoInit(object):
+class _NoInit(object):
     def __init__(self):
         raise RuntimeError("This class cannot be instantiated.")
 
@@ -134,7 +134,7 @@ def _constant_callback(type_, name, value):
 _lib.populate_constants(_constant_callback)
 
 for type_, d in _constants.iteritems():
-    locals()[type_] = type(type_, (NoInit,), d)
+    locals()[type_] = type(type_, (_NoInit,), d)
 # }}}
 
 
@@ -289,7 +289,6 @@ class Buffer(MemoryObjectHolder):
             warnings.warn("'hostbuf' was passed, but no memory flags to make use of it.")
         c_hostbuf = _ffi.NULL
         if hostbuf is not None:
-            # todo: buffer protocol; for now hostbuf is assumed to be a numpy array
             c_hostbuf, hostbuf_size = self._c_buffer_from_obj(hostbuf)
             if size > hostbuf_size:
                 raise RuntimeError("Buffer", status_code.INVALID_VALUE, "specified size is greater than host buffer size")
@@ -430,6 +429,12 @@ class Kernel(_Common):
             _handle_error(_lib.kernel__set_arg_mem_buffer(self.ptr, arg_index, arg.ptr))
         else:
             raise NotImplementedError()
+
+    def get_work_group_info(self, param, device):
+        info = _ffi.new('generic_info *')
+        _handle_error(_lib.kernel__get_work_group_info(self.ptr, param, device.ptr, info))
+        return _generic_info_to_python(info)
+
     
 def get_platforms():
     platforms = _CArray(_ffi.new('void**'))
@@ -447,6 +452,10 @@ class Event(_Common):
     def __init__(self):
         pass
 
+    def get_profiling_info(self, param):
+        info = _ffi.new('generic_info *')
+        _handle_error(_lib.event__get_profiling_info(self.ptr, param, info))
+        return _generic_info_to_python(info)
 
 def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False):
     if wait_for is not None:

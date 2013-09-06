@@ -94,9 +94,9 @@
     generic_info info;							\
     info.dontfree = 0;							\
     info.opaque_class = CLASS_##CLSU;					\
-    info.type = _copy_str(std::string("void*[") + tostring(VEC.size()) + "]"); \
-    info.value = (void**)ar;						\
-    return info;							\
+      info.type = _copy_str(std::string("void*[") + tostring(VEC.size()) + "]"); \
+      info.value = (void**)ar;						\
+      return info;							\
   }
   
 
@@ -155,7 +155,7 @@
   }
 
 #define PYOPENCL_WAITLIST_ARGS						\
-    num_wait_for, event_wait_list.empty( ) ? NULL : &event_wait_list.front()
+  num_wait_for, event_wait_list.empty( ) ? NULL : &event_wait_list.front()
 
 
 #define PYOPENCL_RETURN_NEW_EVENT(evt)		\
@@ -207,34 +207,34 @@
 
 
 
-#define PYOPENCL_RETRY_IF_MEM_ERROR(OPERATION)		\
-  {							\
-    bool failed_with_mem_error = false;			\
-    try							\
-      {							\
-	OPERATION					\
-	  }						\
-    catch (pyopencl::error &e)				\
-      {							\
-	failed_with_mem_error = true;			\
-	if (!e.is_out_of_memory())			\
-	  throw;					\
-      }							\
-							\
-    if (failed_with_mem_error)				\
-      {							\
-	/* If we get here, we got an error from CL.
-	 * We should run the Python GC to try and free up
-	 * some memory references. */ \
-run_python_gc(); \
+#define PYOPENCL_RETRY_IF_MEM_ERROR(OPERATION)	\
+  {						\
+  bool failed_with_mem_error = false;		\
+  try						\
+    {						\
+      OPERATION					\
+	}					\
+  catch (pyopencl::error &e)			\
+    {						\
+      failed_with_mem_error = true;		\
+      if (!e.is_out_of_memory())		\
+	throw;					\
+    }						\
+						\
+  if (failed_with_mem_error)			\
+    {						\
+  /* If we get here, we got an error from CL.
+   * We should run the Python GC to try and free up
+   * some memory references. */			\
+run_python_gc();				\
 \
 /* Now retry the allocation. If it fails again,
- * let it fail. */ \
-{ \
-  OPERATION \
-    } \
-} \
-  }
+ * let it fail. */				\
+{						\
+  OPERATION					\
+    }						\
+}						\
+}
 
 // }}}
 
@@ -465,203 +465,203 @@ namespace pyopencl
 
     PYOPENCL_EQUALITY_TESTS(device);
 
-generic_info get_info(cl_device_info param_name) const
-{
+    generic_info get_info(cl_device_info param_name) const
+    {
 #define DEV_GET_INT_INF(TYPE) PYOPENCL_GET_INTEGRAL_INFO(Device, m_device, param_name, TYPE);
 
-  switch (param_name)
-    {
-    case CL_DEVICE_TYPE: DEV_GET_INT_INF(cl_device_type);
-    case CL_DEVICE_VENDOR_ID: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_MAX_COMPUTE_UNITS: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_MAX_WORK_GROUP_SIZE: DEV_GET_INT_INF(size_t);
+      switch (param_name)
+	{
+	case CL_DEVICE_TYPE: DEV_GET_INT_INF(cl_device_type);
+	case CL_DEVICE_VENDOR_ID: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_MAX_COMPUTE_UNITS: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_MAX_WORK_GROUP_SIZE: DEV_GET_INT_INF(size_t);
 
-    case CL_DEVICE_MAX_WORK_ITEM_SIZES:
-      {
-	std::vector<size_t> result;
-	PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-	PYOPENCL_GET_ARRAY_INFO(size_t, result);
-      }
+	case CL_DEVICE_MAX_WORK_ITEM_SIZES:
+	  {
+	    std::vector<size_t> result;
+	    PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+	    PYOPENCL_GET_ARRAY_INFO(size_t, result);
+	  }
 
-    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
 
-    case CL_DEVICE_MAX_CLOCK_FREQUENCY: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_ADDRESS_BITS: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_MAX_READ_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_MAX_WRITE_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_MAX_MEM_ALLOC_SIZE: DEV_GET_INT_INF(cl_ulong);
-    case CL_DEVICE_IMAGE2D_MAX_WIDTH: DEV_GET_INT_INF(size_t);
-    case CL_DEVICE_IMAGE2D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
-    case CL_DEVICE_IMAGE3D_MAX_WIDTH: DEV_GET_INT_INF(size_t);
-    case CL_DEVICE_IMAGE3D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
-    case CL_DEVICE_IMAGE3D_MAX_DEPTH: DEV_GET_INT_INF(size_t);
-    case CL_DEVICE_IMAGE_SUPPORT: DEV_GET_INT_INF(cl_bool);
-    case CL_DEVICE_MAX_PARAMETER_SIZE: DEV_GET_INT_INF(size_t);
-    case CL_DEVICE_MAX_SAMPLERS: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_MEM_BASE_ADDR_ALIGN: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_SINGLE_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
+	case CL_DEVICE_MAX_CLOCK_FREQUENCY: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_ADDRESS_BITS: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_MAX_READ_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_MAX_WRITE_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_MAX_MEM_ALLOC_SIZE: DEV_GET_INT_INF(cl_ulong);
+	case CL_DEVICE_IMAGE2D_MAX_WIDTH: DEV_GET_INT_INF(size_t);
+	case CL_DEVICE_IMAGE2D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
+	case CL_DEVICE_IMAGE3D_MAX_WIDTH: DEV_GET_INT_INF(size_t);
+	case CL_DEVICE_IMAGE3D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
+	case CL_DEVICE_IMAGE3D_MAX_DEPTH: DEV_GET_INT_INF(size_t);
+	case CL_DEVICE_IMAGE_SUPPORT: DEV_GET_INT_INF(cl_bool);
+	case CL_DEVICE_MAX_PARAMETER_SIZE: DEV_GET_INT_INF(size_t);
+	case CL_DEVICE_MAX_SAMPLERS: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_MEM_BASE_ADDR_ALIGN: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_SINGLE_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
 #ifdef CL_DEVICE_DOUBLE_FP_CONFIG
-    case CL_DEVICE_DOUBLE_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
+	case CL_DEVICE_DOUBLE_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
 #endif
 #ifdef CL_DEVICE_HALF_FP_CONFIG
-    case CL_DEVICE_HALF_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
+	case CL_DEVICE_HALF_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
 #endif
 
-    case CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: DEV_GET_INT_INF(cl_device_mem_cache_type);
-    case CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: DEV_GET_INT_INF(cl_ulong);
-    case CL_DEVICE_GLOBAL_MEM_SIZE: DEV_GET_INT_INF(cl_ulong);
+	case CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: DEV_GET_INT_INF(cl_device_mem_cache_type);
+	case CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: DEV_GET_INT_INF(cl_ulong);
+	case CL_DEVICE_GLOBAL_MEM_SIZE: DEV_GET_INT_INF(cl_ulong);
 
-    case CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE: DEV_GET_INT_INF(cl_ulong);
-    case CL_DEVICE_MAX_CONSTANT_ARGS: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_LOCAL_MEM_TYPE: DEV_GET_INT_INF(cl_device_local_mem_type);
-    case CL_DEVICE_LOCAL_MEM_SIZE: DEV_GET_INT_INF(cl_ulong);
-    case CL_DEVICE_ERROR_CORRECTION_SUPPORT: DEV_GET_INT_INF(cl_bool);
-    case CL_DEVICE_PROFILING_TIMER_RESOLUTION: DEV_GET_INT_INF(size_t);
-    case CL_DEVICE_ENDIAN_LITTLE: DEV_GET_INT_INF(cl_bool);
-    case CL_DEVICE_AVAILABLE: DEV_GET_INT_INF(cl_bool);
-    case CL_DEVICE_COMPILER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
-    case CL_DEVICE_EXECUTION_CAPABILITIES: DEV_GET_INT_INF(cl_device_exec_capabilities);
-    case CL_DEVICE_QUEUE_PROPERTIES: DEV_GET_INT_INF(cl_command_queue_properties);
+	case CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE: DEV_GET_INT_INF(cl_ulong);
+	case CL_DEVICE_MAX_CONSTANT_ARGS: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_LOCAL_MEM_TYPE: DEV_GET_INT_INF(cl_device_local_mem_type);
+	case CL_DEVICE_LOCAL_MEM_SIZE: DEV_GET_INT_INF(cl_ulong);
+	case CL_DEVICE_ERROR_CORRECTION_SUPPORT: DEV_GET_INT_INF(cl_bool);
+	case CL_DEVICE_PROFILING_TIMER_RESOLUTION: DEV_GET_INT_INF(size_t);
+	case CL_DEVICE_ENDIAN_LITTLE: DEV_GET_INT_INF(cl_bool);
+	case CL_DEVICE_AVAILABLE: DEV_GET_INT_INF(cl_bool);
+	case CL_DEVICE_COMPILER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
+	case CL_DEVICE_EXECUTION_CAPABILITIES: DEV_GET_INT_INF(cl_device_exec_capabilities);
+	case CL_DEVICE_QUEUE_PROPERTIES: DEV_GET_INT_INF(cl_command_queue_properties);
 
-    case CL_DEVICE_NAME:
-    case CL_DEVICE_VENDOR:
-    case CL_DRIVER_VERSION:
-    case CL_DEVICE_PROFILE:
-    case CL_DEVICE_VERSION:
-    case CL_DEVICE_EXTENSIONS:
-      PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+	case CL_DEVICE_NAME:
+	case CL_DEVICE_VENDOR:
+	case CL_DRIVER_VERSION:
+	case CL_DEVICE_PROFILE:
+	case CL_DEVICE_VERSION:
+	case CL_DEVICE_EXTENSIONS:
+	  PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
 	  
-    case CL_DEVICE_PLATFORM:
-      PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_platform_id, platform, PLATFORM);
+	case CL_DEVICE_PLATFORM:
+	  PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_platform_id, platform, PLATFORM);
 
 #if PYOPENCL_CL_VERSION >= 0x1010
-    case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
 
-    case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_NATIVE_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_NATIVE_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
 
-    case CL_DEVICE_HOST_UNIFIED_MEMORY: DEV_GET_INT_INF(cl_bool);
-    case CL_DEVICE_OPENCL_C_VERSION:
-      PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+	case CL_DEVICE_HOST_UNIFIED_MEMORY: DEV_GET_INT_INF(cl_bool);
+	case CL_DEVICE_OPENCL_C_VERSION:
+	  PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
 #endif
 #ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
-    case CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV:
-    case CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV:
-    case CL_DEVICE_REGISTERS_PER_BLOCK_NV:
-    case CL_DEVICE_WARP_SIZE_NV:
-      DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_GPU_OVERLAP_NV:
-    case CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV:
-    case CL_DEVICE_INTEGRATED_MEMORY_NV:
-      DEV_GET_INT_INF(cl_bool);
+	case CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV:
+	case CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV:
+	case CL_DEVICE_REGISTERS_PER_BLOCK_NV:
+	case CL_DEVICE_WARP_SIZE_NV:
+	  DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_GPU_OVERLAP_NV:
+	case CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV:
+	case CL_DEVICE_INTEGRATED_MEMORY_NV:
+	  DEV_GET_INT_INF(cl_bool);
 #endif
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    case CL_DEVICE_PARENT_DEVICE_EXT:
-      PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
-    case CL_DEVICE_PARTITION_TYPES_EXT:
-    case CL_DEVICE_AFFINITY_DOMAINS_EXT:
-    case CL_DEVICE_PARTITION_STYLE_EXT:
-      {
-	std::vector<cl_device_partition_property_ext> result;
-	PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-	PYOPENCL_GET_ARRAY_INFO(cl_device_partition_property_ext, result);
-      }
-    case CL_DEVICE_REFERENCE_COUNT_EXT: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_PARENT_DEVICE_EXT:
+	  PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
+	case CL_DEVICE_PARTITION_TYPES_EXT:
+	case CL_DEVICE_AFFINITY_DOMAINS_EXT:
+	case CL_DEVICE_PARTITION_STYLE_EXT:
+	  {
+	    std::vector<cl_device_partition_property_ext> result;
+	    PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+	    PYOPENCL_GET_ARRAY_INFO(cl_device_partition_property_ext, result);
+	  }
+	case CL_DEVICE_REFERENCE_COUNT_EXT: DEV_GET_INT_INF(cl_uint);
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
-    case CL_DEVICE_LINKER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
-    case CL_DEVICE_BUILT_IN_KERNELS:
-      PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
-    case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE: DEV_GET_INT_INF(size_t);
-    case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE: DEV_GET_INT_INF(size_t);
-    case CL_DEVICE_PARENT_DEVICE:
-      PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
-    case CL_DEVICE_PARTITION_MAX_SUB_DEVICES: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_PARTITION_TYPE:
-    case CL_DEVICE_PARTITION_PROPERTIES:
-      {
-	std::vector<cl_device_partition_property> result;
-	PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-	PYOPENCL_GET_ARRAY_INFO(cl_device_partition_property, result);
-      }
-    case CL_DEVICE_PARTITION_AFFINITY_DOMAIN:
-      {
-	std::vector<cl_device_affinity_domain> result;
-	PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-	PYOPENCL_GET_ARRAY_INFO(cl_device_affinity_domain, result);
-      }
-    case CL_DEVICE_REFERENCE_COUNT: DEV_GET_INT_INF(cl_uint);
-    case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC: DEV_GET_INT_INF(cl_bool);
-    case CL_DEVICE_PRINTF_BUFFER_SIZE: DEV_GET_INT_INF(cl_bool);
+	case CL_DEVICE_LINKER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
+	case CL_DEVICE_BUILT_IN_KERNELS:
+	  PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+	case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE: DEV_GET_INT_INF(size_t);
+	case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE: DEV_GET_INT_INF(size_t);
+	case CL_DEVICE_PARENT_DEVICE:
+	  PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
+	case CL_DEVICE_PARTITION_MAX_SUB_DEVICES: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_PARTITION_TYPE:
+	case CL_DEVICE_PARTITION_PROPERTIES:
+	  {
+	    std::vector<cl_device_partition_property> result;
+	    PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+	    PYOPENCL_GET_ARRAY_INFO(cl_device_partition_property, result);
+	  }
+	case CL_DEVICE_PARTITION_AFFINITY_DOMAIN:
+	  {
+	    std::vector<cl_device_affinity_domain> result;
+	    PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+	    PYOPENCL_GET_ARRAY_INFO(cl_device_affinity_domain, result);
+	  }
+	case CL_DEVICE_REFERENCE_COUNT: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC: DEV_GET_INT_INF(cl_bool);
+	case CL_DEVICE_PRINTF_BUFFER_SIZE: DEV_GET_INT_INF(cl_bool);
 #endif
-      // {{{ AMD dev attrs
-      //
-      // types of AMD dev attrs divined from
-      // https://www.khronos.org/registry/cl/api/1.2/cl.hpp
+	  // {{{ AMD dev attrs
+	  //
+	  // types of AMD dev attrs divined from
+	  // https://www.khronos.org/registry/cl/api/1.2/cl.hpp
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
-    case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD: DEV_GET_INT_INF(cl_ulong);
+	case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD: DEV_GET_INT_INF(cl_ulong);
 #endif
-      /* FIXME
-	 #ifdef CL_DEVICE_TOPOLOGY_AMD
-	 case CL_DEVICE_TOPOLOGY_AMD:
-	 #endif
-      */
+	  /* FIXME
+	     #ifdef CL_DEVICE_TOPOLOGY_AMD
+	     case CL_DEVICE_TOPOLOGY_AMD:
+	     #endif
+	  */
 #ifdef CL_DEVICE_BOARD_NAME_AMD
-    case CL_DEVICE_BOARD_NAME_AMD: ;
-      PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+	case CL_DEVICE_BOARD_NAME_AMD: ;
+	  PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
 #endif
 #ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
-    case CL_DEVICE_GLOBAL_FREE_MEMORY_AMD:
-      {
-	std::vector<size_t> result;
-	PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-	PYOPENCL_GET_ARRAY_INFO(size_t, result);
-      }
+	case CL_DEVICE_GLOBAL_FREE_MEMORY_AMD:
+	  {
+	    std::vector<size_t> result;
+	    PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+	    PYOPENCL_GET_ARRAY_INFO(size_t, result);
+	  }
 #endif
 #ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
-    case CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
 #ifdef CL_DEVICE_SIMD_WIDTH_AMD
-    case CL_DEVICE_SIMD_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_SIMD_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
 #ifdef CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD
-    case CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
 #ifdef CL_DEVICE_WAVEFRONT_WIDTH_AMD
-    case CL_DEVICE_WAVEFRONT_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_WAVEFRONT_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
 #ifdef CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD
-    case CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
 #ifdef CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD
-    case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
 #ifdef CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD
-    case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
 #ifdef CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD
-    case CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
 #ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
-    case CL_DEVICE_LOCAL_MEM_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_LOCAL_MEM_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
-      // }}}
+	  // }}}
 
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
-    case CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT: DEV_GET_INT_INF(cl_uint);
+	case CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT: DEV_GET_INT_INF(cl_uint);
 #endif
 
 	default:
@@ -824,7 +824,7 @@ generic_info get_info(cl_device_info param_name) const
 #endif
 		    info.type = "intptr_t *";
 		    info.value = (void*)result[i+1];
-		     // we do not own this object
+		    // we do not own this object
 		    info.dontfree = 1;
 		    break;
 
@@ -834,8 +834,8 @@ generic_info get_info(cl_device_info param_name) const
 				"unknown context_property key encountered");
 		  }
 
-		  py_result.push_back(info);
-     		}
+		py_result.push_back(info);
+	      }
 	    PYOPENCL_GET_ARRAY_INFO(generic_info, py_result);
 	  }
 
@@ -887,7 +887,7 @@ generic_info get_info(cl_device_info param_name) const
           PYOPENCL_GET_VEC_INFO(Context, ctx.data(), CL_CONTEXT_DEVICES, devs);
           if (devs.size() == 0)
             throw pyopencl::error("CommandQueue", CL_INVALID_VALUE,
-                "context doesn't have any devices? -- don't know which one to default to");
+				  "context doesn't have any devices? -- don't know which one to default to");
 	  dev = devs[0];
         }
 
@@ -916,22 +916,22 @@ generic_info get_info(cl_device_info param_name) const
     generic_info get_info(cl_command_queue_info param_name) const
     {
       switch (param_name)
-      {
+	{
         case CL_QUEUE_CONTEXT:
           PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
-              cl_context, context, CONTEXT);
+				   cl_context, context, CONTEXT);
         case CL_QUEUE_DEVICE:
           PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
-              cl_device_id, device, DEVICE);
+				   cl_device_id, device, DEVICE);
         case CL_QUEUE_REFERENCE_COUNT:
           PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
-              cl_uint);
+				     cl_uint);
         case CL_QUEUE_PROPERTIES:
           PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
-              cl_command_queue_properties);
+				     cl_command_queue_properties);
         default:
           throw error("CommandQueue.get_info", CL_INVALID_VALUE);
-      }
+	}
     }
 
     std::auto_ptr<context> get_context() const
@@ -1024,20 +1024,20 @@ generic_info get_info(cl_device_info param_name) const
 	}
     }
 
-    // py::object get_profiling_info(cl_profiling_info param_name) const
-    // {
-    //   switch (param_name)
-    //   {
-    //     case CL_PROFILING_COMMAND_QUEUED:
-    //     case CL_PROFILING_COMMAND_SUBMIT:
-    //     case CL_PROFILING_COMMAND_START:
-    //     case CL_PROFILING_COMMAND_END:
-    //       PYOPENCL_GET_INTEGRAL_INFO(EventProfiling, m_event, param_name,
-    //           cl_ulong);
-    //     default:
-    //       throw error("Event.get_profiling_info", CL_INVALID_VALUE);
-    //   }
-    // }
+    generic_info get_profiling_info(cl_profiling_info param_name) const
+    {
+      switch (param_name)
+	{
+        case CL_PROFILING_COMMAND_QUEUED:
+        case CL_PROFILING_COMMAND_SUBMIT:
+        case CL_PROFILING_COMMAND_START:
+        case CL_PROFILING_COMMAND_END:
+          PYOPENCL_GET_INTEGRAL_INFO(EventProfiling, m_event, param_name,
+				     cl_ulong);
+        default:
+          throw error("Event.get_profiling_info", CL_INVALID_VALUE);
+	}
+    }
 
     virtual void wait()
     {
@@ -1311,25 +1311,23 @@ generic_info get_info(cl_device_info param_name) const
       : memory_object(mem, retain, hostbuf)
     { }
 
-    // #if PYOPENCL_CL_VERSION >= 0x1010
-    //       buffer *get_sub_region(
-    //           size_t origin, size_t size, cl_mem_flags flags) const
-    //       {
-    //         cl_buffer_region region = { origin, size};
+#if PYOPENCL_CL_VERSION >= 0x1010
+    buffer *get_sub_region(size_t origin, size_t size, cl_mem_flags flags) const
+    {
+      cl_buffer_region region = {origin, size};
 
-    //         cl_mem mem = create_sub_buffer_gc(
-    //             data(), flags, CL_BUFFER_CREATE_TYPE_REGION, &region);
+      cl_mem mem = create_sub_buffer_gc(data(), flags, CL_BUFFER_CREATE_TYPE_REGION, &region);
 
-    //         try
-    //         {
-    //           return new buffer(mem, false);
-    //         }
-    //         catch (...)
-    //         {
-    //           PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
-    //           throw;
-    //         }
-    //       }
+      try
+	{
+	  return new buffer(mem, false);
+	}
+      catch (...)
+	{
+	  PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+	  throw;
+	}
+    }
 
     //       buffer *getitem(py::slice slc) const
     //       {
@@ -1357,7 +1355,7 @@ generic_info get_info(cl_device_info param_name) const
 
     //         return get_sub_region(start, end, my_flags);
     //       }
-    // #endif
+#endif
   };
 
   // {{{ buffer creation
@@ -1735,45 +1733,42 @@ generic_info get_info(cl_device_info param_name) const
 	}
     }
 
-    //       py::object get_work_group_info(
-    //           cl_kernel_work_group_info param_name,
-    //           device const &dev
-    //           ) const
-    //       {
-    //         switch (param_name)
-    //         {
-    // #define PYOPENCL_FIRST_ARG m_kernel, dev.data() // hackety hack
-    //           case CL_KERNEL_WORK_GROUP_SIZE:
-    //             PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
-    //                 PYOPENCL_FIRST_ARG, param_name,
-    //                 size_t);
-    //           case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
-    //             {
-    //               std::vector<size_t> result;
-    //               PYOPENCL_GET_VEC_INFO(KernelWorkGroup,
-    //                   PYOPENCL_FIRST_ARG, param_name, result);
+    generic_info get_work_group_info(cl_kernel_work_group_info param_name, device const &dev) const
+    {
+      switch (param_name)
+	{
+#define PYOPENCL_FIRST_ARG m_kernel, dev.data() // hackety hack
+	case CL_KERNEL_WORK_GROUP_SIZE:
+	  PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
+				     PYOPENCL_FIRST_ARG, param_name,
+				     size_t);
+	case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
+	  {
+	    std::vector<size_t> result;
+	    PYOPENCL_GET_VEC_INFO(KernelWorkGroup,
+				  PYOPENCL_FIRST_ARG, param_name, result);
 
-    //               PYOPENCL_RETURN_VECTOR(size_t, result);
-    //             }
-    //           case CL_KERNEL_LOCAL_MEM_SIZE:
-    // #if PYOPENCL_CL_VERSION >= 0x1010
-    //           case CL_KERNEL_PRIVATE_MEM_SIZE:
-    // #endif
-    //             PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
-    //                 PYOPENCL_FIRST_ARG, param_name,
-    //                 cl_ulong);
+	    PYOPENCL_GET_ARRAY_INFO(size_t, result);
+	  }
+	case CL_KERNEL_LOCAL_MEM_SIZE:
+#if PYOPENCL_CL_VERSION >= 0x1010
+	case CL_KERNEL_PRIVATE_MEM_SIZE:
+#endif
+	  PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
+				     PYOPENCL_FIRST_ARG, param_name,
+				     cl_ulong);
 
-    // #if PYOPENCL_CL_VERSION >= 0x1010
-    //           case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
-    //             PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
-    //                 PYOPENCL_FIRST_ARG, param_name,
-    //                 size_t);
-    // #endif
-    //           default:
-    //             throw error("Kernel.get_work_group_info", CL_INVALID_VALUE);
-    // #undef PYOPENCL_FIRST_ARG
-    //         }
-    //       }
+#if PYOPENCL_CL_VERSION >= 0x1010
+	case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
+	  PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
+				     PYOPENCL_FIRST_ARG, param_name,
+				     size_t);
+#endif
+	default:
+	  throw error("Kernel.get_work_group_info", CL_INVALID_VALUE);
+#undef PYOPENCL_FIRST_ARG
+	}
+    }
 
     // #if PYOPENCL_CL_VERSION >= 0x1020
     //       py::object get_arg_info(
@@ -1875,13 +1870,13 @@ generic_info get_info(cl_device_info param_name) const
 
   inline
   event *enqueue_write_buffer(
-      command_queue &cq,
-      memory_object_holder &mem,
-      void *buffer,
-      size_t size,
-      size_t device_offset,
-      void **wait_for, uint32_t num_wait_for, 
-      bool is_blocking)
+			      command_queue &cq,
+			      memory_object_holder &mem,
+			      void *buffer,
+			      size_t size,
+			      size_t device_offset,
+			      void **wait_for, uint32_t num_wait_for, 
+			      bool is_blocking)
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
@@ -1897,9 +1892,9 @@ generic_info get_info(cl_device_info param_name) const
 				    &evt
 				    ));
     //);
-  // TODO
-  PYOPENCL_RETURN_NEW_EVENT(evt);
-  //PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
+    // TODO
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+    //PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
 
@@ -2012,154 +2007,165 @@ generic_info get_info(cl_device_info param_name) const
 
   
 
-  ::error *get_platforms(void **ptr_platforms, uint32_t *num_platforms) {
-    C_HANDLE_ERROR(
-		   *num_platforms = 0;
-		   PYOPENCL_CALL_GUARDED(clGetPlatformIDs, (0, 0, num_platforms));
+::error *get_platforms(void **ptr_platforms, uint32_t *num_platforms) {
+  C_HANDLE_ERROR(
+		 *num_platforms = 0;
+		 PYOPENCL_CALL_GUARDED(clGetPlatformIDs, (0, 0, num_platforms));
 
-		   typedef std::vector<cl_platform_id> vec;
-		   vec platforms(*num_platforms);
-		   PYOPENCL_CALL_GUARDED(clGetPlatformIDs,
-					 (*num_platforms, platforms.empty( ) ? NULL : &platforms.front(), num_platforms));
+		 typedef std::vector<cl_platform_id> vec;
+		 vec platforms(*num_platforms);
+		 PYOPENCL_CALL_GUARDED(clGetPlatformIDs,
+				       (*num_platforms, platforms.empty( ) ? NULL : &platforms.front(), num_platforms));
 
-		   MALLOC(pyopencl::platform*, _ptr_platforms, *num_platforms);
-		   for(vec::size_type i = 0; i < platforms.size(); ++i) {
-		     _ptr_platforms[i] = new pyopencl::platform(platforms[i]);
-		   }
-		   *ptr_platforms = _ptr_platforms;
-		   )
-      return 0;
+		 MALLOC(pyopencl::platform*, _ptr_platforms, *num_platforms);
+		 for(vec::size_type i = 0; i < platforms.size(); ++i) {
+		   _ptr_platforms[i] = new pyopencl::platform(platforms[i]);
+		 }
+		 *ptr_platforms = _ptr_platforms;
+		 );
+  return 0;
+}
+
+void _free(void *p) {
+  free(p);
+}
+
+void _free2(void **p, uint32_t size) {
+  for(uint32_t i = 0; i < size; ++i) {
+    _free(p[i]);
   }
-
-  void _free(void *p) {
-    free(p);
-  }
-
-  void _free2(void **p, uint32_t size) {
-    for(uint32_t i = 0; i < size; ++i) {
-      _free(p[i]);
-    }
-  }
+}
 
  
-  ::error *platform__get_devices(void *ptr_platform, void **ptr_devices, uint32_t *num_devices, cl_device_type devtype) {
-    typedef std::vector<cl_device_id> vec;
-    C_HANDLE_ERROR(
-		   vec devices = static_cast<pyopencl::platform*>(ptr_platform)->get_devices(devtype);
-		   *num_devices = devices.size();
+::error *platform__get_devices(void *ptr_platform, void **ptr_devices, uint32_t *num_devices, cl_device_type devtype) {
+  typedef std::vector<cl_device_id> vec;
+  C_HANDLE_ERROR(vec devices = static_cast<pyopencl::platform*>(ptr_platform)->get_devices(devtype);
+		 *num_devices = devices.size();
+		 
+		 MALLOC(pyopencl::device*, _ptr_devices, *num_devices);
+		 for(vec::size_type i = 0; i < devices.size(); ++i) {
+		   _ptr_devices[i] = new pyopencl::device(devices[i]);
+		 }
+		 *ptr_devices = _ptr_devices;
+		 );
+  return 0;
+}
 
-		   MALLOC(pyopencl::device*, _ptr_devices, *num_devices);
-		   for(vec::size_type i = 0; i < devices.size(); ++i) {
-		     _ptr_devices[i] = new pyopencl::device(devices[i]);
-		   }
-		   *ptr_devices = _ptr_devices;
-		   )
-      return 0;
-  }
 
+::error *_create_context(void **ptr_ctx, cl_context_properties *properties, cl_uint num_devices, void **ptr_devices) {
+  C_HANDLE_ERROR(
+		 cl_int status_code;
+		 std::vector<cl_device_id> devices(num_devices);
+		 for(cl_uint i = 0; i < num_devices; ++i) {
+		   devices[i] = static_cast<pyopencl::device*>(ptr_devices[i])->data();
+		 }
+		 cl_context ctx = clCreateContext(properties,
+						  num_devices,
+						  devices.empty() ? NULL : &devices.front(),
+						  0, 0, &status_code);
+		 if (status_code != CL_SUCCESS) {
+		   throw pyopencl::error("Context", status_code);
+		 }
+		 *ptr_ctx = new pyopencl::context(ctx, false);
+		 );
+  return 0;
+}
 
-  ::error *_create_context(void **ptr_ctx, cl_context_properties *properties, cl_uint num_devices, void **ptr_devices) {
-    C_HANDLE_ERROR(
-		   cl_int status_code;
-		   std::vector<cl_device_id> devices(num_devices);
-		   for(cl_uint i = 0; i < num_devices; ++i) {
-		     devices[i] = static_cast<pyopencl::device*>(ptr_devices[i])->data();
-		   }
-		   cl_context ctx = clCreateContext(properties,
-						    num_devices,
-						    devices.empty() ? NULL : &devices.front(),
-						    0, 0, &status_code);
-		   if (status_code != CL_SUCCESS) {
-		     throw pyopencl::error("Context", status_code);
-		   }
-		   *ptr_ctx = new pyopencl::context(ctx, false);
-		   )
-      return 0;
-  }
+::error *_create_command_queue(void **ptr_command_queue, void *ptr_context, void *ptr_device, cl_command_queue_properties properties) {
+  pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
+  pyopencl::device *dev = static_cast<pyopencl::device*>(ptr_device);
+  C_HANDLE_ERROR(
+		 *ptr_command_queue = new pyopencl::command_queue(*ctx, dev, properties);
+		 );
+  return 0;
+}
 
-  ::error *_create_command_queue(void **ptr_command_queue, void *ptr_context, void *ptr_device, cl_command_queue_properties properties) {
-    pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
-    pyopencl::device *dev = static_cast<pyopencl::device*>(ptr_device);
-    C_HANDLE_ERROR(
-		   *ptr_command_queue = new pyopencl::command_queue(*ctx, dev, properties);
-		   )
-      return 0;
-  }
+::error *_create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, size_t size, void *hostbuf) {
+  pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
+  C_HANDLE_ERROR(
+		 *ptr_buffer = create_buffer_py(*ctx, flags, size, hostbuf);
+		 );
+  return 0;
+}
 
-  ::error *_create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, size_t size, void *hostbuf) {
-    pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
-    C_HANDLE_ERROR(
-		   *ptr_buffer = create_buffer_py(*ctx, flags, size, hostbuf);
-		   )
-      return 0;
-  }
+::error *_create_program_with_source(void **ptr_program, void *ptr_context, char *src) {
+  pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
+  C_HANDLE_ERROR(
+		 *ptr_program = create_program_with_source(*ctx, src);
+		 );
+  return 0;
+}
 
-  ::error *_create_program_with_source(void **ptr_program, void *ptr_context, char *src) {
-    pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
-    C_HANDLE_ERROR(
-		   *ptr_program = create_program_with_source(*ctx, src);
-		   )
-      return 0;
-  }
+::error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries, size_t *binary_sizes) {
+  pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
+  C_HANDLE_ERROR(
+		 *ptr_program = create_program_with_binary(*ctx, num_devices, ptr_devices, num_binaries, reinterpret_cast<char **>(binaries), binary_sizes);
+		 );
+  return 0;
+}
 
-  ::error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries, size_t *binary_sizes) {
-    pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
-    C_HANDLE_ERROR(
-		   *ptr_program = create_program_with_binary(*ctx, num_devices, ptr_devices, num_binaries, reinterpret_cast<char **>(binaries), binary_sizes);
-		   )
-      return 0;
-  }
+::error *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices) {
+  C_HANDLE_ERROR(
+		 static_cast<pyopencl::program*>(ptr_program)->build(options, num_devices, ptr_devices);
+		 );
+  return 0;
+}
 
-  ::error *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices) {
-    C_HANDLE_ERROR(
-		   static_cast<pyopencl::program*>(ptr_program)->build(options, num_devices, ptr_devices);
-		   )
-      return 0;
-  }
-
-  ::error *program__kind(void *ptr_program, int *kind) {
-    C_HANDLE_ERROR(
-		   *kind = static_cast<pyopencl::program*>(ptr_program)->kind();
-		   )
-      return 0;
-  }
+::error *program__kind(void *ptr_program, int *kind) {
+  C_HANDLE_ERROR(
+		 *kind = static_cast<pyopencl::program*>(ptr_program)->kind();
+		 );
+  return 0;
+}
 
   
-  ::error *program__get_build_info(void *ptr_program, void *ptr_device, cl_program_build_info param, generic_info *out) {
-    C_HANDLE_ERROR(
-		   *out = static_cast<pyopencl::program*>(ptr_program)->get_build_info(*static_cast<pyopencl::device*>(ptr_device),
-									     param);
-		   )
-      return 0;
-  }
+::error *program__get_build_info(void *ptr_program, void *ptr_device, cl_program_build_info param, generic_info *out) {
+  C_HANDLE_ERROR(
+		 *out = static_cast<pyopencl::program*>(ptr_program)->get_build_info(*static_cast<pyopencl::device*>(ptr_device),
+										     param);
+		 );
+  return 0;
+}
+
+::error *event__get_profiling_info(void *ptr, cl_uint param, generic_info *out) {
+  C_HANDLE_ERROR(*out = static_cast<pyopencl::event*>(ptr)->get_profiling_info(param););
+  return 0;
+}
+
   
-  ::error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name) {
-    pyopencl::program *prg = static_cast<pyopencl::program*>(ptr_program);
-    C_HANDLE_ERROR(
-		   *ptr_kernel = new pyopencl::kernel(*prg, name);
-		   )
-      return 0;
-  }
+::error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name) {
+  pyopencl::program *prg = static_cast<pyopencl::program*>(ptr_program);
+  C_HANDLE_ERROR(
+		 *ptr_kernel = new pyopencl::kernel(*prg, name);
+		 );
+  return 0;
+}
 
-  ::error *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer) {
-    pyopencl::buffer *buf = static_cast<pyopencl::buffer*>(ptr_buffer);
-    C_HANDLE_ERROR(
-		   static_cast<pyopencl::kernel*>(ptr_kernel)->set_arg_mem(arg_index, *buf);
-		   )
-      return 0;
-  }
+::error *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer) {
+  pyopencl::buffer *buf = static_cast<pyopencl::buffer*>(ptr_buffer);
+  C_HANDLE_ERROR(
+		 static_cast<pyopencl::kernel*>(ptr_kernel)->set_arg_mem(arg_index, *buf);
+		 );
+  return 0;
+}
 
-  ::error *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size) {
-    C_HANDLE_ERROR(
-		   *ptr_event = enqueue_nd_range_kernel(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
-							*static_cast<pyopencl::kernel*>(ptr_kernel),
-							work_dim,
-							global_work_offset,
-							global_work_size,
-							local_work_size);
-		   )    
-      return 0;
-  }
+::error *kernel__get_work_group_info(void *ptr, cl_uint param, void *ptr_device, generic_info *out) {
+  C_HANDLE_ERROR(*out = static_cast<pyopencl::kernel*>(ptr)->get_work_group_info(param, *static_cast<pyopencl::device*>(ptr_device)););
+  return 0;
+}
+
+
+::error *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size) {
+  C_HANDLE_ERROR(
+		 *ptr_event = enqueue_nd_range_kernel(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+						      *static_cast<pyopencl::kernel*>(ptr_kernel),
+						      work_dim,
+						      global_work_offset,
+						      global_work_size,
+						      local_work_size);
+		 );
+  return 0;
+}
 
 
 ::error *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking) {
@@ -2167,18 +2173,18 @@ generic_info get_info(cl_device_info param_name) const
 		 *ptr_event = enqueue_read_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
 						  *static_cast<pyopencl::memory_object_holder*>(ptr_memory_object_holder),
 						  buffer, size, device_offset, wait_for, num_wait_for, (bool)is_blocking);
-		 )
-    return 0;
-  }
+		 );
+  return 0;
+}
 
-  ::error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking) {
-    C_HANDLE_ERROR(
-		   *ptr_event = enqueue_write_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
-						    *static_cast<pyopencl::memory_object_holder*>(ptr_memory_object_holder),
-						     buffer, size, device_offset, wait_for, num_wait_for, (bool)is_blocking);
-		   )
-      return 0;
-  }
+::error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking) {
+  C_HANDLE_ERROR(
+		 *ptr_event = enqueue_write_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+						   *static_cast<pyopencl::memory_object_holder*>(ptr_memory_object_holder),
+						   buffer, size, device_offset, wait_for, num_wait_for, (bool)is_blocking);
+		 );
+  return 0;
+}
 
 ::error *_enqueue_copy_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_src, void *ptr_dst, ptrdiff_t byte_count, size_t src_offset, size_t dst_offset, void **wait_for, uint32_t num_wait_for) {
   C_HANDLE_ERROR(
@@ -2186,37 +2192,37 @@ generic_info get_info(cl_device_info param_name) const
 						  *static_cast<pyopencl::memory_object_holder*>(ptr_src),
 						  *static_cast<pyopencl::memory_object_holder*>(ptr_dst),
 						  byte_count, src_offset, dst_offset, wait_for, num_wait_for);
-		 )
-    return 0;
-  }
+		 );
+  return 0;
+}
   
-  intptr_t _int_ptr(void* ptr, class_t class_) {
+intptr_t _int_ptr(void* ptr, class_t class_) {
 #define INT_PTR(CLSU, CLS) return (intptr_t)(static_cast<pyopencl::CLS*>(ptr)->data());
-    SWITCHCLASS(INT_PTR);
-  }
+  SWITCHCLASS(INT_PTR);
+}
 
-  void* _from_int_ptr(void **ptr_out, intptr_t int_ptr_value, class_t class_) {
+void* _from_int_ptr(void **ptr_out, intptr_t int_ptr_value, class_t class_) {
 #define FROM_INT_PTR(CLSU, CLS) C_HANDLE_ERROR(*ptr_out = new pyopencl::CLS((PYOPENCL_CL_##CLSU)int_ptr_value, /* retain */ true);)
-    SWITCHCLASS(FROM_INT_PTR);
-    return 0;								
-  }
+  SWITCHCLASS(FROM_INT_PTR);
+  return 0;								
+}
   
-  long _hash(void *ptr, class_t class_) {	
+long _hash(void *ptr, class_t class_) {	
 #define HASH(CLSU, CLS)	return static_cast<pyopencl::CLS*>(ptr)->hash();
-    SWITCHCLASS(HASH);
-  }
+  SWITCHCLASS(HASH);
+}
 
   
-  ::error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out) {
+::error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out) {
 #define GET_INFO(CLSU, CLS) C_HANDLE_ERROR(*out = static_cast<pyopencl::CLS*>(ptr)->get_info(param);)
-    SWITCHCLASS(GET_INFO)
-      return 0;
-  }
+  SWITCHCLASS(GET_INFO)
+    return 0;
+}
  
 
-  int get_cl_version(void) {
-    return PYOPENCL_CL_VERSION;
-  }  
+int get_cl_version(void) {
+  return PYOPENCL_CL_VERSION;
+}  
 
 unsigned bitlog2(unsigned long v) {
   return pyopencl::bitlog2(v);

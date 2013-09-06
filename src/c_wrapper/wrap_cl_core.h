@@ -39,8 +39,11 @@ error *program__build(void *ptr_program, char *options, cl_uint num_devices, voi
 error *program__kind(void *ptr_program, int *kind);
 error *program__get_build_info(void *ptr_program, void *ptr_device, cl_program_build_info param, generic_info *out);
 
+error *event__get_profiling_info(void *ptr_event, cl_uint param, generic_info *out);
+
 error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name);
 error *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer);
+error *kernel__get_work_group_info(void *ptr_kernel, cl_uint param, void *ptr_device, generic_info *out);
 long _hash(void *ptr_platform, class_t);
 
 error *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size);
@@ -52,7 +55,6 @@ void populate_constants(void(*add)(const char*, const char*, long value));
 intptr_t _int_ptr(void*, class_t);
 void* _from_int_ptr(void **ptr_out, intptr_t int_ptr_value, class_t);
 error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out);
-
 void _free(void*);
 void _free2(void**, uint32_t size);
 
