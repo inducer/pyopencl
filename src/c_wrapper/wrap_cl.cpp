@@ -771,52 +771,53 @@ generic_info get_info(cl_device_info param_name) const
 	    
 	  }
 
-    //           case CL_CONTEXT_PROPERTIES:
-    //             {
-    //               std::vector<cl_context_properties> result;
-    //               PYOPENCL_GET_VEC_INFO(Context, m_context, param_name, result);
+	case CL_CONTEXT_PROPERTIES:
+	  {
+	    
+	    std::vector<cl_context_properties> result;
+	    PYOPENCL_GET_VEC_INFO(Context, m_context, param_name, result);
+	    std::vector<generic_info> py_result;
+	    for (size_t i = 0; i < result.size(); i+=2)
+	      {
+		cl_context_properties key = result[i];
+		if(key == 0)
+		  break;
+		generic_info info;
+		info.opaque_class = CLASS_NONE;
+		switch (key)
+		  {
+		  case CL_CONTEXT_PLATFORM:
+		    {
+		      info.opaque_class = CLASS_PLATFORM;
+		      info.type = "void *";
+		      info.value = new platform(reinterpret_cast<cl_platform_id>(result[i+1]));
+		      break;
+		    }
 
-    //               py::list py_result;
-    //               for (size_t i = 0; i < result.size(); i+=2)
-    // 		{
-    // 		  cl_context_properties key = result[i];
-    // 		  py::object value;
-    // 		  switch (key)
-    // 		    {
-    // 		    case CL_CONTEXT_PLATFORM:
-    // 		      {
-    // 			value = py::object(
-    // 					   handle_from_new_ptr(new platform(
-    // 									    reinterpret_cast<cl_platform_id>(result[i+1]))));
-    // 			break;
-    // 		      }
+#if defined(PYOPENCL_GL_SHARING_VERSION) && (PYOPENCL_GL_SHARING_VERSION >= 1)
+#if defined(__APPLE__) && defined(HAVE_GL)
+		  case CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE:
+#else
+		  case CL_GL_CONTEXT_KHR:
+		  case CL_EGL_DISPLAY_KHR:
+		  case CL_GLX_DISPLAY_KHR:
+		  case CL_WGL_HDC_KHR:
+		  case CL_CGL_SHAREGROUP_KHR:
+#endif
+		    info.type = "cl_context_properties *";
+		    info.value = (void*)result[i+1];
+		    break;
 
-    // #if defined(PYOPENCL_GL_SHARING_VERSION) && (PYOPENCL_GL_SHARING_VERSION >= 1)
-    // #if defined(__APPLE__) && defined(HAVE_GL)
-    // 		    case CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE:
-    // #else
-    // 		    case CL_GL_CONTEXT_KHR:
-    // 		    case CL_EGL_DISPLAY_KHR:
-    // 		    case CL_GLX_DISPLAY_KHR:
-    // 		    case CL_WGL_HDC_KHR:
-    // 		    case CL_CGL_SHAREGROUP_KHR:
-    // #endif
-    // 		      value = py::object(result[i+1]);
-    // 		      break;
+#endif
+		  default:
+		    throw error("Context.get_info", CL_INVALID_VALUE,
+				"unknown context_property key encountered");
+		  }
 
-    // #endif
-    // 		    case 0:
-    // 		      break;
-
-    // 		    default:
-    // 		      throw error("Context.get_info", CL_INVALID_VALUE,
-    // 				  "unknown context_property key encountered");
-    // 		    }
-
-    // 		  py_result.append(py::make_tuple(result[i], value));
-    // 		}
-    //               return py_result;
-    //             }
+		  py_result.push_back(info);
+     		}
+	    PYOPENCL_GET_ARRAY_INFO(generic_info, py_result);
+	  }
 
 #if PYOPENCL_CL_VERSION >= 0x1010
 	case CL_CONTEXT_NUM_DEVICES:

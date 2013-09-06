@@ -285,9 +285,7 @@ def _add_functionality():
     # {{{ Platform
 
     def platform_repr(self):
-        return "<pyopencl.Platform '%s' at TODO>" % (self.name)
-        # TODO int_ptr
-        #return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
+        return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
 
     Platform.__repr__ = platform_repr
 
@@ -296,11 +294,8 @@ def _add_functionality():
     # {{{ Device
 
     def device_repr(self):
-        return "<pyopencl.Device '%s' on TODO at TODO>" % (
-                self.name.strip())
-        # TODO
-        # return "<pyopencl.Device '%s' on '%s' at 0x%x>" % (
-        #         self.name.strip(), self.platform.name.strip(), self.int_ptr)
+        return "<pyopencl.Device '%s' on '%s' at 0x%x>" % (
+                self.name.strip(), self.platform.name.strip(), self.int_ptr)
 
     Device.__repr__ = device_repr
 
@@ -309,8 +304,7 @@ def _add_functionality():
     # {{{ Context
 
     def context_repr(self):
-        return 'TODO'
-        #return "<pyopencl.Context at TODO on %s>" % (", ".join(repr(dev) for dev in self.devices))
+        return "<pyopencl.Context at TODO on %s>" % (", ".join(repr(dev) for dev in self.devices))
         # return "<pyopencl.Context at 0x%x on %s>" % (self.obj_ptr,
         #         ", ".join(repr(dev) for dev in self.devices))
 

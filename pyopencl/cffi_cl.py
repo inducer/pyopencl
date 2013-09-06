@@ -1,3 +1,4 @@
+from pyopencl._cl import bitlog2, PooledBuffer, MemoryPool
 import warnings
 
 import os.path
@@ -214,12 +215,15 @@ def _parse_context_properties(properties):
             raise RuntimeError("Context", status_code.INVALID_VALUE, "property tuple must have length 2")
         prop, value = prop_tuple
         props.append(prop)
-        if prop == _lib.CL_CONTEXT_PLATFORM:
-            props.append(_ffi.cast('cl_context_properties', value.data()))
-            
-        else: # TODO_PLAT CL_WGL_HDC_KHR and morecc
+        if prop == context_properties.PLATFORM:
+            props.append(value.int_ptr)
+        # elif prop == context_properties.WGL_HDC_KHR:
+        #     raise NotImplementedError()
+        #elif      
+        else: # TODO_PLAT CL_WGL_HDC_KHR and more
             raise RuntimeError("Context", status_code.INVALID_VALUE, "invalid context property")
     props.append(0)
+    #c_props = [_ffi.new('cl_context_properties *', prop) for prop in props]
     return _ffi.new('cl_context_properties[]', props)
 
         
