@@ -1864,10 +1864,40 @@ generic_info get_info(cl_device_info param_name) const
 						&evt
 						))
       // );
-
       PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
+  inline
+  event *enqueue_write_buffer(
+      command_queue &cq,
+      memory_object_holder &mem,
+      void *buffer,
+      size_t size,
+      size_t device_offset,
+      /*py::object py_wait_for,*/
+      bool is_blocking)
+  {
+    //PYOPENCL_PARSE_WAIT_FOR;
+
+    cl_event evt;
+    // TODO
+    //PYOPENCL_RETRY_IF_MEM_ERROR(
+    PYOPENCL_CALL_GUARDED_THREADED(clEnqueueWriteBuffer,
+				   (cq.data(),
+				    mem.data(),
+				    PYOPENCL_CAST_BOOL(is_blocking),
+				    device_offset, size, buffer,
+				    0, NULL, //PYOPENCL_WAITLIST_ARGS,
+				    &evt
+				    ));
+    //);
+  // TODO
+  PYOPENCL_RETURN_NEW_EVENT(evt);
+  //PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
+  }
+
+
+  
   // }}}
 
   inline event *enqueue_nd_range_kernel(
@@ -2133,6 +2163,25 @@ generic_info get_info(cl_device_info param_name) const
 						    buffer, size, device_offset, (bool)is_blocking);
 		   )
       return 0;
+  }
+
+  ::error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, int is_blocking) {
+    C_HANDLE_ERROR(
+		   *ptr_event = enqueue_write_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+						    *static_cast<pyopencl::memory_object_holder*>(ptr_memory_object_holder),
+						    buffer, size, device_offset, (bool)is_blocking);
+		   )
+      return 0;
+  }
+
+::error *_enqueue_copy_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_src, void *ptr_dst, ptrdiff_t byte_count, size_t src_offset, size_t dst_offset) {
+  C_HANDLE_ERROR(
+		 *ptr_event = enqueue_copy_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+						  *static_cast<pyopencl::memory_object_holder*>(ptr_src),
+						  *static_cast<pyopencl::memory_object_holder*>(ptr_dst),
+						  byte_count, src_offset, dst_offset);
+		 )
+    return 0;
   }
   
   intptr_t _int_ptr(void* ptr, class_t class_) {

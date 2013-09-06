@@ -282,7 +282,7 @@ class Buffer(MemoryObjectHolder):
     @classmethod
     def _c_buffer_from_obj(cls, obj):
         # assume numpy array for now
-        return _ffi.cast('void *', obj.__array_interface__['data'][0])
+        return _ffi.cast('void *', obj.__array_interface__['data'][0]), obj.nbytes
         
     def __init__(self, context, flags, size=0, hostbuf=None):
         if hostbuf is not None and not (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
@@ -290,8 +290,7 @@ class Buffer(MemoryObjectHolder):
         c_hostbuf = _ffi.NULL
         if hostbuf is not None:
             # todo: buffer protocol; for now hostbuf is assumed to be a numpy array
-            c_hostbuf = self._c_buffer_from_obj(hostbuf)
-            hostbuf_size = hostbuf.nbytes
+            c_hostbuf, hostbuf_size = self._c_buffer_from_obj(hostbuf)
             if size > hostbuf_size:
                 raise RuntimeError("Buffer", status_code.INVALID_VALUE, "specified size is greater than host buffer size")
             if size == 0:
@@ -494,13 +493,12 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, gl
     ))
     return _create_instance(Event, ptr_event[0])
 
-def _enqueue_read_buffer(cq, mem, buf, device_offset=0, is_blocking=True):
-    c_buf = Buffer._c_buffer_from_obj(buf)
-    size = buf.nbytes
+def _enqueue_read_buffer(queue, mem, buf, device_offset=0, wait_for=None, is_blocking=True):
+    c_buf, size = Buffer._c_buffer_from_obj(buf)
     ptr_event = _ffi.new('void **')
     _handle_error(_lib._enqueue_read_buffer(
         ptr_event,
-        cq.ptr,
+        queue.ptr,
         mem.ptr,
         c_buf,
         size,
@@ -509,6 +507,34 @@ def _enqueue_read_buffer(cq, mem, buf, device_offset=0, is_blocking=True):
     ))
     return _create_instance(Event, ptr_event[0])
 
+def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0, dst_offset=0, wait_for=None):
+    ptr_event = _ffi.new('void **')
+    _handle_error(_lib._enqueue_copy_buffer(
+        ptr_event,
+        queue.ptr,
+        src.ptr,
+        dst.ptr,
+        byte_count,
+        src_offset,
+        dst_offset
+    ))
+    return _create_instance(Event, ptr_event[0])
+
+def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=True):
+    c_buf, size = Buffer._c_buffer_from_obj(hostbuf)
+    ptr_event = _ffi.new('void **')
+    _handle_error(_lib._enqueue_read_buffer(
+        ptr_event,
+        queue.ptr,
+        mem.ptr,
+        c_buf,
+        size,
+        device_offset,
+        bool(is_blocking)
+    ))
+    return _create_instance(Event, ptr_event[0])
+
+    
 def _create_instance(cls, ptr):
     ins = cls.__new__(cls)
     ins.ptr = ptr

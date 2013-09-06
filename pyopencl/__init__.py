@@ -862,8 +862,8 @@ def _mark_copy_deprecated(func):
 # enqueue_copy_buffer_to_image = _mark_copy_deprecated(
 #         _cl._enqueue_copy_buffer_to_image)
 enqueue_read_buffer = _mark_copy_deprecated(_cl._enqueue_read_buffer)
-# enqueue_write_buffer = _mark_copy_deprecated(_cl._enqueue_write_buffer)
-# enqueue_copy_buffer = _mark_copy_deprecated(_cl._enqueue_copy_buffer)
+enqueue_write_buffer = _mark_copy_deprecated(_cl._enqueue_write_buffer)
+enqueue_copy_buffer = _mark_copy_deprecated(_cl._enqueue_copy_buffer)
 
 
 # if _cl.get_cl_header_version() >= (1, 1):
