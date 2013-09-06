@@ -804,7 +804,7 @@ generic_info get_info(cl_device_info param_name) const
 		  case CL_WGL_HDC_KHR:
 		  case CL_CGL_SHAREGROUP_KHR:
 #endif
-		    info.type = "cl_context_properties *";
+		    info.type = "intptr_t *";
 		    info.value = (void*)result[i+1];
 		    break;
 

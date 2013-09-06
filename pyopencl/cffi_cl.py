@@ -214,17 +214,29 @@ def _parse_context_properties(properties):
         if len(prop_tuple) != 2:
             raise RuntimeError("Context", status_code.INVALID_VALUE, "property tuple must have length 2")
         prop, value = prop_tuple
+        if prop is None:
+            raise RuntimeError("Context", status_code.INVALID_VALUE, "invalid context property")
+            
         props.append(prop)
         if prop == context_properties.PLATFORM:
             props.append(value.int_ptr)
-        # elif prop == context_properties.WGL_HDC_KHR:
-        #     raise NotImplementedError()
-        #elif      
-        else: # TODO_PLAT CL_WGL_HDC_KHR and more
+        elif prop == getattr(context_properties, "WGL_HDC_KHR"): # TODO if _WIN32? Why?
+            props.append(value)
+        elif prop in [getattr(context_properties, key, None) for key in (
+                'CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE',
+                'GL_CONTEXT_KHR',
+                'EGL_DISPLAY_KHR',
+                'GLX_DISPLAY_KHR',
+                'CGL_SHAREGROUP_KHR',
+                )]:
+            # TODO: without ctypes?
+            import ctypes
+            val = (ctypes.cast(value, ctypes.c_void_p)).value
+            props.append(0 if val is None else val)
+        else:
             raise RuntimeError("Context", status_code.INVALID_VALUE, "invalid context property")
     props.append(0)
-    #c_props = [_ffi.new('cl_context_properties *', prop) for prop in props]
-    return _ffi.new('cl_context_properties[]', props)
+    return _ffi.new('intptr_t[]', props)
 
         
 class Context(_Common):
