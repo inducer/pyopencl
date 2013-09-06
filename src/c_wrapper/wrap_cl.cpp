@@ -6,6 +6,7 @@
 #include <string.h>
 #include <memory>
 #include <sstream>
+#include "bitlog.hpp"
 
 #define MALLOC(TYPE, VAR, N) TYPE *VAR = reinterpret_cast<TYPE*>(malloc(sizeof(TYPE)*(N)));
 
@@ -256,7 +257,7 @@ std::string tostring(const T& v) {
   return ostr.str();
 }
 
-extern "C"
+
 namespace pyopencl
 {
   char *_copy_str(const std::string& str) {
@@ -1970,6 +1971,8 @@ generic_info get_info(cl_device_info param_name) const
 
 
 
+}
+
 
   
 
@@ -1983,9 +1986,9 @@ generic_info get_info(cl_device_info param_name) const
 		   PYOPENCL_CALL_GUARDED(clGetPlatformIDs,
 					 (*num_platforms, platforms.empty( ) ? NULL : &platforms.front(), num_platforms));
 
-		   MALLOC(platform*, _ptr_platforms, *num_platforms);
+		   MALLOC(pyopencl::platform*, _ptr_platforms, *num_platforms);
 		   for(vec::size_type i = 0; i < platforms.size(); ++i) {
-		     _ptr_platforms[i] = new platform(platforms[i]);
+		     _ptr_platforms[i] = new pyopencl::platform(platforms[i]);
 		   }
 		   *ptr_platforms = _ptr_platforms;
 		   )
@@ -2006,12 +2009,12 @@ generic_info get_info(cl_device_info param_name) const
   ::error *platform__get_devices(void *ptr_platform, void **ptr_devices, uint32_t *num_devices, cl_device_type devtype) {
     typedef std::vector<cl_device_id> vec;
     C_HANDLE_ERROR(
-		   vec devices = static_cast<platform*>(ptr_platform)->get_devices(devtype);
+		   vec devices = static_cast<pyopencl::platform*>(ptr_platform)->get_devices(devtype);
 		   *num_devices = devices.size();
 
-		   MALLOC(device*, _ptr_devices, *num_devices);
+		   MALLOC(pyopencl::device*, _ptr_devices, *num_devices);
 		   for(vec::size_type i = 0; i < devices.size(); ++i) {
-		     _ptr_devices[i] = new device(devices[i]);
+		     _ptr_devices[i] = new pyopencl::device(devices[i]);
 		   }
 		   *ptr_devices = _ptr_devices;
 		   )
@@ -2024,7 +2027,7 @@ generic_info get_info(cl_device_info param_name) const
 		   cl_int status_code;
 		   std::vector<cl_device_id> devices(num_devices);
 		   for(cl_uint i = 0; i < num_devices; ++i) {
-		     devices[i] = static_cast<device*>(ptr_devices[i])->data();
+		     devices[i] = static_cast<pyopencl::device*>(ptr_devices[i])->data();
 		   }
 		   cl_context ctx = clCreateContext(properties,
 						    num_devices,
@@ -2033,22 +2036,22 @@ generic_info get_info(cl_device_info param_name) const
 		   if (status_code != CL_SUCCESS) {
 		     throw pyopencl::error("Context", status_code);
 		   }
-		   *ptr_ctx = new context(ctx, false);
+		   *ptr_ctx = new pyopencl::context(ctx, false);
 		   )
       return 0;
   }
 
   ::error *_create_command_queue(void **ptr_command_queue, void *ptr_context, void *ptr_device, cl_command_queue_properties properties) {
-    context *ctx = static_cast<context*>(ptr_context);
-    device *dev = static_cast<device*>(ptr_device);
+    pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
+    pyopencl::device *dev = static_cast<pyopencl::device*>(ptr_device);
     C_HANDLE_ERROR(
-		   *ptr_command_queue = new command_queue(*ctx, dev, properties);
+		   *ptr_command_queue = new pyopencl::command_queue(*ctx, dev, properties);
 		   )
       return 0;
   }
 
   ::error *_create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, size_t size, void *hostbuf) {
-    context *ctx = static_cast<context*>(ptr_context);
+    pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
     C_HANDLE_ERROR(
 		   *ptr_buffer = create_buffer_py(*ctx, flags, size, hostbuf);
 		   )
@@ -2056,7 +2059,7 @@ generic_info get_info(cl_device_info param_name) const
   }
 
   ::error *_create_program_with_source(void **ptr_program, void *ptr_context, char *src) {
-    context *ctx = static_cast<context*>(ptr_context);
+    pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
     C_HANDLE_ERROR(
 		   *ptr_program = create_program_with_source(*ctx, src);
 		   )
@@ -2064,7 +2067,7 @@ generic_info get_info(cl_device_info param_name) const
   }
 
   ::error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries, size_t *binary_sizes) {
-    context *ctx = static_cast<context*>(ptr_context);
+    pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
     C_HANDLE_ERROR(
 		   *ptr_program = create_program_with_binary(*ctx, num_devices, ptr_devices, num_binaries, reinterpret_cast<char **>(binaries), binary_sizes);
 		   )
@@ -2073,14 +2076,14 @@ generic_info get_info(cl_device_info param_name) const
 
   ::error *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices) {
     C_HANDLE_ERROR(
-		   static_cast<program*>(ptr_program)->build(options, num_devices, ptr_devices);
+		   static_cast<pyopencl::program*>(ptr_program)->build(options, num_devices, ptr_devices);
 		   )
       return 0;
   }
 
   ::error *program__kind(void *ptr_program, int *kind) {
     C_HANDLE_ERROR(
-		   *kind = static_cast<program*>(ptr_program)->kind();
+		   *kind = static_cast<pyopencl::program*>(ptr_program)->kind();
 		   )
       return 0;
   }
@@ -2088,32 +2091,32 @@ generic_info get_info(cl_device_info param_name) const
   
   ::error *program__get_build_info(void *ptr_program, void *ptr_device, cl_program_build_info param, generic_info *out) {
     C_HANDLE_ERROR(
-		   *out = static_cast<program*>(ptr_program)->get_build_info(*static_cast<device*>(ptr_device),
+		   *out = static_cast<pyopencl::program*>(ptr_program)->get_build_info(*static_cast<pyopencl::device*>(ptr_device),
 									     param);
 		   )
       return 0;
   }
   
   ::error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name) {
-    program *prg = static_cast<program*>(ptr_program);
+    pyopencl::program *prg = static_cast<pyopencl::program*>(ptr_program);
     C_HANDLE_ERROR(
-		   *ptr_kernel = new kernel(*prg, name);
+		   *ptr_kernel = new pyopencl::kernel(*prg, name);
 		   )
       return 0;
   }
 
   ::error *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer) {
-    buffer *buf = static_cast<buffer*>(ptr_buffer);
+    pyopencl::buffer *buf = static_cast<pyopencl::buffer*>(ptr_buffer);
     C_HANDLE_ERROR(
-		   static_cast<kernel*>(ptr_kernel)->set_arg_mem(arg_index, *buf);
+		   static_cast<pyopencl::kernel*>(ptr_kernel)->set_arg_mem(arg_index, *buf);
 		   )
       return 0;
   }
 
   ::error *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size) {
     C_HANDLE_ERROR(
-		   *ptr_event = enqueue_nd_range_kernel(*static_cast<command_queue*>(ptr_command_queue),
-							*static_cast<kernel*>(ptr_kernel),
+		   *ptr_event = enqueue_nd_range_kernel(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+							*static_cast<pyopencl::kernel*>(ptr_kernel),
 							work_dim,
 							global_work_offset,
 							global_work_size,
@@ -2125,40 +2128,41 @@ generic_info get_info(cl_device_info param_name) const
 
   ::error *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, int is_blocking) {
     C_HANDLE_ERROR(
-		   *ptr_event = enqueue_read_buffer(*static_cast<command_queue*>(ptr_command_queue),
-						    *static_cast<memory_object_holder*>(ptr_memory_object_holder),
+		   *ptr_event = enqueue_read_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+						    *static_cast<pyopencl::memory_object_holder*>(ptr_memory_object_holder),
 						    buffer, size, device_offset, (bool)is_blocking);
 		   )
       return 0;
   }
   
   intptr_t _int_ptr(void* ptr, class_t class_) {
-#define INT_PTR(CLSU, CLS) return (intptr_t)(static_cast<CLS*>(ptr)->data());
+#define INT_PTR(CLSU, CLS) return (intptr_t)(static_cast<pyopencl::CLS*>(ptr)->data());
     SWITCHCLASS(INT_PTR);
   }
 
   void* _from_int_ptr(void **ptr_out, intptr_t int_ptr_value, class_t class_) {
-#define FROM_INT_PTR(CLSU, CLS) C_HANDLE_ERROR(*ptr_out = new CLS((PYOPENCL_CL_##CLSU)int_ptr_value, /* retain */ true);)
+#define FROM_INT_PTR(CLSU, CLS) C_HANDLE_ERROR(*ptr_out = new pyopencl::CLS((PYOPENCL_CL_##CLSU)int_ptr_value, /* retain */ true);)
     SWITCHCLASS(FROM_INT_PTR);
     return 0;								
   }
   
   long _hash(void *ptr, class_t class_) {	
-#define HASH(CLSU, CLS)	return static_cast<CLS*>(ptr)->hash();
+#define HASH(CLSU, CLS)	return static_cast<pyopencl::CLS*>(ptr)->hash();
     SWITCHCLASS(HASH);
   }
 
   
   ::error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out) {
-#define GET_INFO(CLSU, CLS) C_HANDLE_ERROR(*out = static_cast<CLS*>(ptr)->get_info(param);)
+#define GET_INFO(CLSU, CLS) C_HANDLE_ERROR(*out = static_cast<pyopencl::CLS*>(ptr)->get_info(param);)
     SWITCHCLASS(GET_INFO)
       return 0;
   }
  
+
   int get_cl_version(void) {
     return PYOPENCL_CL_VERSION;
-  }
+  }  
+
+unsigned bitlog2(unsigned long v) {
+  return pyopencl::bitlog2(v);
 }
-
-  
-

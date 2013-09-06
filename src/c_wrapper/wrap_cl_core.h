@@ -54,6 +54,5 @@ error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out);
 void _free(void*);
 void _free2(void**, uint32_t size);
 
-
-
+unsigned bitlog2(unsigned long v);
 

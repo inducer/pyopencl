@@ -1,10 +1,8 @@
-from pyopencl._cl import bitlog2, PooledBuffer, MemoryPool
+from pyopencl._cl import PooledBuffer, MemoryPool
 import warnings
 
 import os.path
 current_directory = os.path.dirname(__file__)
-
-
 
 from cffi import FFI
 _ffi = FFI()
@@ -92,6 +90,8 @@ _lib = _ffi.verify(
     include_dirs=[os.path.join(current_directory, "../src/c_wrapper/")],
     library_dirs=[current_directory],
     libraries=["wrapcl", "OpenCL"])
+
+bitlog2 = _lib.bitlog2
 
 class _CArray(object):
     def __init__(self, ptr):
@@ -495,7 +495,6 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, gl
     return _create_instance(Event, ptr_event[0])
 
 def _enqueue_read_buffer(cq, mem, buf, device_offset=0, is_blocking=True):
-    # assume numpy
     c_buf = Buffer._c_buffer_from_obj(buf)
     size = buf.nbytes
     ptr_event = _ffi.new('void **')
