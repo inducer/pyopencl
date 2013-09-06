@@ -232,7 +232,9 @@ def _parse_context_properties(properties):
             # TODO: without ctypes?
             import ctypes
             val = (ctypes.cast(value, ctypes.c_void_p)).value
-            props.append(0 if val is None else val)
+            if val is None:
+                raise LogicError("Context", status_code.INVALID_VALUE, "You most likely have not initialized OpenGL properly.")
+            props.append(val)
         else:
             raise RuntimeError("Context", status_code.INVALID_VALUE, "invalid context property")
     props.append(0)
@@ -412,7 +414,8 @@ def _generic_info_to_python(info):
             ret = list(value)
     else:
         ret = value[0]
-    _lib._free(info.value)
+    if info.dontfree == 0:
+        _lib._free(info.value)
     return ret
 
 class Kernel(_Common):

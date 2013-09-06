@@ -76,6 +76,7 @@
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,				\
 			  (FIRST_ARG, SECOND_ARG, sizeof(param_value), &param_value, 0)); \
     generic_info info;							\
+    info.dontfree = 0;							\
     info.opaque_class = CLASS_##TYPEU;					\
       info.type = "void *";						\
       if (param_value)							\
@@ -93,6 +94,7 @@
       ar[i] = new pyopencl::CLS(VEC[i]);				\
     }									\
     generic_info info;							\
+    info.dontfree = 0;							\
     info.opaque_class = CLASS_##CLSU;					\
     info.type = _copy_str(std::string("void*[") + tostring(VEC.size()) + "]"); \
     info.value = (void**)ar;						\
@@ -111,6 +113,7 @@
 			  (FIRST_ARG, SECOND_ARG, param_value_size,	\
 			   param_value, &param_value_size));		\
     generic_info info;							\
+    info.dontfree = 0;							\
     info.opaque_class = CLASS_NONE;					\
     info.type = "char*";						\
     info.value = (void*)param_value;					\
@@ -123,6 +126,7 @@
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,				\
 			  (FIRST_ARG, SECOND_ARG, sizeof(param_value), param_value, 0)); \
     generic_info info;							\
+    info.dontfree = 0;							\
     info.opaque_class = CLASS_NONE;					\
     info.type = #TYPE"*";						\
       info.value = (void*)param_value;					\
@@ -136,6 +140,7 @@
       ar[i] = VEC[i];							\
     }									\
     generic_info info;							\
+    info.dontfree = 0;							\
     info.opaque_class = CLASS_NONE;					\
     info.type = _copy_str(std::string(#TYPE"[") + tostring(VEC.size()) + "]"); \
     info.value = (void*)ar;						\
@@ -783,6 +788,7 @@ generic_info get_info(cl_device_info param_name) const
 		if(key == 0)
 		  break;
 		generic_info info;
+		info.dontfree = 0;
 		info.opaque_class = CLASS_NONE;
 		switch (key)
 		  {
@@ -806,6 +812,8 @@ generic_info get_info(cl_device_info param_name) const
 #endif
 		    info.type = "intptr_t *";
 		    info.value = (void*)result[i+1];
+		     // we do not own this object
+		    info.dontfree = 1;
 		    break;
 
 #endif

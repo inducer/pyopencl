@@ -23,6 +23,7 @@ typedef struct {
   class_t opaque_class;
   const char *type;
   void *value;
+  int dontfree;
 } generic_info;
 
 
