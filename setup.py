@@ -4,8 +4,8 @@
 
 def get_config_schema():
     from aksetup_helper import ConfigSchema, Option, \
-            IncludeDir, LibraryDir, Libraries, BoostLibraries, \
-            Switch, StringListOption, make_boost_base_options
+            IncludeDir, LibraryDir, Libraries, \
+            Switch, StringListOption
 
     import sys
     if 'darwin' in sys.platform:
@@ -35,11 +35,7 @@ def get_config_schema():
         default_cxxflags = []
         default_ldflags = []
 
-    return ConfigSchema(make_boost_base_options() + [
-        BoostLibraries("python"),
-
-        Switch("USE_SHIPPED_BOOST", True, "Use included Boost library"),
-
+    return ConfigSchema([
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
         Switch("CL_ENABLE_DEVICE_FISSION", True,
@@ -60,7 +56,7 @@ def get_config_schema():
 
 def main():
     from aksetup_helper import (hack_distutils, get_config, setup,
-            NumpyExtension, set_up_shipped_boost_if_requested,
+            NumpyExtension, 
             check_git_submodules)
 
     check_git_submodules()
@@ -68,13 +64,7 @@ def main():
     hack_distutils()
     conf = get_config(get_config_schema(),
             warn_about_no_config=False)
-    EXTRA_OBJECTS, EXTRA_DEFINES = \
-            set_up_shipped_boost_if_requested("pyopencl", conf)
-
-    LIBRARY_DIRS = conf["BOOST_LIB_DIR"]
-    LIBRARIES = conf["BOOST_PYTHON_LIBNAME"]
-
-    EXTRA_INCLUDE_DIRS = []
+    EXTRA_DEFINES = {}
 
     EXTRA_DEFINES["PYGPU_PACKAGE"] = "pyopencl"
     EXTRA_DEFINES["PYGPU_PYOPENCL"] = "1"
@@ -82,7 +72,6 @@ def main():
     if conf["CL_TRACE"]:
         EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
 
-    INCLUDE_DIRS = conf["BOOST_INC_DIR"] + conf["CL_INC_DIR"]
 
     if conf["CL_ENABLE_GL"]:
         EXTRA_DEFINES["HAVE_GL"] = 1
@@ -165,6 +154,13 @@ def main():
     else:
         pvt_struct_source = "src/wrapper/_pvt_struct_v2.cpp"
 
+    # wrap_cl_core.h needs to be available in pyopencl/
+    # the cffi verifier depends on it.
+    import shutil
+    shutil.copyfile("src/c_wrapper/wrap_cl_core.h", "pyopencl/wrap_cl_core.h")
+    
+    from pyopencl._cffi import _get_verifier
+    
     setup(name="pyopencl",
             # metadata
             version=ver_dic["VERSION_TEXT"],
@@ -204,32 +200,28 @@ def main():
                 "pytools>=2013.5.2",
                 "pytest>=2",
                 "decorator>=3.2.0",
+                "cffi>=0.7.2",
                 # "Mako>=0.3.6",
                 ],
-
+          
             ext_package="pyopencl",
             ext_modules=[
-                NumpyExtension("_cl",
-                    [
-                        "src/wrapper/wrap_cl.cpp",
-                        "src/wrapper/wrap_cl_part_1.cpp",
-                        "src/wrapper/wrap_cl_part_2.cpp",
-                        "src/wrapper/wrap_constants.cpp",
-                        "src/wrapper/wrap_mempool.cpp",
-                        "src/wrapper/bitlog.cpp",
-                        ]+EXTRA_OBJECTS,
-                    include_dirs=INCLUDE_DIRS + EXTRA_INCLUDE_DIRS,
-                    library_dirs=LIBRARY_DIRS + conf["CL_LIB_DIR"],
-                    libraries=LIBRARIES + conf["CL_LIBNAME"],
+                _get_verifier(
+                    ext_package='pyopencl', # needs to be the same as above
+                    sources=[
+                        "src/c_wrapper/wrap_cl.cpp",
+                        "src/c_wrapper/wrap_constants.cpp",
+                        #"src/c_wrapper/wrap_mempool.cpp",
+                        "src/c_wrapper/bitlog.cpp",
+                    ],
+                    include_dirs=conf["CL_INC_DIR"] + ["src/c_wrapper/"],
+                    library_dirs=conf["CL_LIB_DIR"],
+                    libraries=conf["CL_LIBNAME"],
                     define_macros=list(EXTRA_DEFINES.items()),
                     extra_compile_args=conf["CXXFLAGS"],
                     extra_link_args=conf["LDFLAGS"],
-                    ),
-                NumpyExtension("_pvt_struct",
-                    [pvt_struct_source],
-                    extra_compile_args=conf["CXXFLAGS"],
-                    extra_link_args=conf["LDFLAGS"],
-                    ),
+
+                ).get_extension()
                 ],
 
             include_package_data=True,
@@ -237,6 +229,7 @@ def main():
                     "pyopencl": [
                         "cl/*.cl",
                         "cl/*.h",
+                        "wrap_cl_core.h",
                         ]
                     },
 
