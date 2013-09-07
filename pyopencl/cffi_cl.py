@@ -433,15 +433,15 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, gl
     ))
     return _create_instance(Event, ptr_event[0])
 
-def _c_wait_for(wait_for=None):
-    if wait_for is None:
+def _c_obj_list(objs=None):
+    if objs is None:
         return _ffi.NULL, 0
-    return _ffi.new('void *[]', [ev.ptr for ev in wait_for]), len(wait_for)
+    return _ffi.new('void *[]', [ev.ptr for ev in objs]), len(objs)
 
 def _enqueue_read_buffer(queue, mem, buf, device_offset=0, wait_for=None, is_blocking=True):
     c_buf, size = Buffer._c_buffer_from_obj(buf)
     ptr_event = _ffi.new('void **')
-    c_wait_for, num_wait_for = _c_wait_for(wait_for=wait_for)
+    c_wait_for, num_wait_for = _c_obj_list(wait_for)
     _handle_error(_lib._enqueue_read_buffer(
         ptr_event,
         queue.ptr,
@@ -456,7 +456,7 @@ def _enqueue_read_buffer(queue, mem, buf, device_offset=0, wait_for=None, is_blo
 
 def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0, dst_offset=0, wait_for=None):
     ptr_event = _ffi.new('void **')
-    c_wait_for, num_wait_for = _c_wait_for(wait_for=wait_for)
+    c_wait_for, num_wait_for = _c_obj_list(wait_for)
     _handle_error(_lib._enqueue_copy_buffer(
         ptr_event,
         queue.ptr,
@@ -472,7 +472,7 @@ def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0, dst_offse
 def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=True):
     c_buf, size = Buffer._c_buffer_from_obj(hostbuf)
     ptr_event = _ffi.new('void **')
-    c_wait_for, num_wait_for = _c_wait_for(wait_for=wait_for)
+    c_wait_for, num_wait_for = _c_obj_list(wait_for)
     _handle_error(_lib._enqueue_write_buffer(
         ptr_event,
         queue.ptr,
@@ -491,7 +491,8 @@ def _create_instance(cls, ptr):
     ins.ptr = ptr
     return ins
 
-# gl interop
+# {{{ gl interop
+
 def have_gl():
     return bool(_lib.have_gl())
 
@@ -499,6 +500,55 @@ class GLBuffer(MemoryObject):
     _id = 'gl_buffer'
     
     def __init__(self, context, flags, bufobj):
-        ptr_buffer = _ffi.new('void **')
-        _handle_error(_lib._create_gl_buffer(ptr_buffer, context.ptr, flags, bufobj))
-        self.ptr = ptr_buffer[0]
+        ptr = _ffi.new('void **')
+        _handle_error(_lib._create_from_gl_buffer(ptr, context.ptr, flags, bufobj))
+        self.ptr = ptr[0]
+
+class GLRenderBuffer(MemoryObject):
+    _id = 'gl_renderbuffer'
+    
+    def __init__(self, context, flags, bufobj):
+        ptr = _ffi.new('void **')
+        _handle_error(_lib._create_from_gl_renderbuffer(ptr, context.ptr, flags, bufobj))
+        self.ptr = ptr[0]
+
+        
+def _create_gl_enqueue(what):
+    def enqueue_gl_objects(queue, mem_objects, wait_for=None):
+        ptr_event = _ffi.new('void **')
+        c_wait_for, num_wait_for = _c_obj_list(wait_for)
+        c_mem_objects, num_mem_objects = _c_obj_list(mem_objects)
+        _handle_error(what(
+            ptr_event,
+            queue.ptr,
+            c_mem_objects,
+            num_mem_objects,
+            c_wait_for,
+            num_wait_for
+            ))
+        return _create_instance(Event, ptr_event[0])
+    return enqueue_gl_objects
+
+enqueue_acquire_gl_objects = _create_gl_enqueue(_lib._enqueue_acquire_gl_objects)
+enqueue_release_gl_objects = _create_gl_enqueue(_lib._enqueue_release_gl_objects)
+
+class Image(MemoryObject):
+    _id = 'image'
+
+    def __init__(self, context, flags, format, *args):
+        if len(args) == 2:
+            # > (1,2)
+            desc, hostbuf = args
+        elif len(args) == 3:
+            # <= (1,1)
+            shape, pitches, hostbuf = args
+        else:
+            assert False
+
+# class GLTexture(MemoryObject):
+#     _id = 'gl_texture'
+    
+#     def __init__(self, context, flags, texture_target, miplevel, texture, dims):
+#         ptr = _ffi.new('void **')
+#         _handle_error(_lib._create_from_gl_texture(ptr, context.ptr, flags, texture_target, miplevel, texture, dims))
+#         self.ptr = ptr[0]

@@ -192,15 +192,18 @@
     info.value = (void*)ar;						\
     return info;							\
   }
-
+ 
 // {{{ event helpers --------------------------------------------------------------
-#define PYOPENCL_PARSE_WAIT_FOR						\
-  std::vector<cl_event> event_wait_list(num_wait_for);			\
-  {									\
-    for(unsigned i = 0; i < num_wait_for; ++i) {			\
-      event_wait_list[i] = static_cast<pyopencl::event*>(wait_for[i])->data(); \
-    }									\
+#define PYOPENCL_PARSE_OBJECT_LIST(CLS, TYPE, OUT, NAME, NUM)	\
+  std::vector<TYPE> OUT((NUM));					\
+  {								\
+    for(unsigned i = 0; i < (NUM); ++i) {			\
+      OUT[i] = static_cast<pyopencl::CLS*>(NAME[i])->data();	\
+    }								\
   }
+
+
+#define PYOPENCL_PARSE_WAIT_FOR	PYOPENCL_PARSE_OBJECT_LIST(event, cl_event, event_wait_list, wait_for, num_wait_for)
 
 #define PYOPENCL_WAITLIST_ARGS						\
   num_wait_for, event_wait_list.empty( ) ? NULL : &event_wait_list.front()
@@ -298,6 +301,7 @@ run_python_gc();				\
   case ::CLASS_PROGRAM: OPERATION(PROGRAM, program); break;		\
   case ::CLASS_EVENT: OPERATION(EVENT, event); break;			\
   case ::CLASS_GL_BUFFER: OPERATION(GL_BUFFER, gl_buffer); break;			\
+  case ::CLASS_GL_RENDERBUFFER: OPERATION(GL_RENDERBUFFER, gl_renderbuffer); break;	\
   default: throw pyopencl::error("unknown class", CL_INVALID_VALUE);	\
   }
 
@@ -310,6 +314,7 @@ run_python_gc();				\
 #define PYOPENCL_CL_PROGRAM cl_program
 #define PYOPENCL_CL_EVENT cl_event
 #define PYOPENCL_CL_GL_BUFFER cl_mem
+#define PYOPENCL_CL_GL_RENDERBUFFER cl_mem
 
 template<class T>
 std::string tostring(const T& v) {
@@ -1920,8 +1925,7 @@ namespace pyopencl
 			       (ctx.data(), flags, renderbuffer, &status_code));
 
   inline
-  gl_texture *create_from_gl_texture(
-				     context &ctx, cl_mem_flags flags,
+  gl_texture *create_from_gl_texture(context &ctx, cl_mem_flags flags,
 				     GLenum texture_target, GLint miplevel,
 				     GLuint texture, unsigned dims)
   {
@@ -1946,34 +1950,31 @@ namespace pyopencl
   //   PYOPENCL_CALL_GUARDED(clGetGLObjectInfo, (mem.data(), &otype, &gl_name));
   //   return py::make_tuple(otype, gl_name);
   // }
-  /*
-#define WRAP_GL_ENQUEUE(what, What) \
-  inline \
-  event *enqueue_##what##_gl_objects( \
-      command_queue &cq, \
-      py::object py_mem_objects, \
-      py::object py_wait_for) \
-  { \
-    PYOPENCL_PARSE_WAIT_FOR; \
-    \
-    std::vector<cl_mem> mem_objects; \
-    PYTHON_FOREACH(mo, py_mem_objects) \
-      mem_objects.push_back(py::extract<memory_object_holder &>(mo)().data()); \
-    \
-    cl_event evt; \
-    PYOPENCL_CALL_GUARDED(clEnqueue##What##GLObjects, ( \
-          cq.data(), \
-          mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(), \
-          PYOPENCL_WAITLIST_ARGS, &evt \
-          )); \
-    \
-    PYOPENCL_RETURN_NEW_EVENT(evt); \
+  
+#define WRAP_GL_ENQUEUE(what, What)					\
+  inline								\
+  event *enqueue_##what##_gl_objects(command_queue &cq,			\
+				     void **ptr_mem_objects,		\
+				     uint32_t num_mem_objects,		\
+				     void **wait_for,			\
+				     uint32_t num_wait_for)		\
+  {									\
+    PYOPENCL_PARSE_WAIT_FOR;						\
+    PYOPENCL_PARSE_OBJECT_LIST(memory_object_holder, cl_mem, mem_objects, ptr_mem_objects, num_mem_objects); \
+    cl_event evt;							\
+    PYOPENCL_CALL_GUARDED(clEnqueue##What##GLObjects, (			\
+						       cq.data(),	\
+						       mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(), \
+						       PYOPENCL_WAITLIST_ARGS, &evt \
+									)); \
+									\
+    PYOPENCL_RETURN_NEW_EVENT(evt);					\
   }
 
   WRAP_GL_ENQUEUE(acquire, Acquire);
   WRAP_GL_ENQUEUE(release, Release);
 #endif
-  */
+  
 
 
 
@@ -2062,7 +2063,7 @@ namespace pyopencl
   //     }
   //   }
 
-#endif
+  // #endif
 
   // }}}
 
@@ -3071,10 +3072,35 @@ int have_gl() {
 #endif
 }
 
-error *_create_gl_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, GLuint bufobj) {
+error *_create_from_gl_buffer(void **ptr, void *ptr_context, cl_mem_flags flags, GLuint bufobj) {
   pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
-  C_HANDLE_ERROR(*ptr_buffer = create_from_gl_buffer(*ctx, flags, bufobj););
-  return 0;  
+  C_HANDLE_ERROR(*ptr = create_from_gl_buffer(*ctx, flags, bufobj););
+  return 0;
 }
+
+error *_create_from_gl_renderbuffer(void **ptr, void *ptr_context, cl_mem_flags flags, GLuint bufobj) {
+  pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
+  C_HANDLE_ERROR(*ptr = create_from_gl_renderbuffer(*ctx, flags, bufobj););
+  return 0;
+}
+
+::error *_enqueue_acquire_gl_objects(void **ptr_event, void *ptr_command_queue, void **ptr_mem_objects, uint32_t num_mem_objects, void **wait_for, uint32_t num_wait_for) {
+  C_HANDLE_ERROR(
+		 *ptr_event = enqueue_acquire_gl_objects(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+							 ptr_mem_objects, num_mem_objects,
+							 wait_for, num_wait_for);
+		 );
+  return 0;
+}
+
+::error *_enqueue_release_gl_objects(void **ptr_event, void *ptr_command_queue, void **ptr_mem_objects, uint32_t num_mem_objects, void **wait_for, uint32_t num_wait_for) {
+  C_HANDLE_ERROR(
+		 *ptr_event = enqueue_release_gl_objects(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+							 ptr_mem_objects, num_mem_objects,
+							 wait_for, num_wait_for);
+		 );
+  return 0;
+}
+
 
 // }}}

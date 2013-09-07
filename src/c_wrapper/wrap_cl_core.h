@@ -17,7 +17,8 @@ typedef enum {
   CLASS_PROGRAM,
   CLASS_EVENT,
   CLASS_COMMAND_QUEUE,
-  CLASS_GL_BUFFER
+  CLASS_GL_BUFFER,
+  CLASS_GL_RENDERBUFFER
 } class_t;
 
 
@@ -67,4 +68,7 @@ unsigned bitlog2(unsigned long v);
 /* gl interop */
 
 int have_gl();
-error *_create_gl_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, GLuint bufobj);
+error *_create_from_gl_buffer(void **ptr, void *ptr_context, cl_mem_flags flags, GLuint bufobj);
+error *_create_from_gl_renderbuffer(void **ptr, void *ptr_context, cl_mem_flags flags, GLuint bufobj);
+error *_enqueue_acquire_gl_objects(void **ptr_event, void *ptr_command_queue, void **ptr_mem_objects, uint32_t num_mem_objects, void **wait_for, uint32_t num_wait_for);
+error *_enqueue_release_gl_objects(void **ptr_event, void *ptr_command_queue, void **ptr_mem_objects, uint32_t num_mem_objects, void **wait_for, uint32_t num_wait_for);

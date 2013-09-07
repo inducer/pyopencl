@@ -8,7 +8,10 @@ _ffi = FFI()
 _cl_header = """
 
 /* gl.h */
+typedef unsigned int	GLenum;
+typedef int		GLint;		/* 4-byte signed */
 typedef unsigned int	GLuint;		/* 4-byte unsigned */
+
 
 /* cl.h */
 /* scalar types */
