@@ -7,6 +7,9 @@ current_directory = os.path.dirname(__file__)
 _ffi = FFI()
 _cl_header = """
 
+/* gl.h */
+typedef unsigned int	GLuint;		/* 4-byte unsigned */
+
 /* cl.h */
 /* scalar types */
 typedef int8_t		cl_char;

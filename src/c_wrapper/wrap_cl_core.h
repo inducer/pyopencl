@@ -16,7 +16,8 @@ typedef enum {
   CLASS_BUFFER,
   CLASS_PROGRAM,
   CLASS_EVENT,
-  CLASS_COMMAND_QUEUE
+  CLASS_COMMAND_QUEUE,
+  CLASS_GL_BUFFER
 } class_t;
 
 
@@ -63,3 +64,7 @@ void _free2(void**, uint32_t size);
 
 unsigned bitlog2(unsigned long v);
 
+/* gl interop */
+
+int have_gl();
+error *_create_gl_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, GLuint bufobj);

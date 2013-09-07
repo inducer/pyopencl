@@ -297,6 +297,7 @@ run_python_gc();				\
   case ::CLASS_BUFFER: OPERATION(BUFFER, buffer); break;		\
   case ::CLASS_PROGRAM: OPERATION(PROGRAM, program); break;		\
   case ::CLASS_EVENT: OPERATION(EVENT, event); break;			\
+  case ::CLASS_GL_BUFFER: OPERATION(GL_BUFFER, gl_buffer); break;			\
   default: throw pyopencl::error("unknown class", CL_INVALID_VALUE);	\
   }
 
@@ -308,6 +309,7 @@ run_python_gc();				\
 #define PYOPENCL_CL_BUFFER cl_mem
 #define PYOPENCL_CL_PROGRAM cl_program
 #define PYOPENCL_CL_EVENT cl_event
+#define PYOPENCL_CL_GL_BUFFER cl_mem
 
 template<class T>
 std::string tostring(const T& v) {
@@ -1285,6 +1287,786 @@ namespace pyopencl
 
   // }}}
 
+
+  // {{{ image
+
+  class image : public memory_object
+  {
+  public:
+    image(cl_mem mem, bool retain, void *hostbuf=0)
+      : memory_object(mem, retain, hostbuf)
+    { }
+
+    generic_info get_image_info(cl_image_info param_name) const
+    {
+      switch (param_name)
+        {
+	case CL_IMAGE_FORMAT:
+	  PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name,
+				     cl_image_format);
+	case CL_IMAGE_ELEMENT_SIZE:
+	case CL_IMAGE_ROW_PITCH:
+	case CL_IMAGE_SLICE_PITCH:
+	case CL_IMAGE_WIDTH:
+	case CL_IMAGE_HEIGHT:
+	case CL_IMAGE_DEPTH:
+#if PYOPENCL_CL_VERSION >= 0x1020
+	case CL_IMAGE_ARRAY_SIZE:
+#endif
+	  PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, size_t);
+
+// #if PYOPENCL_CL_VERSION >= 0x1020
+// 	case CL_IMAGE_BUFFER:
+// 	  {
+// 	    cl_mem param_value;
+// 	    PYOPENCL_CALL_GUARDED(clGetImageInfo, (data(), param_name, sizeof(param_value), &param_value, 0));
+// 	    if (param_value == 0)
+//               {
+//                 // no associated memory object? no problem.
+//                 return py::object();
+//               }
+
+// 	    return create_mem_object_wrapper(param_value);
+// 	  }
+
+// 	case CL_IMAGE_NUM_MIP_LEVELS:
+// 	case CL_IMAGE_NUM_SAMPLES:
+// 	  PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, cl_uint);
+// #endif
+
+	default:
+	  throw error("MemoryObject.get_image_info", CL_INVALID_VALUE);
+        }
+    }
+  };
+
+
+
+
+//   // {{{ image formats
+
+//   inline
+//   cl_image_format *make_image_format(cl_channel_order ord, cl_channel_type tp)
+//   {
+//     std::auto_ptr<cl_image_format> result(new cl_image_format);
+//     result->image_channel_order = ord;
+//     result->image_channel_data_type = tp;
+//     return result.release();
+//   }
+
+//   inline
+//   py::list get_supported_image_formats(
+//       context const &ctx,
+//       cl_mem_flags flags,
+//       cl_mem_object_type image_type)
+//   {
+//     cl_uint num_image_formats;
+//     PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
+//           ctx.data(), flags, image_type,
+//           0, NULL, &num_image_formats));
+
+//     std::vector<cl_image_format> formats(num_image_formats);
+//     PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
+//           ctx.data(), flags, image_type,
+//           formats.size(), formats.empty( ) ? NULL : &formats.front(), NULL));
+
+//     PYOPENCL_RETURN_VECTOR(cl_image_format, formats);
+//   }
+
+//   inline
+//   cl_uint get_image_format_channel_count(cl_image_format const &fmt)
+//   {
+//     switch (fmt.image_channel_order)
+//     {
+//       case CL_R: return 1;
+//       case CL_A: return 1;
+//       case CL_RG: return 2;
+//       case CL_RA: return 2;
+//       case CL_RGB: return 3;
+//       case CL_RGBA: return 4;
+//       case CL_BGRA: return 4;
+//       case CL_INTENSITY: return 1;
+//       case CL_LUMINANCE: return 1;
+//       default:
+//         throw pyopencl::error("ImageFormat.channel_dtype_size",
+//             CL_INVALID_VALUE,
+//             "unrecognized channel order");
+//     }
+//   }
+
+//   inline
+//   cl_uint get_image_format_channel_dtype_size(cl_image_format const &fmt)
+//   {
+//     switch (fmt.image_channel_data_type)
+//     {
+//       case CL_SNORM_INT8: return 1;
+//       case CL_SNORM_INT16: return 2;
+//       case CL_UNORM_INT8: return 1;
+//       case CL_UNORM_INT16: return 2;
+//       case CL_UNORM_SHORT_565: return 2;
+//       case CL_UNORM_SHORT_555: return 2;
+//       case CL_UNORM_INT_101010: return 4;
+//       case CL_SIGNED_INT8: return 1;
+//       case CL_SIGNED_INT16: return 2;
+//       case CL_SIGNED_INT32: return 4;
+//       case CL_UNSIGNED_INT8: return 1;
+//       case CL_UNSIGNED_INT16: return 2;
+//       case CL_UNSIGNED_INT32: return 4;
+//       case CL_HALF_FLOAT: return 2;
+//       case CL_FLOAT: return 4;
+//       default:
+//         throw pyopencl::error("ImageFormat.channel_dtype_size",
+//             CL_INVALID_VALUE,
+//             "unrecognized channel data type");
+//     }
+//   }
+
+//   inline
+//   cl_uint get_image_format_item_size(cl_image_format const &fmt)
+//   {
+//     return get_image_format_channel_count(fmt)
+//       * get_image_format_channel_dtype_size(fmt);
+//   }
+
+//   // }}}
+
+//   // {{{ image creation
+
+//   inline
+//   image *create_image(
+//       context const &ctx,
+//       cl_mem_flags flags,
+//       cl_image_format const &fmt,
+//       py::object shape,
+//       py::object pitches,
+//       py::object buffer)
+//   {
+//     if (shape.ptr() == Py_None)
+//       throw pyopencl::error("Image", CL_INVALID_VALUE,
+//           "'shape' must be given");
+
+//     void *buf = 0;
+//     PYOPENCL_BUFFER_SIZE_T len;
+//     py::object *retained_buf_obj = 0;
+
+//     if (buffer.ptr() != Py_None)
+//     {
+//       if (flags & CL_MEM_USE_HOST_PTR)
+//       {
+//         if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
+//           throw py::error_already_set();
+//       }
+//       else
+//       {
+//         if (PyObject_AsReadBuffer(
+//               buffer.ptr(), const_cast<const void **>(&buf), &len))
+//           throw py::error_already_set();
+//       }
+
+//       if (flags & CL_MEM_USE_HOST_PTR)
+//         retained_buf_obj = &buffer;
+//     }
+
+//     unsigned dims = py::len(shape);
+//     cl_int status_code;
+//     cl_mem mem;
+//     if (dims == 2)
+//     {
+//       size_t width = py::extract<size_t>(shape[0]);
+//       size_t height = py::extract<size_t>(shape[1]);
+
+//       size_t pitch = 0;
+//       if (pitches.ptr() != Py_None)
+//       {
+//         if (py::len(pitches) != 1)
+//           throw pyopencl::error("Image", CL_INVALID_VALUE,
+//               "invalid length of pitch tuple");
+//         pitch = py::extract<size_t>(pitches[0]);
+//       }
+
+//       // check buffer size
+//       cl_int itemsize = get_image_format_item_size(fmt);
+//       if (buf && std::max(pitch, width*itemsize)*height > cl_uint(len))
+//           throw pyopencl::error("Image", CL_INVALID_VALUE,
+//               "buffer too small");
+
+//       PYOPENCL_PRINT_CALL_TRACE("clCreateImage2D");
+//       PYOPENCL_RETRY_IF_MEM_ERROR(
+//           {
+//             mem = clCreateImage2D(ctx.data(), flags, &fmt,
+//                 width, height, pitch, buf, &status_code);
+//             if (status_code != CL_SUCCESS)
+//               throw pyopencl::error("clCreateImage2D", status_code);
+//           } );
+
+//     }
+//     else if (dims == 3)
+//     {
+//       size_t width = py::extract<size_t>(shape[0]);
+//       size_t height = py::extract<size_t>(shape[1]);
+//       size_t depth = py::extract<size_t>(shape[2]);
+
+//       size_t pitch_x = 0;
+//       size_t pitch_y = 0;
+
+//       if (pitches.ptr() != Py_None)
+//       {
+//         if (py::len(pitches) != 2)
+//           throw pyopencl::error("Image", CL_INVALID_VALUE,
+//               "invalid length of pitch tuple");
+
+//         pitch_x = py::extract<size_t>(pitches[0]);
+//         pitch_y = py::extract<size_t>(pitches[1]);
+//       }
+
+//       // check buffer size
+//       cl_int itemsize = get_image_format_item_size(fmt);
+//       if (buf &&
+//           std::max(std::max(pitch_x, width*itemsize)*height, pitch_y)
+//           * depth > cl_uint(len))
+//         throw pyopencl::error("Image", CL_INVALID_VALUE,
+//             "buffer too small");
+
+//       PYOPENCL_PRINT_CALL_TRACE("clCreateImage3D");
+//       PYOPENCL_RETRY_IF_MEM_ERROR(
+//           {
+//             mem = clCreateImage3D(ctx.data(), flags, &fmt,
+//               width, height, depth, pitch_x, pitch_y, buf, &status_code);
+//             if (status_code != CL_SUCCESS)
+//               throw pyopencl::error("clCreateImage3D", status_code);
+//           } );
+//     }
+//     else
+//       throw pyopencl::error("Image", CL_INVALID_VALUE,
+//           "invalid dimension");
+
+//     try
+//     {
+//       return new image(mem, false, retained_buf_obj);
+//     }
+//     catch (...)
+//     {
+//       PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+//       throw;
+//     }
+//   }
+
+// #if PYOPENCL_CL_VERSION >= 0x1020
+
+//   inline
+//   image *create_image_from_desc(
+//       context const &ctx,
+//       cl_mem_flags flags,
+//       cl_image_format const &fmt,
+//       cl_image_desc &desc,
+//       py::object buffer)
+//   {
+//     if (buffer.ptr() != Py_None &&
+//         !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
+//       PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
+//           "but no memory flags to make use of it.");
+
+//     void *buf = 0;
+//     PYOPENCL_BUFFER_SIZE_T len;
+//     py::object *retained_buf_obj = 0;
+
+//     if (buffer.ptr() != Py_None)
+//     {
+//       if (flags & CL_MEM_USE_HOST_PTR)
+//       {
+//         if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
+//           throw py::error_already_set();
+//       }
+//       else
+//       {
+//         if (PyObject_AsReadBuffer(
+//               buffer.ptr(), const_cast<const void **>(&buf), &len))
+//           throw py::error_already_set();
+//       }
+
+//       if (flags & CL_MEM_USE_HOST_PTR)
+//         retained_buf_obj = &buffer;
+//     }
+
+//     PYOPENCL_PRINT_CALL_TRACE("clCreateImage");
+//     cl_int status_code;
+//     cl_mem mem = clCreateImage(ctx.data(), flags, &fmt, &desc, buf, &status_code);
+//     if (status_code != CL_SUCCESS)
+//       throw pyopencl::error("clCreateImage", status_code);
+
+//     try
+//     {
+//       return new image(mem, false, retained_buf_obj);
+//     }
+//     catch (...)
+//     {
+//       PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+//       throw;
+//     }
+//   }
+
+// #endif
+
+//   // }}}
+
+//   // {{{ image transfers
+
+//   inline
+//   event *enqueue_read_image(
+//       command_queue &cq,
+//       image &img,
+//       py::object py_origin, py::object py_region,
+//       py::object buffer,
+//       size_t row_pitch, size_t slice_pitch,
+//       py::object py_wait_for,
+//       bool is_blocking)
+//   {
+//     PYOPENCL_PARSE_WAIT_FOR;
+//     COPY_PY_COORD_TRIPLE(origin);
+//     COPY_PY_REGION_TRIPLE(region);
+
+//     void *buf;
+//     PYOPENCL_BUFFER_SIZE_T len;
+
+//     if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
+//       throw py::error_already_set();
+
+//     cl_event evt;
+
+//     PYOPENCL_RETRY_IF_MEM_ERROR(
+//       PYOPENCL_CALL_GUARDED(clEnqueueReadImage, (
+//             cq.data(),
+//             img.data(),
+//             PYOPENCL_CAST_BOOL(is_blocking),
+//             origin, region, row_pitch, slice_pitch, buf,
+//             PYOPENCL_WAITLIST_ARGS, &evt
+//             ));
+//       );
+//     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
+//   }
+
+
+
+
+//   inline
+//   event *enqueue_write_image(
+//       command_queue &cq,
+//       image &img,
+//       py::object py_origin, py::object py_region,
+//       py::object buffer,
+//       size_t row_pitch, size_t slice_pitch,
+//       py::object py_wait_for,
+//       bool is_blocking)
+//   {
+//     PYOPENCL_PARSE_WAIT_FOR;
+//     COPY_PY_COORD_TRIPLE(origin);
+//     COPY_PY_REGION_TRIPLE(region);
+
+//     const void *buf;
+//     PYOPENCL_BUFFER_SIZE_T len;
+
+//     if (PyObject_AsReadBuffer(buffer.ptr(), &buf, &len))
+//       throw py::error_already_set();
+
+//     cl_event evt;
+//     PYOPENCL_RETRY_IF_MEM_ERROR(
+//       PYOPENCL_CALL_GUARDED(clEnqueueWriteImage, (
+//             cq.data(),
+//             img.data(),
+//             PYOPENCL_CAST_BOOL(is_blocking),
+//             origin, region, row_pitch, slice_pitch, buf,
+//             PYOPENCL_WAITLIST_ARGS, &evt
+//             ));
+//       );
+//     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
+//   }
+
+
+
+
+//   inline
+//   event *enqueue_copy_image(
+//       command_queue &cq,
+//       memory_object_holder &src,
+//       memory_object_holder &dest,
+//       py::object py_src_origin,
+//       py::object py_dest_origin,
+//       py::object py_region,
+//       py::object py_wait_for
+//       )
+//   {
+//     PYOPENCL_PARSE_WAIT_FOR;
+//     COPY_PY_COORD_TRIPLE(src_origin);
+//     COPY_PY_COORD_TRIPLE(dest_origin);
+//     COPY_PY_REGION_TRIPLE(region);
+
+//     cl_event evt;
+//     PYOPENCL_RETRY_IF_MEM_ERROR(
+//       PYOPENCL_CALL_GUARDED(clEnqueueCopyImage, (
+//             cq.data(), src.data(), dest.data(),
+//             src_origin, dest_origin, region,
+//             PYOPENCL_WAITLIST_ARGS, &evt
+//             ));
+//       );
+//     PYOPENCL_RETURN_NEW_EVENT(evt);
+//   }
+
+
+
+
+//   inline
+//   event *enqueue_copy_image_to_buffer(
+//       command_queue &cq,
+//       memory_object_holder &src,
+//       memory_object_holder &dest,
+//       py::object py_origin,
+//       py::object py_region,
+//       size_t offset,
+//       py::object py_wait_for
+//       )
+//   {
+//     PYOPENCL_PARSE_WAIT_FOR;
+//     COPY_PY_COORD_TRIPLE(origin);
+//     COPY_PY_REGION_TRIPLE(region);
+
+//     cl_event evt;
+//     PYOPENCL_RETRY_IF_MEM_ERROR(
+//       PYOPENCL_CALL_GUARDED(clEnqueueCopyImageToBuffer, (
+//             cq.data(), src.data(), dest.data(),
+//             origin, region, offset,
+//             PYOPENCL_WAITLIST_ARGS, &evt
+//             ));
+//       );
+//     PYOPENCL_RETURN_NEW_EVENT(evt);
+//   }
+
+
+
+
+//   inline
+//   event *enqueue_copy_buffer_to_image(
+//       command_queue &cq,
+//       memory_object_holder &src,
+//       memory_object_holder &dest,
+//       size_t offset,
+//       py::object py_origin,
+//       py::object py_region,
+//       py::object py_wait_for
+//       )
+//   {
+//     PYOPENCL_PARSE_WAIT_FOR;
+//     COPY_PY_COORD_TRIPLE(origin);
+//     COPY_PY_REGION_TRIPLE(region);
+
+//     cl_event evt;
+//     PYOPENCL_RETRY_IF_MEM_ERROR(
+//       PYOPENCL_CALL_GUARDED(clEnqueueCopyBufferToImage, (
+//             cq.data(), src.data(), dest.data(),
+//             offset, origin, region,
+//             PYOPENCL_WAITLIST_ARGS, &evt
+//             ));
+//       );
+//     PYOPENCL_RETURN_NEW_EVENT(evt);
+//   }
+
+//   // }}}
+
+// #if PYOPENCL_CL_VERSION >= 0x1020
+//   inline
+//   event *enqueue_fill_image(
+//       command_queue &cq,
+//       memory_object_holder &mem,
+//       py::object color,
+//       py::object py_origin, py::object py_region,
+//       py::object py_wait_for
+//       )
+//   {
+//     PYOPENCL_PARSE_WAIT_FOR;
+
+//     COPY_PY_COORD_TRIPLE(origin);
+//     COPY_PY_REGION_TRIPLE(region);
+
+//     const void *color_buf;
+//     PYOPENCL_BUFFER_SIZE_T color_len;
+
+//     if (PyObject_AsReadBuffer(color.ptr(), &color_buf, &color_len))
+//       throw py::error_already_set();
+
+//     cl_event evt;
+//     PYOPENCL_RETRY_IF_MEM_ERROR(
+//       PYOPENCL_CALL_GUARDED(clEnqueueFillImage, (
+//             cq.data(),
+//             mem.data(),
+//             color_buf, origin, region,
+//             PYOPENCL_WAITLIST_ARGS, &evt
+//             ));
+//       );
+//     PYOPENCL_RETURN_NEW_EVENT(evt);
+//   }
+// #endif
+
+  // }}}
+
+  
+  
+  // {{{ gl interop
+
+
+#ifdef HAVE_GL
+
+#ifdef __APPLE__
+  inline
+  cl_context_properties get_apple_cgl_share_group()
+  {
+    CGLContextObj kCGLContext = CGLGetCurrentContext();
+    CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
+
+    return (cl_context_properties) kCGLShareGroup;
+  }
+#endif /* __APPLE__ */
+
+
+
+
+  class gl_buffer : public memory_object
+  {
+  public:
+    gl_buffer(cl_mem mem, bool retain, void *hostbuf=0)
+      : memory_object(mem, retain, hostbuf)
+    { }
+  };
+
+
+
+
+  class gl_renderbuffer : public memory_object
+  {
+  public:
+    gl_renderbuffer(cl_mem mem, bool retain, void *hostbuf=0)
+      : memory_object(mem, retain, hostbuf)
+    { }
+  };
+
+
+
+
+  class gl_texture : public image
+  {
+  public:
+    gl_texture(cl_mem mem, bool retain, void *hostbuf=0)
+      : image(mem, retain, hostbuf)
+    { }
+
+    generic_info get_gl_texture_info(cl_gl_texture_info param_name)
+    {
+      switch (param_name)
+        {
+	case CL_GL_TEXTURE_TARGET:
+	  PYOPENCL_GET_INTEGRAL_INFO(GLTexture, data(), param_name, GLenum);
+	case CL_GL_MIPMAP_LEVEL:
+	  PYOPENCL_GET_INTEGRAL_INFO(GLTexture, data(), param_name, GLint);
+
+	default:
+	  throw error("MemoryObject.get_gl_texture_info", CL_INVALID_VALUE);
+        }
+    }
+  };
+
+
+
+
+#define PYOPENCL_WRAP_BUFFER_CREATOR(TYPE, NAME, CL_NAME, ARGS, CL_ARGS) \
+  inline								\
+  TYPE *NAME ARGS							\
+  {									\
+    cl_int status_code;							\
+    PYOPENCL_PRINT_CALL_TRACE(#CL_NAME);				\
+    cl_mem mem = CL_NAME CL_ARGS;					\
+									\
+    if (status_code != CL_SUCCESS)					\
+      throw pyopencl::error(#CL_NAME, status_code);			\
+									\
+    try									\
+      {									\
+	return new TYPE(mem, false);					\
+      }									\
+    catch (...)								\
+      {									\
+	PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));		\
+	throw;								\
+      }									\
+  }
+
+
+
+
+  PYOPENCL_WRAP_BUFFER_CREATOR(gl_buffer,
+			       create_from_gl_buffer, clCreateFromGLBuffer,
+			       (context &ctx, cl_mem_flags flags, GLuint bufobj),
+			       (ctx.data(), flags, bufobj, &status_code));
+  PYOPENCL_WRAP_BUFFER_CREATOR(gl_texture,
+			       create_from_gl_texture_2d, clCreateFromGLTexture2D,
+			       (context &ctx, cl_mem_flags flags,
+				GLenum texture_target, GLint miplevel, GLuint texture),
+			       (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
+  PYOPENCL_WRAP_BUFFER_CREATOR(gl_texture,
+			       create_from_gl_texture_3d, clCreateFromGLTexture3D,
+			       (context &ctx, cl_mem_flags flags,
+				GLenum texture_target, GLint miplevel, GLuint texture),
+			       (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
+  PYOPENCL_WRAP_BUFFER_CREATOR(gl_renderbuffer,
+			       create_from_gl_renderbuffer, clCreateFromGLRenderbuffer,
+			       (context &ctx, cl_mem_flags flags, GLuint renderbuffer),
+			       (ctx.data(), flags, renderbuffer, &status_code));
+
+  inline
+  gl_texture *create_from_gl_texture(
+				     context &ctx, cl_mem_flags flags,
+				     GLenum texture_target, GLint miplevel,
+				     GLuint texture, unsigned dims)
+  {
+    if (dims == 2)
+      return create_from_gl_texture_2d(ctx, flags, texture_target, miplevel, texture);
+    else if (dims == 3)
+      return create_from_gl_texture_3d(ctx, flags, texture_target, miplevel, texture);
+    else
+      throw pyopencl::error("Image", CL_INVALID_VALUE,
+			    "invalid dimension");
+  }
+
+
+
+
+
+  // inline
+  // py::tuple get_gl_object_info(memory_object_holder const &mem)
+  // {
+  //   cl_gl_object_type otype;
+  //   GLuint gl_name;
+  //   PYOPENCL_CALL_GUARDED(clGetGLObjectInfo, (mem.data(), &otype, &gl_name));
+  //   return py::make_tuple(otype, gl_name);
+  // }
+  /*
+#define WRAP_GL_ENQUEUE(what, What) \
+  inline \
+  event *enqueue_##what##_gl_objects( \
+      command_queue &cq, \
+      py::object py_mem_objects, \
+      py::object py_wait_for) \
+  { \
+    PYOPENCL_PARSE_WAIT_FOR; \
+    \
+    std::vector<cl_mem> mem_objects; \
+    PYTHON_FOREACH(mo, py_mem_objects) \
+      mem_objects.push_back(py::extract<memory_object_holder &>(mo)().data()); \
+    \
+    cl_event evt; \
+    PYOPENCL_CALL_GUARDED(clEnqueue##What##GLObjects, ( \
+          cq.data(), \
+          mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(), \
+          PYOPENCL_WAITLIST_ARGS, &evt \
+          )); \
+    \
+    PYOPENCL_RETURN_NEW_EVENT(evt); \
+  }
+
+  WRAP_GL_ENQUEUE(acquire, Acquire);
+  WRAP_GL_ENQUEUE(release, Release);
+#endif
+  */
+
+
+
+// #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+//   inline
+//   py::object get_gl_context_info_khr(
+//       py::object py_properties,
+//       cl_gl_context_info param_name,
+//       py::object py_platform
+//       )
+//   {
+//     std::vector<cl_context_properties> props
+//       = parse_context_properties(py_properties);
+
+//     typedef CL_API_ENTRY cl_int (CL_API_CALL
+//       *func_ptr_type)(const cl_context_properties * /* properties */,
+//           cl_gl_context_info            /* param_name */,
+//           size_t                        /* param_value_size */,
+//           void *                        /* param_value */,
+//           size_t *                      /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
+
+//     func_ptr_type func_ptr;
+
+// #if PYOPENCL_CL_VERSION >= 0x1020
+//     if (py_platform.ptr() != Py_None)
+//     {
+//       platform &plat = py::extract<platform &>(py_platform);
+
+//       func_ptr = (func_ptr_type) clGetExtensionFunctionAddressForPlatform(
+//             plat.data(), "clGetGLContextInfoKHR");
+//     }
+//     else
+//     {
+//       PYOPENCL_DEPRECATED("get_gl_context_info_khr with platform=None", "2013.1", );
+
+//       func_ptr = (func_ptr_type) clGetExtensionFunctionAddress(
+//             "clGetGLContextInfoKHR");
+//     }
+// #else
+//     func_ptr = (func_ptr_type) clGetExtensionFunctionAddress(
+//           "clGetGLContextInfoKHR");
+// #endif
+
+
+//     if (!func_ptr)
+//       throw error("Context.get_info", CL_INVALID_PLATFORM,
+//           "clGetGLContextInfoKHR extension function not present");
+
+//     cl_context_properties *props_ptr
+//       = props.empty( ) ? NULL : &props.front();
+
+//     switch (param_name)
+//     {
+//       case CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR:
+//         {
+//           cl_device_id param_value;
+//           PYOPENCL_CALL_GUARDED(func_ptr,
+//               (props_ptr, param_name, sizeof(param_value), &param_value, 0));
+//           return py::object(handle_from_new_ptr( new device(param_value, /*retain*/ true)));
+  //         }
+
+  //       case CL_DEVICES_FOR_GL_CONTEXT_KHR:
+  //         {
+  //           size_t size;
+  //           PYOPENCL_CALL_GUARDED(func_ptr,
+  //               (props_ptr, param_name, 0, 0, &size));
+
+  //           std::vector<cl_device_id> devices;
+
+  //           devices.resize(size / sizeof(devices.front()));
+
+  //           PYOPENCL_CALL_GUARDED(func_ptr,
+  //               (props_ptr, param_name, size,
+  //                devices.empty( ) ? NULL : &devices.front(), &size));
+
+  //           py::list result;
+  //           BOOST_FOREACH(cl_device_id did, devices)
+  //             result.append(handle_from_new_ptr(
+  //                   new device(did)));
+
+  //           return result;
+  //         }
+
+  //       default:
+  //         throw error("get_gl_context_info_khr", CL_INVALID_VALUE);
+  //     }
+  //   }
+
+#endif
+
+  // }}}
+
+
   
   // {{{ buffer
 
@@ -1437,6 +2219,7 @@ namespace pyopencl
   }
 
   
+  // }}}
   // }}}
 
   
@@ -1620,7 +2403,7 @@ namespace pyopencl
     // #endif
   };
 
-
+  // }}}
 
   // {{{ kernel
   class local_memory
@@ -1843,6 +2626,7 @@ namespace pyopencl
     // #endif
   };
 
+  // }}}
  
   // {{{ buffer transfers
 
@@ -1976,8 +2760,6 @@ namespace pyopencl
   }
 
 
-
-  // }}}
   inline
   program *create_program_with_source(
 				      context &ctx,
@@ -2279,3 +3061,20 @@ int get_cl_version(void) {
 unsigned bitlog2(unsigned long v) {
   return pyopencl::bitlog2(v);
 }
+
+// {{{ gl interop
+int have_gl() {
+#ifdef HAVE_GL
+  return 1;
+#else
+  return 0;
+#endif
+}
+
+error *_create_gl_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, GLuint bufobj) {
+  pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
+  C_HANDLE_ERROR(*ptr_buffer = create_from_gl_buffer(*ctx, flags, bufobj););
+  return 0;  
+}
+
+// }}}

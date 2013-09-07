@@ -204,7 +204,7 @@ class MemoryObjectHolder(_Common):
 class MemoryObject(MemoryObjectHolder):
     pass
 
-class Buffer(MemoryObjectHolder):
+class Buffer(MemoryObject):
     _id = 'buffer'
 
     @classmethod
@@ -491,3 +491,14 @@ def _create_instance(cls, ptr):
     ins.ptr = ptr
     return ins
 
+# gl interop
+def have_gl():
+    return bool(_lib.have_gl())
+
+class GLBuffer(MemoryObject):
+    _id = 'gl_buffer'
+    
+    def __init__(self, context, flags, bufobj):
+        ptr_buffer = _ffi.new('void **')
+        _handle_error(_lib._create_gl_buffer(ptr_buffer, context.ptr, flags, bufobj))
+        self.ptr = ptr_buffer[0]
