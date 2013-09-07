@@ -68,6 +68,31 @@
 
 // }}}
 
+#if PYOPENCL_CL_VERSION >= 0x1020
+
+#define PYOPENCL_GET_EXT_FUN(PLATFORM, NAME, VAR) \
+    NAME##_fn VAR \
+      = (NAME##_fn) \
+      clGetExtensionFunctionAddressForPlatform(PLATFORM, #NAME); \
+    \
+    if (!VAR) \
+      throw error(#NAME, CL_INVALID_VALUE, #NAME \
+          "not available");
+
+#else
+
+#define PYOPENCL_GET_EXT_FUN(PLATFORM, NAME, VAR) \
+    NAME##_fn VAR \
+      = (NAME##_fn) \
+      clGetExtensionFunctionAddress(#NAME); \
+    \
+    if (!VAR) \
+      throw error(#NAME, CL_INVALID_VALUE, #NAME \
+          "not available");
+
+#endif
+
+
 
 #define PYOPENCL_GET_VEC_INFO(WHAT, FIRST_ARG, SECOND_ARG, RES_VEC)	\
   {									\
