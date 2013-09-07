@@ -41,6 +41,7 @@ error *program__kind(void *ptr_program, int *kind);
 error *program__get_build_info(void *ptr_program, void *ptr_device, cl_program_build_info param, generic_info *out);
 
 error *event__get_profiling_info(void *ptr_event, cl_profiling_info param, generic_info *out);
+error *event__wait(void *ptr_event);
 
 error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name);
 error *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer);

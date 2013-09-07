@@ -1658,10 +1658,8 @@ namespace pyopencl
       cl_int status_code;
 
       PYOPENCL_PRINT_CALL_TRACE("clCreateKernel");
-      std::cout << "HUH HAHAH" << std::endl;
       m_kernel = clCreateKernel(prg.data(), kernel_name.c_str(),
 				&status_code);
-      std::cout << "HU2" << std::endl;
       if (status_code != CL_SUCCESS)
 	throw pyopencl::error("clCreateKernel", status_code);
     }
@@ -2177,6 +2175,10 @@ void _free2(void **p, uint32_t size) {
   return 0;
 }
 
+::error *event__wait(void *ptr) {
+  C_HANDLE_ERROR(static_cast<pyopencl::event*>(ptr)->wait(););
+  return 0;
+}
   
 ::error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name) {
   pyopencl::program *prg = static_cast<pyopencl::program*>(ptr_program);

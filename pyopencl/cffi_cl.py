@@ -385,6 +385,9 @@ class Event(_Common):
         _handle_error(_lib.event__get_profiling_info(self.ptr, param, info))
         return _generic_info_to_python(info)
 
+    def wait(self):
+        _handle_error(_lib.event__wait(self.ptr))
+
 def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False):
     if wait_for is not None:
         raise NotImplementedError("wait_for")
