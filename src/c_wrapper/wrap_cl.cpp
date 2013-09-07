@@ -21,16 +21,25 @@
 #define PYOPENCL_PRINT_CALL_TRACE_INFO(NAME, EXTRA_INFO) /*nothing*/
 #endif
 
-#define C_HANDLE_ERROR(OPERATION)		\
-  try {						\
-    OPERATION					\
-      } catch(pyopencl::error& e) {		\
-    MALLOC(::error, error, 1);			\
-    error->routine = e.routine();		\
-    error->msg = e.what();			\
-    error->code = e.code();			\
-    return error;				\
-  }						
+#define C_HANDLE_ERROR(OPERATION)			\
+  try {							\
+    OPERATION						\
+      } catch(const pyopencl::error& e) {		\
+    MALLOC(::error, error, 1);				\
+    error->routine = pyopencl::_copy_str(e.routine());	\
+    error->msg = pyopencl::_copy_str(e.what());		\
+    error->code = e.code();				\
+    error->other = 0;					\
+    return error;					\
+  } catch(const std::exception& e) {			\
+    /* non-pyopencl exceptions shall be */		\
+    /* converted as well */				\
+    MALLOC(::error, error, 1);				\
+    error->other = 1;					\
+    error->msg = pyopencl::_copy_str(e.what());		\
+    return error;					\
+  }							\
+  
 
 // TODO Py_BEGIN_ALLOW_THREADS \ Py_END_ALLOW_THREADS below
 #define PYOPENCL_CALL_GUARDED_THREADED(NAME, ARGLIST)	\
@@ -312,7 +321,8 @@ namespace pyopencl
 {
   char *_copy_str(const std::string& str) {
     MALLOC(char, cstr, str.size() + 1);
-    strcpy(cstr, str.c_str());
+    std::size_t len = str.copy(cstr, str.size());
+    cstr[len] = '\0';
     return cstr;
   }
   
@@ -1648,8 +1658,10 @@ namespace pyopencl
       cl_int status_code;
 
       PYOPENCL_PRINT_CALL_TRACE("clCreateKernel");
+      std::cout << "HUH HAHAH" << std::endl;
       m_kernel = clCreateKernel(prg.data(), kernel_name.c_str(),
 				&status_code);
+      std::cout << "HU2" << std::endl;
       if (status_code != CL_SUCCESS)
 	throw pyopencl::error("clCreateKernel", status_code);
     }

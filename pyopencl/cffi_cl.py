@@ -12,7 +12,8 @@ class _CArray(object):
         self.size = _ffi.new('uint32_t *')
 
     def __del__(self):
-        _lib._free(self.ptr[0])
+        if self.ptr != _ffi.NULL:
+            _lib._free(self.ptr[0])
 
     def __getitem__(self, key):
         return self.ptr[0].__getitem__(key)
@@ -70,6 +71,13 @@ class RuntimeError(Error):
 def _handle_error(error):
     if error == _ffi.NULL:
         return
+    if error.other == 1:
+        # non-pyopencl exceptions are handled here
+        import exceptions
+        e = exceptions.RuntimeError(_ffi.string(error.msg))
+        _lib._free(error.msg)
+        _lib._free(error)
+        raise e
     if error.code == status_code.MEM_OBJECT_ALLOCATION_FAILURE:
         klass = MemoryError
     elif error.code <= status_code.INVALID_VALUE:
@@ -79,11 +87,15 @@ def _handle_error(error):
     else:
         klass = Error
     e = klass(_ffi.string(error.routine), error.code, _ffi.string(error.msg))
+    _lib._free(error.routine)
+    _lib._free(error.msg)
     _lib._free(error)
     raise e
 # }}}
 
 class _Common(object):
+    ptr = _ffi.NULL
+    
     @classmethod
     def _c_class_type(cls):
         return getattr(_lib, 'CLASS_%s' % cls._id.upper())

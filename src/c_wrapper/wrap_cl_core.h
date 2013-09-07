@@ -4,6 +4,7 @@ typedef struct {
   const char *routine;
   const char *msg;
   cl_int code;
+  int other;
 } error;
 
 typedef enum {
