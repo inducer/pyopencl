@@ -4,7 +4,6 @@ import warnings
 
 
 _ffi, _lib = _get_lib()
-
 bitlog2 = _lib.bitlog2
 
 class _CArray(object):
@@ -14,7 +13,7 @@ class _CArray(object):
 
     def __del__(self):
         _lib._free(self.ptr[0])
-        
+
     def __getitem__(self, key):
         return self.ptr[0].__getitem__(key)
 
@@ -60,7 +59,7 @@ class Error(Exception):
         self.code = code
         self.what = msg
         super(Error, self).__init__(self, msg)
-        
+
 class MemoryError(Error):
     pass
 class LogicError(Error):
@@ -91,7 +90,7 @@ class _Common(object):
 
     def __del__(self):
         _lib._delete(self.ptr, self._c_class_type())
-        
+
     def __eq__(self, other):
         return hash(self) == hash(other)
 
@@ -113,7 +112,7 @@ class _Common(object):
         _lib._from_int_ptr(ptr, int_ptr_value, getattr(_lib, 'CLASS_%s' % cls._id.upper()))
         #getattr(_lib, '%s__from_int_ptr' % cls._id)(ptr, int_ptr_value)
         return _create_instance(cls, ptr[0])
-        
+
 class Device(_Common):
     _id = 'device'
 
@@ -133,7 +132,7 @@ def _parse_context_properties(properties):
         prop, value = prop_tuple
         if prop is None:
             raise RuntimeError("Context", status_code.INVALID_VALUE, "invalid context property")
-            
+
         props.append(prop)
         if prop == context_properties.PLATFORM:
             props.append(value.int_ptr)
@@ -157,14 +156,14 @@ def _parse_context_properties(properties):
     props.append(0)
     return _ffi.new('intptr_t[]', props)
 
-        
+
 class Context(_Common):
     _id = 'context'
 
     def __init__(self, devices=None, properties=None, dev_type=None):
         c_props = _parse_context_properties(properties)
         status_code = _ffi.new('cl_int *')
-        
+
         # from device list
         if devices is not None:
             if dev_type is not None:
@@ -172,7 +171,7 @@ class Context(_Common):
             ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
             ptr_ctx = _ffi.new('void **')
             _handle_error(_lib._create_context(ptr_ctx, c_props, len(ptr_devices), _ffi.cast('void**', ptr_devices)))
-            
+
         else: # from dev_type
             raise NotImplementedError()
 
@@ -192,15 +191,15 @@ class MemoryObjectHolder(_Common):
 
 class MemoryObject(MemoryObjectHolder):
     pass
-        
+
 class Buffer(MemoryObjectHolder):
     _id = 'buffer'
-    
+
     @classmethod
     def _c_buffer_from_obj(cls, obj):
         # assume numpy array for now
         return _ffi.cast('void *', obj.__array_interface__['data'][0]), obj.nbytes
-        
+
     def __init__(self, context, flags, size=0, hostbuf=None):
         if hostbuf is not None and not (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
             warnings.warn("'hostbuf' was passed, but no memory flags to make use of it.")
@@ -232,7 +231,7 @@ class _Program(_Common):
     def _init_binary(self, context, devices, binaries):
         if len(devices) != len(binaries):
             raise RuntimeError("create_program_with_binary", status_code.INVALID_VALUE, "device and binary counts don't match")
-            
+
         ptr_program = _ffi.new('void **')
         ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
         ptr_binaries = [_ffi.new('char[%i]' % len(binary), binary) for binary in binaries]
@@ -246,7 +245,7 @@ class _Program(_Common):
             len(ptr_binaries),
             _ffi.new('char*[]', ptr_binaries),
             binary_sizes))
-        
+
         self.ptr = ptr_program[0]
 
     def kind(self):
@@ -264,7 +263,7 @@ class _Program(_Common):
         else:
             ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
             num_devices = len(devices)
-        
+
         _handle_error(_lib.program__build(self.ptr, _ffi.new('char[]', options), num_devices, _ffi.cast('void**', ptr_devices)))
 
 
@@ -272,7 +271,7 @@ class _Program(_Common):
         info = _ffi.new('generic_info *')
         _handle_error(_lib.program__get_build_info(self.ptr, device.ptr, param, info))
         return _generic_info_to_python(info)
-        
+
 class Platform(_Common):
     _id = 'platform'
     # todo: __del__
@@ -308,7 +307,7 @@ def _generic_info_to_python(info):
                 from . import Program
                 return Program(ins)
             return ins
-            
+
         if type_.endswith(']'):
             ret = map(ci, value)
             _lib._free(info.value)
@@ -335,12 +334,12 @@ def _generic_info_to_python(info):
 
 class Kernel(_Common):
     _id = 'kernel'
-    
+
     def __init__(self, program, name):
         ptr_kernel = _ffi.new('void **')
         _handle_error(_lib._create_kernel(ptr_kernel, program.ptr, name))
         self.ptr = ptr_kernel[0]
-        
+
     def set_arg(self, arg_index, arg):
         if isinstance(arg, Buffer):
             _handle_error(_lib.kernel__set_arg_mem_buffer(self.ptr, arg_index, arg.ptr))
@@ -352,7 +351,7 @@ class Kernel(_Common):
         _handle_error(_lib.kernel__get_work_group_info(self.ptr, param, device.ptr, info))
         return _generic_info_to_python(info)
 
-    
+
 def get_platforms():
     platforms = _CArray(_ffi.new('void**'))
     _handle_error(_lib.get_platforms(platforms.ptr, platforms.size))
@@ -361,7 +360,7 @@ def get_platforms():
         # TODO why is the cast needed? 
         platform_ptr = _ffi.cast('void**', platforms.ptr[0])[i]
         result.append(_create_instance(Platform, platform_ptr))
-        
+
     return result
 
 class Event(_Common):
@@ -378,21 +377,21 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, gl
     if wait_for is not None:
         raise NotImplementedError("wait_for")
     work_dim = len(global_work_size)
-    
+
     if local_work_size is not None:
         if g_times_l:
             work_dim = max(work_dim, len(local_work_size))
         elif work_dim != len(local_work_size):
             raise RuntimeError("enqueue_nd_range_kernel", status_code.INVALID_VALUE,
                                  "global/local work sizes have differing dimensions")
-        
+
         local_work_size = list(local_work_size)
-        
+
         if len(local_work_size) < work_dim:
             local_work_size.extend([1] * (work_dim - len(local_work_size)))
         if len(global_work_size) < work_dim:
             global_work_size.extend([1] * (work_dim - len(global_work_size)))
-            
+
     elif g_times_l:
         for i in xrange(work_dim):
             global_work_size[i] *= local_work_size[i]
@@ -423,7 +422,7 @@ def _c_wait_for(wait_for=None):
     if wait_for is None:
         return _ffi.NULL, 0
     return _ffi.new('void *[]', [ev.ptr for ev in wait_for]), len(wait_for)
-    
+
 def _enqueue_read_buffer(queue, mem, buf, device_offset=0, wait_for=None, is_blocking=True):
     c_buf, size = Buffer._c_buffer_from_obj(buf)
     ptr_event = _ffi.new('void **')
@@ -471,9 +470,9 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, i
     ))
     return _create_instance(Event, ptr_event[0])
 
-    
+
 def _create_instance(cls, ptr):
     ins = cls.__new__(cls)
     ins.ptr = ptr
     return ins
-    
+

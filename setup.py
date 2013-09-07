@@ -55,6 +55,9 @@ def get_config_schema():
 
 
 def main():
+    import os
+    os.environ['PYOPENCL_SETUP'] = '1'
+    
     from aksetup_helper import (hack_distutils, get_config, setup,
             NumpyExtension, 
             check_git_submodules)
@@ -160,6 +163,11 @@ def main():
     shutil.copyfile("src/c_wrapper/wrap_cl_core.h", "pyopencl/wrap_cl_core.h")
     
     from pyopencl._cffi import _get_verifier
+    import os.path
+    current_directory = os.path.dirname(__file__)
+
+    # for development: clean cache such that the extension is rebuilt
+    shutil.rmtree(os.path.join(current_directory, 'pyopencl', '__pycache__/'), ignore_errors=True)
     
     setup(name="pyopencl",
             # metadata
@@ -207,7 +215,6 @@ def main():
             ext_package="pyopencl",
             ext_modules=[
                 _get_verifier(
-                    ext_package='pyopencl', # needs to be the same as above
                     sources=[
                         "src/c_wrapper/wrap_cl.cpp",
                         "src/c_wrapper/wrap_constants.cpp",
@@ -220,9 +227,8 @@ def main():
                     define_macros=list(EXTRA_DEFINES.items()),
                     extra_compile_args=conf["CXXFLAGS"],
                     extra_link_args=conf["LDFLAGS"],
-
                 ).get_extension()
-                ],
+            ],
 
             include_package_data=True,
             package_data={
@@ -230,6 +236,7 @@ def main():
                         "cl/*.cl",
                         "cl/*.h",
                         "wrap_cl_core.h",
+                        "_cl.so",
                         ]
                     },
 

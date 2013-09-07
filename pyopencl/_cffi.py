@@ -83,21 +83,24 @@ with open(os.path.join(current_directory, 'wrap_cl_core.h')) as _f:
 _ffi.cdef('%s\n%s' % (_cl_header, _wrap_cl_header))
 
 def _get_verifier(**kwargs):
+
     # called by setup.py at build-time, with the relevant sources/include dirs/defines.
     # called by pyopencl at runtime with no kwargs, as we do not want to build at runtime,
     # but only get the cached version.
-    
-    from cffi.verifier import Verifier
-    return Verifier(
-        _ffi,
+
+    _ffi.verify(
         """
         #include <wrap_cl.h>
         """,
-        modulename='wrapcl',
+        # needs to be the same as ext_package in setup.py
+        ext_package='pyopencl',
+        modulename='cffi_wrapcl',
         **kwargs)
+    
+    return _ffi.verifier
     
 
 def _get_lib():
-    # should
+    # is expected to return the library from cache
     return _ffi, _get_verifier().load_library()
 
