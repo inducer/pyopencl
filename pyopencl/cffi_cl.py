@@ -166,7 +166,7 @@ def _parse_context_properties(properties):
         else:
             raise RuntimeError("Context", status_code.INVALID_VALUE, "invalid context property")
     props.append(0)
-    return _ffi.new('intptr_t[]', props)
+    return _ffi.new('cl_context_properties[]', props)
 
 
 class Context(_Common):
@@ -336,6 +336,8 @@ def _generic_info_to_python(info):
             ret = ''.join(a[0] for a in value)
         elif type_.startswith('generic_info['):
             ret = list(map(_generic_info_to_python, value))
+        elif type_.startswith('cl_image_format['):
+            ret = [ImageFormat(imf.image_channel_order, imf.image_channel_data_type) for imf in value]
         else:
             ret = list(value)
     else:
@@ -531,6 +533,66 @@ def _create_gl_enqueue(what):
 
 enqueue_acquire_gl_objects = _create_gl_enqueue(_lib._enqueue_acquire_gl_objects)
 enqueue_release_gl_objects = _create_gl_enqueue(_lib._enqueue_release_gl_objects)
+
+class ImageFormat(object):
+    def __init__(self, channel_order=0, channel_type=0):
+        self.channel_order = channel_order
+        self.channel_data_type = channel_type
+
+    @property
+    def channel_count(self):
+        try:
+            return {
+                channel_order.R: 1,
+                channel_order.A: 1,
+                channel_order.RG: 2,
+                channel_order.RA: 2,
+                channel_order.RGB: 3,
+                channel_order.RGBA: 4,
+                channel_order.BGRA: 4,
+                channel_order.INTENSITY: 1,
+                channel_order.LUMINANCE: 1,
+            }[self.channel_order]
+        except KeyError:
+            raise LogicError("ImageFormat.channel_count",
+                             status_code.INVALID_VALUE,
+                             "unrecognized channel order")
+
+    @property
+    def dtype_size(self):
+        try:
+            return {
+                channel_type.SNORM_INT8: 1,
+                channel_type.SNORM_INT16: 2,
+                channel_type.UNORM_INT8: 1,
+                channel_type.UNORM_INT16: 2,
+                channel_type.UNORM_SHORT_565: 2,
+                channel_type.UNORM_SHORT_555: 2,
+                channel_type.UNORM_INT_101010: 4,
+                channel_type.SIGNED_INT8: 1,
+                channel_type.SIGNED_INT16: 2,
+                channel_type.SIGNED_INT32: 4,
+                channel_type.UNSIGNED_INT8: 1,
+                channel_type.UNSIGNED_INT16: 2,
+                channel_type.UNSIGNED_INT32: 4,
+                channel_type.HALF_FLOAT: 2,
+                channel_type.FLOAT: 4,                
+            }[self.channel_data_type]
+        except KeyError:
+            raise LogicError("ImageFormat.channel_dtype_size",
+                             status_code.INVALID_VALUE,
+                             "unrecognized channel data type")
+
+    @property
+    def itemsize(self):
+        return self.channel_count * self.dtype_size
+        
+
+def get_supported_image_formats(context, flags, image_type):
+    info = _ffi.new('generic_info *')
+    _handle_error(_lib._get_supported_image_formats(context.ptr, flags, image_type, info))
+    return _generic_info_to_python(info)
+
 
 class Image(MemoryObject):
     _id = 'image'

@@ -81,6 +81,16 @@ typedef cl_uint             cl_event_info;
 typedef cl_uint             cl_command_type;
 typedef cl_uint             cl_profiling_info;
 
+typedef struct _cl_image_format {
+    cl_channel_order        image_channel_order;
+    cl_channel_type         image_channel_data_type;
+} cl_image_format;
+
+typedef struct _cl_buffer_region {
+    size_t                  origin;
+    size_t                  size;
+} cl_buffer_region;
+
 """
 
 with open(os.path.join(current_directory, 'wrap_cl_core.h')) as _f:

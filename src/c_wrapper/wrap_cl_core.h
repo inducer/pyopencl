@@ -48,6 +48,9 @@ error *event__wait(void *ptr_event);
 error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name);
 error *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer);
 error *kernel__get_work_group_info(void *ptr_kernel, cl_kernel_work_group_info param, void *ptr_device, generic_info *out);
+
+error *_get_supported_image_formats(void *ptr_context, cl_mem_flags flags, cl_mem_object_type image_type, generic_info *out);
+
 long _hash(void *ptr_platform, class_t);
 
 error *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size);
@@ -64,6 +67,7 @@ void _free(void*);
 void _free2(void**, uint32_t size);
 
 unsigned bitlog2(unsigned long v);
+
 
 /* gl interop */
 

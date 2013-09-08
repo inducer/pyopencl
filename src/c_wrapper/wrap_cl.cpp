@@ -1348,90 +1348,23 @@ namespace pyopencl
 
 
 
-//   // {{{ image formats
+  // {{{ image formats
+  inline
+  generic_info get_supported_image_formats(context const &ctx, cl_mem_flags flags, cl_mem_object_type image_type)
+  {
+    cl_uint num_image_formats;
+    PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats,
+			  (ctx.data(), flags, image_type,
+			   0, NULL, &num_image_formats));
 
-//   inline
-//   cl_image_format *make_image_format(cl_channel_order ord, cl_channel_type tp)
-//   {
-//     std::auto_ptr<cl_image_format> result(new cl_image_format);
-//     result->image_channel_order = ord;
-//     result->image_channel_data_type = tp;
-//     return result.release();
-//   }
+    std::vector<cl_image_format> formats(num_image_formats);
+    PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats,
+			  (ctx.data(), flags, image_type,
+			   formats.size(), formats.empty( ) ? NULL : &formats.front(), NULL));
+    
+    PYOPENCL_GET_ARRAY_INFO(cl_image_format, formats);
+  }
 
-//   inline
-//   py::list get_supported_image_formats(
-//       context const &ctx,
-//       cl_mem_flags flags,
-//       cl_mem_object_type image_type)
-//   {
-//     cl_uint num_image_formats;
-//     PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
-//           ctx.data(), flags, image_type,
-//           0, NULL, &num_image_formats));
-
-//     std::vector<cl_image_format> formats(num_image_formats);
-//     PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
-//           ctx.data(), flags, image_type,
-//           formats.size(), formats.empty( ) ? NULL : &formats.front(), NULL));
-
-//     PYOPENCL_RETURN_VECTOR(cl_image_format, formats);
-//   }
-
-//   inline
-//   cl_uint get_image_format_channel_count(cl_image_format const &fmt)
-//   {
-//     switch (fmt.image_channel_order)
-//     {
-//       case CL_R: return 1;
-//       case CL_A: return 1;
-//       case CL_RG: return 2;
-//       case CL_RA: return 2;
-//       case CL_RGB: return 3;
-//       case CL_RGBA: return 4;
-//       case CL_BGRA: return 4;
-//       case CL_INTENSITY: return 1;
-//       case CL_LUMINANCE: return 1;
-//       default:
-//         throw pyopencl::error("ImageFormat.channel_dtype_size",
-//             CL_INVALID_VALUE,
-//             "unrecognized channel order");
-//     }
-//   }
-
-//   inline
-//   cl_uint get_image_format_channel_dtype_size(cl_image_format const &fmt)
-//   {
-//     switch (fmt.image_channel_data_type)
-//     {
-//       case CL_SNORM_INT8: return 1;
-//       case CL_SNORM_INT16: return 2;
-//       case CL_UNORM_INT8: return 1;
-//       case CL_UNORM_INT16: return 2;
-//       case CL_UNORM_SHORT_565: return 2;
-//       case CL_UNORM_SHORT_555: return 2;
-//       case CL_UNORM_INT_101010: return 4;
-//       case CL_SIGNED_INT8: return 1;
-//       case CL_SIGNED_INT16: return 2;
-//       case CL_SIGNED_INT32: return 4;
-//       case CL_UNSIGNED_INT8: return 1;
-//       case CL_UNSIGNED_INT16: return 2;
-//       case CL_UNSIGNED_INT32: return 4;
-//       case CL_HALF_FLOAT: return 2;
-//       case CL_FLOAT: return 4;
-//       default:
-//         throw pyopencl::error("ImageFormat.channel_dtype_size",
-//             CL_INVALID_VALUE,
-//             "unrecognized channel data type");
-//     }
-//   }
-
-//   inline
-//   cl_uint get_image_format_item_size(cl_image_format const &fmt)
-//   {
-//     return get_image_format_channel_count(fmt)
-//       * get_image_format_channel_dtype_size(fmt);
-//   }
 
 //   // }}}
 
@@ -2981,6 +2914,11 @@ void _free2(void **p, uint32_t size) {
 
 ::error *kernel__get_work_group_info(void *ptr, cl_kernel_work_group_info param, void *ptr_device, generic_info *out) {
   C_HANDLE_ERROR(*out = static_cast<pyopencl::kernel*>(ptr)->get_work_group_info(param, *static_cast<pyopencl::device*>(ptr_device)););
+  return 0;
+}
+
+::error *_get_supported_image_formats(void *ptr_context, cl_mem_flags flags, cl_mem_object_type image_type, generic_info *out) {
+  C_HANDLE_ERROR(*out = get_supported_image_formats(*static_cast<pyopencl::context*>(ptr_context), flags, image_type););
   return 0;
 }
 
