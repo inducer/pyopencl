@@ -1,4 +1,4 @@
-from pyopencl._cl import PooledBuffer, MemoryPool
+#from pyopencl._cl import PooledBuffer, MemoryPool
 from _cffi import _ffi, _lib
 import warnings
 
