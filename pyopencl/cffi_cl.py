@@ -1,9 +1,7 @@
 from pyopencl._cl import PooledBuffer, MemoryPool
-from _cffi import _get_lib
+from _cffi import _ffi, _lib
 import warnings
 
-
-_ffi, _lib = _get_lib()
 bitlog2 = _lib.bitlog2
 
 class _CArray(object):

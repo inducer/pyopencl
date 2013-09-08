@@ -54,10 +54,7 @@ def get_config_schema():
         ])
 
 
-def main():
-    import os
-    os.environ['PYOPENCL_SETUP'] = '1'
-    
+def main():   
     from aksetup_helper import (hack_distutils, get_config, setup,
             NumpyExtension, 
             check_git_submodules)
@@ -214,20 +211,6 @@ def main():
           
             ext_package="pyopencl",
             ext_modules=[
-                # _get_verifier(
-                #     sources=[
-                #         "src/c_wrapper/wrap_cl.cpp",
-                #         "src/c_wrapper/wrap_constants.cpp",
-                #         #"src/c_wrapper/wrap_mempool.cpp",
-                #         "src/c_wrapper/bitlog.cpp",
-                #     ],
-                #     include_dirs=conf["CL_INC_DIR"] + ["src/c_wrapper/"],
-                #     library_dirs=conf["CL_LIB_DIR"],
-                #     libraries=conf["CL_LIBNAME"],
-                #     define_macros=list(EXTRA_DEFINES.items()),
-                #     extra_compile_args=conf["CXXFLAGS"],
-                #     extra_link_args=conf["LDFLAGS"],
-                # ).get_extension()
                 NumpyExtension("_wrapcl",
                                ["src/c_wrapper/wrap_cl.cpp",
                                 "src/c_wrapper/wrap_constants.cpp",
