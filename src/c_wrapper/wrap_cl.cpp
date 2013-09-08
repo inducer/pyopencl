@@ -61,17 +61,17 @@
       throw pyopencl::error(#NAME, status_code);	\
   }
 
-#define PYOPENCL_CALL_GUARDED_CLEANUP(NAME, ARGLIST) \
-  { \
-    PYOPENCL_PRINT_CALL_TRACE(#NAME); \
-    cl_int status_code; \
-    status_code = NAME ARGLIST; \
-    if (status_code != CL_SUCCESS) \
-      std::cerr \
+#define PYOPENCL_CALL_GUARDED_CLEANUP(NAME, ARGLIST)			\
+  {									\
+    PYOPENCL_PRINT_CALL_TRACE(#NAME);					\
+    cl_int status_code;							\
+    status_code = NAME ARGLIST;						\
+    if (status_code != CL_SUCCESS)					\
+      std::cerr								\
         << "PyOpenCL WARNING: a clean-up operation failed (dead context maybe?)" \
-        << std::endl \
-        << #NAME " failed with code " << status_code \
-        << std::endl; \
+        << std::endl							\
+        << #NAME " failed with code " << status_code			\
+        << std::endl;							\
   }
 
 
@@ -79,25 +79,25 @@
 
 #if PYOPENCL_CL_VERSION >= 0x1020
 
-#define PYOPENCL_GET_EXT_FUN(PLATFORM, NAME, VAR) \
-    NAME##_fn VAR \
-      = (NAME##_fn) \
-      clGetExtensionFunctionAddressForPlatform(PLATFORM, #NAME); \
-    \
-    if (!VAR) \
-      throw error(#NAME, CL_INVALID_VALUE, #NAME \
-          "not available");
+#define PYOPENCL_GET_EXT_FUN(PLATFORM, NAME, VAR)			\
+  NAME##_fn VAR								\
+  = (NAME##_fn)								\
+					 clGetExtensionFunctionAddressForPlatform(PLATFORM, #NAME); \
+									\
+  if (!VAR)								\
+    throw error(#NAME, CL_INVALID_VALUE, #NAME				\
+		"not available");
 
 #else
 
-#define PYOPENCL_GET_EXT_FUN(PLATFORM, NAME, VAR) \
-    NAME##_fn VAR \
-      = (NAME##_fn) \
-      clGetExtensionFunctionAddress(#NAME); \
-    \
-    if (!VAR) \
-      throw error(#NAME, CL_INVALID_VALUE, #NAME \
-          "not available");
+#define PYOPENCL_GET_EXT_FUN(PLATFORM, NAME, VAR)			\
+  NAME##_fn VAR								\
+  = (NAME##_fn)								\
+					 clGetExtensionFunctionAddress(#NAME); \
+									\
+  if (!VAR)								\
+    throw error(#NAME, CL_INVALID_VALUE, #NAME				\
+		"not available");
 
 #endif
 
@@ -260,23 +260,23 @@
 
 #define PYOPENCL_RETRY_IF_MEM_ERROR(OPERATION)	\
   {						\
-  bool failed_with_mem_error = false;		\
-  try						\
-    {						\
-      OPERATION					\
-	}					\
-  catch (pyopencl::error &e)			\
-    {						\
-      failed_with_mem_error = true;		\
-      if (!e.is_out_of_memory())		\
-	throw;					\
-    }						\
+    bool failed_with_mem_error = false;		\
+    try						\
+      {						\
+	OPERATION				\
+	  }					\
+    catch (pyopencl::error &e)			\
+      {						\
+	failed_with_mem_error = true;		\
+	if (!e.is_out_of_memory())		\
+	  throw;				\
+      }						\
 						\
-  if (failed_with_mem_error)			\
-    {						\
-  /* If we get here, we got an error from CL.
-   * We should run the Python GC to try and free up
-   * some memory references. */			\
+    if (failed_with_mem_error)			\
+      {						\
+    /* If we get here, we got an error from CL.
+     * We should run the Python GC to try and free up
+     * some memory references. */			\
 run_python_gc();				\
 \
 /* Now retry the allocation. If it fails again,
@@ -300,8 +300,10 @@ run_python_gc();				\
   case ::CLASS_BUFFER: OPERATION(BUFFER, buffer); break;		\
   case ::CLASS_PROGRAM: OPERATION(PROGRAM, program); break;		\
   case ::CLASS_EVENT: OPERATION(EVENT, event); break;			\
-  case ::CLASS_GL_BUFFER: OPERATION(GL_BUFFER, gl_buffer); break;			\
-  case ::CLASS_GL_RENDERBUFFER: OPERATION(GL_RENDERBUFFER, gl_renderbuffer); break;	\
+  case ::CLASS_GL_BUFFER: OPERATION(GL_BUFFER, gl_buffer); break;	\
+  case ::CLASS_GL_RENDERBUFFER: OPERATION(GL_RENDERBUFFER, gl_renderbuffer); break; \
+  case ::CLASS_IMAGE: OPERATION(IMAGE, image); break; \
+  case ::CLASS_SAMPLER: OPERATION(SAMPLER, sampler); break; \
   default: throw pyopencl::error("unknown class", CL_INVALID_VALUE);	\
   }
 
@@ -315,12 +317,14 @@ run_python_gc();				\
 #define PYOPENCL_CL_EVENT cl_event
 #define PYOPENCL_CL_GL_BUFFER cl_mem
 #define PYOPENCL_CL_GL_RENDERBUFFER cl_mem
+#define PYOPENCL_CL_IMAGE cl_mem
+#define PYOPENCL_CL_SAMPLER cl_sampler
 
 template<class T>
 std::string tostring(const T& v) {
-  std::ostringstream ostr;
-  ostr << v;
-  return ostr.str();
+std::ostringstream ostr;
+ ostr << v;
+ return ostr.str();
 }
 
 
@@ -818,7 +822,7 @@ namespace pyopencl
     ~context()
     {
       PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseContext,
-      			      (m_context));
+				    (m_context));
     }
 
     cl_context data() const
@@ -959,7 +963,7 @@ namespace pyopencl
     ~command_queue()
     {
       PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseCommandQueue,
-          (m_queue));
+				    (m_queue));
     }
 
     const cl_command_queue data() const
@@ -1320,24 +1324,24 @@ namespace pyopencl
 #endif
 	  PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, size_t);
 
-// #if PYOPENCL_CL_VERSION >= 0x1020
-// 	case CL_IMAGE_BUFFER:
-// 	  {
-// 	    cl_mem param_value;
-// 	    PYOPENCL_CALL_GUARDED(clGetImageInfo, (data(), param_name, sizeof(param_value), &param_value, 0));
-// 	    if (param_value == 0)
-//               {
-//                 // no associated memory object? no problem.
-//                 return py::object();
-//               }
+#if PYOPENCL_CL_VERSION >= 0x1020
+	  // 	case CL_IMAGE_BUFFER:
+	  // 	  {
+	  // 	    cl_mem param_value;
+	  // 	    PYOPENCL_CALL_GUARDED(clGetImageInfo, (data(), param_name, sizeof(param_value), &param_value, 0));
+	  // 	    if (param_value == 0)
+	  //               {
+	  //                 // no associated memory object? no problem.
+	  //                 return py::object();
+	  //               }
 
-// 	    return create_mem_object_wrapper(param_value);
-// 	  }
-
-// 	case CL_IMAGE_NUM_MIP_LEVELS:
-// 	case CL_IMAGE_NUM_SAMPLES:
-// 	  PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, cl_uint);
-// #endif
+	  // 	    return create_mem_object_wrapper(param_value);
+	  // 	  }
+	  
+	case CL_IMAGE_NUM_MIP_LEVELS:
+	case CL_IMAGE_NUM_SAMPLES:
+	  PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, cl_uint);
+#endif
 
 	default:
 	  throw error("MemoryObject.get_image_info", CL_INVALID_VALUE);
@@ -1366,384 +1370,331 @@ namespace pyopencl
   }
 
 
-//   // }}}
+  // }}}
 
-//   // {{{ image creation
+  // {{{ image creation
 
-//   inline
-//   image *create_image(
-//       context const &ctx,
-//       cl_mem_flags flags,
-//       cl_image_format const &fmt,
-//       py::object shape,
-//       py::object pitches,
-//       py::object buffer)
-//   {
-//     if (shape.ptr() == Py_None)
-//       throw pyopencl::error("Image", CL_INVALID_VALUE,
-//           "'shape' must be given");
+  inline
+  image *create_image_2d(context const &ctx,
+			 cl_mem_flags flags,
+			 cl_image_format const &fmt,
+			 size_t width, size_t height,
+			 size_t pitch,
+			 void *buffer, size_t size)
+  {
+    cl_int status_code;
+    cl_mem mem;
+    void *retained_buf_obj = 0;
+    if(flags & CL_MEM_USE_HOST_PTR)
+      retained_buf_obj = buffer;
 
-//     void *buf = 0;
-//     PYOPENCL_BUFFER_SIZE_T len;
-//     py::object *retained_buf_obj = 0;
+    PYOPENCL_PRINT_CALL_TRACE("clCreateImage2D");
+    //
+    //PYOPENCL_RETRY_IF_MEM_ERROR(
+    {
+      mem = clCreateImage2D(ctx.data(), flags, &fmt,
+			    width, height, pitch, buffer, &status_code);
+      if (status_code != CL_SUCCESS)
+	throw pyopencl::error("clCreateImage2D", status_code);
+    }
+    //);
 
-//     if (buffer.ptr() != Py_None)
-//     {
-//       if (flags & CL_MEM_USE_HOST_PTR)
-//       {
-//         if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
-//           throw py::error_already_set();
-//       }
-//       else
-//       {
-//         if (PyObject_AsReadBuffer(
-//               buffer.ptr(), const_cast<const void **>(&buf), &len))
-//           throw py::error_already_set();
-//       }
+    try
+      {
+	return new image(mem, false, retained_buf_obj);
+      }
+    catch (...)
+      {
+	PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+	throw;
+      }
+  }
 
-//       if (flags & CL_MEM_USE_HOST_PTR)
-//         retained_buf_obj = &buffer;
-//     }
+  inline
+  image *create_image_3d(context const &ctx,
+			 cl_mem_flags flags,
+			 cl_image_format const &fmt,
+			 size_t width, size_t height, size_t depth,
+			 size_t pitch_x, size_t pitch_y,
+			 void *buffer, size_t size)
+  {
+    cl_int status_code;
+    cl_mem mem;
+    void *retained_buf_obj = 0;
+    if(flags & CL_MEM_USE_HOST_PTR)
+      retained_buf_obj = buffer;
 
-//     unsigned dims = py::len(shape);
-//     cl_int status_code;
-//     cl_mem mem;
-//     if (dims == 2)
-//     {
-//       size_t width = py::extract<size_t>(shape[0]);
-//       size_t height = py::extract<size_t>(shape[1]);
+    PYOPENCL_PRINT_CALL_TRACE("clCreateImage3D");
+    //
+    //PYOPENCL_RETRY_IF_MEM_ERROR(
+    {
+      mem = clCreateImage3D(ctx.data(), flags, &fmt,
+			    width, height, depth, pitch_x, pitch_y, buffer, &status_code);
+      if (status_code != CL_SUCCESS)
+	throw pyopencl::error("clCreateImage3D", status_code);
+    }
+    //);
 
-//       size_t pitch = 0;
-//       if (pitches.ptr() != Py_None)
-//       {
-//         if (py::len(pitches) != 1)
-//           throw pyopencl::error("Image", CL_INVALID_VALUE,
-//               "invalid length of pitch tuple");
-//         pitch = py::extract<size_t>(pitches[0]);
-//       }
-
-//       // check buffer size
-//       cl_int itemsize = get_image_format_item_size(fmt);
-//       if (buf && std::max(pitch, width*itemsize)*height > cl_uint(len))
-//           throw pyopencl::error("Image", CL_INVALID_VALUE,
-//               "buffer too small");
-
-//       PYOPENCL_PRINT_CALL_TRACE("clCreateImage2D");
-//       PYOPENCL_RETRY_IF_MEM_ERROR(
-//           {
-//             mem = clCreateImage2D(ctx.data(), flags, &fmt,
-//                 width, height, pitch, buf, &status_code);
-//             if (status_code != CL_SUCCESS)
-//               throw pyopencl::error("clCreateImage2D", status_code);
-//           } );
-
-//     }
-//     else if (dims == 3)
-//     {
-//       size_t width = py::extract<size_t>(shape[0]);
-//       size_t height = py::extract<size_t>(shape[1]);
-//       size_t depth = py::extract<size_t>(shape[2]);
-
-//       size_t pitch_x = 0;
-//       size_t pitch_y = 0;
-
-//       if (pitches.ptr() != Py_None)
-//       {
-//         if (py::len(pitches) != 2)
-//           throw pyopencl::error("Image", CL_INVALID_VALUE,
-//               "invalid length of pitch tuple");
-
-//         pitch_x = py::extract<size_t>(pitches[0]);
-//         pitch_y = py::extract<size_t>(pitches[1]);
-//       }
-
-//       // check buffer size
-//       cl_int itemsize = get_image_format_item_size(fmt);
-//       if (buf &&
-//           std::max(std::max(pitch_x, width*itemsize)*height, pitch_y)
-//           * depth > cl_uint(len))
-//         throw pyopencl::error("Image", CL_INVALID_VALUE,
-//             "buffer too small");
-
-//       PYOPENCL_PRINT_CALL_TRACE("clCreateImage3D");
-//       PYOPENCL_RETRY_IF_MEM_ERROR(
-//           {
-//             mem = clCreateImage3D(ctx.data(), flags, &fmt,
-//               width, height, depth, pitch_x, pitch_y, buf, &status_code);
-//             if (status_code != CL_SUCCESS)
-//               throw pyopencl::error("clCreateImage3D", status_code);
-//           } );
-//     }
-//     else
-//       throw pyopencl::error("Image", CL_INVALID_VALUE,
-//           "invalid dimension");
-
-//     try
-//     {
-//       return new image(mem, false, retained_buf_obj);
-//     }
-//     catch (...)
-//     {
-//       PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
-//       throw;
-//     }
-//   }
-
-// #if PYOPENCL_CL_VERSION >= 0x1020
-
-//   inline
-//   image *create_image_from_desc(
-//       context const &ctx,
-//       cl_mem_flags flags,
-//       cl_image_format const &fmt,
-//       cl_image_desc &desc,
-//       py::object buffer)
-//   {
-//     if (buffer.ptr() != Py_None &&
-//         !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
-//       PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
-//           "but no memory flags to make use of it.");
-
-//     void *buf = 0;
-//     PYOPENCL_BUFFER_SIZE_T len;
-//     py::object *retained_buf_obj = 0;
-
-//     if (buffer.ptr() != Py_None)
-//     {
-//       if (flags & CL_MEM_USE_HOST_PTR)
-//       {
-//         if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
-//           throw py::error_already_set();
-//       }
-//       else
-//       {
-//         if (PyObject_AsReadBuffer(
-//               buffer.ptr(), const_cast<const void **>(&buf), &len))
-//           throw py::error_already_set();
-//       }
-
-//       if (flags & CL_MEM_USE_HOST_PTR)
-//         retained_buf_obj = &buffer;
-//     }
-
-//     PYOPENCL_PRINT_CALL_TRACE("clCreateImage");
-//     cl_int status_code;
-//     cl_mem mem = clCreateImage(ctx.data(), flags, &fmt, &desc, buf, &status_code);
-//     if (status_code != CL_SUCCESS)
-//       throw pyopencl::error("clCreateImage", status_code);
-
-//     try
-//     {
-//       return new image(mem, false, retained_buf_obj);
-//     }
-//     catch (...)
-//     {
-//       PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
-//       throw;
-//     }
-//   }
-
-// #endif
-
-//   // }}}
-
-//   // {{{ image transfers
-
-//   inline
-//   event *enqueue_read_image(
-//       command_queue &cq,
-//       image &img,
-//       py::object py_origin, py::object py_region,
-//       py::object buffer,
-//       size_t row_pitch, size_t slice_pitch,
-//       py::object py_wait_for,
-//       bool is_blocking)
-//   {
-//     PYOPENCL_PARSE_WAIT_FOR;
-//     COPY_PY_COORD_TRIPLE(origin);
-//     COPY_PY_REGION_TRIPLE(region);
-
-//     void *buf;
-//     PYOPENCL_BUFFER_SIZE_T len;
-
-//     if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
-//       throw py::error_already_set();
-
-//     cl_event evt;
-
-//     PYOPENCL_RETRY_IF_MEM_ERROR(
-//       PYOPENCL_CALL_GUARDED(clEnqueueReadImage, (
-//             cq.data(),
-//             img.data(),
-//             PYOPENCL_CAST_BOOL(is_blocking),
-//             origin, region, row_pitch, slice_pitch, buf,
-//             PYOPENCL_WAITLIST_ARGS, &evt
-//             ));
-//       );
-//     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
-//   }
+    try
+      {
+	return new image(mem, false, retained_buf_obj);
+      }
+    catch (...)
+      {
+	PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+	throw;
+      }
+  }
+  
 
 
+  // #if PYOPENCL_CL_VERSION >= 0x1020
 
+  //   inline
+  //   image *create_image_from_desc(
+  //       context const &ctx,
+  //       cl_mem_flags flags,
+  //       cl_image_format const &fmt,
+  //       cl_image_desc &desc,
+  //       py::object buffer)
+  //   {
+  //     if (buffer.ptr() != Py_None &&
+  //         !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
+  //       PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
+  //           "but no memory flags to make use of it.");
 
-//   inline
-//   event *enqueue_write_image(
-//       command_queue &cq,
-//       image &img,
-//       py::object py_origin, py::object py_region,
-//       py::object buffer,
-//       size_t row_pitch, size_t slice_pitch,
-//       py::object py_wait_for,
-//       bool is_blocking)
-//   {
-//     PYOPENCL_PARSE_WAIT_FOR;
-//     COPY_PY_COORD_TRIPLE(origin);
-//     COPY_PY_REGION_TRIPLE(region);
+  //     void *buf = 0;
+  //     PYOPENCL_BUFFER_SIZE_T len;
+  //     py::object *retained_buf_obj = 0;
 
-//     const void *buf;
-//     PYOPENCL_BUFFER_SIZE_T len;
+  //     if (buffer.ptr() != Py_None)
+  //     {
+  //       if (flags & CL_MEM_USE_HOST_PTR)
+  //       {
+  //         if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
+  //           throw py::error_already_set();
+  //       }
+  //       else
+  //       {
+  //         if (PyObject_AsReadBuffer(
+  //               buffer.ptr(), const_cast<const void **>(&buf), &len))
+  //           throw py::error_already_set();
+  //       }
 
-//     if (PyObject_AsReadBuffer(buffer.ptr(), &buf, &len))
-//       throw py::error_already_set();
+  //       if (flags & CL_MEM_USE_HOST_PTR)
+  //         retained_buf_obj = &buffer;
+  //     }
 
-//     cl_event evt;
-//     PYOPENCL_RETRY_IF_MEM_ERROR(
-//       PYOPENCL_CALL_GUARDED(clEnqueueWriteImage, (
-//             cq.data(),
-//             img.data(),
-//             PYOPENCL_CAST_BOOL(is_blocking),
-//             origin, region, row_pitch, slice_pitch, buf,
-//             PYOPENCL_WAITLIST_ARGS, &evt
-//             ));
-//       );
-//     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
-//   }
+  //     PYOPENCL_PRINT_CALL_TRACE("clCreateImage");
+  //     cl_int status_code;
+  //     cl_mem mem = clCreateImage(ctx.data(), flags, &fmt, &desc, buf, &status_code);
+  //     if (status_code != CL_SUCCESS)
+  //       throw pyopencl::error("clCreateImage", status_code);
 
+  //     try
+  //     {
+  //       return new image(mem, false, retained_buf_obj);
+  //     }
+  //     catch (...)
+  //     {
+  //       PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+  //       throw;
+  //     }
+  //   }
 
-
-
-//   inline
-//   event *enqueue_copy_image(
-//       command_queue &cq,
-//       memory_object_holder &src,
-//       memory_object_holder &dest,
-//       py::object py_src_origin,
-//       py::object py_dest_origin,
-//       py::object py_region,
-//       py::object py_wait_for
-//       )
-//   {
-//     PYOPENCL_PARSE_WAIT_FOR;
-//     COPY_PY_COORD_TRIPLE(src_origin);
-//     COPY_PY_COORD_TRIPLE(dest_origin);
-//     COPY_PY_REGION_TRIPLE(region);
-
-//     cl_event evt;
-//     PYOPENCL_RETRY_IF_MEM_ERROR(
-//       PYOPENCL_CALL_GUARDED(clEnqueueCopyImage, (
-//             cq.data(), src.data(), dest.data(),
-//             src_origin, dest_origin, region,
-//             PYOPENCL_WAITLIST_ARGS, &evt
-//             ));
-//       );
-//     PYOPENCL_RETURN_NEW_EVENT(evt);
-//   }
-
-
-
-
-//   inline
-//   event *enqueue_copy_image_to_buffer(
-//       command_queue &cq,
-//       memory_object_holder &src,
-//       memory_object_holder &dest,
-//       py::object py_origin,
-//       py::object py_region,
-//       size_t offset,
-//       py::object py_wait_for
-//       )
-//   {
-//     PYOPENCL_PARSE_WAIT_FOR;
-//     COPY_PY_COORD_TRIPLE(origin);
-//     COPY_PY_REGION_TRIPLE(region);
-
-//     cl_event evt;
-//     PYOPENCL_RETRY_IF_MEM_ERROR(
-//       PYOPENCL_CALL_GUARDED(clEnqueueCopyImageToBuffer, (
-//             cq.data(), src.data(), dest.data(),
-//             origin, region, offset,
-//             PYOPENCL_WAITLIST_ARGS, &evt
-//             ));
-//       );
-//     PYOPENCL_RETURN_NEW_EVENT(evt);
-//   }
-
-
-
-
-//   inline
-//   event *enqueue_copy_buffer_to_image(
-//       command_queue &cq,
-//       memory_object_holder &src,
-//       memory_object_holder &dest,
-//       size_t offset,
-//       py::object py_origin,
-//       py::object py_region,
-//       py::object py_wait_for
-//       )
-//   {
-//     PYOPENCL_PARSE_WAIT_FOR;
-//     COPY_PY_COORD_TRIPLE(origin);
-//     COPY_PY_REGION_TRIPLE(region);
-
-//     cl_event evt;
-//     PYOPENCL_RETRY_IF_MEM_ERROR(
-//       PYOPENCL_CALL_GUARDED(clEnqueueCopyBufferToImage, (
-//             cq.data(), src.data(), dest.data(),
-//             offset, origin, region,
-//             PYOPENCL_WAITLIST_ARGS, &evt
-//             ));
-//       );
-//     PYOPENCL_RETURN_NEW_EVENT(evt);
-//   }
-
-//   // }}}
-
-// #if PYOPENCL_CL_VERSION >= 0x1020
-//   inline
-//   event *enqueue_fill_image(
-//       command_queue &cq,
-//       memory_object_holder &mem,
-//       py::object color,
-//       py::object py_origin, py::object py_region,
-//       py::object py_wait_for
-//       )
-//   {
-//     PYOPENCL_PARSE_WAIT_FOR;
-
-//     COPY_PY_COORD_TRIPLE(origin);
-//     COPY_PY_REGION_TRIPLE(region);
-
-//     const void *color_buf;
-//     PYOPENCL_BUFFER_SIZE_T color_len;
-
-//     if (PyObject_AsReadBuffer(color.ptr(), &color_buf, &color_len))
-//       throw py::error_already_set();
-
-//     cl_event evt;
-//     PYOPENCL_RETRY_IF_MEM_ERROR(
-//       PYOPENCL_CALL_GUARDED(clEnqueueFillImage, (
-//             cq.data(),
-//             mem.data(),
-//             color_buf, origin, region,
-//             PYOPENCL_WAITLIST_ARGS, &evt
-//             ));
-//       );
-//     PYOPENCL_RETURN_NEW_EVENT(evt);
-//   }
-// #endif
+  // #endif
 
   // }}}
+
+  // {{{ image transfers
+
+  inline
+  event *enqueue_read_image(command_queue &cq,
+			    image &img,
+			    size_t *origin, size_t *region,
+			    void *buffer, size_t size, 
+			    size_t row_pitch, size_t slice_pitch,
+			    void **wait_for, uint32_t num_wait_for,
+			    bool is_blocking)
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    cl_event evt;
+    // TODO
+    //PYOPENCL_RETRY_IF_MEM_ERROR(
+    PYOPENCL_CALL_GUARDED(clEnqueueReadImage,
+			  (cq.data(),
+			   img.data(),
+			   PYOPENCL_CAST_BOOL(is_blocking),
+			   origin, region, row_pitch, slice_pitch, buffer,
+			   PYOPENCL_WAITLIST_ARGS, &evt
+			   ));
+    //);
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+    //PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
+  }
+
+
+
+
+  //   inline
+  //   event *enqueue_write_image(
+  //       command_queue &cq,
+  //       image &img,
+  //       py::object py_origin, py::object py_region,
+  //       py::object buffer,
+  //       size_t row_pitch, size_t slice_pitch,
+  //       py::object py_wait_for,
+  //       bool is_blocking)
+  //   {
+  //     PYOPENCL_PARSE_WAIT_FOR;
+  //     COPY_PY_COORD_TRIPLE(origin);
+  //     COPY_PY_REGION_TRIPLE(region);
+
+  //     const void *buf;
+  //     PYOPENCL_BUFFER_SIZE_T len;
+
+  //     if (PyObject_AsReadBuffer(buffer.ptr(), &buf, &len))
+  //       throw py::error_already_set();
+
+  //     cl_event evt;
+  //     PYOPENCL_RETRY_IF_MEM_ERROR(
+  //       PYOPENCL_CALL_GUARDED(clEnqueueWriteImage, (
+  //             cq.data(),
+  //             img.data(),
+  //             PYOPENCL_CAST_BOOL(is_blocking),
+  //             origin, region, row_pitch, slice_pitch, buf,
+  //             PYOPENCL_WAITLIST_ARGS, &evt
+  //             ));
+  //       );
+  //     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
+  //   }
+
+
+
+
+  //   inline
+  //   event *enqueue_copy_image(
+  //       command_queue &cq,
+  //       memory_object_holder &src,
+  //       memory_object_holder &dest,
+  //       py::object py_src_origin,
+  //       py::object py_dest_origin,
+  //       py::object py_region,
+  //       py::object py_wait_for
+  //       )
+  //   {
+  //     PYOPENCL_PARSE_WAIT_FOR;
+  //     COPY_PY_COORD_TRIPLE(src_origin);
+  //     COPY_PY_COORD_TRIPLE(dest_origin);
+  //     COPY_PY_REGION_TRIPLE(region);
+
+  //     cl_event evt;
+  //     PYOPENCL_RETRY_IF_MEM_ERROR(
+  //       PYOPENCL_CALL_GUARDED(clEnqueueCopyImage, (
+  //             cq.data(), src.data(), dest.data(),
+  //             src_origin, dest_origin, region,
+  //             PYOPENCL_WAITLIST_ARGS, &evt
+  //             ));
+  //       );
+  //     PYOPENCL_RETURN_NEW_EVENT(evt);
+  //   }
+
+
+
+
+  //   inline
+  //   event *enqueue_copy_image_to_buffer(
+  //       command_queue &cq,
+  //       memory_object_holder &src,
+  //       memory_object_holder &dest,
+  //       py::object py_origin,
+  //       py::object py_region,
+  //       size_t offset,
+  //       py::object py_wait_for
+  //       )
+  //   {
+  //     PYOPENCL_PARSE_WAIT_FOR;
+  //     COPY_PY_COORD_TRIPLE(origin);
+  //     COPY_PY_REGION_TRIPLE(region);
+
+  //     cl_event evt;
+  //     PYOPENCL_RETRY_IF_MEM_ERROR(
+  //       PYOPENCL_CALL_GUARDED(clEnqueueCopyImageToBuffer, (
+  //             cq.data(), src.data(), dest.data(),
+  //             origin, region, offset,
+  //             PYOPENCL_WAITLIST_ARGS, &evt
+  //             ));
+  //       );
+  //     PYOPENCL_RETURN_NEW_EVENT(evt);
+  //   }
+
+
+
+
+  //   inline
+  //   event *enqueue_copy_buffer_to_image(
+  //       command_queue &cq,
+  //       memory_object_holder &src,
+  //       memory_object_holder &dest,
+  //       size_t offset,
+  //       py::object py_origin,
+  //       py::object py_region,
+  //       py::object py_wait_for
+  //       )
+  //   {
+  //     PYOPENCL_PARSE_WAIT_FOR;
+  //     COPY_PY_COORD_TRIPLE(origin);
+  //     COPY_PY_REGION_TRIPLE(region);
+
+  //     cl_event evt;
+  //     PYOPENCL_RETRY_IF_MEM_ERROR(
+  //       PYOPENCL_CALL_GUARDED(clEnqueueCopyBufferToImage, (
+  //             cq.data(), src.data(), dest.data(),
+  //             offset, origin, region,
+  //             PYOPENCL_WAITLIST_ARGS, &evt
+  //             ));
+  //       );
+  //     PYOPENCL_RETURN_NEW_EVENT(evt);
+  //   }
+
+  //   // }}}
+
+  // #if PYOPENCL_CL_VERSION >= 0x1020
+  //   inline
+  //   event *enqueue_fill_image(
+  //       command_queue &cq,
+  //       memory_object_holder &mem,
+  //       py::object color,
+  //       py::object py_origin, py::object py_region,
+  //       py::object py_wait_for
+  //       )
+  //   {
+  //     PYOPENCL_PARSE_WAIT_FOR;
+
+  //     COPY_PY_COORD_TRIPLE(origin);
+  //     COPY_PY_REGION_TRIPLE(region);
+
+  //     const void *color_buf;
+  //     PYOPENCL_BUFFER_SIZE_T color_len;
+
+  //     if (PyObject_AsReadBuffer(color.ptr(), &color_buf, &color_len))
+  //       throw py::error_already_set();
+
+  //     cl_event evt;
+  //     PYOPENCL_RETRY_IF_MEM_ERROR(
+  //       PYOPENCL_CALL_GUARDED(clEnqueueFillImage, (
+  //             cq.data(),
+  //             mem.data(),
+  //             color_buf, origin, region,
+  //             PYOPENCL_WAITLIST_ARGS, &evt
+  //             ));
+  //       );
+  //     PYOPENCL_RETURN_NEW_EVENT(evt);
+  //   }
+  // #endif
+
+// }}}
 
   
   
@@ -1911,62 +1862,62 @@ namespace pyopencl
 
 
 
-// #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
-//   inline
-//   py::object get_gl_context_info_khr(
-//       py::object py_properties,
-//       cl_gl_context_info param_name,
-//       py::object py_platform
-//       )
-//   {
-//     std::vector<cl_context_properties> props
-//       = parse_context_properties(py_properties);
+  // #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
+  //   inline
+  //   py::object get_gl_context_info_khr(
+  //       py::object py_properties,
+  //       cl_gl_context_info param_name,
+  //       py::object py_platform
+  //       )
+  //   {
+  //     std::vector<cl_context_properties> props
+  //       = parse_context_properties(py_properties);
 
-//     typedef CL_API_ENTRY cl_int (CL_API_CALL
-//       *func_ptr_type)(const cl_context_properties * /* properties */,
-//           cl_gl_context_info            /* param_name */,
-//           size_t                        /* param_value_size */,
-//           void *                        /* param_value */,
-//           size_t *                      /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
+  //     typedef CL_API_ENTRY cl_int (CL_API_CALL
+  //       *func_ptr_type)(const cl_context_properties * /* properties */,
+  //           cl_gl_context_info            /* param_name */,
+  //           size_t                        /* param_value_size */,
+  //           void *                        /* param_value */,
+  //           size_t *                      /* param_value_size_ret */) CL_API_SUFFIX__VERSION_1_0;
 
-//     func_ptr_type func_ptr;
+  //     func_ptr_type func_ptr;
 
-// #if PYOPENCL_CL_VERSION >= 0x1020
-//     if (py_platform.ptr() != Py_None)
-//     {
-//       platform &plat = py::extract<platform &>(py_platform);
+  // #if PYOPENCL_CL_VERSION >= 0x1020
+  //     if (py_platform.ptr() != Py_None)
+  //     {
+  //       platform &plat = py::extract<platform &>(py_platform);
 
-//       func_ptr = (func_ptr_type) clGetExtensionFunctionAddressForPlatform(
-//             plat.data(), "clGetGLContextInfoKHR");
-//     }
-//     else
-//     {
-//       PYOPENCL_DEPRECATED("get_gl_context_info_khr with platform=None", "2013.1", );
+  //       func_ptr = (func_ptr_type) clGetExtensionFunctionAddressForPlatform(
+  //             plat.data(), "clGetGLContextInfoKHR");
+  //     }
+  //     else
+  //     {
+  //       PYOPENCL_DEPRECATED("get_gl_context_info_khr with platform=None", "2013.1", );
 
-//       func_ptr = (func_ptr_type) clGetExtensionFunctionAddress(
-//             "clGetGLContextInfoKHR");
-//     }
-// #else
-//     func_ptr = (func_ptr_type) clGetExtensionFunctionAddress(
-//           "clGetGLContextInfoKHR");
-// #endif
+  //       func_ptr = (func_ptr_type) clGetExtensionFunctionAddress(
+  //             "clGetGLContextInfoKHR");
+  //     }
+  // #else
+  //     func_ptr = (func_ptr_type) clGetExtensionFunctionAddress(
+  //           "clGetGLContextInfoKHR");
+  // #endif
 
 
-//     if (!func_ptr)
-//       throw error("Context.get_info", CL_INVALID_PLATFORM,
-//           "clGetGLContextInfoKHR extension function not present");
+  //     if (!func_ptr)
+  //       throw error("Context.get_info", CL_INVALID_PLATFORM,
+  //           "clGetGLContextInfoKHR extension function not present");
 
-//     cl_context_properties *props_ptr
-//       = props.empty( ) ? NULL : &props.front();
+  //     cl_context_properties *props_ptr
+  //       = props.empty( ) ? NULL : &props.front();
 
-//     switch (param_name)
-//     {
-//       case CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR:
-//         {
-//           cl_device_id param_value;
-//           PYOPENCL_CALL_GUARDED(func_ptr,
-//               (props_ptr, param_name, sizeof(param_value), &param_value, 0));
-//           return py::object(handle_from_new_ptr( new device(param_value, /*retain*/ true)));
+  //     switch (param_name)
+  //     {
+  //       case CL_CURRENT_DEVICE_FOR_GL_CONTEXT_KHR:
+  //         {
+  //           cl_device_id param_value;
+  //           PYOPENCL_CALL_GUARDED(func_ptr,
+  //               (props_ptr, param_name, sizeof(param_value), &param_value, 0));
+  //           return py::object(handle_from_new_ptr( new device(param_value, /*retain*/ true)));
   //         }
 
   //       case CL_DEVICES_FOR_GL_CONTEXT_KHR:
@@ -2156,7 +2107,75 @@ namespace pyopencl
   // }}}
   // }}}
 
-  
+  // {{{ sampler
+  class sampler // : boost::noncopyable
+  {
+    private:
+      cl_sampler m_sampler;
+
+    public:
+      sampler(context const &ctx, bool normalized_coordinates,
+          cl_addressing_mode am, cl_filter_mode fm)
+      {
+        cl_int status_code;
+        PYOPENCL_PRINT_CALL_TRACE("clCreateSampler");
+        m_sampler = clCreateSampler(
+            ctx.data(),
+            normalized_coordinates,
+            am, fm, &status_code);
+
+        if (status_code != CL_SUCCESS)
+          throw pyopencl::error("Sampler", status_code);
+      }
+
+      sampler(cl_sampler samp, bool retain)
+        : m_sampler(samp)
+      {
+        if (retain)
+          PYOPENCL_CALL_GUARDED(clRetainSampler, (samp));
+      }
+
+      ~sampler()
+      {
+        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseSampler, (m_sampler));
+      }
+
+      cl_sampler data() const
+      {
+        return m_sampler;
+      }
+
+      PYOPENCL_EQUALITY_TESTS(sampler);
+
+      generic_info get_info(cl_sampler_info param_name) const
+      {
+        switch (param_name)
+        {
+          case CL_SAMPLER_REFERENCE_COUNT:
+            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
+                cl_uint);
+          case CL_SAMPLER_CONTEXT:
+            PYOPENCL_GET_OPAQUE_INFO(Sampler, m_sampler, param_name,
+				     cl_context, context, CONTEXT);
+          case CL_SAMPLER_ADDRESSING_MODE:
+            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
+                cl_addressing_mode);
+          case CL_SAMPLER_FILTER_MODE:
+            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
+                cl_filter_mode);
+          case CL_SAMPLER_NORMALIZED_COORDS:
+            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
+                cl_bool);
+
+          default:
+            throw error("Sampler.get_info", CL_INVALID_VALUE);
+        }
+      }
+  };
+
+  // }}}
+
+
   // {{{ program
 
   class program : public _common //: boost::noncopyable
@@ -2413,28 +2432,18 @@ namespace pyopencl
 			    (m_kernel, arg_index, loc.size(), 0));
     }
 
-    // void set_arg_sampler(cl_uint arg_index, sampler const &smp)
-    // {
-    //   cl_sampler s = smp.data();
-    //   PYOPENCL_CALL_GUARDED(clSetKernelArg,
-    //       (m_kernel, arg_index, sizeof(cl_sampler), &s));
-    // }
+    void set_arg_sampler(cl_uint arg_index, sampler const &smp)
+    {
+      cl_sampler s = smp.data();
+      PYOPENCL_CALL_GUARDED(clSetKernelArg,
+			    (m_kernel, arg_index, sizeof(cl_sampler), &s));
+    }
 
-    // void set_arg_buf(cl_uint arg_index, py::object py_buffer)
-    // {
-    //   const void *buf;
-    //   PYOPENCL_BUFFER_SIZE_T len;
-
-    //   if (PyObject_AsReadBuffer(py_buffer.ptr(), &buf, &len))
-    //   {
-    //     PyErr_Clear();
-    //     throw error("Kernel.set_arg", CL_INVALID_VALUE,
-    //         "invalid kernel argument");
-    //   }
-
-    //   PYOPENCL_CALL_GUARDED(clSetKernelArg,
-    //       (m_kernel, arg_index, len, buf));
-    // }
+    void set_arg_buf(cl_uint arg_index, void *buffer, size_t size)
+    {
+      PYOPENCL_CALL_GUARDED(clSetKernelArg,
+			    (m_kernel, arg_index, size, buffer));
+    }
 
     // void set_arg(cl_uint arg_index, py::object arg)
     // {
@@ -2568,8 +2577,7 @@ namespace pyopencl
   event *enqueue_read_buffer(
 			     command_queue &cq,
 			     memory_object_holder &mem,
-			     void *buffer,
-			     size_t size, 
+			     void *buffer, size_t size, 
 			     size_t device_offset,
 			     void **wait_for, uint32_t num_wait_for,
 			     bool is_blocking)
@@ -2886,6 +2894,12 @@ void _free2(void **p, uint32_t size) {
   return 0;
 }
 
+::error *_create_sampler(void **ptr_sampler, void *ptr_context, int normalized_coordinates, cl_addressing_mode am, cl_filter_mode fm) {
+  C_HANDLE_ERROR(*ptr_sampler = new pyopencl::sampler(*static_cast<pyopencl::context*>(ptr_context), (bool)normalized_coordinates, am, fm););
+  return 0;
+}
+
+
 ::error *event__get_profiling_info(void *ptr, cl_profiling_info param, generic_info *out) {
   C_HANDLE_ERROR(*out = static_cast<pyopencl::event*>(ptr)->get_profiling_info(param););
   return 0;
@@ -2904,13 +2918,28 @@ void _free2(void **p, uint32_t size) {
   return 0;
 }
 
-::error *kernel__set_arg_mem_buffer(void *ptr_kernel, cl_uint arg_index, void *ptr_buffer) {
-  pyopencl::buffer *buf = static_cast<pyopencl::buffer*>(ptr_buffer);
-  C_HANDLE_ERROR(
-		 static_cast<pyopencl::kernel*>(ptr_kernel)->set_arg_mem(arg_index, *buf);
-		 );
+::error *kernel__set_arg_null(void *ptr_kernel, cl_uint arg_index) {
+  C_HANDLE_ERROR(static_cast<pyopencl::kernel*>(ptr_kernel)->set_arg_null(arg_index););
   return 0;
 }
+
+::error *kernel__set_arg_mem(void *ptr_kernel, cl_uint arg_index, void *ptr_mem) {
+  pyopencl::memory_object *mem = static_cast<pyopencl::memory_object*>(ptr_mem);
+  C_HANDLE_ERROR(static_cast<pyopencl::kernel*>(ptr_kernel)->set_arg_mem(arg_index, *mem););
+  return 0;
+}
+
+::error *kernel__set_arg_sampler(void *ptr_kernel, cl_uint arg_index, void *ptr_sampler) {
+  pyopencl::sampler *sampler = static_cast<pyopencl::sampler*>(ptr_sampler);
+  C_HANDLE_ERROR(static_cast<pyopencl::kernel*>(ptr_kernel)->set_arg_sampler(arg_index, *sampler););
+  return 0;
+}
+
+::error *kernel__set_arg_buf(void *ptr_kernel, cl_uint arg_index, void *buffer, size_t size) {
+  C_HANDLE_ERROR(static_cast<pyopencl::kernel*>(ptr_kernel)->set_arg_buf(arg_index, buffer, size););
+  return 0;
+}
+
 
 ::error *kernel__get_work_group_info(void *ptr, cl_kernel_work_group_info param, void *ptr_device, generic_info *out) {
   C_HANDLE_ERROR(*out = static_cast<pyopencl::kernel*>(ptr)->get_work_group_info(param, *static_cast<pyopencl::device*>(ptr_device)););
@@ -2919,6 +2948,22 @@ void _free2(void **p, uint32_t size) {
 
 ::error *_get_supported_image_formats(void *ptr_context, cl_mem_flags flags, cl_mem_object_type image_type, generic_info *out) {
   C_HANDLE_ERROR(*out = get_supported_image_formats(*static_cast<pyopencl::context*>(ptr_context), flags, image_type););
+  return 0;
+}
+
+error *_create_image_2d(void **ptr_image, void *ptr_context, cl_mem_flags flags, cl_image_format *fmt, size_t width, size_t height, size_t pitch, void *ptr_buffer, size_t size) {
+  C_HANDLE_ERROR(*ptr_image = create_image_2d(*static_cast<pyopencl::context*>(ptr_context), flags, *fmt, width, height, pitch, ptr_buffer, size););
+  return 0;
+}
+
+ 
+error *_create_image_3d(void **ptr_image, void *ptr_context, cl_mem_flags flags, cl_image_format *fmt, size_t width, size_t height, size_t depth, size_t pitch_x, size_t pitch_y, void *ptr_buffer, size_t size) {
+  C_HANDLE_ERROR(*ptr_image = create_image_3d(*static_cast<pyopencl::context*>(ptr_context), flags, *fmt, width, height, depth, pitch_x, pitch_y, ptr_buffer, size););
+  return 0;
+}
+
+::error *image__get_image_info(void *ptr, cl_image_info param, generic_info *out) {
+  C_HANDLE_ERROR(*out = static_cast<pyopencl::image*>(ptr)->get_image_info(param););
   return 0;
 }
 
@@ -2937,32 +2982,38 @@ void _free2(void **p, uint32_t size) {
 
 
 ::error *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking) {
-  C_HANDLE_ERROR(
-		 *ptr_event = enqueue_read_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+  C_HANDLE_ERROR(*ptr_event = enqueue_read_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
 						  *static_cast<pyopencl::memory_object_holder*>(ptr_memory_object_holder),
 						  buffer, size, device_offset, wait_for, num_wait_for, (bool)is_blocking);
 		 );
   return 0;
 }
 
-::error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking) {
-  C_HANDLE_ERROR(
-		 *ptr_event = enqueue_write_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
-						   *static_cast<pyopencl::memory_object_holder*>(ptr_memory_object_holder),
+::error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_mem, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking) {
+  C_HANDLE_ERROR(*ptr_event = enqueue_write_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+						   *static_cast<pyopencl::memory_object_holder*>(ptr_mem),
 						   buffer, size, device_offset, wait_for, num_wait_for, (bool)is_blocking);
 		 );
   return 0;
 }
 
 ::error *_enqueue_copy_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_src, void *ptr_dst, ptrdiff_t byte_count, size_t src_offset, size_t dst_offset, void **wait_for, uint32_t num_wait_for) {
-  C_HANDLE_ERROR(
-		 *ptr_event = enqueue_copy_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+  C_HANDLE_ERROR(*ptr_event = enqueue_copy_buffer(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
 						  *static_cast<pyopencl::memory_object_holder*>(ptr_src),
 						  *static_cast<pyopencl::memory_object_holder*>(ptr_dst),
 						  byte_count, src_offset, dst_offset, wait_for, num_wait_for);
 		 );
   return 0;
 }
+
+::error *_enqueue_read_image(void **ptr_event, void *ptr_command_queue, void *ptr_mem, size_t *origin, size_t *region, void *buffer, size_t size, size_t row_pitch, size_t slice_pitch, void **wait_for, uint32_t num_wait_for, int is_blocking) {
+  C_HANDLE_ERROR(*ptr_event = enqueue_read_image(*static_cast<pyopencl::command_queue*>(ptr_command_queue),
+						  *static_cast<pyopencl::image*>(ptr_mem),
+						 origin, region, buffer, size, row_pitch, slice_pitch, wait_for, num_wait_for, (bool)is_blocking);
+		 );
+  return 0;
+}
+
   
 intptr_t _int_ptr(void* ptr, class_t class_) {
 #define INT_PTR(CLSU, CLS) return (intptr_t)(static_cast<pyopencl::CLS*>(ptr)->data());

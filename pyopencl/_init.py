@@ -239,14 +239,14 @@ def _add_functionality():
                 (Event.get_info, event_info),
             MemoryObjectHolder:
                 (MemoryObjectHolder.get_info, mem_info),
-            # Image:
-            #     (Image.get_image_info, image_info),
+            Image:
+                (Image.get_image_info, image_info),
             Program:
                 (Program.get_info, program_info),
             Kernel:
                 (Kernel.get_info, kernel_info),
-            # Sampler:
-            #     (Sampler.get_info, sampler_info),
+            Sampler:
+                (Sampler.get_info, sampler_info),
             }
 
     def to_string(cls, value, default_format=None):
@@ -510,122 +510,113 @@ def _add_functionality():
 
     # }}}
 
-    # # {{{ Image
+    # {{{ Image
 
-    # image_old_init = Image.__init__
+    image_old_init = Image.__init__
 
-    # def image_init(self, context, flags, format, shape=None, pitches=None,
-    #         hostbuf=None, is_array=False, buffer=None):
+    def image_init(self, context, flags, format, shape=None, pitches=None,
+            hostbuf=None, is_array=False, buffer=None):
 
-    #     if shape is None and hostbuf is None:
-    #         raise Error("'shape' must be passed if 'hostbuf' is not given")
+        if shape is None and hostbuf is None:
+            raise Error("'shape' must be passed if 'hostbuf' is not given")
 
-    #     if shape is None and hostbuf is not None:
-    #         shape = hostbuf.shape
+        if shape is None and hostbuf is not None:
+            shape = hostbuf.shape
 
-    #     if hostbuf is not None and not \
-    #             (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
-    #         from warnings import warn
-    #         warn("'hostbuf' was passed, but no memory flags to make use of it.")
+        if hostbuf is not None and not \
+                (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
+            from warnings import warn
+            warn("'hostbuf' was passed, but no memory flags to make use of it.")
 
-    #     if hostbuf is None and pitches is not None:
-    #         raise Error("'pitches' may only be given if 'hostbuf' is given")
+        if hostbuf is None and pitches is not None:
+            raise Error("'pitches' may only be given if 'hostbuf' is given")
 
-    #     if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
-    #         if buffer is not None and is_array:
-    #                 raise ValueError(
-    #                         "'buffer' and 'is_array' are mutually exclusive")
+        if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
+            if buffer is not None and is_array:
+                    raise ValueError(
+                            "'buffer' and 'is_array' are mutually exclusive")
 
-    #         if len(shape) == 3:
-    #             if buffer is not None:
-    #                 raise TypeError(
-    #                         "'buffer' argument is not supported for 3D arrays")
-    #             elif is_array:
-    #                 image_type = mem_object_type.IMAGE2D_ARRAY
-    #             else:
-    #                 image_type = mem_object_type.IMAGE3D
+            if len(shape) == 3:
+                if buffer is not None:
+                    raise TypeError(
+                            "'buffer' argument is not supported for 3D arrays")
+                elif is_array:
+                    image_type = mem_object_type.IMAGE2D_ARRAY
+                else:
+                    image_type = mem_object_type.IMAGE3D
 
-    #         elif len(shape) == 2:
-    #             if buffer is not None:
-    #                 raise TypeError(
-    #                         "'buffer' argument is not supported for 2D arrays")
-    #             elif is_array:
-    #                 image_type = mem_object_type.IMAGE1D_ARRAY
-    #             else:
-    #                 image_type = mem_object_type.IMAGE2D
+            elif len(shape) == 2:
+                if buffer is not None:
+                    raise TypeError(
+                            "'buffer' argument is not supported for 2D arrays")
+                elif is_array:
+                    image_type = mem_object_type.IMAGE1D_ARRAY
+                else:
+                    image_type = mem_object_type.IMAGE2D
 
-    #         elif len(shape) == 1:
-    #             if buffer is not None:
-    #                 image_type = mem_object_type.IMAGE1D_BUFFER
-    #             elif is_array:
-    #                 raise TypeError("array of zero-dimensional images not supported")
-    #             else:
-    #                 image_type = mem_object_type.IMAGE1D
+            elif len(shape) == 1:
+                if buffer is not None:
+                    image_type = mem_object_type.IMAGE1D_BUFFER
+                elif is_array:
+                    raise TypeError("array of zero-dimensional images not supported")
+                else:
+                    image_type = mem_object_type.IMAGE1D
 
-    #         else:
-    #             raise ValueError("images cannot have more than three dimensions")
+            else:
+                raise ValueError("images cannot have more than three dimensions")
 
-    #         desc = ImageDescriptor()
+            desc = ImageDescriptor()
 
-    #         desc.image_type = image_type
-    #         desc.shape = shape  # also sets desc.array_size
+            desc.image_type = image_type
+            desc.shape = shape  # also sets desc.array_size
 
-    #         if pitches is None:
-    #             desc.pitches = (0, 0)
-    #         else:
-    #             desc.pitches = pitches
+            if pitches is None:
+                desc.pitches = (0, 0)
+            else:
+                desc.pitches = pitches
 
-    #         desc.num_mip_levels = 0  # per CL 1.2 spec
-    #         desc.num_samples = 0  # per CL 1.2 spec
-    #         desc.buffer = buffer
+            desc.num_mip_levels = 0  # per CL 1.2 spec
+            desc.num_samples = 0  # per CL 1.2 spec
+            desc.buffer = buffer
 
-    #         image_old_init(self, context, flags, format, desc, hostbuf)
-    #     else:
-    #         # legacy init for CL 1.1 and older
-    #         if is_array:
-    #             raise TypeError("'is_array=True' is not supported for CL < 1.2")
-    #         #if num_mip_levels is not None:
-    #             #raise TypeError(
-    #             #      "'num_mip_levels' argument is not supported for CL < 1.2")
-    #         #if num_samples is not None:
-    #             #raise TypeError(
-    #             #       "'num_samples' argument is not supported for CL < 1.2")
-    #         if buffer is not None:
-    #             raise TypeError("'buffer' argument is not supported for CL < 1.2")
+            image_old_init(self, context, flags, format, desc, hostbuf)
+        else:
+            # legacy init for CL 1.1 and older
+            if is_array:
+                raise TypeError("'is_array=True' is not supported for CL < 1.2")
+            #if num_mip_levels is not None:
+                #raise TypeError(
+                #      "'num_mip_levels' argument is not supported for CL < 1.2")
+            #if num_samples is not None:
+                #raise TypeError(
+                #       "'num_samples' argument is not supported for CL < 1.2")
+            if buffer is not None:
+                raise TypeError("'buffer' argument is not supported for CL < 1.2")
 
-    #         image_old_init(self, context, flags, format, shape,
-    #                 pitches, hostbuf)
+            image_old_init(self, context, flags, format, shape,
+                    pitches, hostbuf)
 
-    # class _ImageInfoGetter:
-    #     def __init__(self, event):
-    #         from warnings import warn
-    #         warn("Image.image.attr is deprecated. "
-    #                 "Use Image.attr directly, instead.")
+    class _ImageInfoGetter:
+        def __init__(self, event):
+            from warnings import warn
+            warn("Image.image.attr is deprecated. "
+                    "Use Image.attr directly, instead.")
 
-    #         self.event = event
+            self.event = event
 
-    #     def __getattr__(self, name):
-    #         try:
-    #             inf_attr = getattr(_cl.image_info, name.upper())
-    #         except AttributeError:
-    #             raise AttributeError("%s has no attribute '%s'"
-    #                     % (type(self), name))
-    #         else:
-    #             return self.event.get_image_info(inf_attr)
+        def __getattr__(self, name):
+            try:
+                inf_attr = getattr(_cl.image_info, name.upper())
+            except AttributeError:
+                raise AttributeError("%s has no attribute '%s'"
+                        % (type(self), name))
+            else:
+                return self.event.get_image_info(inf_attr)
 
-    # def image_shape(self):
-    #     if self.type == mem_object_type.IMAGE2D:
-    #         return (self.width, self.height)
-    #     elif self.type == mem_object_type.IMAGE3D:
-    #         return (self.width, self.height, self.depth)
-    #     else:
-    #         raise LogicError("only images have shapes")
+    Image.__init__ = image_init
+    Image.image = property(_ImageInfoGetter)
 
-    # Image.__init__ = image_init
-    # Image.image = property(_ImageInfoGetter)
-    # Image.shape = property(image_shape)
-
-    # # }}}
+    # }}}
 
     # # {{{ Error
 
@@ -825,7 +816,7 @@ def _mark_copy_deprecated(func):
     return new_func
 
 
-# enqueue_read_image = _mark_copy_deprecated(_cl._enqueue_read_image)
+enqueue_read_image = _mark_copy_deprecated(_cl._enqueue_read_image)
 # enqueue_write_image = _mark_copy_deprecated(_cl._enqueue_write_image)
 # enqueue_copy_image = _mark_copy_deprecated(_cl._enqueue_copy_image)
 # enqueue_copy_image_to_buffer = _mark_copy_deprecated(
