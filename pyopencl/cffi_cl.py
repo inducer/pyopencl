@@ -540,6 +540,7 @@ class ImageFormat(object):
         cls = type(cls.__name__, (cls,), {})
         cls.channel_order = property(lambda self: args[0], lambda self, v: args.__setitem__(0, v))
         cls.channel_data_type = property(lambda self: args[1], lambda self, v: args.__setitem__(1, v))
+        cls.__hash__ = lambda self: hash(tuple(args))
         return object.__new__(cls)
 
     @property
