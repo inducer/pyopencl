@@ -535,9 +535,12 @@ enqueue_acquire_gl_objects = _create_gl_enqueue(_lib._enqueue_acquire_gl_objects
 enqueue_release_gl_objects = _create_gl_enqueue(_lib._enqueue_release_gl_objects)
 
 class ImageFormat(object):
-    def __init__(self, channel_order=0, channel_type=0):
-        self.channel_order = channel_order
-        self.channel_data_type = channel_type
+    def __new__(cls, channel_order=0, channel_type=0):
+        args = [channel_order, channel_type]
+        cls = type(cls.__name__, (cls,), {})
+        cls.channel_order = property(lambda self: args[0], lambda self, v: args.__setitem__(0, v))
+        cls.channel_data_type = property(lambda self: args[1], lambda self, v: args.__setitem__(1, v))
+        return object.__new__(cls)
 
     @property
     def channel_count(self):
