@@ -540,7 +540,6 @@ class ImageFormat(object):
         cls = type(cls.__name__, (cls,), {})
         cls.channel_order = property(lambda self: args[0], lambda self, v: args.__setitem__(0, v))
         cls.channel_data_type = property(lambda self: args[1], lambda self, v: args.__setitem__(1, v))
-        cls.__hash__ = lambda self: hash(tuple(args))
         return object.__new__(cls)
 
     @property
@@ -590,6 +589,23 @@ class ImageFormat(object):
     @property
     def itemsize(self):
         return self.channel_count * self.dtype_size
+
+    def __repr__(self):
+        return "ImageFormat(%s, %s)" % (
+                channel_order.to_string(self.channel_order,
+                    "<unknown channel order 0x%x>"),
+                channel_type.to_string(self.channel_data_type,
+                    "<unknown channel data type 0x%x>"))
+
+    def __eq__(self, other):
+        return (self.channel_order == other.channel_order
+                and self.channel_data_type == other.channel_data_type)
+
+    def __ne__(self, other):
+        return not image_format_eq(self, other)
+
+    def __hash__(self):
+        return hash((ImageFormat, self.channel_order, self.channel_data_type))
         
 
 def get_supported_image_formats(context, flags, image_type):
