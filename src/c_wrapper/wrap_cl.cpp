@@ -2924,7 +2924,7 @@ void _free2(void **p, uint32_t size) {
 }
 
 ::error *kernel__set_arg_mem(void *ptr_kernel, cl_uint arg_index, void *ptr_mem) {
-  pyopencl::memory_object *mem = static_cast<pyopencl::memory_object*>(ptr_mem);
+  pyopencl::memory_object_holder *mem = static_cast<pyopencl::memory_object_holder*>(ptr_mem);
   C_HANDLE_ERROR(static_cast<pyopencl::kernel*>(ptr_kernel)->set_arg_mem(arg_index, *mem););
   return 0;
 }
