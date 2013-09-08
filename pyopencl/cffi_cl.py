@@ -734,7 +734,7 @@ class Sampler(_Common):
             filter_mode))
         self.ptr = ptr[0]
 
-# class GLTexture(MemoryObject):
+# class GLTexture(Image):
 #     _id = 'gl_texture'
     
 #     def __init__(self, context, flags, texture_target, miplevel, texture, dims):

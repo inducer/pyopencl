@@ -162,12 +162,12 @@ def main():
     import shutil
     shutil.copyfile("src/c_wrapper/wrap_cl_core.h", "pyopencl/wrap_cl_core.h")
     
-    from pyopencl._cffi import _get_verifier
-    import os.path
-    current_directory = os.path.dirname(__file__)
+    # from pyopencl._cffi import _get_verifier
+    # import os.path
+    # current_directory = os.path.dirname(__file__)
 
-    # for development: clean cache such that the extension is rebuilt
-    shutil.rmtree(os.path.join(current_directory, 'pyopencl', '__pycache__/'), ignore_errors=True)
+    # # for development: clean cache such that the extension is rebuilt
+    # shutil.rmtree(os.path.join(current_directory, 'pyopencl', '__pycache__/'), ignore_errors=True)
     
     setup(name="pyopencl",
             # metadata
@@ -214,20 +214,31 @@ def main():
           
             ext_package="pyopencl",
             ext_modules=[
-                _get_verifier(
-                    sources=[
-                        "src/c_wrapper/wrap_cl.cpp",
-                        "src/c_wrapper/wrap_constants.cpp",
-                        #"src/c_wrapper/wrap_mempool.cpp",
-                        "src/c_wrapper/bitlog.cpp",
-                    ],
-                    include_dirs=conf["CL_INC_DIR"] + ["src/c_wrapper/"],
-                    library_dirs=conf["CL_LIB_DIR"],
-                    libraries=conf["CL_LIBNAME"],
-                    define_macros=list(EXTRA_DEFINES.items()),
-                    extra_compile_args=conf["CXXFLAGS"],
-                    extra_link_args=conf["LDFLAGS"],
-                ).get_extension()
+                # _get_verifier(
+                #     sources=[
+                #         "src/c_wrapper/wrap_cl.cpp",
+                #         "src/c_wrapper/wrap_constants.cpp",
+                #         #"src/c_wrapper/wrap_mempool.cpp",
+                #         "src/c_wrapper/bitlog.cpp",
+                #     ],
+                #     include_dirs=conf["CL_INC_DIR"] + ["src/c_wrapper/"],
+                #     library_dirs=conf["CL_LIB_DIR"],
+                #     libraries=conf["CL_LIBNAME"],
+                #     define_macros=list(EXTRA_DEFINES.items()),
+                #     extra_compile_args=conf["CXXFLAGS"],
+                #     extra_link_args=conf["LDFLAGS"],
+                # ).get_extension()
+                NumpyExtension("_wrapcl",
+                               ["src/c_wrapper/wrap_cl.cpp",
+                                "src/c_wrapper/wrap_constants.cpp",
+                                #"src/c_wrapper/wrap_mempool.cpp",
+                                "src/c_wrapper/bitlog.cpp",],
+                               include_dirs=conf["CL_INC_DIR"] + ["src/c_wrapper/"],
+                               library_dirs=conf["CL_LIB_DIR"],
+                               libraries=conf["CL_LIBNAME"],
+                               define_macros=list(EXTRA_DEFINES.items()),
+                               extra_compile_args=conf["CXXFLAGS"],
+                               extra_link_args=conf["LDFLAGS"])
             ],
 
             include_package_data=True,
