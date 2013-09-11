@@ -1,8 +1,14 @@
-from pyopencl._cl import PooledBuffer, MemoryPool
-from _cffi import _ffi, _lib
+#from pyopencl._cl import PooledBuffer, MemoryPool
 import warnings
 import np
 import ctypes
+import sys
+
+from _cffi import _ffi, _lib
+
+# are we running on pypy?
+_PYPY = '__pypy__' in sys.builtin_module_names
+
 
 bitlog2 = _lib.bitlog2
 
@@ -214,21 +220,21 @@ def _c_buffer_from_obj(obj, writable=False):
     if obj is None:
         return _ffi.NULL, 0
 
-    # CPYthon: use the old buffer protocol 
-
-    # {{{ special case: numpy (also works with numpypy)
-    if isinstance(obj, np.ndarray):
-        # numpy array
-        return _ffi.cast('void *', obj.__array_interface__['data'][0]), obj.nbytes, None
-    if isinstance(obj, np.generic):
-        # numpy scalar
-        # * obj.__array_interface__ exists in CPython, but the address does not seem to point
-        # to the actual scalar (not supported/bug?).
-        # * does not exist (yet?) in numpypy.
-        s_array = np.array([obj]) # obj[()] not supported yet by numpypy
-        return _ffi.cast('void *', s_array.__array_interface__['data'][0]), s_array.nbytes, s_array
-
-    # }}}
+    if _PYPY:
+        # {{{ special case: numpy (also works with numpypy)
+        if isinstance(obj, np.ndarray):
+            # numpy array
+            return _ffi.cast('void *', obj.__array_interface__['data'][0]), obj.nbytes, None
+        if isinstance(obj, np.generic):
+            # numpy scalar
+            # * obj.__array_interface__ exists in CPython, but the address does not seem to point
+            # to the actual scalar (not supported/bug?).
+            # * does not exist (yet?) in numpypy.
+            s_array = np.array([obj]) # obj[()] not supported yet by numpypy
+            return _ffi.cast('void *', s_array.__array_interface__['data'][0]), s_array.nbytes, s_array
+        else:
+            raise LogicError("", status_code.INVALID_VALUE, "PyOpencl on PyPy only accepts numpy arrays and scalars arguments")
+        # }}}
 
     # TODO: is there a cross-interpreter solution?
     
@@ -245,7 +251,6 @@ def _c_buffer_from_obj(obj, writable=False):
     else:
         if status:
             raise Exception('TODO error_already_set')
-    print addr.value, length
     return _ffi.cast('void *', addr.value), length.value, None
 
     # }}}
