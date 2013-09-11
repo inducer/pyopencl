@@ -204,18 +204,35 @@ class MemoryObjectHolder(_Common):
 class MemoryObject(MemoryObjectHolder):
     pass
 
-
 def _c_buffer_from_obj(obj, writable=False):
+    """
+    Convert a Python object to a tuple (cdata('void *'), num_bytes, dummy) to be able to pass
+    a data stream to a C function. The dummy variable exists only to ensure that the Python object referencing the
+    C buffer is not garbage collected at the end of this function, making the C buffer itself invalid.
+    """
+    
     if obj is None:
         return _ffi.NULL, 0
 
-    # numpy array
-    if hasattr(obj, '__array_interface__'): # if writeable == False, some tests fail...
-        return _ffi.cast('void *', obj.__array_interface__['data'][0]), obj.nbytes
+    # CPYthon: use the old buffer protocol 
 
-    # ... ?
+    # {{{ special case: numpy (also works with numpypy)
+    if isinstance(obj, np.ndarray):
+        # numpy array
+        return _ffi.cast('void *', obj.__array_interface__['data'][0]), obj.nbytes, None
+    if isinstance(obj, np.generic):
+        # numpy scalar
+        # * obj.__array_interface__ exists in CPython, but the address does not seem to point
+        # to the actual scalar (not supported/bug?).
+        # * does not exist (yet?) in numpypy.
+        s_array = np.array([obj]) # obj[()] not supported yet by numpypy
+        return _ffi.cast('void *', s_array.__array_interface__['data'][0]), s_array.nbytes, s_array
+
+    # }}}
+
+    # TODO: is there a cross-interpreter solution?
     
-    # fall back to old CPython buffer protocol API
+    # {{{ fall back to the old CPython buffer protocol API
     addr = ctypes.c_void_p()
     length = ctypes.c_ssize_t()
     try:
@@ -228,7 +245,10 @@ def _c_buffer_from_obj(obj, writable=False):
     else:
         if status:
             raise Exception('TODO error_already_set')
-    return _ffi.cast('void *', addr.value), length.value
+    print addr.value, length
+    return _ffi.cast('void *', addr.value), length.value, None
+
+    # }}}
     
 class Buffer(MemoryObject):
     _id = 'buffer'
@@ -237,7 +257,7 @@ class Buffer(MemoryObject):
             warnings.warn("'hostbuf' was passed, but no memory flags to make use of it.")
         c_hostbuf = _ffi.NULL
         if hostbuf is not None:
-            c_hostbuf, hostbuf_size = _c_buffer_from_obj(hostbuf, writable=flags & mem_flags.USE_HOST_PTR)
+            c_hostbuf, hostbuf_size, _ = _c_buffer_from_obj(hostbuf, writable=flags & mem_flags.USE_HOST_PTR)
             if size > hostbuf_size:
                 raise RuntimeError("Buffer", status_code.INVALID_VALUE, "specified size is greater than host buffer size")
             if size == 0:
@@ -383,7 +403,7 @@ class Kernel(_Common):
             _handle_error(_lib.kernel__set_arg_sampler(self.ptr, arg_index, arg.ptr))
         else:
             # todo: how to handle args other than numpy arrays?
-            c_buf, size = _c_buffer_from_obj(arg)
+            c_buf, size, _ = _c_buffer_from_obj(arg)
             _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index, c_buf, size))
 
     def get_work_group_info(self, param, device):
@@ -467,7 +487,7 @@ def _c_obj_list(objs=None):
     return _ffi.new('void *[]', [ev.ptr for ev in objs]), len(objs)
 
 def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=True):
-    c_buf, size = _c_buffer_from_obj(hostbuf, writable=True)
+    c_buf, size, _ = _c_buffer_from_obj(hostbuf, writable=True)
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
     _handle_error(_lib._enqueue_read_buffer(
@@ -498,7 +518,7 @@ def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0, dst_offse
     return _create_instance(Event, ptr_event[0])
 
 def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, is_blocking=True):
-    c_buf, size = _c_buffer_from_obj(hostbuf)
+    c_buf, size, _ = _c_buffer_from_obj(hostbuf)
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
     _handle_error(_lib._enqueue_write_buffer(
@@ -514,7 +534,7 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0, wait_for=None, i
     return _create_instance(Event, ptr_event[0])
 
 def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=True):
-    c_buf, size = _c_buffer_from_obj(hostbuf, writable=True)
+    c_buf, size, _ = _c_buffer_from_obj(hostbuf, writable=True)
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
     _handle_error(_lib._enqueue_read_image(
@@ -675,7 +695,7 @@ class Image(MemoryObject):
         if shape is None:
             raise LogicError("Image", status_code.INVALID_VALUE, "'shape' must be given")
 
-        c_buf, size = _c_buffer_from_obj(buffer, writable=flags & mem_flags.USE_HOST_PTR)
+        c_buf, size, _ = _c_buffer_from_obj(buffer, writable=flags & mem_flags.USE_HOST_PTR)
                 
         dims = len(shape)
         if dims == 2:

@@ -475,7 +475,6 @@ def _add_functionality():
                     self.set_arg(i, arg)
             else:
                 from pyopencl._pvt_struct import pack
-
                 for i, (arg, arg_type_char) in enumerate(
                         zip(args, arg_type_chars)):
                     if arg_type_char and arg_type_char != "V":
