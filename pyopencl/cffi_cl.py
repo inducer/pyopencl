@@ -216,9 +216,6 @@ def _c_buffer_from_obj(obj, writable=False):
     a data stream to a C function. The dummy variable exists only to ensure that the Python object referencing the
     C buffer is not garbage collected at the end of this function, making the C buffer itself invalid.
     """
-    
-    if obj is None:
-        return _ffi.NULL, 0
 
     if _PYPY:
         # {{{ special case: numpy (also works with numpypy)
