@@ -1,4 +1,4 @@
-#from pyopencl._cl import PooledBuffer, MemoryPool
+from pyopencl._cl import PooledBuffer, MemoryPool
 import warnings
 import np
 import ctypes
@@ -697,7 +697,10 @@ class Image(MemoryObject):
         if shape is None:
             raise LogicError("Image", status_code.INVALID_VALUE, "'shape' must be given")
 
-        c_buf, size, _ = _c_buffer_from_obj(buffer, writable=flags & mem_flags.USE_HOST_PTR)
+        if buffer is None:
+            c_buf, size = _ffi.NULL, 0
+        else:
+            c_buf, size, _ = _c_buffer_from_obj(buffer, writable=flags & mem_flags.USE_HOST_PTR)
                 
         dims = len(shape)
         if dims == 2:
