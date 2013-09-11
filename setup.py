@@ -58,7 +58,7 @@ def main():
     from aksetup_helper import (hack_distutils, get_config, setup,
             NumpyExtension, 
             check_git_submodules)
-
+    from setuptools import Extension
     check_git_submodules()
 
     hack_distutils()
@@ -211,7 +211,7 @@ def main():
           
             ext_package="pyopencl",
             ext_modules=[
-                NumpyExtension("_wrapcl",
+                Extension("_wrapcl",
                                ["src/c_wrapper/wrap_cl.cpp",
                                 "src/c_wrapper/wrap_constants.cpp",
                                 #"src/c_wrapper/wrap_mempool.cpp",
