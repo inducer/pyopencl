@@ -54,9 +54,8 @@ def get_config_schema():
         ])
 
 
-def main():   
+def main():
     from aksetup_helper import (hack_distutils, get_config, setup,
-            NumpyExtension, 
             check_git_submodules)
     from setuptools import Extension
     check_git_submodules()
@@ -71,7 +70,6 @@ def main():
 
     if conf["CL_TRACE"]:
         EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
-
 
     if conf["CL_ENABLE_GL"]:
         EXTRA_DEFINES["HAVE_GL"] = 1
@@ -158,14 +156,14 @@ def main():
     # the cffi verifier depends on it.
     import shutil
     shutil.copyfile("src/c_wrapper/wrap_cl_core.h", "pyopencl/wrap_cl_core.h")
-    
+
     # from pyopencl._cffi import _get_verifier
     # import os.path
     # current_directory = os.path.dirname(__file__)
 
     # # for development: clean cache such that the extension is rebuilt
     # shutil.rmtree(os.path.join(current_directory, 'pyopencl', '__pycache__/'), ignore_errors=True)
-    
+
     setup(name="pyopencl",
             # metadata
             version=ver_dic["VERSION_TEXT"],
@@ -208,14 +206,15 @@ def main():
                 "cffi>=0.7.2",
                 # "Mako>=0.3.6",
                 ],
-          
+
             ext_package="pyopencl",
             ext_modules=[
                 Extension("_wrapcl",
                                ["src/c_wrapper/wrap_cl.cpp",
                                 "src/c_wrapper/wrap_constants.cpp",
                                 #"src/c_wrapper/wrap_mempool.cpp",
-                                "src/c_wrapper/bitlog.cpp",],
+                                "src/c_wrapper/bitlog.cpp",
+                                ],
                                include_dirs=conf["CL_INC_DIR"] + ["src/c_wrapper/"],
                                library_dirs=conf["CL_LIB_DIR"],
                                libraries=conf["CL_LIBNAME"],
