@@ -110,7 +110,15 @@ KERNEL = """//CL//
 
             barrier(CLK_LOCAL_MEM_FENCE);
 
-            if (lid < ${no_sync_size})
+            <%
+            # NB: There's an exact duplicate of this calculation in the
+            # %while loop below.
+
+            new_size = cur_size // 2
+            assert new_size * 2 == cur_size
+            %>
+
+            if (lid < ${new_size})
             {
                 __local volatile out_type *lvdata = ldata;
                 % while cur_size > 1:
