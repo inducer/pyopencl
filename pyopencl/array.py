@@ -654,8 +654,9 @@ class Array(object):
     @elwise_kernel_runner
     def _axpbyz(out, afac, a, bfac, b, queue=None):
         """Compute ``out = selffac * self + otherfac*other``,
-        where `other` is a vector.."""
+        where *other* is an array."""
         assert out.shape == a.shape
+        assert out.shape == b.shape
 
         return elementwise.get_axpbyz_kernel(
                 out.context, a.dtype, b.dtype, out.dtype)
@@ -663,15 +664,18 @@ class Array(object):
     @staticmethod
     @elwise_kernel_runner
     def _axpbz(out, a, x, b, queue=None):
-        """Compute ``z = a * x + b``, where `b` is a scalar."""
+        """Compute ``z = a * x + b``, where *b* is a scalar."""
         a = np.array(a)
         b = np.array(b)
+        assert out.shape == x.shape
         return elementwise.get_axpbz_kernel(out.context,
                 a.dtype, x.dtype, b.dtype, out.dtype)
 
     @staticmethod
     @elwise_kernel_runner
     def _elwise_multiply(out, a, b, queue=None):
+        assert out.shape == a.shape
+        assert out.shape == b.shape
         return elementwise.get_multiply_kernel(
                 a.context, a.dtype, b.dtype, out.dtype)
 
@@ -679,6 +683,7 @@ class Array(object):
     @elwise_kernel_runner
     def _rdiv_scalar(out, ary, other, queue=None):
         other = np.array(other)
+        assert out.shape == ary.shape
         return elementwise.get_rdivide_elwise_kernel(
                 out.context, ary.dtype, other.dtype, out.dtype)
 
