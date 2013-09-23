@@ -23,6 +23,12 @@ are made through it. Allocations performed from outside of the pool may run
 into spurious out-of-memory conditions due to the pool owning much or all of
 the available memory.
 
+Using :class:`pyopencl.array.Array` instances with a :class:`MemoryPool` is
+not complicated::
+
+    mem_pool = cl_tools.MemoryPool(cl_tools.ImmediateAllocator(queue))
+    a_dev = cl_array.arange(queue, 2000, dtype=np.float32, allocator=mem_pool)
+
 .. class:: PooledBuffer
 
     An object representing a :class:`MemoryPool`-based allocation of
