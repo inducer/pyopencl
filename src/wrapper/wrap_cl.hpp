@@ -850,6 +850,8 @@ namespace pyopencl
     cl_uint num_devices = 0;
     PYOPENCL_CALL_GUARDED(clGetDeviceIDs,
         (m_platform, devtype, 0, 0, &num_devices));
+    if (num_devices == 0)
+      return py::list();
 
     std::vector<cl_device_id> devices(num_devices);
     PYOPENCL_CALL_GUARDED(clGetDeviceIDs,
