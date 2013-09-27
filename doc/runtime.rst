@@ -78,6 +78,12 @@ Platforms, Devices and Contexts
         Return a list of devices matching *device_type*.
         See :class:`device_type` for values of *device_type*.
 
+        .. versionchanged:: 2013.2
+
+            This used to raise an exception if no matching
+            devices were found. Now, it will simply return
+            an empty list.
+
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
 
