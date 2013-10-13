@@ -314,7 +314,7 @@ def _add_functionality():
     # {{{ Context
 
     def context_repr(self):
-        return "<pyopencl.Context at 0x%x on %s>" % (self.obj_ptr,
+        return "<pyopencl.Context at 0x%x on %s>" % (self.int_ptr,
                 ", ".join(repr(dev) for dev in self.devices))
 
     def context_get_cl_version(self):
