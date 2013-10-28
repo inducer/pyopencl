@@ -91,12 +91,15 @@ other software to be turned into the corresponding :mod:`pyopencl` objects.
 User-visible Changes
 ====================
 
-Version 2013.2
+Version 2013.3
 --------------
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
+
+Version 2013.2
+--------------
 
 * Add :meth:`pyopencl.array.Array.map_to_host`.
 * Support *strides* on :func:`pyopencl.enqueue_map_buffer` and
