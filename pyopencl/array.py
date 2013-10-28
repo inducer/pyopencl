@@ -476,7 +476,7 @@ class Array(object):
 
         # }}}
 
-        if dtype == np.object:
+        if dtype == object:
             raise TypeError("object arrays on the compute device are not allowed")
 
         self.queue = queue
