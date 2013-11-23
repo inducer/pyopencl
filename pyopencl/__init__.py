@@ -124,8 +124,9 @@ class Program(object):
             self._prg = None
 
         else:
-            # 3-argument form: context, devices, binaries
-            self._prg = _cl._Program(arg1, arg2, arg3)
+            context, device, binaries = arg1, arg2, arg3
+            self._context = context
+            self._prg = _cl._Program(context, device, binaries)
 
     def _get_prg(self):
         if self._prg is not None:
