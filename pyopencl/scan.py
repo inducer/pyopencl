@@ -125,7 +125,7 @@ SCAN_INTERVALS_SOURCE = SHARED_PREAMBLE + r"""//CL//
 
 KERNEL
 REQD_WG_SIZE(WG_SIZE, 1, 1)
-void ${name_prefix}_scan_intervals(
+void ${kernel_name}(
     ${argument_signature},
     GLOBAL_MEM scan_type *restrict partial_scan_buffer,
     const index_type N,
@@ -784,7 +784,7 @@ _IGNORED_WORDS = set("""
         get_local_size get_local_id cl_khr_fp64 reqd_work_group_size
         get_num_groups barrier get_group_id
 
-        _final_update _scan_intervals _debug_scan
+        _final_update _debug_scan kernel_name
 
         positions all padded integer its previous write based writes 0
         has local worth scan_expr to read cannot not X items False bank
@@ -1249,6 +1249,12 @@ class GenericScanKernel(_GenericScanKernelBase):
         wg_size = _round_down_to_power_of_2(
                 min(max_wg_size, 256))
 
+        kernel_name = self.code_variables["name_prefix"]+"_scan_intervals"
+        if is_first_level:
+            kernel_name += "_lev1"
+        else:
+            kernel_name += "_lev2"
+
         scan_tpl = _make_template(SCAN_INTERVALS_SOURCE)
         scan_src = str(scan_tpl.render(
             wg_size=wg_size,
@@ -1260,13 +1266,12 @@ class GenericScanKernel(_GenericScanKernelBase):
             is_first_level=is_first_level,
             store_segment_start_flags=store_segment_start_flags,
             use_bank_conflict_avoidance=use_bank_conflict_avoidance,
+            kernel_name=kernel_name,
             **self.code_variables))
 
         prg = cl.Program(self.context, scan_src).build(self.options)
 
-        knl = getattr(
-                prg,
-                self.code_variables["name_prefix"]+"_scan_intervals")
+        knl = getattr(prg, kernel_name)
 
         scalar_arg_dtypes.extend(
                 (None, self.index_dtype, self. index_dtype))

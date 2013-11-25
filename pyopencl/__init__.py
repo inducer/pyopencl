@@ -63,7 +63,45 @@ def compiler_output(text):
                 "to see more.", CompilerWarning)
 
 
+# {{{ find pyopencl shipped source code
+
+def _find_pyopencl_include_path():
+    from pkg_resources import Requirement, resource_filename
+    return resource_filename(Requirement.parse("pyopencl"), "pyopencl/cl")
+
+# }}}
+
+
 # {{{ Program (including caching support)
+
+_DEFAULT_BUILD_OPTIONS = []
+_DEFAULT_INCLUDE_OPTIONS = ["-I", _find_pyopencl_include_path()]
+
+# map of platform.name to build options list
+_PLAT_BUILD_OPTIONS = {}
+
+
+def enable_debugging(platform_or_context):
+    """Enables debugging for all code subsequently compiled by
+    PyOpenCL on the passed *platform*. Alternatively, a context
+    may be passed.
+    """
+
+    if isinstance(platform_or_context, Context):
+        platform = platform_or_context.devices[0].platform
+    else:
+        platform = platform_or_context
+
+    if "AMD Accelerated" in platform.name:
+        _PLAT_BUILD_OPTIONS.setdefault(platform.name, []).extend(
+                ["-g", "-O0"])
+        import os
+        os.environ["CPU_MAX_COMPUTE_UNITS"] = "1"
+    else:
+        from warnings import warn
+        warn("do not know how to enable debugging on '%s'"
+                % platform.name)
+
 
 class Program(object):
     def __init__(self, arg1, arg2=None, arg3=None):
@@ -88,8 +126,9 @@ class Program(object):
             self._prg = None
 
         else:
-            # 3-argument form: context, devices, binaries
-            self._prg = _cl._Program(arg1, arg2, arg3)
+            context, device, binaries = arg1, arg2, arg3
+            self._context = context
+            self._prg = _cl._Program(context, device, binaries)
 
     def _get_prg(self):
         if self._prg is not None:
@@ -140,7 +179,11 @@ class Program(object):
         if isinstance(options, str):
             options = [options]
 
-        options = options + ["-I", _find_pyopencl_include_path()]
+        options = (options
+                + _DEFAULT_BUILD_OPTIONS
+                + _DEFAULT_INCLUDE_OPTIONS
+                + _PLAT_BUILD_OPTIONS.get(
+                    self._context.devices[0].platform.name, []))
 
         import os
         forced_options = os.environ.get("PYOPENCL_BUILD_OPTIONS")
@@ -658,15 +701,6 @@ def _add_functionality():
     #     GLTexture.gl_object = property(gl_object_get_gl_object)
 
 _add_functionality()
-
-
-# {{{ find pyopencl shipped source code
-
-def _find_pyopencl_include_path():
-    from pkg_resources import Requirement, resource_filename
-    return resource_filename(Requirement.parse("pyopencl"), "pyopencl/cl")
-
-# }}}
 
 
 # {{{ convenience
