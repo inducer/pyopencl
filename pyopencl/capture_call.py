@@ -119,6 +119,8 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
             cg("knl._arg_type_chars = %s" % repr(kernel._arg_type_chars))
         cg("knl(queue, %s, %s," % (repr(g_size), repr(l_size)))
         cg("    %s)" % ", ".join(kernel_args))
+        cg("")
+        cg("queue.finish()")
 
     # }}}
 
