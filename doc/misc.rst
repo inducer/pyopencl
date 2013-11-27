@@ -8,7 +8,7 @@ Acknowledgments
 ===============
 
 Too many to list. Please see the
-`commit log <https://github.com/inducer/pyopencl/commits/master>`_
+`commit log <https://github.com/pyopencl/pyopencl/commits/master>`_
 for detailed acknowledgments.
 
 Tips
@@ -19,7 +19,7 @@ Syntax highlighting
 
 You can obtain Vim syntax highlighting for OpenCL C inlined in Python by
 checking `this file
-<https://github.com/inducer/pyopencl/blob/master/contrib/pyopencl.vim>`_.
+<https://github.com/pyopencl/pyopencl/blob/master/contrib/pyopencl.vim>`_.
 
 Note that the triple-quoted strings containing the source must start with
 `"""//CL// ..."""`.
@@ -96,7 +96,7 @@ Version 2013.3
 .. note::
 
     This version is currently under development. You can get snapshots from
-    PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
+    PyOpenCL's `git repository <https://github.com/pyopencl/pyopencl>`_
 
 Version 2013.2
 --------------
@@ -116,7 +116,7 @@ Version 2013.1
 * Add :func:`pyopencl.tools.match_dtype_to_c_struct`,
   for better integration of the CL and :mod:`numpy` type systems.
 * More/improved Bessel functions.
-  See `the source <https://github.com/inducer/pyopencl/tree/master/src/cl>`_.
+  See `the source <https://github.com/pyopencl/pyopencl/tree/master/src/cl>`_.
 * Add :envvar:`PYOPENCL_NO_CACHE` environment variable to aid debugging.
   (e.g. with AMD's CPU implementation, see
   `their programming guide <http://developer.amd.com/sdks/AMDAPPSDK/assets/AMD_Accelerated_Parallel_Processing_OpenCL_Programming_Guide.pdf>`_)
