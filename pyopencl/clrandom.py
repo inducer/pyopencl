@@ -35,7 +35,7 @@ available in any piece of code compiled through PyOpenCL by::
     #include <pyopencl-ranluxcl.cl>
 
 See the `source
-<https://github.com/inducer/pyopencl/blob/master/src/cl/pyopencl-ranluxcl.cl>`_
+<https://github.com/pyopencl/pyopencl/blob/master/src/cl/pyopencl-ranluxcl.cl>`_
 for some documentation if you're planning on using RANLUXCL directly.
 
 The RANLUX generator is described in the following two articles. If you use the

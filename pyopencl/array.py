@@ -416,15 +416,21 @@ class Array(object):
                 raise TypeError("may not pass a context and a queue "
                         "(just pass the queue)")
             if allocator is not None:
-                raise TypeError("may not pass a context and an allocator "
-                        "(just pass the queue)")
+                # "is" would be wrong because two Python objects are allowed
+                # to hold handles to the same context.
+
+                # FIXME It would be nice to check this. But it would require
+                # changing the allocator interface. Trust the user for now.
+
+                #assert allocator.context == context
+                pass
 
         else:
             # cqa is assumed to be an allocator
             warn("Passing an allocator for the 'cqa' parameter is deprecated. "
                     "This usage will be continue to be accepted throughout "
                     "the 2013.[0-6] versions of PyOpenCL.",
-                    DeprecationWarning, 2)
+                    DeprecationWarning, stacklevel=2)
             if allocator is not None:
                 raise TypeError("can't specify allocator in 'cqa' and "
                         "'allocator' arguments")
@@ -546,14 +552,10 @@ class Array(object):
             return Array(queue, shape, dtype, allocator=self.allocator,
                     strides=strides, data=data, offset=offset,
                     events=self.events)
-        elif self.allocator is not None:
-            return Array(self.allocator, shape, dtype, queue=queue,
-                    strides=strides, data=data, offset=offset,
-                    events=self.events)
         else:
-            return Array(self.context, shape, dtype,
+            return Array(self.context, shape, dtype, queue=queue,
                     strides=strides, data=data, offset=offset,
-                    events=self.events)
+                    events=self.events, allocator=self.allocator)
 
     def with_queue(self, queue):
         """Return a copy of *self* with the default queue set to *queue*.
