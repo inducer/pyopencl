@@ -86,7 +86,7 @@ functions defined on them such as `cfloat_mul(a, b)` or `cdouble_log(z)`.
 Elementwise kernels automatically include the header if your kernel has
 complex input or output.
 See the `source file
-<https://github.com/inducer/pyopencl/blob/master/src/cl/pyopencl-complex.h>`_
+<https://github.com/pyopencl/pyopencl/blob/master/src/cl/pyopencl-complex.h>`_
 for a precise list of what's available.
 
 If you need double precision support, please::
