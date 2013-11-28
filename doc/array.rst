@@ -99,9 +99,11 @@ autodetected.
 Under the hood, the complex types are simply `float2` and `double2`.
 
 .. warning::
-    Note that addition (real + complex) and multiplication (complex*complex)
-    are defined for e.g. `float2`, but yield wrong results, so that you need to
-    use the corresponding functions.
+    Note that, at the OpenCL source code level, addition (real + complex) and
+    multiplication (complex*complex) are defined for e.g. `float2`, but yield
+    wrong results, so that you need to use the corresponding functions.
+    (The :mod:`Array` type implements complex arithmetic as you remember it,
+    without any idiotic quirks like this.)
 
 .. versionadded:: 2012.1
 
