@@ -119,8 +119,9 @@ Prefix Sums ("scan")
 .. module:: pyopencl.scan
 
 .. |scan_extra_args| replace:: a list of tuples *(name, value)* specifying
-    extra arguments to pass to the scan procedure. *value* must be :mod:`numpy`
-    sized type.
+    extra arguments to pass to the scan procedure. For version 2013.1,
+    *value* must be a of a :mod:`numpy` sized scalar type. As of version 2013.2,
+    *value* may also be a :class:`pyopencl.array.Array`.
 .. |preamble| replace:: A snippet of C that is inserted into the compiled kernel
     before the actual kernel function. May be used for, e.g. type definitions
     or include statements.
@@ -231,7 +232,7 @@ Simple / Legacy Interface
     an associative binary operation. *neutral* is the neutral element
     of *scan_expr*, obeying *scan_expr(a, neutral) == a*.
 
-    *dtype* specifies the type of the arrays being operated on. 
+    *dtype* specifies the type of the arrays being operated on.
     *name_prefix* is used for kernel names to ensure recognizability
     in profiles and logs. *options* is a list of compiler options to use
     when building. *preamble* specifies a string of code that is

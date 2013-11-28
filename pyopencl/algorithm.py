@@ -49,6 +49,24 @@ _copy_if_template = ScanTemplate(
         template_processor="printf")
 
 
+def extract_extra_args_types_values(extra_args):
+    from pyopencl.tools import VectorArg, ScalarArg
+
+    extra_args_types = []
+    extra_args_values = []
+    for name, val in extra_args:
+        if isinstance(val, cl.array.Array):
+            extra_args_types.append(VectorArg(val.dtype, name, with_offset=False))
+            extra_args_values.append(val)
+        elif isinstance(val, np.generic):
+            extra_args_types.append(ScalarArg(val.dtype, name))
+            extra_args_values.append(val)
+        else:
+            raise RuntimeError("argument '%d' not understood" % name)
+
+    return tuple(extra_args_types), extra_args_values
+
+
 def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
     """Copy the elements of *ary* satisfying *predicate* to an output array.
 
@@ -70,8 +88,7 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
     else:
         scan_dtype = np.int32
 
-    extra_args_types = tuple((val.dtype, name) for name, val in extra_args)
-    extra_args_values = tuple(val for name, val in extra_args)
+    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
 
     knl = _copy_if_template.build(ary.context,
             type_aliases=(("scan_t", scan_dtype), ("item_t", ary.dtype)),
@@ -153,8 +170,7 @@ def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
     else:
         scan_dtype = np.uint32
 
-    extra_args_types = tuple((val.dtype, name) for name, val in extra_args)
-    extra_args_values = tuple(val for name, val in extra_args)
+    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
 
     knl = _partition_template.build(
             ary.context,
@@ -222,8 +238,7 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
     else:
         scan_dtype = np.uint32
 
-    extra_args_types = tuple((val.dtype, name) for name, val in extra_args)
-    extra_args_values = tuple(val for name, val in extra_args)
+    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
 
     knl = _unique_template.build(
             ary.context,
