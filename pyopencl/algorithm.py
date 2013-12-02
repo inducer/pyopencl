@@ -79,7 +79,9 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
     :returns: a tuple *(out, count, event)* where *out* is the output array, *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied *predicate*, and *event* is a
-        :class:`pyopencl.Event` for dependency management.
+        :class:`pyopencl.Event` for dependency management. *out* is allocated
+        to the same length as *ary*, but only the first *count* entries carry
+        meaning.
 
     .. versionadded:: 2013.1
     """
@@ -808,7 +810,7 @@ class ListOfListsBuilder:
     def do_not_vectorize(self):
         from pytools import any
         return (self.complex_kernel
-                and any(dev.type == cl.device_type.CPU
+                and any(dev.type & cl.device_type.CPU
                     for dev in self.context.devices))
 
     @memoize_method
@@ -975,6 +977,9 @@ class ListOfListsBuilder:
         result = {}
         count_list_args = []
 
+        if wait_for is None:
+            wait_for = []
+
         count_kernel = self.get_count_kernel(index_dtype)
         write_kernel = self.get_write_kernel(index_dtype)
         scan_kernel = self.get_scan_kernel(index_dtype)
@@ -987,6 +992,8 @@ class ListOfListsBuilder:
 
             counts = cl.array.empty(queue,
                     (n_objects + 1), index_dtype, allocator=allocator)
+            counts[-1] = 0
+            wait_for = wait_for + counts.events
 
             # The scan will turn the "counts" array into the "starts" array
             # in-place.
@@ -1027,11 +1034,7 @@ class ListOfListsBuilder:
             scan_events.append(evt)
 
             # retrieve count
-            count = np.array(1, index_dtype)
-            cl.enqueue_copy(queue, count, starts_ary.data,
-                    device_offset=index_dtype.itemsize*n_objects)
-
-            info_record.count = int(count)
+            info_record.count = int(starts_ary[-1].get())
 
         # }}}
 
