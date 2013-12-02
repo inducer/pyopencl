@@ -1026,12 +1026,11 @@ class ListOfListsBuilder:
 
             info_record = result[name]
             starts_ary = info_record.starts
-            evt = scan_kernel(starts_ary, wait_for=[count_event])
+            evt = scan_kernel(starts_ary, wait_for=[count_event],
+                    size=n_objects)
 
-            # set first entry to zero
-            evt = cl.enqueue_copy(queue, starts_ary.data, index_dtype.type(0),
-                    wait_for=[evt])
-            scan_events.append(evt)
+            starts_ary.setitem(0, 0, queue=queue, wait_for=[evt])
+            scan_events.extend(starts_ary.events)
 
             # retrieve count
             info_record.count = int(starts_ary[-1].get())
