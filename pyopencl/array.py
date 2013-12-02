@@ -1802,7 +1802,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
                     queue.device))
 
         from pytools import flatten
-        knl(queue, gs, ls,
+        evt = knl(queue, gs, ls,
                 *(
                     list(flatten(
                         (o.base_data, o.offset)
@@ -1812,6 +1812,11 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
                         (i.base_data, i.offset)
                         for i in arrays[chunk_slice]))
                     + [dest_indices.size]))
+
+        # FIXME should wait on incoming events
+
+        for o in out[chunk_slice]:
+            o.events.append(evt)
 
     return out
 
