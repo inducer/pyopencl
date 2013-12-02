@@ -1755,7 +1755,8 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
     return out
 
 
-def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
+def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
+        wait_for=None):
     if not len(arrays):
         return []
 
@@ -1811,7 +1812,8 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
                     + list(flatten(
                         (i.base_data, i.offset)
                         for i in arrays[chunk_slice]))
-                    + [dest_indices.size]))
+                    + [dest_indices.size]),
+                **dict(wait_for=wait_for))
 
         # FIXME should wait on incoming events
 
