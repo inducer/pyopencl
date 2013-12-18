@@ -33,13 +33,11 @@ from pymbolic.mapper.c_code import CCodeMapper as CCodeMapperBase
 from warnings import warn
 
 import pytools.lex
-import re
-
-
 
 
 class TranslatorWarning(UserWarning):
     pass
+
 
 class TranslationError(RuntimeError):
     pass
@@ -77,9 +75,7 @@ def dtype_to_ctype(dtype):
     elif dtype == np.complex128:
         return "cdouble_t"
     else:
-        raise ValueError, "unable to map dtype '%s'" % dtype
-
-
+        raise ValueError("unable to map dtype '%s'" % dtype)
 
 
 class POD(cgen.POD):
@@ -87,8 +83,6 @@ class POD(cgen.POD):
         return [dtype_to_ctype(self.dtype)], self.name
 
 # }}}
-
-
 
 
 # {{{ expression parser
@@ -104,6 +98,7 @@ _not = intern("not")
 _and = intern("and")
 _or = intern("or")
 
+
 class TypedLiteral(pymbolic.primitives.Leaf):
     def __init__(self, value, dtype):
         self.value = value
@@ -114,21 +109,22 @@ class TypedLiteral(pymbolic.primitives.Leaf):
 
     mapper_method = intern("map_literal")
 
+
 class FortranExpressionParser(ExpressionParserBase):
     # FIXME double/single prec literals
 
     lex_table = [
-            (_less_than, pytools.lex.RE(r"\.lt\.", re.I)),
-            (_greater_than, pytools.lex.RE(r"\.gt\.", re.I)),
-            (_less_equal, pytools.lex.RE(r"\.le\.", re.I)),
-            (_greater_equal, pytools.lex.RE(r"\.ge\.", re.I)),
-            (_equal, pytools.lex.RE(r"\.eq\.", re.I)),
-            (_not_equal, pytools.lex.RE(r"\.ne\.", re.I)),
+        (_less_than, pytools.lex.RE(r"\.lt\.", re.I)),
+        (_greater_than, pytools.lex.RE(r"\.gt\.", re.I)),
+        (_less_equal, pytools.lex.RE(r"\.le\.", re.I)),
+        (_greater_equal, pytools.lex.RE(r"\.ge\.", re.I)),
+        (_equal, pytools.lex.RE(r"\.eq\.", re.I)),
+        (_not_equal, pytools.lex.RE(r"\.ne\.", re.I)),
 
-            (_not, pytools.lex.RE(r"\.not\.", re.I)),
-            (_and, pytools.lex.RE(r"\.and\.", re.I)),
-            (_or, pytools.lex.RE(r"\.or\.", re.I)),
-            ] + ExpressionParserBase.lex_table
+        (_not, pytools.lex.RE(r"\.not\.", re.I)),
+        (_and, pytools.lex.RE(r"\.and\.", re.I)),
+        (_or, pytools.lex.RE(r"\.or\.", re.I)),
+        ] + ExpressionParserBase.lex_table
 
     def __init__(self, tree_walker):
         self.tree_walker = tree_walker
@@ -140,7 +136,7 @@ class FortranExpressionParser(ExpressionParserBase):
 
         from pymbolic.primitives import Subscript, Call, Variable
         from pymbolic.parser import (
-                _identifier, _openpar, _closepar, _float)
+            _identifier, _openpar, _closepar, _float)
 
         next_tag = pstate.next_tag()
         if next_tag is _float:
@@ -266,6 +262,7 @@ class FortranExpressionParser(ExpressionParserBase):
 
 # }}}
 
+
 # {{{ expression generator
 
 class TypeInferenceMapper(CombineMapper):
@@ -300,8 +297,6 @@ class TypeInferenceMapper(CombineMapper):
 
         else:
             return CombineMapper.map_call(self, expr)
-
-
 
 
 class ComplexCCodeMapper(CCodeMapperBase):
@@ -434,8 +429,6 @@ class ComplexCCodeMapper(CCodeMapperBase):
                             self.rec(expr.exponent, PREC_NONE))
 
         return CCodeMapperBase.map_power(self, expr, enclosing_prec)
-
-
 
 
 class CCodeMapper(ComplexCCodeMapper):
@@ -596,8 +589,6 @@ class Scope(object):
             return name
 
 
-
-
 class FTreeWalkerBase(object):
     def __init__(self):
         self.scope_stack = []
@@ -659,7 +650,6 @@ class FTreeWalkerBase(object):
         return self.expr_parser(expr_str)
 
     # }}}
-
 
 
 class ArgumentAnalayzer(FTreeWalkerBase):
@@ -768,7 +758,6 @@ class ArgumentAnalayzer(FTreeWalkerBase):
 
         lhs = self.parse_expr(node.variable)
 
-
         from pymbolic.primitives import Subscript, Call
         if isinstance(lhs, Subscript):
             lhs_name = lhs.aggregate.name
@@ -869,9 +858,6 @@ class ArgumentAnalayzer(FTreeWalkerBase):
     # }}}
 
 
-
-
-
 # {{{ translator
 
 class F2CLTranslator(FTreeWalkerBase):
@@ -891,7 +877,6 @@ class F2CLTranslator(FTreeWalkerBase):
     def get_declarator(self, name):
         scope = self.scope_stack[-1]
         return POD(scope.get_type(name), name)
-
 
     def get_declarations(self):
         scope = self.scope_stack[-1]
@@ -1003,8 +988,7 @@ class F2CLTranslator(FTreeWalkerBase):
 
             return decl
 
-
-        result =  cgen.FunctionBody(
+        result = cgen.FunctionBody(
                 cgen.FunctionDeclaration(
                     cgen.Value("void", node.name),
                     [get_arg_decl(i, arg) for i, arg in enumerate(node.args)]
@@ -1196,7 +1180,7 @@ class F2CLTranslator(FTreeWalkerBase):
 
         return cgen.Statement("%s(%s)" % (
             node.designator,
-            ", ".join(transform_arg(i, arg_str) 
+            ", ".join(transform_arg(i, arg_str)
                 for i, arg_str in enumerate(node.items))))
 
     def map_Return(self, node):
@@ -1278,7 +1262,8 @@ class F2CLTranslator(FTreeWalkerBase):
 
             if not isinstance(step, int):
                 print type(step)
-                raise TranslationError("non-constant steps not yet supported: %s" % step)
+                raise TranslationError(
+                        "non-constant steps not yet supported: %s" % step)
 
             if step < 0:
                 comp_op = ">="
@@ -1327,10 +1312,6 @@ class F2CLTranslator(FTreeWalkerBase):
 # }}}
 
 
-
-
-
-
 def f2cl(source, free_form=False, strict=True,
         addr_space_hints={}, force_casts={},
         do_arg_analysis=True,
@@ -1369,13 +1350,9 @@ def f2cl(source, free_form=False, strict=True,
     return str_mod
 
 
-
-
 def f2cl_files(source_file, target_file, **kwargs):
     mod = f2cl(open(source_file).read(), **kwargs)
     open(target_file, "w").write(mod)
-
-
 
 
 if __name__ == "__main__":
