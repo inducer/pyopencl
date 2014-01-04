@@ -39,6 +39,13 @@ if have_cl():
             as pytest_generate_tests
     from pyopencl.characterize import has_double_support
 
+try:
+    import faulthandler
+except ImportError:
+    pass
+else:
+    faulthandler.enable()
+
 
 sizes = [10, 128, 1<<10, 1<<11, 1<<13]
 
