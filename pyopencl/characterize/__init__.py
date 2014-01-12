@@ -261,8 +261,11 @@ def get_fast_inaccurate_build_options(dev):
     """Return a list of flags valid on device *dev* that enable fast, but
     potentially inaccurate floating point math.
     """
-    return ["-cl-mad-enable", "-cl-fast-relaxed-math",
-        "-cl-no-signed-zeros", "-cl-strict-aliasing"]
+    result = ["-cl-mad-enable", "-cl-fast-relaxed-math",
+        "-cl-no-signed-zeros", ]
+    if dev.vendor.startswith("Advanced Micro") or dev.vendor.startswith("NVIDIA"):
+        result.append("-cl-strict-aliasing")
+    return result
 
 
 def get_simd_group_size(dev, type_size):
