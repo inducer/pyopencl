@@ -1725,7 +1725,7 @@ namespace pyopencl
         PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
             (data(), CL_MEM_FLAGS, sizeof(my_flags), &my_flags, 0));
 
-        flags &= ~CL_MEM_COPY_HOST_PTR;
+        my_flags &= ~CL_MEM_COPY_HOST_PTR;
 
         if (end <= start)
           throw pyopencl::error("Buffer.__getitem__", CL_INVALID_VALUE,
