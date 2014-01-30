@@ -624,7 +624,7 @@ class FTreeWalkerBase(object):
 
             assert 1 <= len(start_end) <= 2
 
-            return (self.parse_expr(s) for s in start_end)
+            return tuple(self.parse_expr(s) for s in start_end)
 
         for decl in dim_decls:
             entity_match = self.ENTITY_RE.match(decl)
