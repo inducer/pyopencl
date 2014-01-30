@@ -101,7 +101,6 @@ else:
     # documentation.
     html_theme_options = {
             "navbar_fixed_top": "true",
-            "navbar_class": "navbar navbar-inverse",
             "navbar_site_name": "Contents",
             'bootstrap_version': '3',
             'source_link_position': 'footer',
@@ -155,7 +154,7 @@ html_copy_source = False
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'PyCudadoc'
+htmlhelp_basename = 'PyOpenClDoc'
 
 
 # Options for LaTeX output
