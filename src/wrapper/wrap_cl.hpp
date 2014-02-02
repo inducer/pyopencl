@@ -1756,7 +1756,9 @@ namespace pyopencl
     if (py_hostbuf.ptr() != Py_None)
     {
       PYOPENCL_BUFFER_SIZE_T len;
-      if (flags & CL_MEM_USE_HOST_PTR)
+      if ((flags & CL_MEM_USE_HOST_PTR)
+          && ((flags & CL_MEM_READ_WRITE)
+            || (flags & CL_MEM_WRITE_ONLY)))
       {
         if (PyObject_AsWriteBuffer(py_hostbuf.ptr(), &buf, &len))
           throw py::error_already_set();
@@ -2236,7 +2238,9 @@ namespace pyopencl
 
     if (buffer.ptr() != Py_None)
     {
-      if (flags & CL_MEM_USE_HOST_PTR)
+      if ((flags & CL_MEM_USE_HOST_PTR)
+          && ((flags & CL_MEM_READ_WRITE)
+            || (flags & CL_MEM_WRITE_ONLY)))
       {
         if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
           throw py::error_already_set();
