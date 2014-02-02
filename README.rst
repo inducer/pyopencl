@@ -32,13 +32,13 @@ To use PyOpenCL, you just need `numpy <http://numpy.org>`_ and an OpenCL
 implementation.
 (See this `howto <http://wiki.tiker.net/OpenCLHowTo>`_ for how to get one.)
 
-Web resources for PyOpenCL:
+Places on the web related to PyOpenCL:
 
-* Python package index (download releases)
+* `Python package index <http://pypi.python.org/pypi/pyopencl>`_ (download releases)
 
   .. image:: https://badge.fury.io/py/pyopencl.png
       :target: http://pypi.python.org/pypi/pyopencl
 * `C. Gohlke's Windows binaries <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`_ (download Windows binaries)
 * `Github <http://github.com/pyopencl/pyopencl>`_ (get latest source code, file bugs)
-* `Documetnation <http://documen.tician.de>`_ (get latest source code, file bugs)
-* `Wiki <http://wiki.tiker.net/PyOpenCL>`_ (get latest source code, file bugs)
+* `Documentation <http://documen.tician.de>`_ (read how things work)
+* `Wiki <http://wiki.tiker.net/PyOpenCL>`_ (read installation tips, get examples, read FAQ)

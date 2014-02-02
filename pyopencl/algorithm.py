@@ -49,6 +49,24 @@ _copy_if_template = ScanTemplate(
         template_processor="printf")
 
 
+def extract_extra_args_types_values(extra_args):
+    from pyopencl.tools import VectorArg, ScalarArg
+
+    extra_args_types = []
+    extra_args_values = []
+    for name, val in extra_args:
+        if isinstance(val, cl.array.Array):
+            extra_args_types.append(VectorArg(val.dtype, name, with_offset=False))
+            extra_args_values.append(val)
+        elif isinstance(val, np.generic):
+            extra_args_types.append(ScalarArg(val.dtype, name))
+            extra_args_values.append(val)
+        else:
+            raise RuntimeError("argument '%d' not understood" % name)
+
+    return tuple(extra_args_types), extra_args_values
+
+
 def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
     """Copy the elements of *ary* satisfying *predicate* to an output array.
 
@@ -61,7 +79,9 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
     :returns: a tuple *(out, count, event)* where *out* is the output array, *count*
         is an on-device scalar (fetch to host with `count.get()`) indicating
         how many elements satisfied *predicate*, and *event* is a
-        :class:`pyopencl.Event` for dependency management.
+        :class:`pyopencl.Event` for dependency management. *out* is allocated
+        to the same length as *ary*, but only the first *count* entries carry
+        meaning.
 
     .. versionadded:: 2013.1
     """
@@ -70,8 +90,7 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
     else:
         scan_dtype = np.int32
 
-    extra_args_types = tuple((val.dtype, name) for name, val in extra_args)
-    extra_args_values = tuple(val for name, val in extra_args)
+    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
 
     knl = _copy_if_template.build(ary.context,
             type_aliases=(("scan_t", scan_dtype), ("item_t", ary.dtype)),
@@ -153,8 +172,7 @@ def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
     else:
         scan_dtype = np.uint32
 
-    extra_args_types = tuple((val.dtype, name) for name, val in extra_args)
-    extra_args_values = tuple(val for name, val in extra_args)
+    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
 
     knl = _partition_template.build(
             ary.context,
@@ -222,8 +240,7 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
     else:
         scan_dtype = np.uint32
 
-    extra_args_types = tuple((val.dtype, name) for name, val in extra_args)
-    extra_args_values = tuple(val for name, val in extra_args)
+    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
 
     knl = _unique_template.build(
             ary.context,
@@ -793,7 +810,7 @@ class ListOfListsBuilder:
     def do_not_vectorize(self):
         from pytools import any
         return (self.complex_kernel
-                and any(dev.type == cl.device_type.CPU
+                and any(dev.type & cl.device_type.CPU
                     for dev in self.context.devices))
 
     @memoize_method
@@ -960,6 +977,9 @@ class ListOfListsBuilder:
         result = {}
         count_list_args = []
 
+        if wait_for is None:
+            wait_for = []
+
         count_kernel = self.get_count_kernel(index_dtype)
         write_kernel = self.get_write_kernel(index_dtype)
         scan_kernel = self.get_scan_kernel(index_dtype)
@@ -972,6 +992,8 @@ class ListOfListsBuilder:
 
             counts = cl.array.empty(queue,
                     (n_objects + 1), index_dtype, allocator=allocator)
+            counts[-1] = 0
+            wait_for = wait_for + counts.events
 
             # The scan will turn the "counts" array into the "starts" array
             # in-place.
@@ -1004,19 +1026,14 @@ class ListOfListsBuilder:
 
             info_record = result[name]
             starts_ary = info_record.starts
-            evt = scan_kernel(starts_ary, wait_for=[count_event])
+            evt = scan_kernel(starts_ary, wait_for=[count_event],
+                    size=n_objects)
 
-            # set first entry to zero
-            evt = cl.enqueue_copy(queue, starts_ary.data, index_dtype.type(0),
-                    wait_for=[evt])
-            scan_events.append(evt)
+            starts_ary.setitem(0, 0, queue=queue, wait_for=[evt])
+            scan_events.extend(starts_ary.events)
 
             # retrieve count
-            count = np.array(1, index_dtype)
-            cl.enqueue_copy(queue, count, starts_ary.data,
-                    device_offset=index_dtype.itemsize*n_objects)
-
-            info_record.count = int(count)
+            info_record.count = int(starts_ary[-1].get())
 
         # }}}
 

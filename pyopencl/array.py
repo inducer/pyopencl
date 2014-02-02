@@ -1154,6 +1154,12 @@ class Array(object):
 
     # }}}
 
+    def finish(self):
+        # undoc
+        if self.events:
+            cl.wait_for_events(self.events)
+            del self.events[:]
+
     # {{{ views
 
     def reshape(self, *shape, **kwargs):
@@ -1213,12 +1219,6 @@ class Array(object):
                 strides=new_strides)
 
     # }}}
-
-    def finish(self):
-        # undoc
-        if self.events:
-            cl.wait_for_events(self.events)
-            del self.events[:]
 
     def map_to_host(self, queue=None, flags=None, is_blocking=True, wait_for=None):
         """If *is_blocking*, return a :class:`numpy.ndarray` corresponding to the
@@ -1344,11 +1344,15 @@ class Array(object):
                 shape=tuple(new_shape),
                 strides=tuple(new_strides))
 
-    def setitem(self, subscript, value, queue=None):
+    def setitem(self, subscript, value, queue=None, wait_for=None):
         """Like :meth:`__setitem__`, but with the ability to specify
-        a *queue* for execution.
+        a *queue* and *wait_for*.
 
         .. versionadded:: 2013.1
+
+        .. versionchanged:: 2013.2
+
+            Added *wait_for*.
         """
 
         if isinstance(subscript, Array):
@@ -1362,7 +1366,8 @@ class Array(object):
                 raise NotImplementedError(
                         "fancy indexing into a multi-d array is supported")
 
-            multi_put([value], subscript, out=[self], queue=self.queue)
+            multi_put([value], subscript, out=[self], queue=self.queue,
+                    wait_for=wait_for)
             return
 
         queue = queue or self.queue or value.queue
@@ -1373,7 +1378,7 @@ class Array(object):
             if subarray.shape == value.shape and subarray.strides == value.strides:
                 self.events.append(
                         cl.enqueue_copy(queue, subarray.base_data,
-                            value, device_offset=subarray.offset))
+                            value, device_offset=subarray.offset, wait_for=wait_for))
                 return
             else:
                 value = to_device(queue, value, self.allocator)
@@ -1389,11 +1394,11 @@ class Array(object):
                 raise ValueError("cannot assign between arrays of "
                         "differing strides")
 
-            self._copy(subarray, value, queue=queue)
+            self._copy(subarray, value, queue=queue, wait_for=wait_for)
 
         else:
             # Let's assume it's a scalar
-            subarray.fill(value, queue=queue)
+            subarray.fill(value, queue=queue, wait_for=wait_for)
 
     def __setitem__(self, subscript, value):
         """Set the slice of *self* identified *subscript* to *value*.
@@ -1750,7 +1755,8 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
     return out
 
 
-def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
+def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
+        wait_for=None):
     if not len(arrays):
         return []
 
@@ -1797,7 +1803,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
                     queue.device))
 
         from pytools import flatten
-        knl(queue, gs, ls,
+        evt = knl(queue, gs, ls,
                 *(
                     list(flatten(
                         (o.base_data, o.offset)
@@ -1806,7 +1812,13 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None):
                     + list(flatten(
                         (i.base_data, i.offset)
                         for i in arrays[chunk_slice]))
-                    + [dest_indices.size]))
+                    + [dest_indices.size]),
+                **dict(wait_for=wait_for))
+
+        # FIXME should wait on incoming events
+
+        for o in out[chunk_slice]:
+            o.events.append(evt)
 
     return out
 

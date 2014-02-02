@@ -24,9 +24,10 @@ THE SOFTWARE.
 import math
 import numpy as np
 
+
 def have_cl():
     try:
-        import pyopencl
+        import pyopencl  # noqa
         return True
     except:
         return False
@@ -35,12 +36,20 @@ if have_cl():
     import pyopencl.array as cl_array
     import pyopencl as cl
     import pyopencl.clmath as clmath
-    from pyopencl.tools import pytest_generate_tests_for_pyopencl \
-            as pytest_generate_tests
+    from pyopencl.tools import (  # noqa
+            pytest_generate_tests_for_pyopencl
+            as pytest_generate_tests)
     from pyopencl.characterize import has_double_support
 
+try:
+    import faulthandler
+except ImportError:
+    pass
+else:
+    faulthandler.enable()
 
-sizes = [10, 128, 1<<10, 1<<11, 1<<13]
+
+sizes = [10, 128, 1 << 10, 1 << 11, 1 << 13]
 
 
 numpy_func_names = {
@@ -95,8 +104,6 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False
     return test
 
 
-
-
 if have_cl():
     test_ceil = make_unary_function_test("ceil", (-10, 10))
     test_floor = make_unary_function_test("ceil", (-10, 10))
@@ -119,8 +126,6 @@ if have_cl():
     test_tanh = make_unary_function_test("tanh", (-3, 3), 2e-6, use_complex=True)
 
 
-
-
 def test_fmod(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -137,6 +142,7 @@ def test_fmod(ctx_factory):
         for i in range(s):
             assert math.fmod(a[i], a2[i]) == b[i]
 
+
 def test_ldexp(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -144,7 +150,7 @@ def test_ldexp(ctx_factory):
     for s in sizes:
         a = cl_array.arange(queue, s, dtype=np.float32)
         a2 = cl_array.arange(queue, s, dtype=np.float32)*1e-3
-        b = clmath.ldexp(a,a2)
+        b = clmath.ldexp(a, a2)
 
         a = a.get()
         a2 = a2.get()
@@ -152,6 +158,7 @@ def test_ldexp(ctx_factory):
 
         for i in range(s):
             assert math.ldexp(a[i], int(a2[i])) == b[i]
+
 
 def test_modf(ctx_factory):
     context = ctx_factory()
@@ -171,6 +178,7 @@ def test_modf(ctx_factory):
             assert intpart_true == intpart[i]
             assert abs(fracpart_true - fracpart[i]) < 1e-4
 
+
 def test_frexp(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -189,13 +197,13 @@ def test_frexp(ctx_factory):
             assert sig_true == significands[i]
             assert ex_true == exponents[i]
 
+
 def test_bessel(ctx_factory):
     try:
         import scipy.special as spec
     except ImportError:
         from pytest import skip
         skip("scipy not present--cannot test Bessel function")
-
 
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
@@ -275,11 +283,9 @@ def test_bessel(ctx_factory):
 
                 pt.loglog(a, np.abs(cl_bessel-scipy_bessel), label="vs scipy")
                 if use_pyfmmlib:
-                    pt.loglog(a, np.abs(cl_bessel-hk_bessel), label="vs pyfmmlib")
+                    pt.loglog(a, np.abs(cl_bessel-pyfmm_bessel), label="vs pyfmmlib")
                 pt.legend()
                 pt.show()
-
-
 
 
 if __name__ == "__main__":

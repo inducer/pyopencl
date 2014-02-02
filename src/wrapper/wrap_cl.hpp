@@ -1725,7 +1725,13 @@ namespace pyopencl
         PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
             (data(), CL_MEM_FLAGS, sizeof(my_flags), &my_flags, 0));
 
-        return get_sub_region(start, end, my_flags);
+        my_flags &= ~CL_MEM_COPY_HOST_PTR;
+
+        if (end <= start)
+          throw pyopencl::error("Buffer.__getitem__", CL_INVALID_VALUE,
+              "Buffer slice have end > start");
+
+        return get_sub_region(start, end-start, my_flags);
       }
 #endif
   };
