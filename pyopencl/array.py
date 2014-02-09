@@ -823,7 +823,7 @@ class Array(object):
         else:
             # add a scalar
             if other == 0:
-                return self
+                return self.copy()
             else:
                 common_dtype = _get_common_dtype(self, other, self.queue)
                 result = self._new_like_me(common_dtype)
@@ -846,7 +846,7 @@ class Array(object):
         else:
             # subtract a scalar
             if other == 0:
-                return self
+                return self.copy()
             else:
                 result = self._new_like_me(
                         _get_common_dtype(self, other, self.queue))
@@ -927,7 +927,7 @@ class Array(object):
             self._div(result, self, other)
         else:
             if other == 1:
-                return self
+                return self.copy()
             else:
                 # create a new array for the result
                 common_dtype = _get_common_dtype(self, other, self.queue)
@@ -1020,9 +1020,9 @@ class Array(object):
         return result
 
     def astype(self, dtype, queue=None):
-        """Return *self*, cast to *dtype*."""
+        """Return a copy of *self*, cast to *dtype*."""
         if dtype == self.dtype:
-            return self
+            return self.copy()
 
         result = self._new_like_me(dtype=dtype)
         self._copy(result, self, queue=queue)
