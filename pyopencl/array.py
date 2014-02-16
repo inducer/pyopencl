@@ -1173,6 +1173,10 @@ class Array(object):
         # TODO: add more error-checking, perhaps
         if isinstance(shape[0], tuple) or isinstance(shape[0], list):
             shape = tuple(shape[0])
+
+        if shape == self.shape:
+            return self
+
         size = reduce(lambda x, y: x * y, shape, 1)
         if size != self.size:
             raise ValueError("total size of new array must be unchanged")
