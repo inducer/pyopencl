@@ -35,19 +35,6 @@ Here's an example, to give you an impression:
 :download:`examples/demo.py <../examples/demo.py>` in the PyOpenCL
 source distribution.)
 
-Software that works with or enhances PyOpenCL
-=============================================
-
-* Bogdan Opanchuk's `reikna <http://pypi.python.org/pypi/reikna>`_ offers a
-  variety of GPU-based algorithms (FFT, random number generation, matrix
-  multiplication) designed to work with :class:`pyopencl.array.Array` objects.
-
-* Gregor Thalhammer's `gpyfft <https://github.com/geggo/gpyfft>`_ provides a
-  Python wrapper for the OpenCL FFT library clFFT from AMD.
-
-If you know of a piece of software you feel that should be on this list, please
-let me know, or, even better, send a patch!
-
 Tutorials
 =========
 
@@ -73,6 +60,19 @@ Tutorials
   `Problem set 1 <http://tiker.net/pub/simula-pyopencl-probset1.pdf>`_
   `Problem set 2 <http://tiker.net/pub/simula-pyopencl-probset2.pdf>`_
 * Ian Johnson's `PyOpenCL tutorial <http://enja.org/2011/02/22/adventures-in-pyopencl-part-1-getting-started-with-python/>`_.
+
+Software that works with or enhances PyOpenCL
+=============================================
+
+* Bogdan Opanchuk's `reikna <http://pypi.python.org/pypi/reikna>`_ offers a
+  variety of GPU-based algorithms (FFT, random number generation, matrix
+  multiplication) designed to work with :class:`pyopencl.array.Array` objects.
+
+* Gregor Thalhammer's `gpyfft <https://github.com/geggo/gpyfft>`_ provides a
+  Python wrapper for the OpenCL FFT library clFFT from AMD.
+
+If you know of a piece of software you feel that should be on this list, please
+let me know, or, even better, send a patch!
 
 Contents
 ========
