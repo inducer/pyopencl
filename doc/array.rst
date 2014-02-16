@@ -276,10 +276,3 @@ Generating Arrays of Random Numbers
 
     .. autofunction:: rand
     .. autofunction:: fill_rand
-
-GPGPU Algorithms
-----------------
-
-Bogdan Opanchuk's `reikna <http://pypi.python.org/pypi/reikna>`_ offers a
-variety of GPU-based algorithms (FFT, RNG, matrix multiplication) designed to work with
-:class:`pyopencl.array.Array` objects.

@@ -81,6 +81,19 @@ for that.
 PyOpenCL also has its own `web site <http://mathema.tician.de/software/pyopencl>`_,
 where you can find updates, new versions, documentation, and support.
 
+Software that works with or enhances PyOpenCL
+=============================================
+
+* Bogdan Opanchuk's `reikna <http://pypi.python.org/pypi/reikna>`_ offers a
+  variety of GPU-based algorithms (FFT, random number generation, matrix
+  multiplication) designed to work with :class:`pyopencl.array.Array` objects.
+
+* Gregor Thalhammer's `gpyfft <https://github.com/geggo/gpyfft>`_ provides a
+  Python wrapper for the OpenCL FFT library clFFT from AMD.
+
+If you know of a piece of software you feel that should be on this list, please
+let me know, or, even better, send a patch!
+
 Indices and tables
 ==================
 
