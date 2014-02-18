@@ -74,7 +74,7 @@ C interface to Python:
 Interoperability with other OpenCL software
 -------------------------------------------
 
-Just about every object in :mod:`pyopncl` supports the following
+Just about every object in :mod:`pyopencl` supports the following
 interface (here shown as an example for :class:`pyopencl.MemoryObject`,
 from which :class:`pyopencl.Buffer` and :class:`pyopencl.Image` inherit):
 
