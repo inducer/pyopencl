@@ -350,7 +350,13 @@ def _add_functionality():
         return "<pyopencl.Device '%s' on '%s' at 0x%x>" % (
                 self.name.strip(), self.platform.name.strip(), self.int_ptr)
 
+    def device_persistent_unique_id(self):
+        return (self.vendor, self.vendor_id, self.name, self.version)
+
     Device.__repr__ = device_repr
+
+    # undocumented for now:
+    Device.persistent_unique_id = property(device_persistent_unique_id)
 
     # }}}
 
