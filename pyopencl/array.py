@@ -28,7 +28,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-import warnings
 import numpy as np
 import pyopencl.elementwise as elementwise
 import pyopencl as cl
@@ -102,8 +101,9 @@ def _create_vector_types():
 
             def create_array(dtype, count, padded_count, *args, **kwargs):
                 if len(args) < count:
-                    warnings.warn("default values for make_xxx are deprecated;"+
-                            " instead specify all parameters or use"+
+                    from warnings import warn
+                    warn("default values for make_xxx are deprecated;"
+                            " instead specify all parameters or use"
                             " array.vec.zeros_xxx", DeprecationWarning)
                 padded_args = tuple(list(args)+[0]*(padded_count-len(args)))
                 array = eval("array(padded_args, dtype=dtype)",
@@ -114,7 +114,7 @@ def _create_vector_types():
                 return array
 
             setattr(vec, "make_"+name, staticmethod(eval(
-                    "lambda *args, **kwargs: create_array(dtype, %i, %i, "+
+                    "lambda *args, **kwargs: create_array(dtype, %i, %i, "
                     "*args, **kwargs)" % (count, padded_count),
                     dict(create_array=create_array, dtype=dtype))))
             setattr(vec, "filled_"+name, staticmethod(eval(
