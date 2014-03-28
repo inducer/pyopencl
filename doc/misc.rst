@@ -459,7 +459,8 @@ Citing PyOpenCL
 We are not asking you to gratuitously cite PyOpenCL in work that is otherwise
 unrelated to software. That said, if you do discuss some of the development
 aspects of your code and would like to highlight a few of the ideas behind
-PyOpenCL, feel free to cite this article:
+PyOpenCL, feel free to cite `this article
+<http://dx.doi.org/10.1016/j.parco.2011.09.001>`_:
 
     Andreas Klöckner, Nicolas Pinto, Yunsup Lee, Bryan Catanzaro, Paul Ivanov,
     Ahmed Fasih, PyCUDA and PyOpenCL: A scripting-based approach to GPU
