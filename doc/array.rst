@@ -29,6 +29,21 @@ Vector Types
     Python code. For each type, a `make_type` function is also provided (e.g.
     `make_float3(x,y,z)`).
 
+    If you want to construct a pre-initialized vector type you have three new
+    functions to choose from:
+
+    * `zeros_type()`
+    * `ones_type()`
+    * `filled_type(fill_value)`
+
+    .. versionadded:: 2014.1
+
+    .. versionchanged:: 2014.1
+        The `make_type` functions have a default value (0) for each component.
+        Relying on the default values has been deprecated. Either specify all
+        components or use one of th new flavors mentioned above for constructing
+        a vector.
+
 Custom data types
 ^^^^^^^^^^^^^^^^^
 
