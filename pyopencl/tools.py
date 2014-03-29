@@ -60,25 +60,8 @@ _register_types()
 
 # {{{ imported names
 
-bitlog2 = cl.bitlog2
-
-PooledBuffer = cl.PooledBuffer
-
-from pyopencl._cl import _tools_DeferredAllocator as DeferredAllocator
-from pyopencl._cl import (  # noqa
-        _tools_ImmediateAllocator as ImmediateAllocator)
-
-
-class CLAllocator(DeferredAllocator):
-    def __init__(self, *args, **kwargs):
-        from warnings import warn
-        warn("pyopencl.tools.CLAllocator is deprecated. "
-                "It will be continue to exist throughout the 2013.x "
-                "versions of PyOpenCL. Use {Deferred,Immediate}Allocator.",
-                DeprecationWarning, 2)
-        DeferredAllocator.__init__(self, *args, **kwargs)
-
-MemoryPool = cl.MemoryPool
+from pyopencl.mempool import (  # noqa
+        PooledBuffer, DeferredAllocator, ImmediateAllocator, MemoryPool)
 
 # }}}
 

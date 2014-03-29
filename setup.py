@@ -1,13 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 
+__copyright__ = """
+Copyright (C) 2009-14 Andreas Kloeckner
+Copyright (C) 2013 Marko Bencun
+"""
+
+__license__ = """
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+"""
+
+
+import sys
+
 
 def get_config_schema():
     from aksetup_helper import ConfigSchema, Option, \
             IncludeDir, LibraryDir, Libraries, \
             Switch, StringListOption
 
-    import sys
     if 'darwin' in sys.platform:
         import platform
         osx_ver, _, _ = platform.mac_ver()
@@ -146,23 +173,15 @@ def main():
         from aksetup_helper import count_down_delay
         count_down_delay(delay=5)
 
-    import sys
-    if sys.version_info >= (3,):
-        pvt_struct_source = "src/wrapper/_pvt_struct_v3.cpp"
-    else:
-        pvt_struct_source = "src/wrapper/_pvt_struct_v2.cpp"
-
-    # wrap_cl_core.h needs to be available in pyopencl/
-    # the cffi verifier depends on it.
-    import shutil
-    shutil.copyfile("src/c_wrapper/wrap_cl_core.h", "pyopencl/wrap_cl_core.h")
-
     # from pyopencl._cffi import _get_verifier
-    # import os.path
-    # current_directory = os.path.dirname(__file__)
 
-    # # for development: clean cache such that the extension is rebuilt
-    # shutil.rmtree(os.path.join(current_directory, 'pyopencl', '__pycache__/'), ignore_errors=True)
+    # for development: clean cache such that the extension is rebuilt
+    if 0:
+        import os.path
+        current_directory = os.path.dirname(__file__)
+
+        shutil.rmtree(os.path.join(current_directory,
+            'pyopencl', '__pycache__/'), ignore_errors=True)
 
     setup(name="pyopencl",
             # metadata
@@ -213,9 +232,12 @@ def main():
                                ["src/c_wrapper/wrap_cl.cpp",
                                 "src/c_wrapper/wrap_constants.cpp",
                                 #"src/c_wrapper/wrap_mempool.cpp",
-                                "src/c_wrapper/bitlog.cpp",
                                 ],
-                               include_dirs=conf["CL_INC_DIR"] + ["src/c_wrapper/"],
+                               include_dirs=(
+                                   conf["CL_INC_DIR"]
+                                   + ["src/c_wrapper/"]
+                                   + ["pyopencl/c_wrapper/"]
+                                   ),
                                library_dirs=conf["CL_LIB_DIR"],
                                libraries=conf["CL_LIBNAME"],
                                define_macros=list(EXTRA_DEFINES.items()),
@@ -228,8 +250,7 @@ def main():
                     "pyopencl": [
                         "cl/*.cl",
                         "cl/*.h",
-                        "wrap_cl_core.h",
-                        "_cl.so",
+                        "c_wrapper/wrap_cl_core.h",
                         ]
                     },
 

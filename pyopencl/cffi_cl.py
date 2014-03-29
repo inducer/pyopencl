@@ -26,7 +26,6 @@ THE SOFTWARE.
 """
 
 
-#from pyopencl._cl import PooledBuffer, MemoryPool
 import warnings
 import np
 import sys
@@ -34,13 +33,10 @@ import sys
 # TODO: can we do without ctypes?
 import ctypes
 
-from _cffi import _ffi, _lib
+from pyopencl._cffi import _ffi, _lib
 
 # are we running on pypy?
 _PYPY = '__pypy__' in sys.builtin_module_names
-
-
-bitlog2 = _lib.bitlog2
 
 
 # {{{ wrapper tools
@@ -54,7 +50,7 @@ class _CArray(object):
 
     def __del__(self):
         if self.ptr != _ffi.NULL:
-            _lib._free(self.ptr[0])
+            _lib.free_pointer(self.ptr[0])
 
     def __getitem__(self, key):
         return self.ptr[0].__getitem__(key)
@@ -66,7 +62,7 @@ class _CArray(object):
 
 class _CArrays(_CArray):
     def __del__(self):
-        _lib._free2(_ffi.cast('void**', self.ptr[0]), self.size[0])
+        _lib.free_pointer_array(_ffi.cast('void**', self.ptr[0]), self.size[0])
         super(_CArrays, self).__del__()
 
 # }}}
@@ -99,7 +95,7 @@ def _generic_info_to_python(info):
 
         if type_.endswith(']'):
             ret = map(ci, value)
-            _lib._free(info.value)
+            _lib.free_pointer(info.value)
             return ret
         else:
             return ci(value)
@@ -107,7 +103,7 @@ def _generic_info_to_python(info):
         ret = _ffi.string(value)
     elif type_.startswith('char*['):
         ret = map(_ffi.string, value)
-        _lib._free2(info.value, len(value))
+        _lib.free_pointer_array(info.value, len(value))
     elif type_.endswith(']'):
         if type_.startswith('char['):
             ret = ''.join(a[0] for a in value)
@@ -124,7 +120,7 @@ def _generic_info_to_python(info):
     else:
         ret = value[0]
     if info.dontfree == 0:
-        _lib._free(info.value)
+        _lib.free_pointer(info.value)
     return ret
 
 # }}}
@@ -273,8 +269,8 @@ def _handle_error(error):
         # non-pyopencl exceptions are handled here
         import exceptions
         e = exceptions.RuntimeError(_ffi.string(error.msg))
-        _lib._free(error.msg)
-        _lib._free(error)
+        _lib.free_pointer(error.msg)
+        _lib.free_pointer(error)
         raise e
     if error.code == status_code.MEM_OBJECT_ALLOCATION_FAILURE:
         klass = MemoryError
@@ -286,9 +282,9 @@ def _handle_error(error):
         klass = Error
     e = klass(routine=_ffi.string(error.routine),
             code=error.code, msg=_ffi.string(error.msg))
-    _lib._free(error.routine)
-    _lib._free(error.msg)
-    _lib._free(error)
+    _lib.free_pointer(error.routine)
+    _lib.free_pointer(error.msg)
+    _lib.free_pointer(error)
     raise e
 
 # }}}

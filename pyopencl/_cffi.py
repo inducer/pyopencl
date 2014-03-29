@@ -1,9 +1,5 @@
 from cffi import FFI
 
-import os.path
-current_directory = os.path.dirname(__file__)
-
-
 _ffi = FFI()
 _cl_header = """
 
@@ -93,10 +89,23 @@ typedef struct _cl_buffer_region {
 
 """
 
-with open(os.path.join(current_directory, 'wrap_cl_core.h')) as _f:
-    _wrap_cl_header = _f.read()
 
-_ffi.cdef('%s\n%s' % (_cl_header, _wrap_cl_header))
+def _get_wrap_header():
+    from pkg_resources import Requirement, resource_filename
+    header_name = resource_filename(
+            Requirement.parse("pyopencl"), "pyopencl/c_wrapper/wrap_cl_core.h")
 
-# todo: cross platform library extension?
-_lib = _ffi.dlopen(os.path.join(current_directory, "_wrapcl.so"))
+    with open(header_name, "rt") as f:
+        return f.read()
+
+_ffi.cdef(_cl_header + "\n" + _get_wrap_header())
+
+
+def _get_wrapcl_so_name():
+    import os.path
+    current_directory = os.path.dirname(__file__)
+
+    # TODO: cross platform library extension?
+    return os.path.join(current_directory, "_wrapcl.so")
+
+_lib = _ffi.dlopen(_get_wrapcl_so_name())
