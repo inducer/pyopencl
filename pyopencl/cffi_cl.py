@@ -50,7 +50,7 @@ class _CArray(object):
 
     def __del__(self):
         if self.ptr != _ffi.NULL:
-            _lib.free_pointer(self.ptr[0])
+            _lib.pyopencl_free_pointer(self.ptr[0])
 
     def __getitem__(self, key):
         return self.ptr[0].__getitem__(key)
@@ -62,7 +62,8 @@ class _CArray(object):
 
 class _CArrays(_CArray):
     def __del__(self):
-        _lib.free_pointer_array(_ffi.cast('void**', self.ptr[0]), self.size[0])
+        _lib.pyopencl_free_pointer_array(
+                _ffi.cast('void**', self.ptr[0]), self.size[0])
         super(_CArrays, self).__del__()
 
 # }}}
@@ -95,7 +96,7 @@ def _generic_info_to_python(info):
 
         if type_.endswith(']'):
             ret = map(ci, value)
-            _lib.free_pointer(info.value)
+            _lib.pyopencl_free_pointer(info.value)
             return ret
         else:
             return ci(value)
@@ -103,7 +104,7 @@ def _generic_info_to_python(info):
         ret = _ffi.string(value)
     elif type_.startswith('char*['):
         ret = map(_ffi.string, value)
-        _lib.free_pointer_array(info.value, len(value))
+        _lib.pyopencl_free_pointer_array(info.value, len(value))
     elif type_.endswith(']'):
         if type_.startswith('char['):
             ret = ''.join(a[0] for a in value)
@@ -120,7 +121,7 @@ def _generic_info_to_python(info):
     else:
         ret = value[0]
     if info.dontfree == 0:
-        _lib.free_pointer(info.value)
+        _lib.pyopencl_free_pointer(info.value)
     return ret
 
 # }}}
@@ -179,7 +180,7 @@ class _Common(object):
 
 
 def get_cl_header_version():
-    v = _lib.get_cl_version()
+    v = _lib.pyopencl_get_cl_version()
     return (v >> (3*4),
             (v >> (1*4)) & 0xff)
 
@@ -269,8 +270,8 @@ def _handle_error(error):
         # non-pyopencl exceptions are handled here
         import exceptions
         e = exceptions.RuntimeError(_ffi.string(error.msg))
-        _lib.free_pointer(error.msg)
-        _lib.free_pointer(error)
+        _lib.pyopencl_free_pointer(error.msg)
+        _lib.pyopencl_free_pointer(error)
         raise e
     if error.code == status_code.MEM_OBJECT_ALLOCATION_FAILURE:
         klass = MemoryError
@@ -282,9 +283,9 @@ def _handle_error(error):
         klass = Error
     e = klass(routine=_ffi.string(error.routine),
             code=error.code, msg=_ffi.string(error.msg))
-    _lib.free_pointer(error.routine)
-    _lib.free_pointer(error.msg)
-    _lib.free_pointer(error)
+    _lib.pyopencl_free_pointer(error.routine)
+    _lib.pyopencl_free_pointer(error.msg)
+    _lib.pyopencl_free_pointer(error)
     raise e
 
 # }}}
@@ -790,7 +791,7 @@ def _enqueue_read_image(queue, mem, origin, region,
 # {{{ gl interop
 
 def have_gl():
-    return bool(_lib.have_gl())
+    return bool(_lib.pyopencl_have_gl())
 
 
 class GLBuffer(MemoryObject):

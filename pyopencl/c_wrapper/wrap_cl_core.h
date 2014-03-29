@@ -1,3 +1,6 @@
+// Everything in here should have a 'pyopencl_' prefix to avoid clashing with
+// other libraries imported via CFFI.
+
 typedef enum { KND_UNKNOWN, KND_SOURCE, KND_BINARY } program_kind_type;
 
 typedef struct {
@@ -32,7 +35,8 @@ typedef struct {
 } generic_info;
 
 
-int get_cl_version(void);
+int pyopencl_get_cl_version(void);
+
 error *get_platforms(void **ptr_platforms, uint32_t *num_platforms);
 error *platform__get_devices(void *ptr_platform, void **ptr_devices, uint32_t *num_devices, cl_device_type devtype);
 error *_create_context(void **ptr_ctx, cl_context_properties *properties, cl_uint num_devices, void **ptr_devices);
@@ -76,16 +80,8 @@ intptr_t _int_ptr(void*, class_t);
 void* _from_int_ptr(void **ptr_out, intptr_t int_ptr_value, class_t);
 error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out);
 void _delete(void *ptr, class_t class_);
-void free_pointer(void*);
-void free_pointer_array(void**, uint32_t size);
 
-unsigned bitlog2(unsigned long v);
+void pyopencl_free_pointer(void*);
+void pyopencl_free_pointer_array(void**, uint32_t size);
 
-
-/* gl interop */
-
-int have_gl();
-error *_create_from_gl_buffer(void **ptr, void *ptr_context, cl_mem_flags flags, GLuint bufobj);
-error *_create_from_gl_renderbuffer(void **ptr, void *ptr_context, cl_mem_flags flags, GLuint bufobj);
-error *_enqueue_acquire_gl_objects(void **ptr_event, void *ptr_command_queue, void **ptr_mem_objects, uint32_t num_mem_objects, void **wait_for, uint32_t num_wait_for);
-error *_enqueue_release_gl_objects(void **ptr_event, void *ptr_command_queue, void **ptr_mem_objects, uint32_t num_mem_objects, void **wait_for, uint32_t num_wait_for);
+int pyopencl_have_gl();

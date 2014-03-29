@@ -2823,15 +2823,15 @@ namespace pyopencl
 
 // {{{ c wrapper
 
-void free_pointer(void *p)
+void pyopencl_free_pointer(void *p)
 {
   free(p);
 }
 
-void free_pointer_array(void **p, uint32_t size)
+void pyopencl_free_pointer_array(void **p, uint32_t size)
 {
   for(uint32_t i = 0; i < size; ++i)
-    free_pointer(p[i]);
+    pyopencl_free_pointer(p[i]);
 }
 
 
@@ -3336,13 +3336,13 @@ void _delete(void *ptr, class_t class_) {
 }
 
 
-int get_cl_version(void) {
+int pyopencl_get_cl_version(void) {
   return PYOPENCL_CL_VERSION;
 }
 
 // {{{ gl interop
 
-int have_gl() {
+int pyopencl_have_gl() {
 #ifdef HAVE_GL
   return 1;
 #else

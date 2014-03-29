@@ -90,15 +90,16 @@ typedef struct _cl_buffer_region {
 """
 
 
-def _get_wrap_header():
+def _get_wrap_header(filename):
     from pkg_resources import Requirement, resource_filename
     header_name = resource_filename(
-            Requirement.parse("pyopencl"), "pyopencl/c_wrapper/wrap_cl_core.h")
+            Requirement.parse("pyopencl"), "pyopencl/c_wrapper/"+filename)
 
     with open(header_name, "rt") as f:
         return f.read()
 
-_ffi.cdef(_cl_header + "\n" + _get_wrap_header())
+_ffi.cdef(_cl_header)
+_ffi.cdef(_get_wrap_header("wrap_cl_core.h"))
 
 
 def _get_wrapcl_so_name():
@@ -109,3 +110,6 @@ def _get_wrapcl_so_name():
     return os.path.join(current_directory, "_wrapcl.so")
 
 _lib = _ffi.dlopen(_get_wrapcl_so_name())
+
+if _lib.pyopencl_have_gl():
+    _ffi.cdef(_get_wrap_header("wrap_cl_gl_core.h"))

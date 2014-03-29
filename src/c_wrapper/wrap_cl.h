@@ -64,7 +64,11 @@ extern "C" {
 #endif
 
 #include "wrap_cl_core.h"
-  
+
+#ifdef HAVE_GL
+#include "wrap_cl_gl_core.h"
+#endif
+
 #ifdef __cplusplus
 }
 #endif
