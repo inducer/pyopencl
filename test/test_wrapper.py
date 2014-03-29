@@ -487,21 +487,22 @@ def test_copy_buffer(ctx_factory):
 
 
 def test_mempool(ctx_factory):
-    from pyopencl.tools import MemoryPool, CLAllocator
+    from pyopencl.tools import MemoryPool, ImmediateAllocator
 
     context = ctx_factory()
+    queue = cl.CommandQueue(context)
 
-    pool = MemoryPool(CLAllocator(context))
-    queue = []
+    pool = MemoryPool(ImmediateAllocator(queue))
+    alloc_queue = []
 
     e0 = 12
 
     for e in range(e0-6, e0-4):
         for i in range(100):
-            queue.append(pool.allocate(1 << e))
-            if len(queue) > 10:
-                queue.pop(0)
-    del queue
+            alloc_queue.append(pool.allocate(1 << e))
+            if len(alloc_queue) > 10:
+                alloc_queue.pop(0)
+    del alloc_queue
     pool.stop_holding()
 
 
