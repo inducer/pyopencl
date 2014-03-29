@@ -112,4 +112,5 @@ def _get_wrapcl_so_name():
 _lib = _ffi.dlopen(_get_wrapcl_so_name())
 
 if _lib.pyopencl_have_gl():
+    print "GL!"
     _ffi.cdef(_get_wrap_header("wrap_cl_gl_core.h"))

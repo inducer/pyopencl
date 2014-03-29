@@ -305,6 +305,16 @@ run_python_gc();                                \
 
 // {{{ more odds and ends
 
+#ifdef HAVE_GL
+#define GL_SWITCHCLASS(OPERATION) \
+  case ::CLASS_GL_BUFFER: OPERATION(GL_BUFFER, gl_buffer); break; \
+  case ::CLASS_GL_RENDERBUFFER: OPERATION(GL_RENDERBUFFER, gl_renderbuffer); break;
+#else
+#define GL_SWITCHCLASS(OPERATION) \
+  case ::CLASS_GL_BUFFER: \
+  case ::CLASS_GL_RENDERBUFFER:
+#endif
+
 #define SWITCHCLASS(OPERATION)                                          \
   switch(class_) {                                                      \
   case ::CLASS_PLATFORM: OPERATION(PLATFORM, platform); break;          \
@@ -315,10 +325,9 @@ run_python_gc();                                \
   case ::CLASS_BUFFER: OPERATION(BUFFER, buffer); break;                \
   case ::CLASS_PROGRAM: OPERATION(PROGRAM, program); break;             \
   case ::CLASS_EVENT: OPERATION(EVENT, event); break;                   \
-  case ::CLASS_GL_BUFFER: OPERATION(GL_BUFFER, gl_buffer); break;       \
-  case ::CLASS_GL_RENDERBUFFER: OPERATION(GL_RENDERBUFFER, gl_renderbuffer); break; \
   case ::CLASS_IMAGE: OPERATION(IMAGE, image); break; \
   case ::CLASS_SAMPLER: OPERATION(SAMPLER, sampler); break; \
+  GL_SWITCHCLASS(OPERATION) \
   default: throw pyopencl::error("unknown class", CL_INVALID_VALUE);    \
   }
 
@@ -3351,6 +3360,7 @@ int pyopencl_have_gl() {
 }
 
 
+#ifdef HAVE_GL
 error *_create_from_gl_buffer(
     void **ptr, void *ptr_context, cl_mem_flags flags, GLuint bufobj)
 {
@@ -3414,6 +3424,7 @@ error *_create_from_gl_renderbuffer(
 
   return 0;
 }
+#endif /* HAVE_GL */
 
 // }}}
 

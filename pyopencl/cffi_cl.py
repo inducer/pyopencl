@@ -830,8 +830,9 @@ def _create_gl_enqueue(what):
         return _create_instance(Event, ptr_event[0])
     return enqueue_gl_objects
 
-enqueue_acquire_gl_objects = _create_gl_enqueue(_lib._enqueue_acquire_gl_objects)
-enqueue_release_gl_objects = _create_gl_enqueue(_lib._enqueue_release_gl_objects)
+if _lib.pyopencl_have_gl():
+    enqueue_acquire_gl_objects = _create_gl_enqueue(_lib._enqueue_acquire_gl_objects)
+    enqueue_release_gl_objects = _create_gl_enqueue(_lib._enqueue_release_gl_objects)
 
 # }}}
 
