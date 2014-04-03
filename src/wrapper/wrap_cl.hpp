@@ -2361,7 +2361,9 @@ namespace pyopencl
 
     if (buffer.ptr() != Py_None)
     {
-      if (flags & CL_MEM_USE_HOST_PTR)
+      if ((flags & CL_MEM_USE_HOST_PTR)
+          && ((flags & CL_MEM_READ_WRITE)
+            || (flags & CL_MEM_WRITE_ONLY)))
       {
         if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
           throw py::error_already_set();
