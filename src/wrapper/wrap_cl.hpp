@@ -852,7 +852,7 @@ namespace pyopencl
     {
       cl_int status_code;
       status_code = clGetDeviceIDs(m_platform, devtype, 0, 0, &num_devices);
-      if (status_code != CL_DEVICE_NOT_FOUND)
+      if (status_code == CL_DEVICE_NOT_FOUND)
         num_devices = 0;
       else if (status_code != CL_SUCCESS) \
         throw pyopencl::error("clGetDeviceIDs", status_code);
