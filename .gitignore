@@ -49,3 +49,4 @@ distribute-*.tar.gz
 core
 *.sess
 _build
+.ipynb_checkpoints

@@ -767,7 +767,7 @@ _add_functionality()
 
 # {{{ convenience
 
-def create_some_context(interactive=True, answers=None):
+def create_some_context(interactive=None, answers=None):
     import os
     if answers is None and "PYOPENCL_CTX" in os.environ:
         ctx_spec = os.environ["PYOPENCL_CTX"]
@@ -781,12 +781,14 @@ def create_some_context(interactive=True, answers=None):
 
     user_inputs = []
 
-    try:
-        import sys
-        if not sys.stdin.isatty():
+    if interactive is None:
+        interactive = True
+        try:
+            import sys
+            if not sys.stdin.isatty():
+                interactive = False
+        except:
             interactive = False
-    except:
-        interactive = False
 
     def cc_print(s):
         if interactive:

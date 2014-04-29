@@ -6,6 +6,7 @@ include src/wrapper/*.cpp
 include test/*.py
 include test/*.h
 include examples/*.py
+include examples/*.ipynb
 
 include doc/source/*.rst
 include doc/Makefile
