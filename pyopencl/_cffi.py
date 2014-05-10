@@ -35,7 +35,7 @@ typedef struct _cl_kernel *         cl_kernel;
 typedef struct _cl_event *          cl_event;
 typedef struct _cl_sampler *        cl_sampler;
 
-typedef cl_uint             cl_bool;                     /* WARNING!  Unlike cl_ types in cl_platform.h, cl_bool is not guaranteed to be the same size as the bool in kernels. */ 
+typedef cl_uint             cl_bool;                     /* WARNING!  Unlike cl_ types in cl_platform.h, cl_bool is not guaranteed to be the same size as the bool in kernels. */
 typedef cl_ulong            cl_bitfield;
 typedef cl_bitfield         cl_device_type;
 typedef cl_uint             cl_platform_info;
@@ -101,13 +101,24 @@ def _get_wrap_header(filename):
 _ffi.cdef(_cl_header)
 _ffi.cdef(_get_wrap_header("wrap_cl_core.h"))
 
+# Copied from pypy distutils/commands/build_ext.py
+def _get_c_extension_suffix():
+    import imp
+    for ext, mod, typ in imp.get_suffixes():
+        if typ == imp.C_EXTENSION:
+            return ext
 
 def _get_wrapcl_so_name():
     import os.path
     current_directory = os.path.dirname(__file__)
 
-    # TODO: cross platform library extension?
-    return os.path.join(current_directory, "_wrapcl.so")
+    # Copied from pypy's distutils that "should work for CPython too".
+    so_ext = _get_c_extension_suffix()
+    if so_ext is None:
+        from distutils.sysconfig import get_config_var
+        so_ext = get_config_var('SO')     # fall-back
+    # TODO: windows debug_mode?
+    return os.path.join(current_directory, "_wrapcl" + so_ext)
 
 _lib = _ffi.dlopen(_get_wrapcl_so_name())
 
