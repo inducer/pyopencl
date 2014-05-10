@@ -42,13 +42,14 @@ from pyopencl.compyte.dtypes import (  # noqa
 
 def _register_types():
     from pyopencl.compyte.dtypes import _fill_dtype_registry
+    import struct
 
     _fill_dtype_registry(respect_windows=False, include_bool=False)
 
     get_or_register_dtype("cfloat_t", np.complex64)
     get_or_register_dtype("cdouble_t", np.complex128)
 
-    is_64_bit = tuple.__itemsize__ * 8 == 64
+    is_64_bit = struct.calcsize('@P') * 8 == 64
     if not is_64_bit:
         get_or_register_dtype(
                 ["unsigned long", "unsigned long int"], np.uint64)
