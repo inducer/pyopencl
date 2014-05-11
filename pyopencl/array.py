@@ -45,6 +45,14 @@ def _get_common_dtype(obj1, obj2, queue):
     return _get_common_dtype_base(obj1, obj2,
             has_double_support(queue.device))
 
+# PyPy does not and is not planning to support object dtype.
+try:
+    np.dtype(object)
+    def _dtype_is_array(t):
+        return t == object
+except:
+    def _dtype_is_array(t):
+        return False
 
 # {{{ vector types
 
@@ -498,7 +506,7 @@ class Array(object):
 
         # }}}
 
-        if dtype == object:
+        if _dtype_is_array(dtype):
             raise TypeError("object arrays on the compute device are not allowed")
 
         self.queue = queue
@@ -1470,7 +1478,7 @@ def to_device(queue, ary, allocator=None, async=False):
         *context* argument was deprecated.
     """
 
-    if ary.dtype == object:
+    if _dtype_is_array(ary.dtype):
         raise RuntimeError("to_device does not work on object arrays.")
 
     result = Array(queue, ary.shape, ary.dtype,
