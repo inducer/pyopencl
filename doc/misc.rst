@@ -24,6 +24,21 @@ checking `this file
 Note that the triple-quoted strings containing the source must start with
 `"""//CL// ..."""`.
 
+IPython integration
+-------------------
+
+PyOpenCL comes with IPython integration, which lets you seamlessly integrate
+PyOpenCL kernels into your IPython notebooks. Simply load the PyOpenCL 
+IPython extension using::
+
+    %load_ext pyopencl.ipython
+
+and then use the ``%%cl_kernel`` 'cell-magic' command. See `this notebook
+<http://nbviewer.ipython.org/urls/raw.githubusercontent.com/pyopencl/pyopencl/master/examples/ipython-demo.ipynb>`_
+(which ships with PyOpenCL) for a demonstration.
+
+.. versionadded:: 2014.1
+
 Guidelines
 ==========
 
@@ -91,12 +106,15 @@ other software to be turned into the corresponding :mod:`pyopencl` objects.
 User-visible Changes
 ====================
 
-Version 2013.3
+Version 2014.1
 --------------
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/pyopencl/pyopencl>`_
+
+* :ref:`ipython-integration`
+* Bug fixes
 
 Version 2013.2
 --------------
