@@ -463,8 +463,15 @@ namespace pyopencl
   inline std::vector<cl_device_id> platform::get_devices(cl_device_type devtype)
   {
     cl_uint num_devices = 0;
-    PYOPENCL_CALL_GUARDED(clGetDeviceIDs,
-                          (m_platform, devtype, 0, 0, &num_devices));
+    PYOPENCL_PRINT_CALL_TRACE("clGetDeviceIDs");
+    {
+      cl_int status_code;
+      status_code = clGetDeviceIDs(m_platform, devtype, 0, 0, &num_devices);
+      if (status_code == CL_DEVICE_NOT_FOUND)
+        num_devices = 0;
+      else if (status_code != CL_SUCCESS) \
+        throw pyopencl::error("clGetDeviceIDs", status_code);
+    }
 
     std::vector<cl_device_id> devices(num_devices);
     if (num_devices == 0)
