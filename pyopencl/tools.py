@@ -32,6 +32,7 @@ import pyopencl.np as np
 from decorator import decorator
 import pyopencl as cl
 from pytools import memoize, memoize_method
+from pyopencl._cffi import _lib
 
 import re
 
@@ -61,6 +62,7 @@ _register_types()
 
 # {{{ imported names
 
+bitlog2 = _lib.pyopencl_bitlog2
 from pyopencl.mempool import (  # noqa
         PooledBuffer, DeferredAllocator, ImmediateAllocator, MemoryPool)
 
