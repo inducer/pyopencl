@@ -47,10 +47,13 @@ def test_get_info(ctx_factory):
     failure_count = [0]
 
     pocl_quirks = [
-            (cl.Buffer, cl.mem_info.OFFSET),
+        (cl.Buffer, cl.mem_info.OFFSET),
+    ]
+    if ctx._get_cl_version() >= (1, 2) and cl.get_cl_header_version() >= (1, 2):
+        pocl_quirks.extend([
             (cl.Program, cl.program_info.KERNEL_NAMES),
             (cl.Program, cl.program_info.NUM_KERNELS),
-            ]
+        ])
     CRASH_QUIRKS = [
             (("NVIDIA Corporation", "NVIDIA CUDA",
                 "OpenCL 1.0 CUDA 3.0.1"),
