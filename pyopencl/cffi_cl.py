@@ -453,7 +453,7 @@ def _c_buffer_from_obj(obj, writable=False):
                         obj.__array_interface__['data'][0]),
                     obj.nbytes,
                     None)
-        if isinstance(obj, np.generic):
+        elif isinstance(obj, np.generic):
             # numpy scalar
             #
             # * obj.__array_interface__ exists in CPython, but the address does
@@ -467,6 +467,10 @@ def _c_buffer_from_obj(obj, writable=False):
                         s_array.__array_interface__['data'][0]),
                     s_array.nbytes,
                     s_array)
+        elif isinstance(obj, bytes):
+            # There sould be better ways to pass arguments
+            p = _ffi.new('char[]', obj)
+            return (_ffi.cast('void *', p), len(obj), p)
         else:
             raise LogicError("", status_code.INVALID_VALUE,
                     "PyOpencl on PyPy only accepts numpy arrays "
