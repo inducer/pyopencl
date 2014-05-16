@@ -2834,6 +2834,51 @@ namespace pyopencl
                            ));
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+  inline
+  event *enqueue_marker_with_wait_list(command_queue &cq,
+    void **wait_for, uint32_t num_wait_for)
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+    cl_event evt;
+
+    PYOPENCL_CALL_GUARDED(clEnqueueMarkerWithWaitList, (
+          cq.data(), PYOPENCL_WAITLIST_ARGS, &evt));
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+
+  inline
+  event *enqueue_barrier_with_wait_list(command_queue &cq,
+    void **wait_for, uint32_t num_wait_for)
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+    cl_event evt;
+
+    PYOPENCL_CALL_GUARDED(clEnqueueBarrierWithWaitList,
+        (cq.data(), PYOPENCL_WAITLIST_ARGS, &evt));
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+#endif
+
+  inline
+  event *enqueue_marker(command_queue &cq)
+  {
+    cl_event evt;
+    // TODO
+    //PYOPENCL_RETRY_IF_MEM_ERROR(
+    PYOPENCL_CALL_GUARDED(clEnqueueMarker, (cq.data(), &evt));
+    //);
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+
+  inline
+  void enqueue_barrier(command_queue &cq)
+  {
+    PYOPENCL_CALL_GUARDED(clEnqueueBarrier, (cq.data()));
+  }
 }
 
 
@@ -3228,6 +3273,62 @@ error *_create_image_3d(
       global_work_offset,
       global_work_size,
       local_work_size);
+
+  END_C_HANDLE_ERROR
+
+  return 0;
+}
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+::error *_enqueue_marker_with_wait_list(
+    void **ptr_event, void *ptr_command_queue, void **wait_for,
+    uint32_t num_wait_for)
+{
+  BEGIN_C_HANDLE_ERROR
+
+  *ptr_event = enqueue_marker_with_wait_list(
+      *static_cast<pyopencl::command_queue*>(ptr_command_queue),
+      wait_for, num_wait_for);
+
+  END_C_HANDLE_ERROR
+
+  return 0;
+}
+
+::error *_enqueue_barrier_with_wait_list(
+    void **ptr_event, void *ptr_command_queue, void **wait_for,
+    uint32_t num_wait_for)
+{
+  BEGIN_C_HANDLE_ERROR
+
+  *ptr_event = enqueue_barrier_with_wait_list(
+      *static_cast<pyopencl::command_queue*>(ptr_command_queue),
+      wait_for, num_wait_for);
+
+  END_C_HANDLE_ERROR
+
+  return 0;
+}
+#endif
+
+::error *_enqueue_marker(
+    void **ptr_event, void *ptr_command_queue)
+{
+  BEGIN_C_HANDLE_ERROR
+
+  *ptr_event = enqueue_marker(
+      *static_cast<pyopencl::command_queue*>(ptr_command_queue));
+
+  END_C_HANDLE_ERROR
+
+  return 0;
+}
+
+::error *_enqueue_barrier(void *ptr_command_queue)
+{
+  BEGIN_C_HANDLE_ERROR
+
+  enqueue_barrier(*static_cast<pyopencl::command_queue*>(ptr_command_queue));
 
   END_C_HANDLE_ERROR
 

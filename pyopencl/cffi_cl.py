@@ -704,11 +704,44 @@ def enqueue_nd_range_kernel(queue, kernel,
 
 # }}}
 
+# {{{ _enqueue_marker_*
+
+def _enqueue_marker_with_wait_list(queue, wait_for=None):
+    ptr_event = _ffi.new('void **')
+    c_wait_for, num_wait_for = _c_obj_list(wait_for)
+    _handle_error(_lib._enqueue_marker_with_wait_list(
+        ptr_event,
+        queue.ptr,
+        c_wait_for, num_wait_for))
+    return _create_instance(Event, ptr_event[0])
+
+def _enqueue_marker(queue):
+    ptr_event = _ffi.new('void **')
+    _handle_error(_lib._enqueue_marker(ptr_event, queue.ptr))
+    return _create_instance(Event, ptr_event[0])
+
+# }}}
+
+# {{{ _enqueue_barrier_*
+
+def _enqueue_barrier_with_wait_list(queue, wait_for=None):
+    ptr_event = _ffi.new('void **')
+    c_wait_for, num_wait_for = _c_obj_list(wait_for)
+    _handle_error(_lib._enqueue_barrier_with_wait_list(
+        ptr_event,
+        queue.ptr,
+        c_wait_for, num_wait_for))
+    return _create_instance(Event, ptr_event[0])
+
+def _enqueue_barrier(queue):
+    _handle_error(_lib._enqueue_barrier(queue.ptr))
+
+# }}}
 
 # {{{ _enqueue_*_buffer
 
 def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
-        wait_for=None, is_blocking=True):
+                         wait_for=None, is_blocking=True):
     c_buf, size, _ = _c_buffer_from_obj(hostbuf, writable=True)
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
