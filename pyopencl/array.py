@@ -38,6 +38,7 @@ from pyopencl.compyte.array import (
         c_contiguous_strides as _c_contiguous_strides,
         ArrayFlags as _ArrayFlags,
         get_common_dtype as _get_common_dtype_base)
+from pyopencl.compyte.dtypes import DTypeDict as _DTypeDict
 from pyopencl.characterize import has_double_support
 
 
@@ -66,7 +67,7 @@ def _create_vector_types():
     from pyopencl.tools import get_or_register_dtype
 
     vec.types = {}
-    vec.type_to_scalar_and_count = {}
+    vec.type_to_scalar_and_count = _DTypeDict()
 
     counts = [2, 3, 4, 8, 16]
 
@@ -98,10 +99,18 @@ def _create_vector_types():
             if len(titles) < len(names):
                 titles.extend((len(names)-len(titles))*[None])
 
-            dtype = np.dtype(dict(
-                names=names,
-                formats=[base_type]*padded_count,
-                titles=titles))
+            try:
+                dtype = np.dtype(dict(
+                    names=names,
+                    formats=[base_type]*padded_count,
+                    titles=titles))
+            except NotImplementedError:
+                try:
+                    dtype = np.dtype([((n, title), base_type)
+                                      for (n, title) in zip(names, titles)])
+                except TypeError:
+                    dtype = np.dtype([(n, base_type) for (n, title)
+                                      in zip(names, titles)])
 
             get_or_register_dtype(name, dtype)
 
@@ -136,9 +145,8 @@ def _create_vector_types():
             vec.type_to_scalar_and_count[dtype] = np.dtype(base_type), count
 
 try:
-    # Not yet implemented in pypy as of 5/2014
     _create_vector_types()
-except NotImplementedError:
+except:
     pass
 
 # }}}
