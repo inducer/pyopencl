@@ -1074,8 +1074,7 @@ namespace pyopencl
 
     void finish()
     {
-      // TODO
-      // PYOPENCL_CALL_GUARDED_THREADED(clFinish, (m_queue));
+      PYOPENCL_CALL_GUARDED_THREADED(clFinish, (m_queue));
     }
   };
 
@@ -3412,6 +3411,21 @@ error *_create_image_3d(
 
 // }}}
 
+::error *_command_queue_finish(void *ptr_command_queue)
+{
+  BEGIN_C_HANDLE_ERROR
+  static_cast<pyopencl::command_queue*>(ptr_command_queue)->finish();
+  END_C_HANDLE_ERROR
+  return 0;
+}
+
+::error *_command_queue_flush(void *ptr_command_queue)
+{
+  BEGIN_C_HANDLE_ERROR
+  static_cast<pyopencl::command_queue*>(ptr_command_queue)->flush();
+  END_C_HANDLE_ERROR
+  return 0;
+}
 
 intptr_t _int_ptr(void* ptr, class_t class_) {
 #define INT_PTR(CLSU, CLS) return (intptr_t)(static_cast<pyopencl::CLS*>(ptr)->data());

@@ -84,6 +84,9 @@ error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *pt
 error *_enqueue_read_image(void **ptr_event, void *ptr_command_queue, void *ptr_mem, size_t *origin, size_t *region, void *buffer, size_t size, size_t row_pitch, size_t slice_pitch, void **wait_for, uint32_t num_wait_for, int is_blocking);
 void populate_constants(void(*add)(const char*, const char*, long value));
 
+error *_command_queue_finish(void *ptr_command_queue);
+error *_command_queue_flush(void *ptr_command_queue);
+
 intptr_t _int_ptr(void*, class_t);
 void* _from_int_ptr(void **ptr_out, intptr_t int_ptr_value, class_t);
 error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out);

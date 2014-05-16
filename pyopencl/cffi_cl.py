@@ -425,7 +425,10 @@ class CommandQueue(_Common):
             _ffi.NULL if device is None else device.ptr, properties))
 
         self.ptr = ptr_command_queue[0]
-
+    def finish(self):
+        _handle_error(_lib._command_queue_finish(self.ptr))
+    def flush(self):
+        _handle_error(_lib._command_queue_flush(self.ptr))
 
 class MemoryObjectHolder(_Common):
     pass
