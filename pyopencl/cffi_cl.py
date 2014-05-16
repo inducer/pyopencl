@@ -660,10 +660,6 @@ def enqueue_nd_range_kernel(queue, kernel,
         global_work_size, local_work_size, global_work_offset=None,
         wait_for=None, g_times_l=False):
 
-    if wait_for is not None:
-        # TODO: implement wait_for
-        raise NotImplementedError("wait_for")
-
     work_dim = len(global_work_size)
 
     if local_work_size is not None:
@@ -695,6 +691,7 @@ def enqueue_nd_range_kernel(queue, kernel,
         c_local_work_size = _ffi.new('const size_t[]', local_work_size)
 
     ptr_event = _ffi.new('void **')
+    c_wait_for, num_wait_for = _c_obj_list(wait_for)
     _handle_error(_lib._enqueue_nd_range_kernel(
         ptr_event,
         queue.ptr,
@@ -702,7 +699,8 @@ def enqueue_nd_range_kernel(queue, kernel,
         work_dim,
         c_global_work_offset,
         c_global_work_size,
-        c_local_work_size
+        c_local_work_size,
+        c_wait_for, num_wait_for
     ))
     return _create_instance(Event, ptr_event[0])
 

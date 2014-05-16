@@ -2811,13 +2811,10 @@ namespace pyopencl
       cl_uint work_dim,
       const size_t *global_work_offset,
       const size_t *global_work_size,
-      const size_t *local_work_size //,
-      //py::object py_global_work_offset,
-      //py::object py_wait_for,
-      )
+      const size_t *local_work_size,
+      void **wait_for, uint32_t num_wait_for)
   {
-    // TODO
-    // PYOPENCL_PARSE_WAIT_FOR;
+    PYOPENCL_PARSE_WAIT_FOR;
 
     cl_event evt;
 
@@ -2829,7 +2826,7 @@ namespace pyopencl
                            global_work_offset,
                            global_work_size,
                            local_work_size,
-                           0, NULL,// PYOPENCL_WAITLIST_ARGS,
+                           PYOPENCL_WAITLIST_ARGS,
                            &evt
                            ));
     PYOPENCL_RETURN_NEW_EVENT(evt);
@@ -3262,7 +3259,8 @@ error *_create_image_3d(
 ::error *_enqueue_nd_range_kernel(
     void **ptr_event, void *ptr_command_queue, void *ptr_kernel,
     cl_uint work_dim, const size_t *global_work_offset,
-    const size_t *global_work_size, const size_t *local_work_size)
+    const size_t *global_work_size, const size_t *local_work_size,
+    void **wait_for, uint32_t num_wait_for)
 {
   BEGIN_C_HANDLE_ERROR
 
@@ -3272,7 +3270,8 @@ error *_create_image_3d(
       work_dim,
       global_work_offset,
       global_work_size,
-      local_work_size);
+      local_work_size,
+      wait_for, num_wait_for);
 
   END_C_HANDLE_ERROR
 

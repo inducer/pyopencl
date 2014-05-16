@@ -69,7 +69,7 @@ error *image__get_image_info(void *ptr_image, cl_image_info param, generic_info 
 
 long _hash(void *ptr_platform, class_t);
 
-error *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size);
+error *_enqueue_nd_range_kernel(void **ptr_event, void *ptr_command_queue, void *ptr_kernel, cl_uint work_dim, const size_t *global_work_offset, const size_t *global_work_size, const size_t *local_work_size, void **wait_for, uint32_t num_wait_for);
 
 error *_enqueue_marker_with_wait_list(void **ptr_event, void *ptr_command_queue,
                                       void **wait_for, uint32_t num_wait_for);
