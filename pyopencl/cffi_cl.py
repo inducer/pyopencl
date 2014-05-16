@@ -248,7 +248,7 @@ class Error(Exception):
         self.routine = routine
         self.code = code
         self.what = msg
-        super(Error, self).__init__(self, msg)
+        super(Error, self).__init__(msg)
 
 
 class MemoryError(Error):
