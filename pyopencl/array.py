@@ -49,10 +49,10 @@ def _get_common_dtype(obj1, obj2, queue):
 # PyPy does not and is not planning to support object dtype.
 try:
     np.dtype(object)
-    def _dtype_is_array(t):
+    def _dtype_is_object(t):
         return t == object
 except:
-    def _dtype_is_array(t):
+    def _dtype_is_object(t):
         return False
 
 # {{{ vector types
@@ -518,7 +518,7 @@ class Array(object):
 
         # }}}
 
-        if _dtype_is_array(dtype):
+        if _dtype_is_object(dtype):
             raise TypeError("object arrays on the compute device are not allowed")
 
         self.queue = queue
@@ -1490,7 +1490,7 @@ def to_device(queue, ary, allocator=None, async=False):
         *context* argument was deprecated.
     """
 
-    if _dtype_is_array(ary.dtype):
+    if _dtype_is_object(ary.dtype):
         raise RuntimeError("to_device does not work on object arrays.")
 
     result = Array(queue, ary.shape, ary.dtype,
