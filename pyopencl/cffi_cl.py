@@ -27,7 +27,7 @@ THE SOFTWARE.
 
 
 import warnings
-import np
+import numpy as np
 import sys
 
 # TODO: can we do without ctypes?

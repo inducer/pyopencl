@@ -36,7 +36,7 @@ from pyopencl.tools import (
         context_dependent_memoize,
         dtype_to_ctype, KernelTemplateBase,
         _process_code_for_macro)
-import pyopencl.np as np
+import numpy as np
 
 
 # {{{ kernel source

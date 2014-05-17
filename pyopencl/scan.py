@@ -28,7 +28,7 @@ within the Thrust project, https://code.google.com/p/thrust/
 # Direct link to thrust source:
 # https://code.google.com/p/thrust/source/browse/thrust/detail/backend/cuda/detail/fast_scan.inl # noqa
 
-import pyopencl.np as np
+import numpy as np
 
 import pyopencl as cl
 import pyopencl.array  # noqa

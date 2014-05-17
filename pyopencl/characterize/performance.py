@@ -23,7 +23,7 @@ THE SOFTWARE.
 """
 
 import pyopencl as cl
-import pyopencl.np as np
+import numpy as np
 
 
 
