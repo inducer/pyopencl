@@ -510,6 +510,17 @@ def _add_functionality():
 
         self._arg_type_chars = arg_type_chars
 
+    _size_t_char = ({
+        8: 'Q',
+        4: 'L',
+        2: 'H',
+        1: 'B',
+        })[_cl._ffi.sizeof('size_t')]
+    _type_char_map = {
+        'n': _size_t_char.lower(),
+        'N': _size_t_char
+    }
+    del _size_t_char
     def kernel_set_args(self, *args):
         assert len(args) == self.num_args, (
                 "length of argument list (%d) and "
@@ -524,15 +535,20 @@ def _add_functionality():
                 for i, arg in enumerate(args):
                     self.set_arg(i, arg)
             else:
-                # TODO:
                 #from pyopencl._pvt_struct import pack
                 from struct import pack
                 for i, (arg, arg_type_char) in enumerate(
                         zip(args, arg_type_chars)):
-                    if arg_type_char and arg_type_char != "V":
-                        self.set_arg(i, pack(arg_type_char, arg))
+                    if not arg_type_char or arg_type_char == "V":
+                        _arg = arg
+                    elif arg_type_char == "F":
+                        _arg = pack('f', arg.real) + pack('f', arg.imag)
+                    elif arg_type_char == "D":
+                         _arg = pack('d', arg.real) + pack('d', arg.imag)
                     else:
-                        self.set_arg(i, arg)
+                        _arg = pack(_type_char_map.get(arg_type_char,
+                                                       arg_type_char), arg)
+                    self.set_arg(i, _arg)
         except LogicError, e:
             if i is not None:
                 advice = ""
