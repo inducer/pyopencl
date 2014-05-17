@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -48,6 +48,8 @@ def test_get_info(ctx_factory):
 
     pocl_quirks = [
         (cl.Buffer, cl.mem_info.OFFSET),
+        (cl.Program, cl.program_info.BINARIES),
+        (cl.Program, cl.program_info.BINARY_SIZES),
     ]
     if ctx._get_cl_version() >= (1, 2) and cl.get_cl_header_version() >= (1, 2):
         pocl_quirks.extend([
@@ -68,6 +70,9 @@ def test_get_info(ctx_factory):
                 pocl_quirks),
             (("The pocl project", "Portable Computing Language",
                 "OpenCL 1.2 pocl 0.9-pre"),
+                pocl_quirks),
+            (("The pocl project", "Portable Computing Language",
+                "OpenCL 1.2 pocl 0.9"),
                 pocl_quirks),
             (("Apple", "Apple",
                 "OpenCL 1.2 (Apr 25 2013 18:32:06)"),
@@ -584,6 +589,13 @@ def test_context_dep_memoize(ctx_factory):
 def test_can_build_binary(ctx_factory):
     ctx = ctx_factory()
     device, = ctx.devices
+    platform = device.platform
+
+    if (platform.vendor == "The pocl project" and
+        platform.name == "Portable Computing Language"):
+        # Segfault on pocl 0.9
+        from pytest import skip
+        skip("pocl doesn't like getting PROGRAM_BINARIES")
 
     program = cl.Program(ctx, """
     __kernel void simple(__global float *in, __global float *out)
