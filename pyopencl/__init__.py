@@ -544,7 +544,7 @@ def _add_functionality():
                     elif arg_type_char == "F":
                         _arg = pack('f', arg.real) + pack('f', arg.imag)
                     elif arg_type_char == "D":
-                         _arg = pack('d', arg.real) + pack('d', arg.imag)
+                        _arg = pack('d', arg.real) + pack('d', arg.imag)
                     else:
                         _arg = pack(_type_char_map.get(arg_type_char,
                                                        arg_type_char), arg)
