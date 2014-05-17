@@ -435,8 +435,8 @@ class MemoryObjectHolder(_Common):
 
 
 class MemoryObject(MemoryObjectHolder):
-    pass
-
+    def release(self):
+        _handle_error(_lib._release_memobj(self.ptr))
 
 def _c_buffer_from_obj(obj, writable=False):
     """Convert a Python object to a tuple (cdata('void *'), num_bytes, dummy)

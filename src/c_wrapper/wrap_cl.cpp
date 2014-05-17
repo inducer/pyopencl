@@ -3432,7 +3432,6 @@ intptr_t _int_ptr(void* ptr, class_t class_) {
   SWITCHCLASS(INT_PTR);
 }
 
-
 void* _from_int_ptr(void **ptr_out, intptr_t int_ptr_value, class_t class_) {
 #define FROM_INT_PTR(CLSU, CLS) \
   BEGIN_C_HANDLE_ERROR \
@@ -3465,6 +3464,14 @@ void _delete(void *ptr, class_t class_) {
   SWITCHCLASS(DELETE);
 }
 
+::error*
+_release_memobj(void* ptr)
+{
+    BEGIN_C_HANDLE_ERROR;
+    static_cast<pyopencl::memory_object*>(ptr)->release();
+    END_C_HANDLE_ERROR;
+    return NULL;
+}
 
 int pyopencl_get_cl_version(void) {
   return PYOPENCL_CL_VERSION;

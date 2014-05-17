@@ -91,6 +91,7 @@ intptr_t _int_ptr(void*, class_t);
 void* _from_int_ptr(void **ptr_out, intptr_t int_ptr_value, class_t);
 error *_get_info(void *ptr, class_t class_, cl_uint param, generic_info *out);
 void _delete(void *ptr, class_t class_);
+error *_release_memobj(void* ptr);
 
 void pyopencl_free_pointer(void*);
 void pyopencl_free_pointer_array(void**, uint32_t size);
