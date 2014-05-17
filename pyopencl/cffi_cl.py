@@ -666,22 +666,26 @@ def enqueue_nd_range_kernel(queue, kernel,
     work_dim = len(global_work_size)
 
     if local_work_size is not None:
+        global_size_copied = False
         if g_times_l:
             work_dim = max(work_dim, len(local_work_size))
         elif work_dim != len(local_work_size):
-            raise RuntimeError("enqueue_nd_range_kernel", status_code.INVALID_VALUE,
-                                 "global/local work sizes have differing dimensions")
-
-        local_work_size = list(local_work_size)
+            raise RuntimeError("enqueue_nd_range_kernel",
+                               status_code.INVALID_VALUE,
+                               "global/local work sizes have differing dimensions")
 
         if len(local_work_size) < work_dim:
-            local_work_size.extend([1] * (work_dim - len(local_work_size)))
+            local_work_size = (local_work_size +
+                               [1] * (work_dim - len(local_work_size)))
         if len(global_work_size) < work_dim:
-            global_work_size.extend([1] * (work_dim - len(global_work_size)))
-
-    elif g_times_l:
-        for i in xrange(work_dim):
-            global_work_size[i] *= local_work_size[i]
+            global_size_copied = True
+            global_work_size = (global_work_size +
+                                [1] * (work_dim - len(global_work_size)))
+        if g_times_l:
+            if not global_size_copied:
+                global_work_size = list(global_work_size)
+            for i in xrange(work_dim):
+                global_work_size[i] *= local_work_size[i]
 
     if global_work_offset is not None:
         raise NotImplementedError("global_work_offset")
