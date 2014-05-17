@@ -623,21 +623,34 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     del queue
     del context
 
-    dtype_arg_dict = dict(
-            names=[field_name for field_name, (field_dtype, offset) in fields],
-            formats=[field_dtype
-                for field_name, (field_dtype, offset) in fields],
-            offsets=[int(x) for x in offsets],
-            itemsize=int(size_and_offsets[0]),
-            )
-    dtype = np.dtype(dtype_arg_dict)
-
-    if dtype.itemsize != size_and_offsets[0]:
-        # "Old" versions of numpy (1.6.x?) silently ignore "itemsize". Boo.
-        dtype_arg_dict["names"].append("_pycl_size_fixer")
-        dtype_arg_dict["formats"].append(np.uint8)
-        dtype_arg_dict["offsets"].append(int(size_and_offsets[0])-1)
+    try:
+        dtype_arg_dict = {
+            'names': [field_name
+                      for field_name, (field_dtype, offset) in fields],
+            'formats': [field_dtype
+                        for field_name, (field_dtype, offset) in fields],
+            'offsets': [int(x) for x in offsets],
+            'itemsize': int(size_and_offsets[0]),
+            }
         dtype = np.dtype(dtype_arg_dict)
+        if dtype.itemsize != size_and_offsets[0]:
+            # "Old" versions of numpy (1.6.x?) silently ignore "itemsize". Boo.
+            dtype_arg_dict["names"].append("_pycl_size_fixer")
+            dtype_arg_dict["formats"].append(np.uint8)
+            dtype_arg_dict["offsets"].append(int(size_and_offsets[0])-1)
+            dtype = np.dtype(dtype_arg_dict)
+    except NotImplementedError:
+        def calc_field_type():
+            total_size = 0
+            padding_count = 0
+            for offset, (field_name, (field_dtype, _)) in zip(offsets, fields):
+                if offset > total_size:
+                    padding_count += 1
+                    yield ('__pycl_padding%d' % padding_count,
+                           'V%d' % offset - total_size)
+                yield field_name, field_dtype
+                total_size = field_dtype.itemsize + offset
+        dtype = np.dtype(list(calc_field_type()))
 
     assert dtype.itemsize == size_and_offsets[0]
 
