@@ -152,11 +152,6 @@ class MemoryPool(object):
         assert not (ones & head)
         return head | ones
 
-    def allocate(self):
-        pass
-
-    __call__ = allocate
-
     def stop_holding(self):
         self.stop_holding = True
         self.free_held()
@@ -224,6 +219,8 @@ class MemoryPool(object):
                 "failed to free memory for allocation",
                 routine="memory_pool::allocate",
                 code=cl.status_code.MEM_OBJECT_ALLOCATION_FAILURE)
+
+    __call__ = allocate
 
     def free(self, buf, size):
         self.active_blocks -= 1
