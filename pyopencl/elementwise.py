@@ -863,13 +863,12 @@ def get_unary_func_kernel(context, func_name, in_dtype, out_dtype=None):
     if out_dtype is None:
         out_dtype = in_dtype
 
-    return get_elwise_kernel(context,
-            "%(tp_out)s *z, %(tp_in)s *y" % {
-                "tp_in": dtype_to_ctype(in_dtype),
-                "tp_out": dtype_to_ctype(out_dtype),
-                },
-            "z[i] = %s(y[i])" % func_name,
-            name="%s_kernel" % func_name)
+    return get_elwise_kernel(context, [
+        VectorArg(out_dtype, "z", with_offset=True),
+        VectorArg(in_dtype, "y", with_offset=True),
+        ],
+        "z[i] = %s(y[i])" % func_name,
+        name="%s_kernel" % func_name)
 
 
 @context_dependent_memoize
