@@ -88,7 +88,8 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False
 
                 args = cl_array.arange(queue, a, b, (b-a)/s, dtype=dtype)
                 if dtype.kind == "c":
-                    args = args+dtype.type(1j)*args
+                    # args = args + dtype.type(1j) * args
+                    args = args + args * dtype.type(1j)
 
                 gpu_results = gpu_func(args).get()
                 cpu_results = cpu_func(args.get())
