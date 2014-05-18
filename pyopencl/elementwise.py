@@ -838,10 +838,31 @@ def get_binary_func_kernel(context, func_name, x_dtype, y_dtype, out_dtype,
 
 
 @context_dependent_memoize
+def get_float_binary_func_kernel(context, func_name, x_dtype, y_dtype,
+                                 out_dtype, preamble="", name=None):
+    if (np.array(0, x_dtype) * np.array(0, y_dtype)).itemsize > 4:
+        arg_type = 'double'
+        preamble = """
+        #pragma OPENCL EXTENSION cl_khr_fp64: enable
+        #define PYOPENCL_DEFINE_CDOUBLE
+        """ + preamble
+    else:
+        arg_type = 'float'
+    return get_elwise_kernel(context, [
+        VectorArg(out_dtype, "z", with_offset=True),
+        VectorArg(x_dtype, "x", with_offset=True),
+        VectorArg(y_dtype, "y", with_offset=True),
+        ],
+        "z[i] = %s((%s)x[i], (%s)y[i])" % (func_name, arg_type, arg_type),
+        name="%s_kernel" % func_name if name is None else name,
+        preamble=preamble)
+
+
+@context_dependent_memoize
 def get_fmod_kernel(context, out_dtype=np.float32, arg_dtype=np.float32,
                     mod_dtype=np.float32):
-    return get_binary_func_kernel(context, 'fmod', arg_dtype,
-                                  mod_dtype, out_dtype)
+    return get_float_binary_func_kernel(context, 'fmod', arg_dtype,
+                                        mod_dtype, out_dtype)
 
 
 @context_dependent_memoize

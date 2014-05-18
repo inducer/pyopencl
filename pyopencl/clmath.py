@@ -57,14 +57,14 @@ asinpi = _make_unary_array_func("asinpi")
 
 @cl_array.elwise_kernel_runner
 def _atan2(result, arg1, arg2):
-    return elementwise.get_binary_func_kernel(result.context, "atan2",
-            arg1.dtype, arg2.dtype, result.dtype)
+    return elementwise.get_float_binary_func_kernel(
+        result.context, "atan2", arg1.dtype, arg2.dtype, result.dtype)
 
 
 @cl_array.elwise_kernel_runner
 def _atan2pi(result, arg1, arg2):
-    return elementwise.get_binary_func_kernel(result.context, "atan2pi",
-            arg1.dtype, arg2.dtype, result.dtype)
+    return elementwise.get_float_binary_func_kernel(
+        result.context, "atan2pi", arg1.dtype, arg2.dtype, result.dtype)
 
 
 atan = _make_unary_array_func("atan")

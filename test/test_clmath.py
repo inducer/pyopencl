@@ -127,6 +127,40 @@ if have_cl():
     test_tanh = make_unary_function_test("tanh", (-3, 3), 2e-6, use_complex=True)
 
 
+def test_atan2(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    for s in sizes:
+        a = (cl_array.arange(queue, s, dtype=np.float32) - s / 2) / 100
+        a2 = (s / 2 - 1 - cl_array.arange(queue, s, dtype=np.float32)) / 100
+        b = clmath.atan2(a, a2)
+
+        a = a.get()
+        a2 = a2.get()
+        b = b.get()
+
+        for i in range(s):
+            assert abs(math.atan2(a[i], a2[i]) - b[i]) < 1e-6
+
+
+def test_atan2pi(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    for s in sizes:
+        a = (cl_array.arange(queue, s, dtype=np.float32) - s / 2) / 100
+        a2 = (s / 2 - 1 - cl_array.arange(queue, s, dtype=np.float32)) / 100
+        b = clmath.atan2pi(a, a2)
+
+        a = a.get()
+        a2 = a2.get()
+        b = b.get()
+
+        for i in range(s):
+            assert abs(math.atan2(a[i], a2[i]) / math.pi - b[i]) < 1e-6
+
+
 def test_fmod(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
