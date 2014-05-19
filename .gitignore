@@ -50,6 +50,5 @@ core
 *.sess
 _build
 __pycache__
-wrap_cl_core.h
 *.o
 .ipynb_checkpoints
