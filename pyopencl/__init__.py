@@ -23,6 +23,7 @@ THE SOFTWARE.
 """
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
+
 try:
     import pyopencl.cffi_cl as _cl
     #import pyopencl._cl as _cl
@@ -35,18 +36,17 @@ except ImportError:
                 "its source directory. This likely won't work.")
     raise
 
-# _ccl = _cl
-# import cffi_cl
-# _cl = cffi_cl
+
 import numpy as np
 #from pyopencl._cl import *  # noqa
-from pyopencl.cffi_cl import *
+from pyopencl.cffi_cl import *  # noqa
 import inspect as _inspect
 
 CONSTANT_CLASSES = [
         getattr(_cl, name) for name in dir(_cl)
         if _inspect.isclass(getattr(_cl, name))
         and name[0].islower()]
+
 
 class CompilerWarning(UserWarning):
     pass
@@ -192,14 +192,17 @@ class Program(object):
 
         if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
             self._prg = _cl._Program(self._context, self._source)
+
         if self._prg is not None:
             # uncached
+
             self._build_and_catch_errors(
                     lambda: self._prg.build(" ".join(options), devices),
                     options=options)
 
         else:
             # cached
+
             from pyopencl.cache import create_built_program_from_source_cached
             self._prg = self._build_and_catch_errors(
                     lambda: create_built_program_from_source_cached(
@@ -268,28 +271,29 @@ def link_program(context, programs, options=[], devices=None):
 
 # }}}
 
+
 def _add_functionality():
     cls_to_info_cls = {
-            Platform:
-                (Platform.get_info, platform_info),
-            Device:
-                (Device.get_info, device_info),
-            Context:
-                (Context.get_info, context_info),
-            CommandQueue:
-                (CommandQueue.get_info, command_queue_info),
-            Event:
-                (Event.get_info, event_info),
-            MemoryObjectHolder:
-                (MemoryObjectHolder.get_info, mem_info),
+            _cl.Platform:
+                (_cl.Platform.get_info, _cl.platform_info),
+            _cl.Device:
+                (_cl.Device.get_info, _cl.device_info),
+            _cl.Context:
+                (_cl.Context.get_info, _cl.context_info),
+            _cl.CommandQueue:
+                (_cl.CommandQueue.get_info, _cl.command_queue_info),
+            _cl.Event:
+                (_cl.Event.get_info, _cl.event_info),
+            _cl.MemoryObjectHolder:
+                (MemoryObjectHolder.get_info, _cl.mem_info),
             Image:
-                (Image.get_image_info, image_info),
+                (_cl.Image.get_image_info, _cl.image_info),
             Program:
-                (Program.get_info, program_info),
+                (Program.get_info, _cl.program_info),
             Kernel:
-                (Kernel.get_info, kernel_info),
-            Sampler:
-                (Sampler.get_info, sampler_info),
+                (Kernel.get_info, _cl.kernel_info),
+            _cl.Sampler:
+                (Sampler.get_info, _cl.sampler_info),
             }
 
     def to_string(cls, value, default_format=None):
@@ -318,8 +322,10 @@ def _add_functionality():
         for info_name, info_value in info_class.__dict__.iteritems():
             if info_name == "to_string" or info_name.startswith("_"):
                 continue
+
             setattr(cls, info_name.lower(), make_getinfo(
                     info_method, getattr(info_class, info_name)))
+
     # }}}
 
     # {{{ Platform
@@ -350,10 +356,8 @@ def _add_functionality():
     # {{{ Context
 
     def context_repr(self):
-        return "<pyopencl.Context at TODO on %s>" % (
+        return "<pyopencl.Context at 0x%x on %s>" % (self.int_ptr,
                 ", ".join(repr(dev) for dev in self.devices))
-        # return "<pyopencl.Context at 0x%x on %s>" % (self.int_ptr,
-        #         ", ".join(repr(dev) for dev in self.devices))
 
     def context_get_cl_version(self):
         import re
