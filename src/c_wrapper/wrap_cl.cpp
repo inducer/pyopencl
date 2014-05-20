@@ -2362,7 +2362,7 @@ namespace pyopencl
         }
       }
 
-      void build(char *options, cl_uint num_devices, void **ptr_devices)
+      void build(const char *options, cl_uint num_devices, void **ptr_devices)
       {
         // todo: this function should get a list of device instances, not raw pointers
         // pointers are for the cffi interface and should not be here
@@ -2520,13 +2520,12 @@ namespace pyopencl
         PYOPENCL_CALL_GUARDED(clRetainKernel, (knl));
     }
 
-    kernel(program const &prg, std::string const &kernel_name)
+    kernel(program const &prg, const char *kernel_name)
     {
       cl_int status_code;
 
       PYOPENCL_PRINT_CALL_TRACE("clCreateKernel");
-      m_kernel = clCreateKernel(prg.data(), kernel_name.c_str(),
-                                &status_code);
+      m_kernel = clCreateKernel(prg.data(), kernel_name, &status_code);
       if (status_code != CL_SUCCESS)
         throw pyopencl::error("clCreateKernel", status_code);
     }
@@ -3027,8 +3026,8 @@ void pyopencl_free_pointer_array(void **p, uint32_t size)
   return 0;
 }
 
-::error *program__build(
-    void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices)
+::error *program__build(void *ptr_program, const char *options,
+                        cl_uint num_devices, void **ptr_devices)
 {
 
   BEGIN_C_HANDLE_ERROR
@@ -3116,7 +3115,8 @@ void pyopencl_free_pointer_array(void **p, uint32_t size)
 
 // {{{ kernel
 
-::error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name) {
+::error *_create_kernel(void **ptr_kernel, void *ptr_program,
+                        const char *name) {
   pyopencl::program *prg = static_cast<pyopencl::program*>(ptr_program);
 
   BEGIN_C_HANDLE_ERROR

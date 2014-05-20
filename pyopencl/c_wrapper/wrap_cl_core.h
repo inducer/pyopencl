@@ -44,7 +44,7 @@ error *_create_command_queue(void **ptr_command_queue, void *ptr_context, void *
 error *_create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, size_t size, void *hostbuf);
 error *_create_program_with_source(void **ptr_program, void *ptr_context, const char *src);
 error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries, size_t *binary_sizes);
-error *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices);
+error *program__build(void *ptr_program, const char *options, cl_uint num_devices, void **ptr_devices);
 error *program__kind(void *ptr_program, int *kind);
 error *program__get_build_info(void *ptr_program, void *ptr_device, cl_program_build_info param, generic_info *out);
 
@@ -53,7 +53,7 @@ error *_create_sampler(void **ptr_sampler, void *ptr_context, int normalized_coo
 error *event__get_profiling_info(void *ptr_event, cl_profiling_info param, generic_info *out);
 error *event__wait(void *ptr_event);
 
-error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name);
+error *_create_kernel(void **ptr_kernel, void *ptr_program, const char *name);
 error *kernel__set_arg_null(void *ptr_kernel, cl_uint arg_index);
 error *kernel__set_arg_mem(void *ptr_kernel, cl_uint arg_index, void *ptr_mem);
 error *kernel__set_arg_sampler(void *ptr_kernel, cl_uint arg_index, void *ptr_sampler);

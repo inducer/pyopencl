@@ -38,6 +38,21 @@ from pyopencl._cffi import _ffi, _lib
 # are we running on pypy?
 _PYPY = '__pypy__' in sys.builtin_module_names
 
+try:
+    _unicode = unicode
+except:
+    _unicode = str
+    _bytes = bytes
+else:
+    try:
+        _bytes = bytes
+    except:
+        _bytes = str
+
+def _convert_str(s):
+    if isinstance(s, _unicode):
+        return s.encode()
+    return s
 
 # {{{ wrapper tools
 
@@ -553,7 +568,7 @@ class _Program(_Common):
     def _init_source(self, context, src):
         ptr_program = _ffi.new('void **')
         _handle_error(_lib._create_program_with_source(
-            ptr_program, context.ptr, _ffi.new('char[]', src)))
+            ptr_program, context.ptr, _convert_str(src)))
         self.ptr = ptr_program[0]
 
     def _init_binary(self, context, devices, binaries):
@@ -597,7 +612,7 @@ class _Program(_Common):
 
         _handle_error(
                 _lib.program__build(self.ptr,
-                    _ffi.new('char[]', options), num_devices,
+                    _convert_str(options), num_devices,
                     _ffi.cast('void**', ptr_devices)))
 
     def get_build_info(self, device, param):
@@ -616,7 +631,8 @@ class Kernel(_Common):
 
     def __init__(self, program, name):
         ptr_kernel = _ffi.new('void **')
-        _handle_error(_lib._create_kernel(ptr_kernel, program.ptr, name))
+        _handle_error(_lib._create_kernel(ptr_kernel, program.ptr,
+                                          _convert_str(name)))
         self.ptr = ptr_kernel[0]
 
     def set_arg(self, arg_index, arg):
