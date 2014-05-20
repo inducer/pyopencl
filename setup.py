@@ -244,7 +244,8 @@ def main():
                                library_dirs=conf["CL_LIB_DIR"],
                                libraries=conf["CL_LIBNAME"],
                                define_macros=list(EXTRA_DEFINES.items()),
-                               extra_compile_args=conf["CXXFLAGS"],
+                               extra_compile_args=(['-std=c++0x']
+                                                   + conf["CXXFLAGS"]),
                                extra_link_args=conf["LDFLAGS"])
             ],
 

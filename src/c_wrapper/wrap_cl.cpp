@@ -43,16 +43,6 @@
 #define PYOPENCL_PRINT_CALL_TRACE_INFO(NAME, EXTRA_INFO) /*nothing*/
 #endif
 
-// TODO Py_BEGIN_ALLOW_THREADS \ Py_END_ALLOW_THREADS below
-#define PYOPENCL_CALL_GUARDED(NAME, ARGLIST)   \
-  {                                                     \
-    PYOPENCL_PRINT_CALL_TRACE(#NAME);                   \
-    cl_int status_code;                                 \
-    status_code = NAME ARGLIST;                         \
-    if (status_code != CL_SUCCESS)                      \
-      throw pyopencl::error(#NAME, status_code);        \
-  }
-
 
 #define PYOPENCL_CALL_GUARDED_CLEANUP(NAME, ARGLIST)                    \
   {                                                                     \
@@ -100,21 +90,21 @@
 #define PYOPENCL_GET_VEC_INFO(WHAT, FIRST_ARG, SECOND_ARG, RES_VEC)     \
   {                                                                     \
     size_t size;                                                        \
-    PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,                            \
-                          (FIRST_ARG, SECOND_ARG, 0, 0, &size));        \
+    pyopencl_call_guarded(clGet##WHAT##Info,                            \
+                          FIRST_ARG, SECOND_ARG, 0, NULL, &size);   \
                                                                         \
     RES_VEC.resize(size / sizeof(RES_VEC.front()));                     \
                                                                         \
-    PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,                            \
-                          (FIRST_ARG, SECOND_ARG, size,                 \
-                           RES_VEC.empty( ) ? NULL : &RES_VEC.front(), &size)); \
+    pyopencl_call_guarded(clGet##WHAT##Info,                            \
+                          FIRST_ARG, SECOND_ARG, size,                  \
+                          RES_VEC.empty() ? NULL : &RES_VEC.front(), &size); \
   }
 
 #define PYOPENCL_GET_OPAQUE_INFO(WHAT, FIRST_ARG, SECOND_ARG, CL_TYPE, TYPE, TYPEU) \
   {                                                                     \
     CL_TYPE param_value;                                                \
-    PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,                            \
-                          (FIRST_ARG, SECOND_ARG, sizeof(param_value), &param_value, 0)); \
+    pyopencl_call_guarded(clGet##WHAT##Info,                            \
+                          FIRST_ARG, SECOND_ARG, sizeof(param_value), &param_value, NULL); \
     generic_info info;                                                  \
     info.dontfree = 0;                                                  \
     info.opaque_class = CLASS_##TYPEU;                                  \
@@ -145,13 +135,14 @@
 #define PYOPENCL_GET_STR_INFO(WHAT, FIRST_ARG, SECOND_ARG)              \
   {                                                                     \
     size_t param_value_size;                                            \
-    PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,                            \
-                          (FIRST_ARG, SECOND_ARG, 0, 0, &param_value_size)); \
+    pyopencl_call_guarded(clGet##WHAT##Info,                            \
+                          FIRST_ARG, SECOND_ARG, 0, NULL,               \
+                          &param_value_size);                           \
                                                                         \
     MALLOC(char, param_value, param_value_size);                        \
-    PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,                            \
-                          (FIRST_ARG, SECOND_ARG, param_value_size,     \
-                           param_value, &param_value_size));            \
+    pyopencl_call_guarded(clGet##WHAT##Info,                            \
+                          FIRST_ARG, SECOND_ARG, param_value_size,      \
+                          param_value, &param_value_size);              \
     generic_info info;                                                  \
     info.dontfree = 0;                                                  \
     info.opaque_class = CLASS_NONE;                                     \
@@ -163,8 +154,8 @@
 #define PYOPENCL_GET_INTEGRAL_INFO(WHAT, FIRST_ARG, SECOND_ARG, TYPE)   \
   {                                                                     \
     MALLOC(TYPE, param_value, 1);                                       \
-    PYOPENCL_CALL_GUARDED(clGet##WHAT##Info,                            \
-                          (FIRST_ARG, SECOND_ARG, sizeof(param_value), param_value, 0)); \
+    pyopencl_call_guarded(clGet##WHAT##Info,                            \
+                          FIRST_ARG, SECOND_ARG, sizeof(param_value), param_value, NULL); \
     generic_info info;                                                  \
     info.dontfree = 0;                                                  \
     info.opaque_class = CLASS_NONE;                                     \
@@ -345,6 +336,58 @@ std::string tostring(const T& v)
 
 // }}}
 
+namespace pyopencl {
+
+// {{{ error
+
+class error : public std::runtime_error {
+private:
+    const char *m_routine;
+    cl_int m_code;
+
+public:
+    error(const char *rout, cl_int c, const char *msg="")
+        : std::runtime_error(msg), m_routine(rout), m_code(c)
+    {
+        std::cout << rout <<";" << msg<< ";" << c << std::endl;
+    }
+    const char*
+    routine() const
+    {
+        return m_routine;
+    }
+
+    cl_int
+    code() const
+    {
+        return m_code;
+    }
+
+    bool
+    is_out_of_memory() const
+    {
+        return (code() == CL_MEM_OBJECT_ALLOCATION_FAILURE ||
+                code() == CL_OUT_OF_RESOURCES ||
+                code() == CL_OUT_OF_HOST_MEMORY);
+    }
+};
+// }}}
+
+}
+
+template<typename... ArgTypes, typename... ArgTypes2>
+static inline void
+pyopencl_call_guarded(cl_int (*func)(ArgTypes...), const char *name,
+                      ArgTypes2&&... args)
+{
+    PYOPENCL_PRINT_CALL_TRACE(name);
+    cl_int status_code = func(ArgTypes(args)...);
+    if (status_code != CL_SUCCESS) {
+        throw pyopencl::error(name, status_code);
+    }
+}
+#define pyopencl_call_guarded(func, args...)    \
+    pyopencl_call_guarded(func, #func, args)
 
 namespace pyopencl
 {
@@ -371,39 +414,6 @@ namespace pyopencl
       noncopyable()
       { }
   };
-
-
-  // {{{ error
-
-  class error : public std::runtime_error
-  {
-    private:
-      const char *m_routine;
-      cl_int m_code;
-
-    public:
-      error(const char *rout, cl_int c, const char *msg="")
-        : std::runtime_error(msg), m_routine(rout), m_code(c)
-        { std::cout << rout <<";" << msg<< ";" << c << std::endl; }
-      const char *routine() const
-      {
-        return m_routine;
-      }
-
-      cl_int code() const
-      {
-        return m_code;
-      }
-
-      bool is_out_of_memory() const
-      {
-        return (code() == CL_MEM_OBJECT_ALLOCATION_FAILURE
-            || code() == CL_OUT_OF_RESOURCES
-            || code() == CL_OUT_OF_HOST_MEMORY);
-      }
-  };
-
-  // }}}
 
 
   // {{{ platform
@@ -468,9 +478,9 @@ namespace pyopencl
     if (num_devices == 0)
       return devices;
 
-    PYOPENCL_CALL_GUARDED(clGetDeviceIDs,
-                          (m_platform, devtype,
-                           num_devices, devices.empty( ) ? NULL : &devices.front(), &num_devices));
+    pyopencl_call_guarded(clGetDeviceIDs, m_platform, devtype, num_devices,
+                          devices.empty( ) ? NULL : &devices.front(),
+                          &num_devices);
 
     return devices;
   }
@@ -512,21 +522,21 @@ namespace pyopencl
           {
 #if PYOPENCL_CL_VERSION >= 0x1020
             cl_platform_id plat;
-            PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (m_device, CL_DEVICE_PLATFORM,
-                  sizeof(plat), &plat, NULL));
+            pyopencl_call_guarded(clGetDeviceInfo, m_device, CL_DEVICE_PLATFORM,
+                                  sizeof(plat), &plat, NULL);
 #endif
 
             PYOPENCL_GET_EXT_FUN(plat,
                 clRetainDeviceEXT, retain_func);
 
-            PYOPENCL_CALL_GUARDED(retain_func, (did));
+            pyopencl_call_guarded(retain_func, did);
           }
 #endif
 
 #if PYOPENCL_CL_VERSION >= 0x1020
           else if (ref_type == REF_CL_1_2)
             {
-              PYOPENCL_CALL_GUARDED(clRetainDevice, (did));
+              pyopencl_call_guarded(clRetainDevice, did);
             }
 #endif
 
@@ -545,8 +555,8 @@ namespace pyopencl
         {
 #if PYOPENCL_CL_VERSION >= 0x1020
           cl_platform_id plat;
-          PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (m_device, CL_DEVICE_PLATFORM,
-                sizeof(plat), &plat, NULL));
+          pyopencl_call_guarded(clGetDeviceInfo, m_device, CL_DEVICE_PLATFORM,
+                                sizeof(plat), &plat, NULL);
 #endif
 
           PYOPENCL_GET_EXT_FUN(plat,
@@ -558,7 +568,7 @@ namespace pyopencl
 
 #if PYOPENCL_CL_VERSION >= 0x1020
         else if (m_ref_type == REF_CL_1_2)
-          PYOPENCL_CALL_GUARDED(clReleaseDevice, (m_device));
+          pyopencl_call_guarded(clReleaseDevice, m_device);
 #endif
       }
 
@@ -860,7 +870,7 @@ namespace pyopencl
         : m_context(ctx)
       {
         if (retain)
-          PYOPENCL_CALL_GUARDED(clRetainContext, (ctx));
+          pyopencl_call_guarded(clRetainContext, ctx);
       }
 
 
@@ -970,13 +980,13 @@ namespace pyopencl
         : m_queue(q)
       {
         if (retain)
-          PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (q));
+          pyopencl_call_guarded(clRetainCommandQueue, q);
       }
 
       command_queue(command_queue const &src)
         : m_queue(src.m_queue)
       {
-        PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (m_queue));
+        pyopencl_call_guarded(clRetainCommandQueue, m_queue);
       }
 
       command_queue(
@@ -1042,8 +1052,8 @@ namespace pyopencl
       std::auto_ptr<context> get_context() const
       {
         cl_context param_value;
-        PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo,
-            (m_queue, CL_QUEUE_CONTEXT, sizeof(param_value), &param_value, 0));
+        pyopencl_call_guarded(clGetCommandQueueInfo, m_queue, CL_QUEUE_CONTEXT,
+                              sizeof(param_value), &param_value, NULL);
         return std::auto_ptr<context>(
             new context(param_value, /*retain*/ true));
       }
@@ -1054,18 +1064,18 @@ namespace pyopencl
         bool enable)
     {
       cl_command_queue_properties old_prop;
-      PYOPENCL_CALL_GUARDED(clSetCommandQueueProperty,
-                            (m_queue, prop, PYOPENCL_CAST_BOOL(enable), &old_prop));
+      pyopencl_call_guarded(clSetCommandQueueProperty, m_queue, prop,
+                            PYOPENCL_CAST_BOOL(enable), &old_prop);
       return old_prop;
     }
 #endif
 
     void flush()
-    { PYOPENCL_CALL_GUARDED(clFlush, (m_queue)); }
+    { pyopencl_call_guarded(clFlush, m_queue); }
 
     void finish()
     {
-      PYOPENCL_CALL_GUARDED(clFinish, (m_queue));
+      pyopencl_call_guarded(clFinish, m_queue);
     }
   };
 
@@ -1084,12 +1094,12 @@ namespace pyopencl
         : m_event(event)
       {
         if (retain)
-          PYOPENCL_CALL_GUARDED(clRetainEvent, (event));
+          pyopencl_call_guarded(clRetainEvent, event);
       }
 
       event(event const &src)
         : m_event(src.m_event)
-      { PYOPENCL_CALL_GUARDED(clRetainEvent, (m_event)); }
+      { pyopencl_call_guarded(clRetainEvent, m_event); }
 
       virtual ~event()
       {
@@ -1146,7 +1156,7 @@ namespace pyopencl
 
       virtual void wait()
       {
-        PYOPENCL_CALL_GUARDED(clWaitForEvents, (1, &m_event));
+        pyopencl_call_guarded(clWaitForEvents, 1, &m_event);
       }
   };
 
@@ -1167,8 +1177,8 @@ namespace pyopencl
       size_t size() const
       {
         size_t param_value;
-        PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
-            (data(), CL_MEM_SIZE, sizeof(param_value), &param_value, 0));
+        pyopencl_call_guarded(clGetMemObjectInfo, data(), CL_MEM_SIZE,
+                              sizeof(param_value), &param_value, NULL);
         return param_value;
       }
 
@@ -1234,7 +1244,7 @@ namespace pyopencl
         : m_valid(true), m_mem(mem)
       {
         if (retain)
-          PYOPENCL_CALL_GUARDED(clRetainMemObject, (mem));
+          pyopencl_call_guarded(clRetainMemObject, mem);
 
         if (hostbuf)
           m_hostbuf = hostbuf;
@@ -1243,13 +1253,13 @@ namespace pyopencl
       memory_object(memory_object const &src)
         : m_valid(true), m_mem(src.m_mem), m_hostbuf(src.m_hostbuf)
       {
-        PYOPENCL_CALL_GUARDED(clRetainMemObject, (m_mem));
+        pyopencl_call_guarded(clRetainMemObject, m_mem);
       }
 
       memory_object(memory_object_holder const &src)
         : m_valid(true), m_mem(src.data())
       {
-        PYOPENCL_CALL_GUARDED(clRetainMemObject, (m_mem));
+        pyopencl_call_guarded(clRetainMemObject, m_mem);
       }
 
       void release()
@@ -1406,14 +1416,15 @@ namespace pyopencl
   generic_info get_supported_image_formats(context const &ctx, cl_mem_flags flags, cl_mem_object_type image_type)
   {
     cl_uint num_image_formats;
-    PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats,
-                          (ctx.data(), flags, image_type,
-                           0, NULL, &num_image_formats));
+    pyopencl_call_guarded(clGetSupportedImageFormats,
+                          ctx.data(), flags, image_type,
+                          0, NULL, &num_image_formats);
 
     std::vector<cl_image_format> formats(num_image_formats);
-    PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats,
-                          (ctx.data(), flags, image_type,
-                           formats.size(), formats.empty( ) ? NULL : &formats.front(), NULL));
+    pyopencl_call_guarded(clGetSupportedImageFormats,
+                          ctx.data(), flags, image_type,
+                          formats.size(),
+                          formats.empty( ) ? NULL : &formats.front(), NULL);
 
     PYOPENCL_GET_ARRAY_INFO(cl_image_format, formats);
   }
@@ -1454,7 +1465,7 @@ namespace pyopencl
     }
     catch (...)
     {
-      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+      pyopencl_call_guarded(clReleaseMemObject, mem);
       throw;
     }
   }
@@ -1490,7 +1501,7 @@ namespace pyopencl
       }
     catch (...)
       {
-        PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+        pyopencl_call_guarded(clReleaseMemObject, mem);
         throw;
       }
   }
@@ -1571,13 +1582,11 @@ namespace pyopencl
     cl_event evt;
     // TODO
     //PYOPENCL_RETRY_IF_MEM_ERROR(
-    PYOPENCL_CALL_GUARDED(clEnqueueReadImage,
-                          (cq.data(),
-                           img.data(),
-                           PYOPENCL_CAST_BOOL(is_blocking),
-                           origin, region, row_pitch, slice_pitch, buffer,
-                           PYOPENCL_WAITLIST_ARGS, &evt
-                           ));
+    pyopencl_call_guarded(clEnqueueReadImage,
+                          cq.data(), img.data(),
+                          PYOPENCL_CAST_BOOL(is_blocking),
+                          origin, region, row_pitch, slice_pitch, buffer,
+                          PYOPENCL_WAITLIST_ARGS, &evt);
     //);
     PYOPENCL_RETURN_NEW_EVENT(evt);
     //PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
@@ -1830,8 +1839,8 @@ namespace pyopencl
       }                                                                 \
     catch (...)                                                         \
       {                                                                 \
-        PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));               \
-        throw;                                                          \
+          pyopencl_call_guarded(clReleaseMemObject, mem);               \
+          throw;                                                        \
       }                                                                 \
   }
 
@@ -1896,11 +1905,10 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;                                            \
     PYOPENCL_PARSE_OBJECT_LIST(memory_object_holder, cl_mem, mem_objects, ptr_mem_objects, num_mem_objects); \
     cl_event evt;                                                       \
-    PYOPENCL_CALL_GUARDED(clEnqueue##What##GLObjects, (                 \
-                                                       cq.data(),       \
-                                                       mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(), \
-                                                       PYOPENCL_WAITLIST_ARGS, &evt \
-                                                                        )); \
+    pyopencl_call_guarded(clEnqueue##What##GLObjects, cq.data(),        \
+                          mem_objects.size(),                           \
+                          mem_objects.empty( ) ? NULL : &mem_objects.front(), \
+                          PYOPENCL_WAITLIST_ARGS, &evt);                \
                                                                         \
     PYOPENCL_RETURN_NEW_EVENT(evt);                                     \
   }
@@ -2085,7 +2093,7 @@ namespace pyopencl
         }
       catch (...)
         {
-          PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+          pyopencl_call_guarded(clReleaseMemObject, mem);
           throw;
         }
     }
@@ -2147,7 +2155,7 @@ namespace pyopencl
       }
     catch (...)
       {
-        PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+        pyopencl_call_guarded(clReleaseMemObject, mem);
         throw;
       }
   }
@@ -2182,7 +2190,7 @@ namespace pyopencl
         : m_sampler(samp)
       {
         if (retain)
-          PYOPENCL_CALL_GUARDED(clRetainSampler, (samp));
+          pyopencl_call_guarded(clRetainSampler, samp);
       }
 
       ~sampler()
@@ -2239,7 +2247,7 @@ namespace pyopencl
         : m_program(prog), m_program_kind(progkind)
       {
         if (retain)
-          PYOPENCL_CALL_GUARDED(clRetainProgram, (prog));
+          pyopencl_call_guarded(clRetainProgram, prog);
       }
 
       ~program()
@@ -2307,9 +2315,10 @@ namespace pyopencl
                 gis[i].type =  _copy_str(std::string("char[") + tostring(sizes[i]) + "]");
                 gis[i].value = result_ptrs[i];
               }
-              PYOPENCL_CALL_GUARDED(clGetProgramInfo,
-                  (m_program, CL_PROGRAM_BINARIES, sizes.size()*sizeof(char *),
-                   &result_ptrs.front(), 0));
+              pyopencl_call_guarded(clGetProgramInfo, m_program,
+                                    CL_PROGRAM_BINARIES,
+                                    sizes.size() * sizeof(char *),
+                                    &result_ptrs.front(), NULL);
               PYOPENCL_GET_ARRAY_INFO(generic_info, gis);
             }
 
@@ -2361,9 +2370,9 @@ namespace pyopencl
         for(cl_uint i = 0; i < num_devices; ++i) {
           devices[i] = static_cast<device*>(ptr_devices[i])->data();
         }
-        PYOPENCL_CALL_GUARDED(clBuildProgram,
-            (m_program, num_devices, devices.empty( ) ? NULL : &devices.front(),
-             options, 0 ,0));
+        pyopencl_call_guarded(clBuildProgram, m_program, num_devices,
+                              devices.empty() ? NULL : &devices.front(),
+                              options, NULL, NULL);
       }
 
       // #if PYOPENCL_CL_VERSION >= 0x1020
@@ -2508,7 +2517,7 @@ namespace pyopencl
       : m_kernel(knl)
     {
       if (retain)
-        PYOPENCL_CALL_GUARDED(clRetainKernel, (knl));
+        pyopencl_call_guarded(clRetainKernel, knl);
     }
 
     kernel(program const &prg, const char *kernel_name)
@@ -2523,7 +2532,7 @@ namespace pyopencl
 
     ~kernel()
     {
-      PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseKernel, (m_kernel));
+        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseKernel, (m_kernel));
     }
 
     cl_kernel data() const
@@ -2535,35 +2544,34 @@ namespace pyopencl
 
     void set_arg_null(cl_uint arg_index)
     {
-      cl_mem m = 0;
-      PYOPENCL_CALL_GUARDED(
-          clSetKernelArg, (m_kernel, arg_index, sizeof(cl_mem), &m));
+        cl_mem m = 0;
+        pyopencl_call_guarded(clSetKernelArg, m_kernel, arg_index,
+                              sizeof(cl_mem), &m);
     }
 
     void set_arg_mem(cl_uint arg_index, memory_object_holder &moh)
     {
       cl_mem m = moh.data();
-      PYOPENCL_CALL_GUARDED(
-          clSetKernelArg, (m_kernel, arg_index, sizeof(cl_mem), &m));
+      pyopencl_call_guarded(clSetKernelArg, m_kernel, arg_index,
+                            sizeof(cl_mem), &m);
     }
 
     void set_arg_local(cl_uint arg_index, local_memory const &loc)
     {
-      PYOPENCL_CALL_GUARDED(
-          clSetKernelArg, (m_kernel, arg_index, loc.size(), 0));
+      pyopencl_call_guarded(clSetKernelArg, m_kernel, arg_index,
+                            loc.size(), NULL);
     }
 
     void set_arg_sampler(cl_uint arg_index, sampler const &smp)
     {
       cl_sampler s = smp.data();
-      PYOPENCL_CALL_GUARDED(
-          clSetKernelArg, (m_kernel, arg_index, sizeof(cl_sampler), &s));
+      pyopencl_call_guarded(clSetKernelArg, m_kernel, arg_index,
+                            sizeof(cl_sampler), &s);
     }
 
     void set_arg_buf(cl_uint arg_index, const void *buffer, size_t size)
     {
-      PYOPENCL_CALL_GUARDED(
-          clSetKernelArg, (m_kernel, arg_index, size, buffer));
+      pyopencl_call_guarded(clSetKernelArg, m_kernel, arg_index, size, buffer);
     }
 
     // void set_arg(cl_uint arg_index, py::object arg)
@@ -2709,14 +2717,11 @@ namespace pyopencl
     cl_event evt;
     // TODO
     //PYOPENCL_RETRY_IF_MEM_ERROR(
-    PYOPENCL_CALL_GUARDED(clEnqueueReadBuffer,
-                                   (cq.data(),
-                                    mem.data(),
-                                    PYOPENCL_CAST_BOOL(is_blocking),
-                                    device_offset, size, buffer,
-                                    PYOPENCL_WAITLIST_ARGS,
-                                    &evt
-                                    ));
+    pyopencl_call_guarded(clEnqueueReadBuffer,
+                          cq.data(), mem.data(),
+                          PYOPENCL_CAST_BOOL(is_blocking),
+                          device_offset, size, buffer,
+                          PYOPENCL_WAITLIST_ARGS, &evt);
     //);
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
@@ -2738,25 +2743,21 @@ namespace pyopencl
       {
         size_t byte_count_src = 0;
         size_t byte_count_dst = 0;
-        PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
-                              (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_src, 0));
-        PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
-                              (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_dst, 0));
+        pyopencl_call_guarded(clGetMemObjectInfo, src.data(), CL_MEM_SIZE,
+                              sizeof(byte_count), &byte_count_src, NULL);
+        pyopencl_call_guarded(clGetMemObjectInfo, src.data(), CL_MEM_SIZE,
+                              sizeof(byte_count), &byte_count_dst, NULL);
         byte_count = std::min(byte_count_src, byte_count_dst);
       }
 
     cl_event evt;
     // TODO
     //PYOPENCL_RETRY_IF_MEM_ERROR(
-    PYOPENCL_CALL_GUARDED(clEnqueueCopyBuffer, (cq.data(),
-                                                src.data(), dst.data(),
-                                                src_offset, dst_offset,
-                                                byte_count,
-                                                PYOPENCL_WAITLIST_ARGS,
-                                                &evt
-                                                ))
-      // );
-      PYOPENCL_RETURN_NEW_EVENT(evt);
+    pyopencl_call_guarded(clEnqueueCopyBuffer, cq.data(), src.data(),
+                          dst.data(), src_offset, dst_offset,
+                          byte_count, PYOPENCL_WAITLIST_ARGS, &evt);
+    // );
+    PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
   inline
@@ -2774,14 +2775,9 @@ namespace pyopencl
     cl_event evt;
     // TODO
     //PYOPENCL_RETRY_IF_MEM_ERROR(
-    PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer,
-                                   (cq.data(),
-                                    mem.data(),
-                                    PYOPENCL_CAST_BOOL(is_blocking),
-                                    device_offset, size, buffer,
-                                    PYOPENCL_WAITLIST_ARGS,
-                                    &evt
-                                    ));
+    pyopencl_call_guarded(clEnqueueWriteBuffer, cq.data(), mem.data(),
+                          PYOPENCL_CAST_BOOL(is_blocking), device_offset,
+                          size, buffer, PYOPENCL_WAITLIST_ARGS, &evt);
     //);
     // TODO
     PYOPENCL_RETURN_NEW_EVENT(evt);
@@ -2807,16 +2803,9 @@ namespace pyopencl
     cl_event evt;
 
     // TODO: PYOPENCL_RETRY_RETURN_IF_MEM_ERROR
-    PYOPENCL_CALL_GUARDED(clEnqueueNDRangeKernel,
-                          (cq.data(),
-                           knl.data(),
-                           work_dim,
-                           global_work_offset,
-                           global_work_size,
-                           local_work_size,
-                           PYOPENCL_WAITLIST_ARGS,
-                           &evt
-                           ));
+    pyopencl_call_guarded(clEnqueueNDRangeKernel, cq.data(), knl.data(),
+                          work_dim, global_work_offset, global_work_size,
+                          local_work_size, PYOPENCL_WAITLIST_ARGS, &evt);
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
@@ -2828,8 +2817,8 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
     cl_event evt;
 
-    PYOPENCL_CALL_GUARDED(clEnqueueMarkerWithWaitList, (
-          cq.data(), PYOPENCL_WAITLIST_ARGS, &evt));
+    pyopencl_call_guarded(clEnqueueMarkerWithWaitList, cq.data(),
+                          PYOPENCL_WAITLIST_ARGS, &evt);
 
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
@@ -2841,8 +2830,8 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
     cl_event evt;
 
-    PYOPENCL_CALL_GUARDED(clEnqueueBarrierWithWaitList,
-        (cq.data(), PYOPENCL_WAITLIST_ARGS, &evt));
+    pyopencl_call_guarded(clEnqueueBarrierWithWaitList, cq.data(),
+                          PYOPENCL_WAITLIST_ARGS, &evt);
 
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
@@ -2854,7 +2843,7 @@ namespace pyopencl
     cl_event evt;
     // TODO
     //PYOPENCL_RETRY_IF_MEM_ERROR(
-    PYOPENCL_CALL_GUARDED(clEnqueueMarker, (cq.data(), &evt));
+    pyopencl_call_guarded(clEnqueueMarker, cq.data(), &evt);
     //);
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
@@ -2862,7 +2851,7 @@ namespace pyopencl
   inline
   void enqueue_barrier(command_queue &cq)
   {
-    PYOPENCL_CALL_GUARDED(clEnqueueBarrier, (cq.data()));
+    pyopencl_call_guarded(clEnqueueBarrier, cq.data());
   }
 }
 
@@ -2886,12 +2875,13 @@ void pyopencl_free_pointer_array(void **p, uint32_t size)
   BEGIN_C_HANDLE_ERROR
 
   *num_platforms = 0;
-  PYOPENCL_CALL_GUARDED(clGetPlatformIDs, (0, 0, num_platforms));
+  pyopencl_call_guarded(clGetPlatformIDs, 0, NULL, num_platforms);
 
   typedef std::vector<cl_platform_id> vec;
   vec platforms(*num_platforms);
-  PYOPENCL_CALL_GUARDED(clGetPlatformIDs,
-      (*num_platforms, platforms.empty( ) ? NULL : &platforms.front(), num_platforms));
+  pyopencl_call_guarded(clGetPlatformIDs, *num_platforms,
+                        platforms.empty() ? NULL : &platforms.front(),
+                        num_platforms);
 
   MALLOC(pyopencl::platform*, _ptr_platforms, *num_platforms);
   for(vec::size_type i = 0; i < platforms.size(); ++i) {
