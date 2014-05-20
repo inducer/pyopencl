@@ -2418,10 +2418,9 @@ namespace pyopencl
   inline
   program *create_program_with_source(
       context &ctx,
-      std::string const &src)
+      const char *string)
   {
-    const char *string = src.c_str();
-    size_t length = src.size();
+    size_t length = strlen(string);
 
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithSource");
@@ -2571,7 +2570,7 @@ namespace pyopencl
           clSetKernelArg, (m_kernel, arg_index, sizeof(cl_sampler), &s));
     }
 
-    void set_arg_buf(cl_uint arg_index, void *buffer, size_t size)
+    void set_arg_buf(cl_uint arg_index, const void *buffer, size_t size)
     {
       PYOPENCL_CALL_GUARDED(
           clSetKernelArg, (m_kernel, arg_index, size, buffer));
@@ -2774,7 +2773,7 @@ namespace pyopencl
   event *enqueue_write_buffer(
                               command_queue &cq,
                               memory_object_holder &mem,
-                              void *buffer,
+                              const void *buffer,
                               size_t size,
                               size_t device_offset,
                               void **wait_for, uint32_t num_wait_for,
@@ -3000,13 +2999,14 @@ void pyopencl_free_pointer_array(void **p, uint32_t size)
 
 // {{{ program
 
-::error *_create_program_with_source(void **ptr_program, void *ptr_context, char *src)
+::error *_create_program_with_source(void **ptr_program, void *ptr_context,
+                                     const char *src)
 {
   pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
 
   BEGIN_C_HANDLE_ERROR
 
-                 *ptr_program = create_program_with_source(*ctx, src);
+  *ptr_program = create_program_with_source(*ctx, src);
 
   END_C_HANDLE_ERROR
 
@@ -3166,7 +3166,7 @@ void pyopencl_free_pointer_array(void **p, uint32_t size)
 }
 
 ::error *kernel__set_arg_buf(
-    void *ptr_kernel, cl_uint arg_index, void *buffer, size_t size)
+    void *ptr_kernel, cl_uint arg_index, const void *buffer, size_t size)
 {
   BEGIN_C_HANDLE_ERROR
 
@@ -3356,7 +3356,7 @@ error *_create_image_3d(
 
 ::error *_enqueue_write_buffer(
     void **ptr_event, void *ptr_command_queue, void *ptr_mem,
-    void *buffer, size_t size, size_t device_offset, void **wait_for,
+    const void *buffer, size_t size, size_t device_offset, void **wait_for,
     uint32_t num_wait_for, int is_blocking)
 {
   BEGIN_C_HANDLE_ERROR

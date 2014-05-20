@@ -42,7 +42,7 @@ error *platform__get_devices(void *ptr_platform, void **ptr_devices, uint32_t *n
 error *_create_context(void **ptr_ctx, cl_context_properties *properties, cl_uint num_devices, void **ptr_devices);
 error *_create_command_queue(void **ptr_command_queue, void *ptr_context, void *ptr_device, cl_command_queue_properties properties);
 error *_create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags, size_t size, void *hostbuf);
-error *_create_program_with_source(void **ptr_program, void *ptr_context, char *src);
+error *_create_program_with_source(void **ptr_program, void *ptr_context, const char *src);
 error *_create_program_with_binary(void **ptr_program, void *ptr_context, cl_uint num_devices, void **ptr_devices, cl_uint num_binaries, char **binaries, size_t *binary_sizes);
 error *program__build(void *ptr_program, char *options, cl_uint num_devices, void **ptr_devices);
 error *program__kind(void *ptr_program, int *kind);
@@ -57,7 +57,8 @@ error *_create_kernel(void **ptr_kernel, void *ptr_program, char *name);
 error *kernel__set_arg_null(void *ptr_kernel, cl_uint arg_index);
 error *kernel__set_arg_mem(void *ptr_kernel, cl_uint arg_index, void *ptr_mem);
 error *kernel__set_arg_sampler(void *ptr_kernel, cl_uint arg_index, void *ptr_sampler);
-error *kernel__set_arg_buf(void *ptr_kernel, cl_uint arg_index, void *buffer, size_t size);
+error *kernel__set_arg_buf(void *ptr_kernel, cl_uint arg_index,
+                           const void *buffer, size_t size);
 
 error *kernel__get_work_group_info(void *ptr_kernel, cl_kernel_work_group_info param, void *ptr_device, generic_info *out);
 
@@ -80,7 +81,7 @@ error *_enqueue_marker(void **ptr_event, void *ptr_command_queue);
 error *_enqueue_barrier(void *ptr_command_queue);
 error *_enqueue_read_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_mem, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking);
 error *_enqueue_copy_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_src, void *ptr_dst, ptrdiff_t byte_count, size_t src_offset, size_t dst_offset, void **wait_for, uint32_t num_wait_for);
-error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking);
+error *_enqueue_write_buffer(void **ptr_event, void *ptr_command_queue, void *ptr_memory_object_holder, const void *buffer, size_t size, size_t device_offset, void **wait_for, uint32_t num_wait_for, int is_blocking);
 error *_enqueue_read_image(void **ptr_event, void *ptr_command_queue, void *ptr_mem, size_t *origin, size_t *region, void *buffer, size_t size, size_t row_pitch, size_t slice_pitch, void **wait_for, uint32_t num_wait_for, int is_blocking);
 void populate_constants(void(*add)(const char*, const char*, long value));
 

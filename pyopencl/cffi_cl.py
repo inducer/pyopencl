@@ -471,9 +471,11 @@ def _c_buffer_from_obj(obj, writable=False):
                     s_array.nbytes,
                     s_array)
         elif isinstance(obj, bytes):
-            # There sould be better ways to pass arguments
-            p = _ffi.new('char[]', obj)
-            return (_ffi.cast('void *', p), len(obj), p)
+            if writable:
+                # There sould be better ways to pass arguments
+                p = _ffi.new('char[]', obj)
+                return (_ffi.cast('void *', p), len(obj), p)
+            return (obj, len(obj), None)
         else:
             raise LogicError("", status_code.INVALID_VALUE,
                     "PyOpencl on PyPy only accepts numpy arrays "
