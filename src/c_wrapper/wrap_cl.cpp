@@ -44,7 +44,7 @@
 #endif
 
 // TODO Py_BEGIN_ALLOW_THREADS \ Py_END_ALLOW_THREADS below
-#define PYOPENCL_CALL_GUARDED_THREADED(NAME, ARGLIST)   \
+#define PYOPENCL_CALL_GUARDED(NAME, ARGLIST)   \
   {                                                     \
     PYOPENCL_PRINT_CALL_TRACE(#NAME);                   \
     cl_int status_code;                                 \
@@ -53,15 +53,6 @@
       throw pyopencl::error(#NAME, status_code);        \
   }
 
-
-#define PYOPENCL_CALL_GUARDED(NAME, ARGLIST)            \
-  {                                                     \
-    PYOPENCL_PRINT_CALL_TRACE(#NAME);                   \
-    cl_int status_code;                                 \
-    status_code = NAME ARGLIST;                         \
-    if (status_code != CL_SUCCESS)                      \
-      throw pyopencl::error(#NAME, status_code);        \
-  }
 
 #define PYOPENCL_CALL_GUARDED_CLEANUP(NAME, ARGLIST)                    \
   {                                                                     \
@@ -1074,7 +1065,7 @@ namespace pyopencl
 
     void finish()
     {
-      PYOPENCL_CALL_GUARDED_THREADED(clFinish, (m_queue));
+      PYOPENCL_CALL_GUARDED(clFinish, (m_queue));
     }
   };
 
@@ -1155,7 +1146,7 @@ namespace pyopencl
 
       virtual void wait()
       {
-        PYOPENCL_CALL_GUARDED_THREADED(clWaitForEvents, (1, &m_event));
+        PYOPENCL_CALL_GUARDED(clWaitForEvents, (1, &m_event));
       }
   };
 
@@ -2370,7 +2361,7 @@ namespace pyopencl
         for(cl_uint i = 0; i < num_devices; ++i) {
           devices[i] = static_cast<device*>(ptr_devices[i])->data();
         }
-        PYOPENCL_CALL_GUARDED_THREADED(clBuildProgram,
+        PYOPENCL_CALL_GUARDED(clBuildProgram,
             (m_program, num_devices, devices.empty( ) ? NULL : &devices.front(),
              options, 0 ,0));
       }
@@ -2404,7 +2395,7 @@ namespace pyopencl
 
       //         // }}}
 
-      //         PYOPENCL_CALL_GUARDED_THREADED(clCompileProgram,
+      //         PYOPENCL_CALL_GUARDED(clCompileProgram,
       //             (m_program, num_devices, devices,
       //              options.c_str(), header_names.size(),
       //              programs.empty() ? NULL : &programs.front(),
@@ -2718,7 +2709,7 @@ namespace pyopencl
     cl_event evt;
     // TODO
     //PYOPENCL_RETRY_IF_MEM_ERROR(
-    PYOPENCL_CALL_GUARDED_THREADED(clEnqueueReadBuffer,
+    PYOPENCL_CALL_GUARDED(clEnqueueReadBuffer,
                                    (cq.data(),
                                     mem.data(),
                                     PYOPENCL_CAST_BOOL(is_blocking),
@@ -2783,7 +2774,7 @@ namespace pyopencl
     cl_event evt;
     // TODO
     //PYOPENCL_RETRY_IF_MEM_ERROR(
-    PYOPENCL_CALL_GUARDED_THREADED(clEnqueueWriteBuffer,
+    PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer,
                                    (cq.data(),
                                     mem.data(),
                                     PYOPENCL_CAST_BOOL(is_blocking),
