@@ -84,12 +84,22 @@ public:
 
 namespace pyopencl {
 
+template<typename T>
+static inline cl_bool
+cast_bool(const T &v)
+{
+    return v ? CL_TRUE : CL_FALSE;
+}
+
+
 // FIXME
 static inline char*
 _copy_str(const std::string& str)
 {
     return strdup(str.c_str());
 }
+
+// {{{ GetInfo helpers
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
 static inline pyopencl_buf<T>
@@ -200,5 +210,25 @@ get_str_info(cl_int (*func)(ArgTypes...), const char *name,
 }
 #define pyopencl_get_str_info(what, args...)                            \
     pyopencl::get_str_info(clGet##what##Info, "clGet" #what "Info", args)
+
+template<typename T, typename... ArgTypes, typename... ArgTypes2>
+static inline generic_info
+get_int_info(cl_int (*func)(ArgTypes...), const char *name,
+             const char *tpname, ArgTypes2&&... args)
+{
+    pyopencl_buf<T> param_value;
+    call_guarded(func, name, args..., sizeof(T), param_value.get(), NULL);
+    generic_info info;
+    info.dontfree = 0;
+    info.opaque_class = CLASS_NONE;
+    info.type = tpname;
+    info.value = (void*)param_value.release();
+    return info;
+}
+#define pyopencl_get_int_info(type, what, args...)                      \
+    pyopencl::get_int_info<type>(clGet##what##Info, "clGet" #what "Info", \
+                                 #type "*", args)
+
+// }}}
 
 }

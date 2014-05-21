@@ -58,24 +58,6 @@
 // }}}
 
 
-// {{{ GetInfo helpers
-
-#define PYOPENCL_GET_INTEGRAL_INFO(WHAT, FIRST_ARG, SECOND_ARG, TYPE)   \
-  {                                                                     \
-    pyopencl_buf<TYPE> param_value;                                     \
-    pyopencl_call_guarded(clGet##WHAT##Info, FIRST_ARG, SECOND_ARG,     \
-                          sizeof(TYPE), param_value.get(), NULL);       \
-    generic_info info;                                                  \
-    info.dontfree = 0;                                                  \
-    info.opaque_class = CLASS_NONE;                                     \
-    info.type = #TYPE"*";                                               \
-    info.value = (void*)param_value.release();                          \
-    return info;                                                        \
-  }
-
-// }}}
-
-
 // {{{ event helpers
 
 #define PYOPENCL_PARSE_OBJECT_LIST(CLS, TYPE, OUT, NAME, NUM)   \
@@ -223,13 +205,6 @@ run_python_gc();                                \
 
 namespace pyopencl
 {
-
-template<typename T>
-static inline cl_bool
-cast_bool(const T &v)
-{
-    return v ? CL_TRUE : CL_FALSE;
-}
 
   class noncopyable {
     // non-copyable
@@ -415,193 +390,216 @@ cast_bool(const T &v)
 
       generic_info get_info(cl_device_info param_name) const
       {
-#define DEV_GET_INT_INF(TYPE) PYOPENCL_GET_INTEGRAL_INFO(Device, m_device, param_name, TYPE);
+#define DEV_GET_INT_INF(TYPE) pyopencl_get_int_info(TYPE, Device, m_device, param_name)
+        switch (param_name) {
+        case CL_DEVICE_TYPE:
+            return DEV_GET_INT_INF(cl_device_type);
+        case CL_DEVICE_MAX_WORK_GROUP_SIZE:
+            return DEV_GET_INT_INF(size_t);
+        case CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS:
+        case CL_DEVICE_MAX_COMPUTE_UNITS:
+        case CL_DEVICE_VENDOR_ID:
+            return DEV_GET_INT_INF(cl_uint);
 
-        switch (param_name)
-          {
-          case CL_DEVICE_TYPE: DEV_GET_INT_INF(cl_device_type);
-          case CL_DEVICE_VENDOR_ID: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_MAX_COMPUTE_UNITS: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_MAX_WORK_GROUP_SIZE: DEV_GET_INT_INF(size_t);
+        case CL_DEVICE_MAX_WORK_ITEM_SIZES:
+            return pyopencl_get_array_info(size_t, Device, m_device, param_name);
 
-          case CL_DEVICE_MAX_WORK_ITEM_SIZES:
-              return pyopencl_get_array_info(size_t, Device,
-                                             m_device, param_name);
+        case CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR:
+        case CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT:
+        case CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT:
+        case CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG:
+        case CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT:
+        case CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE:
 
-          case CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_MAX_CLOCK_FREQUENCY:
+        case CL_DEVICE_ADDRESS_BITS:
+        case CL_DEVICE_MAX_READ_IMAGE_ARGS:
+        case CL_DEVICE_MAX_WRITE_IMAGE_ARGS:
+        case CL_DEVICE_MAX_SAMPLERS:
+        case CL_DEVICE_MEM_BASE_ADDR_ALIGN:
+        case CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE:
+            return DEV_GET_INT_INF(cl_uint);
 
-          case CL_DEVICE_MAX_CLOCK_FREQUENCY: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_ADDRESS_BITS: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_MAX_READ_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_MAX_WRITE_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_MAX_MEM_ALLOC_SIZE: DEV_GET_INT_INF(cl_ulong);
-          case CL_DEVICE_IMAGE2D_MAX_WIDTH: DEV_GET_INT_INF(size_t);
-          case CL_DEVICE_IMAGE2D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
-          case CL_DEVICE_IMAGE3D_MAX_WIDTH: DEV_GET_INT_INF(size_t);
-          case CL_DEVICE_IMAGE3D_MAX_HEIGHT: DEV_GET_INT_INF(size_t);
-          case CL_DEVICE_IMAGE3D_MAX_DEPTH: DEV_GET_INT_INF(size_t);
-          case CL_DEVICE_IMAGE_SUPPORT: DEV_GET_INT_INF(cl_bool);
-          case CL_DEVICE_MAX_PARAMETER_SIZE: DEV_GET_INT_INF(size_t);
-          case CL_DEVICE_MAX_SAMPLERS: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_MEM_BASE_ADDR_ALIGN: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_SINGLE_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
+        case CL_DEVICE_MAX_MEM_ALLOC_SIZE:
+            return DEV_GET_INT_INF(cl_ulong);
+
+        case CL_DEVICE_IMAGE2D_MAX_WIDTH:
+        case CL_DEVICE_IMAGE2D_MAX_HEIGHT:
+        case CL_DEVICE_IMAGE3D_MAX_WIDTH:
+        case CL_DEVICE_IMAGE3D_MAX_HEIGHT:
+        case CL_DEVICE_IMAGE3D_MAX_DEPTH:
+        case CL_DEVICE_MAX_PARAMETER_SIZE:
+            return DEV_GET_INT_INF(size_t);
+
+        case CL_DEVICE_IMAGE_SUPPORT:
+            return DEV_GET_INT_INF(cl_bool);
 #ifdef CL_DEVICE_DOUBLE_FP_CONFIG
-          case CL_DEVICE_DOUBLE_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
+        case CL_DEVICE_DOUBLE_FP_CONFIG:
 #endif
 #ifdef CL_DEVICE_HALF_FP_CONFIG
-          case CL_DEVICE_HALF_FP_CONFIG: DEV_GET_INT_INF(cl_device_fp_config);
+        case CL_DEVICE_HALF_FP_CONFIG:
 #endif
+        case CL_DEVICE_SINGLE_FP_CONFIG:
+            return DEV_GET_INT_INF(cl_device_fp_config);
 
-          case CL_DEVICE_GLOBAL_MEM_CACHE_TYPE: DEV_GET_INT_INF(cl_device_mem_cache_type);
-          case CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_GLOBAL_MEM_CACHE_SIZE: DEV_GET_INT_INF(cl_ulong);
-          case CL_DEVICE_GLOBAL_MEM_SIZE: DEV_GET_INT_INF(cl_ulong);
+        case CL_DEVICE_GLOBAL_MEM_CACHE_TYPE:
+            return DEV_GET_INT_INF(cl_device_mem_cache_type);
+        case CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE:
+            return DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_GLOBAL_MEM_CACHE_SIZE:
+        case CL_DEVICE_GLOBAL_MEM_SIZE:
+        case CL_DEVICE_LOCAL_MEM_SIZE:
+        case CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE:
+            return DEV_GET_INT_INF(cl_ulong);
 
-          case CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE: DEV_GET_INT_INF(cl_ulong);
-          case CL_DEVICE_MAX_CONSTANT_ARGS: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_LOCAL_MEM_TYPE: DEV_GET_INT_INF(cl_device_local_mem_type);
-          case CL_DEVICE_LOCAL_MEM_SIZE: DEV_GET_INT_INF(cl_ulong);
-          case CL_DEVICE_ERROR_CORRECTION_SUPPORT: DEV_GET_INT_INF(cl_bool);
-          case CL_DEVICE_PROFILING_TIMER_RESOLUTION: DEV_GET_INT_INF(size_t);
-          case CL_DEVICE_ENDIAN_LITTLE: DEV_GET_INT_INF(cl_bool);
-          case CL_DEVICE_AVAILABLE: DEV_GET_INT_INF(cl_bool);
-          case CL_DEVICE_COMPILER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
-          case CL_DEVICE_EXECUTION_CAPABILITIES: DEV_GET_INT_INF(cl_device_exec_capabilities);
-          case CL_DEVICE_QUEUE_PROPERTIES: DEV_GET_INT_INF(cl_command_queue_properties);
+        case CL_DEVICE_MAX_CONSTANT_ARGS:
+            return DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_LOCAL_MEM_TYPE:
+            return DEV_GET_INT_INF(cl_device_local_mem_type);
+        case CL_DEVICE_PROFILING_TIMER_RESOLUTION:
+            return DEV_GET_INT_INF(size_t);
+        case CL_DEVICE_ENDIAN_LITTLE:
+        case CL_DEVICE_AVAILABLE:
+        case CL_DEVICE_COMPILER_AVAILABLE:
+        case CL_DEVICE_ERROR_CORRECTION_SUPPORT:
+            return DEV_GET_INT_INF(cl_bool);
+        case CL_DEVICE_EXECUTION_CAPABILITIES:
+            return DEV_GET_INT_INF(cl_device_exec_capabilities);
+        case CL_DEVICE_QUEUE_PROPERTIES:
+            return DEV_GET_INT_INF(cl_command_queue_properties);
 
-          case CL_DEVICE_NAME:
-          case CL_DEVICE_VENDOR:
-          case CL_DRIVER_VERSION:
-          case CL_DEVICE_PROFILE:
-          case CL_DEVICE_VERSION:
-          case CL_DEVICE_EXTENSIONS:
-              return pyopencl_get_str_info(Device, m_device, param_name);
+        case CL_DEVICE_NAME:
+        case CL_DEVICE_VENDOR:
+        case CL_DRIVER_VERSION:
+        case CL_DEVICE_PROFILE:
+        case CL_DEVICE_VERSION:
+        case CL_DEVICE_EXTENSIONS:
+            return pyopencl_get_str_info(Device, m_device, param_name);
 
-          case CL_DEVICE_PLATFORM:
-              return pyopencl_get_opaque_info(cl_platform_id, platform,
-                                              Device, m_device, param_name);
+        case CL_DEVICE_PLATFORM:
+            return pyopencl_get_opaque_info(cl_platform_id, platform,
+                                            Device, m_device, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1010
-          case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_INT:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE:
+        case CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF:
+            return DEV_GET_INT_INF(cl_uint);
 
-          case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_NATIVE_VECTOR_WIDTH_INT: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_NATIVE_VECTOR_WIDTH_LONG: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
-
-          case CL_DEVICE_HOST_UNIFIED_MEMORY: DEV_GET_INT_INF(cl_bool);
-          case CL_DEVICE_OPENCL_C_VERSION:
+        case CL_DEVICE_HOST_UNIFIED_MEMORY:
+            return DEV_GET_INT_INF(cl_bool);
+        case CL_DEVICE_OPENCL_C_VERSION:
             return pyopencl_get_str_info(Device, m_device, param_name);
 #endif
 #ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
-          case CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV:
-          case CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV:
-          case CL_DEVICE_REGISTERS_PER_BLOCK_NV:
-          case CL_DEVICE_WARP_SIZE_NV:
-            DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_GPU_OVERLAP_NV:
-          case CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV:
-          case CL_DEVICE_INTEGRATED_MEMORY_NV:
-            DEV_GET_INT_INF(cl_bool);
+        case CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV:
+        case CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV:
+        case CL_DEVICE_REGISTERS_PER_BLOCK_NV:
+        case CL_DEVICE_WARP_SIZE_NV:
+            return DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_GPU_OVERLAP_NV:
+        case CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV:
+        case CL_DEVICE_INTEGRATED_MEMORY_NV:
+            return DEV_GET_INT_INF(cl_bool);
 #endif
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-          case CL_DEVICE_PARENT_DEVICE_EXT:
-              return pyopencl_get_opaque_info(cl_device_id, device,
-                                              Device, m_device, param_name);
-          case CL_DEVICE_PARTITION_TYPES_EXT:
-          case CL_DEVICE_AFFINITY_DOMAINS_EXT:
-          case CL_DEVICE_PARTITION_STYLE_EXT:
-              return pyopencl_get_array_info(cl_device_partition_property_ext,
-                                             Device, m_device, param_name);
-          case CL_DEVICE_REFERENCE_COUNT_EXT: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_PARENT_DEVICE_EXT:
+            return pyopencl_get_opaque_info(cl_device_id, device,
+                                            Device, m_device, param_name);
+        case CL_DEVICE_PARTITION_TYPES_EXT:
+        case CL_DEVICE_AFFINITY_DOMAINS_EXT:
+        case CL_DEVICE_PARTITION_STYLE_EXT:
+            return pyopencl_get_array_info(cl_device_partition_property_ext,
+                                           Device, m_device, param_name);
+        case CL_DEVICE_REFERENCE_COUNT_EXT:
+            return DEV_GET_INT_INF(cl_uint);
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
-          case CL_DEVICE_LINKER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
-          case CL_DEVICE_BUILT_IN_KERNELS:
-              return pyopencl_get_str_info(Device, m_device, param_name);
-          case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE: DEV_GET_INT_INF(size_t);
-          case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE: DEV_GET_INT_INF(size_t);
-          case CL_DEVICE_PARENT_DEVICE:
-              return pyopencl_get_opaque_info(cl_device_id, device,
-                                              Device, m_device, param_name);
-          case CL_DEVICE_PARTITION_MAX_SUB_DEVICES: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_PARTITION_TYPE:
-          case CL_DEVICE_PARTITION_PROPERTIES:
-              return pyopencl_get_array_info(cl_device_partition_property,
-                                             Device, m_device, param_name);
-          case CL_DEVICE_PARTITION_AFFINITY_DOMAIN:
-              return pyopencl_get_array_info(cl_device_affinity_domain,
-                                             Device, m_device, param_name);
-          case CL_DEVICE_REFERENCE_COUNT: DEV_GET_INT_INF(cl_uint);
-          case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC: DEV_GET_INT_INF(cl_bool);
-          case CL_DEVICE_PRINTF_BUFFER_SIZE: DEV_GET_INT_INF(cl_bool);
+        case CL_DEVICE_LINKER_AVAILABLE: return DEV_GET_INT_INF(cl_bool);
+        case CL_DEVICE_BUILT_IN_KERNELS:
+            return pyopencl_get_str_info(Device, m_device, param_name);
+        case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE:
+        case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE:
+            DEV_GET_INT_INF(size_t);
+        case CL_DEVICE_PARENT_DEVICE:
+            return pyopencl_get_opaque_info(cl_device_id, device,
+                                            Device, m_device, param_name);
+        case CL_DEVICE_PARTITION_MAX_SUB_DEVICES:
+            return DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_PARTITION_TYPE:
+        case CL_DEVICE_PARTITION_PROPERTIES:
+            return pyopencl_get_array_info(cl_device_partition_property,
+                                           Device, m_device, param_name);
+        case CL_DEVICE_PARTITION_AFFINITY_DOMAIN:
+            return pyopencl_get_array_info(cl_device_affinity_domain,
+                                           Device, m_device, param_name);
+        case CL_DEVICE_REFERENCE_COUNT: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC:
+        case CL_DEVICE_PRINTF_BUFFER_SIZE:
+            DEV_GET_INT_INF(cl_bool);
 #endif
-          // {{{ AMD dev attrs
-          //
-          // types of AMD dev attrs divined from
-          // https://www.khronos.org/registry/cl/api/1.2/cl.hpp
+            // {{{ AMD dev attrs
+            //
+            // types of AMD dev attrs divined from
+            // https://www.khronos.org/registry/cl/api/1.2/cl.hpp
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
-          case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD: DEV_GET_INT_INF(cl_ulong);
+        case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD: DEV_GET_INT_INF(cl_ulong);
 #endif
-          /* FIXME
-             #ifdef CL_DEVICE_TOPOLOGY_AMD
-             case CL_DEVICE_TOPOLOGY_AMD:
-             #endif
-          */
+            /* FIXME
+               #ifdef CL_DEVICE_TOPOLOGY_AMD
+               case CL_DEVICE_TOPOLOGY_AMD:
+               #endif
+            */
 #ifdef CL_DEVICE_BOARD_NAME_AMD
-          case CL_DEVICE_BOARD_NAME_AMD: ;
-              return pyopencl_get_str_info(Device, m_device, param_name);
+        case CL_DEVICE_BOARD_NAME_AMD: ;
+            return pyopencl_get_str_info(Device, m_device, param_name);
 #endif
 #ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
-          case CL_DEVICE_GLOBAL_FREE_MEMORY_AMD:
-              return pyopencl_get_array_info(size_t, Device,
-                                             m_device, param_name);
+        case CL_DEVICE_GLOBAL_FREE_MEMORY_AMD:
+            return pyopencl_get_array_info(size_t, Device,
+                                           m_device, param_name);
 #endif
 #ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
-          case CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD:
 #endif
 #ifdef CL_DEVICE_SIMD_WIDTH_AMD
-          case CL_DEVICE_SIMD_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_SIMD_WIDTH_AMD:
 #endif
 #ifdef CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD
-          case CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD:
 #endif
 #ifdef CL_DEVICE_WAVEFRONT_WIDTH_AMD
-          case CL_DEVICE_WAVEFRONT_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_WAVEFRONT_WIDTH_AMD:
 #endif
 #ifdef CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD
-          case CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD:
 #endif
 #ifdef CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD
-          case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANKS_AMD:
 #endif
 #ifdef CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD
-          case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD:
 #endif
 #ifdef CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD
-          case CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD:
 #endif
 #ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
-          case CL_DEVICE_LOCAL_MEM_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_LOCAL_MEM_BANKS_AMD:
 #endif
-          // }}}
 
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
-          case CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT:
 #endif
+            return DEV_GET_INT_INF(cl_uint);
+            // }}}
 
-          default:
+        default:
             throw error("Device.get_info", CL_INVALID_VALUE);
-          }
+        }
       }
 
     // TODO: sub-devices
@@ -708,67 +706,67 @@ cast_bool(const T &v)
 
       generic_info get_info(cl_context_info param_name) const
       {
-        switch (param_name)
-        {
-          case CL_CONTEXT_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(Context, m_context, param_name, cl_uint);
-
-          case CL_CONTEXT_DEVICES:
-              return pyopencl_get_opaque_array_info(
-                  cl_device_id, device, Context, m_context, param_name);
-          case CL_CONTEXT_PROPERTIES: {
-              auto result = pyopencl_get_vec_info(
-                  cl_context_properties, Context, m_context, param_name);
-              pyopencl_buf<generic_info> py_result(result.len() / 2);
-              size_t i = 0;
-              for (;i < py_result.len();i++) {
-                  cl_context_properties key = result[i * 2];
-                  if (key == 0)
-                      break;
-                  cl_context_properties value = result[i * 2 + 1];
-                  generic_info &info = py_result[i];
-                  info.dontfree = 0;
-                  info.opaque_class = CLASS_NONE;
-                  switch (key) {
-                  case CL_CONTEXT_PLATFORM:
-                      info.opaque_class = CLASS_PLATFORM;
-                      info.type = "void *";
-                      info.value = new platform(
-                          reinterpret_cast<cl_platform_id>(value));
-                      break;
+        switch (param_name) {
+        case CL_CONTEXT_REFERENCE_COUNT:
+            return pyopencl_get_int_info(cl_uint, Context,
+                                         m_context, param_name);
+        case CL_CONTEXT_DEVICES:
+            return pyopencl_get_opaque_array_info(
+                cl_device_id, device, Context, m_context, param_name);
+        case CL_CONTEXT_PROPERTIES: {
+            auto result = pyopencl_get_vec_info(
+                cl_context_properties, Context, m_context, param_name);
+            pyopencl_buf<generic_info> py_result(result.len() / 2);
+            size_t i = 0;
+            for (;i < py_result.len();i++) {
+                cl_context_properties key = result[i * 2];
+                if (key == 0)
+                    break;
+                cl_context_properties value = result[i * 2 + 1];
+                generic_info &info = py_result[i];
+                info.dontfree = 0;
+                info.opaque_class = CLASS_NONE;
+                switch (key) {
+                case CL_CONTEXT_PLATFORM:
+                    info.opaque_class = CLASS_PLATFORM;
+                    info.type = "void *";
+                    info.value = new platform(
+                        reinterpret_cast<cl_platform_id>(value));
+                    break;
 
 #if defined(PYOPENCL_GL_SHARING_VERSION) && (PYOPENCL_GL_SHARING_VERSION >= 1)
 #if defined(__APPLE__) && defined(HAVE_GL)
-                  case CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE:
+                case CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE:
 #else
-                  case CL_GL_CONTEXT_KHR:
-                  case CL_EGL_DISPLAY_KHR:
-                  case CL_GLX_DISPLAY_KHR:
-                  case CL_WGL_HDC_KHR:
-                  case CL_CGL_SHAREGROUP_KHR:
+                case CL_GL_CONTEXT_KHR:
+                case CL_EGL_DISPLAY_KHR:
+                case CL_GLX_DISPLAY_KHR:
+                case CL_WGL_HDC_KHR:
+                case CL_CGL_SHAREGROUP_KHR:
 #endif
-                      info.type = "intptr_t *";
-                      info.value = (void*)value;
-                      // we do not own this object
-                      info.dontfree = 1;
-                      break;
+                    info.type = "intptr_t *";
+                    info.value = (void*)value;
+                    // we do not own this object
+                    info.dontfree = 1;
+                    break;
 
 #endif
-                  default:
-                      throw error("Context.get_info", CL_INVALID_VALUE,
-                                  "unknown context_property key encountered");
-                  }
-              }
-              py_result.resize(i);
-              return pyopencl_convert_array_info(generic_info, py_result);
-          }
+                default:
+                    throw error("Context.get_info", CL_INVALID_VALUE,
+                                "unknown context_property key encountered");
+                }
+            }
+            py_result.resize(i);
+            return pyopencl_convert_array_info(generic_info, py_result);
+        }
 
 #if PYOPENCL_CL_VERSION >= 0x1010
-          case CL_CONTEXT_NUM_DEVICES:
-            PYOPENCL_GET_INTEGRAL_INFO(Context, m_context, param_name, cl_uint);
+        case CL_CONTEXT_NUM_DEVICES:
+            return pyopencl_get_int_info(cl_uint, Context,
+                                         m_context, param_name);
 #endif
 
-          default:
+        default:
             throw error("Context.get_info", CL_INVALID_VALUE);
         }
       }
@@ -846,13 +844,13 @@ cast_bool(const T &v)
             return pyopencl_get_opaque_info(cl_device_id, device,
                                             CommandQueue, m_queue, param_name);
         case CL_QUEUE_REFERENCE_COUNT:
-          PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
-                                     cl_uint);
+            return pyopencl_get_int_info(cl_uint, CommandQueue,
+                                         m_queue, param_name);
         case CL_QUEUE_PROPERTIES:
-          PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
-                                     cl_command_queue_properties);
+            return pyopencl_get_int_info(cl_command_queue_properties,
+                                         CommandQueue, m_queue, param_name);
         default:
-          throw error("CommandQueue.get_info", CL_INVALID_VALUE);
+            throw error("CommandQueue.get_info", CL_INVALID_VALUE);
         }
       }
 
@@ -927,14 +925,12 @@ cast_bool(const T &v)
             return pyopencl_get_opaque_info(cl_command_queue, command_queue,
                                             Event, m_event, param_name);
         case CL_EVENT_COMMAND_TYPE:
-            PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
-                cl_command_type);
+            return pyopencl_get_int_info(cl_command_type, Event,
+                                         m_event, param_name);
         case CL_EVENT_COMMAND_EXECUTION_STATUS:
-            PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
-                cl_int);
+            return pyopencl_get_int_info(cl_int, Event, m_event, param_name);
         case CL_EVENT_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
-                cl_uint);
+            return pyopencl_get_int_info(cl_uint, Event, m_event, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1010
         case CL_EVENT_CONTEXT:
             return pyopencl_get_opaque_info(cl_context, context,
@@ -948,15 +944,14 @@ cast_bool(const T &v)
 
       generic_info get_profiling_info(cl_profiling_info param_name) const
       {
-        switch (param_name)
-        {
-          case CL_PROFILING_COMMAND_QUEUED:
-          case CL_PROFILING_COMMAND_SUBMIT:
-          case CL_PROFILING_COMMAND_START:
-          case CL_PROFILING_COMMAND_END:
-            PYOPENCL_GET_INTEGRAL_INFO(EventProfiling, m_event, param_name,
-                cl_ulong);
-          default:
+        switch (param_name) {
+        case CL_PROFILING_COMMAND_QUEUED:
+        case CL_PROFILING_COMMAND_SUBMIT:
+        case CL_PROFILING_COMMAND_START:
+        case CL_PROFILING_COMMAND_END:
+            return pyopencl_get_int_info(cl_ulong, EventProfiling,
+                                         m_event, param_name);
+        default:
             throw error("Event.get_profiling_info", CL_INVALID_VALUE);
         }
       }
@@ -989,26 +984,26 @@ cast_bool(const T &v)
         return param_value;
       }
 
-      generic_info get_info(cl_mem_info param_name) {
-        switch (param_name){
+      generic_info get_info(cl_mem_info param_name)
+      {
+          switch (param_name){
           case CL_MEM_TYPE:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
-                cl_mem_object_type);
+              return pyopencl_get_int_info(cl_mem_object_type, MemObject,
+                                           data(), param_name);
           case CL_MEM_FLAGS:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
-                cl_mem_flags);
+              return pyopencl_get_int_info(cl_mem_flags, MemObject,
+                                           data(), param_name);
           case CL_MEM_SIZE:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
-                size_t);
+              return pyopencl_get_int_info(size_t, MemObject,
+                                           data(), param_name);
           case CL_MEM_HOST_PTR:
-            throw pyopencl::error("MemoryObject.get_info", CL_INVALID_VALUE,
-                "Use MemoryObject.get_host_array to get host pointer.");
+              throw pyopencl::error("MemoryObject.get_info", CL_INVALID_VALUE,
+                                    "Use MemoryObject.get_host_array to get "
+                                    "host pointer.");
           case CL_MEM_MAP_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
-                cl_uint);
           case CL_MEM_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
-                cl_uint);
+              return pyopencl_get_int_info(cl_uint, MemObject,
+                                           data(), param_name);
           case CL_MEM_CONTEXT:
               return pyopencl_get_opaque_info(cl_context, context,
                                               MemObject, data(), param_name);
@@ -1028,12 +1023,12 @@ cast_bool(const T &v)
             //        return create_mem_object_wrapper(param_value);
             //      }
           case CL_MEM_OFFSET:
-            PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
-                size_t);
+              return pyopencl_get_int_info(size_t, MemObject,
+                                           data(), param_name);
 #endif
 
           default:
-            throw error("MemoryObjectHolder.get_info", CL_INVALID_VALUE);
+              throw error("MemoryObjectHolder.get_info", CL_INVALID_VALUE);
         }
       }
   };
@@ -1174,21 +1169,20 @@ cast_bool(const T &v)
 
       generic_info get_image_info(cl_image_info param_name) const
       {
-        switch (param_name)
-        {
-          case CL_IMAGE_FORMAT:
-            PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name,
-                cl_image_format);
-          case CL_IMAGE_ELEMENT_SIZE:
-          case CL_IMAGE_ROW_PITCH:
-          case CL_IMAGE_SLICE_PITCH:
-          case CL_IMAGE_WIDTH:
-          case CL_IMAGE_HEIGHT:
-          case CL_IMAGE_DEPTH:
+        switch (param_name) {
+        case CL_IMAGE_FORMAT:
+            return pyopencl_get_int_info(cl_image_format, Image,
+                                         data(), param_name);
+        case CL_IMAGE_ELEMENT_SIZE:
+        case CL_IMAGE_ROW_PITCH:
+        case CL_IMAGE_SLICE_PITCH:
+        case CL_IMAGE_WIDTH:
+        case CL_IMAGE_HEIGHT:
+        case CL_IMAGE_DEPTH:
 #if PYOPENCL_CL_VERSION >= 0x1020
-          case CL_IMAGE_ARRAY_SIZE:
+        case CL_IMAGE_ARRAY_SIZE:
 #endif
-            PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, size_t);
+            return pyopencl_get_int_info(size_t, Image, data(), param_name);
 
 #if PYOPENCL_CL_VERSION >= 0x1020
             // TODO:
@@ -1205,12 +1199,12 @@ cast_bool(const T &v)
             //        return create_mem_object_wrapper(param_value);
             //      }
 
-          case CL_IMAGE_NUM_MIP_LEVELS:
-          case CL_IMAGE_NUM_SAMPLES:
-            PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, cl_uint);
+        case CL_IMAGE_NUM_MIP_LEVELS:
+        case CL_IMAGE_NUM_SAMPLES:
+            return pyopencl_get_int_info(cl_uint, Image, data(), param_name);
 #endif
 
-          default:
+        default:
             throw error("MemoryObject.get_image_info", CL_INVALID_VALUE);
         }
       }
@@ -1615,16 +1609,14 @@ cast_bool(const T &v)
 
     generic_info get_gl_texture_info(cl_gl_texture_info param_name)
     {
-      switch (param_name)
-        {
-        case CL_GL_TEXTURE_TARGET:
-          PYOPENCL_GET_INTEGRAL_INFO(GLTexture, data(), param_name, GLenum);
-        case CL_GL_MIPMAP_LEVEL:
-          PYOPENCL_GET_INTEGRAL_INFO(GLTexture, data(), param_name, GLint);
-
-        default:
+      switch (param_name) {
+      case CL_GL_TEXTURE_TARGET:
+          return pyopencl_get_int_info(GLenum, GLTexture, data(), param_name);
+      case CL_GL_MIPMAP_LEVEL:
+          return pyopencl_get_int_info(GLint, GLTexture, data(), param_name);
+      default:
           throw error("MemoryObject.get_gl_texture_info", CL_INVALID_VALUE);
-        }
+      }
     }
   };
 
@@ -2017,25 +2009,24 @@ cast_bool(const T &v)
 
       generic_info get_info(cl_sampler_info param_name) const
       {
-        switch (param_name)
-        {
-          case CL_SAMPLER_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
-                cl_uint);
-          case CL_SAMPLER_CONTEXT:
-              return pyopencl_get_opaque_info(cl_context, context,
-                                              Sampler, m_sampler, param_name);
-          case CL_SAMPLER_ADDRESSING_MODE:
-            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
-                cl_addressing_mode);
-          case CL_SAMPLER_FILTER_MODE:
-            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
-                cl_filter_mode);
-          case CL_SAMPLER_NORMALIZED_COORDS:
-            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
-                cl_bool);
+        switch (param_name) {
+        case CL_SAMPLER_REFERENCE_COUNT:
+            return pyopencl_get_int_info(cl_uint, Sampler,
+                                         m_sampler, param_name);
+        case CL_SAMPLER_CONTEXT:
+            return pyopencl_get_opaque_info(cl_context, context,
+                                            Sampler, m_sampler, param_name);
+        case CL_SAMPLER_ADDRESSING_MODE:
+            return pyopencl_get_int_info(cl_addressing_mode, Sampler,
+                                         m_sampler, param_name);
+        case CL_SAMPLER_FILTER_MODE:
+            return pyopencl_get_int_info(cl_filter_mode, Sampler,
+                                         m_sampler, param_name);
+        case CL_SAMPLER_NORMALIZED_COORDS:
+            return pyopencl_get_int_info(cl_bool, Sampler,
+                                         m_sampler, param_name);
 
-          default:
+        default:
             throw error("Sampler.get_info", CL_INVALID_VALUE);
         }
       }
@@ -2086,17 +2077,14 @@ cast_bool(const T &v)
 
       generic_info get_info(cl_program_info param_name) const
       {
-        switch (param_name)
-        {
-          case CL_PROGRAM_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
-                cl_uint);
+        switch (param_name) {
           case CL_PROGRAM_CONTEXT:
               return pyopencl_get_opaque_info(cl_context, context,
                                               Program, m_program, param_name);
+          case CL_PROGRAM_REFERENCE_COUNT:
           case CL_PROGRAM_NUM_DEVICES:
-            PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
-                cl_uint);
+              return pyopencl_get_int_info(cl_uint, Program,
+                                           m_program, param_name);
           case CL_PROGRAM_DEVICES:
               return pyopencl_get_opaque_array_info(
                   cl_device_id, device, Program, m_program, param_name);
@@ -2135,8 +2123,8 @@ cast_bool(const T &v)
 
 #if PYOPENCL_CL_VERSION >= 0x1020
           case CL_PROGRAM_NUM_KERNELS:
-            PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
-                size_t);
+              return pyopencl_get_int_info(size_t, Program,
+                                           m_program, param_name);
           case CL_PROGRAM_KERNEL_NAMES:
               return pyopencl_get_str_info(Program, m_program, param_name);
 #endif
@@ -2147,28 +2135,22 @@ cast_bool(const T &v)
       }
 
       generic_info get_build_info(device const &dev,
-          cl_program_build_info param_name) const
+                                  cl_program_build_info param_name) const
       {
-        switch (param_name)
-        {
-#define PYOPENCL_FIRST_ARG m_program, dev.data() // hackety hack
-          case CL_PROGRAM_BUILD_STATUS:
-            PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
-                PYOPENCL_FIRST_ARG, param_name,
-                cl_build_status);
-          case CL_PROGRAM_BUILD_OPTIONS:
-          case CL_PROGRAM_BUILD_LOG:
+        switch (param_name) {
+        case CL_PROGRAM_BUILD_STATUS:
+            return pyopencl_get_int_info(cl_build_status, ProgramBuild,
+                                         m_program, dev.data(), param_name);
+        case CL_PROGRAM_BUILD_OPTIONS:
+        case CL_PROGRAM_BUILD_LOG:
             return pyopencl_get_str_info(ProgramBuild, m_program,
                                          dev.data(), param_name);
 #if PYOPENCL_CL_VERSION >= 0x1020
-          case CL_PROGRAM_BINARY_TYPE:
-            PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
-                PYOPENCL_FIRST_ARG, param_name,
-                cl_program_binary_type);
+        case CL_PROGRAM_BINARY_TYPE:
+            return pyopencl_get_int_info(cl_program_binary_type, ProgramBuild,
+                                         m_program, dev.data(), param_name);
 #endif
-#undef PYOPENCL_FIRST_ARG
-
-          default:
+        default:
             throw error("Program.get_build_info", CL_INVALID_VALUE);
         }
       }
@@ -2425,53 +2407,44 @@ cast_bool(const T &v)
           return pyopencl_get_str_info(Kernel, m_kernel, param_name);
       case CL_KERNEL_NUM_ARGS:
       case CL_KERNEL_REFERENCE_COUNT:
-          PYOPENCL_GET_INTEGRAL_INFO(Kernel, m_kernel, param_name,
-                                     cl_uint);
-        case CL_KERNEL_CONTEXT:
-            return pyopencl_get_opaque_info(cl_context, context,
-                                            Kernel, m_kernel, param_name);
-        case CL_KERNEL_PROGRAM:
-            return pyopencl_get_opaque_info(cl_program, program,
-                                            Kernel, m_kernel, param_name);
+          return pyopencl_get_int_info(cl_uint, Kernel, m_kernel, param_name);
+      case CL_KERNEL_CONTEXT:
+          return pyopencl_get_opaque_info(cl_context, context,
+                                          Kernel, m_kernel, param_name);
+      case CL_KERNEL_PROGRAM:
+          return pyopencl_get_opaque_info(cl_program, program,
+                                          Kernel, m_kernel, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1020
-        case CL_KERNEL_ATTRIBUTES:
-            return pyopencl_get_str_info(Kernel, m_kernel, param_name);
+      case CL_KERNEL_ATTRIBUTES:
+          return pyopencl_get_str_info(Kernel, m_kernel, param_name);
 #endif
-        default:
+      default:
           throw error("Kernel.get_info", CL_INVALID_VALUE);
-        }
+      }
     }
 
     generic_info get_work_group_info(cl_kernel_work_group_info param_name, device const &dev) const
     {
-      switch (param_name)
-        {
-#define PYOPENCL_FIRST_ARG m_kernel, dev.data() // hackety hack
-        case CL_KERNEL_WORK_GROUP_SIZE:
-          PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
-                                     PYOPENCL_FIRST_ARG, param_name,
-                                     size_t);
-        case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
-            return pyopencl_get_array_info(size_t, KernelWorkGroup,
-                                           m_kernel, dev.data(), param_name);
-        case CL_KERNEL_LOCAL_MEM_SIZE:
+      switch (param_name) {
 #if PYOPENCL_CL_VERSION >= 0x1010
-        case CL_KERNEL_PRIVATE_MEM_SIZE:
+      case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
 #endif
-          PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
-                                     PYOPENCL_FIRST_ARG, param_name,
-                                     cl_ulong);
+      case CL_KERNEL_WORK_GROUP_SIZE:
+          return pyopencl_get_int_info(size_t, KernelWorkGroup,
+                                       m_kernel, dev.data(), param_name);
+      case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
+          return pyopencl_get_array_info(size_t, KernelWorkGroup,
+                                         m_kernel, dev.data(), param_name);
+      case CL_KERNEL_LOCAL_MEM_SIZE:
+#if PYOPENCL_CL_VERSION >= 0x1010
+      case CL_KERNEL_PRIVATE_MEM_SIZE:
+#endif
+          return pyopencl_get_int_info(cl_ulong, KernelWorkGroup,
+                                       m_kernel, dev.data(), param_name);
 
-#if PYOPENCL_CL_VERSION >= 0x1010
-        case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
-          PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
-                                     PYOPENCL_FIRST_ARG, param_name,
-                                     size_t);
-#endif
-        default:
+      default:
           throw error("Kernel.get_work_group_info", CL_INVALID_VALUE);
-#undef PYOPENCL_FIRST_ARG
-        }
+      }
     }
 
     // #if PYOPENCL_CL_VERSION >= 0x1020
