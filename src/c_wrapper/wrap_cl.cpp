@@ -226,8 +226,6 @@ public:
 
 // {{{ tools
 
-#define PYOPENCL_CAST_BOOL(B) ((B) ? CL_TRUE : CL_FALSE)
-
 #define PYOPENCL_PARSE_PY_DEVICES \
   std::vector<cl_device_id> devices_vec; \
   cl_uint num_devices; \
@@ -334,6 +332,14 @@ std::string tostring(const T& v)
 
 namespace pyopencl
 {
+
+template<typename T>
+static inline cl_bool
+cast_bool(const T &v)
+{
+    return v ? CL_TRUE : CL_FALSE;
+}
+
   char *_copy_str(const std::string& str) {
     MALLOC(char, cstr, str.size() + 1);
     std::size_t len = str.copy(cstr, str.size());
@@ -1007,7 +1013,7 @@ namespace pyopencl
     {
       cl_command_queue_properties old_prop;
       pyopencl_call_guarded(clSetCommandQueueProperty, m_queue, prop,
-                            PYOPENCL_CAST_BOOL(enable), &old_prop);
+                            cast_bool(enable), &old_prop);
       return old_prop;
     }
 #endif
@@ -1525,8 +1531,7 @@ namespace pyopencl
     // TODO
     //PYOPENCL_RETRY_IF_MEM_ERROR(
     pyopencl_call_guarded(clEnqueueReadImage,
-                          cq.data(), img.data(),
-                          PYOPENCL_CAST_BOOL(is_blocking),
+                          cq.data(), img.data(), cast_bool(is_blocking),
                           origin, region, row_pitch, slice_pitch, buffer,
                           PYOPENCL_WAITLIST_ARGS, &evt);
     //);
@@ -2659,8 +2664,7 @@ namespace pyopencl
     // TODO
     //PYOPENCL_RETRY_IF_MEM_ERROR(
     pyopencl_call_guarded(clEnqueueReadBuffer,
-                          cq.data(), mem.data(),
-                          PYOPENCL_CAST_BOOL(is_blocking),
+                          cq.data(), mem.data(), cast_bool(is_blocking),
                           device_offset, size, buffer,
                           PYOPENCL_WAITLIST_ARGS, &evt);
     //);
@@ -2717,7 +2721,7 @@ namespace pyopencl
     // TODO
     //PYOPENCL_RETRY_IF_MEM_ERROR(
     pyopencl_call_guarded(clEnqueueWriteBuffer, cq.data(), mem.data(),
-                          PYOPENCL_CAST_BOOL(is_blocking), device_offset,
+                          cast_bool(is_blocking), device_offset,
                           size, buffer, PYOPENCL_WAITLIST_ARGS, &evt);
     //);
     // TODO
