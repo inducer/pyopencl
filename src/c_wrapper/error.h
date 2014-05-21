@@ -81,6 +81,8 @@ public:
     }
 };
 
+// }}}
+
 template<typename... ArgTypes, typename... ArgTypes2>
 static inline void
 call_guarded(cl_int (*func)(ArgTypes...), const char *name,
@@ -95,6 +97,21 @@ call_guarded(cl_int (*func)(ArgTypes...), const char *name,
 #define pyopencl_call_guarded(func, args...)    \
     pyopencl::call_guarded(func, #func, args)
 
-// }}}
+template<typename... ArgTypes, typename... ArgTypes2>
+static inline void
+call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
+                     ArgTypes2&&... args)
+{
+    print_call_trace(name);
+    cl_int status_code = func(ArgTypes(args)...);
+    if (status_code != CL_SUCCESS) {
+        std::cerr
+            << ("PyOpenCL WARNING: a clean-up operation failed "
+                "(dead context maybe?)") << std::endl
+            << name << " failed with code " << status_code << std::endl;
+    }
+}
+#define pyopencl_call_guarded_cleanup(func, args...)    \
+    pyopencl::call_guarded_cleanup(func, #func, args)
 
 }

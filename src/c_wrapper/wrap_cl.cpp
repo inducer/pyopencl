@@ -33,21 +33,6 @@
       return error; \
     }
 
-
-#define PYOPENCL_CALL_GUARDED_CLEANUP(NAME, ARGLIST)                    \
-  {                                                                     \
-    pyopencl::print_call_trace(#NAME);                                  \
-    cl_int status_code;                                                 \
-    status_code = NAME ARGLIST;                                         \
-    if (status_code != CL_SUCCESS)                                      \
-      std::cerr                                                         \
-        << "PyOpenCL WARNING: a clean-up operation failed (dead context maybe?)" \
-        << std::endl                                                    \
-        << #NAME " failed with code " << status_code                    \
-        << std::endl;                                                   \
-  }
-
-
 // }}}
 
 
@@ -499,7 +484,7 @@ namespace pyopencl
           PYOPENCL_GET_EXT_FUN(plat,
               clReleaseDeviceEXT, release_func);
 
-          PYOPENCL_CALL_GUARDED_CLEANUP(release_func, (m_device));
+          pyopencl_call_guarded_cleanup(release_func, m_device);
         }
 #endif
 
@@ -813,7 +798,7 @@ namespace pyopencl
 
       ~context()
       {
-        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseContext, (m_context));
+          pyopencl_call_guarded_cleanup(clReleaseContext, m_context);
       }
 
       cl_context data() const
@@ -956,8 +941,7 @@ namespace pyopencl
 
       ~command_queue()
       {
-        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseCommandQueue,
-                                      (m_queue));
+          pyopencl_call_guarded_cleanup(clReleaseCommandQueue, m_queue);
       }
 
       const cl_command_queue data() const
@@ -1034,14 +1018,14 @@ namespace pyopencl
           pyopencl_call_guarded(clRetainEvent, event);
       }
 
-      event(event const &src)
-        : m_event(src.m_event)
-      { pyopencl_call_guarded(clRetainEvent, m_event); }
+      event(event const &src) : m_event(src.m_event)
+      {
+          pyopencl_call_guarded(clRetainEvent, m_event);
+      }
 
       virtual ~event()
       {
-        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseEvent,
-            (m_event));
+          pyopencl_call_guarded_cleanup(clReleaseEvent, m_event);
       }
 
       const cl_event data() const
@@ -1201,11 +1185,11 @@ namespace pyopencl
 
       void release()
       {
-        if (!m_valid)
-          throw error("MemoryObject.free", CL_INVALID_VALUE,
-              "trying to double-unref mem object");
-        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseMemObject, (m_mem));
-        m_valid = false;
+          if (!m_valid)
+              throw error("MemoryObject.free", CL_INVALID_VALUE,
+                          "trying to double-unref mem object");
+          pyopencl_call_guarded_cleanup(clReleaseMemObject, m_mem);
+          m_valid = false;
       }
 
       virtual ~memory_object()
@@ -2131,7 +2115,7 @@ namespace pyopencl
 
       ~sampler()
       {
-        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseSampler, (m_sampler));
+          pyopencl_call_guarded_cleanup(clReleaseSampler, m_sampler);
       }
 
       cl_sampler data() const
@@ -2188,7 +2172,7 @@ namespace pyopencl
 
       ~program()
       {
-        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseProgram, (m_program));
+          pyopencl_call_guarded_cleanup(clReleaseProgram, m_program);
       }
 
       cl_program data() const
@@ -2468,7 +2452,7 @@ namespace pyopencl
 
     ~kernel()
     {
-        PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseKernel, (m_kernel));
+        pyopencl_call_guarded_cleanup(clReleaseKernel, m_kernel);
     }
 
     cl_kernel data() const
