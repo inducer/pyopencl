@@ -206,24 +206,6 @@ run_python_gc();                                \
 namespace pyopencl
 {
 
-  class noncopyable {
-    // non-copyable
-
-    private:
-      noncopyable(noncopyable const &)
-      { }
-
-      noncopyable &operator=(noncopyable const &)
-      {
-        return *this;
-      }
-
-    public:
-      noncopyable()
-      { }
-  };
-
-
   // {{{ platform
 
   class platform : public noncopyable

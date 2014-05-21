@@ -91,6 +91,14 @@ cast_bool(const T &v)
     return v ? CL_TRUE : CL_FALSE;
 }
 
+class noncopyable {
+    // non-copyable
+private:
+    noncopyable(noncopyable const &) = delete;
+    noncopyable &operator=(noncopyable const &) = delete;
+public:
+    noncopyable() {}
+};
 
 // FIXME
 static inline char*
