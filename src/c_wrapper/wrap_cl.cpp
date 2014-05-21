@@ -60,25 +60,6 @@
 
 // {{{ GetInfo helpers
 
-#define PYOPENCL_GET_STR_INFO(WHAT, FIRST_ARG, SECOND_ARG)              \
-  {                                                                     \
-    size_t param_value_size;                                            \
-    pyopencl_call_guarded(clGet##WHAT##Info,                            \
-                          FIRST_ARG, SECOND_ARG, 0, NULL,               \
-                          &param_value_size);                           \
-                                                                        \
-    pyopencl_buf<char> param_value(param_value_size);                   \
-    pyopencl_call_guarded(clGet##WHAT##Info,                            \
-                          FIRST_ARG, SECOND_ARG, param_value_size,      \
-                          param_value.get(), &param_value_size);        \
-    generic_info info;                                                  \
-    info.dontfree = 0;                                                  \
-    info.opaque_class = CLASS_NONE;                                     \
-    info.type = "char*";                                                \
-    info.value = (void*)param_value.release();                          \
-    return info;                                                        \
-  }
-
 #define PYOPENCL_GET_INTEGRAL_INFO(WHAT, FIRST_ARG, SECOND_ARG, TYPE)   \
   {                                                                     \
     pyopencl_buf<TYPE> param_value;                                     \
@@ -294,18 +275,17 @@ cast_bool(const T &v)
 
       generic_info get_info(cl_platform_info param_name) const
       {
-        switch (param_name)
-        {
-          case CL_PLATFORM_PROFILE:
-          case CL_PLATFORM_VERSION:
-          case CL_PLATFORM_NAME:
-          case CL_PLATFORM_VENDOR:
+        switch (param_name) {
+        case CL_PLATFORM_PROFILE:
+        case CL_PLATFORM_VERSION:
+        case CL_PLATFORM_NAME:
+        case CL_PLATFORM_VENDOR:
 #if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
-          case CL_PLATFORM_EXTENSIONS:
+        case CL_PLATFORM_EXTENSIONS:
 #endif
-            PYOPENCL_GET_STR_INFO(Platform, m_platform, param_name);
+            return pyopencl_get_str_info(Platform, m_platform, param_name);
 
-          default:
+        default:
             throw error("Platform.get_info", CL_INVALID_VALUE);
         }
       }
@@ -502,7 +482,7 @@ cast_bool(const T &v)
           case CL_DEVICE_PROFILE:
           case CL_DEVICE_VERSION:
           case CL_DEVICE_EXTENSIONS:
-            PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+              return pyopencl_get_str_info(Device, m_device, param_name);
 
           case CL_DEVICE_PLATFORM:
               return pyopencl_get_opaque_info(cl_platform_id, platform,
@@ -520,7 +500,7 @@ cast_bool(const T &v)
 
           case CL_DEVICE_HOST_UNIFIED_MEMORY: DEV_GET_INT_INF(cl_bool);
           case CL_DEVICE_OPENCL_C_VERSION:
-            PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+            return pyopencl_get_str_info(Device, m_device, param_name);
 #endif
 #ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
           case CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV:
@@ -547,7 +527,7 @@ cast_bool(const T &v)
 #if PYOPENCL_CL_VERSION >= 0x1020
           case CL_DEVICE_LINKER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
           case CL_DEVICE_BUILT_IN_KERNELS:
-            PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+              return pyopencl_get_str_info(Device, m_device, param_name);
           case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE: DEV_GET_INT_INF(size_t);
           case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE: DEV_GET_INT_INF(size_t);
           case CL_DEVICE_PARENT_DEVICE:
@@ -579,7 +559,7 @@ cast_bool(const T &v)
           */
 #ifdef CL_DEVICE_BOARD_NAME_AMD
           case CL_DEVICE_BOARD_NAME_AMD: ;
-            PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+              return pyopencl_get_str_info(Device, m_device, param_name);
 #endif
 #ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
           case CL_DEVICE_GLOBAL_FREE_MEMORY_AMD:
@@ -2121,7 +2101,7 @@ cast_bool(const T &v)
               return pyopencl_get_opaque_array_info(
                   cl_device_id, device, Program, m_program, param_name);
           case CL_PROGRAM_SOURCE:
-            PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
+              return pyopencl_get_str_info(Program, m_program, param_name);
           case CL_PROGRAM_BINARY_SIZES:
               return pyopencl_get_array_info(size_t, Program, m_program,
                                              param_name);
@@ -2158,7 +2138,7 @@ cast_bool(const T &v)
             PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
                 size_t);
           case CL_PROGRAM_KERNEL_NAMES:
-            PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
+              return pyopencl_get_str_info(Program, m_program, param_name);
 #endif
 
           default:
@@ -2178,8 +2158,8 @@ cast_bool(const T &v)
                 cl_build_status);
           case CL_PROGRAM_BUILD_OPTIONS:
           case CL_PROGRAM_BUILD_LOG:
-            PYOPENCL_GET_STR_INFO(ProgramBuild,
-                PYOPENCL_FIRST_ARG, param_name);
+            return pyopencl_get_str_info(ProgramBuild, m_program,
+                                         dev.data(), param_name);
 #if PYOPENCL_CL_VERSION >= 0x1020
           case CL_PROGRAM_BINARY_TYPE:
             PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
@@ -2440,12 +2420,11 @@ cast_bool(const T &v)
 
     generic_info get_info(cl_kernel_info param_name) const
     {
-      switch (param_name)
-        {
-        case CL_KERNEL_FUNCTION_NAME:
-          PYOPENCL_GET_STR_INFO(Kernel, m_kernel, param_name);
-        case CL_KERNEL_NUM_ARGS:
-        case CL_KERNEL_REFERENCE_COUNT:
+      switch (param_name) {
+      case CL_KERNEL_FUNCTION_NAME:
+          return pyopencl_get_str_info(Kernel, m_kernel, param_name);
+      case CL_KERNEL_NUM_ARGS:
+      case CL_KERNEL_REFERENCE_COUNT:
           PYOPENCL_GET_INTEGRAL_INFO(Kernel, m_kernel, param_name,
                                      cl_uint);
         case CL_KERNEL_CONTEXT:
@@ -2456,7 +2435,7 @@ cast_bool(const T &v)
                                             Kernel, m_kernel, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1020
         case CL_KERNEL_ATTRIBUTES:
-          PYOPENCL_GET_STR_INFO(Kernel, m_kernel, param_name);
+            return pyopencl_get_str_info(Kernel, m_kernel, param_name);
 #endif
         default:
           throw error("Kernel.get_info", CL_INVALID_VALUE);

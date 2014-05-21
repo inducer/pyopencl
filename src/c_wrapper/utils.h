@@ -158,7 +158,6 @@ convert_opaque_array_info(pyopencl_buf<T> &&_buf)
     pyopencl::convert_opaque_array_info<type, cls>(              \
         pyopencl_get_vec_info(type, what, args))
 
-
 template<typename CLType, typename Cls,
          typename... ArgTypes, typename... ArgTypes2>
 static inline generic_info
@@ -181,5 +180,25 @@ get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
 #define pyopencl_get_opaque_info(type, cls, what, args...)              \
     pyopencl::get_opaque_info<type, cls>(clGet##what##Info,             \
                                          "clGet" #what "Info", args)
+
+template<typename... ArgTypes, typename... ArgTypes2>
+static inline generic_info
+get_str_info(cl_int (*func)(ArgTypes...), const char *name,
+             ArgTypes2&&... args)
+{
+    size_t param_value_size;
+    call_guarded(func, name, args..., 0, NULL, &param_value_size);
+    pyopencl_buf<char> param_value(param_value_size);
+    call_guarded(func, name, args..., param_value_size,
+                 param_value.get(), &param_value_size);
+    generic_info info;
+    info.dontfree = 0;
+    info.opaque_class = CLASS_NONE;
+    info.type = "char*";
+    info.value = (void*)param_value.release();
+    return info;
+}
+#define pyopencl_get_str_info(what, args...)                            \
+    pyopencl::get_str_info(clGet##what##Info, "clGet" #what "Info", args)
 
 }
