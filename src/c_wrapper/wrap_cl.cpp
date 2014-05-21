@@ -7,6 +7,27 @@
 #include <memory>
 #include <sstream>
 
+template<typename T>
+struct _D {
+    void operator()(T *p) {
+        free((void*)p);
+    }
+};
+
+template<typename T>
+class pyopencl_buf : public std::unique_ptr<T, _D<T> > {
+public:
+    pyopencl_buf(size_t len=1) :
+        std::unique_ptr<T, _D<T> >(static_cast<T*>(malloc(sizeof(T) * len)))
+    {
+    }
+    inline T&
+    operator[](int i)
+    {
+        return this->get()[i];
+    }
+};
+
 #define MALLOC(TYPE, VAR, N) TYPE *VAR = reinterpret_cast<TYPE*>(malloc(sizeof(TYPE)*(N)));
 
 
@@ -94,15 +115,15 @@
 
 #define PYOPENCL_GET_OPAQUE_ARRAY_INFO(TYPE, CLS, CLSU, VEC)            \
   {                                                                     \
-    MALLOC(void*, ar, VEC.size());                                      \
-    for(uint32_t i = 0; i < VEC.size(); ++i) {                          \
-      ar[i] = new pyopencl::CLS(VEC[i]);                                \
-    }                                                                   \
-    generic_info info;                                                  \
-    info.dontfree = 0;                                                  \
-    info.opaque_class = CLASS_##CLSU;                                   \
+      pyopencl_buf<void*> ar(VEC.size());                               \
+      for(uint32_t i = 0; i < VEC.size(); ++i) {                        \
+          ar[i] = new pyopencl::CLS(VEC[i]);                            \
+      }                                                                 \
+      generic_info info;                                                \
+      info.dontfree = 0;                                                \
+      info.opaque_class = CLASS_##CLSU;                                 \
       info.type = _copy_str(std::string("void*[") + tostring(VEC.size()) + "]"); \
-      info.value = (void**)ar;                                          \
+      info.value = (void**)ar.release();                                \
       return info;                                                      \
   }
 
@@ -114,34 +135,34 @@
                           FIRST_ARG, SECOND_ARG, 0, NULL,               \
                           &param_value_size);                           \
                                                                         \
-    MALLOC(char, param_value, param_value_size);                        \
+    pyopencl_buf<char> param_value(param_value_size);                   \
     pyopencl_call_guarded(clGet##WHAT##Info,                            \
                           FIRST_ARG, SECOND_ARG, param_value_size,      \
-                          param_value, &param_value_size);              \
+                          param_value.get(), &param_value_size);        \
     generic_info info;                                                  \
     info.dontfree = 0;                                                  \
     info.opaque_class = CLASS_NONE;                                     \
     info.type = "char*";                                                \
-    info.value = (void*)param_value;                                    \
+    info.value = (void*)param_value.release();                          \
     return info;                                                        \
   }
 
 #define PYOPENCL_GET_INTEGRAL_INFO(WHAT, FIRST_ARG, SECOND_ARG, TYPE)   \
   {                                                                     \
-    MALLOC(TYPE, param_value, 1);                                       \
-    pyopencl_call_guarded(clGet##WHAT##Info,                            \
-                          FIRST_ARG, SECOND_ARG, sizeof(param_value), param_value, NULL); \
+    pyopencl_buf<TYPE> param_value;                                     \
+    pyopencl_call_guarded(clGet##WHAT##Info, FIRST_ARG, SECOND_ARG,     \
+                          sizeof(TYPE), param_value.get(), NULL);       \
     generic_info info;                                                  \
     info.dontfree = 0;                                                  \
     info.opaque_class = CLASS_NONE;                                     \
     info.type = #TYPE"*";                                               \
-      info.value = (void*)param_value;                                  \
-      return info;                                                      \
+    info.value = (void*)param_value.release();                          \
+    return info;                                                        \
   }
 
 #define PYOPENCL_GET_ARRAY_INFO(TYPE, VEC)                              \
   {                                                                     \
-    MALLOC(TYPE, ar, VEC.size());                                       \
+    pyopencl_buf<TYPE> ar(VEC.size());                                  \
     for(uint32_t i = 0; i < VEC.size(); ++i) {                          \
       ar[i] = VEC[i];                                                   \
     }                                                                   \
@@ -149,7 +170,7 @@
     info.dontfree = 0;                                                  \
     info.opaque_class = CLASS_NONE;                                     \
     info.type = _copy_str(std::string(#TYPE"[") + tostring(VEC.size()) + "]"); \
-    info.value = (void*)ar;                                             \
+    info.value = (void*)ar.release();                                   \
     return info;                                                        \
   }
 
@@ -970,12 +991,12 @@ namespace pyopencl
         }
       }
 
-      std::auto_ptr<context> get_context() const
+      std::unique_ptr<context> get_context() const
       {
         cl_context param_value;
         pyopencl_call_guarded(clGetCommandQueueInfo, m_queue, CL_QUEUE_CONTEXT,
                               sizeof(param_value), &param_value, NULL);
-        return std::auto_ptr<context>(
+        return std::unique_ptr<context>(
             new context(param_value, /*retain*/ true));
       }
 
@@ -2803,11 +2824,11 @@ void pyopencl_free_pointer_array(void **p, uint32_t size)
                         platforms.empty() ? NULL : &platforms.front(),
                         num_platforms);
 
-  MALLOC(pyopencl::platform*, _ptr_platforms, *num_platforms);
+  pyopencl_buf<pyopencl::platform*> _ptr_platforms(*num_platforms);
   for(vec::size_type i = 0; i < platforms.size(); ++i) {
-    _ptr_platforms[i] = new pyopencl::platform(platforms[i]);
+      _ptr_platforms[i] = new pyopencl::platform(platforms[i]);
   }
-  *ptr_platforms = _ptr_platforms;
+  *ptr_platforms = _ptr_platforms.release();
 
   END_C_HANDLE_ERROR
 
@@ -2828,11 +2849,11 @@ void pyopencl_free_pointer_array(void **p, uint32_t size)
   vec devices = static_cast<pyopencl::platform*>(ptr_platform)->get_devices(devtype);
   *num_devices = devices.size();
 
-  MALLOC(pyopencl::device*, _ptr_devices, *num_devices);
+  pyopencl_buf<pyopencl::device*> _ptr_devices(*num_devices);
   for(vec::size_type i = 0; i < devices.size(); ++i) {
-    _ptr_devices[i] = new pyopencl::device(devices[i]);
+      _ptr_devices[i] = new pyopencl::device(devices[i]);
   }
-  *ptr_devices = _ptr_devices;
+  *ptr_devices = _ptr_devices.release();
 
   END_C_HANDLE_ERROR
 
