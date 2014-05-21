@@ -1,8 +1,8 @@
 #include "wrap_cl.h"
+#include "error.h"
+
 #include <stdlib.h>
 #include <vector>
-#include <iostream>
-#include <stdexcept>
 #include <string.h>
 #include <memory>
 #include <sstream>
@@ -33,20 +33,10 @@
       return error; \
     }
 
-#ifdef PYOPENCL_TRACE
-#define PYOPENCL_PRINT_CALL_TRACE(NAME)         \
-  std::cerr << NAME << std::endl;
-#define PYOPENCL_PRINT_CALL_TRACE_INFO(NAME, EXTRA_INFO)        \
-  std::cerr << NAME << " (" << EXTRA_INFO << ')' << std::endl;
-#else
-#define PYOPENCL_PRINT_CALL_TRACE(NAME) /*nothing*/
-#define PYOPENCL_PRINT_CALL_TRACE_INFO(NAME, EXTRA_INFO) /*nothing*/
-#endif
-
 
 #define PYOPENCL_CALL_GUARDED_CLEANUP(NAME, ARGLIST)                    \
   {                                                                     \
-    PYOPENCL_PRINT_CALL_TRACE(#NAME);                                   \
+    pyopencl::print_call_trace(#NAME);                                  \
     cl_int status_code;                                                 \
     status_code = NAME ARGLIST;                                         \
     if (status_code != CL_SUCCESS)                                      \
@@ -336,59 +326,6 @@ std::string tostring(const T& v)
 
 // }}}
 
-namespace pyopencl {
-
-// {{{ error
-
-class error : public std::runtime_error {
-private:
-    const char *m_routine;
-    cl_int m_code;
-
-public:
-    error(const char *rout, cl_int c, const char *msg="")
-        : std::runtime_error(msg), m_routine(rout), m_code(c)
-    {
-        std::cout << rout <<";" << msg<< ";" << c << std::endl;
-    }
-    const char*
-    routine() const
-    {
-        return m_routine;
-    }
-
-    cl_int
-    code() const
-    {
-        return m_code;
-    }
-
-    bool
-    is_out_of_memory() const
-    {
-        return (code() == CL_MEM_OBJECT_ALLOCATION_FAILURE ||
-                code() == CL_OUT_OF_RESOURCES ||
-                code() == CL_OUT_OF_HOST_MEMORY);
-    }
-};
-// }}}
-
-}
-
-template<typename... ArgTypes, typename... ArgTypes2>
-static inline void
-pyopencl_call_guarded(cl_int (*func)(ArgTypes...), const char *name,
-                      ArgTypes2&&... args)
-{
-    PYOPENCL_PRINT_CALL_TRACE(name);
-    cl_int status_code = func(ArgTypes(args)...);
-    if (status_code != CL_SUCCESS) {
-        throw pyopencl::error(name, status_code);
-    }
-}
-#define pyopencl_call_guarded(func, args...)    \
-    pyopencl_call_guarded(func, #func, args)
-
 namespace pyopencl
 {
   char *_copy_str(const std::string& str) {
@@ -464,14 +401,14 @@ namespace pyopencl
   inline std::vector<cl_device_id> platform::get_devices(cl_device_type devtype)
   {
     cl_uint num_devices = 0;
-    PYOPENCL_PRINT_CALL_TRACE("clGetDeviceIDs");
+    print_call_trace("clGetDeviceIDs");
     {
       cl_int status_code;
       status_code = clGetDeviceIDs(m_platform, devtype, 0, 0, &num_devices);
       if (status_code == CL_DEVICE_NOT_FOUND)
-        num_devices = 0;
-      else if (status_code != CL_SUCCESS) \
-        throw pyopencl::error("clGetDeviceIDs", status_code);
+          num_devices = 0;
+      else if (status_code != CL_SUCCESS)
+          throw pyopencl::error("clGetDeviceIDs", status_code);
     }
 
     std::vector<cl_device_id> devices(num_devices);
@@ -1008,7 +945,7 @@ namespace pyopencl
           }
 
         cl_int status_code;
-        PYOPENCL_PRINT_CALL_TRACE("clCreateCommandQueue");
+        print_call_trace("clCreateCommandQueue");
         m_queue = clCreateCommandQueue(
                                        ctx.data(), dev, props, &status_code);
 
@@ -1448,7 +1385,7 @@ namespace pyopencl
     if(flags & CL_MEM_USE_HOST_PTR)
       retained_buf_obj = buffer;
 
-    PYOPENCL_PRINT_CALL_TRACE("clCreateImage2D");
+    print_call_trace("clCreateImage2D");
 
     // PYOPENCL_RETRY_IF_MEM_ERROR(
     {
@@ -1484,7 +1421,7 @@ namespace pyopencl
     if(flags & CL_MEM_USE_HOST_PTR)
       retained_buf_obj = buffer;
 
-    PYOPENCL_PRINT_CALL_TRACE("clCreateImage3D");
+    print_call_trace("clCreateImage3D");
     //
     //PYOPENCL_RETRY_IF_MEM_ERROR(
     {
@@ -1827,7 +1764,7 @@ namespace pyopencl
   TYPE *NAME ARGS                                                       \
   {                                                                     \
     cl_int status_code;                                                 \
-    PYOPENCL_PRINT_CALL_TRACE(#CL_NAME);                                \
+    pyopencl::print_call_trace(#CL_NAME);                               \
     cl_mem mem = CL_NAME CL_ARGS;                                       \
                                                                         \
     if (status_code != CL_SUCCESS)                                      \
@@ -2012,14 +1949,13 @@ namespace pyopencl
 
   // {{{ buffer
 
-  inline cl_mem create_buffer(
-                              cl_context ctx,
+  inline cl_mem create_buffer(cl_context ctx,
                               cl_mem_flags flags,
                               size_t size,
                               void *host_ptr)
   {
     cl_int status_code;
-    PYOPENCL_PRINT_CALL_TRACE("clCreateBuffer");
+    print_call_trace("clCreateBuffer");
     cl_mem mem = clCreateBuffer(ctx, flags, size, host_ptr, &status_code);
 
     if (status_code != CL_SUCCESS)
@@ -2049,7 +1985,7 @@ namespace pyopencl
                                   const void *buffer_create_info)
   {
     cl_int status_code;
-    PYOPENCL_PRINT_CALL_TRACE("clCreateSubBuffer");
+    print_call_trace("clCreateSubBuffer");
     cl_mem mem = clCreateSubBuffer(buffer, flags,
                                    bct, buffer_create_info, &status_code);
 
@@ -2176,7 +2112,7 @@ namespace pyopencl
           cl_addressing_mode am, cl_filter_mode fm)
       {
         cl_int status_code;
-        PYOPENCL_PRINT_CALL_TRACE("clCreateSampler");
+        print_call_trace("clCreateSampler");
         m_sampler = clCreateSampler(
             ctx.data(),
             normalized_coordinates,
@@ -2423,7 +2359,7 @@ namespace pyopencl
     size_t length = strlen(string);
 
     cl_int status_code;
-    PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithSource");
+    print_call_trace("clCreateProgramWithSource");
 
     cl_program result = clCreateProgramWithSource(
         ctx.data(), 1, &string, &length, &status_code);
@@ -2459,7 +2395,7 @@ namespace pyopencl
         devices.push_back(static_cast<device*>(ptr_devices[i])->data());
       }
     cl_int status_code;
-    PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBinary");
+    print_call_trace("clCreateProgramWithBinary");
     cl_program result = clCreateProgramWithBinary(
         ctx.data(), num_devices,
         devices.empty( ) ? NULL : &devices.front(),
@@ -2524,7 +2460,7 @@ namespace pyopencl
     {
       cl_int status_code;
 
-      PYOPENCL_PRINT_CALL_TRACE("clCreateKernel");
+      print_call_trace("clCreateKernel");
       m_kernel = clCreateKernel(prg.data(), kernel_name, &status_code);
       if (status_code != CL_SUCCESS)
         throw pyopencl::error("clCreateKernel", status_code);
