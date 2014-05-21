@@ -60,23 +60,6 @@
 
 // {{{ GetInfo helpers
 
-#define PYOPENCL_GET_OPAQUE_INFO(WHAT, FIRST_ARG, SECOND_ARG, CL_TYPE, TYPE, TYPEU) \
-  {                                                                     \
-    CL_TYPE param_value;                                                \
-    pyopencl_call_guarded(clGet##WHAT##Info,                            \
-                          FIRST_ARG, SECOND_ARG, sizeof(param_value), &param_value, NULL); \
-    generic_info info;                                                  \
-    info.dontfree = 0;                                                  \
-    info.opaque_class = CLASS_##TYPEU;                                  \
-      info.type = "void *";                                             \
-      if (param_value)                                                  \
-        info.value = (void*)(new TYPE(param_value, /*retain*/ true));   \
-      else                                                              \
-        info.value = NULL;                                              \
-      return info;                                                      \
-  }
-
-
 #define PYOPENCL_GET_STR_INFO(WHAT, FIRST_ARG, SECOND_ARG)              \
   {                                                                     \
     size_t param_value_size;                                            \
@@ -522,8 +505,8 @@ cast_bool(const T &v)
             PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
 
           case CL_DEVICE_PLATFORM:
-            PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_platform_id, platform, PLATFORM);
-
+              return pyopencl_get_opaque_info(cl_platform_id, platform,
+                                              Device, m_device, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1010
           case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF: DEV_GET_INT_INF(cl_uint);
 
@@ -552,7 +535,8 @@ cast_bool(const T &v)
 #endif
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
           case CL_DEVICE_PARENT_DEVICE_EXT:
-            PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
+              return pyopencl_get_opaque_info(cl_device_id, device,
+                                              Device, m_device, param_name);
           case CL_DEVICE_PARTITION_TYPES_EXT:
           case CL_DEVICE_AFFINITY_DOMAINS_EXT:
           case CL_DEVICE_PARTITION_STYLE_EXT:
@@ -567,7 +551,8 @@ cast_bool(const T &v)
           case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE: DEV_GET_INT_INF(size_t);
           case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE: DEV_GET_INT_INF(size_t);
           case CL_DEVICE_PARENT_DEVICE:
-            PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device, DEVICE);
+              return pyopencl_get_opaque_info(cl_device_id, device,
+                                              Device, m_device, param_name);
           case CL_DEVICE_PARTITION_MAX_SUB_DEVICES: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_PARTITION_TYPE:
           case CL_DEVICE_PARTITION_PROPERTIES:
@@ -873,14 +858,13 @@ cast_bool(const T &v)
 
       generic_info get_info(cl_command_queue_info param_name) const
       {
-        switch (param_name)
-        {
+        switch (param_name) {
         case CL_QUEUE_CONTEXT:
-          PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
-                                   cl_context, context, CONTEXT);
+            return pyopencl_get_opaque_info(cl_context, context,
+                                            CommandQueue, m_queue, param_name);
         case CL_QUEUE_DEVICE:
-          PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
-                                   cl_device_id, device, DEVICE);
+            return pyopencl_get_opaque_info(cl_device_id, device,
+                                            CommandQueue, m_queue, param_name);
         case CL_QUEUE_REFERENCE_COUNT:
           PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
                                      cl_uint);
@@ -958,27 +942,26 @@ cast_bool(const T &v)
 
       generic_info get_info(cl_event_info param_name) const
       {
-        switch (param_name)
-        {
-          case CL_EVENT_COMMAND_QUEUE:
-            PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
-                cl_command_queue, command_queue, COMMAND_QUEUE);
-          case CL_EVENT_COMMAND_TYPE:
+        switch (param_name) {
+        case CL_EVENT_COMMAND_QUEUE:
+            return pyopencl_get_opaque_info(cl_command_queue, command_queue,
+                                            Event, m_event, param_name);
+        case CL_EVENT_COMMAND_TYPE:
             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
                 cl_command_type);
-          case CL_EVENT_COMMAND_EXECUTION_STATUS:
+        case CL_EVENT_COMMAND_EXECUTION_STATUS:
             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
                 cl_int);
-          case CL_EVENT_REFERENCE_COUNT:
+        case CL_EVENT_REFERENCE_COUNT:
             PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
                 cl_uint);
 #if PYOPENCL_CL_VERSION >= 0x1010
-          case CL_EVENT_CONTEXT:
-            PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
-                cl_context, context, CONTEXT);
+        case CL_EVENT_CONTEXT:
+            return pyopencl_get_opaque_info(cl_context, context,
+                                            Event, m_event, param_name);
 #endif
 
-          default:
+        default:
             throw error("Event.get_info", CL_INVALID_VALUE);
         }
       }
@@ -1047,8 +1030,8 @@ cast_bool(const T &v)
             PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
                 cl_uint);
           case CL_MEM_CONTEXT:
-            PYOPENCL_GET_OPAQUE_INFO(MemObject, data(), param_name,
-                cl_context, context, CONTEXT);
+              return pyopencl_get_opaque_info(cl_context, context,
+                                              MemObject, data(), param_name);
 
 #if PYOPENCL_CL_VERSION >= 0x1010
             // TODO
@@ -2060,8 +2043,8 @@ cast_bool(const T &v)
             PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
                 cl_uint);
           case CL_SAMPLER_CONTEXT:
-            PYOPENCL_GET_OPAQUE_INFO(Sampler, m_sampler, param_name,
-                                     cl_context, context, CONTEXT);
+              return pyopencl_get_opaque_info(cl_context, context,
+                                              Sampler, m_sampler, param_name);
           case CL_SAMPLER_ADDRESSING_MODE:
             PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
                 cl_addressing_mode);
@@ -2129,8 +2112,8 @@ cast_bool(const T &v)
             PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
                 cl_uint);
           case CL_PROGRAM_CONTEXT:
-            PYOPENCL_GET_OPAQUE_INFO(Program, m_program, param_name,
-                cl_context, context, CONTEXT);
+              return pyopencl_get_opaque_info(cl_context, context,
+                                              Program, m_program, param_name);
           case CL_PROGRAM_NUM_DEVICES:
             PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
                 cl_uint);
@@ -2466,11 +2449,11 @@ cast_bool(const T &v)
           PYOPENCL_GET_INTEGRAL_INFO(Kernel, m_kernel, param_name,
                                      cl_uint);
         case CL_KERNEL_CONTEXT:
-          PYOPENCL_GET_OPAQUE_INFO(Kernel, m_kernel, param_name,
-                                   cl_context, context, CONTEXT);
+            return pyopencl_get_opaque_info(cl_context, context,
+                                            Kernel, m_kernel, param_name);
         case CL_KERNEL_PROGRAM:
-          PYOPENCL_GET_OPAQUE_INFO(Kernel, m_kernel, param_name,
-                                   cl_program, program, PROGRAM);
+            return pyopencl_get_opaque_info(cl_program, program,
+                                            Kernel, m_kernel, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1020
         case CL_KERNEL_ATTRIBUTES:
           PYOPENCL_GET_STR_INFO(Kernel, m_kernel, param_name);
