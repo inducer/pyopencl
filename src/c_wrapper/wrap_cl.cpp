@@ -38,23 +38,10 @@
     }                                                           \
   }
 
-
 #define PYOPENCL_PARSE_WAIT_FOR PYOPENCL_PARSE_OBJECT_LIST(event, cl_event, event_wait_list, wait_for, num_wait_for)
 
 #define PYOPENCL_WAITLIST_ARGS                                          \
   num_wait_for, event_wait_list.empty( ) ? NULL : &event_wait_list.front()
-
-
-#define PYOPENCL_RETURN_NEW_EVENT(evt) \
-  try                                           \
-    {                                           \
-      return new event(evt, false);             \
-    }                                           \
-  catch (...)                                   \
-    {                                           \
-      clReleaseEvent(evt);                      \
-      throw;                                    \
-    }
 
 // }}}
 
@@ -904,6 +891,11 @@ platform::get_devices(cl_device_type devtype)
         pyopencl_call_guarded(clWaitForEvents, 1, &m_event);
       }
   };
+static inline event*
+new_event(cl_event evt)
+{
+    return pyopencl_convert_obj(event, clReleaseEvent, evt);
+}
 
   // }}}
 
@@ -1152,8 +1144,11 @@ platform::get_devices(cl_device_type devtype)
         }
       }
   };
-
-
+static inline image*
+new_image(cl_mem mem, void *buff=0)
+{
+    return pyopencl_convert_obj(image, clReleaseMemObject, mem, buff);
+}
 
 
   // {{{ image formats
@@ -1188,13 +1183,7 @@ create_image_2d(context const &ctx, cl_mem_flags flags,
     cl_mem mem = pyopencl_call_guarded(clCreateImage2D, ctx.data(), flags,
                                        &fmt, width, height, pitch, buffer);
     //);
-    try {
-        return new image(mem, false,
-                         flags & CL_MEM_USE_HOST_PTR ? buffer : NULL);
-    } catch (...) {
-        pyopencl_call_guarded(clReleaseMemObject, mem);
-        throw;
-    }
+    return new_image(mem, flags & CL_MEM_USE_HOST_PTR ? buffer : NULL);
 }
 
 inline image*
@@ -1208,13 +1197,7 @@ create_image_3d(context const &ctx, cl_mem_flags flags,
                                        &fmt, width, height, depth, pitch_x,
                                        pitch_y, buffer);
     //);
-    try {
-        return new image(mem, false,
-                         flags & CL_MEM_USE_HOST_PTR ? buffer : NULL);
-    } catch (...) {
-        pyopencl_call_guarded(clReleaseMemObject, mem);
-        throw;
-    }
+    return new_image(mem, flags & CL_MEM_USE_HOST_PTR ? buffer : NULL);
 }
 
 
@@ -1297,7 +1280,7 @@ create_image_3d(context const &ctx, cl_mem_flags flags,
                           origin, region, row_pitch, slice_pitch, buffer,
                           PYOPENCL_WAITLIST_ARGS, &evt);
     //);
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    return new_event(evt);
     //PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
@@ -1619,7 +1602,7 @@ create_image_3d(context const &ctx, cl_mem_flags flags,
                           mem_objects.empty( ) ? NULL : &mem_objects.front(), \
                           PYOPENCL_WAITLIST_ARGS, &evt);                \
                                                                         \
-    PYOPENCL_RETURN_NEW_EVENT(evt);                                     \
+    return pyopencl::new_event(evt);                                    \
   }
 
   WRAP_GL_ENQUEUE(acquire, Acquire);
@@ -1744,30 +1727,26 @@ create_sub_buffer_gc(cl_mem buffer, cl_mem_flags flags,
 }
 #endif
 
-  class buffer : public memory_object
-  {
-  public:
+class buffer;
+static inline buffer *new_buffer(cl_mem mem, void *buff=0);
+
+class buffer : public memory_object {
+public:
     PYOPENCL_DEF_GET_CLASS_T(BUFFER);
     buffer(cl_mem mem, bool retain, void *hostbuf=0)
-      : memory_object(mem, retain, hostbuf)
+        : memory_object(mem, retain, hostbuf)
     { }
 
 #if PYOPENCL_CL_VERSION >= 0x1010
-    buffer *get_sub_region(size_t origin, size_t size, cl_mem_flags flags) const
+    buffer*
+    get_sub_region(size_t origin, size_t size, cl_mem_flags flags) const
     {
-      cl_buffer_region region = {origin, size};
+        cl_buffer_region region = {origin, size};
 
-      cl_mem mem = create_sub_buffer_gc(data(), flags, CL_BUFFER_CREATE_TYPE_REGION, &region);
-
-      try
-        {
-          return new buffer(mem, false);
-        }
-      catch (...)
-        {
-          pyopencl_call_guarded(clReleaseMemObject, mem);
-          throw;
-        }
+        cl_mem mem = create_sub_buffer_gc(data(), flags,
+                                          CL_BUFFER_CREATE_TYPE_REGION,
+                                          &region);
+        return new_buffer(mem);
     }
 
     //       buffer *getitem(py::slice slc) const
@@ -1797,47 +1776,35 @@ create_sub_buffer_gc(cl_mem buffer, cl_mem_flags flags,
     //         return get_sub_region(start, end, my_flags);
     //       }
 #endif
-  };
+};
+static inline buffer*
+new_buffer(cl_mem mem, void *buff)
+{
+    return pyopencl_convert_obj(buffer, clReleaseMemObject, mem, buff);
+}
 
-  // {{{ buffer creation
+// {{{ buffer creation
 
-  inline
-  buffer *create_buffer_py(
-                           context &ctx,
-                           cl_mem_flags flags,
-                           size_t size,
-                           void *py_hostbuf
-                           )
-  {
-
+inline buffer*
+create_buffer_py(context &ctx, cl_mem_flags flags,
+                 size_t size, void *py_hostbuf)
+{
     void *buf = py_hostbuf;
     void *retained_buf_obj = 0;
-    if (py_hostbuf != NULL)
-      {
-        if (flags & CL_MEM_USE_HOST_PTR)
+    if (py_hostbuf != NULL) {
+        if (flags & CL_MEM_USE_HOST_PTR) {
           retained_buf_obj = py_hostbuf;
-
-      }
-
+        }
+    }
     cl_mem mem = create_buffer_gc(ctx.data(), flags, size, buf);
+    return new_buffer(mem, retained_buf_obj);
+}
 
-    try
-      {
-        return new buffer(mem, false, retained_buf_obj);
-      }
-    catch (...)
-      {
-        pyopencl_call_guarded(clReleaseMemObject, mem);
-        throw;
-      }
-  }
+// }}}
+// }}}
 
 
-  // }}}
-  // }}}
-
-
-  // {{{ sampler
+// {{{ sampler
 class sampler : public noncopyable {
 private:
     cl_sampler m_sampler;
@@ -2068,7 +2035,11 @@ public:
       //       }
       // #endif
   };
-
+static inline program*
+new_program(cl_program prog, program_kind_type progkind=KND_UNKNOWN)
+{
+    return pyopencl_convert_obj(program, clReleaseProgram, prog, progkind);
+}
 
 inline program*
 create_program_with_source(context &ctx, const char *string)
@@ -2076,12 +2047,7 @@ create_program_with_source(context &ctx, const char *string)
     size_t length = strlen(string);
     cl_program result = pyopencl_call_guarded(clCreateProgramWithSource,
                                               ctx.data(), 1, &string, &length);
-    try {
-        return new program(result, false, KND_SOURCE);
-    } catch (...) {
-        clReleaseProgram(result);
-        throw;
-    }
+    return new_program(result, KND_SOURCE);
 }
 
 
@@ -2092,10 +2058,9 @@ create_program_with_binary(context &ctx, cl_uint num_devices,
 {
     std::vector<cl_device_id> devices;
     std::vector<cl_int> binary_statuses(num_devices);
-    for (cl_uint i = 0; i < num_devices; ++i)
-      {
+    for (cl_uint i = 0; i < num_devices; ++i) {
         devices.push_back(static_cast<device*>(ptr_devices[i])->data());
-      }
+    }
     cl_int status_code;
     print_call_trace("clCreateProgramWithBinary");
     cl_program result = clCreateProgramWithBinary(
@@ -2103,7 +2068,7 @@ create_program_with_binary(context &ctx, cl_uint num_devices,
         devices.empty( ) ? NULL : &devices.front(),
         binary_sizes,
         reinterpret_cast<const unsigned char**>(const_cast<const char**>(binaries)),
-        binary_statuses.empty( ) ? NULL : &binary_statuses.front(),
+        binary_statuses.empty() ? NULL : &binary_statuses.front(),
         &status_code);
 
     // for (cl_uint i = 0; i < num_devices; ++i)
@@ -2112,37 +2077,26 @@ create_program_with_binary(context &ctx, cl_uint num_devices,
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("clCreateProgramWithBinary", status_code);
 
-    try
-    {
-      return new program(result, false, KND_BINARY);
-    }
-    catch (...)
-    {
-      clReleaseProgram(result);
-      throw;
-    }
-  }
+    return new_program(result, KND_BINARY);
+}
 
-  // }}}
+// }}}
 
 
   // {{{ kernel
 
-  class local_memory
-  {
-  private:
+class local_memory {
+private:
     size_t m_size;
-
-  public:
-    local_memory(size_t size)
-      : m_size(size)
-    { }
-
-    size_t size() const
-    { return m_size; }
-  };
-
-
+public:
+    local_memory(size_t size) : m_size(size)
+    {}
+    size_t
+    size() const
+    {
+        return m_size;
+    }
+};
 
 
 class kernel : public noncopyable {
@@ -2339,7 +2293,7 @@ public:
                           device_offset, size, buffer,
                           PYOPENCL_WAITLIST_ARGS, &evt);
     //);
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    return new_event(evt);
   }
 
 
@@ -2373,7 +2327,7 @@ public:
                           dst.data(), src_offset, dst_offset,
                           byte_count, PYOPENCL_WAITLIST_ARGS, &evt);
     // );
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    return new_event(evt);
   }
 
   inline
@@ -2396,7 +2350,7 @@ public:
                           size, buffer, PYOPENCL_WAITLIST_ARGS, &evt);
     //);
     // TODO
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    return new_event(evt);
     //PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
   }
 
@@ -2422,7 +2376,7 @@ public:
     pyopencl_call_guarded(clEnqueueNDRangeKernel, cq.data(), knl.data(),
                           work_dim, global_work_offset, global_work_size,
                           local_work_size, PYOPENCL_WAITLIST_ARGS, &evt);
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    return new_event(evt);
   }
 
 #if PYOPENCL_CL_VERSION >= 0x1020
@@ -2436,7 +2390,7 @@ public:
     pyopencl_call_guarded(clEnqueueMarkerWithWaitList, cq.data(),
                           PYOPENCL_WAITLIST_ARGS, &evt);
 
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    return new_event(evt);
   }
 
   inline
@@ -2449,7 +2403,7 @@ public:
     pyopencl_call_guarded(clEnqueueBarrierWithWaitList, cq.data(),
                           PYOPENCL_WAITLIST_ARGS, &evt);
 
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    return new_event(evt);
   }
 #endif
 
@@ -2461,7 +2415,7 @@ public:
     //PYOPENCL_RETRY_IF_MEM_ERROR(
     pyopencl_call_guarded(clEnqueueMarker, cq.data(), &evt);
     //);
-    PYOPENCL_RETURN_NEW_EVENT(evt);
+    return new_event(evt);
   }
 
   inline

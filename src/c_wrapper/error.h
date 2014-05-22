@@ -157,6 +157,21 @@ c_handle_error(std::function<void()> func)
 
 // }}}
 
+template<typename T, typename CLType, typename... ArgTypes>
+static inline T*
+convert_obj(cl_int (*clRelease)(CLType), const char *name, CLType cl_obj,
+            ArgTypes&&... args)
+{
+    try {
+        return new T(cl_obj, false, std::forward<ArgTypes>(args)...);
+    } catch (...) {
+        call_guarded_cleanup(clRelease, name, cl_obj);
+        throw;
+    }
+}
+#define pyopencl_convert_obj(type, func, args...)       \
+    pyopencl::convert_obj<type>(func, #func, args)
+
 }
 
 #endif

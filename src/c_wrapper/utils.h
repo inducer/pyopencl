@@ -244,3 +244,5 @@ get_int_info(cl_int (*func)(ArgTypes...), const char *name,
 // }}}
 
 }
+
+#endif
