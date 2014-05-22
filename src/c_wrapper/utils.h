@@ -52,6 +52,11 @@ public:
     {
         return this->get()[i];
     }
+    inline const T&
+    operator[](int i) const
+    {
+        return this->get()[i];
+    }
     inline void
     resize(size_t len)
     {
@@ -59,6 +64,59 @@ public:
             return;
         m_len = len;
         this->reset((T*)realloc((void*)this->release(), len * sizeof(T)));
+    }
+    template<typename T2>
+    static pyopencl_buf<T>
+    from_class(const T2 *buf2, size_t len)
+    {
+        pyopencl_buf<T> buf(len);
+        for (size_t i = 0;i < len;i++) {
+            buf[i] = buf2[i]->data();
+        }
+        return buf;
+    }
+    template<typename T2>
+    static pyopencl_buf<T>
+    from_class(const void **buf2, size_t len)
+    {
+        return from_class<const T2*>(
+            reinterpret_cast<const T2 *const*>(buf2), len);
+    }
+    template<typename T2>
+    static pyopencl_buf<T>
+    from_class(const void *const *buf2, size_t len)
+    {
+        return from_class<const T2*>(
+            reinterpret_cast<const T2 *const*>(buf2), len);
+    }
+    template<typename T2>
+    static pyopencl_buf<T>
+    from_class(const pyopencl_buf<T2> buf2)
+    {
+        return from_class(buf2.get(), buf2.len());
+    }
+    template<typename T2, typename... ArgTypes>
+    static pyopencl_buf<T2*>
+    _to_class(const T *buf2, size_t len, ArgTypes&&... args)
+    {
+        pyopencl_buf<T2*> buf(len);
+        for (size_t i = 0;i < len;i++) {
+            buf[i] = new T2(buf2[i], std::forward<ArgTypes>(args)...);
+        }
+        return buf;
+    }
+    template<typename T2, typename... ArgTypes>
+    static pyopencl_buf<T2*>
+    to_class(const T *buf2, size_t len, ArgTypes&&... args)
+    {
+        return _to_class<T2>(buf2, len, std::forward<ArgTypes>(args)...);
+    }
+    template<typename T2, typename... ArgTypes>
+    pyopencl_buf<T2*>
+    to_class(ArgTypes... args)
+    {
+        return _to_class<T2>(this->get(), m_len,
+                             std::forward<ArgTypes>(args)...);
     }
 };
 
@@ -157,15 +215,11 @@ template<typename T, typename Cls>
 static inline generic_info
 convert_opaque_array_info(pyopencl_buf<T> &buf)
 {
-    pyopencl_buf<void*> ar(buf.len());
-    for (unsigned i = 0;i < buf.len();i++) {
-        ar[i] = new Cls(buf[i]);
-    }
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = Cls::get_class_t();
     info.type = _copy_str(std::string("void*[") + tostring(buf.len()) + "]");
-    info.value = ar.release();
+    info.value = buf.template to_class<Cls>().release();
     return info;
 }
 

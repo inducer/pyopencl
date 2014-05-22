@@ -28,24 +28,6 @@
 // }}}
 
 
-// {{{ event helpers
-
-#define PYOPENCL_PARSE_OBJECT_LIST(CLS, TYPE, OUT, NAME, NUM)   \
-  std::vector<TYPE> OUT((NUM));                                 \
-  {                                                             \
-    for(unsigned i = 0; i < (NUM); ++i) {                       \
-      OUT[i] = static_cast<pyopencl::CLS*>(NAME[i])->data();    \
-    }                                                           \
-  }
-
-#define PYOPENCL_PARSE_WAIT_FOR PYOPENCL_PARSE_OBJECT_LIST(event, cl_event, event_wait_list, wait_for, num_wait_for)
-
-#define PYOPENCL_WAITLIST_ARGS                                          \
-  num_wait_for, event_wait_list.empty( ) ? NULL : &event_wait_list.front()
-
-// }}}
-
-
 // {{{ equality testing
 
 #define PYOPENCL_EQUALITY_TESTS(cls) \
@@ -1243,13 +1225,14 @@ enqueue_read_image(command_queue &cq, image &img, size_t *origin,
                    size_t slice_pitch, void **wait_for, uint32_t num_wait_for,
                    bool is_blocking)
 {
-    PYOPENCL_PARSE_WAIT_FOR;
+    auto _wait_for =
+        pyopencl_buf<cl_event>::from_class<event>(wait_for, num_wait_for);
     cl_event evt;
     retry_mem_error<void>([&] {
             pyopencl_call_guarded(clEnqueueReadImage, cq.data(), img.data(),
                                   cast_bool(is_blocking), origin, region,
                                   row_pitch, slice_pitch, buffer,
-                                  PYOPENCL_WAITLIST_ARGS, &evt);
+                                  num_wait_for, _wait_for.get(), &evt);
         });
     return new_event(evt);
     //PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
@@ -1540,10 +1523,6 @@ enqueue_read_image(command_queue &cq, image &img, size_t *origin,
                             "invalid dimension");
   }
 
-
-
-
-
   // TODO:
   // inline
   // py::tuple get_gl_object_info(memory_object_holder const &mem)
@@ -1554,27 +1533,29 @@ enqueue_read_image(command_queue &cq, image &img, size_t *origin,
   //   return py::make_tuple(otype, gl_name);
   // }
 
-#define WRAP_GL_ENQUEUE(what, What)                                     \
-  inline                                                                \
-  event *enqueue_##what##_gl_objects(command_queue &cq,                 \
-                                     void **ptr_mem_objects,            \
-                                     uint32_t num_mem_objects,          \
-                                     void **wait_for,                   \
-                                     uint32_t num_wait_for)             \
-  {                                                                     \
-    PYOPENCL_PARSE_WAIT_FOR;                                            \
-    PYOPENCL_PARSE_OBJECT_LIST(memory_object_holder, cl_mem, mem_objects, ptr_mem_objects, num_mem_objects); \
-    cl_event evt;                                                       \
-    pyopencl_call_guarded(clEnqueue##What##GLObjects, cq.data(),        \
-                          mem_objects.size(),                           \
-                          mem_objects.empty( ) ? NULL : &mem_objects.front(), \
-                          PYOPENCL_WAITLIST_ARGS, &evt);                \
-                                                                        \
-    return pyopencl::new_event(evt);                                    \
-  }
+typedef cl_int (*clEnqueueGLObjectFunc)(cl_command_queue, cl_uint,
+                                        const cl_mem*, cl_uint,
+                                        const cl_event*, cl_event*);
 
-  WRAP_GL_ENQUEUE(acquire, Acquire);
-  WRAP_GL_ENQUEUE(release, Release);
+static inline event*
+enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
+                   command_queue &cq, void **mem_objects,
+                   uint32_t num_mem_objects, void **wait_for,
+                   uint32_t num_wait_for)
+{
+    auto _wait_for =
+        pyopencl_buf<cl_event>::from_class<event>(wait_for, num_wait_for);
+    auto _mem_objs = pyopencl_buf<cl_mem>::from_class<memory_object_holder>(
+        mem_objects, num_mem_objects);
+    cl_event evt;
+    call_guarded(func, name, cq.data(), num_mem_objects, _mem_objs.get(),
+                 num_wait_for, _wait_for.get(), &evt);
+    return new_event(evt);
+}
+#define enqueue_gl_objects(what, args...)                       \
+    enqueue_gl_objects(clEnqueue##what##GLObjects,              \
+                       "clEnqueue" #what "GLObjects", args)
+
 #endif
 
 
@@ -1930,17 +1911,16 @@ public:
         }
       }
 
-      void build(const char *options, cl_uint num_devices, void **ptr_devices)
+      void
+      build(const char *options, cl_uint num_devices, void **ptr_devices)
       {
-        // todo: this function should get a list of device instances, not raw pointers
-        // pointers are for the cffi interface and should not be here
-        std::vector<cl_device_id> devices(num_devices);
-        for(cl_uint i = 0; i < num_devices; ++i) {
-          devices[i] = static_cast<device*>(ptr_devices[i])->data();
-        }
-        pyopencl_call_guarded(clBuildProgram, m_program, num_devices,
-                              devices.empty() ? NULL : &devices.front(),
-                              options, NULL, NULL);
+          // todo: this function should get a list of device instances,
+          // not raw pointers pointers are for the cffi interface and
+          // should not be here
+          auto devices = pyopencl_buf<cl_device_id>::from_class<device>(
+              ptr_devices, num_devices);
+          pyopencl_call_guarded(clBuildProgram, m_program, num_devices,
+                                devices.get(), options, NULL, NULL);
       }
 
       // #if PYOPENCL_CL_VERSION >= 0x1020
@@ -2225,32 +2205,26 @@ enqueue_read_buffer(command_queue &cq, memory_object_holder &mem, void *buffer,
                     size_t size, size_t device_offset, void **wait_for,
                     uint32_t num_wait_for, bool is_blocking)
 {
-    PYOPENCL_PARSE_WAIT_FOR;
-
+    auto _wait_for =
+        pyopencl_buf<cl_event>::from_class<event>(wait_for, num_wait_for);
     cl_event evt;
     retry_mem_error<void>([&] {
             pyopencl_call_guarded(clEnqueueReadBuffer, cq.data(), mem.data(),
                                   cast_bool(is_blocking), device_offset, size,
-                                  buffer, PYOPENCL_WAITLIST_ARGS, &evt);
+                                  buffer, num_wait_for, _wait_for.get(), &evt);
         });
     return new_event(evt);
 }
 
 
 
-  inline
-  event *enqueue_copy_buffer(command_queue &cq,
-                             memory_object_holder &src,
-                             memory_object_holder &dst,
-                             ptrdiff_t byte_count,
-                             size_t src_offset,
-                             size_t dst_offset,
-                             void **wait_for, uint32_t num_wait_for
-                             )
-  {
-    PYOPENCL_PARSE_WAIT_FOR;
-    if (byte_count < 0)
-      {
+inline event*
+enqueue_copy_buffer(command_queue &cq, memory_object_holder &src,
+                    memory_object_holder &dst, ptrdiff_t byte_count,
+                    size_t src_offset, size_t dst_offset,
+                    void **wait_for, uint32_t num_wait_for)
+{
+    if (byte_count < 0) {
         size_t byte_count_src = 0;
         size_t byte_count_dst = 0;
         pyopencl_call_guarded(clGetMemObjectInfo, src.data(), CL_MEM_SIZE,
@@ -2258,29 +2232,32 @@ enqueue_read_buffer(command_queue &cq, memory_object_holder &mem, void *buffer,
         pyopencl_call_guarded(clGetMemObjectInfo, src.data(), CL_MEM_SIZE,
                               sizeof(byte_count), &byte_count_dst, NULL);
         byte_count = std::min(byte_count_src, byte_count_dst);
-      }
-
+    }
+    auto _wait_for =
+        pyopencl_buf<cl_event>::from_class<event>(wait_for, num_wait_for);
     cl_event evt;
     retry_mem_error<void>([&] {
             pyopencl_call_guarded(clEnqueueCopyBuffer, cq.data(), src.data(),
                                   dst.data(), src_offset, dst_offset,
-                                  byte_count, PYOPENCL_WAITLIST_ARGS, &evt);
+                                  byte_count, num_wait_for,
+                                  _wait_for.get(), &evt);
         });
     return new_event(evt);
-  }
+}
 
 inline event*
 enqueue_write_buffer(command_queue &cq,memory_object_holder &mem,
                      const void *buffer, size_t size, size_t device_offset,
                      void **wait_for, uint32_t num_wait_for, bool is_blocking)
 {
-    PYOPENCL_PARSE_WAIT_FOR;
-
+    auto _wait_for =
+        pyopencl_buf<cl_event>::from_class<event>(wait_for, num_wait_for);
     cl_event evt;
     retry_mem_error<void>([&] {
             pyopencl_call_guarded(clEnqueueWriteBuffer, cq.data(), mem.data(),
                                   cast_bool(is_blocking), device_offset,
-                                  size, buffer, PYOPENCL_WAITLIST_ARGS, &evt);
+                                  size, buffer, num_wait_for,
+                                  _wait_for.get(), &evt);
         });
     return new_event(evt);
     //PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
@@ -2295,44 +2272,42 @@ enqueue_nd_range_kernel(command_queue &cq, kernel &knl, cl_uint work_dim,
                         const size_t *local_work_size,
                         void **wait_for, uint32_t num_wait_for)
 {
-    PYOPENCL_PARSE_WAIT_FOR;
-
+    auto _wait_for =
+        pyopencl_buf<cl_event>::from_class<event>(wait_for, num_wait_for);
     cl_event evt;
     retry_mem_error<void>([&] {
             pyopencl_call_guarded(clEnqueueNDRangeKernel, cq.data(),
                                   knl.data(), work_dim, global_work_offset,
                                   global_work_size, local_work_size,
-                                  PYOPENCL_WAITLIST_ARGS, &evt);
+                                  num_wait_for, _wait_for.get(), &evt);
         });
     return new_event(evt);
 }
 
 #if PYOPENCL_CL_VERSION >= 0x1020
-  inline
-  event *enqueue_marker_with_wait_list(command_queue &cq,
-    void **wait_for, uint32_t num_wait_for)
-  {
-    PYOPENCL_PARSE_WAIT_FOR;
+inline event*
+enqueue_marker_with_wait_list(command_queue &cq, void **wait_for,
+                              uint32_t num_wait_for)
+{
+    auto _wait_for =
+        pyopencl_buf<cl_event>::from_class<event>(wait_for, num_wait_for);
     cl_event evt;
-
     pyopencl_call_guarded(clEnqueueMarkerWithWaitList, cq.data(),
-                          PYOPENCL_WAITLIST_ARGS, &evt);
-
+                          num_wait_for, _wait_for.get(), &evt);
     return new_event(evt);
-  }
+}
 
-  inline
-  event *enqueue_barrier_with_wait_list(command_queue &cq,
-    void **wait_for, uint32_t num_wait_for)
-  {
-    PYOPENCL_PARSE_WAIT_FOR;
+inline event*
+enqueue_barrier_with_wait_list(command_queue &cq, void **wait_for,
+                               uint32_t num_wait_for)
+{
+    auto _wait_for =
+        pyopencl_buf<cl_event>::from_class<event>(wait_for, num_wait_for);
     cl_event evt;
-
     pyopencl_call_guarded(clEnqueueBarrierWithWaitList, cq.data(),
-                          PYOPENCL_WAITLIST_ARGS, &evt);
-
+                          num_wait_for, _wait_for.get(), &evt);
     return new_event(evt);
-  }
+}
 #endif
 
 inline event*
@@ -2360,8 +2335,9 @@ void pyopencl_free_pointer(void *p)
 
 void pyopencl_free_pointer_array(void **p, uint32_t size)
 {
-  for(uint32_t i = 0; i < size; ++i)
-    pyopencl_free_pointer(p[i]);
+    for (uint32_t i = 0;i < size;i++) {
+        pyopencl_free_pointer(p[i]);
+    }
 }
 
 void
@@ -2381,11 +2357,8 @@ get_platforms(void **ptr_platforms, uint32_t *num_platforms)
             pyopencl_buf<cl_platform_id> platforms(*num_platforms);
             pyopencl_call_guarded(clGetPlatformIDs, *num_platforms,
                                   platforms.get(), num_platforms);
-            pyopencl_buf<pyopencl::platform*> _ptr_platforms(*num_platforms);
-            for (size_t i = 0;i < platforms.len();i++) {
-                _ptr_platforms[i] = new pyopencl::platform(platforms[i]);
-            }
-            *ptr_platforms = _ptr_platforms.release();
+            *ptr_platforms =
+                platforms.template to_class<pyopencl::platform>().release();
         });
 }
 
@@ -2398,10 +2371,7 @@ platform__get_devices(void *ptr_platform, void **ptr_devices,
             auto devices = static_cast<pyopencl::platform*>(ptr_platform)
                 ->get_devices(devtype);
             *num_devices = devices.len();
-            pyopencl_buf<pyopencl::device*> _ptr_devices(*num_devices);
-            for(size_t i = 0; i < devices.len();i++) {
-                _ptr_devices[i] = new pyopencl::device(devices[i]);
-            }
+            auto _ptr_devices = devices.template to_class<pyopencl::device>();
             *ptr_devices = _ptr_devices.release();
         });
 }
@@ -2412,11 +2382,8 @@ _create_context(void **ptr_ctx, cl_context_properties *properties,
                 cl_uint num_devices, void **ptr_devices)
 {
     return pyopencl::c_handle_error([&] {
-            pyopencl_buf<cl_device_id> devices(num_devices);
-            for(size_t i = 0;i < num_devices;i++) {
-                devices[i] = static_cast<pyopencl::device*>(
-                    ptr_devices[i])->data();
-            }
+            auto devices = pyopencl_buf<cl_device_id>
+                ::from_class<pyopencl::device>(ptr_devices, num_devices);
             *ptr_ctx = new pyopencl::context(
                 pyopencl_call_guarded(clCreateContext, properties,
                                       num_devices, devices.get(),
@@ -2876,9 +2843,10 @@ error *_create_from_gl_renderbuffer(
     uint32_t num_wait_for)
 {
     return pyopencl::c_handle_error([&] {
-            *ptr_event = enqueue_acquire_gl_objects(
-                *static_cast<pyopencl::command_queue*>(ptr_command_queue),
-                ptr_mem_objects, num_mem_objects, wait_for, num_wait_for);
+            *ptr_event = enqueue_gl_objects(
+                Acquire, *static_cast<pyopencl::command_queue*>(
+                    ptr_command_queue), ptr_mem_objects, num_mem_objects,
+                wait_for, num_wait_for);
         });
 }
 
@@ -2888,9 +2856,10 @@ _enqueue_release_gl_objects(void **ptr_event, void *ptr_command_queue,
                             void **wait_for, uint32_t num_wait_for)
 {
     return pyopencl::c_handle_error([&] {
-            *ptr_event = enqueue_release_gl_objects(
-                *static_cast<pyopencl::command_queue*>(ptr_command_queue),
-                ptr_mem_objects, num_mem_objects, wait_for, num_wait_for);
+            *ptr_event = enqueue_gl_objects(
+                Release, *static_cast<pyopencl::command_queue*>(
+                    ptr_command_queue), ptr_mem_objects, num_mem_objects,
+                wait_for, num_wait_for);
         });
 }
 #endif /* HAVE_GL */
