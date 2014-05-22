@@ -1672,28 +1672,6 @@ enqueue_read_image(command_queue &cq, image &img, size_t *origin,
 
   // {{{ buffer
 
-inline cl_mem
-create_buffer_gc(cl_context ctx, cl_mem_flags flags,
-                 size_t size, void *host_ptr)
-{
-    return retry_mem_error<cl_mem>([&] {
-            return pyopencl_call_guarded(clCreateBuffer, ctx,
-                                         flags, size, host_ptr);
-        });
-}
-
-#if PYOPENCL_CL_VERSION >= 0x1010
-inline cl_mem
-create_sub_buffer_gc(cl_mem buffer, cl_mem_flags flags,
-                     cl_buffer_create_type bct, const void *buffer_create_info)
-{
-    return retry_mem_error<cl_mem>([&] {
-            return pyopencl_call_guarded(clCreateSubBuffer, buffer, flags,
-                                         bct, buffer_create_info);
-        });
-}
-#endif
-
 class buffer;
 static inline buffer *new_buffer(cl_mem mem, void *buff=0);
 
@@ -1710,9 +1688,11 @@ public:
     {
         cl_buffer_region region = {origin, size};
 
-        cl_mem mem = create_sub_buffer_gc(data(), flags,
-                                          CL_BUFFER_CREATE_TYPE_REGION,
-                                          &region);
+        auto mem = retry_mem_error<cl_mem>([&] {
+                return pyopencl_call_guarded(clCreateSubBuffer, data(), flags,
+                                             CL_BUFFER_CREATE_TYPE_REGION,
+                                             &region);
+            });
         return new_buffer(mem);
     }
 
@@ -1753,17 +1733,16 @@ new_buffer(cl_mem mem, void *buff)
 // {{{ buffer creation
 
 inline buffer*
-create_buffer_py(context &ctx, cl_mem_flags flags,
-                 size_t size, void *py_hostbuf)
+create_buffer(context &ctx, cl_mem_flags flags, size_t size, void *py_hostbuf)
 {
-    void *buf = py_hostbuf;
     void *retained_buf_obj = 0;
-    if (py_hostbuf != NULL) {
-        if (flags & CL_MEM_USE_HOST_PTR) {
-          retained_buf_obj = py_hostbuf;
-        }
+    if (py_hostbuf != NULL && flags & CL_MEM_USE_HOST_PTR) {
+        retained_buf_obj = py_hostbuf;
     }
-    cl_mem mem = create_buffer_gc(ctx.data(), flags, size, buf);
+    auto mem = retry_mem_error<cl_mem>([&] {
+            return pyopencl_call_guarded(clCreateBuffer, ctx.data(),
+                                         flags, size, py_hostbuf);
+        });
     return new_buffer(mem, retained_buf_obj);
 }
 
@@ -2465,7 +2444,7 @@ _create_buffer(void **ptr_buffer, void *ptr_context, cl_mem_flags flags,
 {
   pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
   return pyopencl::c_handle_error([&] {
-          *ptr_buffer = create_buffer_py(*ctx, flags, size, hostbuf);
+          *ptr_buffer = create_buffer(*ctx, flags, size, hostbuf);
       });
 }
 
