@@ -10,6 +10,8 @@
 
 namespace pyopencl {
 
+extern int (*python_gc)();
+
 #ifdef PYOPENCL_TRACE
 
 template<typename FirstType, typename... ArgTypes>
@@ -153,6 +155,20 @@ c_handle_error(std::function<void()> func)
         err->msg = strdup(e.what());
         return err;
     }
+}
+
+template<typename T>
+static inline T
+retry_mem_error(std::function<T()> func)
+{
+    try {
+        return func();
+    } catch (pyopencl::error &e) {
+        if (!e.is_out_of_memory() || !python_gc()) {
+            throw;
+        }
+    }
+    return func();
 }
 
 // }}}

@@ -100,3 +100,4 @@ void pyopencl_free_pointer_array(void**, uint32_t size);
 int pyopencl_have_gl();
 
 unsigned pyopencl_bitlog2(unsigned long v);
+void pyopencl_set_gc(int (*func)());
