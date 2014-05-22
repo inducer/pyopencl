@@ -1,7 +1,12 @@
 #include "wrap_cl.h"
+#include <string.h>
 #include <stdexcept>
 #include <iostream>
 #include <utility>
+#include <functional>
+
+#ifndef __PYOPENCL_ERROR_H
+#define __PYOPENCL_ERROR_H
 
 namespace pyopencl {
 
@@ -83,16 +88,30 @@ public:
 
 // }}}
 
-template<typename... ArgTypes, typename... ArgTypes2>
+// {{{ tracing and error reporting
+
+template<typename... ArgTypes2, typename... ArgTypes>
 static inline void
-call_guarded(cl_int (*func)(ArgTypes...), const char *name,
-             ArgTypes2&&... args)
+call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     print_call_trace(name);
     cl_int status_code = func(ArgTypes(args)...);
     if (status_code != CL_SUCCESS) {
         throw pyopencl::error(name, status_code);
     }
+}
+
+template<typename T, typename... ArgTypes, typename... ArgTypes2>
+static inline T
+call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
+{
+    print_call_trace(name);
+    cl_int status_code = CL_SUCCESS;
+    T res = func(args..., &status_code);
+    if (status_code != CL_SUCCESS) {
+        throw pyopencl::error(name, status_code);
+    }
+    return res;
 }
 #define pyopencl_call_guarded(func, args...)    \
     pyopencl::call_guarded(func, #func, args)
@@ -114,4 +133,30 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
 #define pyopencl_call_guarded_cleanup(func, args...)    \
     pyopencl::call_guarded_cleanup(func, #func, args)
 
+static inline ::error*
+c_handle_error(std::function<void()> func)
+{
+    try {
+        func();
+        return NULL;
+    } catch(const pyopencl::error &e) {
+        auto err = (::error*)malloc(sizeof(::error));
+        err->routine = strdup(e.routine());
+        err->msg = strdup(e.what());
+        err->code = e.code();
+        err->other = 0;
+        return err;
+    } catch (const std::exception &e) {
+        /* non-pyopencl exceptions need to be converted as well */
+        auto err = (::error*)malloc(sizeof(::error));
+        err->other = 1;
+        err->msg = strdup(e.what());
+        return err;
+    }
 }
+
+// }}}
+
+}
+
+#endif

@@ -1,8 +1,12 @@
 #include "wrap_cl.h"
+#include "error.h"
 #include <string>
 #include <sstream>
 #include <string.h>
 #include <memory>
+
+#ifndef __PYOPENCL_UTILS_H
+#define __PYOPENCL_UTILS_H
 
 #define PYOPENCL_DEF_GET_CLASS_T(name)          \
     static inline class_t                       \
@@ -97,7 +101,7 @@ private:
     noncopyable(noncopyable const &) = delete;
     noncopyable &operator=(noncopyable const &) = delete;
 public:
-    noncopyable() {}
+    noncopyable() = default;
 };
 
 // FIXME
