@@ -67,30 +67,6 @@ public:
     }
 };
 
-template<>
-class pyopencl_buf<void> : public std::unique_ptr<void, _D<void> > {
-    size_t m_len;
-public:
-    pyopencl_buf(size_t len) :
-        std::unique_ptr<void, _D<void> >((len ? malloc(len) : NULL)),
-        m_len(len)
-    {
-    }
-    inline size_t
-    len() const
-    {
-        return m_len;
-    }
-    inline void
-    resize(size_t len)
-    {
-        if (len == m_len)
-            return;
-        m_len = len;
-        this->reset(realloc(this->release(), len));
-    }
-};
-
 namespace pyopencl {
 
 template<typename T>
@@ -100,21 +76,18 @@ cast_bool(const T &v)
     return v ? CL_TRUE : CL_FALSE;
 }
 
-class noncopyable {
-    // non-copyable
+struct clbase {
 private:
-    noncopyable(noncopyable const &) = delete;
-    noncopyable &operator=(noncopyable const &) = delete;
+    // non-copyable
+    clbase(const clbase&) = delete;
+    clbase &operator=(const clbase&) = delete;
+    bool operator==(clbase const &other) const = delete;
+    bool operator!=(clbase const &other) const = delete;
 public:
-    noncopyable() = default;
-};
-
-struct clbase : public noncopyable {
+    clbase() = default;
     virtual ~clbase() = default;
     virtual intptr_t intptr() const = 0;
     virtual generic_info get_info(cl_uint) const = 0;
-    bool operator==(clbase const &other) const = delete;
-    bool operator!=(clbase const &other) const = delete;
 };
 
 template<typename CLType>

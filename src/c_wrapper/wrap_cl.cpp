@@ -2,7 +2,6 @@
 #include "utils.h"
 
 #include <stdlib.h>
-#include <vector>
 
 // {{{ extension function pointers
 
@@ -112,15 +111,14 @@ inline pyopencl_buf<cl_device_id>
 platform::get_devices(cl_device_type devtype)
 {
     cl_uint num_devices = 0;
-    print_call_trace("clGetDeviceIDs");
-    cl_int status_code;
-    status_code = clGetDeviceIDs(data(), devtype, 0, 0, &num_devices);
-    if (status_code == CL_DEVICE_NOT_FOUND) {
+    try {
+        pyopencl_call_guarded(clGetDeviceIDs,
+                              data(), devtype, 0, NULL, &num_devices);
+    } catch (const pyopencl::error &e) {
+        if (e.code() != CL_DEVICE_NOT_FOUND)
+            throw e;
         num_devices = 0;
-    } else if (status_code != CL_SUCCESS) {
-        throw pyopencl::error("clGetDeviceIDs", status_code);
     }
-
     pyopencl_buf<cl_device_id> devices(num_devices);
     if (num_devices == 0)
         return devices;
@@ -617,11 +615,6 @@ public:
             pyopencl_call_guarded(clRetainCommandQueue, q);
         }
     }
-    command_queue(command_queue const &src)
-        : clobj(src.data())
-    {
-        pyopencl_call_guarded(clRetainCommandQueue, data());
-    }
     command_queue(const context *ctx, const device *py_dev=0,
                   cl_command_queue_properties props=0)
         : clobj(create_command_queue(ctx, py_dev, props))
@@ -696,10 +689,6 @@ public:
         if (retain) {
             pyopencl_call_guarded(clRetainEvent, event);
         }
-    }
-    event(event const &src) : clobj(src.data())
-    {
-        pyopencl_call_guarded(clRetainEvent, data());
     }
     ~event()
     {
@@ -835,17 +824,6 @@ public:
         if (hostbuf) {
             m_hostbuf = hostbuf;
         }
-    }
-    memory_object(memory_object const &src)
-        : m_valid(true), memory_object_holder(src.data()),
-          m_hostbuf(src.m_hostbuf)
-    {
-        pyopencl_call_guarded(clRetainMemObject, data());
-    }
-    memory_object(memory_object_holder const &src)
-        : m_valid(true), memory_object_holder(src.data())
-    {
-        pyopencl_call_guarded(clRetainMemObject, data());
     }
     void
     release()
@@ -1799,21 +1777,7 @@ create_program_with_binary(context *ctx, cl_uint num_devices,
 
 // }}}
 
-
-  // {{{ kernel
-
-class local_memory {
-private:
-    size_t m_size;
-public:
-    local_memory(size_t size) : m_size(size)
-    {}
-    size_t
-    size() const
-    {
-        return m_size;
-    }
-};
+// {{{ kernel
 
 class kernel : public clobj<cl_kernel> {
 private:
@@ -1848,12 +1812,6 @@ public:
     {
         pyopencl_call_guarded(clSetKernelArg, data(), arg_index,
                               sizeof(cl_mem), &mem->data());
-    }
-    void
-    set_arg_local(cl_uint arg_index, const local_memory *loc)
-    {
-        pyopencl_call_guarded(clSetKernelArg, data(), arg_index,
-                              loc->size(), NULL);
     }
     void
     set_arg_sampler(cl_uint arg_index, const sampler *smp)
