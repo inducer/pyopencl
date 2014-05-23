@@ -30,43 +30,11 @@
 
 // {{{ equality testing
 
-#define PYOPENCL_EQUALITY_TESTS(cls) \
-  \
-  bool operator==(cls const &other) const \
-  { return data() == other.data(); } \
-  \
-  bool operator!=(cls const &other) const \
-  { return data() != other.data(); } \
-  \
-  long hash() const \
-  { return (long) (intptr_t) data(); }
+#define PYOPENCL_EQUALITY_TESTS(cls)                    \
+    bool operator==(cls const &other) const = delete;   \
+    bool operator!=(cls const &other) const = delete;
 
 // }}}
-
-
-// {{{ tools
-
-#define PYOPENCL_PARSE_PY_DEVICES \
-  std::vector<cl_device_id> devices_vec; \
-  cl_uint num_devices; \
-  cl_device_id *devices; \
-  \
-  if (py_devices.ptr() == Py_None)                                      \
-    {                                                                   \
-      num_devices = 0; \
-      devices = 0; \
-    }                                                                   \
-  else                                                                  \
-    {                                                                   \
-      PYTHON_FOREACH(py_dev, py_devices)                                \
-        devices_vec.push_back(                                          \
-                              py::extract<device &>(py_dev)().data()); \
-      num_devices = devices_vec.size(); \
-      devices = devices_vec.empty( ) ? NULL : &devices_vec.front(); \
-    }                                                                   \
-
-// }}}
-
 
 // {{{ more odds and ends
 
@@ -111,8 +79,8 @@
 
 // }}}
 
-namespace pyopencl
-{
+namespace pyopencl {
+
 static int
 dummy_python_gc()
 {
@@ -284,7 +252,8 @@ platform::get_devices(cl_device_type devtype)
 
       generic_info get_info(cl_device_info param_name) const
       {
-#define DEV_GET_INT_INF(TYPE) pyopencl_get_int_info(TYPE, Device, m_device, param_name)
+#define DEV_GET_INT_INF(TYPE)                                           \
+          pyopencl_get_int_info(TYPE, Device, m_device, param_name)
         switch (param_name) {
         case CL_DEVICE_TYPE:
             return DEV_GET_INT_INF(cl_device_type);
@@ -1462,66 +1431,24 @@ enqueue_read_image(command_queue &cq, image &img, size_t *origin,
     }
   };
 
-
-
-
-#define PYOPENCL_WRAP_BUFFER_CREATOR(TYPE, NAME, CL_NAME, ARGS, CL_ARGS) \
-  inline                                                                \
-  TYPE *NAME ARGS                                                       \
-  {                                                                     \
-    cl_int status_code;                                                 \
-    pyopencl::print_call_trace(#CL_NAME);                               \
-    cl_mem mem = CL_NAME CL_ARGS;                                       \
-                                                                        \
-    if (status_code != CL_SUCCESS)                                      \
-      throw pyopencl::error(#CL_NAME, status_code);                     \
-                                                                        \
-    try                                                                 \
-      {                                                                 \
-        return new TYPE(mem, false);                                    \
-      }                                                                 \
-    catch (...)                                                         \
-      {                                                                 \
-          pyopencl_call_guarded(clReleaseMemObject, mem);               \
-          throw;                                                        \
-      }                                                                 \
-  }
-
-
-
-
-  PYOPENCL_WRAP_BUFFER_CREATOR(gl_buffer,
-                               create_from_gl_buffer, clCreateFromGLBuffer,
-                               (context &ctx, cl_mem_flags flags, GLuint bufobj),
-                               (ctx.data(), flags, bufobj, &status_code));
-  PYOPENCL_WRAP_BUFFER_CREATOR(gl_texture,
-                               create_from_gl_texture_2d, clCreateFromGLTexture2D,
-                               (context &ctx, cl_mem_flags flags,
-                                GLenum texture_target, GLint miplevel, GLuint texture),
-                               (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
-  PYOPENCL_WRAP_BUFFER_CREATOR(gl_texture,
-                               create_from_gl_texture_3d, clCreateFromGLTexture3D,
-                               (context &ctx, cl_mem_flags flags,
-                                GLenum texture_target, GLint miplevel, GLuint texture),
-                               (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
-  PYOPENCL_WRAP_BUFFER_CREATOR(gl_renderbuffer,
-                               create_from_gl_renderbuffer, clCreateFromGLRenderbuffer,
-                               (context &ctx, cl_mem_flags flags, GLuint renderbuffer),
-                               (ctx.data(), flags, renderbuffer, &status_code));
-
-  inline
-  gl_texture *create_from_gl_texture(context &ctx, cl_mem_flags flags,
-                                     GLenum texture_target, GLint miplevel,
-                                     GLuint texture, unsigned dims)
-  {
-    if (dims == 2)
-      return create_from_gl_texture_2d(ctx, flags, texture_target, miplevel, texture);
-    else if (dims == 3)
-      return create_from_gl_texture_3d(ctx, flags, texture_target, miplevel, texture);
-    else
-      throw pyopencl::error("Image", CL_INVALID_VALUE,
-                            "invalid dimension");
-  }
+inline gl_texture*
+create_from_gl_texture(context &ctx, cl_mem_flags flags, GLenum texture_target,
+                       GLint miplevel, GLuint texture, unsigned dims)
+{
+    if (dims == 2) {
+        cl_mem mem = pyopencl_call_guarded(clCreateFromGLTexture2D,
+                                           ctx.data(), flags, texture_target,
+                                           miplevel, texture);
+        return pyopencl_convert_obj(gl_texture, clReleaseMemObject, mem);
+    } else if (dims == 3) {
+        cl_mem mem = pyopencl_call_guarded(clCreateFromGLTexture3D,
+                                           ctx.data(), flags, texture_target,
+                                           miplevel, texture);
+        return pyopencl_convert_obj(gl_texture, clReleaseMemObject, mem);
+    } else {
+        throw pyopencl::error("Image", CL_INVALID_VALUE, "invalid dimension");
+    }
+}
 
   // TODO:
   // inline
@@ -2774,7 +2701,8 @@ void* _from_int_ptr(void **ptr_out, intptr_t int_ptr_value, class_t class_)
 
 long _hash(void *ptr, class_t class_)
 {
-#define HASH(CLSU, CLS) return static_cast<pyopencl::CLS*>(ptr)->hash();
+#define HASH(CLSU, CLS)                                         \
+    return intptr_t(static_cast<pyopencl::CLS*>(ptr)->data());
   SWITCHCLASS(HASH);
 }
 
@@ -2824,7 +2752,10 @@ error *_create_from_gl_buffer(
 {
     pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
     return pyopencl::c_handle_error([&] {
-            *ptr = create_from_gl_buffer(*ctx, flags, bufobj);
+            cl_mem mem = pyopencl_call_guarded(clCreateFromGLBuffer,
+                                               ctx->data(), flags, bufobj);
+            *ptr = pyopencl_convert_obj(pyopencl::gl_buffer,
+                                        clReleaseMemObject, mem);
         });
 }
 
@@ -2833,7 +2764,10 @@ error *_create_from_gl_renderbuffer(
 {
     pyopencl::context *ctx = static_cast<pyopencl::context*>(ptr_context);
     return pyopencl::c_handle_error([&] {
-            *ptr = create_from_gl_renderbuffer(*ctx, flags, bufobj);
+            cl_mem mem = pyopencl_call_guarded(clCreateFromGLRenderbuffer,
+                                               ctx->data(), flags, bufobj);
+            *ptr = pyopencl_convert_obj(pyopencl::gl_renderbuffer,
+                                        clReleaseMemObject, mem);
         });
 }
 
