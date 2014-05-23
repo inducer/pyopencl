@@ -183,34 +183,29 @@ def _create_instance(cls, ptr):
 class _Common(object):
     ptr = _ffi.NULL
 
-    @classmethod
-    def _c_class_type(cls):
-        return getattr(_lib, 'CLASS_%s' % cls._id.upper())
-
     def __del__(self):
-        _lib._delete(self.ptr, self._c_class_type())
+        _lib._delete(self.ptr)
 
     def __eq__(self, other):
-        return hash(self) == hash(other)
+        return other == self.int_ptr
 
     def __hash__(self):
-        return _lib._hash(self.ptr, self._c_class_type())
+        return _lib._int_ptr(self.ptr)
 
     def get_info(self, param):
-        info = _ffi.new('generic_info *')
-        _handle_error(_lib._get_info(self.ptr, self._c_class_type(), param, info))
+        info = _ffi.new('generic_info*')
+        _handle_error(_lib._get_info(self.ptr, param, info))
         return _generic_info_to_python(info)
 
     @property
     def int_ptr(self):
-        return _lib._int_ptr(self.ptr, self._c_class_type())
+        return _lib._int_ptr(self.ptr)
 
     @classmethod
     def from_int_ptr(cls, int_ptr_value):
         ptr = _ffi.new('void **')
-        _lib._from_int_ptr(ptr, int_ptr_value,
-                getattr(_lib, 'CLASS_%s' % cls._id.upper()))
-        #getattr(_lib, '%s__from_int_ptr' % cls._id)(ptr, int_ptr_value)
+        _handle_error(_lib._from_int_ptr(
+            ptr, int_ptr_value, getattr(_lib, 'CLASS_%s' % cls._id.upper())))
         return _create_instance(cls, ptr[0])
 
 # }}}
@@ -499,25 +494,21 @@ def _c_buffer_from_obj(obj, writable=False):
 
         if isinstance(obj, np.ndarray):
             # numpy array
-            return (
-                    _ffi.cast('void *',
-                        obj.__array_interface__['data'][0]),
-                    obj.nbytes,
-                    None)
+            return (_ffi.cast('void *',
+                              obj.__array_interface__['data'][0]),
+                    obj.nbytes, None)
         elif isinstance(obj, np.generic):
             # numpy scalar
             #
-            # * obj.__array_interface__ exists in CPython, but the address does
-            #   not seem to point to the actual scalar (not supported/bug?).
+            # * obj.__array_interface__ exists in CPython although requires
+            #   holding a reference to the dynamically created
+            #   __array_interface__ object
             #
             # * does not exist (yet?) in numpypy.
-
-            s_array = np.array([obj])  # obj[()] not supported yet by numpypy
-            return (
-                    _ffi.cast('void *',
-                        s_array.__array_interface__['data'][0]),
-                    s_array.nbytes,
-                    s_array)
+            s_array = obj[()]
+            return (_ffi.cast('void *',
+                              s_array.__array_interface__['data'][0]),
+                    s_array.nbytes, s_array)
         elif isinstance(obj, bytes):
             if writable:
                 # There sould be better ways to pass arguments

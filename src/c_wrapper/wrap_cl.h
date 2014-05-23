@@ -59,6 +59,11 @@
 
 #endif
 
+namespace pyopencl {
+struct clbase;
+}
+typedef pyopencl::clbase *clobj_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
