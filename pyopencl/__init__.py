@@ -115,9 +115,9 @@ class Program(object):
             if isinstance(source, unicode) and sys.version_info < (3,):
                 from warnings import warn
                 warn("Received OpenCL source code in Unicode, "
-                        "should be ASCII string. Attempting conversion.",
-                        stacklevel=2)
-                source = str(source)
+                     "should be ASCII string. Attempting conversion.",
+                     stacklevel=2)
+                source = source.encode()
 
             self._context = context
             self._source = source
