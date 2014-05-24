@@ -182,6 +182,6 @@ def _get_insert_func(obj):
     return _insert
 
 def _find_obj(_id):
-    return _pyref[_id]
+    return _pyref.get(_id, None)
 
 _lib.set_deref(_py_deref)

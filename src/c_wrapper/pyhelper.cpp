@@ -4,11 +4,15 @@
 
 namespace pyopencl {
 
-static std::atomic<unsigned long> pyobj_id = ATOMIC_VAR_INIT(0ul);
+static std::atomic<unsigned long> pyobj_id = ATOMIC_VAR_INIT(1ul);
 unsigned long
 next_obj_id()
 {
-    return std::atomic_fetch_add(&pyobj_id, 1ul);
+    unsigned long id;
+    do {
+        id = std::atomic_fetch_add(&pyobj_id, 1ul);
+    } while (id == 0);
+    return id;
 }
 
 static int

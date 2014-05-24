@@ -743,15 +743,57 @@ public:
         }
     }
     virtual void
-    wait() const
+    finished()
+    {}
+    void
+    wait()
     {
         pyopencl_call_guarded(clWaitForEvents, 1, &data());
+        finished();
     }
 };
+
+class nanny_event : public event {
+private:
+    unsigned int m_ward;
+public:
+    nanny_event(cl_event evt, bool retain, void (*reffunc)(unsigned long)=0)
+        : event(evt, retain), m_ward(0)
+    {
+        if (reffunc) {
+            m_ward = next_obj_id();
+            reffunc(m_ward);
+        }
+    }
+    ~nanny_event()
+    {
+        if (m_ward) {
+            wait();
+        }
+    }
+    unsigned int
+    get_ward() const
+    {
+        return m_ward;
+    }
+    void
+    finished()
+    {
+        // No lock needed because multiple release is safe here.
+        unsigned long ward = m_ward;
+        m_ward = 0;
+        python_deref(ward);
+    }
+};
+
 static inline event*
-new_event(cl_event evt)
+new_event(cl_event evt, void (*reffunc)(unsigned long)=0)
 {
-    return pyopencl_convert_obj(event, clReleaseEvent, evt);
+    if (reffunc) {
+        return pyopencl_convert_obj(nanny_event, clReleaseEvent, evt, reffunc);
+    } else {
+        return pyopencl_convert_obj(event, clReleaseEvent, evt);
+    }
 }
 
 // }}}
