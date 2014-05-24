@@ -1,6 +1,7 @@
 - nanny events
-- retry-if-mem-error
+- *_from_int_ptr, register with metaclass
 - subdevices
 - Kernel.get_arg_info
 - image/buffer copies
 - Incorporate fixes in C++ stuff from after the fork
+- other missing functions
