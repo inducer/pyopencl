@@ -3,5 +3,4 @@
 - subdevices
 - Kernel.get_arg_info
 - image/buffer copies
-- interaction with threading BEGIN_ALLOW_THREADS/END_ALLOW_THREADS
 - Incorporate fixes in C++ stuff from after the fork
