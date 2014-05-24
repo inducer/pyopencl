@@ -7,7 +7,7 @@
 
 #if PYOPENCL_CL_VERSION >= 0x1020
 template<typename T>
-static inline T
+PYOPENCL_USE_RESULT static inline T
 pyopencl_get_ext_fun(cl_platform_id plat, const char *name, const char *err)
 {
     T func = (T)clGetExtensionFunctionAddressForPlatform(plat, name);
@@ -18,7 +18,7 @@ pyopencl_get_ext_fun(cl_platform_id plat, const char *name, const char *err)
 }
 #else
 template<typename T>
-static inline T
+PYOPENCL_USE_RESULT static inline T
 pyopencl_get_ext_fun(cl_platform_id, const char *name, const char *err)
 {
     T func = (T)clGetExtensionFunctionAddress(name);
@@ -110,12 +110,12 @@ public:
         }
     }
 
-    pyopencl_buf<cl_device_id> get_devices(cl_device_type devtype);
+    pyopencl_buf<cl_device_id> get_devices(cl_device_type devtype) const;
 };
 
 
-inline pyopencl_buf<cl_device_id>
-platform::get_devices(cl_device_type devtype)
+PYOPENCL_USE_RESULT inline pyopencl_buf<cl_device_id>
+platform::get_devices(cl_device_type devtype) const
 {
     cl_uint num_devices = 0;
     try {
@@ -154,11 +154,7 @@ private:
     reference_type_t m_ref_type;
 
 public:
-    device(cl_device_id did)
-        : clobj(did), m_ref_type(REF_NOT_OWNABLE)
-    {}
-
-    device(cl_device_id did, bool retain,
+    device(cl_device_id did, bool retain=false,
            reference_type_t ref_type=REF_NOT_OWNABLE)
         : clobj(did), m_ref_type(ref_type)
     {
@@ -212,8 +208,8 @@ public:
         }
 #endif
     }
-
-    generic_info get_info(cl_uint param_name) const
+    generic_info
+    get_info(cl_uint param_name) const
     {
 #define DEV_GET_INT_INF(TYPE)                                           \
         pyopencl_get_int_info(TYPE, Device, data(), param_name)
@@ -346,12 +342,13 @@ public:
             return DEV_GET_INT_INF(cl_uint);
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
-        case CL_DEVICE_LINKER_AVAILABLE: return DEV_GET_INT_INF(cl_bool);
+        case CL_DEVICE_LINKER_AVAILABLE:
+            return DEV_GET_INT_INF(cl_bool);
         case CL_DEVICE_BUILT_IN_KERNELS:
             return pyopencl_get_str_info(Device, data(), param_name);
         case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE:
         case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE:
-            DEV_GET_INT_INF(size_t);
+            return DEV_GET_INT_INF(size_t);
         case CL_DEVICE_PARENT_DEVICE:
             return pyopencl_get_opaque_info(cl_device_id, device,
                                             Device, data(), param_name);
@@ -364,10 +361,11 @@ public:
         case CL_DEVICE_PARTITION_AFFINITY_DOMAIN:
             return pyopencl_get_array_info(cl_device_affinity_domain,
                                            Device, data(), param_name);
-        case CL_DEVICE_REFERENCE_COUNT: DEV_GET_INT_INF(cl_uint);
+        case CL_DEVICE_REFERENCE_COUNT:
+            return DEV_GET_INT_INF(cl_uint);
         case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC:
         case CL_DEVICE_PRINTF_BUFFER_SIZE:
-            DEV_GET_INT_INF(cl_bool);
+            return DEV_GET_INT_INF(cl_bool);
 #endif
             // {{{ AMD dev attrs
             //
@@ -518,7 +516,8 @@ public:
     {
         pyopencl_call_guarded_cleanup(clReleaseContext, data());
     }
-    generic_info get_info(cl_uint param_name) const
+    generic_info
+    get_info(cl_uint param_name) const
     {
         switch ((cl_context_info)param_name) {
         case CL_CONTEXT_REFERENCE_COUNT:
@@ -584,7 +583,7 @@ public:
             throw clerror("Context.get_info", CL_INVALID_VALUE);
         }
     }
-    inline generic_info
+    PYOPENCL_USE_RESULT inline generic_info
     get_supported_image_formats(cl_mem_flags flags,
                                 cl_mem_object_type image_type) const
     {
@@ -664,7 +663,7 @@ public:
         }
     }
 
-    std::unique_ptr<context>
+    PYOPENCL_USE_RESULT std::unique_ptr<context>
     get_context() const
     {
         cl_context param_value;
@@ -676,7 +675,7 @@ public:
 
 #if PYOPENCL_CL_VERSION < 0x1010
     cl_command_queue_properties
-    set_property(cl_command_queue_properties prop, bool enable)
+    set_property(cl_command_queue_properties prop, bool enable) const
     {
         cl_command_queue_properties old_prop;
         pyopencl_call_guarded(clSetCommandQueueProperty, data(), prop,
@@ -685,12 +684,12 @@ public:
     }
 #endif
     void
-    flush()
+    flush() const
     {
         pyopencl_call_guarded(clFlush, data());
     }
     void
-    finish()
+    finish() const
     {
         pyopencl_call_guarded(clFinish, data());
     }
@@ -737,7 +736,7 @@ public:
             throw clerror("Event.get_info", CL_INVALID_VALUE);
         }
     }
-    generic_info
+    PYOPENCL_USE_RESULT generic_info
     get_profiling_info(cl_profiling_info param_name) const
     {
         switch (param_name) {
@@ -751,9 +750,8 @@ public:
             throw clerror("Event.get_profiling_info", CL_INVALID_VALUE);
         }
     }
-
     virtual void
-    wait()
+    wait() const
     {
         pyopencl_call_guarded(clWaitForEvents, 1, &data());
     }
@@ -830,7 +828,7 @@ public:
 
 class memory_object : public memory_object_holder {
 private:
-    bool m_valid;
+    mutable bool m_valid;
     void *m_hostbuf;
 public:
     memory_object(cl_mem mem, bool retain, void *hostbuf=0)
@@ -844,7 +842,7 @@ public:
         }
     }
     void
-    release()
+    release() const
     {
         if (!m_valid)
             throw clerror("MemoryObject.free", CL_INVALID_VALUE,
@@ -859,7 +857,7 @@ public:
         }
     }
     void*
-    hostbuf()
+    hostbuf() const
     {
         return m_hostbuf;
     }
@@ -1243,8 +1241,8 @@ class gl_texture : public image {
     gl_texture(cl_mem mem, bool retain, void *hostbuf=0)
       : image(mem, retain, hostbuf)
     {}
-    generic_info
-    get_gl_texture_info(cl_gl_texture_info param_name)
+    PYOPENCL_USE_RESULT generic_info
+    get_gl_texture_info(cl_gl_texture_info param_name) const
     {
         switch (param_name) {
         case CL_GL_TEXTURE_TARGET:
@@ -1257,7 +1255,7 @@ class gl_texture : public image {
     }
 };
 
-static gl_texture*
+PYOPENCL_USE_RESULT static gl_texture*
 create_from_gl_texture(context &ctx, cl_mem_flags flags, GLenum texture_target,
                        GLint miplevel, GLuint texture, unsigned dims)
 {
@@ -1290,7 +1288,7 @@ typedef cl_int (*clEnqueueGLObjectFunc)(cl_command_queue, cl_uint,
                                         const cl_mem*, cl_uint,
                                         const cl_event*, cl_event*);
 
-static inline event*
+PYOPENCL_USE_RESULT static inline event*
 enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
                    command_queue *cq, const clobj_t *mem_objects,
                    uint32_t num_mem_objects, const clobj_t *wait_for,
@@ -1413,10 +1411,10 @@ public:
     PYOPENCL_DEF_GET_CLASS_T(BUFFER);
     buffer(cl_mem mem, bool retain, void *hostbuf=0)
         : memory_object(mem, retain, hostbuf)
-    { }
+    {}
 
 #if PYOPENCL_CL_VERSION >= 0x1010
-    buffer*
+    PYOPENCL_USE_RESULT buffer*
     get_sub_region(size_t origin, size_t size, cl_mem_flags flags) const
     {
         cl_buffer_region region = {origin, size};
@@ -1457,7 +1455,7 @@ public:
     //       }
 #endif
 };
-static inline buffer*
+PYOPENCL_USE_RESULT static inline buffer*
 new_buffer(cl_mem mem, void *buff)
 {
     return pyopencl_convert_obj(buffer, clReleaseMemObject, mem, buff);
@@ -1540,13 +1538,14 @@ public:
     {
         return m_program_kind;
     }
-    pyopencl_buf<cl_device_id>
-    get_info__devices()
+    PYOPENCL_USE_RESULT pyopencl_buf<cl_device_id>
+    get_info__devices() const
     {
         return pyopencl_get_vec_info(cl_device_id, Program, data(),
                                      CL_PROGRAM_DEVICES);
     }
-    generic_info get_info(cl_uint param_name) const
+    generic_info
+    get_info(cl_uint param_name) const
     {
         switch ((cl_program_info)param_name) {
         case CL_PROGRAM_CONTEXT:
@@ -1600,7 +1599,7 @@ public:
             throw clerror("Program.get_info", CL_INVALID_VALUE);
         }
     }
-    generic_info
+    PYOPENCL_USE_RESULT generic_info
     get_build_info(const device *dev, cl_program_build_info param_name) const
     {
         switch (param_name) {
@@ -1621,9 +1620,10 @@ public:
         }
     }
     void
-    build(const char *options, cl_uint num_devices, const clobj_t *ptr_devices)
+    build(const char *options, cl_uint num_devices,
+          const clobj_t *_devices) const
     {
-        auto devices = buf_from_class<device>(ptr_devices, num_devices);
+        auto devices = buf_from_class<device>(_devices, num_devices);
         pyopencl_call_guarded(clBuildProgram, data(), num_devices,
                               devices.get(), options, NULL, NULL);
     }
@@ -1666,7 +1666,7 @@ public:
     //       }
     // #endif
 };
-static inline program*
+PYOPENCL_USE_RESULT static inline program*
 new_program(cl_program prog, program_kind_type progkind=KND_UNKNOWN)
 {
     return pyopencl_convert_obj(program, clReleaseProgram, prog, progkind);
@@ -1698,26 +1698,26 @@ public:
         pyopencl_call_guarded_cleanup(clReleaseKernel, data());
     }
     void
-    set_arg_null(cl_uint arg_index)
+    set_arg_null(cl_uint arg_index) const
     {
         cl_mem m = 0;
         pyopencl_call_guarded(clSetKernelArg, data(), arg_index,
                               sizeof(cl_mem), &m);
     }
     void
-    set_arg_mem(cl_uint arg_index, const memory_object_holder *mem)
+    set_arg_mem(cl_uint arg_index, const memory_object_holder *mem) const
     {
         pyopencl_call_guarded(clSetKernelArg, data(), arg_index,
                               sizeof(cl_mem), &mem->data());
     }
     void
-    set_arg_sampler(cl_uint arg_index, const sampler *smp)
+    set_arg_sampler(cl_uint arg_index, const sampler *smp) const
     {
         pyopencl_call_guarded(clSetKernelArg, data(), arg_index,
                               sizeof(cl_sampler), &smp->data());
     }
     void
-    set_arg_buf(cl_uint arg_index, const void *buffer, size_t size)
+    set_arg_buf(cl_uint arg_index, const void *buffer, size_t size) const
     {
         pyopencl_call_guarded(clSetKernelArg, data(), arg_index, size, buffer);
     }
@@ -1744,7 +1744,7 @@ public:
             throw clerror("Kernel.get_info", CL_INVALID_VALUE);
         }
     }
-    generic_info
+    PYOPENCL_USE_RESULT generic_info
     get_work_group_info(cl_kernel_work_group_info param_name,
                         const device *dev) const
     {
@@ -1836,7 +1836,8 @@ set_gc(int (*func)())
     python_gc = func ? func : dummy_python_gc;
 }
 
-int have_gl()
+int
+have_gl()
 {
 #ifdef HAVE_GL
     return 1;

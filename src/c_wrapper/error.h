@@ -104,7 +104,7 @@ call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 }
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
-static inline T
+PYOPENCL_USE_RESULT static inline T
 call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     print_call_trace(name);
@@ -135,7 +135,7 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
 #define pyopencl_call_guarded_cleanup(func, args...)    \
     pyopencl::call_guarded_cleanup(func, #func, args)
 
-static inline ::error*
+PYOPENCL_USE_RESULT static inline ::error*
 c_handle_error(std::function<void()> func)
 {
     try {
@@ -174,7 +174,7 @@ retry_mem_error(std::function<T()> func)
 // }}}
 
 template<typename T, typename CLType, typename... ArgTypes>
-static inline T*
+PYOPENCL_USE_RESULT static inline T*
 convert_obj(cl_int (*clRelease)(CLType), const char *name, CLType cl_obj,
             ArgTypes&&... args)
 {
