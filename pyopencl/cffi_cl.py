@@ -334,8 +334,6 @@ def _handle_error(error):
 
 class Platform(_Common):
     _id = 'platform'
-    # todo: __del__
-
     def get_devices(self, device_type=device_type.ALL):
         devices = _CArray(_ffi.new('void**'))
         _handle_error(_lib.platform__get_devices(
@@ -367,11 +365,8 @@ def get_platforms():
 
 class Device(_Common):
     _id = 'device'
-
-    # TODO: __del__
-
-    def get_info(self, param):
-        return super(Device, self).get_info(param)
+    # TODO create_sub_devices
+    # TODO create_sub_devices_ext
 
 # }}}
 
@@ -468,6 +463,8 @@ class CommandQueue(_Common):
         _handle_error(_lib.command_queue__finish(self.ptr))
     def flush(self):
         _handle_error(_lib.command_queue__flush(self.ptr))
+    # TODO get_context?
+    # TODO set_property
 
 class MemoryObjectHolder(_Common):
     pass
@@ -476,6 +473,7 @@ class MemoryObjectHolder(_Common):
 class MemoryObject(MemoryObjectHolder):
     def release(self):
         _handle_error(_lib.memory_object__release(self.ptr))
+    # TODO hostbuf?
 
 def _c_buffer_from_obj(obj, writable=False):
     """Convert a Python object to a tuple (cdata('void *'), num_bytes, dummy)
@@ -494,6 +492,9 @@ def _c_buffer_from_obj(obj, writable=False):
                               obj.__array_interface__['data'][0]),
                     obj.nbytes, None)
         elif isinstance(obj, np.generic):
+            if writable:
+                raise TypeError('expected an object with a writable '
+                                'buffer interface.')
             # numpy scalar
             #
             # * obj.__array_interface__ exists in CPython although requires
@@ -507,9 +508,9 @@ def _c_buffer_from_obj(obj, writable=False):
                     s_array.nbytes, s_array)
         elif isinstance(obj, bytes):
             if writable:
-                # There sould be better ways to pass arguments
-                p = _ffi.new('char[]', obj)
-                return (_ffi.cast('void *', p), len(obj), p)
+                # bytes is not writable
+                raise TypeError('expected an object with a writable '
+                                'buffer interface.')
             return (obj, len(obj), None)
         else:
             raise LogicError("", status_code.INVALID_VALUE,
@@ -570,6 +571,8 @@ class Buffer(MemoryObject):
         _handle_error(_lib.create_buffer(
             ptr_buffer, context.ptr, flags, size, c_hostbuf))
         self.ptr = ptr_buffer[0]
+
+    # TODO __getitem__ ?
 
 # }}}
 
@@ -635,6 +638,10 @@ class _Program(_Common):
         _handle_error(_lib.program__get_build_info(
             self.ptr, device.ptr, param, info))
         return _generic_info_to_python(info)
+    # TODO compile?
+    # create_with_built_in_kernels
+    # link_program
+    # unload_platform_compiler
 
 # }}}
 
@@ -667,6 +674,8 @@ class Kernel(_Common):
         _handle_error(_lib.kernel__get_work_group_info(
             self.ptr, param, device.ptr, info))
         return _generic_info_to_python(info)
+    # TODO get_arg_info
+    #  create_kernels_in_program
 
 # }}}
 
@@ -686,6 +695,23 @@ class Event(_Common):
 
     def wait(self):
         _handle_error(_lib.event__wait(self.ptr))
+
+# TODO
+#   NannyEvent
+#   wait_for_events
+#   enqueue_wait_for_events
+#   UserEvent
+#   enqueue_migrate_mem_objects
+#   enqueue_migrate_mem_objects_ext
+#   create_sub_buffer
+#   enqueue_read_buffer_rect
+#   enqueue_write_buffer_rect
+#   enqueue_copy_buffer_rect
+#   enqueue_fill_buffer
+#   get_image_format_channel_count
+#   get_image_format_dtype_size
+#   get_image_format_item_size
+#   enqueue_task
 
 # }}}
 
@@ -818,10 +844,15 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
         slice_pitch, c_wait_for, num_wait_for, bool(is_blocking)))
     return _create_instance(Event, ptr_event[0])
 
-# TODO: write_image? copy_image?...
+# TODO: write_image copy_image fill_image
+#    copy_buffer_to_image copy_image_to_buffer
 
 # }}}
 
+# TODO
+#   MemoryMap
+#   enqueue_map_buffer
+#   enqueue_map_image
 
 # {{{ gl interop
 
@@ -974,6 +1005,7 @@ class Image(MemoryObject):
         if len(args) == 5:
             # > (1,2)
             context, flags, format, desc, hostbuf = args
+            # TODO WTF???
         elif len(args) == 6:
             # legacy init for CL 1.1 and older
             self._init_legacy(*args)
@@ -1059,6 +1091,9 @@ class Image(MemoryObject):
         else:
             raise LogicError("Image", status_code.INVALID_VALUE,
                     "only images have shapes")
+
+# TODO
+#   create_image_from_desc
 
 # }}}
 

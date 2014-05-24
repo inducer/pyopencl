@@ -166,3 +166,20 @@ if _lib.have_gl():
 import gc
 _gc_collect = _ffi.callback('int(void)')(gc.collect)
 _lib.set_gc(_gc_collect)
+
+_pyrefs = {}
+@_ffi.callback('void(int)')
+def _py_deref(_id):
+    try:
+        del _pyrefs[_id]
+    except:
+        pass
+
+def _get_insert_func(obj):
+    @_ffi.callback('void(int)')
+    def _insert(_id):
+        _pyref[_id] = obj
+    return _insert
+
+def _find_obj(_id):
+    return _pyref[_id]
