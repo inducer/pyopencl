@@ -752,6 +752,11 @@ public:
         finished();
     }
 };
+static inline event*
+new_event(cl_event evt)
+{
+    return pyopencl_convert_obj(event, clReleaseEvent, evt);
+}
 
 class nanny_event : public event {
 private:
@@ -785,15 +790,10 @@ public:
         python_deref(ward);
     }
 };
-
 static inline event*
-new_event(cl_event evt, void (*reffunc)(unsigned long)=0)
+new_nanny_event(cl_event evt, void (*reffunc)(unsigned long))
 {
-    if (reffunc) {
-        return pyopencl_convert_obj(nanny_event, clReleaseEvent, evt, reffunc);
-    } else {
-        return pyopencl_convert_obj(event, clReleaseEvent, evt);
-    }
+    return pyopencl_convert_obj(nanny_event, clReleaseEvent, evt, reffunc);
 }
 
 // }}}
@@ -2182,6 +2182,14 @@ event__wait(clobj_t evt)
 }
 
 
+// Nanny Event
+unsigned long
+nanny_event__get_ward(clobj_t evt)
+{
+    return static_cast<nanny_event*>(evt)->get_ward();
+}
+
+
 // enqueue_*
 error*
 enqueue_nd_range_kernel(clobj_t *_evt, clobj_t _queue, clobj_t _knl,
@@ -2261,7 +2269,7 @@ error*
 enqueue_read_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                     void *buffer, size_t size, size_t device_offset,
                     const clobj_t *_wait_for, uint32_t num_wait_for,
-                    int is_blocking)
+                    int is_blocking, void (*ref)(unsigned long))
 {
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
@@ -2274,7 +2282,7 @@ enqueue_read_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                         cast_bool(is_blocking), device_offset, size,
                         buffer, num_wait_for, wait_for.get(), &evt);
                 });
-            *_evt = new_event(evt);
+            *_evt = new_nanny_event(evt, ref);
         });
 }
 
@@ -2282,7 +2290,7 @@ error*
 enqueue_write_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                      const void *buffer, size_t size, size_t device_offset,
                      const clobj_t *_wait_for, uint32_t num_wait_for,
-                     int is_blocking)
+                     int is_blocking, void (*ref)(unsigned long))
 {
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
@@ -2295,8 +2303,7 @@ enqueue_write_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                         cast_bool(is_blocking), device_offset,
                         size, buffer, num_wait_for, wait_for.get(), &evt);
                 });
-            *_evt = new_event(evt);
-            // PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
+            *_evt = new_nanny_event(evt, ref);
         });
 }
 
@@ -2337,7 +2344,8 @@ error*
 enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem, size_t *origin,
                    size_t *region, void *buffer, size_t row_pitch,
                    size_t slice_pitch, const clobj_t *_wait_for,
-                   uint32_t num_wait_for, int is_blocking)
+                   uint32_t num_wait_for, int is_blocking,
+                   void (*ref)(unsigned long))
 {
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
@@ -2351,8 +2359,7 @@ enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem, size_t *origin,
                         slice_pitch, buffer, num_wait_for,
                         wait_for.get(), &evt);
                 });
-            *_evt = new_event(evt);
-            //PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
+            *_evt = new_nanny_event(evt, ref);
         });
 }
 

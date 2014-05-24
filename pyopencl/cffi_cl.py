@@ -32,7 +32,7 @@ import sys
 
 # TODO: can we do without ctypes?
 import ctypes
-from pyopencl._cffi import _ffi, _lib
+from pyopencl._cffi import _ffi, _lib, _get_insert_func, _find_obj
 
 # {{{ compatibility shims
 
@@ -490,7 +490,7 @@ def _c_buffer_from_obj(obj, writable=False):
             # numpy array
             return (_ffi.cast('void *',
                               obj.__array_interface__['data'][0]),
-                    obj.nbytes, None)
+                    obj.nbytes, obj)
         elif isinstance(obj, np.generic):
             if writable:
                 raise TypeError('expected an object with a writable '
@@ -511,7 +511,7 @@ def _c_buffer_from_obj(obj, writable=False):
                 # bytes is not writable
                 raise TypeError('expected an object with a writable '
                                 'buffer interface.')
-            return (obj, len(obj), None)
+            return (obj, len(obj), obj)
         else:
             raise LogicError("", status_code.INVALID_VALUE,
                     "PyOpencl on PyPy only accepts numpy arrays "
@@ -539,7 +539,7 @@ def _c_buffer_from_obj(obj, writable=False):
         raise LogicError(routine=None, code=status_code.INVALID_VALUE,
                 msg="un-sized (pure-Python) types not acceptable as arguments")
 
-    return _ffi.cast('void *', addr.value), length.value, None
+    return _ffi.cast('void *', addr.value), length.value, obj
 
     # }}}
 
@@ -696,6 +696,10 @@ class Event(_Common):
     def wait(self):
         _handle_error(_lib.event__wait(self.ptr))
 
+class NannyEvent(Event):
+    def get_ward(self):
+        return _find_obj(_lib.nanny_event__get_ward(self.ptr))
+
 # TODO
 #   NannyEvent
 #   wait_for_events
@@ -804,8 +808,9 @@ def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
     _handle_error(_lib.enqueue_read_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
-        c_wait_for, num_wait_for, bool(is_blocking)))
-    return _create_instance(Event, ptr_event[0])
+        c_wait_for, num_wait_for, bool(is_blocking),
+        _get_insert_func(hostbuf)))
+    return _create_instance(NannyEvent, ptr_event[0])
 
 
 def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
@@ -820,13 +825,14 @@ def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
 
 def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
         wait_for=None, is_blocking=True):
-    c_buf, size, _ = _c_buffer_from_obj(hostbuf)
+    c_buf, size, c_ref = _c_buffer_from_obj(hostbuf)
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
     _handle_error(_lib.enqueue_write_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
-        c_wait_for, num_wait_for, bool(is_blocking)))
-    return _create_instance(Event, ptr_event[0])
+        c_wait_for, num_wait_for, bool(is_blocking),
+        _get_insert_func(c_ref)))
+    return _create_instance(NannyEvent, ptr_event[0])
 
 # }}}
 
@@ -841,8 +847,9 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     # TODO check buffer size
     _handle_error(_lib.enqueue_read_image(
         ptr_event, queue.ptr, mem.ptr, origin, region, c_buf, row_pitch,
-        slice_pitch, c_wait_for, num_wait_for, bool(is_blocking)))
-    return _create_instance(Event, ptr_event[0])
+        slice_pitch, c_wait_for, num_wait_for, bool(is_blocking),
+        _get_insert_func(c_buf)))
+    return _create_instance(NannyEvent, ptr_event[0])
 
 # TODO: write_image copy_image fill_image
 #    copy_buffer_to_image copy_image_to_buffer

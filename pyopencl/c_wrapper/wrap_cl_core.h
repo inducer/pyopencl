@@ -108,6 +108,8 @@ error *image__get_image_info(clobj_t image, cl_image_info param,
 error *event__get_profiling_info(clobj_t event, cl_profiling_info param,
                                  generic_info *out);
 error *event__wait(clobj_t event);
+// Nanny Event
+unsigned long nanny_event__get_ward(clobj_t evt);
 // enqueue_*
 error *enqueue_nd_range_kernel(clobj_t *event, clobj_t queue,
                                clobj_t kernel, cl_uint work_dim,
@@ -127,7 +129,7 @@ error *enqueue_barrier(clobj_t queue);
 error *enqueue_read_buffer(clobj_t *event, clobj_t queue, clobj_t mem,
                            void *buffer, size_t size, size_t device_offset,
                            const clobj_t *wait_for, uint32_t num_wait_for,
-                           int is_blocking);
+                           int is_blocking, void (*ref)(unsigned long));
 error *enqueue_copy_buffer(clobj_t *event, clobj_t queue, clobj_t src,
                            clobj_t dst, ptrdiff_t byte_count,
                            size_t src_offset, size_t dst_offset,
@@ -135,13 +137,14 @@ error *enqueue_copy_buffer(clobj_t *event, clobj_t queue, clobj_t src,
 error *enqueue_write_buffer(clobj_t *event, clobj_t queue, clobj_t mem,
                             const void *buffer, size_t size,
                             size_t device_offset, const clobj_t *wait_for,
-                            uint32_t num_wait_for, int is_blocking);
+                            uint32_t num_wait_for, int is_blocking,
+                            void (*ref)(unsigned long));
 
 error *enqueue_read_image(clobj_t *event, clobj_t queue, clobj_t mem,
                           size_t *origin, size_t *region, void *buffer,
                           size_t row_pitch, size_t slice_pitch,
                           const clobj_t *wait_for, uint32_t num_wait_for,
-                          int is_blocking);
+                          int is_blocking, void (*ref)(unsigned long));
 // CL Object
 intptr_t clobj__int_ptr(clobj_t obj);
 error *clobj__get_info(clobj_t obj, cl_uint param, generic_info *out);

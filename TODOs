@@ -1,4 +1,3 @@
-- nanny events
 - *_from_int_ptr, register with metaclass
 - subdevices
 - Kernel.get_arg_info
