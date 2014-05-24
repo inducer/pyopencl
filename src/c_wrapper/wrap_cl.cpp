@@ -2181,6 +2181,15 @@ event__wait(clobj_t evt)
         });
 }
 
+error*
+wait_for_events(const clobj_t *_wait_for, uint32_t num_wait_for)
+{
+    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    return c_handle_error([&] {
+            pyopencl_call_guarded(clWaitForEvents,
+                                  num_wait_for, wait_for.get());
+        });
+}
 
 // Nanny Event
 unsigned long
@@ -2200,8 +2209,8 @@ enqueue_nd_range_kernel(clobj_t *_evt, clobj_t _queue, clobj_t _knl,
 {
     auto queue = static_cast<command_queue*>(_queue);
     auto knl = static_cast<kernel*>(_knl);
+    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
-            auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(

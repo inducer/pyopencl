@@ -696,7 +696,12 @@ class Event(_Common):
     def wait(self):
         _handle_error(_lib.event__wait(self.ptr))
 
+def wait_for_events(wait_for):
+    _handle_error(_lib.wait_for_events(*_c_obj_list(wait_for)))
+
 class NannyEvent(Event):
+    # TODO disable/handle write to buffer from bytes since the data may be moved
+    # by GC
     def get_ward(self):
         return _find_obj(_lib.nanny_event__get_ward(self.ptr))
 
