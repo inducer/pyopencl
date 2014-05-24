@@ -56,13 +56,13 @@ print_call_trace(ArgTypes&&...)
 
 // {{{ error
 
-class error : public std::runtime_error {
+class clerror : public std::runtime_error {
 private:
     const char *m_routine;
     cl_int m_code;
 
 public:
-    error(const char *rout, cl_int c, const char *msg="")
+    clerror(const char *rout, cl_int c, const char *msg="")
         : std::runtime_error(msg), m_routine(rout), m_code(c)
     {
         std::cout << rout <<";" << msg<< ";" << c << std::endl;
@@ -99,7 +99,7 @@ call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
     print_call_trace(name);
     cl_int status_code = func(ArgTypes(args)...);
     if (status_code != CL_SUCCESS) {
-        throw pyopencl::error(name, status_code);
+        throw clerror(name, status_code);
     }
 }
 
@@ -111,7 +111,7 @@ call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
     cl_int status_code = CL_SUCCESS;
     T res = func(args..., &status_code);
     if (status_code != CL_SUCCESS) {
-        throw pyopencl::error(name, status_code);
+        throw clerror(name, status_code);
     }
     return res;
 }
@@ -141,7 +141,7 @@ c_handle_error(std::function<void()> func)
     try {
         func();
         return NULL;
-    } catch(const pyopencl::error &e) {
+    } catch(const clerror &e) {
         auto err = (::error*)malloc(sizeof(::error));
         err->routine = strdup(e.routine());
         err->msg = strdup(e.what());
@@ -163,7 +163,7 @@ retry_mem_error(std::function<T()> func)
 {
     try {
         return func();
-    } catch (pyopencl::error &e) {
+    } catch (clerror &e) {
         if (!e.is_out_of_memory() || !python_gc()) {
             throw;
         }

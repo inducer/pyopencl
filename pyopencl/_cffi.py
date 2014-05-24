@@ -160,9 +160,9 @@ def _import_library():
 
 _lib = _import_library()
 
-if _lib.pyopencl_have_gl():
+if _lib.have_gl():
     _ffi.cdef(_get_wrap_header("wrap_cl_gl_core.h"))
 
 import gc
 _gc_collect = _ffi.callback('int(void)')(gc.collect)
-_lib.pyopencl_set_gc(_gc_collect)
+_lib.set_gc(_gc_collect)

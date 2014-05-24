@@ -64,7 +64,7 @@ _register_types()
 
 # {{{ imported names
 
-bitlog2 = _lib.pyopencl_bitlog2
+bitlog2 = _lib.bitlog2
 from pyopencl.mempool import (  # noqa
         PooledBuffer, DeferredAllocator, ImmediateAllocator, MemoryPool)
 

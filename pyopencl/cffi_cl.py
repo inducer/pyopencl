@@ -76,7 +76,7 @@ class _CArray(object):
 
     def __del__(self):
         if self.ptr != _ffi.NULL:
-            _lib.pyopencl_free_pointer(self.ptr[0])
+            _lib.free_pointer(self.ptr[0])
 
     def __getitem__(self, key):
         return self.ptr[0].__getitem__(key)
@@ -88,7 +88,7 @@ class _CArray(object):
 
 class _CArrays(_CArray):
     def __del__(self):
-        _lib.pyopencl_free_pointer_array(
+        _lib.free_pointer_array(
                 _ffi.cast('void**', self.ptr[0]), self.size[0])
         super(_CArrays, self).__del__()
 
@@ -125,7 +125,7 @@ def _generic_info_to_python(info):
 
         if type_.endswith(']'):
             ret = map(ci, value)
-            _lib.pyopencl_free_pointer(info.value)
+            _lib.free_pointer(info.value)
             return ret
         else:
             return ci(value)
@@ -135,9 +135,7 @@ def _generic_info_to_python(info):
             ret = ret.decode()
     elif type_.startswith('char*['):
         ret = map(_ffi.string, value)
-        if sys.version_info >= (3,):
-            ret = [s.decode() for s in ret]
-        _lib.pyopencl_free_pointer_array(info.value, len(value))
+        _lib.free_pointer_array(info.value, len(value))
     elif type_.endswith(']'):
         if type_.startswith('char['):
             # This is usually a CL binary, which may contain NUL characters
@@ -150,17 +148,15 @@ def _generic_info_to_python(info):
         elif type_.startswith('generic_info['):
             ret = list(map(_generic_info_to_python, value))
         elif type_.startswith('cl_image_format['):
-            ret = [
-                    ImageFormat(
-                        imf.image_channel_order,
-                        imf.image_channel_data_type)
-                    for imf in value]
+            ret = [ImageFormat(imf.image_channel_order,
+                               imf.image_channel_data_type)
+                   for imf in value]
         else:
             ret = list(value)
     else:
         ret = value[0]
     if info.dontfree == 0:
-        _lib.pyopencl_free_pointer(info.value)
+        _lib.free_pointer(info.value)
     return ret
 
 # }}}
@@ -184,26 +180,26 @@ class _Common(object):
     ptr = _ffi.NULL
 
     def __del__(self):
-        _lib._delete(self.ptr)
+        _lib.clobj__delete(self.ptr)
 
     def __eq__(self, other):
         return other == self.int_ptr
 
     def __hash__(self):
-        return _lib._int_ptr(self.ptr)
+        return _lib.clobj__int_ptr(self.ptr)
 
     def get_info(self, param):
         info = _ffi.new('generic_info*')
-        _handle_error(_lib._get_info(self.ptr, param, info))
+        _handle_error(_lib.clobj__get_info(self.ptr, param, info))
         return _generic_info_to_python(info)
 
     @property
     def int_ptr(self):
-        return _lib._int_ptr(self.ptr)
+        return _lib.clobj__int_ptr(self.ptr)
 
     @classmethod
     def from_int_ptr(cls, int_ptr_value):
-        ptr = _ffi.new('void **')
+        ptr = _ffi.new('clobj_t*')
         _handle_error(_lib._from_int_ptr(
             ptr, int_ptr_value, getattr(_lib, 'CLASS_%s' % cls._id.upper())))
         return _create_instance(cls, ptr[0])
@@ -214,9 +210,9 @@ class _Common(object):
 
 
 def get_cl_header_version():
-    v = _lib.pyopencl_get_cl_version()
-    return (v >> (3*4),
-            (v >> (1*4)) & 0xff)
+    v = _lib.get_cl_version()
+    return (v >> (3 * 4),
+            (v >> (1 * 4)) & 0xff)
 
 
 # {{{ constants
@@ -312,8 +308,8 @@ def _handle_error(error):
         # non-pyopencl exceptions are handled here
         import exceptions
         e = exceptions.RuntimeError(_ffi.string(error.msg))
-        _lib.pyopencl_free_pointer(error.msg)
-        _lib.pyopencl_free_pointer(error)
+        _lib.free_pointer(error.msg)
+        _lib.free_pointer(error)
         raise e
     if error.code == status_code.MEM_OBJECT_ALLOCATION_FAILURE:
         klass = MemoryError
@@ -326,9 +322,9 @@ def _handle_error(error):
 
     e = klass(routine=_ffi.string(error.routine),
             code=error.code, msg=_ffi.string(error.msg))
-    _lib.pyopencl_free_pointer(error.routine)
-    _lib.pyopencl_free_pointer(error.msg)
-    _lib.pyopencl_free_pointer(error)
+    _lib.free_pointer(error.routine)
+    _lib.free_pointer(error.msg)
+    _lib.free_pointer(error)
     raise e
 
 # }}}
@@ -440,7 +436,7 @@ class Context(_Common):
                         "one of 'devices' or 'dev_type' must be None")
             ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
             ptr_ctx = _ffi.new('void **')
-            _handle_error(_lib._create_context(
+            _handle_error(_lib.create_context(
                 ptr_ctx, c_props, len(ptr_devices),
                 _ffi.cast('void**', ptr_devices)))
 
@@ -463,15 +459,15 @@ class CommandQueue(_Common):
 
         ptr_command_queue = _ffi.new('void **')
 
-        _handle_error(_lib._create_command_queue(
+        _handle_error(_lib.create_command_queue(
             ptr_command_queue, context.ptr,
             _ffi.NULL if device is None else device.ptr, properties))
 
         self.ptr = ptr_command_queue[0]
     def finish(self):
-        _handle_error(_lib._command_queue_finish(self.ptr))
+        _handle_error(_lib.command_queue__finish(self.ptr))
     def flush(self):
-        _handle_error(_lib._command_queue_flush(self.ptr))
+        _handle_error(_lib.command_queue__flush(self.ptr))
 
 class MemoryObjectHolder(_Common):
     pass
@@ -479,7 +475,7 @@ class MemoryObjectHolder(_Common):
 
 class MemoryObject(MemoryObjectHolder):
     def release(self):
-        _handle_error(_lib._release_memobj(self.ptr))
+        _handle_error(_lib.memory_object__release(self.ptr))
 
 def _c_buffer_from_obj(obj, writable=False):
     """Convert a Python object to a tuple (cdata('void *'), num_bytes, dummy)
@@ -571,7 +567,7 @@ class Buffer(MemoryObject):
                 size = hostbuf_size
 
         ptr_buffer = _ffi.new('void **')
-        _handle_error(_lib._create_buffer(
+        _handle_error(_lib.create_buffer(
             ptr_buffer, context.ptr, flags, size, c_hostbuf))
         self.ptr = ptr_buffer[0]
 
@@ -591,7 +587,7 @@ class _Program(_Common):
 
     def _init_source(self, context, src):
         ptr_program = _ffi.new('void **')
-        _handle_error(_lib._create_program_with_source(
+        _handle_error(_lib.create_program_with_source(
             ptr_program, context.ptr, _convert_str(src)))
         self.ptr = ptr_program[0]
 
@@ -604,17 +600,12 @@ class _Program(_Common):
         ptr_program = _ffi.new('void **')
         ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
         ptr_binaries = [_ffi.new('char[%i]' % len(binary), binary)
-                for binary in binaries]
+                        for binary in binaries]
         binary_sizes = _ffi.new('size_t[]', map(len, binaries))
 
-        _handle_error(_lib._create_program_with_binary(
-            ptr_program,
-            context.ptr,
-            len(ptr_devices),
-            ptr_devices,
-            len(ptr_binaries),
-            _ffi.new('char*[]', ptr_binaries),
-            binary_sizes))
+        _handle_error(_lib.create_program_with_binary(
+            ptr_program, context.ptr, len(ptr_devices), ptr_devices,
+            _ffi.new('char*[]', ptr_binaries), binary_sizes))
 
         self.ptr = ptr_program[0]
 
@@ -655,8 +646,8 @@ class Kernel(_Common):
 
     def __init__(self, program, name):
         ptr_kernel = _ffi.new('void **')
-        _handle_error(_lib._create_kernel(ptr_kernel, program.ptr,
-                                          _convert_str(name)))
+        _handle_error(_lib.create_kernel(ptr_kernel, program.ptr,
+                                         _convert_str(name)))
         self.ptr = ptr_kernel[0]
 
     def set_arg(self, arg_index, arg):
@@ -741,16 +732,9 @@ def enqueue_nd_range_kernel(queue, kernel,
 
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
-    _handle_error(_lib._enqueue_nd_range_kernel(
-        ptr_event,
-        queue.ptr,
-        kernel.ptr,
-        work_dim,
-        c_global_work_offset,
-        c_global_work_size,
-        c_local_work_size,
-        c_wait_for, num_wait_for
-    ))
+    _handle_error(_lib.enqueue_nd_range_kernel(
+        ptr_event, queue.ptr, kernel.ptr, work_dim, c_global_work_offset,
+        c_global_work_size, c_local_work_size, c_wait_for, num_wait_for))
     return _create_instance(Event, ptr_event[0])
 
 # }}}
@@ -760,15 +744,13 @@ def enqueue_nd_range_kernel(queue, kernel,
 def _enqueue_marker_with_wait_list(queue, wait_for=None):
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
-    _handle_error(_lib._enqueue_marker_with_wait_list(
-        ptr_event,
-        queue.ptr,
-        c_wait_for, num_wait_for))
+    _handle_error(_lib.enqueue_marker_with_wait_list(
+        ptr_event, queue.ptr, c_wait_for, num_wait_for))
     return _create_instance(Event, ptr_event[0])
 
 def _enqueue_marker(queue):
     ptr_event = _ffi.new('void **')
-    _handle_error(_lib._enqueue_marker(ptr_event, queue.ptr))
+    _handle_error(_lib.enqueue_marker(ptr_event, queue.ptr))
     return _create_instance(Event, ptr_event[0])
 
 # }}}
@@ -778,14 +760,12 @@ def _enqueue_marker(queue):
 def _enqueue_barrier_with_wait_list(queue, wait_for=None):
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
-    _handle_error(_lib._enqueue_barrier_with_wait_list(
-        ptr_event,
-        queue.ptr,
-        c_wait_for, num_wait_for))
+    _handle_error(_lib.enqueue_barrier_with_wait_list(
+        ptr_event, queue.ptr, c_wait_for, num_wait_for))
     return _create_instance(Event, ptr_event[0])
 
 def _enqueue_barrier(queue):
-    _handle_error(_lib._enqueue_barrier(queue.ptr))
+    _handle_error(_lib.enqueue_barrier(queue.ptr))
 
 # }}}
 
@@ -796,16 +776,9 @@ def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
     c_buf, size, _ = _c_buffer_from_obj(hostbuf, writable=True)
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
-    _handle_error(_lib._enqueue_read_buffer(
-        ptr_event,
-        queue.ptr,
-        mem.ptr,
-        c_buf,
-        size,
-        device_offset,
-        c_wait_for, num_wait_for,
-        bool(is_blocking)
-    ))
+    _handle_error(_lib.enqueue_read_buffer(
+        ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
+        c_wait_for, num_wait_for, bool(is_blocking)))
     return _create_instance(Event, ptr_event[0])
 
 
@@ -813,16 +786,9 @@ def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
         dst_offset=0, wait_for=None):
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
-    _handle_error(_lib._enqueue_copy_buffer(
-        ptr_event,
-        queue.ptr,
-        src.ptr,
-        dst.ptr,
-        byte_count,
-        src_offset,
-        dst_offset,
-        c_wait_for, num_wait_for,
-    ))
+    _handle_error(_lib.enqueue_copy_buffer(
+        ptr_event, queue.ptr, src.ptr, dst.ptr, byte_count, src_offset,
+        dst_offset, c_wait_for, num_wait_for))
     return _create_instance(Event, ptr_event[0])
 
 
@@ -831,16 +797,9 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
     c_buf, size, _ = _c_buffer_from_obj(hostbuf)
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
-    _handle_error(_lib._enqueue_write_buffer(
-        ptr_event,
-        queue.ptr,
-        mem.ptr,
-        c_buf,
-        size,
-        device_offset,
-        c_wait_for, num_wait_for,
-        bool(is_blocking)
-    ))
+    _handle_error(_lib.enqueue_write_buffer(
+        ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
+        c_wait_for, num_wait_for, bool(is_blocking)))
     return _create_instance(Event, ptr_event[0])
 
 # }}}
@@ -848,23 +807,15 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
 
 # {{{ _enqueue_*_image
 
-def _enqueue_read_image(queue, mem, origin, region,
-        hostbuf, row_pitch=0, slice_pitch=0, wait_for=None, is_blocking=True):
+def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
+                        slice_pitch=0, wait_for=None, is_blocking=True):
     c_buf, size, _ = _c_buffer_from_obj(hostbuf, writable=True)
     ptr_event = _ffi.new('void **')
     c_wait_for, num_wait_for = _c_obj_list(wait_for)
-    _handle_error(_lib._enqueue_read_image(
-        ptr_event,
-        queue.ptr,
-        mem.ptr,
-        origin,
-        region,
-        c_buf,
-        size,
-        row_pitch, slice_pitch,
-        c_wait_for, num_wait_for,
-        bool(is_blocking)
-    ))
+    # TODO check buffer size
+    _handle_error(_lib.enqueue_read_image(
+        ptr_event, queue.ptr, mem.ptr, origin, region, c_buf, row_pitch,
+        slice_pitch, c_wait_for, num_wait_for, bool(is_blocking)))
     return _create_instance(Event, ptr_event[0])
 
 # TODO: write_image? copy_image?...
@@ -875,7 +826,7 @@ def _enqueue_read_image(queue, mem, origin, region,
 # {{{ gl interop
 
 def have_gl():
-    return bool(_lib.pyopencl_have_gl())
+    return bool(_lib.have_gl())
 
 
 class GLBuffer(MemoryObject):
@@ -883,7 +834,7 @@ class GLBuffer(MemoryObject):
 
     def __init__(self, context, flags, bufobj):
         ptr = _ffi.new('void **')
-        _handle_error(_lib._create_from_gl_buffer(
+        _handle_error(_lib.create_from_gl_buffer(
             ptr, context.ptr, flags, bufobj))
         self.ptr = ptr[0]
 
@@ -893,7 +844,7 @@ class GLRenderBuffer(MemoryObject):
 
     def __init__(self, context, flags, bufobj):
         ptr = _ffi.new('void **')
-        _handle_error(_lib._create_from_gl_renderbuffer(
+        _handle_error(_lib.create_from_gl_renderbuffer(
             ptr, context.ptr, flags, bufobj))
         self.ptr = ptr[0]
 
@@ -914,9 +865,11 @@ def _create_gl_enqueue(what):
         return _create_instance(Event, ptr_event[0])
     return enqueue_gl_objects
 
-if _lib.pyopencl_have_gl():
-    enqueue_acquire_gl_objects = _create_gl_enqueue(_lib._enqueue_acquire_gl_objects)
-    enqueue_release_gl_objects = _create_gl_enqueue(_lib._enqueue_release_gl_objects)
+if _lib.have_gl():
+    enqueue_acquire_gl_objects = _create_gl_enqueue(
+        _lib.enqueue_acquire_gl_objects)
+    enqueue_release_gl_objects = _create_gl_enqueue(
+        _lib.enqueue_release_gl_objects)
 
 # }}}
 
@@ -1005,7 +958,7 @@ class ImageFormat(object):
 
 def get_supported_image_formats(context, flags, image_type):
     info = _ffi.new('generic_info *')
-    _handle_error(_lib._get_supported_image_formats(
+    _handle_error(_lib.context__get_supported_image_formats(
         context.ptr, flags, image_type, info))
     return _generic_info_to_python(info)
 
@@ -1051,21 +1004,17 @@ class Image(MemoryObject):
                             "invalid length of pitch tuple")
 
             # check buffer size
-            if (buffer is not None
-                    and max(pitch, width*format.itemsize)*height > size):
+            if (buffer is not None and
+                max(pitch, width * format.itemsize) * height > size):
                 raise LogicError("Image", status_code.INVALID_VALUE,
                         "buffer too small")
 
             ptr = _ffi.new('void **')
-            _handle_error(_lib._create_image_2d(
-                ptr,
-                context.ptr,
-                flags,
+            _handle_error(_lib.create_image_2d(
+                ptr, context.ptr, flags,
                 _ffi.new('struct _cl_image_format *',
                     (format.channel_order, format.channel_data_type, )),
-                width, height, pitch,
-                c_buf,
-                size))
+                width, height, pitch, c_buf))
             self.ptr = ptr[0]
         elif dims == 3:
             width, height, depth = shape
@@ -1078,27 +1027,18 @@ class Image(MemoryObject):
                             "invalid length of pitch tuple")
 
             # check buffer size
-            if (buffer is not None
-                    and (
-                        max(
-                            max(
-                                pitch_x,
-                                width*format.itemsize)*height,
-                            pitch_y
-                            ) * depth > size)):
+            if (buffer is not None and
+                (max(max(pitch_x, width * format.itemsize) *
+                     height, pitch_y) * depth > size)):
                 raise LogicError("Image", status_code.INVALID_VALUE,
                     "buffer too small")
 
             ptr = _ffi.new('void **')
-            _handle_error(_lib._create_image_3d(
-                ptr,
-                context.ptr,
-                flags,
+            _handle_error(_lib.create_image_3d(
+                ptr, context.ptr, flags,
                 _ffi.new('struct _cl_image_format *',
                     (format.channel_order, format.channel_data_type, )),
-                width, height, depth, pitch_x, pitch_y,
-                c_buf,
-                size))
+                width, height, depth, pitch_x, pitch_y, c_buf))
 
             self.ptr = ptr[0]
         else:
@@ -1130,12 +1070,8 @@ class Sampler(_Common):
 
     def __init__(self, context, normalized_coords, addressing_mode, filter_mode):
         ptr = _ffi.new('void **')
-        _handle_error(_lib._create_sampler(
-            ptr,
-            context.ptr,
-            normalized_coords,
-            addressing_mode,
-            filter_mode))
+        _handle_error(_lib.create_sampler(
+            ptr, context.ptr, normalized_coords, addressing_mode, filter_mode))
         self.ptr = ptr[0]
 
 # }}}
