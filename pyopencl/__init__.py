@@ -252,7 +252,7 @@ class Program(object):
 
     def compile(self, options=[], devices=None, headers=[]):
         options = " ".join(options)
-        return self._prg().compile(options, devices, headers)
+        return self._prg.compile(options, devices, headers)
 
     def __eq__(self, other):
         return self._get_prg() == other._get_prg()
