@@ -43,6 +43,7 @@ int get_cl_version();
 void free_pointer(void*);
 void free_pointer_array(void**, uint32_t size);
 void set_gc(int (*func)());
+void set_deref(void (*func)(unsigned long));
 int have_gl();
 
 unsigned bitlog2(unsigned long v);

@@ -51,7 +51,7 @@ else:
         _bytes = str
 
 
-def _convert_str(s):
+def _to_cstring(s):
     if isinstance(s, _unicode):
         return s.encode()
     return s
@@ -72,7 +72,7 @@ except AttributeError:
 class _CArray(object):
     def __init__(self, ptr):
         self.ptr = ptr
-        self.size = _ffi.new('uint32_t *')
+        self.size = _ffi.new('uint32_t*')
 
     def __del__(self):
         if self.ptr != _ffi.NULL:
@@ -591,7 +591,7 @@ class _Program(_Common):
     def _init_source(self, context, src):
         ptr_program = _ffi.new('void **')
         _handle_error(_lib.create_program_with_source(
-            ptr_program, context.ptr, _convert_str(src)))
+            ptr_program, context.ptr, _to_cstring(src)))
         self.ptr = ptr_program[0]
 
     def _init_binary(self, context, devices, binaries):
@@ -630,7 +630,7 @@ class _Program(_Common):
 
         _handle_error(
                 _lib.program__build(self.ptr,
-                    _convert_str(options), num_devices,
+                    _to_cstring(options), num_devices,
                     _ffi.cast('void**', ptr_devices)))
 
     def get_build_info(self, device, param):
@@ -654,7 +654,7 @@ class Kernel(_Common):
     def __init__(self, program, name):
         ptr_kernel = _ffi.new('void **')
         _handle_error(_lib.create_kernel(ptr_kernel, program.ptr,
-                                         _convert_str(name)))
+                                         _to_cstring(name)))
         self.ptr = ptr_kernel[0]
 
     def set_arg(self, arg_index, arg):

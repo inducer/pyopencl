@@ -234,6 +234,7 @@ def main():
                                ["src/c_wrapper/wrap_cl.cpp",
                                 "src/c_wrapper/wrap_constants.cpp",
                                 "src/c_wrapper/bitlog.cpp",
+                                "src/c_wrapper/pyhelper.cpp",
                                 #"src/c_wrapper/wrap_mempool.cpp",
                                 ],
                                include_dirs=(

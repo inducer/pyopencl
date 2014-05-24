@@ -78,14 +78,6 @@ pyopencl_get_ext_fun(cl_platform_id, const char *name, const char *err)
 
 namespace pyopencl {
 
-static int
-dummy_python_gc()
-{
-    return 0;
-}
-
-int (*python_gc)() = dummy_python_gc;
-
 // {{{ platform
 
 class platform : public clobj<cl_platform_id> {
@@ -1828,12 +1820,6 @@ free_pointer_array(void **p, uint32_t size)
     for (uint32_t i = 0;i < size;i++) {
         free(p[i]);
     }
-}
-
-void
-set_gc(int (*func)())
-{
-    python_gc = func ? func : dummy_python_gc;
 }
 
 int
