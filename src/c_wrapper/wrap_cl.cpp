@@ -2220,6 +2220,23 @@ event__wait(clobj_t evt)
         });
 }
 
+#if PYOPENCL_CL_VERSION >= 0x1010
+error*
+event__set_callback(clobj_t _evt, cl_int type, void (*cb)(cl_int),
+                    void (*ref)(unsigned long))
+{
+    auto evt = static_cast<event*>(_evt);
+    return c_handle_error([&] {
+            unsigned long obj_id = next_obj_id();
+            evt->set_callback(type, [=] (cl_int status) {
+                    cb(status);
+                    python_deref(obj_id);
+                });
+            ref(obj_id);
+        });
+}
+#endif
+
 error*
 wait_for_events(const clobj_t *_wait_for, uint32_t num_wait_for)
 {

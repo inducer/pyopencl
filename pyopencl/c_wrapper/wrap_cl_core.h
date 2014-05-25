@@ -108,6 +108,8 @@ error *image__get_image_info(clobj_t image, cl_image_info param,
 error *event__get_profiling_info(clobj_t event, cl_profiling_info param,
                                  generic_info *out);
 error *event__wait(clobj_t event);
+error *event__set_callback(clobj_t _evt, cl_int type, void (*cb)(cl_int),
+                           void (*ref)(unsigned long));
 error *wait_for_events(const clobj_t *_wait_for, uint32_t num_wait_for);
 // Nanny Event
 unsigned long nanny_event__get_ward(clobj_t evt);

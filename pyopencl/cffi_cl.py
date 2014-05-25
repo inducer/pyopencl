@@ -696,6 +696,13 @@ class Event(_Common):
     def wait(self):
         _handle_error(_lib.event__wait(self.ptr))
 
+    def set_callback(self, _type, cb, *args, **kwargs):
+        @_ffi.callback('void(cl_int)')
+        def _func(status):
+            cb(status, *args, **kwargs)
+        _handle_error(_lib.event__set_callback(self.ptr, _type, _func,
+                                               _get_ref_func(_func)))
+
 def wait_for_events(wait_for):
     _handle_error(_lib.wait_for_events(*_c_obj_list(wait_for)))
 
