@@ -69,6 +69,12 @@ error *create_buffer(clobj_t *buffer, clobj_t context, cl_mem_flags flags,
                      size_t size, void *hostbuf);
 // Memory Object
 error *memory_object__release(clobj_t obj);
+// Memory Map
+error *memory_map__release(clobj_t _map, clobj_t _queue,
+                           const clobj_t *_wait_for, uint32_t num_wait_for,
+                           clobj_t *evt);
+void *memory_map__data(clobj_t _map);
+size_t memory_map__size(clobj_t _map);
 // Program
 error *create_program_with_source(clobj_t *program, clobj_t context,
                                   const char *src);
@@ -142,6 +148,10 @@ error *enqueue_write_buffer(clobj_t *event, clobj_t queue, clobj_t mem,
                             size_t device_offset, const clobj_t *wait_for,
                             uint32_t num_wait_for, int is_blocking,
                             void (*ref)(unsigned long));
+error *enqueue_map_buffer(clobj_t *_evt, clobj_t *mpa, clobj_t _queue,
+                          clobj_t _mem, cl_map_flags flags, size_t offset,
+                          size_t size, const clobj_t *_wait_for,
+                          uint32_t num_wait_for, int block);
 
 error *enqueue_read_image(clobj_t *event, clobj_t queue, clobj_t mem,
                           size_t *origin, size_t *region, void *buffer,

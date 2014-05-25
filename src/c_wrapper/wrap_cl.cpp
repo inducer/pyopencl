@@ -630,6 +630,9 @@ public:
                   cl_command_queue_properties props=0)
         : clobj(create_cl_command_queue(ctx, py_dev, props))
     {}
+    command_queue(const command_queue &queue)
+        : command_queue(queue.data(), true)
+    {}
     ~command_queue()
     {
         pyopencl_call_guarded_cleanup(clReleaseCommandQueue, data());
@@ -901,7 +904,7 @@ public:
 
 class memory_object : public memory_object_holder {
 private:
-    mutable bool m_valid;
+    mutable volatile std::atomic_bool m_valid;
     void *m_hostbuf;
 public:
     memory_object(cl_mem mem, bool retain, void *hostbuf=0)
@@ -914,20 +917,23 @@ public:
             m_hostbuf = hostbuf;
         }
     }
+    memory_object(const memory_object &mem)
+        : memory_object(mem.data(), true)
+    {}
+    ~memory_object()
+    {
+        if (!m_valid.exchange(false))
+            return;
+        pyopencl_call_guarded_cleanup(clReleaseMemObject, data());
+    }
     void
     release() const
     {
-        if (!m_valid)
-            throw clerror("MemoryObject.free", CL_INVALID_VALUE,
+        if (!m_valid.exchange(false)) {
+            throw clerror("MemoryObject.release", CL_INVALID_VALUE,
                           "trying to double-unref mem object");
-        pyopencl_call_guarded_cleanup(clReleaseMemObject, data());
-        m_valid = false;
-    }
-    ~memory_object()
-    {
-        if (m_valid) {
-            release();
         }
+        pyopencl_call_guarded(clReleaseMemObject, data());
     }
     void*
     hostbuf() const
@@ -1536,6 +1542,67 @@ new_buffer(cl_mem mem, void *buff)
 
 // }}}
 
+// {{{ memory_map
+
+class memory_map : public clbase {
+private:
+    mutable volatile std::atomic_bool m_valid;
+    command_queue m_queue;
+    memory_object m_mem;
+    void *m_ptr;
+    size_t m_size;
+public:
+    memory_map(const command_queue *queue, const memory_object *mem,
+               void *ptr, size_t size)
+        : m_valid(true), m_queue(*queue), m_mem(*mem), m_ptr(ptr), m_size(size)
+    {}
+    ~memory_map()
+    {
+        if (!m_valid.exchange(false))
+            return;
+        pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, m_queue.data(),
+                                      m_mem.data(), m_ptr, 0, NULL, NULL);
+    }
+    event*
+    release(const command_queue *queue, const clobj_t *_wait_for,
+            uint32_t num_wait_for) const
+    {
+        if (!m_valid.exchange(false)) {
+            throw clerror("MemoryMap.release", CL_INVALID_VALUE,
+                          "trying to double-unref mem map");
+        }
+        auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+        queue = queue ? queue : &m_queue;
+        cl_event evt;
+        pyopencl_call_guarded(clEnqueueUnmapMemObject, queue->data(),
+                              m_mem.data(), m_ptr, num_wait_for,
+                              wait_for.get(), &evt);
+        return new_event(evt);
+    }
+    intptr_t
+    intptr() const
+    {
+        return (intptr_t)data();
+    }
+    generic_info
+    get_info(cl_uint) const
+    {
+        throw clerror("MemoryMap.get_info", CL_INVALID_VALUE);
+    }
+    void*
+    data() const
+    {
+        return m_valid ? m_ptr : NULL;
+    }
+    size_t
+    size() const
+    {
+        return m_valid ? m_size : 0;
+    }
+};
+
+// }}}
+
 // {{{ sampler
 
 class sampler : public clobj<cl_sampler> {
@@ -2023,6 +2090,31 @@ memory_object__release(clobj_t obj)
         });
 }
 
+
+// Memory Map
+error*
+memory_map__release(clobj_t _map, clobj_t _queue, const clobj_t *_wait_for,
+                    uint32_t num_wait_for, clobj_t *evt)
+{
+    auto map = static_cast<memory_map*>(_map);
+    auto queue = static_cast<command_queue*>(_queue);
+    return c_handle_error([&] {
+            *evt = map->release(queue, _wait_for, num_wait_for);
+        });
+}
+
+void*
+memory_map__data(clobj_t _map)
+{
+    return static_cast<memory_map*>(_map)->data();
+}
+
+size_t
+memory_map__size(clobj_t _map)
+{
+    return static_cast<memory_map*>(_map)->size();
+}
+
 // Program
 error*
 create_program_with_source(clobj_t *prog, clobj_t _ctx, const char *src)
@@ -2404,6 +2496,38 @@ enqueue_copy_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
         });
 }
 
+error*
+enqueue_map_buffer(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
+                   cl_map_flags flags, size_t offset, size_t size,
+                   const clobj_t *_wait_for, uint32_t num_wait_for,
+                   int block)
+{
+    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    auto queue = static_cast<command_queue*>(_queue);
+    auto buf = static_cast<buffer*>(_mem);
+    return c_handle_error([&] {
+            cl_event evt;
+            void *res = retry_mem_error<void*>([&] {
+                    return pyopencl_call_guarded(
+                        clEnqueueMapBuffer, queue->data(), buf->data(),
+                        cast_bool(block), flags, offset, size, num_wait_for,
+                        wait_for.get(), &evt);
+                });
+            try {
+                *_evt = new event(evt, false);
+                evt = 0;
+                *map = new memory_map(queue, buf, res, size);
+            } catch (...) {
+                if (evt) {
+                    pyopencl_call_guarded_cleanup(clReleaseEvent, evt);
+                }
+                pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject,
+                                              queue->data(), buf->data(),
+                                              res, 0, NULL, NULL);
+                throw;
+            }
+        });
+}
 
 error*
 enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem, size_t *origin,

@@ -33,6 +33,7 @@ import sys
 # TODO: can we do without ctypes?
 import ctypes
 from pyopencl._cffi import _ffi, _lib, _get_ref_func, _find_obj, _to_c_callback
+from .compyte.array import f_contiguous_strides, c_contiguous_strides
 
 # {{{ compatibility shims
 
@@ -459,6 +460,15 @@ class MemoryObject(MemoryObjectHolder):
         _handle_error(_lib.memory_object__release(self.ptr))
     # TODO hostbuf?
 
+class MemoryMap(_Common):
+    def release(self, queue=None, wait_for=None):
+        c_wait_for, num_wait_for = _clobj_list(wait_for)
+        _event = _ffi.new('clobj_t*')
+        _handle_error(_lib.memory_map__release(
+            self.ptr, queue.ptr if queue is not None else _ffi.NULL,
+            c_wait_for, num_wait_for, _event))
+        return _create_instance(Event, _event[0])
+
 def _c_buffer_from_obj(obj, writable=False):
     """Convert a Python object to a tuple (cdata('void *'), num_bytes, dummy)
     to be able to pass a data stream to a C function. The dummy variable exists
@@ -826,6 +836,44 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
         c_wait_for, num_wait_for, bool(is_blocking),
         _get_ref_func(c_ref)))
     return _create_instance(NannyEvent, ptr_event[0])
+
+# PyPy bug report: https://bitbucket.org/pypy/pypy/issue/1777/unable-to-create-proper-numpy-array-from
+def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
+                       order="C", strides=None, wait_for=None,
+                       is_blocking=True):
+    dtype = np.dtype(dtype)
+    if not isinstance(shape, tuple):
+        try:
+            shape = tuple(shape)
+        except:
+            shape = (shape,)
+    byte_size = dtype.itemsize
+    if strides is None:
+        if order == "cC":
+            strides = c_contigous_strides(byte_size, shape)
+        elif order == "cF":
+            strides = f_contigous_strides(byte_size, shape)
+        else:
+            raise RuntimeError("unrecognized order specifier %s" % order,
+                               'enqueue_map_buffer')
+    for s in shape:
+        byte_size *= s
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _event = _ffi.new('clobj_t*')
+    _map = _ffi.new('clobj_t*')
+    _handle_error(_lib.enqueue_map_buffer(_event, _map, queue.ptr, buf.ptr,
+                                          flags, offset, byte_size, c_wait_for,
+                                          num_wait_for, bool(is_blocking)))
+    event = _create_instance(Event, _event[0])
+    map = _create_instance(MemoryMap, _map[0])
+    map.__array_interface__ = {
+        'shape': shape,
+        'typestr': dtype.str,
+        'strides': strides,
+        'data': (int(_lib.clobj__int_ptr(_map[0])), False),
+        'version': 3
+        }
+    return np.asarray(map), event
 
 # }}}
 

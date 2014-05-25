@@ -4,6 +4,7 @@
 #include <iostream>
 #include <utility>
 #include <functional>
+#include <atomic>
 
 #ifndef __PYOPENCL_ERROR_H
 #define __PYOPENCL_ERROR_H
