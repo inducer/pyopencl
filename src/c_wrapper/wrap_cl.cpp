@@ -1,5 +1,6 @@
 #include "error.h"
 #include "utils.h"
+#include "async.h"
 
 #include <stdlib.h>
 
@@ -692,9 +693,32 @@ public:
 // {{{ event
 
 class event : public clobj<cl_event> {
+private:
+#if PYOPENCL_CL_VERSION >= 0x1010
+    class event_callback {
+    private:
+        std::function<void(cl_int)> m_func;
+    public:
+        event_callback(const std::function<void(cl_int)> &func)
+            : m_func(func)
+        {}
+        static void
+        cl_call_and_free(cl_event, cl_int status, void *data)
+        {
+            auto cb = static_cast<event_callback*>(data);
+            auto func = cb->m_func;
+            try {
+                call_async([func, status] {func(status);});
+            } catch (...) {
+            }
+            delete cb;
+        }
+    };
+#endif
 public:
     PYOPENCL_DEF_GET_CLASS_T(EVENT);
-    event(cl_event event, bool retain) : clobj(event)
+    event(cl_event event, bool retain)
+        : clobj(event)
     {
         if (retain) {
             pyopencl_call_guarded(clRetainEvent, event);
@@ -751,6 +775,21 @@ public:
         pyopencl_call_guarded(clWaitForEvents, 1, &data());
         finished();
     }
+#if PYOPENCL_CL_VERSION >= 0x1010
+    void
+    set_callback(cl_int type, const std::function<void(cl_int)> &func)
+    {
+        auto cb = new event_callback(func);
+        try {
+            pyopencl_call_guarded(clSetEventCallback, data(), type,
+                                  &event_callback::cl_call_and_free, cb);
+        } catch (...) {
+            delete cb;
+            throw;
+        }
+        init_async();
+    }
+#endif
 };
 static inline event*
 new_event(cl_event evt)
