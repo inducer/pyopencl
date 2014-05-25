@@ -85,13 +85,6 @@ class _CArray(object):
         for i in xrange(self.size[0]):
             yield self[i]
 
-
-class _CArrays(_CArray):
-    def __del__(self):
-        _lib.free_pointer_array(
-                _ffi.cast('void**', self.ptr[0]), self.size[0])
-        super(_CArrays, self).__del__()
-
 # }}}
 
 
@@ -162,10 +155,10 @@ def _generic_info_to_python(info):
 # }}}
 
 
-def _c_obj_list(objs=None):
+def _clobj_list(objs):
     if objs is None:
         return _ffi.NULL, 0
-    return _ffi.new('void *[]', [ev.ptr for ev in objs]), len(objs)
+    return _ffi.new('clobj_t[]', [ev.ptr for ev in objs]), len(objs)
 
 
 def _create_instance(cls, ptr):
@@ -335,28 +328,18 @@ def _handle_error(error):
 class Platform(_Common):
     _id = 'platform'
     def get_devices(self, device_type=device_type.ALL):
-        devices = _CArray(_ffi.new('void**'))
+        devices = _CArray(_ffi.new('clobj_t**'))
         _handle_error(_lib.platform__get_devices(
             self.ptr, devices.ptr, devices.size, device_type))
-
-        result = []
-        for i in xrange(devices.size[0]):
-            # TODO why is the cast needed?
-            device_ptr = _ffi.cast('void**', devices.ptr[0])[i]
-            result.append(_create_instance(Device, device_ptr))
-        return result
+        return [_create_instance(Device, devices.ptr[0][i])
+                for i in xrange(devices.size[0])]
 
 
 def get_platforms():
-    platforms = _CArray(_ffi.new('void**'))
+    platforms = _CArray(_ffi.new('clobj_t**'))
     _handle_error(_lib.get_platforms(platforms.ptr, platforms.size))
-    result = []
-    for i in xrange(platforms.size[0]):
-        # TODO why is the cast needed?
-        platform_ptr = _ffi.cast('void**', platforms.ptr[0])[i]
-        result.append(_create_instance(Platform, platform_ptr))
-
-    return result
+    return [_create_instance(Platform, platforms.ptr[0][i])
+            for i in xrange(platforms.size[0])]
 
 # }}}
 
@@ -422,18 +405,19 @@ class Context(_Common):
 
     def __init__(self, devices=None, properties=None, dev_type=None):
         c_props = _parse_context_properties(properties)
-        status_code = _ffi.new('cl_int *')
+        status_code = _ffi.new('cl_int*')
 
         # from device list
         if devices is not None:
             if dev_type is not None:
                 raise RuntimeError("Context", status_code.INVALID_VALUE,
-                        "one of 'devices' or 'dev_type' must be None")
-            ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
-            ptr_ctx = _ffi.new('void **')
+                                   "one of 'devices' or 'dev_type' "
+                                   "must be None")
+            ptr_devices = _ffi.new('clobj_t[]',
+                                   [device.ptr for device in devices])
+            ptr_ctx = _ffi.new('clobj_t*')
             _handle_error(_lib.create_context(
-                ptr_ctx, c_props, len(ptr_devices),
-                _ffi.cast('void**', ptr_devices)))
+                ptr_ctx, c_props, len(ptr_devices), ptr_devices))
 
         else:  # TODO: from dev_type
             raise NotImplementedError()
@@ -452,7 +436,7 @@ class CommandQueue(_Common):
         if properties is None:
             properties = 0
 
-        ptr_command_queue = _ffi.new('void **')
+        ptr_command_queue = _ffi.new('clobj_t*')
 
         _handle_error(_lib.create_command_queue(
             ptr_command_queue, context.ptr,
@@ -488,8 +472,7 @@ def _c_buffer_from_obj(obj, writable=False):
 
         if isinstance(obj, np.ndarray):
             # numpy array
-            return (_ffi.cast('void *',
-                              obj.__array_interface__['data'][0]),
+            return (_ffi.cast('void*', obj.__array_interface__['data'][0]),
                     obj.nbytes, obj)
         elif isinstance(obj, np.generic):
             if writable:
@@ -503,8 +486,7 @@ def _c_buffer_from_obj(obj, writable=False):
             #
             # * does not exist (yet?) in numpypy.
             s_array = obj[()]
-            return (_ffi.cast('void *',
-                              s_array.__array_interface__['data'][0]),
+            return (_ffi.cast('void*', s_array.__array_interface__['data'][0]),
                     s_array.nbytes, s_array)
         elif isinstance(obj, bytes):
             if writable:
@@ -539,7 +521,7 @@ def _c_buffer_from_obj(obj, writable=False):
         raise LogicError(routine=None, code=status_code.INVALID_VALUE,
                 msg="un-sized (pure-Python) types not acceptable as arguments")
 
-    return _ffi.cast('void *', addr.value), length.value, obj
+    return _ffi.cast('void*', addr.value), length.value, obj
 
     # }}}
 
@@ -567,7 +549,7 @@ class Buffer(MemoryObject):
             if size == 0:
                 size = hostbuf_size
 
-        ptr_buffer = _ffi.new('void **')
+        ptr_buffer = _ffi.new('clobj_t*')
         _handle_error(_lib.create_buffer(
             ptr_buffer, context.ptr, flags, size, c_hostbuf))
         self.ptr = ptr_buffer[0]
@@ -589,7 +571,7 @@ class _Program(_Common):
             self._init_binary(*args)
 
     def _init_source(self, context, src):
-        ptr_program = _ffi.new('void **')
+        ptr_program = _ffi.new('clobj_t*')
         _handle_error(_lib.create_program_with_source(
             ptr_program, context.ptr, _to_cstring(src)))
         self.ptr = ptr_program[0]
@@ -600,12 +582,12 @@ class _Program(_Common):
                     status_code.INVALID_VALUE,
                     "device and binary counts don't match")
 
-        ptr_program = _ffi.new('void **')
-        ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
-        ptr_binaries = [_ffi.new('char[%i]' % len(binary), binary)
-                        for binary in binaries]
+        ptr_program = _ffi.new('clobj_t*')
+        ptr_devices = _ffi.new('clobj_t[]', [device.ptr for device in devices])
+        ptr_binaries = [_ffi.new('char[]', binary) for binary in binaries]
         binary_sizes = _ffi.new('size_t[]', map(len, binaries))
 
+        # TODO correct type for binaries
         _handle_error(_lib.create_program_with_binary(
             ptr_program, context.ptr, len(ptr_devices), ptr_devices,
             _ffi.new('char*[]', ptr_binaries), binary_sizes))
@@ -613,7 +595,7 @@ class _Program(_Common):
         self.ptr = ptr_program[0]
 
     def kind(self):
-        kind = _ffi.new('int *')
+        kind = _ffi.new('int*')
         _handle_error(_lib.program__kind(self.ptr, kind))
         return kind[0]
 
@@ -625,13 +607,12 @@ class _Program(_Common):
             num_devices = 0
             ptr_devices = _ffi.NULL
         else:
-            ptr_devices = _ffi.new('void*[]', [device.ptr for device in devices])
+            ptr_devices = _ffi.new('clobj_t[]',
+                                   [device.ptr for device in devices])
             num_devices = len(devices)
 
-        _handle_error(
-                _lib.program__build(self.ptr,
-                    _to_cstring(options), num_devices,
-                    _ffi.cast('void**', ptr_devices)))
+        _handle_error(_lib.program__build(self.ptr, _to_cstring(options),
+                                          num_devices, ptr_devices))
 
     def get_build_info(self, device, param):
         info = _ffi.new('generic_info *')
@@ -652,7 +633,7 @@ class Kernel(_Common):
     _id = 'kernel'
 
     def __init__(self, program, name):
-        ptr_kernel = _ffi.new('void **')
+        ptr_kernel = _ffi.new('clobj_t*')
         _handle_error(_lib.create_kernel(ptr_kernel, program.ptr,
                                          _to_cstring(name)))
         self.ptr = ptr_kernel[0]
@@ -670,7 +651,7 @@ class Kernel(_Common):
             _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index, c_buf, size))
 
     def get_work_group_info(self, param, device):
-        info = _ffi.new('generic_info *')
+        info = _ffi.new('generic_info*')
         _handle_error(_lib.kernel__get_work_group_info(
             self.ptr, param, device.ptr, info))
         return _generic_info_to_python(info)
@@ -704,7 +685,7 @@ class Event(_Common):
                                                _get_ref_func(_func)))
 
 def wait_for_events(wait_for):
-    _handle_error(_lib.wait_for_events(*_c_obj_list(wait_for)))
+    _handle_error(_lib.wait_for_events(*_clobj_list(wait_for)))
 
 class NannyEvent(Event):
     # TODO disable/handle write to buffer from bytes since the data may be moved
@@ -772,8 +753,8 @@ def enqueue_nd_range_kernel(queue, kernel,
     else:
         c_local_work_size = _ffi.new('const size_t[]', local_work_size)
 
-    ptr_event = _ffi.new('void **')
-    c_wait_for, num_wait_for = _c_obj_list(wait_for)
+    ptr_event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_nd_range_kernel(
         ptr_event, queue.ptr, kernel.ptr, work_dim, c_global_work_offset,
         c_global_work_size, c_local_work_size, c_wait_for, num_wait_for))
@@ -784,14 +765,14 @@ def enqueue_nd_range_kernel(queue, kernel,
 # {{{ _enqueue_marker_*
 
 def _enqueue_marker_with_wait_list(queue, wait_for=None):
-    ptr_event = _ffi.new('void **')
-    c_wait_for, num_wait_for = _c_obj_list(wait_for)
+    ptr_event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_marker_with_wait_list(
         ptr_event, queue.ptr, c_wait_for, num_wait_for))
     return _create_instance(Event, ptr_event[0])
 
 def _enqueue_marker(queue):
-    ptr_event = _ffi.new('void **')
+    ptr_event = _ffi.new('clobj_t*')
     _handle_error(_lib.enqueue_marker(ptr_event, queue.ptr))
     return _create_instance(Event, ptr_event[0])
 
@@ -800,8 +781,8 @@ def _enqueue_marker(queue):
 # {{{ _enqueue_barrier_*
 
 def _enqueue_barrier_with_wait_list(queue, wait_for=None):
-    ptr_event = _ffi.new('void **')
-    c_wait_for, num_wait_for = _c_obj_list(wait_for)
+    ptr_event = _ffi.new('cobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_barrier_with_wait_list(
         ptr_event, queue.ptr, c_wait_for, num_wait_for))
     return _create_instance(Event, ptr_event[0])
@@ -816,8 +797,8 @@ def _enqueue_barrier(queue):
 def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
                          wait_for=None, is_blocking=True):
     c_buf, size, _ = _c_buffer_from_obj(hostbuf, writable=True)
-    ptr_event = _ffi.new('void **')
-    c_wait_for, num_wait_for = _c_obj_list(wait_for)
+    ptr_event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_read_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
@@ -827,8 +808,8 @@ def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
 
 def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
         dst_offset=0, wait_for=None):
-    ptr_event = _ffi.new('void **')
-    c_wait_for, num_wait_for = _c_obj_list(wait_for)
+    ptr_event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_copy_buffer(
         ptr_event, queue.ptr, src.ptr, dst.ptr, byte_count, src_offset,
         dst_offset, c_wait_for, num_wait_for))
@@ -838,8 +819,8 @@ def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
 def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
         wait_for=None, is_blocking=True):
     c_buf, size, c_ref = _c_buffer_from_obj(hostbuf)
-    ptr_event = _ffi.new('void **')
-    c_wait_for, num_wait_for = _c_obj_list(wait_for)
+    ptr_event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_write_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
@@ -854,8 +835,8 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
 def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
                         slice_pitch=0, wait_for=None, is_blocking=True):
     c_buf, size, _ = _c_buffer_from_obj(hostbuf, writable=True)
-    ptr_event = _ffi.new('void **')
-    c_wait_for, num_wait_for = _c_obj_list(wait_for)
+    ptr_event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
     # TODO check buffer size
     _handle_error(_lib.enqueue_read_image(
         ptr_event, queue.ptr, mem.ptr, origin, region, c_buf, row_pitch,
@@ -883,7 +864,7 @@ class GLBuffer(MemoryObject):
     _id = 'gl_buffer'
 
     def __init__(self, context, flags, bufobj):
-        ptr = _ffi.new('void **')
+        ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.create_from_gl_buffer(
             ptr, context.ptr, flags, bufobj))
         self.ptr = ptr[0]
@@ -893,7 +874,7 @@ class GLRenderBuffer(MemoryObject):
     _id = 'gl_renderbuffer'
 
     def __init__(self, context, flags, bufobj):
-        ptr = _ffi.new('void **')
+        ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.create_from_gl_renderbuffer(
             ptr, context.ptr, flags, bufobj))
         self.ptr = ptr[0]
@@ -901,17 +882,11 @@ class GLRenderBuffer(MemoryObject):
 
 def _create_gl_enqueue(what):
     def enqueue_gl_objects(queue, mem_objects, wait_for=None):
-        ptr_event = _ffi.new('void **')
-        c_wait_for, num_wait_for = _c_obj_list(wait_for)
-        c_mem_objects, num_mem_objects = _c_obj_list(mem_objects)
-        _handle_error(what(
-            ptr_event,
-            queue.ptr,
-            c_mem_objects,
-            num_mem_objects,
-            c_wait_for,
-            num_wait_for
-            ))
+        ptr_event = _ffi.new('clobj_t*')
+        c_wait_for, num_wait_for = _clobj_list(wait_for)
+        c_mem_objects, num_mem_objects = _clobj_list(mem_objects)
+        _handle_error(what(ptr_event, queue.ptr, c_mem_objects, num_mem_objects,
+                           c_wait_for, num_wait_for))
         return _create_instance(Event, ptr_event[0])
     return enqueue_gl_objects
 
@@ -1007,7 +982,7 @@ class ImageFormat(object):
 
 
 def get_supported_image_formats(context, flags, image_type):
-    info = _ffi.new('generic_info *')
+    info = _ffi.new('generic_info*')
     _handle_error(_lib.context__get_supported_image_formats(
         context.ptr, flags, image_type, info))
     return _generic_info_to_python(info)
@@ -1060,11 +1035,11 @@ class Image(MemoryObject):
                 raise LogicError("Image", status_code.INVALID_VALUE,
                         "buffer too small")
 
-            ptr = _ffi.new('void **')
+            ptr = _ffi.new('clobj_t*')
             _handle_error(_lib.create_image_2d(
                 ptr, context.ptr, flags,
-                _ffi.new('struct _cl_image_format *',
-                    (format.channel_order, format.channel_data_type, )),
+                _ffi.new('struct _cl_image_format*',
+                         (format.channel_order, format.channel_data_type)),
                 width, height, pitch, c_buf))
             self.ptr = ptr[0]
         elif dims == 3:
@@ -1084,11 +1059,11 @@ class Image(MemoryObject):
                 raise LogicError("Image", status_code.INVALID_VALUE,
                     "buffer too small")
 
-            ptr = _ffi.new('void **')
+            ptr = _ffi.new('clobj_t*')
             _handle_error(_lib.create_image_3d(
                 ptr, context.ptr, flags,
                 _ffi.new('struct _cl_image_format *',
-                    (format.channel_order, format.channel_data_type, )),
+                         (format.channel_order, format.channel_data_type)),
                 width, height, depth, pitch_x, pitch_y, c_buf))
 
             self.ptr = ptr[0]
@@ -1097,7 +1072,7 @@ class Image(MemoryObject):
                     "invalid dimension")
 
     def get_image_info(self, param):
-        info = _ffi.new('generic_info *')
+        info = _ffi.new('generic_info*')
         _handle_error(_lib.image__get_image_info(self.ptr, param, info))
         return _generic_info_to_python(info)
 
@@ -1123,7 +1098,7 @@ class Sampler(_Common):
     _id = 'sampler'
 
     def __init__(self, context, normalized_coords, addressing_mode, filter_mode):
-        ptr = _ffi.new('void **')
+        ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.create_sampler(
             ptr, context.ptr, normalized_coords, addressing_mode, filter_mode))
         self.ptr = ptr[0]
@@ -1139,7 +1114,7 @@ class GLTexture(Image):
     def __init__(self, context, flags, texture_target, miplevel, texture, dims):
         raise NotImplementedError("GLTexture")
 
-        ptr = _ffi.new('void **')
+        ptr = _ffi.new('clobj_t*')
         _handle_error(_lib._create_from_gl_texture(
             ptr, context.ptr, flags, texture_target, miplevel, texture, dims))
         self.ptr = ptr[0]
