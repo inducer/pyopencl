@@ -235,13 +235,13 @@ def main():
                                 "src/c_wrapper/wrap_constants.cpp",
                                 "src/c_wrapper/bitlog.cpp",
                                 "src/c_wrapper/pyhelper.cpp",
-                                #"src/c_wrapper/wrap_mempool.cpp",
+                                "src/c_wrapper/async.cpp",
+                                # "src/c_wrapper/wrap_mempool.cpp",
                                 ],
                                include_dirs=(
                                    conf["CL_INC_DIR"]
-                                   + ["src/c_wrapper/"]
-                                   + ["pyopencl/c_wrapper/"]
-                                   ),
+                                   + ["src/c_wrapper/",
+                                      "pyopencl/c_wrapper/"]),
                                library_dirs=conf["CL_LIB_DIR"],
                                libraries=conf["CL_LIBNAME"],
                                define_macros=list(EXTRA_DEFINES.items()),

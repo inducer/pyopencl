@@ -32,7 +32,7 @@ import sys
 
 # TODO: can we do without ctypes?
 import ctypes
-from pyopencl._cffi import _ffi, _lib, _get_insert_func, _find_obj
+from pyopencl._cffi import _ffi, _lib, _get_ref_func, _find_obj, _to_c_callback
 
 # {{{ compatibility shims
 
@@ -814,7 +814,7 @@ def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
     _handle_error(_lib.enqueue_read_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
-        _get_insert_func(hostbuf)))
+        _get_ref_func(hostbuf)))
     return _create_instance(NannyEvent, ptr_event[0])
 
 
@@ -836,7 +836,7 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
     _handle_error(_lib.enqueue_write_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
-        _get_insert_func(c_ref)))
+        _get_ref_func(c_ref)))
     return _create_instance(NannyEvent, ptr_event[0])
 
 # }}}
@@ -853,7 +853,7 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     _handle_error(_lib.enqueue_read_image(
         ptr_event, queue.ptr, mem.ptr, origin, region, c_buf, row_pitch,
         slice_pitch, c_wait_for, num_wait_for, bool(is_blocking),
-        _get_insert_func(c_buf)))
+        _get_ref_func(c_buf)))
     return _create_instance(NannyEvent, ptr_event[0])
 
 # TODO: write_image copy_image fill_image

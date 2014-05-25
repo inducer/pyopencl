@@ -175,7 +175,7 @@ def _py_deref(_id):
     except:
         pass
 
-def _get_insert_func(obj):
+def _get_ref_func(obj):
     @_ffi.callback('void(unsigned long)')
     def _insert(_id):
         _pyref[_id] = obj
@@ -185,3 +185,13 @@ def _find_obj(_id):
     return _pyref.get(_id, None)
 
 _lib.set_deref(_py_deref)
+
+import traceback
+def _to_c_callback(func, *args, **kwargs):
+    @_ffi.callback('void()')
+    def _func():
+        try:
+            func(*args, **kwargs)
+        except:
+            traceback.print_exc()
+    return _func
