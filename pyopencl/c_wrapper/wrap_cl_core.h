@@ -163,10 +163,18 @@ error *enqueue_fill_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                            uint32_t num_wait_for);
 // enqueue_*_image*
 error *enqueue_read_image(clobj_t *event, clobj_t queue, clobj_t mem,
-                          size_t *origin, size_t *region, void *buffer,
-                          size_t row_pitch, size_t slice_pitch,
+                          const size_t *origin, size_t origin_l,
+                          const size_t *region, size_t region_l,
+                          void *buffer, size_t row_pitch, size_t slice_pitch,
                           const clobj_t *wait_for, uint32_t num_wait_for,
                           int is_blocking, void (*ref)(unsigned long));
+error *enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
+                           const size_t *origin, size_t origin_l,
+                           const size_t *region, size_t region_l,
+                           const void *buffer, size_t row_pitch,
+                           size_t slice_pitch, const clobj_t *_wait_for,
+                           uint32_t num_wait_for, int is_blocking,
+                           void (*ref)(unsigned long));
 // CL Object
 intptr_t clobj__int_ptr(clobj_t obj);
 error *clobj__get_info(clobj_t obj, cl_uint param, generic_info *out);

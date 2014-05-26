@@ -906,15 +906,37 @@ def _enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
 
 def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
                         slice_pitch=0, wait_for=None, is_blocking=True):
+    origin_l = len(origin)
+    region_l = len(region)
+    if origin_l > 3 or region_l > 3:
+        raise RuntimeError("origin or region has too many components",
+                           "enqueue_read_image")
     c_buf, size, _ = _c_buffer_from_obj(hostbuf, writable=True)
     ptr_event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     # TODO check buffer size
     _handle_error(_lib.enqueue_read_image(
-        ptr_event, queue.ptr, mem.ptr, origin, region, c_buf, row_pitch,
-        slice_pitch, c_wait_for, num_wait_for, bool(is_blocking),
-        _get_ref_func(c_buf)))
+        ptr_event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
+        c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
+        bool(is_blocking), _get_ref_func(c_buf)))
     return _create_instance(NannyEvent, ptr_event[0])
+
+def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
+                         slice_pitch=0, wait_for=None, is_blocking=True):
+    origin_l = len(origin)
+    region_l = len(region)
+    if origin_l > 3 or region_l > 3:
+        raise RuntimeError("origin or region has too many components",
+                           "enqueue_read_image")
+    c_buf, size, _ = _c_buffer_from_obj(hostbuf)
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    # TODO check buffer size
+    _handle_error(_lib.enqueue_read_image(
+        _event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
+        c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
+        bool(is_blocking), _get_ref_func(c_buf)))
+    return _create_instance(NannyEvent, _event[0])
 
 # TODO: write_image copy_image fill_image
 #    copy_buffer_to_image copy_image_to_buffer

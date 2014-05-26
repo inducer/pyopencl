@@ -2450,7 +2450,7 @@ enqueue_barrier(clobj_t _queue)
         });
 }
 
-// {{{ transfer enqueues
+// {{{ enqueue_*_buffer*
 
 error*
 enqueue_read_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
@@ -2579,21 +2579,70 @@ enqueue_fill_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem, void *pattern,
         });
 }
 
+// }}}
+
+// {{{ enqueue_*_image*
+
 error*
-enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem, size_t *origin,
-                   size_t *region, void *buffer, size_t row_pitch,
-                   size_t slice_pitch, const clobj_t *_wait_for,
-                   uint32_t num_wait_for, int is_blocking,
-                   void (*ref)(unsigned long))
+enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
+                   const size_t *origin, size_t origin_l,
+                   const size_t *region, size_t region_l, void *buffer,
+                   size_t row_pitch, size_t slice_pitch,
+                   const clobj_t *_wait_for, uint32_t num_wait_for,
+                   int is_blocking, void (*ref)(unsigned long))
 {
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(_mem);
+    size_t _origin[3] = {0};
+    if (origin_l < 3) {
+        memcpy(_origin, origin, sizeof(size_t) * origin_l);
+        origin = _origin;
+    }
+    size_t _region[3] = {0};
+    if (region_l < 3) {
+        memcpy(_region, region, sizeof(size_t) * region_l);
+        region = _region;
+    }
     return c_handle_error([&] {
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
                         clEnqueueReadImage, queue->data(), img->data(),
+                        cast_bool(is_blocking), origin, region, row_pitch,
+                        slice_pitch, buffer, num_wait_for,
+                        wait_for.get(), &evt);
+                });
+            *_evt = new_nanny_event(evt, ref);
+        });
+}
+
+error*
+enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
+                    const size_t *origin, size_t origin_l,
+                    const size_t *region, size_t region_l,
+                    const void *buffer, size_t row_pitch, size_t slice_pitch,
+                    const clobj_t *_wait_for, uint32_t num_wait_for,
+                    int is_blocking, void (*ref)(unsigned long))
+{
+    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    auto queue = static_cast<command_queue*>(_queue);
+    auto img = static_cast<image*>(_mem);
+    size_t _origin[3] = {0};
+    if (origin_l < 3) {
+        memcpy(_origin, origin, sizeof(size_t) * origin_l);
+        origin = _origin;
+    }
+    size_t _region[3] = {0};
+    if (region_l < 3) {
+        memcpy(_region, region, sizeof(size_t) * region_l);
+        region = _region;
+    }
+    return c_handle_error([&] {
+            cl_event evt;
+            retry_mem_error<void>([&] {
+                    pyopencl_call_guarded(
+                        clEnqueueWriteImage, queue->data(), img->data(),
                         cast_bool(is_blocking), origin, region, row_pitch,
                         slice_pitch, buffer, num_wait_for,
                         wait_for.get(), &evt);
