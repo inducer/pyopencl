@@ -135,6 +135,8 @@ error *enqueue_marker_with_wait_list(clobj_t *event, clobj_t queue,
 error *enqueue_barrier_with_wait_list(clobj_t *event, clobj_t queue,
                                       const clobj_t *wait_for,
                                       uint32_t num_wait_for);
+error *enqueue_wait_for_events(clobj_t _queue, const clobj_t *_wait_for,
+                               uint32_t num_wait_for);
 error *enqueue_marker(clobj_t *event, clobj_t queue);
 error *enqueue_barrier(clobj_t queue);
 

@@ -2419,6 +2419,18 @@ enqueue_barrier_with_wait_list(clobj_t *_evt, clobj_t _queue,
 #endif
 
 error*
+enqueue_wait_for_events(clobj_t _queue, const clobj_t *_wait_for,
+                        uint32_t num_wait_for)
+{
+    auto queue = static_cast<command_queue*>(_queue);
+    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    return c_handle_error([&] {
+            pyopencl_call_guarded(clEnqueueWaitForEvents, queue->data(),
+                                  num_wait_for, wait_for.get());
+        });
+}
+
+error*
 enqueue_marker(clobj_t *_evt, clobj_t _queue)
 {
     auto queue = static_cast<command_queue*>(_queue);

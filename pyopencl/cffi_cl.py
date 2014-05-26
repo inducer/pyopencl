@@ -704,9 +704,6 @@ class NannyEvent(Event):
         return _find_obj(_lib.nanny_event__get_ward(self.ptr))
 
 # TODO
-#   NannyEvent
-#   wait_for_events
-#   enqueue_wait_for_events
 #   UserEvent
 #   enqueue_migrate_mem_objects
 #   enqueue_migrate_mem_objects_ext
@@ -809,6 +806,15 @@ def _enqueue_barrier_with_wait_list(queue, wait_for=None):
 
 def _enqueue_barrier(queue):
     _handle_error(_lib.enqueue_barrier(queue.ptr))
+
+# }}}
+
+# {{{ _enqueue_wait_for_events
+
+def _enqueue_wait_for_events(queue, wait_for=None):
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_wait_for_events(queue.ptr, c_wait_for,
+                                               num_wait_for))
 
 # }}}
 
