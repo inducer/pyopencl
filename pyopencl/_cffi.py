@@ -178,11 +178,11 @@ def _py_deref(_id):
 def _get_ref_func(obj):
     @_ffi.callback('void(unsigned long)')
     def _insert(_id):
-        _pyref[_id] = obj
+        _pyrefs[_id] = obj
     return _insert
 
 def _find_obj(_id):
-    return _pyref.get(_id, None)
+    return _pyrefs.get(_id, None)
 
 _lib.set_deref(_py_deref)
 
