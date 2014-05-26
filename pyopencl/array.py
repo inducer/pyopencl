@@ -144,10 +144,7 @@ def _create_vector_types():
             vec.types[np.dtype(base_type), count] = dtype
             vec.type_to_scalar_and_count[dtype] = np.dtype(base_type), count
 
-try:
-    _create_vector_types()
-except:
-    pass
+_create_vector_types()
 
 # }}}
 

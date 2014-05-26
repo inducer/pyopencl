@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+from __future__ import division
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
