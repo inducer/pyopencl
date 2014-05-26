@@ -219,7 +219,7 @@ def main():
             packages=["pyopencl", "pyopencl.characterize", "pyopencl.compyte"],
 
             install_requires=[
-                "pytools>=2013.5.2",
+                "pytools>=2014.2",
                 "pytest>=2",
                 "decorator>=3.2.0",
                 "cffi>=0.7.2",
