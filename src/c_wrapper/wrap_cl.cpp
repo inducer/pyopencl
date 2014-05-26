@@ -2560,6 +2560,26 @@ enqueue_map_buffer(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
 }
 
 error*
+enqueue_fill_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem, void *pattern,
+                    size_t psize, size_t offset, size_t size,
+                    const clobj_t *_wait_for, uint32_t num_wait_for)
+{
+    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    auto queue = static_cast<command_queue*>(_queue);
+    auto mem = static_cast<memory_object_holder*>(_mem);
+    return c_handle_error([&] {
+            cl_event evt;
+            retry_mem_error<void>([&] {
+                    pyopencl_call_guarded(
+                        clEnqueueFillBuffer, queue->data(), mem->data(),
+                        pattern, psize, offset, size, num_wait_for,
+                        wait_for.get(), &evt);
+                });
+            *_evt = new_event(evt);
+        });
+}
+
+error*
 enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem, size_t *origin,
                    size_t *region, void *buffer, size_t row_pitch,
                    size_t slice_pitch, const clobj_t *_wait_for,

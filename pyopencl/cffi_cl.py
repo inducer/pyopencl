@@ -711,7 +711,6 @@ class NannyEvent(Event):
 #   enqueue_read_buffer_rect
 #   enqueue_write_buffer_rect
 #   enqueue_copy_buffer_rect
-#   enqueue_fill_buffer
 #   get_image_format_channel_count
 #   get_image_format_dtype_size
 #   get_image_format_item_size
@@ -890,6 +889,15 @@ def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
         'version': 3
         }
     return np.asarray(map), event
+
+def _enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
+    c_pattern, psize, c_ref = _c_buffer_from_obj(pattern)
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_fill_buffer(
+        _event, queue.ptr, mem.ptr, c_pattern, psize, offset, size,
+        c_wait_for, num_wait_for))
+    return _create_instance(Event, ptr_event[0])
 
 # }}}
 

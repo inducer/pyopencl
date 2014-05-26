@@ -139,7 +139,7 @@ error *enqueue_wait_for_events(clobj_t _queue, const clobj_t *_wait_for,
                                uint32_t num_wait_for);
 error *enqueue_marker(clobj_t *event, clobj_t queue);
 error *enqueue_barrier(clobj_t queue);
-
+// enqueue_*_buffer*
 error *enqueue_read_buffer(clobj_t *event, clobj_t queue, clobj_t mem,
                            void *buffer, size_t size, size_t device_offset,
                            const clobj_t *wait_for, uint32_t num_wait_for,
@@ -157,7 +157,11 @@ error *enqueue_map_buffer(clobj_t *_evt, clobj_t *mpa, clobj_t _queue,
                           clobj_t _mem, cl_map_flags flags, size_t offset,
                           size_t size, const clobj_t *_wait_for,
                           uint32_t num_wait_for, int block);
-
+error *enqueue_fill_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
+                           void *pattern, size_t psize, size_t offset,
+                           size_t size, const clobj_t *_wait_for,
+                           uint32_t num_wait_for);
+// enqueue_*_image*
 error *enqueue_read_image(clobj_t *event, clobj_t queue, clobj_t mem,
                           size_t *origin, size_t *region, void *buffer,
                           size_t row_pitch, size_t slice_pitch,
