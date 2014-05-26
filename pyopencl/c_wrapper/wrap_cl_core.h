@@ -126,6 +126,9 @@ error *enqueue_nd_range_kernel(clobj_t *event, clobj_t queue,
                                const size_t *global_work_size,
                                const size_t *local_work_size,
                                const clobj_t *wait_for, uint32_t num_wait_for);
+error *enqueue_task(clobj_t *_evt, clobj_t _queue, clobj_t _knl,
+                    const clobj_t *_wait_for, uint32_t num_wait_for);
+
 error *enqueue_marker_with_wait_list(clobj_t *event, clobj_t queue,
                                      const clobj_t *wait_for,
                                      uint32_t num_wait_for);

@@ -2370,6 +2370,24 @@ enqueue_nd_range_kernel(clobj_t *_evt, clobj_t _queue, clobj_t _knl,
         });
 }
 
+error*
+enqueue_task(clobj_t *_evt, clobj_t _queue, clobj_t _knl,
+             const clobj_t *_wait_for, uint32_t num_wait_for)
+{
+    auto queue = static_cast<command_queue*>(_queue);
+    auto knl = static_cast<kernel*>(_knl);
+    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    return c_handle_error([&] {
+            cl_event evt;
+            retry_mem_error<void>([&] {
+                    pyopencl_call_guarded(
+                        clEnqueueTask, queue->data(), knl->data(),
+                        num_wait_for, wait_for.get(), &evt);
+                });
+            *_evt = new_event(evt);
+        });
+}
+
 #if PYOPENCL_CL_VERSION >= 0x1020
 error*
 enqueue_marker_with_wait_list(clobj_t *_evt, clobj_t _queue,

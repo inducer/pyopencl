@@ -718,16 +718,15 @@ class NannyEvent(Event):
 #   get_image_format_channel_count
 #   get_image_format_dtype_size
 #   get_image_format_item_size
-#   enqueue_task
 
 # }}}
 
 
 # {{{ enqueue_nd_range_kernel
 
-def enqueue_nd_range_kernel(queue, kernel,
-        global_work_size, local_work_size, global_work_offset=None,
-        wait_for=None, g_times_l=False):
+def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size,
+                            global_work_offset=None, wait_for=None,
+                            g_times_l=False):
 
     work_dim = len(global_work_size)
 
@@ -768,6 +767,17 @@ def enqueue_nd_range_kernel(queue, kernel,
     _handle_error(_lib.enqueue_nd_range_kernel(
         ptr_event, queue.ptr, kernel.ptr, work_dim, c_global_work_offset,
         c_global_work_size, c_local_work_size, c_wait_for, num_wait_for))
+    return _create_instance(Event, ptr_event[0])
+
+# }}}
+
+# {{{ enqueue_task
+
+def enqueue_task(queue, kernel, wait_for=None):
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_task(
+        _event, queue.ptr, kernel.ptr, c_wait_for, num_wait_for))
     return _create_instance(Event, ptr_event[0])
 
 # }}}
