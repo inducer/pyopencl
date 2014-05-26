@@ -307,8 +307,8 @@ get_int_info(cl_int (*func)(ArgTypes...), const char *name,
 
 // }}}
 
-unsigned long next_obj_id();
-extern void (*python_deref)(unsigned long);
+extern void (*python_ref)(void*);
+extern void (*python_deref)(void*);
 
 }
 

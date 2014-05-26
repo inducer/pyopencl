@@ -43,7 +43,7 @@ int get_cl_version();
 void free_pointer(void*);
 void free_pointer_array(void**, uint32_t size);
 void set_gc(int (*func)());
-void set_deref(void (*func)(unsigned long));
+void set_ref_funcs(void (*ref)(void*), void (*deref)(void*));
 int have_gl();
 
 unsigned bitlog2(unsigned long v);
@@ -115,10 +115,10 @@ error *event__get_profiling_info(clobj_t event, cl_profiling_info param,
                                  generic_info *out);
 error *event__wait(clobj_t event);
 error *event__set_callback(clobj_t _evt, cl_int type, void (*cb)(cl_int),
-                           void (*ref)(unsigned long));
+                           void *pyobj);
 error *wait_for_events(const clobj_t *_wait_for, uint32_t num_wait_for);
 // Nanny Event
-unsigned long nanny_event__get_ward(clobj_t evt);
+void *nanny_event__get_ward(clobj_t evt);
 // enqueue_*
 error *enqueue_nd_range_kernel(clobj_t *event, clobj_t queue,
                                clobj_t kernel, cl_uint work_dim,
@@ -143,7 +143,7 @@ error *enqueue_barrier(clobj_t queue);
 error *enqueue_read_buffer(clobj_t *event, clobj_t queue, clobj_t mem,
                            void *buffer, size_t size, size_t device_offset,
                            const clobj_t *wait_for, uint32_t num_wait_for,
-                           int is_blocking, void (*ref)(unsigned long));
+                           int is_blocking, void *pyobj);
 error *enqueue_copy_buffer(clobj_t *event, clobj_t queue, clobj_t src,
                            clobj_t dst, ptrdiff_t byte_count,
                            size_t src_offset, size_t dst_offset,
@@ -152,7 +152,7 @@ error *enqueue_write_buffer(clobj_t *event, clobj_t queue, clobj_t mem,
                             const void *buffer, size_t size,
                             size_t device_offset, const clobj_t *wait_for,
                             uint32_t num_wait_for, int is_blocking,
-                            void (*ref)(unsigned long));
+                            void *pyobj);
 error *enqueue_map_buffer(clobj_t *_evt, clobj_t *mpa, clobj_t _queue,
                           clobj_t _mem, cl_map_flags flags, size_t offset,
                           size_t size, const clobj_t *_wait_for,
@@ -167,14 +167,14 @@ error *enqueue_read_image(clobj_t *event, clobj_t queue, clobj_t mem,
                           const size_t *region, size_t region_l,
                           void *buffer, size_t row_pitch, size_t slice_pitch,
                           const clobj_t *wait_for, uint32_t num_wait_for,
-                          int is_blocking, void (*ref)(unsigned long));
+                          int is_blocking, void *pyobj);
 error *enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                            const size_t *origin, size_t origin_l,
                            const size_t *region, size_t region_l,
                            const void *buffer, size_t row_pitch,
                            size_t slice_pitch, const clobj_t *_wait_for,
                            uint32_t num_wait_for, int is_blocking,
-                           void (*ref)(unsigned long));
+                           void *pyobj);
 // CL Object
 intptr_t clobj__int_ptr(clobj_t obj);
 error *clobj__get_info(clobj_t obj, cl_uint param, generic_info *out);

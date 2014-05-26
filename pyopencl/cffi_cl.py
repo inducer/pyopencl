@@ -32,7 +32,7 @@ import sys
 
 # TODO: can we do without ctypes?
 import ctypes
-from pyopencl._cffi import _ffi, _lib, _get_ref_func, _find_obj, _to_c_callback
+from pyopencl._cffi import _ffi, _lib
 from .compyte.array import f_contiguous_strides, c_contiguous_strides
 
 # {{{ compatibility shims
@@ -692,7 +692,7 @@ class Event(_Common):
         def _func(status):
             cb(status, *args, **kwargs)
         _handle_error(_lib.event__set_callback(self.ptr, _type, _func,
-                                               _get_ref_func(_func)))
+                                               _ffi.new_handle(_func)))
 
 def wait_for_events(wait_for):
     _handle_error(_lib.wait_for_events(*_clobj_list(wait_for)))
@@ -701,7 +701,7 @@ class NannyEvent(Event):
     # TODO disable/handle write to buffer from bytes since the data may be moved
     # by GC
     def get_ward(self):
-        return _find_obj(_lib.nanny_event__get_ward(self.ptr))
+        return _ffi.from_handle(_lib.nanny_event__get_ward(self.ptr))
 
 # TODO
 #   UserEvent
@@ -827,7 +827,7 @@ def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
     _handle_error(_lib.enqueue_read_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
-        _get_ref_func(hostbuf)))
+        _ffi.new_handle(hostbuf)))
     return _create_instance(NannyEvent, ptr_event[0])
 
 
@@ -849,7 +849,7 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
     _handle_error(_lib.enqueue_write_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
-        _get_ref_func(c_ref)))
+        _ffi.new_handle(c_ref)))
     return _create_instance(NannyEvent, ptr_event[0])
 
 # PyPy bug report: https://bitbucket.org/pypy/pypy/issue/1777/unable-to-create-proper-numpy-array-from
@@ -918,7 +918,7 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     _handle_error(_lib.enqueue_read_image(
         ptr_event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
-        bool(is_blocking), _get_ref_func(c_buf)))
+        bool(is_blocking), _ffi.new_handle(c_buf)))
     return _create_instance(NannyEvent, ptr_event[0])
 
 def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
@@ -935,7 +935,7 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     _handle_error(_lib.enqueue_read_image(
         _event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
-        bool(is_blocking), _get_ref_func(c_buf)))
+        bool(is_blocking), _ffi.new_handle(c_buf)))
     return _create_instance(NannyEvent, _event[0])
 
 # TODO: write_image copy_image fill_image

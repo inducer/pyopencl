@@ -168,30 +168,15 @@ _gc_collect = _ffi.callback('int(void)')(gc.collect)
 _lib.set_gc(_gc_collect)
 
 _pyrefs = {}
-@_ffi.callback('void(unsigned long)')
-def _py_deref(_id):
+@_ffi.callback('void(void*)')
+def _py_deref(handle):
     try:
-        del _pyrefs[_id]
+        del _pyrefs[handle]
     except:
         pass
 
-def _get_ref_func(obj):
-    @_ffi.callback('void(unsigned long)')
-    def _insert(_id):
-        _pyrefs[_id] = obj
-    return _insert
+@_ffi.callback('void(void*)')
+def _py_ref(handle):
+    _pyrefs[handle] = handle
 
-def _find_obj(_id):
-    return _pyrefs.get(_id, None)
-
-_lib.set_deref(_py_deref)
-
-import traceback
-def _to_c_callback(func, *args, **kwargs):
-    @_ffi.callback('void()')
-    def _func():
-        try:
-            func(*args, **kwargs)
-        except:
-            traceback.print_exc()
-    return _func
+_lib.set_ref_funcs(_py_ref, _py_deref)

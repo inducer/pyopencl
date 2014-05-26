@@ -802,14 +802,13 @@ new_event(cl_event evt)
 
 class nanny_event : public event {
 private:
-    unsigned int m_ward;
+    void *m_ward;
 public:
-    nanny_event(cl_event evt, bool retain, void (*reffunc)(unsigned long)=0)
-        : event(evt, retain), m_ward(0)
+    nanny_event(cl_event evt, bool retain, void *ward=NULL)
+        : event(evt, retain), m_ward(ward)
     {
-        if (reffunc) {
-            m_ward = next_obj_id();
-            reffunc(m_ward);
+        if (ward) {
+            python_ref(ward);
         }
     }
     ~nanny_event()
@@ -818,7 +817,7 @@ public:
             wait();
         }
     }
-    unsigned int
+    void*
     get_ward() const
     {
         return m_ward;
@@ -827,15 +826,15 @@ public:
     finished()
     {
         // No lock needed because multiple release is safe here.
-        unsigned long ward = m_ward;
-        m_ward = 0;
+        void *ward = m_ward;
+        m_ward = NULL;
         python_deref(ward);
     }
 };
 static inline event*
-new_nanny_event(cl_event evt, void (*reffunc)(unsigned long))
+new_nanny_event(cl_event evt, void *ward)
 {
-    return pyopencl_convert_obj(nanny_event, clReleaseEvent, evt, reffunc);
+    return pyopencl_convert_obj(nanny_event, clReleaseEvent, evt, ward);
 }
 
 // }}}
@@ -2313,18 +2312,17 @@ event__wait(clobj_t evt)
 }
 
 #if PYOPENCL_CL_VERSION >= 0x1010
+// TODO directly use pyobj to do callback
 error*
-event__set_callback(clobj_t _evt, cl_int type, void (*cb)(cl_int),
-                    void (*ref)(unsigned long))
+event__set_callback(clobj_t _evt, cl_int type, void (*cb)(cl_int), void *pyobj)
 {
     auto evt = static_cast<event*>(_evt);
     return c_handle_error([&] {
-            unsigned long obj_id = next_obj_id();
             evt->set_callback(type, [=] (cl_int status) {
                     cb(status);
-                    python_deref(obj_id);
+                    python_deref(pyobj);
                 });
-            ref(obj_id);
+            python_ref(pyobj);
         });
 }
 #endif
@@ -2340,7 +2338,7 @@ wait_for_events(const clobj_t *_wait_for, uint32_t num_wait_for)
 }
 
 // Nanny Event
-unsigned long
+void*
 nanny_event__get_ward(clobj_t evt)
 {
     return static_cast<nanny_event*>(evt)->get_ward();
@@ -2456,7 +2454,7 @@ error*
 enqueue_read_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                     void *buffer, size_t size, size_t device_offset,
                     const clobj_t *_wait_for, uint32_t num_wait_for,
-                    int is_blocking, void (*ref)(unsigned long))
+                    int is_blocking, void *pyobj)
 {
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
@@ -2469,7 +2467,7 @@ enqueue_read_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                         cast_bool(is_blocking), device_offset, size,
                         buffer, num_wait_for, wait_for.get(), &evt);
                 });
-            *_evt = new_nanny_event(evt, ref);
+            *_evt = new_nanny_event(evt, pyobj);
         });
 }
 
@@ -2477,7 +2475,7 @@ error*
 enqueue_write_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                      const void *buffer, size_t size, size_t device_offset,
                      const clobj_t *_wait_for, uint32_t num_wait_for,
-                     int is_blocking, void (*ref)(unsigned long))
+                     int is_blocking, void *pyobj)
 {
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
@@ -2490,7 +2488,7 @@ enqueue_write_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                         cast_bool(is_blocking), device_offset,
                         size, buffer, num_wait_for, wait_for.get(), &evt);
                 });
-            *_evt = new_nanny_event(evt, ref);
+            *_evt = new_nanny_event(evt, pyobj);
         });
 }
 
@@ -2589,7 +2587,7 @@ enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                    const size_t *region, size_t region_l, void *buffer,
                    size_t row_pitch, size_t slice_pitch,
                    const clobj_t *_wait_for, uint32_t num_wait_for,
-                   int is_blocking, void (*ref)(unsigned long))
+                   int is_blocking, void *pyobj)
 {
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
@@ -2613,7 +2611,7 @@ enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                         slice_pitch, buffer, num_wait_for,
                         wait_for.get(), &evt);
                 });
-            *_evt = new_nanny_event(evt, ref);
+            *_evt = new_nanny_event(evt, pyobj);
         });
 }
 
@@ -2623,7 +2621,7 @@ enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                     const size_t *region, size_t region_l,
                     const void *buffer, size_t row_pitch, size_t slice_pitch,
                     const clobj_t *_wait_for, uint32_t num_wait_for,
-                    int is_blocking, void (*ref)(unsigned long))
+                    int is_blocking, void *pyobj)
 {
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
@@ -2647,7 +2645,7 @@ enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                         slice_pitch, buffer, num_wait_for,
                         wait_for.get(), &evt);
                 });
-            *_evt = new_nanny_event(evt, ref);
+            *_evt = new_nanny_event(evt, pyobj);
         });
 }
 

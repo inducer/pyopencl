@@ -4,17 +4,6 @@
 
 namespace pyopencl {
 
-static std::atomic<unsigned long> pyobj_id = ATOMIC_VAR_INIT(1ul);
-unsigned long
-next_obj_id()
-{
-    unsigned long id;
-    do {
-        id = std::atomic_fetch_add(&pyobj_id, 1ul);
-    } while (id == 0);
-    return id;
-}
-
 static int
 dummy_python_gc()
 {
@@ -22,12 +11,13 @@ dummy_python_gc()
 }
 
 static void
-dummy_python_deref(unsigned long)
+dummy_python_ref_func(void*)
 {
 }
 
 int (*python_gc)() = dummy_python_gc;
-void (*python_deref)(unsigned long) = dummy_python_deref;
+void (*python_deref)(void*) = dummy_python_ref_func;
+void (*python_ref)(void*) = dummy_python_ref_func;
 
 }
 
@@ -38,7 +28,8 @@ set_gc(int (*func)())
 }
 
 void
-set_deref(void (*func)(unsigned long))
+set_ref_funcs(void (*ref)(void*), void (*deref)(void*))
 {
-    pyopencl::python_deref = func ? func : pyopencl::dummy_python_deref;
+    pyopencl::python_ref = ref ? ref : pyopencl::dummy_python_ref_func;
+    pyopencl::python_deref = deref ? deref : pyopencl::dummy_python_ref_func;
 }
