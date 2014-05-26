@@ -251,7 +251,8 @@ def main():
                         "cl/*.cl",
                         "cl/*.h",
                         "c_wrapper/wrap_cl_core.h",
-                        ]
+                        ] + (["c_wrapper/wrap_cl_gl_core.h"]
+                             if conf["CL_ENABLE_GL"] else [])
                     },
 
             # 2to3 invocation
