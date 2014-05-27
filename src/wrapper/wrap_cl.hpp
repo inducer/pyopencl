@@ -2236,7 +2236,6 @@ namespace pyopencl
     pattern_buf = ward->m_buf.buf;
     pattern_len = ward->m_buf.len;
 #else
-    py::object ward = pattern;
     if (PyObject_AsReadBuffer(pattern.ptr(), &pattern_buf, &pattern_len))
       throw py::error_already_set();
 #endif
@@ -2250,7 +2249,7 @@ namespace pyopencl
             PYOPENCL_WAITLIST_ARGS, &evt
             ))
       );
-    PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, ward);
+    PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 #endif
 
@@ -2829,7 +2828,6 @@ namespace pyopencl
 
     color_buf = ward->m_buf.buf;
 #else
-    py::object ward = color;
     PYOPENCL_BUFFER_SIZE_T color_len;
     if (PyObject_AsReadBuffer(color.ptr(), &color_buf, &color_len))
       throw py::error_already_set();
@@ -2844,7 +2842,7 @@ namespace pyopencl
             PYOPENCL_WAITLIST_ARGS, &evt
             ));
       );
-    PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, ward);
+    PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 #endif
 
