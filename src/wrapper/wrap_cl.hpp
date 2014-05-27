@@ -3889,7 +3889,7 @@ namespace pyopencl
   class gl_buffer : public memory_object
   {
     public:
-      gl_buffer(cl_mem mem, bool retain, py::object *hostbuf=0)
+      gl_buffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
         : memory_object(mem, retain, hostbuf)
       { }
   };
@@ -3900,7 +3900,7 @@ namespace pyopencl
   class gl_renderbuffer : public memory_object
   {
     public:
-      gl_renderbuffer(cl_mem mem, bool retain, py::object *hostbuf=0)
+      gl_renderbuffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
         : memory_object(mem, retain, hostbuf)
       { }
   };
@@ -3911,7 +3911,7 @@ namespace pyopencl
   class gl_texture : public image
   {
     public:
-      gl_texture(cl_mem mem, bool retain, py::object *hostbuf=0)
+      gl_texture(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
         : image(mem, retain, hostbuf)
       { }
 
