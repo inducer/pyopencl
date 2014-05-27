@@ -2420,6 +2420,8 @@ namespace pyopencl
     std::auto_ptr<py_buffer_wrapper> retained_buf_obj;
     if (buffer.ptr() != Py_None)
     {
+      retained_buf_obj = std::auto_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
+
       int py_buf_flags = PyBUF_ANY_CONTIGUOUS;
       if ((flags & CL_MEM_USE_HOST_PTR)
           && ((flags & CL_MEM_READ_WRITE)
@@ -2564,6 +2566,8 @@ namespace pyopencl
     std::auto_ptr<py_buffer_wrapper> retained_buf_obj;
     if (buffer.ptr() != Py_None)
     {
+      retained_buf_obj = std::auto_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
+
       int py_buf_flags = PyBUF_ANY_CONTIGUOUS;
       if ((flags & CL_MEM_USE_HOST_PTR)
           && ((flags & CL_MEM_READ_WRITE)
@@ -3586,7 +3590,16 @@ namespace pyopencl
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
         py_buffer_wrapper buf_wrapper;
 
-        buf_wrapper.get(py_buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
+        try
+        {
+          buf_wrapper.get(py_buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
+        }
+        catch (py::error_already_set)
+        {
+          PyErr_Clear();
+          throw error("Kernel.set_arg", CL_INVALID_VALUE,
+              "invalid kernel argument");
+        }
 
         buf = buf_wrapper.m_buf.buf;
         len = buf_wrapper.m_buf.len;
@@ -3889,7 +3902,7 @@ namespace pyopencl
   class gl_buffer : public memory_object
   {
     public:
-      gl_buffer(cl_mem mem, bool retain, py::object *hostbuf=0)
+      gl_buffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
         : memory_object(mem, retain, hostbuf)
       { }
   };
@@ -3900,7 +3913,7 @@ namespace pyopencl
   class gl_renderbuffer : public memory_object
   {
     public:
-      gl_renderbuffer(cl_mem mem, bool retain, py::object *hostbuf=0)
+      gl_renderbuffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
         : memory_object(mem, retain, hostbuf)
       { }
   };
@@ -3911,7 +3924,7 @@ namespace pyopencl
   class gl_texture : public image
   {
     public:
-      gl_texture(cl_mem mem, bool retain, py::object *hostbuf=0)
+      gl_texture(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
         : image(mem, retain, hostbuf)
       { }
 
