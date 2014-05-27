@@ -3590,7 +3590,16 @@ namespace pyopencl
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
         py_buffer_wrapper buf_wrapper;
 
-        buf_wrapper.get(py_buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
+        try
+        {
+          buf_wrapper.get(py_buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
+        }
+        catch (py::error_already_set)
+        {
+          PyErr_Clear();
+          throw error("Kernel.set_arg", CL_INVALID_VALUE,
+              "invalid kernel argument");
+        }
 
         buf = buf_wrapper.m_buf.buf;
         len = buf_wrapper.m_buf.len;
