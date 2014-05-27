@@ -2420,6 +2420,8 @@ namespace pyopencl
     std::auto_ptr<py_buffer_wrapper> retained_buf_obj;
     if (buffer.ptr() != Py_None)
     {
+      retained_buf_obj = std::auto_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
+
       int py_buf_flags = PyBUF_ANY_CONTIGUOUS;
       if ((flags & CL_MEM_USE_HOST_PTR)
           && ((flags & CL_MEM_READ_WRITE)
@@ -2564,6 +2566,8 @@ namespace pyopencl
     std::auto_ptr<py_buffer_wrapper> retained_buf_obj;
     if (buffer.ptr() != Py_None)
     {
+      retained_buf_obj = std::auto_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
+
       int py_buf_flags = PyBUF_ANY_CONTIGUOUS;
       if ((flags & CL_MEM_USE_HOST_PTR)
           && ((flags & CL_MEM_READ_WRITE)
