@@ -46,9 +46,12 @@ def _get_common_dtype(obj1, obj2, queue):
     return _get_common_dtype_base(obj1, obj2,
             has_double_support(queue.device))
 
-# PyPy does not and is not planning to support object dtype.
+# Work around PyPy not currently supporting the object dtype.
+# (Yes, it doesn't even support checking!)
+# (as of May 27, 2014 on PyPy 2.3)
 try:
     np.dtype(object)
+
     def _dtype_is_object(t):
         return t == object
 except:
