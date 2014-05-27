@@ -1,4 +1,5 @@
 #include "wrap_cl.h"
+#include "pyhelper.h"
 #include <string.h>
 #include <stdexcept>
 #include <iostream>
@@ -10,8 +11,6 @@
 #define __PYOPENCL_ERROR_H
 
 namespace pyopencl {
-
-extern int (*python_gc)();
 
 #ifdef PYOPENCL_TRACE
 
@@ -165,7 +164,7 @@ retry_mem_error(std::function<T()> func)
     try {
         return func();
     } catch (clerror &e) {
-        if (!e.is_out_of_memory() || !python_gc()) {
+        if (!e.is_out_of_memory() || !py::gc()) {
             throw;
         }
     }

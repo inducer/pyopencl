@@ -307,9 +307,6 @@ get_int_info(cl_int (*func)(ArgTypes...), const char *name,
 
 // }}}
 
-extern void (*python_ref)(void*);
-extern void (*python_deref)(void*);
-
 }
 
 #endif

@@ -164,8 +164,7 @@ if _lib.have_gl():
     _ffi.cdef(_get_wrap_header("wrap_cl_gl_core.h"))
 
 import gc
-_gc_collect = _ffi.callback('int(void)')(gc.collect)
-_lib.set_gc(_gc_collect)
+_py_gc = _ffi.callback('int(void)')(gc.collect)
 
 _pyrefs = {}
 @_ffi.callback('void(void*)')
@@ -179,4 +178,8 @@ def _py_deref(handle):
 def _py_ref(handle):
     _pyrefs[handle] = handle
 
-_lib.set_ref_funcs(_py_ref, _py_deref)
+@_ffi.callback('void(void*, cl_int)')
+def _py_call(handle, status):
+    _ffi.from_handle(handle)(status)
+
+_lib.set_py_funcs(_py_gc, _py_ref, _py_deref, _py_call)

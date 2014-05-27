@@ -1,6 +1,7 @@
 #include "error.h"
 #include "utils.h"
 #include "async.h"
+#include "pyhelper.h"
 
 #include <stdlib.h>
 
@@ -808,7 +809,7 @@ public:
         : event(evt, retain), m_ward(ward)
     {
         if (ward) {
-            python_ref(ward);
+            py::ref(ward);
         }
     }
     ~nanny_event()
@@ -828,7 +829,7 @@ public:
         // No lock needed because multiple release is safe here.
         void *ward = m_ward;
         m_ward = NULL;
-        python_deref(ward);
+        py::deref(ward);
     }
 };
 static inline event*
@@ -2312,17 +2313,16 @@ event__wait(clobj_t evt)
 }
 
 #if PYOPENCL_CL_VERSION >= 0x1010
-// TODO directly use pyobj to do callback
 error*
-event__set_callback(clobj_t _evt, cl_int type, void (*cb)(cl_int), void *pyobj)
+event__set_callback(clobj_t _evt, cl_int type, void *pyobj)
 {
     auto evt = static_cast<event*>(_evt);
     return c_handle_error([&] {
             evt->set_callback(type, [=] (cl_int status) {
-                    cb(status);
-                    python_deref(pyobj);
+                    py::call(pyobj, status);
+                    py::deref(pyobj);
                 });
-            python_ref(pyobj);
+            py::ref(pyobj);
         });
 }
 #endif

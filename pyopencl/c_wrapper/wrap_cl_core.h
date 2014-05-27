@@ -42,8 +42,8 @@ typedef struct {
 int get_cl_version();
 void free_pointer(void*);
 void free_pointer_array(void**, uint32_t size);
-void set_gc(int (*func)());
-void set_ref_funcs(void (*ref)(void*), void (*deref)(void*));
+void set_py_funcs(int (*_gc)(), void (*_ref)(void*), void (*_deref)(void*),
+                  void (*_call)(void*, cl_int));
 int have_gl();
 
 unsigned bitlog2(unsigned long v);
@@ -114,8 +114,7 @@ error *image__get_image_info(clobj_t image, cl_image_info param,
 error *event__get_profiling_info(clobj_t event, cl_profiling_info param,
                                  generic_info *out);
 error *event__wait(clobj_t event);
-error *event__set_callback(clobj_t _evt, cl_int type, void (*cb)(cl_int),
-                           void *pyobj);
+error *event__set_callback(clobj_t _evt, cl_int type, void *pyobj);
 error *wait_for_events(const clobj_t *_wait_for, uint32_t num_wait_for);
 // Nanny Event
 void *nanny_event__get_ward(clobj_t evt);

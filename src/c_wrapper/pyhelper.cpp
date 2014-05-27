@@ -1,35 +1,22 @@
-#include "utils.h"
-#include "error.h"
-#include <atomic>
+#include "pyhelper.h"
 
 namespace pyopencl {
 
-static int
-dummy_python_gc()
-{
-    return 0;
+namespace py {
+WrapFunc<int()> gc;
+WrapFunc<void(void*)> ref;
+WrapFunc<void(void*)> deref;
+WrapFunc<void(void*, cl_int)> call;
 }
-
-static void
-dummy_python_ref_func(void*)
-{
-}
-
-int (*python_gc)() = dummy_python_gc;
-void (*python_deref)(void*) = dummy_python_ref_func;
-void (*python_ref)(void*) = dummy_python_ref_func;
 
 }
 
 void
-set_gc(int (*func)())
+set_py_funcs(int (*_gc)(), void (*_ref)(void*), void (*_deref)(void*),
+             void (*_call)(void*, cl_int))
 {
-    pyopencl::python_gc = func ? func : pyopencl::dummy_python_gc;
-}
-
-void
-set_ref_funcs(void (*ref)(void*), void (*deref)(void*))
-{
-    pyopencl::python_ref = ref ? ref : pyopencl::dummy_python_ref_func;
-    pyopencl::python_deref = deref ? deref : pyopencl::dummy_python_ref_func;
+    pyopencl::py::gc = _gc;
+    pyopencl::py::ref = _ref;
+    pyopencl::py::deref = _deref;
+    pyopencl::py::call = _call;
 }
