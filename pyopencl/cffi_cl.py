@@ -261,6 +261,7 @@ for type_, d in _constants.iteritems():
 class Error(Exception):
     def __init__(self, msg='', routine='', code=0):
         self.routine = routine
+        assert isinstance(code, int)
         self.code = code
         self.what = msg
         super(Error, self).__init__(msg)
@@ -296,6 +297,7 @@ def _handle_error(error):
         klass = RuntimeError
     else:
         klass = Error
+
     e = klass(routine=_ffi.string(error.routine),
             code=error.code, msg=_ffi.string(error.msg))
     _lib.pyopencl_free_pointer(error.routine)

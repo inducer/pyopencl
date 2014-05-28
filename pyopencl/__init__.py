@@ -232,10 +232,7 @@ class Program(object):
 
                 what = what + "\n(source saved as %s)" % srcfile.name
 
-            code = e.code
-            routine = e.routine
-
-            err = _cl.RuntimeError(routine, code, what)
+            err = _cl.RuntimeError(msg=what, routine=e.routine, code=e.code)
 
         # Python 3.2 outputs the whole list of currently active exceptions
         # This serves to remove one (redundant) level from that nesting.
@@ -415,14 +412,12 @@ def _add_functionality():
         err = None
         try:
             self._build(options=options, devices=devices)
-        except Exception, e:
+        except Error, e:
             what = e.what + "\n\n" + (75*"="+"\n").join(
                     "Build on %s:\n\n%s" % (dev, log)
                     for dev, log in self._get_build_logs())
-            code = e.code
-            routine = e.routine
 
-            err = _cl.RuntimeError(routine, code, what)
+            err = _cl.RuntimeError(msg=what, routine=e.routine, code=e.code)
 
         if err is not None:
             # Python 3.2 outputs the whole list of currently active exceptions
