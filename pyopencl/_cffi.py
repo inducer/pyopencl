@@ -112,20 +112,30 @@ def _get_c_extension_suffix():
             return ext
 
 
-def _get_wrapcl_so_name():
+def _get_wrapcl_so_names():
     import os.path
     current_directory = os.path.dirname(__file__)
 
-    # Copied from pypy's distutils that "should work for CPython too".
-    so_ext = _get_c_extension_suffix()
-    if so_ext is None:
-        from distutils.sysconfig import get_config_var
-        so_ext = get_config_var('SO')     # fall-back
-
     # TODO: windows debug_mode?
-    return os.path.join(current_directory, "_wrapcl" + so_ext)
 
-_lib = _ffi.dlopen(_get_wrapcl_so_name())
+    # Copied from pypy's distutils that "should work for CPython too".
+    yield os.path.join(current_directory, "_wrapcl" + _get_c_extension_suffix())
+
+    from distutils.sysconfig import get_config_var
+    yield os.path.join(current_directory, "_wrapcl" + get_config_var('SO'))
+
+def _import_library():
+    names = list(_get_wrapcl_so_names())
+    for name in names:
+        try:
+            return _ffi.dlopen(name)
+        except OSError:
+            pass
+
+    raise RuntimeError("could not find PyOpenCL wrapper library. (tried: %s)"
+        % ", ".join(names))
+
+_lib = _import_library()
 
 if _lib.pyopencl_have_gl():
     _ffi.cdef(_get_wrap_header("wrap_cl_gl_core.h"))
