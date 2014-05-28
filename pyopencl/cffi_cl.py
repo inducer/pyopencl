@@ -32,8 +32,9 @@ import sys
 
 # TODO: can we do without ctypes?
 import ctypes
-
 from pyopencl._cffi import _ffi, _lib
+
+# {{{ compatibility shims
 
 # are we running on pypy?
 _PYPY = '__pypy__' in sys.builtin_module_names
@@ -49,10 +50,20 @@ else:
     except:
         _bytes = str
 
+
 def _convert_str(s):
     if isinstance(s, _unicode):
         return s.encode()
     return s
+
+try:
+    # Python 2.6 doesn't have this.
+    _ssize_t = ctypes.c_ssize_t
+except AttributeError:
+    _ssize_t = ctypes.c_size_t
+
+# }}}
+
 
 # {{{ wrapper tools
 
@@ -507,21 +518,21 @@ def _c_buffer_from_obj(obj, writable=False):
     # {{{ fall back to the old CPython buffer protocol API
 
     addr = ctypes.c_void_p()
-    length = ctypes.c_ssize_t()
+    length = _ssize_t()
 
     try:
         if writable:
-            status = ctypes.pythonapi.PyObject_AsWriteBuffer(
+            ctypes.pythonapi.PyObject_AsWriteBuffer(
                     ctypes.py_object(obj), ctypes.byref(addr), ctypes.byref(length))
         else:
-            status = ctypes.pythonapi.PyObject_AsReadBuffer(
+            ctypes.pythonapi.PyObject_AsReadBuffer(
                     ctypes.py_object(obj), ctypes.byref(addr), ctypes.byref(length))
+
+        # ctypes check exit status of these, so no need to check for errors.
     except TypeError:
-        raise LogicError("", status_code.INVALID_VALUE,
-                "PyOpencl does not accept bare Python types as arguments")
-    else:
-        if status:
-            raise Exception('TODO error_already_set')
+        raise LogicError(routine=None, code=status_code.INVALID_VALUE,
+                msg="un-sized (pure-Python) types not acceptable as arguments")
+
     return _ffi.cast('void *', addr.value), length.value, None
 
     # }}}
