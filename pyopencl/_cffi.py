@@ -4,21 +4,21 @@ _ffi = FFI()
 _cl_header = """
 
 /* gl.h */
-typedef unsigned int	GLenum;
-typedef int		GLint;		/* 4-byte signed */
-typedef unsigned int	GLuint;		/* 4-byte unsigned */
+typedef unsigned int    GLenum;
+typedef int             GLint;          /* 4-byte signed */
+typedef unsigned int    GLuint;         /* 4-byte unsigned */
 
 
 /* cl.h */
 /* scalar types */
-typedef int8_t		cl_char;
-typedef uint8_t		cl_uchar;
-typedef int16_t		cl_short;
-typedef uint16_t	cl_ushort;
-typedef int32_t		cl_int;
-typedef uint32_t	cl_uint;
-typedef int64_t		cl_long;
-typedef uint64_t	cl_ulong;
+typedef int8_t          cl_char;
+typedef uint8_t         cl_uchar;
+typedef int16_t         cl_short;
+typedef uint16_t        cl_ushort;
+typedef int32_t         cl_int;
+typedef uint32_t        cl_uint;
+typedef int64_t         cl_long;
+typedef uint64_t        cl_ulong;
 
 typedef uint16_t        cl_half;
 typedef float                   cl_float;
@@ -35,7 +35,9 @@ typedef struct _cl_kernel *         cl_kernel;
 typedef struct _cl_event *          cl_event;
 typedef struct _cl_sampler *        cl_sampler;
 
-typedef cl_uint             cl_bool;                     /* WARNING!  Unlike cl_ types in cl_platform.h, cl_bool is not guaranteed to be the same size as the bool in kernels. */
+/* WARNING!  Unlike cl_ types in cl_platform.h, cl_bool is not guaranteed to be
+the same size as the bool in kernels. */
+typedef cl_uint             cl_bool;
 typedef cl_ulong            cl_bitfield;
 typedef cl_bitfield         cl_device_type;
 typedef cl_uint             cl_platform_info;
@@ -101,12 +103,14 @@ def _get_wrap_header(filename):
 _ffi.cdef(_cl_header)
 _ffi.cdef(_get_wrap_header("wrap_cl_core.h"))
 
+
 # Copied from pypy distutils/commands/build_ext.py
 def _get_c_extension_suffix():
     import imp
     for ext, mod, typ in imp.get_suffixes():
         if typ == imp.C_EXTENSION:
             return ext
+
 
 def _get_wrapcl_so_name():
     import os.path
@@ -117,6 +121,7 @@ def _get_wrapcl_so_name():
     if so_ext is None:
         from distutils.sysconfig import get_config_var
         so_ext = get_config_var('SO')     # fall-back
+
     # TODO: windows debug_mode?
     return os.path.join(current_directory, "_wrapcl" + so_ext)
 
