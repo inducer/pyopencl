@@ -251,6 +251,8 @@ def _constant_callback(type_, name, value):
 _lib.populate_constants(_constant_callback)
 
 for type_, d in _constants.iteritems():
+    if sys.version_info >= (3,):
+        type_ = type_.decode()
     locals()[type_] = type(type_, (_NoInit,), d)
 
 # }}}
