@@ -27,6 +27,7 @@ THE SOFTWARE.
 
 import numpy as np
 import pyopencl as cl
+from pyopencl.tools import bitlog2
 
 
 # {{{ allocators
@@ -120,7 +121,7 @@ class MemoryPool(object):
 
     @classmethod
     def bin_number(cls, size):
-        l = max(size.bit_length(), 1) - 1
+        l = bitlog2(size)
 
         mantissa_bits = cls.mantissa_bits
         if l >= mantissa_bits:
