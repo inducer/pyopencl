@@ -937,14 +937,12 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
         bool(is_blocking), _ffi.new_handle(c_buf)))
     return _create_instance(NannyEvent, _event[0])
 
-# TODO: write_image copy_image fill_image
+# TODO: copy_image fill_image
 #    copy_buffer_to_image copy_image_to_buffer
 
 # }}}
 
 # TODO
-#   MemoryMap
-#   enqueue_map_buffer
 #   enqueue_map_image
 
 # {{{ gl interop
