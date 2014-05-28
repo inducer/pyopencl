@@ -119,10 +119,13 @@ def _get_wrapcl_so_names():
     # TODO: windows debug_mode?
 
     # Copied from pypy's distutils that "should work for CPython too".
-    yield os.path.join(current_directory, "_wrapcl" + _get_c_extension_suffix())
+    ext_suffix = _get_c_extension_suffix()
+    if ext_suffix is not None:
+        yield os.path.join(current_directory, "_wrapcl" + ext_suffix)
 
     from distutils.sysconfig import get_config_var
     yield os.path.join(current_directory, "_wrapcl" + get_config_var('SO'))
+
 
 def _import_library():
     names = list(_get_wrapcl_so_names())
