@@ -123,6 +123,19 @@ def _get_wrapcl_so_names():
     if ext_suffix is not None:
         yield os.path.join(current_directory, "_wrapcl" + ext_suffix)
 
+        # Oh god. Chop hyphen-separated bits off the end, in the hope that
+        # something matches...
+
+        root, ext = os.path.splitext(ext_suffix)
+        while True:
+            last_hyphen = root.rfind("-")
+            if last_hyphen == -1:
+                break
+            root = root[:last_hyphen]
+            yield os.path.join(current_directory, "_wrapcl" + root + ext)
+
+        yield os.path.join(current_directory, "_wrapcl" + ext)
+
     from distutils.sysconfig import get_config_var
     yield os.path.join(current_directory, "_wrapcl" + get_config_var('SO'))
 
