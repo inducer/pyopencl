@@ -88,7 +88,8 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False
 
                 args = cl_array.arange(queue, a, b, (b-a)/s, dtype=dtype)
                 if dtype.kind == "c":
-                    args = args+dtype.type(1j)*args
+                    # args = args + dtype.type(1j) * args
+                    args = args + args * dtype.type(1j)
 
                 gpu_results = gpu_func(args).get()
                 cpu_results = cpu_func(args.get())
@@ -124,6 +125,40 @@ if have_cl():
     test_sinh = make_unary_function_test("sinh", (-3, 3), 2e-6, use_complex=2e-3)
     test_cosh = make_unary_function_test("cosh", (-3, 3), 2e-6, use_complex=2e-3)
     test_tanh = make_unary_function_test("tanh", (-3, 3), 2e-6, use_complex=True)
+
+
+def test_atan2(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    for s in sizes:
+        a = (cl_array.arange(queue, s, dtype=np.float32) - s / 2) / 100
+        a2 = (s / 2 - 1 - cl_array.arange(queue, s, dtype=np.float32)) / 100
+        b = clmath.atan2(a, a2)
+
+        a = a.get()
+        a2 = a2.get()
+        b = b.get()
+
+        for i in range(s):
+            assert abs(math.atan2(a[i], a2[i]) - b[i]) < 1e-6
+
+
+def test_atan2pi(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    for s in sizes:
+        a = (cl_array.arange(queue, s, dtype=np.float32) - s / 2) / 100
+        a2 = (s / 2 - 1 - cl_array.arange(queue, s, dtype=np.float32)) / 100
+        b = clmath.atan2pi(a, a2)
+
+        a = a.get()
+        a2 = a2.get()
+        b = b.get()
+
+        for i in range(s):
+            assert abs(math.atan2(a[i], a2[i]) / math.pi - b[i]) < 1e-6
 
 
 def test_fmod(ctx_factory):

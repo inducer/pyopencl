@@ -445,6 +445,13 @@ def test_random(ctx_factory):
 # {{{ misc
 
 def test_numpy_integer_shape(ctx_factory):
+    try:
+        list(np.int32(17))
+    except:
+        pass
+    else:
+        from pytest import skip
+        skip("numpy implementation does not handle scalar correctly.")
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
