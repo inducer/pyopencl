@@ -38,6 +38,7 @@ from pyopencl.compyte.array import (
         c_contiguous_strides as _c_contiguous_strides,
         ArrayFlags as _ArrayFlags,
         get_common_dtype as _get_common_dtype_base)
+from pyopencl.compyte.dtypes import DTypeDict as _DTypeDict
 from pyopencl.characterize import has_double_support
 
 
@@ -45,6 +46,17 @@ def _get_common_dtype(obj1, obj2, queue):
     return _get_common_dtype_base(obj1, obj2,
             has_double_support(queue.device))
 
+# Work around PyPy not currently supporting the object dtype.
+# (Yes, it doesn't even support checking!)
+# (as of May 27, 2014 on PyPy 2.3)
+try:
+    np.dtype(object)
+
+    def _dtype_is_object(t):
+        return t == object
+except:
+    def _dtype_is_object(t):
+        return False
 
 # {{{ vector types
 
@@ -58,7 +70,7 @@ def _create_vector_types():
     from pyopencl.tools import get_or_register_dtype
 
     vec.types = {}
-    vec.type_to_scalar_and_count = {}
+    vec.type_to_scalar_and_count = _DTypeDict()
 
     counts = [2, 3, 4, 8, 16]
 
@@ -90,10 +102,18 @@ def _create_vector_types():
             if len(titles) < len(names):
                 titles.extend((len(names)-len(titles))*[None])
 
-            dtype = np.dtype(dict(
-                names=names,
-                formats=[base_type]*padded_count,
-                titles=titles))
+            try:
+                dtype = np.dtype(dict(
+                    names=names,
+                    formats=[base_type]*padded_count,
+                    titles=titles))
+            except NotImplementedError:
+                try:
+                    dtype = np.dtype([((n, title), base_type)
+                                      for (n, title) in zip(names, titles)])
+                except TypeError:
+                    dtype = np.dtype([(n, base_type) for (n, title)
+                                      in zip(names, titles)])
 
             get_or_register_dtype(name, dtype)
 
@@ -498,7 +518,7 @@ class Array(object):
 
         # }}}
 
-        if dtype == object:
+        if _dtype_is_object(dtype):
             raise TypeError("object arrays on the compute device are not allowed")
 
         self.queue = queue
@@ -1470,7 +1490,7 @@ def to_device(queue, ary, allocator=None, async=False):
         *context* argument was deprecated.
     """
 
-    if ary.dtype == object:
+    if _dtype_is_object(ary.dtype):
         raise RuntimeError("to_device does not work on object arrays.")
 
     result = Array(queue, ary.shape, ary.dtype,
