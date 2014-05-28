@@ -50,3 +50,10 @@ core
 *.sess
 _build
 .ipynb_checkpoints
+
+# needed by jenkins env
+.env
+virtualenv-[0-9]*
+pytest.xml
+setuptools*tar.gz
+build-and-test-py-project.sh
