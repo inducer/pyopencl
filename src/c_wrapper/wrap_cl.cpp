@@ -1514,11 +1514,9 @@ private:
     command_queue m_queue;
     memory_object m_mem;
     void *m_ptr;
-    size_t m_size;
 public:
-    memory_map(const command_queue *queue, const memory_object *mem,
-               void *ptr, size_t size)
-        : m_valid(true), m_queue(*queue), m_mem(*mem), m_ptr(ptr), m_size(size)
+    memory_map(const command_queue *queue, const memory_object *mem, void *ptr)
+        : m_valid(true), m_queue(*queue), m_mem(*mem), m_ptr(ptr)
     {}
     ~memory_map()
     {
@@ -1557,11 +1555,6 @@ public:
     data() const
     {
         return m_valid ? m_ptr : NULL;
-    }
-    size_t
-    size() const
-    {
-        return m_valid ? m_size : 0;
     }
 };
 
@@ -2073,12 +2066,6 @@ memory_map__data(clobj_t _map)
     return static_cast<memory_map*>(_map)->data();
 }
 
-size_t
-memory_map__size(clobj_t _map)
-{
-    return static_cast<memory_map*>(_map)->size();
-}
-
 // Program
 error*
 create_program_with_source(clobj_t *prog, clobj_t _ctx, const char *src)
@@ -2412,6 +2399,24 @@ enqueue_barrier(clobj_t _queue)
         });
 }
 
+static memory_map*
+_convert_memory_map(clobj_t *_evt, cl_event evt, command_queue *queue,
+                    memory_object *buf, void *res)
+{
+    try {
+        *_evt = new event(evt, false);
+        evt = 0;
+        return new memory_map(queue, buf, res);
+    } catch (...) {
+        if (evt) {
+            pyopencl_call_guarded_cleanup(clReleaseEvent, evt);
+        }
+        pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, queue->data(),
+                                      buf->data(), res, 0, NULL, NULL);
+        throw;
+    }
+}
+
 // {{{ enqueue_*_buffer*
 
 error*
@@ -2505,19 +2510,7 @@ enqueue_map_buffer(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
                         cast_bool(block), flags, offset, size, num_wait_for,
                         wait_for.get(), &evt);
                 });
-            try {
-                *_evt = new event(evt, false);
-                evt = 0;
-                *map = new memory_map(queue, buf, res, size);
-            } catch (...) {
-                if (evt) {
-                    pyopencl_call_guarded_cleanup(clReleaseEvent, evt);
-                }
-                pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject,
-                                              queue->data(), buf->data(),
-                                              res, 0, NULL, NULL);
-                throw;
-            }
+            *map = _convert_memory_map(_evt, evt, queue, buf, res);
         });
 }
 
@@ -2547,8 +2540,8 @@ enqueue_fill_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem, void *pattern,
 
 error*
 enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
-                   const size_t *origin, size_t origin_l,
-                   const size_t *region, size_t region_l, void *buffer,
+                   const size_t *_origin, size_t origin_l,
+                   const size_t *_region, size_t region_l, void *buffer,
                    size_t row_pitch, size_t slice_pitch,
                    const clobj_t *_wait_for, uint32_t num_wait_for,
                    int is_blocking, void *pyobj)
@@ -2556,16 +2549,8 @@ enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(_mem);
-    size_t _origin[3] = {0};
-    if (origin_l < 3) {
-        memcpy(_origin, origin, sizeof(size_t) * origin_l);
-        origin = _origin;
-    }
-    size_t _region[3] = {0};
-    if (region_l < 3) {
-        memcpy(_region, region, sizeof(size_t) * region_l);
-        region = _region;
-    }
+    ConstBuffer<size_t, 3> origin(_origin, origin_l);
+    ConstBuffer<size_t, 3> region(_region, region_l);
     return c_handle_error([&] {
             cl_event evt;
             retry_mem_error<void>([&] {
@@ -2581,8 +2566,8 @@ enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
 
 error*
 enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
-                    const size_t *origin, size_t origin_l,
-                    const size_t *region, size_t region_l,
+                    const size_t *_origin, size_t origin_l,
+                    const size_t *_region, size_t region_l,
                     const void *buffer, size_t row_pitch, size_t slice_pitch,
                     const clobj_t *_wait_for, uint32_t num_wait_for,
                     int is_blocking, void *pyobj)
@@ -2590,16 +2575,8 @@ enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(_mem);
-    size_t _origin[3] = {0};
-    if (origin_l < 3) {
-        memcpy(_origin, origin, sizeof(size_t) * origin_l);
-        origin = _origin;
-    }
-    size_t _region[3] = {0};
-    if (region_l < 3) {
-        memcpy(_region, region, sizeof(size_t) * region_l);
-        region = _region;
-    }
+    ConstBuffer<size_t, 3> origin(_origin, origin_l);
+    ConstBuffer<size_t, 3> region(_region, region_l);
     return c_handle_error([&] {
             cl_event evt;
             retry_mem_error<void>([&] {
@@ -2610,6 +2587,30 @@ enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                         wait_for.get(), &evt);
                 });
             *_evt = new_nanny_event(evt, pyobj);
+        });
+}
+
+error*
+enqueue_map_image(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
+                  cl_map_flags flags, const size_t *_origin, size_t origin_l,
+                  const size_t *_region, size_t region_l, size_t *row_pitch,
+                  size_t *slice_pitch, const clobj_t *_wait_for,
+                  uint32_t num_wait_for, int block)
+{
+    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    auto queue = static_cast<command_queue*>(_queue);
+    auto img = static_cast<image*>(_mem);
+    ConstBuffer<size_t, 3> origin(_origin, origin_l);
+    ConstBuffer<size_t, 3> region(_region, region_l);
+    return c_handle_error([&] {
+            cl_event evt;
+            void *res = retry_mem_error<void*>([&] {
+                    return pyopencl_call_guarded(
+                        clEnqueueMapImage, queue->data(), img->data(),
+                        cast_bool(block), flags, origin, region, row_pitch,
+                        slice_pitch, num_wait_for, wait_for.get(), &evt);
+                });
+            *map = _convert_memory_map(_evt, evt, queue, img, res);
         });
 }
 

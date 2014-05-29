@@ -74,7 +74,6 @@ error *memory_map__release(clobj_t _map, clobj_t _queue,
                            const clobj_t *_wait_for, uint32_t num_wait_for,
                            clobj_t *evt);
 void *memory_map__data(clobj_t _map);
-size_t memory_map__size(clobj_t _map);
 // Program
 error *create_program_with_source(clobj_t *program, clobj_t context,
                                   const char *src);
@@ -174,6 +173,13 @@ error *enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                            size_t slice_pitch, const clobj_t *_wait_for,
                            uint32_t num_wait_for, int is_blocking,
                            void *pyobj);
+error *enqueue_map_image(clobj_t *_evt, clobj_t *map, clobj_t _queue,
+                         clobj_t _mem, cl_map_flags flags,
+                         const size_t *_origin, size_t origin_l,
+                         const size_t *_region, size_t region_l,
+                         size_t *row_pitch, size_t *slice_pitch,
+                         const clobj_t *_wait_for, uint32_t num_wait_for,
+                         int block);
 // CL Object
 intptr_t clobj__int_ptr(clobj_t obj);
 error *clobj__get_info(clobj_t obj, cl_uint param, generic_info *out);

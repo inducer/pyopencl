@@ -468,6 +468,14 @@ class MemoryMap(_Common):
             self.ptr, queue.ptr if queue is not None else _ffi.NULL,
             c_wait_for, num_wait_for, _event))
         return _create_instance(Event, _event[0])
+    def _init_array(self, shape, typestr, strides):
+        self.__array_interface__ = {
+            'shape': shape,
+            'typestr': typestr,
+            'strides': strides,
+            'data': (int(_lib.clobj__int_ptr(self.ptr)), False),
+            'version': 3
+        }
 
 def _c_buffer_from_obj(obj, writable=False):
     """Convert a Python object to a tuple (cdata('void *'), num_bytes, dummy)
@@ -880,13 +888,7 @@ def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
                                           num_wait_for, bool(is_blocking)))
     event = _create_instance(Event, _event[0])
     map = _create_instance(MemoryMap, _map[0])
-    map.__array_interface__ = {
-        'shape': shape,
-        'typestr': dtype.str,
-        'strides': strides,
-        'data': (int(_lib.clobj__int_ptr(_map[0])), False),
-        'version': 3
-        }
+    map._init_array(shape, dtype.str, strides)
     return np.asarray(map), event
 
 def _enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
@@ -937,13 +939,31 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
         bool(is_blocking), _ffi.new_handle(c_buf)))
     return _create_instance(NannyEvent, _event[0])
 
+def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
+                      order="C", strides=None, wait_for=None, is_blocking=True):
+    origin_l = len(origin)
+    region_l = len(region)
+    if origin_l > 3 or region_l > 3:
+        raise RuntimeError("origin or region has too many components",
+                           "enqueue_read_image")
+    _event = _ffi.new('clobj_t*')
+    _map = _ffi.new('clobj_t*')
+    _row_pitch = _ffi.new('size_t*')
+    _slice_pitch = _ffi.new('size_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_map_image(_event, _map, queue.ptr, img.ptr,
+                                         flags, origin, origin_l, region,
+                                         region_l, _row_pitch, _slice_pitch,
+                                         c_wait_for, num_wait_for, is_blocking))
+    event = _create_instance(Event, _event[0])
+    map = _create_instance(MemoryMap, _map[0])
+    map._init_array(shape, dtype.str, strides)
+    return np.asarray(map), event, _row_pitch[0], _slice_pitch[0]
+
 # TODO: copy_image fill_image
 #    copy_buffer_to_image copy_image_to_buffer
 
 # }}}
-
-# TODO
-#   enqueue_map_image
 
 # {{{ gl interop
 

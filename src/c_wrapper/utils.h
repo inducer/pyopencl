@@ -69,6 +69,26 @@ public:
 
 namespace pyopencl {
 
+template<typename T, size_t n>
+class ConstBuffer {
+private:
+    T m_intern_buf[n];
+    const T *m_buf;
+public:
+    ConstBuffer(const T *buf, size_t l)
+        : m_buf(buf)
+    {
+        if (l < n) {
+            memcpy(m_intern_buf, buf, sizeof(T) * std::min(l, n));
+            m_buf = m_intern_buf;
+        }
+    }
+    operator const T*()
+    {
+        return m_buf;
+    }
+};
+
 template<typename T>
 static inline cl_bool
 cast_bool(const T &v)
