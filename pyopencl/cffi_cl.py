@@ -922,13 +922,28 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
         bool(is_blocking), _ffi.new_handle(c_buf)))
     return _create_instance(NannyEvent, ptr_event[0])
 
+def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
+                        wait_for=None):
+    src_origin_l = len(src_origin)
+    dest_origin_l = len(dest_origin)
+    region_l = len(region)
+    if src_origin_l > 3 or dest_origin_l > 3 or region_l > 3:
+        raise RuntimeError("(src/dest)origin or region has too many components",
+                           "enqueue_copy_image")
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_copy_image(
+        _event, queue.ptr, src.ptr, dest.ptr, src_origin, src_origin_l,
+        dest_origin, dest_origin_l, region, region_l, c_wait_for, num_wait_for))
+    return _create_instance(Event, ptr_event[0])
+
 def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
                          slice_pitch=0, wait_for=None, is_blocking=True):
     origin_l = len(origin)
     region_l = len(region)
     if origin_l > 3 or region_l > 3:
         raise RuntimeError("origin or region has too many components",
-                           "enqueue_read_image")
+                           "enqueue_write_image")
     c_buf, size, _ = _c_buffer_from_obj(hostbuf)
     _event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
@@ -945,7 +960,7 @@ def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
     region_l = len(region)
     if origin_l > 3 or region_l > 3:
         raise RuntimeError("origin or region has too many components",
-                           "enqueue_read_image")
+                           "enqueue_map_image")
     _event = _ffi.new('clobj_t*')
     _map = _ffi.new('clobj_t*')
     _row_pitch = _ffi.new('size_t*')
@@ -960,8 +975,7 @@ def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
     map._init_array(shape, dtype.str, strides)
     return np.asarray(map), event, _row_pitch[0], _slice_pitch[0]
 
-# TODO: copy_image fill_image
-#    copy_buffer_to_image copy_image_to_buffer
+# TODO: fill_image copy_buffer_to_image copy_image_to_buffer
 
 # }}}
 

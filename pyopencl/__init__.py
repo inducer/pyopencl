@@ -868,7 +868,7 @@ def _mark_copy_deprecated(func):
 
 enqueue_read_image = _mark_copy_deprecated(_cl._enqueue_read_image)
 enqueue_write_image = _mark_copy_deprecated(_cl._enqueue_write_image)
-# enqueue_copy_image = _mark_copy_deprecated(_cl._enqueue_copy_image)
+enqueue_copy_image = _mark_copy_deprecated(_cl._enqueue_copy_image)
 # enqueue_copy_image_to_buffer = _mark_copy_deprecated(
 #         _cl._enqueue_copy_image_to_buffer)
 # enqueue_copy_buffer_to_image = _mark_copy_deprecated(

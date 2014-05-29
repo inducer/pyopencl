@@ -1132,33 +1132,6 @@ new_image(cl_mem mem, void *buff=0)
 // {{{ image transfers
 
   //   inline
-  //   event *enqueue_copy_image(
-  //       command_queue &cq,
-  //       memory_object_holder &src,
-  //       memory_object_holder &dest,
-  //       py::object py_src_origin,
-  //       py::object py_dest_origin,
-  //       py::object py_region,
-  //       py::object py_wait_for
-  //       )
-  //   {
-  //     PYOPENCL_PARSE_WAIT_FOR;
-  //     COPY_PY_COORD_TRIPLE(src_origin);
-  //     COPY_PY_COORD_TRIPLE(dest_origin);
-  //     COPY_PY_REGION_TRIPLE(region);
-
-  //     cl_event evt;
-  //     PYOPENCL_RETRY_IF_MEM_ERROR(
-  //       PYOPENCL_CALL_GUARDED(clEnqueueCopyImage, (
-  //             cq.data(), src.data(), dest.data(),
-  //             src_origin, dest_origin, region,
-  //             PYOPENCL_WAITLIST_ARGS, &evt
-  //             ));
-  //       );
-  //     PYOPENCL_RETURN_NEW_EVENT(evt);
-  //   }
-
-  //   inline
   //   event *enqueue_copy_image_to_buffer(
   //       command_queue &cq,
   //       memory_object_holder &src,
@@ -2561,6 +2534,32 @@ enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                         wait_for.get(), &evt);
                 });
             *_evt = new_nanny_event(evt, pyobj);
+        });
+}
+
+error*
+enqueue_copy_image(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
+                   const size_t *_src_origin, size_t src_origin_l,
+                   const size_t *_dst_origin, size_t dst_origin_l,
+                   const size_t *_region, size_t region_l,
+                   const clobj_t *_wait_for, uint32_t num_wait_for)
+{
+    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    auto queue = static_cast<command_queue*>(_queue);
+    auto src = static_cast<image*>(_src);
+    auto dst = static_cast<image*>(_dst);
+    ConstBuffer<size_t, 3> src_origin(_src_origin, src_origin_l);
+    ConstBuffer<size_t, 3> dst_origin(_dst_origin, dst_origin_l);
+    ConstBuffer<size_t, 3> region(_region, region_l);
+    return c_handle_error([&] {
+            cl_event evt;
+            retry_mem_error<void>([&] {
+                    pyopencl_call_guarded(
+                        clEnqueueCopyImage, queue->data(), src->data(),
+                        dst->data(), src_origin, dst_origin, region,
+                        num_wait_for, wait_for.get(), &evt);
+                });
+            *_evt = new_event(evt);
         });
 }
 

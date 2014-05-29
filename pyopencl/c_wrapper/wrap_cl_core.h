@@ -166,6 +166,12 @@ error *enqueue_read_image(clobj_t *event, clobj_t queue, clobj_t mem,
                           void *buffer, size_t row_pitch, size_t slice_pitch,
                           const clobj_t *wait_for, uint32_t num_wait_for,
                           int is_blocking, void *pyobj);
+error *enqueue_copy_image(clobj_t *_evt, clobj_t _queue, clobj_t _src,
+                          clobj_t _dst, const size_t *_src_origin,
+                          size_t src_origin_l, const size_t *_dst_origin,
+                          size_t dst_origin_l, const size_t *_region,
+                          size_t region_l, const clobj_t *_wait_for,
+                          uint32_t num_wait_for);
 error *enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                            const size_t *origin, size_t origin_l,
                            const size_t *region, size_t region_l,
