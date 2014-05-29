@@ -1209,7 +1209,7 @@ class Image(MemoryObject):
             return (self.width, self.height, self.depth)
         else:
             raise LogicError("Image", status_code.INVALID_VALUE,
-                    "only images have shapes")
+                             "only images have shapes")
 
 # TODO
 #   create_image_from_desc

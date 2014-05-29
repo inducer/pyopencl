@@ -1015,11 +1015,21 @@ public:
 // {{{ image
 
 class image : public memory_object {
+private:
+    cl_image_format m_format;
 public:
     PYOPENCL_DEF_GET_CLASS_T(IMAGE);
-    image(cl_mem mem, bool retain, void *hostbuf=0)
+    image(cl_mem mem, bool retain, void *hostbuf=0,
+          const cl_image_format *fmt=0)
         : memory_object(mem, retain, hostbuf)
-    {}
+    {
+        if (fmt) {
+            memcpy(&m_format, fmt, sizeof(m_format));
+        } else {
+            pyopencl_call_guarded(clGetImageInfo, data(), CL_IMAGE_FORMAT,
+                                  sizeof(m_format), &m_format, NULL);
+        }
+    }
     generic_info
     get_image_info(cl_image_info param_name) const
     {
@@ -1062,11 +1072,27 @@ public:
             throw clerror("Image.get_image_info", CL_INVALID_VALUE);
         }
     }
+    inline type_t
+    get_fill_type()
+    {
+        switch (m_format.image_channel_data_type) {
+        case CL_SIGNED_INT8:
+        case CL_SIGNED_INT16:
+        case CL_SIGNED_INT32:
+            return TYPE_INT;
+        case CL_UNSIGNED_INT8:
+        case CL_UNSIGNED_INT16:
+        case CL_UNSIGNED_INT32:
+            return TYPE_UINT;
+        default:
+            return TYPE_FLOAT;
+        }
+    }
 };
 static inline image*
-new_image(cl_mem mem, void *buff=0)
+new_image(cl_mem mem, void *buff, const cl_image_format *fmt)
 {
-    return pyopencl_convert_obj(image, clReleaseMemObject, mem, buff);
+    return pyopencl_convert_obj(image, clReleaseMemObject, mem, buff, fmt);
 }
 
 // {{{ image creation
@@ -1184,40 +1210,6 @@ new_image(cl_mem mem, void *buff=0)
   //   }
 
   //   // }}}
-
-  // #if PYOPENCL_CL_VERSION >= 0x1020
-  //   inline
-  //   event *enqueue_fill_image(
-  //       command_queue &cq,
-  //       memory_object_holder &mem,
-  //       py::object color,
-  //       py::object py_origin, py::object py_region,
-  //       py::object py_wait_for
-  //       )
-  //   {
-  //     PYOPENCL_PARSE_WAIT_FOR;
-
-  //     COPY_PY_COORD_TRIPLE(origin);
-  //     COPY_PY_REGION_TRIPLE(region);
-
-  //     const void *color_buf;
-  //     PYOPENCL_BUFFER_SIZE_T color_len;
-
-  //     if (PyObject_AsReadBuffer(color.ptr(), &color_buf, &color_len))
-  //       throw py::error_already_set();
-
-  //     cl_event evt;
-  //     PYOPENCL_RETRY_IF_MEM_ERROR(
-  //       PYOPENCL_CALL_GUARDED(clEnqueueFillImage, (
-  //             cq.data(),
-  //             mem.data(),
-  //             color_buf, origin, region,
-  //             PYOPENCL_WAITLIST_ARGS, &evt
-  //             ));
-  //       );
-  //     PYOPENCL_RETURN_NEW_EVENT(evt);
-  //   }
-  // #endif
 
 // }}}
 
@@ -2187,7 +2179,7 @@ create_image_2d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
                         fmt, width, height, pitch, buffer);
                 });
             *img = new_image(mem, (flags & CL_MEM_USE_HOST_PTR ?
-                                   buffer : NULL));
+                                   buffer : NULL), fmt);
         });
 }
 
@@ -2204,7 +2196,7 @@ create_image_3d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
                         height, depth, pitch_x, pitch_y, buffer);
                 });
             *img = new_image(mem, (flags & CL_MEM_USE_HOST_PTR ?
-                                   buffer : NULL));
+                                   buffer : NULL), fmt);
         });
 }
 
@@ -2214,6 +2206,12 @@ image__get_image_info(clobj_t img, cl_image_info param, generic_info *out)
     return c_handle_error([&] {
             *out = static_cast<image*>(img)->get_image_info(param);
         });
+}
+
+type_t
+image__get_fill_type(clobj_t img)
+{
+    return static_cast<image*>(img)->get_fill_type();
 }
 
 
@@ -2612,6 +2610,40 @@ enqueue_map_image(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
             *map = _convert_memory_map(_evt, evt, queue, img, res);
         });
 }
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+  //   inline
+  //   event *enqueue_fill_image(
+  //       command_queue &cq,
+  //       memory_object_holder &mem,
+  //       py::object color,
+  //       py::object py_origin, py::object py_region,
+  //       py::object py_wait_for
+  //       )
+  //   {
+  //     PYOPENCL_PARSE_WAIT_FOR;
+
+  //     COPY_PY_COORD_TRIPLE(origin);
+  //     COPY_PY_REGION_TRIPLE(region);
+
+  //     const void *color_buf;
+  //     PYOPENCL_BUFFER_SIZE_T color_len;
+
+  //     if (PyObject_AsReadBuffer(color.ptr(), &color_buf, &color_len))
+  //       throw py::error_already_set();
+
+  //     cl_event evt;
+  //     PYOPENCL_RETRY_IF_MEM_ERROR(
+  //       PYOPENCL_CALL_GUARDED(clEnqueueFillImage, (
+  //             cq.data(),
+  //             mem.data(),
+  //             color_buf, origin, region,
+  //             PYOPENCL_WAITLIST_ARGS, &evt
+  //             ));
+  //       );
+  //     PYOPENCL_RETURN_NEW_EVENT(evt);
+  //   }
+#endif
 
 // }}}
 

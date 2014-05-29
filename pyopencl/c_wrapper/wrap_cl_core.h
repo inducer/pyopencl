@@ -2,6 +2,12 @@
 
 // Types
 typedef enum {
+    TYPE_FLOAT,
+    TYPE_INT,
+    TYPE_UINT,
+} type_t;
+
+typedef enum {
     KND_UNKNOWN,
     KND_SOURCE,
     KND_BINARY
@@ -107,8 +113,9 @@ error *create_image_3d(clobj_t *image, clobj_t context, cl_mem_flags flags,
                        cl_image_format *fmt, size_t width, size_t height,
                        size_t depth, size_t pitch_x, size_t pitch_y,
                        void *buffer);
-error *image__get_image_info(clobj_t image, cl_image_info param,
+error *image__get_image_info(clobj_t img, cl_image_info param,
                              generic_info *out);
+type_t image__get_fill_type(clobj_t img);
 // Event
 error *event__get_profiling_info(clobj_t event, cl_profiling_info param,
                                  generic_info *out);
