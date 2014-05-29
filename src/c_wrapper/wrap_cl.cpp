@@ -1132,39 +1132,6 @@ new_image(cl_mem mem, void *buff=0)
 // {{{ image transfers
 
   //   inline
-  //   event *enqueue_write_image(
-  //       command_queue &cq,
-  //       image &img,
-  //       py::object py_origin, py::object py_region,
-  //       py::object buffer,
-  //       size_t row_pitch, size_t slice_pitch,
-  //       py::object py_wait_for,
-  //       bool is_blocking)
-  //   {
-  //     PYOPENCL_PARSE_WAIT_FOR;
-  //     COPY_PY_COORD_TRIPLE(origin);
-  //     COPY_PY_REGION_TRIPLE(region);
-
-  //     const void *buf;
-  //     PYOPENCL_BUFFER_SIZE_T len;
-
-  //     if (PyObject_AsReadBuffer(buffer.ptr(), &buf, &len))
-  //       throw py::error_already_set();
-
-  //     cl_event evt;
-  //     PYOPENCL_RETRY_IF_MEM_ERROR(
-  //       PYOPENCL_CALL_GUARDED(clEnqueueWriteImage, (
-  //             cq.data(),
-  //             img.data(),
-  //             PYOPENCL_CAST_BOOL(is_blocking),
-  //             origin, region, row_pitch, slice_pitch, buf,
-  //             PYOPENCL_WAITLIST_ARGS, &evt
-  //             ));
-  //       );
-  //     PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, buffer);
-  //   }
-
-  //   inline
   //   event *enqueue_copy_image(
   //       command_queue &cq,
   //       memory_object_holder &src,
@@ -1216,9 +1183,6 @@ new_image(cl_mem mem, void *buff=0)
   //       );
   //     PYOPENCL_RETURN_NEW_EVENT(evt);
   //   }
-
-
-
 
   //   inline
   //   event *enqueue_copy_buffer_to_image(
