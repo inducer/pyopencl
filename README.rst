@@ -40,5 +40,5 @@ Places on the web related to PyOpenCL:
       :target: http://pypi.python.org/pypi/pyopencl
 * `C. Gohlke's Windows binaries <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`_ (download Windows binaries)
 * `Github <http://github.com/pyopencl/pyopencl>`_ (get latest source code, file bugs)
-* `Documentation <http://documen.tician.de>`_ (read how things work)
+* `Documentation <http://documen.tician.de/pyopencl>`_ (read how things work)
 * `Wiki <http://wiki.tiker.net/PyOpenCL>`_ (read installation tips, get examples, read FAQ)
