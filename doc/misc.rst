@@ -31,7 +31,7 @@ PyOpenCL comes with IPython integration, which lets you seamlessly integrate
 PyOpenCL kernels into your IPython notebooks. Simply load the PyOpenCL 
 IPython extension using::
 
-    %load_ext pyopencl.ipython
+    %load_ext pyopencl.ipython_ext
 
 and then use the ``%%cl_kernel`` 'cell-magic' command. See `this notebook
 <http://nbviewer.ipython.org/urls/raw.githubusercontent.com/pyopencl/pyopencl/master/examples/ipython-demo.ipynb>`_

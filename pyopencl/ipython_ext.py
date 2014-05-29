@@ -4,9 +4,6 @@ from IPython.core.magic import (magics_class, Magics, cell_magic)
 
 import pyopencl as cl
 
-from warnings import warn
-warn("pyopencl.ipython is deprecated. Use pyopencl.ipython_ext instead.")
-
 
 @magics_class
 class PyOpenCLMagics(Magics):
