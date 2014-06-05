@@ -35,49 +35,6 @@ pyopencl_get_ext_fun(cl_platform_id, const char *name, const char *err)
 
 // }}}
 
-// {{{ more odds and ends
-
-#ifdef HAVE_GL
-#define GL_SWITCHCLASS(OPERATION) \
-  case ::CLASS_GL_BUFFER: OPERATION(GL_BUFFER, gl_buffer); break; \
-  case ::CLASS_GL_RENDERBUFFER: OPERATION(GL_RENDERBUFFER, gl_renderbuffer); break;
-#else
-#define GL_SWITCHCLASS(OPERATION) \
-  case ::CLASS_GL_BUFFER: \
-  case ::CLASS_GL_RENDERBUFFER:
-#endif
-
-#define SWITCHCLASS(OPERATION)                                          \
-  switch(class_) {                                                      \
-  case ::CLASS_PLATFORM: OPERATION(PLATFORM, platform); break;          \
-  case ::CLASS_DEVICE: OPERATION(DEVICE, device); break;                \
-  case ::CLASS_KERNEL: OPERATION(KERNEL, kernel); break;                \
-  case ::CLASS_CONTEXT: OPERATION(CONTEXT, context); break;             \
-  case ::CLASS_COMMAND_QUEUE: OPERATION(COMMAND_QUEUE, command_queue); break; \
-  case ::CLASS_BUFFER: OPERATION(BUFFER, buffer); break;                \
-  case ::CLASS_PROGRAM: OPERATION(PROGRAM, program); break;             \
-  case ::CLASS_EVENT: OPERATION(EVENT, event); break;                   \
-  case ::CLASS_IMAGE: OPERATION(IMAGE, image); break; \
-  case ::CLASS_SAMPLER: OPERATION(SAMPLER, sampler); break; \
-  GL_SWITCHCLASS(OPERATION) \
-  default: throw pyopencl::clerror("unknown class", CL_INVALID_VALUE);    \
-  }
-
-#define PYOPENCL_CL_PLATFORM cl_platform_id
-#define PYOPENCL_CL_DEVICE cl_device_id
-#define PYOPENCL_CL_KERNEL cl_kernel
-#define PYOPENCL_CL_CONTEXT cl_context
-#define PYOPENCL_CL_COMMAND_QUEUE cl_command_queue
-#define PYOPENCL_CL_BUFFER cl_mem
-#define PYOPENCL_CL_PROGRAM cl_program
-#define PYOPENCL_CL_EVENT cl_event
-#define PYOPENCL_CL_GL_BUFFER cl_mem
-#define PYOPENCL_CL_GL_RENDERBUFFER cl_mem
-#define PYOPENCL_CL_IMAGE cl_mem
-#define PYOPENCL_CL_SAMPLER cl_sampler
-
-// }}}
-
 namespace pyopencl {
 
 // {{{ platform
@@ -2653,15 +2610,46 @@ clobj__int_ptr(clobj_t obj)
     return obj->intptr();
 }
 
-error*
-_from_int_ptr(clobj_t *ptr_out, intptr_t int_ptr_value, class_t class_)
+static inline clobj_t
+_from_int_ptr(intptr_t ptr, class_t class_)
 {
-#define FROM_INT_PTR(CLSU, CLS)                                         \
-    *ptr_out = new CLS((PYOPENCL_CL_##CLSU)int_ptr_value,     \
-                                 /* retain */ true);
+    switch(class_) {
+    case CLASS_PLATFORM:
+        return clobj_from_int_ptr<platform>(ptr);
+    case CLASS_DEVICE:
+        return clobj_from_int_ptr<device>(ptr);
+    case CLASS_KERNEL:
+        return clobj_from_int_ptr<kernel>(ptr);
+    case CLASS_CONTEXT:
+        return clobj_from_int_ptr<context>(ptr);
+    case CLASS_COMMAND_QUEUE:
+        return clobj_from_int_ptr<command_queue>(ptr);
+    case CLASS_BUFFER:
+        return clobj_from_int_ptr<buffer>(ptr);
+    case CLASS_PROGRAM:
+        return clobj_from_int_ptr<program>(ptr);
+    case CLASS_EVENT:
+        return clobj_from_int_ptr<event>(ptr);
+    case CLASS_IMAGE:
+        return clobj_from_int_ptr<image>(ptr);
+    case CLASS_SAMPLER:
+        return clobj_from_int_ptr<sampler>(ptr);
+#ifdef HAVE_GL
+    case CLASS_GL_BUFFER:
+        return clobj_from_int_ptr<gl_buffer>(ptr);
+    case CLASS_GL_RENDERBUFFER:
+        return clobj_from_int_ptr<gl_renderbuffer>(ptr);
+#endif
+    default:
+        throw pyopencl::clerror("unknown class", CL_INVALID_VALUE);
+  }
+}
 
+error*
+clobj__from_int_ptr(clobj_t *out, intptr_t ptr, class_t class_)
+{
     return c_handle_error([&] {
-            SWITCHCLASS(FROM_INT_PTR);
+            *out = _from_int_ptr(ptr, class_);
         });
 }
 

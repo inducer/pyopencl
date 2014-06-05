@@ -130,6 +130,13 @@ public:
     }
 };
 
+template<typename CLObj>
+static PYOPENCL_INLINE CLObj*
+clobj_from_int_ptr(intptr_t ptr)
+{
+    return new CLObj(reinterpret_cast<typename CLObj::cl_type>(ptr), true);
+}
+
 template<typename T, typename T2>
 PYOPENCL_USE_RESULT static inline pyopencl_buf<typename T::cl_type>
 buf_from_class(const T2 *buf2, size_t len)

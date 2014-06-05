@@ -197,5 +197,4 @@ error *enqueue_map_image(clobj_t *_evt, clobj_t *map, clobj_t _queue,
 intptr_t clobj__int_ptr(clobj_t obj);
 error *clobj__get_info(clobj_t obj, cl_uint param, generic_info *out);
 void clobj__delete(clobj_t obj);
-
-error *_from_int_ptr(clobj_t *ptr_out, intptr_t int_ptr_value, class_t);
+error *clobj__from_int_ptr(clobj_t *out, intptr_t ptr, class_t);

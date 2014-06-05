@@ -194,7 +194,7 @@ class _Common(object):
     @classmethod
     def from_int_ptr(cls, int_ptr_value):
         ptr = _ffi.new('clobj_t*')
-        _handle_error(_lib._from_int_ptr(
+        _handle_error(_lib.clobj__from_int_ptr(
             ptr, int_ptr_value, getattr(_lib, 'CLASS_%s' % cls._id.upper())))
         return _create_instance(cls, ptr[0])
 
