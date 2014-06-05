@@ -140,7 +140,7 @@ c_handle_error(std::function<void()> func)
 {
     try {
         func();
-        return NULL;
+        return nullptr;
     } catch(const clerror &e) {
         auto err = (::error*)malloc(sizeof(::error));
         err->routine = strdup(e.routine());

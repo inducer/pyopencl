@@ -71,7 +71,7 @@ platform::get_devices(cl_device_type devtype) const
     cl_uint num_devices = 0;
     try {
         pyopencl_call_guarded(clGetDeviceIDs,
-                              data(), devtype, 0, NULL, &num_devices);
+                              data(), devtype, 0, nullptr, &num_devices);
     } catch (const clerror &e) {
         if (e.code() != CL_DEVICE_NOT_FOUND)
             throw e;
@@ -118,7 +118,7 @@ public:
                 cl_platform_id plat;
                 pyopencl_call_guarded(clGetDeviceInfo, data(),
                                       CL_DEVICE_PLATFORM, sizeof(plat),
-                                      &plat, NULL);
+                                      &plat, nullptr);
 #endif
                 pyopencl_call_guarded(
                     pyopencl_get_ext_fun(plat, clRetainDeviceEXT), did);
@@ -147,7 +147,7 @@ public:
 #if PYOPENCL_CL_VERSION >= 0x1020
             cl_platform_id plat;
             pyopencl_call_guarded(clGetDeviceInfo, data(), CL_DEVICE_PLATFORM,
-                                  sizeof(plat), &plat, NULL);
+                                  sizeof(plat), &plat, nullptr);
 #endif
             pyopencl_call_guarded_cleanup(
                 pyopencl_get_ext_fun(plat, clReleaseDeviceEXT), data());
@@ -388,17 +388,17 @@ public:
     //         properties.push_back(0);
 
     //         cl_device_partition_property *props_ptr
-    //           = properties.empty( ) ? NULL : &properties.front();
+    //           = properties.empty( ) ? nullptr : &properties.front();
 
     //         cl_uint num_entries;
     //         PYOPENCL_CALL_GUARDED(clCreateSubDevices,
-    //             (m_device, props_ptr, 0, NULL, &num_entries));
+    //             (m_device, props_ptr, 0, nullptr, &num_entries));
 
     //         std::vector<cl_device_id> result;
     //         result.resize(num_entries);
 
     //         PYOPENCL_CALL_GUARDED(clCreateSubDevices,
-    //             (m_device, props_ptr, num_entries, &result.front(), NULL));
+    //             (m_device, props_ptr, num_entries, &result.front(), nullptr));
 
     //         py::list py_result;
     //         BOOST_FOREACH(cl_device_id did, result)
@@ -417,7 +417,7 @@ public:
     // #if PYOPENCL_CL_VERSION >= 0x1020
     //         cl_platform_id plat;
     //         PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (m_device, CL_DEVICE_PLATFORM,
-    //               sizeof(plat), &plat, NULL));
+    //               sizeof(plat), &plat, nullptr));
     // #endif
 
     //         PYOPENCL_GET_EXT_FUN(plat, clCreateSubDevicesEXT, create_sub_dev);
@@ -426,17 +426,17 @@ public:
     //         properties.push_back(CL_PROPERTIES_LIST_END_EXT);
 
     //         cl_device_partition_property_ext *props_ptr
-    //           = properties.empty( ) ? NULL : &properties.front();
+    //           = properties.empty( ) ? nullptr : &properties.front();
 
     //         cl_uint num_entries;
     //         PYOPENCL_CALL_GUARDED(create_sub_dev,
-    //             (m_device, props_ptr, 0, NULL, &num_entries));
+    //             (m_device, props_ptr, 0, nullptr, &num_entries));
 
     //         std::vector<cl_device_id> result;
     //         result.resize(num_entries);
 
     //         PYOPENCL_CALL_GUARDED(create_sub_dev,
-    //             (m_device, props_ptr, num_entries, &result.front(), NULL));
+    //             (m_device, props_ptr, num_entries, &result.front(), nullptr));
 
     //         py::list py_result;
     //         BOOST_FOREACH(cl_device_id did, result)
@@ -540,10 +540,11 @@ public:
     {
         cl_uint num_image_formats;
         pyopencl_call_guarded(clGetSupportedImageFormats, data(), flags,
-                              image_type, 0, NULL, &num_image_formats);
+                              image_type, 0, nullptr, &num_image_formats);
         pyopencl_buf<cl_image_format> formats(num_image_formats);
         pyopencl_call_guarded(clGetSupportedImageFormats, data(), flags,
-                              image_type, formats.len(), formats.get(), NULL);
+                              image_type, formats.len(),
+                              formats.get(), nullptr);
         return pyopencl_convert_array_info(cl_image_format, formats);
     }
 };
@@ -622,7 +623,7 @@ public:
     {
         cl_context param_value;
         pyopencl_call_guarded(clGetCommandQueueInfo, data(), CL_QUEUE_CONTEXT,
-                              sizeof(param_value), &param_value, NULL);
+                              sizeof(param_value), &param_value, nullptr);
         return std::unique_ptr<context>(
             new context(param_value, /*retain*/ true));
     }
@@ -762,7 +763,7 @@ class nanny_event : public event {
 private:
     void *m_ward;
 public:
-    nanny_event(cl_event evt, bool retain, void *ward=NULL)
+    nanny_event(cl_event evt, bool retain, void *ward=nullptr)
         : event(evt, retain), m_ward(ward)
     {
         if (ward) {
@@ -785,7 +786,7 @@ public:
     {
         // No lock needed because multiple release is safe here.
         void *ward = m_ward;
-        m_ward = NULL;
+        m_ward = nullptr;
         py::deref(ward);
     }
 };
@@ -808,7 +809,7 @@ public:
     {
         size_t param_value;
         pyopencl_call_guarded(clGetMemObjectInfo, data(), CL_MEM_SIZE,
-                              sizeof(param_value), &param_value, NULL);
+                              sizeof(param_value), &param_value, nullptr);
         return param_value;
     }
     generic_info
@@ -917,7 +918,7 @@ public:
 //     PYOPENCL_RETRY_IF_MEM_ERROR(
 //       PYOPENCL_CALL_GUARDED(clEnqueueMigrateMemObjects, (
 //             cq.data(),
-//             mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(),
+//             mem_objects.size(), mem_objects.empty( ) ? nullptr : &mem_objects.front(),
 //             flags,
 //             PYOPENCL_WAITLIST_ARGS, &evt
 //             ));
@@ -940,10 +941,10 @@ public:
 //     // {{{ get platform
 //     cl_device_id dev;
 //     PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo, (cq.data(), CL_QUEUE_DEVICE,
-//           sizeof(dev), &dev, NULL));
+//           sizeof(dev), &dev, nullptr));
 //     cl_platform_id plat;
 //     PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (cq.data(), CL_DEVICE_PLATFORM,
-//           sizeof(plat), &plat, NULL));
+//           sizeof(plat), &plat, nullptr));
 //     // }}}
 // #endif
 
@@ -958,7 +959,7 @@ public:
 //     PYOPENCL_RETRY_IF_MEM_ERROR(
 //       PYOPENCL_CALL_GUARDED(enqueue_migrate_fn, (
 //             cq.data(),
-//             mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(),
+//             mem_objects.size(), mem_objects.empty( ) ? nullptr : &mem_objects.front(),
 //             flags,
 //             PYOPENCL_WAITLIST_ARGS, &evt
 //             ));
@@ -984,7 +985,7 @@ public:
             memcpy(&m_format, fmt, sizeof(m_format));
         } else {
             pyopencl_call_guarded(clGetImageInfo, data(), CL_IMAGE_FORMAT,
-                                  sizeof(m_format), &m_format, NULL);
+                                  sizeof(m_format), &m_format, nullptr);
         }
     }
     generic_info
@@ -1322,7 +1323,7 @@ enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
   //           "clGetGLContextInfoKHR extension function not present");
 
   //     cl_context_properties *props_ptr
-  //       = props.empty( ) ? NULL : &props.front();
+  //       = props.empty( ) ? nullptr : &props.front();
 
   //     switch (param_name)
   //     {
@@ -1346,7 +1347,7 @@ enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
 
   //           PYOPENCL_CALL_GUARDED(func_ptr,
   //               (props_ptr, param_name, size,
-  //                devices.empty( ) ? NULL : &devices.front(), &size));
+  //                devices.empty( ) ? nullptr : &devices.front(), &size));
 
   //           py::list result;
   //           BOOST_FOREACH(cl_device_id did, devices)
@@ -1445,7 +1446,7 @@ public:
         if (!m_valid.exchange(false))
             return;
         pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, m_queue.data(),
-                                      m_mem.data(), m_ptr, 0, NULL, NULL);
+                                      m_mem.data(), m_ptr, 0, nullptr, nullptr);
     }
     event*
     release(const command_queue *queue, const clobj_t *_wait_for,
@@ -1476,7 +1477,7 @@ public:
     void*
     data() const
     {
-        return m_valid ? m_ptr : NULL;
+        return m_valid ? m_ptr : nullptr;
     }
 };
 
@@ -1591,7 +1592,7 @@ public:
                 pyopencl_call_guarded(clGetProgramInfo, data(),
                                       CL_PROGRAM_BINARIES,
                                       sizes.len() * sizeof(char*),
-                                      result_ptrs.get(), NULL);
+                                      result_ptrs.get(), nullptr);
             } catch (...) {
                 for (size_t i  = 0;i < sizes.len();i++) {
                     free(result_ptrs[i]);
@@ -1644,7 +1645,7 @@ public:
     {
         auto devices = buf_from_class<device>(_devices, num_devices);
         pyopencl_call_guarded(clBuildProgram, data(), num_devices,
-                              devices.get(), options, NULL, NULL);
+                              devices.get(), options, nullptr, nullptr);
     }
 
     // #if PYOPENCL_CL_VERSION >= 0x1020
@@ -1679,8 +1680,8 @@ public:
     //         PYOPENCL_CALL_GUARDED(clCompileProgram,
     //             (data(), num_devices, devices,
     //              options.c_str(), header_names.size(),
-    //              programs.empty() ? NULL : &programs.front(),
-    //              header_name_ptrs.empty() ? NULL : &header_name_ptrs.front(),
+    //              programs.empty() ? nullptr : &programs.front(),
+    //              header_name_ptrs.empty() ? nullptr : &header_name_ptrs.front(),
     //              0, 0));
     //       }
     // #endif
@@ -1866,7 +1867,7 @@ get_platforms(clobj_t **_platforms, uint32_t *num_platforms)
 {
     return c_handle_error([&] {
             *num_platforms = 0;
-            pyopencl_call_guarded(clGetPlatformIDs, 0, NULL, num_platforms);
+            pyopencl_call_guarded(clGetPlatformIDs, 0, nullptr, num_platforms);
             pyopencl_buf<cl_platform_id> platforms(*num_platforms);
             pyopencl_call_guarded(clGetPlatformIDs, *num_platforms,
                                   platforms.get(), num_platforms);
@@ -1955,7 +1956,7 @@ create_buffer(clobj_t *buffer, clobj_t _ctx, cl_mem_flags flags,
                                                  flags, size, hostbuf);
                 });
             *buffer = new_buffer(mem, (flags & CL_MEM_USE_HOST_PTR ?
-                                       hostbuf : NULL));
+                                       hostbuf : nullptr));
         });
 }
 
@@ -2136,7 +2137,7 @@ create_image_2d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
                         fmt, width, height, pitch, buffer);
                 });
             *img = new_image(mem, (flags & CL_MEM_USE_HOST_PTR ?
-                                   buffer : NULL), fmt);
+                                   buffer : nullptr), fmt);
         });
 }
 
@@ -2153,7 +2154,7 @@ create_image_3d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
                         height, depth, pitch_x, pitch_y, buffer);
                 });
             *img = new_image(mem, (flags & CL_MEM_USE_HOST_PTR ?
-                                   buffer : NULL), fmt);
+                                   buffer : nullptr), fmt);
         });
 }
 
@@ -2340,7 +2341,7 @@ _convert_memory_map(clobj_t *_evt, cl_event evt, command_queue *queue,
             pyopencl_call_guarded_cleanup(clReleaseEvent, evt);
         }
         pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, queue->data(),
-                                      buf->data(), res, 0, NULL, NULL);
+                                      buf->data(), res, 0, nullptr, nullptr);
         throw;
     }
 }
@@ -2403,10 +2404,10 @@ enqueue_copy_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
                 size_t byte_count_dst = 0;
                 pyopencl_call_guarded(
                     clGetMemObjectInfo, src->data(), CL_MEM_SIZE,
-                    sizeof(byte_count), &byte_count_src, NULL);
+                    sizeof(byte_count), &byte_count_src, nullptr);
                 pyopencl_call_guarded(
                     clGetMemObjectInfo, src->data(), CL_MEM_SIZE,
-                    sizeof(byte_count), &byte_count_dst, NULL);
+                    sizeof(byte_count), &byte_count_dst, nullptr);
                 byte_count = std::min(byte_count_src, byte_count_dst);
             }
             auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);

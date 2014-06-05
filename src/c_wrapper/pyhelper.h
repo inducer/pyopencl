@@ -19,7 +19,7 @@ class WrapFunc<Ret(Args...)> {
         return f ? f : ([] (Args...) {return Ret();});
     }
 public:
-    WrapFunc(_FuncType func=NULL)
+    WrapFunc(_FuncType func=nullptr)
         : m_func(check_func(func))
     {}
     Ret

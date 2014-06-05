@@ -38,7 +38,8 @@ class pyopencl_buf : public std::unique_ptr<T, _D<T> > {
     size_t m_len;
 public:
     pyopencl_buf(size_t len=1) :
-        std::unique_ptr<T, _D<T> >((T*)(len ? malloc(sizeof(T) * len) : NULL)),
+        std::unique_ptr<T, _D<T> >((T*)(len ? malloc(sizeof(T) * len) :
+                                        nullptr)),
         m_len(len)
     {
     }
@@ -214,7 +215,7 @@ get_vec_info(cl_int (*func)(ArgTypes...), const char *name,
              ArgTypes2&&... args)
 {
     size_t size = 0;
-    call_guarded(func, name, args..., 0, NULL, &size);
+    call_guarded(func, name, args..., 0, nullptr, &size);
     pyopencl_buf<T> buf(size / sizeof(T));
     call_guarded(func, name, args..., size, buf.get(), &size);
     return buf;
@@ -278,7 +279,8 @@ get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
                 ArgTypes2&&... args)
 {
     CLType param_value;
-    call_guarded(func, name, args..., sizeof(param_value), &param_value, NULL);
+    call_guarded(func, name, args..., sizeof(param_value),
+                 &param_value, nullptr);
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = Cls::get_class_t();
@@ -286,7 +288,7 @@ get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
     if (param_value) {
         info.value = (void*)(new Cls(param_value, /*retain*/ true));
     } else {
-        info.value = NULL;
+        info.value = nullptr;
     }
     return info;
 }
@@ -300,7 +302,7 @@ get_str_info(cl_int (*func)(ArgTypes...), const char *name,
              ArgTypes2&&... args)
 {
     size_t param_value_size;
-    call_guarded(func, name, args..., 0, NULL, &param_value_size);
+    call_guarded(func, name, args..., 0, nullptr, &param_value_size);
     pyopencl_buf<char> param_value(param_value_size);
     call_guarded(func, name, args..., param_value_size,
                  param_value.get(), &param_value_size);
@@ -320,7 +322,7 @@ get_int_info(cl_int (*func)(ArgTypes...), const char *name,
              const char *tpname, ArgTypes2&&... args)
 {
     pyopencl_buf<T> param_value;
-    call_guarded(func, name, args..., sizeof(T), param_value.get(), NULL);
+    call_guarded(func, name, args..., sizeof(T), param_value.get(), nullptr);
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = CLASS_NONE;
