@@ -1,4 +1,6 @@
 #include "wrap_cl.h"
+#include "function.h"
+
 #include <climits>
 #include <stdint.h>
 
@@ -22,7 +24,7 @@ static const char log_table_8[] = {
     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
 };
 
-static inline unsigned
+static PYOPENCL_INLINE unsigned
 bitlog2_16(uint16_t v)
 {
     if (unsigned long t = v >> 8) {
@@ -32,7 +34,7 @@ bitlog2_16(uint16_t v)
     }
 }
 
-static inline unsigned
+static PYOPENCL_INLINE unsigned
 bitlog2_32(uint32_t v)
 {
     if (uint16_t t = v >> 16) {

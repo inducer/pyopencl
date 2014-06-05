@@ -2,7 +2,7 @@
 #define __PYOPENCL_PYHELPER_H
 
 #include "wrap_cl.h"
-#include <functional>
+#include "function.h"
 
 namespace pyopencl {
 
@@ -13,7 +13,7 @@ template<typename Ret, typename... Args>
 class WrapFunc<Ret(Args...)> {
     typedef Ret (*_FuncType)(Args...);
     _FuncType m_func;
-    static inline _FuncType
+    static PYOPENCL_INLINE _FuncType
     check_func(_FuncType f)
     {
         return f ? f : ([] (Args...) {return Ret();});

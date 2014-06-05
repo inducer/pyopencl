@@ -1,5 +1,7 @@
 #include "wrap_cl.h"
 #include "error.h"
+#include "function.h"
+
 #include <string>
 #include <sstream>
 #include <string.h>
@@ -9,7 +11,7 @@
 #define __PYOPENCL_UTILS_H
 
 #define PYOPENCL_DEF_GET_CLASS_T(name)          \
-    static inline class_t                       \
+    static PYOPENCL_INLINE class_t              \
     get_class_t()                               \
     {                                           \
         return CLASS_##name;                    \
@@ -17,7 +19,7 @@
 
 
 template<class T>
-PYOPENCL_USE_RESULT static inline std::string
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE std::string
 tostring(const T& v)
 {
     std::ostringstream ostr;
@@ -43,22 +45,22 @@ public:
         m_len(len)
     {
     }
-    inline size_t
+    PYOPENCL_INLINE size_t
     len() const
     {
         return m_len;
     }
-    inline T&
+    PYOPENCL_INLINE T&
     operator[](int i)
     {
         return this->get()[i];
     }
-    inline const T&
+    PYOPENCL_INLINE const T&
     operator[](int i) const
     {
         return this->get()[i];
     }
-    inline void
+    PYOPENCL_INLINE void
     resize(size_t len)
     {
         if (len == m_len)
@@ -91,7 +93,7 @@ public:
 };
 
 template<typename T>
-static inline cl_bool
+static PYOPENCL_INLINE cl_bool
 cast_bool(const T &v)
 {
     return v ? CL_TRUE : CL_FALSE;
@@ -119,7 +121,7 @@ public:
     typedef CLType cl_type;
     clobj(CLType obj, bool=false) : m_obj(obj)
     {}
-    inline const CLType&
+    PYOPENCL_INLINE const CLType&
     data() const
     {
         return m_obj;
@@ -139,7 +141,7 @@ clobj_from_int_ptr(intptr_t ptr)
 }
 
 template<typename T, typename T2>
-PYOPENCL_USE_RESULT static inline pyopencl_buf<typename T::cl_type>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<typename T::cl_type>
 buf_from_class(const T2 *buf2, size_t len)
 {
     pyopencl_buf<typename T::cl_type> buf(len);
@@ -150,21 +152,21 @@ buf_from_class(const T2 *buf2, size_t len)
 }
 
 template<typename T, typename T2>
-PYOPENCL_USE_RESULT static inline pyopencl_buf<typename T::cl_type>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<typename T::cl_type>
 buf_from_class(const pyopencl_buf<T2> &&buf)
 {
     return buf_from_class(buf.get(), buf.len());
 }
 
 template<typename T, typename T2>
-PYOPENCL_USE_RESULT static inline pyopencl_buf<typename T::cl_type>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<typename T::cl_type>
 buf_from_class(const pyopencl_buf<T2> &buf)
 {
     return buf_from_class(buf.get(), buf.len());
 }
 
 template<typename T, typename T2, typename... ArgTypes>
-PYOPENCL_USE_RESULT static inline pyopencl_buf<clbase*>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<clbase*>
 buf_to_base(const T2 *buf2, size_t len, ArgTypes&&... args)
 {
     pyopencl_buf<clbase*> buf(len);
@@ -185,7 +187,7 @@ buf_to_base(const T2 *buf2, size_t len, ArgTypes&&... args)
 }
 
 template<typename T, typename T2, typename... ArgTypes>
-PYOPENCL_USE_RESULT static inline pyopencl_buf<clbase*>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<clbase*>
 buf_to_base(const pyopencl_buf<T2> &&buf2, ArgTypes&&... args)
 {
     return buf_to_base<T>(buf2.get(), buf2.len(),
@@ -193,7 +195,7 @@ buf_to_base(const pyopencl_buf<T2> &&buf2, ArgTypes&&... args)
 }
 
 template<typename T, typename T2, typename... ArgTypes>
-PYOPENCL_USE_RESULT static inline pyopencl_buf<clbase*>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<clbase*>
 buf_to_base(const pyopencl_buf<T2> &buf2, ArgTypes&&... args)
 {
     return buf_to_base<T>(buf2.get(), buf2.len(),
@@ -201,7 +203,7 @@ buf_to_base(const pyopencl_buf<T2> &buf2, ArgTypes&&... args)
 }
 
 // FIXME
-PYOPENCL_USE_RESULT static inline char*
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE char*
 _copy_str(const std::string& str)
 {
     return strdup(str.c_str());
@@ -210,7 +212,7 @@ _copy_str(const std::string& str)
 // {{{ GetInfo helpers
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
-PYOPENCL_USE_RESULT static inline pyopencl_buf<T>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<T>
 get_vec_info(cl_int (*func)(ArgTypes...), const char *name,
              ArgTypes2&&... args)
 {
@@ -224,7 +226,7 @@ get_vec_info(cl_int (*func)(ArgTypes...), const char *name,
     pyopencl::get_vec_info<type>(clGet##what##Info, "clGet" #what "Info", args)
 
 template<typename T>
-PYOPENCL_USE_RESULT static inline generic_info
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 convert_array_info(const char *tname, pyopencl_buf<T> &buf)
 {
     generic_info info;
@@ -237,7 +239,7 @@ convert_array_info(const char *tname, pyopencl_buf<T> &buf)
 }
 
 template<typename T>
-PYOPENCL_USE_RESULT static inline generic_info
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 convert_array_info(const char *tname, pyopencl_buf<T> &&_buf)
 {
     pyopencl_buf<T> &buf = _buf;
@@ -250,7 +252,7 @@ convert_array_info(const char *tname, pyopencl_buf<T> &&_buf)
     pyopencl_convert_array_info(type, pyopencl_get_vec_info(type, what, args))
 
 template<typename T, typename Cls>
-PYOPENCL_USE_RESULT static inline generic_info
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 convert_opaque_array_info(pyopencl_buf<T> &buf)
 {
     generic_info info;
@@ -262,7 +264,7 @@ convert_opaque_array_info(pyopencl_buf<T> &buf)
 }
 
 template<typename T, typename Cls>
-PYOPENCL_USE_RESULT static inline generic_info
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 convert_opaque_array_info(pyopencl_buf<T> &&_buf)
 {
     pyopencl_buf<T> &buf = _buf;
@@ -274,7 +276,7 @@ convert_opaque_array_info(pyopencl_buf<T> &&_buf)
 
 template<typename CLType, typename Cls,
          typename... ArgTypes, typename... ArgTypes2>
-PYOPENCL_USE_RESULT static inline generic_info
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
                 ArgTypes2&&... args)
 {
@@ -297,7 +299,7 @@ get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
                                          "clGet" #what "Info", args)
 
 template<typename... ArgTypes, typename... ArgTypes2>
-PYOPENCL_USE_RESULT static inline generic_info
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 get_str_info(cl_int (*func)(ArgTypes...), const char *name,
              ArgTypes2&&... args)
 {
@@ -317,7 +319,7 @@ get_str_info(cl_int (*func)(ArgTypes...), const char *name,
     pyopencl::get_str_info(clGet##what##Info, "clGet" #what "Info", args)
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
-PYOPENCL_USE_RESULT static inline generic_info
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 get_int_info(cl_int (*func)(ArgTypes...), const char *name,
              const char *tpname, ArgTypes2&&... args)
 {

@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "async.h"
 #include "pyhelper.h"
+#include "function.h"
 
 #include <stdlib.h>
 
@@ -9,7 +10,7 @@
 
 #if PYOPENCL_CL_VERSION >= 0x1020
 template<typename T>
-PYOPENCL_USE_RESULT static inline T
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
 pyopencl_get_ext_fun(cl_platform_id plat, const char *name, const char *err)
 {
     T func = (T)clGetExtensionFunctionAddressForPlatform(plat, name);
@@ -20,7 +21,7 @@ pyopencl_get_ext_fun(cl_platform_id plat, const char *name, const char *err)
 }
 #else
 template<typename T>
-PYOPENCL_USE_RESULT static inline T
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
 pyopencl_get_ext_fun(cl_platform_id, const char *name, const char *err)
 {
     T func = (T)clGetExtensionFunctionAddress(name);
@@ -65,7 +66,7 @@ public:
 };
 
 
-PYOPENCL_USE_RESULT inline pyopencl_buf<cl_device_id>
+PYOPENCL_USE_RESULT PYOPENCL_INLINE pyopencl_buf<cl_device_id>
 platform::get_devices(cl_device_type devtype) const
 {
     cl_uint num_devices = 0;
@@ -534,7 +535,7 @@ public:
             throw clerror("Context.get_info", CL_INVALID_VALUE);
         }
     }
-    PYOPENCL_USE_RESULT inline generic_info
+    PYOPENCL_USE_RESULT PYOPENCL_INLINE generic_info
     get_supported_image_formats(cl_mem_flags flags,
                                 cl_mem_object_type image_type) const
     {
@@ -753,7 +754,7 @@ public:
     }
 #endif
 };
-static inline event*
+static PYOPENCL_INLINE event*
 new_event(cl_event evt)
 {
     return pyopencl_convert_obj(event, clReleaseEvent, evt);
@@ -790,7 +791,7 @@ public:
         py::deref(ward);
     }
 };
-static inline event*
+static PYOPENCL_INLINE event*
 new_nanny_event(cl_event evt, void *ward)
 {
     return pyopencl_convert_obj(nanny_event, clReleaseEvent, evt, ward);
@@ -901,7 +902,7 @@ public:
 };
 
 // #if PYOPENCL_CL_VERSION >= 0x1020
-//   inline
+//   PYOPENCL_INLINE
 //   event *enqueue_migrate_mem_objects(
 //       command_queue &cq,
 //       py::object py_mem_objects,
@@ -928,7 +929,7 @@ public:
 // #endif
 
 // #ifdef cl_ext_migrate_memobject
-//   inline
+//   PYOPENCL_INLINE
 //   event *enqueue_migrate_mem_object_ext(
 //       command_queue &cq,
 //       py::object py_mem_objects,
@@ -1030,7 +1031,7 @@ public:
             throw clerror("Image.get_image_info", CL_INVALID_VALUE);
         }
     }
-    inline type_t
+    PYOPENCL_INLINE type_t
     get_fill_type()
     {
         switch (m_format.image_channel_data_type) {
@@ -1047,7 +1048,7 @@ public:
         }
     }
 };
-static inline image*
+static PYOPENCL_INLINE image*
 new_image(cl_mem mem, void *buff, const cl_image_format *fmt)
 {
     return pyopencl_convert_obj(image, clReleaseMemObject, mem, buff, fmt);
@@ -1057,7 +1058,7 @@ new_image(cl_mem mem, void *buff, const cl_image_format *fmt)
 
 // #if PYOPENCL_CL_VERSION >= 0x1020
 
-//   inline
+//   PYOPENCL_INLINE
 //   image *create_image_from_desc(
 //       context const &ctx,
 //       cl_mem_flags flags,
@@ -1115,7 +1116,7 @@ new_image(cl_mem mem, void *buff, const cl_image_format *fmt)
 
 // {{{ image transfers
 
-  //   inline
+  //   PYOPENCL_INLINE
   //   event *enqueue_copy_image_to_buffer(
   //       command_queue &cq,
   //       memory_object_holder &src,
@@ -1141,7 +1142,7 @@ new_image(cl_mem mem, void *buff, const cl_image_format *fmt)
   //     PYOPENCL_RETURN_NEW_EVENT(evt);
   //   }
 
-  //   inline
+  //   PYOPENCL_INLINE
   //   event *enqueue_copy_buffer_to_image(
   //       command_queue &cq,
   //       memory_object_holder &src,
@@ -1176,7 +1177,7 @@ new_image(cl_mem mem, void *buff, const cl_image_format *fmt)
 #ifdef HAVE_GL
 
 #ifdef __APPLE__
-static inline cl_context_properties
+static PYOPENCL_INLINE cl_context_properties
 get_apple_cgl_share_group()
 {
     CGLContextObj kCGLContext = CGLGetCurrentContext();
@@ -1241,7 +1242,7 @@ create_from_gl_texture(context &ctx, cl_mem_flags flags, GLenum texture_target,
 }
 
   // TODO:
-  // inline
+  // PYOPENCL_INLINE
   // py::tuple get_gl_object_info(memory_object_holder const &mem)
   // {
   //   cl_gl_object_type otype;
@@ -1254,7 +1255,7 @@ typedef cl_int (*clEnqueueGLObjectFunc)(cl_command_queue, cl_uint,
                                         const cl_mem*, cl_uint,
                                         const cl_event*, cl_event*);
 
-PYOPENCL_USE_RESULT static inline event*
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE event*
 enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
                    command_queue *cq, const clobj_t *mem_objects,
                    uint32_t num_mem_objects, const clobj_t *wait_for,
@@ -1278,7 +1279,7 @@ enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
 
 
   // #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
-  //   inline
+  //   PYOPENCL_INLINE
   //   py::object get_gl_context_info_khr(
   //       py::object py_properties,
   //       cl_gl_context_info param_name,
@@ -1370,7 +1371,7 @@ enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
   // {{{ buffer
 
 class buffer;
-static inline buffer *new_buffer(cl_mem mem, void *buff=0);
+static PYOPENCL_INLINE buffer *new_buffer(cl_mem mem, void *buff=0);
 
 class buffer : public memory_object {
 public:
@@ -1421,7 +1422,7 @@ public:
     //       }
 #endif
 };
-PYOPENCL_USE_RESULT static inline buffer*
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE buffer*
 new_buffer(cl_mem mem, void *buff)
 {
     return pyopencl_convert_obj(buffer, clReleaseMemObject, mem, buff);
@@ -1686,7 +1687,7 @@ public:
     //       }
     // #endif
 };
-PYOPENCL_USE_RESULT static inline program*
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE program*
 new_program(cl_program prog, program_kind_type progkind=KND_UNKNOWN)
 {
     return pyopencl_convert_obj(program, clReleaseProgram, prog, progkind);
@@ -2570,7 +2571,7 @@ enqueue_map_image(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
 }
 
 #if PYOPENCL_CL_VERSION >= 0x1020
-  //   inline
+  //   PYOPENCL_INLINE
   //   event *enqueue_fill_image(
   //       command_queue &cq,
   //       memory_object_holder &mem,
@@ -2611,7 +2612,7 @@ clobj__int_ptr(clobj_t obj)
     return obj->intptr();
 }
 
-static inline clobj_t
+static PYOPENCL_INLINE clobj_t
 _from_int_ptr(intptr_t ptr, class_t class_)
 {
     switch(class_) {

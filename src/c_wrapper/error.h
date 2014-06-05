@@ -1,5 +1,7 @@
 #include "wrap_cl.h"
 #include "pyhelper.h"
+#include "function.h"
+
 #include <string.h>
 #include <stdexcept>
 #include <iostream>
@@ -15,7 +17,7 @@ namespace pyopencl {
 #ifdef PYOPENCL_TRACE
 
 template<typename FirstType, typename... ArgTypes>
-static inline void
+static PYOPENCL_INLINE void
 _print_args(std::ostream &stm, FirstType &&arg1, ArgTypes&&... args)
 {
     stm << arg1 << "; ";
@@ -23,20 +25,20 @@ _print_args(std::ostream &stm, FirstType &&arg1, ArgTypes&&... args)
 }
 
 template<typename FirstType>
-static inline void
+static PYOPENCL_INLINE void
 _print_args(std::ostream &stm, FirstType &&arg1)
 {
     stm << arg1 << "; ";
 }
 
-static inline void
+static PYOPENCL_INLINE void
 print_call_trace(const char *name)
 {
     std::cerr << name << std::endl;
 }
 
 template<typename... ArgTypes>
-static inline void
+static PYOPENCL_INLINE void
 print_call_trace(const char *name, ArgTypes&&... args)
 {
     std::cerr << name << "(";
@@ -47,7 +49,7 @@ print_call_trace(const char *name, ArgTypes&&... args)
 #else
 
 template<typename... ArgTypes>
-static inline void
+static PYOPENCL_INLINE void
 print_call_trace(ArgTypes&&...)
 {
 }
@@ -67,19 +69,19 @@ public:
     {
         std::cout << rout <<";" << msg<< ";" << c << std::endl;
     }
-    inline const char*
+    PYOPENCL_INLINE const char*
     routine() const
     {
         return m_routine;
     }
 
-    inline cl_int
+    PYOPENCL_INLINE cl_int
     code() const
     {
         return m_code;
     }
 
-    inline bool
+    PYOPENCL_INLINE bool
     is_out_of_memory() const
     {
         return (code() == CL_MEM_OBJECT_ALLOCATION_FAILURE ||
@@ -93,7 +95,7 @@ public:
 // {{{ tracing and error reporting
 
 template<typename... ArgTypes2, typename... ArgTypes>
-static inline void
+static PYOPENCL_INLINE void
 call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     print_call_trace(name);
@@ -104,7 +106,7 @@ call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 }
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
-PYOPENCL_USE_RESULT static inline T
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
 call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     print_call_trace(name);
@@ -119,7 +121,7 @@ call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
     pyopencl::call_guarded(func, #func, args)
 
 template<typename... ArgTypes, typename... ArgTypes2>
-static inline void
+static PYOPENCL_INLINE void
 call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
                      ArgTypes2&&... args)
 {
@@ -135,7 +137,7 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
 #define pyopencl_call_guarded_cleanup(func, args...)    \
     pyopencl::call_guarded_cleanup(func, #func, args)
 
-PYOPENCL_USE_RESULT static inline ::error*
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE ::error*
 c_handle_error(std::function<void()> func)
 {
     try {
@@ -158,7 +160,7 @@ c_handle_error(std::function<void()> func)
 }
 
 template<typename T>
-static inline T
+static PYOPENCL_INLINE T
 retry_mem_error(std::function<T()> func)
 {
     try {
@@ -174,7 +176,7 @@ retry_mem_error(std::function<T()> func)
 // }}}
 
 template<typename T, typename CLType, typename... ArgTypes>
-PYOPENCL_USE_RESULT static inline T*
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE T*
 convert_obj(cl_int (*clRelease)(CLType), const char *name, CLType cl_obj,
             ArgTypes&&... args)
 {
