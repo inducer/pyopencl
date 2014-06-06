@@ -174,8 +174,8 @@ class Program(object):
     # {{{ build
 
     def build(self, options=[], devices=None, cache_dir=None):
-        if isinstance(options, str):
-            options = [options]
+        if isinstance(options, basestring):
+            options = [str(options)]
 
         options = (options
                 + _DEFAULT_BUILD_OPTIONS
