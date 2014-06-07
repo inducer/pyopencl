@@ -1,6 +1,6 @@
 #include "wrap_cl.h"
 #include "pyhelper.h"
-#include "function.h"
+#include "clobj.h"
 
 #include <string.h>
 #include <stdexcept>
@@ -93,22 +93,6 @@ public:
 // }}}
 
 // {{{ tracing and error reporting
-
-template<typename T, class = void>
-class CLArg {
-private:
-    T &m_arg;
-public:
-    CLArg(T &arg)
-        : m_arg(arg)
-    {
-    }
-    PYOPENCL_INLINE T&
-    convert()
-    {
-        return m_arg;
-    }
-};
 
 template<typename>
 struct __CLArgGetter {
@@ -204,21 +188,6 @@ retry_mem_error(std::function<T()> func)
 }
 
 // }}}
-
-template<typename T, typename CLType, typename... ArgTypes>
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE T*
-convert_obj(cl_int (*clRelease)(CLType), const char *name, CLType cl_obj,
-            ArgTypes&&... args)
-{
-    try {
-        return new T(cl_obj, false, std::forward<ArgTypes>(args)...);
-    } catch (...) {
-        call_guarded_cleanup(clRelease, name, cl_obj);
-        throw;
-    }
-}
-#define pyopencl_convert_obj(type, func, args...)       \
-    pyopencl::convert_obj<type>(func, #func, args)
 
 }
 
