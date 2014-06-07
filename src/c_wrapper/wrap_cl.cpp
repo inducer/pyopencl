@@ -55,7 +55,7 @@ public:
 #if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
         case CL_PLATFORM_EXTENSIONS:
 #endif
-            return pyopencl_get_str_info(Platform, data(), param_name);
+            return pyopencl_get_str_info(Platform, this, param_name);
 
         default:
             throw clerror("Platform.get_info", CL_INVALID_VALUE);
@@ -72,7 +72,7 @@ platform::get_devices(cl_device_type devtype) const
     cl_uint num_devices = 0;
     try {
         pyopencl_call_guarded(clGetDeviceIDs,
-                              data(), devtype, 0, nullptr, &num_devices);
+                              this, devtype, 0, nullptr, &num_devices);
     } catch (const clerror &e) {
         if (e.code() != CL_DEVICE_NOT_FOUND)
             throw e;
@@ -81,7 +81,7 @@ platform::get_devices(cl_device_type devtype) const
     pyopencl_buf<cl_device_id> devices(num_devices);
     if (num_devices == 0)
         return devices;
-    pyopencl_call_guarded(clGetDeviceIDs, data(), devtype, num_devices,
+    pyopencl_call_guarded(clGetDeviceIDs, this, devtype, num_devices,
                           devices.get(), &num_devices);
     return devices;
 }
@@ -117,7 +117,7 @@ public:
             else if (ref_type == REF_FISSION_EXT) {
 #if PYOPENCL_CL_VERSION >= 0x1020
                 cl_platform_id plat;
-                pyopencl_call_guarded(clGetDeviceInfo, data(),
+                pyopencl_call_guarded(clGetDeviceInfo, this,
                                       CL_DEVICE_PLATFORM, sizeof(plat),
                                       &plat, nullptr);
 #endif
@@ -147,16 +147,16 @@ public:
         else if (m_ref_type == REF_FISSION_EXT) {
 #if PYOPENCL_CL_VERSION >= 0x1020
             cl_platform_id plat;
-            pyopencl_call_guarded(clGetDeviceInfo, data(), CL_DEVICE_PLATFORM,
+            pyopencl_call_guarded(clGetDeviceInfo, this, CL_DEVICE_PLATFORM,
                                   sizeof(plat), &plat, nullptr);
 #endif
             pyopencl_call_guarded_cleanup(
-                pyopencl_get_ext_fun(plat, clReleaseDeviceEXT), data());
+                pyopencl_get_ext_fun(plat, clReleaseDeviceEXT), this);
         }
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
         else if (m_ref_type == REF_CL_1_2) {
-            pyopencl_call_guarded(clReleaseDevice, data());
+            pyopencl_call_guarded(clReleaseDevice, this);
         }
 #endif
     }
@@ -164,7 +164,7 @@ public:
     get_info(cl_uint param_name) const
     {
 #define DEV_GET_INT_INF(TYPE)                                           \
-        pyopencl_get_int_info(TYPE, Device, data(), param_name)
+        pyopencl_get_int_info(TYPE, Device, this, param_name)
 
         switch ((cl_device_info)param_name) {
         case CL_DEVICE_TYPE:
@@ -177,7 +177,7 @@ public:
             return DEV_GET_INT_INF(cl_uint);
 
         case CL_DEVICE_MAX_WORK_ITEM_SIZES:
-            return pyopencl_get_array_info(size_t, Device, data(), param_name);
+            return pyopencl_get_array_info(size_t, Device, this, param_name);
 
         case CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR:
         case CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT:
@@ -249,11 +249,11 @@ public:
         case CL_DEVICE_PROFILE:
         case CL_DEVICE_VERSION:
         case CL_DEVICE_EXTENSIONS:
-            return pyopencl_get_str_info(Device, data(), param_name);
+            return pyopencl_get_str_info(Device, this, param_name);
 
         case CL_DEVICE_PLATFORM:
             return pyopencl_get_opaque_info(cl_platform_id, platform,
-                                            Device, data(), param_name);
+                                            Device, this, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1010
         case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF:
         case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR:
@@ -268,7 +268,7 @@ public:
         case CL_DEVICE_HOST_UNIFIED_MEMORY:
             return DEV_GET_INT_INF(cl_bool);
         case CL_DEVICE_OPENCL_C_VERSION:
-            return pyopencl_get_str_info(Device, data(), param_name);
+            return pyopencl_get_str_info(Device, this, param_name);
 #endif
 #ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
         case CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV:
@@ -284,12 +284,12 @@ public:
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
         case CL_DEVICE_PARENT_DEVICE_EXT:
             return pyopencl_get_opaque_info(cl_device_id, device,
-                                            Device, data(), param_name);
+                                            Device, this, param_name);
         case CL_DEVICE_PARTITION_TYPES_EXT:
         case CL_DEVICE_AFFINITY_DOMAINS_EXT:
         case CL_DEVICE_PARTITION_STYLE_EXT:
             return pyopencl_get_array_info(cl_device_partition_property_ext,
-                                           Device, data(), param_name);
+                                           Device, this, param_name);
         case CL_DEVICE_REFERENCE_COUNT_EXT:
             return DEV_GET_INT_INF(cl_uint);
 #endif
@@ -297,22 +297,22 @@ public:
         case CL_DEVICE_LINKER_AVAILABLE:
             return DEV_GET_INT_INF(cl_bool);
         case CL_DEVICE_BUILT_IN_KERNELS:
-            return pyopencl_get_str_info(Device, data(), param_name);
+            return pyopencl_get_str_info(Device, this, param_name);
         case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE:
         case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE:
             return DEV_GET_INT_INF(size_t);
         case CL_DEVICE_PARENT_DEVICE:
             return pyopencl_get_opaque_info(cl_device_id, device,
-                                            Device, data(), param_name);
+                                            Device, this, param_name);
         case CL_DEVICE_PARTITION_MAX_SUB_DEVICES:
             return DEV_GET_INT_INF(cl_uint);
         case CL_DEVICE_PARTITION_TYPE:
         case CL_DEVICE_PARTITION_PROPERTIES:
             return pyopencl_get_array_info(cl_device_partition_property,
-                                           Device, data(), param_name);
+                                           Device, this, param_name);
         case CL_DEVICE_PARTITION_AFFINITY_DOMAIN:
             return pyopencl_get_array_info(cl_device_affinity_domain,
-                                           Device, data(), param_name);
+                                           Device, this, param_name);
         case CL_DEVICE_REFERENCE_COUNT:
             return DEV_GET_INT_INF(cl_uint);
         case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC:
@@ -334,12 +334,12 @@ public:
             */
 #ifdef CL_DEVICE_BOARD_NAME_AMD
         case CL_DEVICE_BOARD_NAME_AMD: ;
-            return pyopencl_get_str_info(Device, data(), param_name);
+            return pyopencl_get_str_info(Device, this, param_name);
 #endif
 #ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
         case CL_DEVICE_GLOBAL_FREE_MEMORY_AMD:
             return pyopencl_get_array_info(size_t, Device,
-                                           data(), param_name);
+                                           this, param_name);
 #endif
 #ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
         case CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD:
@@ -467,7 +467,7 @@ public:
     }
     ~context()
     {
-        pyopencl_call_guarded_cleanup(clReleaseContext, data());
+        pyopencl_call_guarded_cleanup(clReleaseContext, this);
     }
     generic_info
     get_info(cl_uint param_name) const
@@ -475,13 +475,13 @@ public:
         switch ((cl_context_info)param_name) {
         case CL_CONTEXT_REFERENCE_COUNT:
             return pyopencl_get_int_info(cl_uint, Context,
-                                         data(), param_name);
+                                         this, param_name);
         case CL_CONTEXT_DEVICES:
             return pyopencl_get_opaque_array_info(
-                cl_device_id, device, Context, data(), param_name);
+                cl_device_id, device, Context, this, param_name);
         case CL_CONTEXT_PROPERTIES: {
             auto result = pyopencl_get_vec_info(
-                cl_context_properties, Context, data(), param_name);
+                cl_context_properties, Context, this, param_name);
             pyopencl_buf<generic_info> py_result(result.len() / 2);
             size_t i = 0;
             for (;i < py_result.len();i++) {
@@ -529,7 +529,7 @@ public:
 #if PYOPENCL_CL_VERSION >= 0x1010
         case CL_CONTEXT_NUM_DEVICES:
             return pyopencl_get_int_info(cl_uint, Context,
-                                         data(), param_name);
+                                         this, param_name);
 #endif
 
         default:
@@ -541,10 +541,10 @@ public:
                                 cl_mem_object_type image_type) const
     {
         cl_uint num_image_formats;
-        pyopencl_call_guarded(clGetSupportedImageFormats, data(), flags,
+        pyopencl_call_guarded(clGetSupportedImageFormats, this, flags,
                               image_type, 0, nullptr, &num_image_formats);
         pyopencl_buf<cl_image_format> formats(num_image_formats);
-        pyopencl_call_guarded(clGetSupportedImageFormats, data(), flags,
+        pyopencl_call_guarded(clGetSupportedImageFormats, this, flags,
                               image_type, formats.len(),
                               formats.get(), nullptr);
         return pyopencl_convert_array_info(cl_image_format, formats);
@@ -567,7 +567,7 @@ private:
             dev = py_dev->data();
         } else {
             auto devs = pyopencl_get_vec_info(cl_device_id, Context,
-                                              ctx->data(), CL_CONTEXT_DEVICES);
+                                              ctx, CL_CONTEXT_DEVICES);
             if (devs.len() == 0) {
                 throw clerror("CommandQueue", CL_INVALID_VALUE,
                               "context doesn't have any devices? -- "
@@ -575,8 +575,7 @@ private:
             }
             dev = devs[0];
         }
-        return pyopencl_call_guarded(clCreateCommandQueue,
-                                     ctx->data(), dev, props);
+        return pyopencl_call_guarded(clCreateCommandQueue, ctx, dev, props);
     }
 public:
     PYOPENCL_DEF_GET_CLASS_T(COMMAND_QUEUE);
@@ -596,7 +595,7 @@ public:
     {}
     ~command_queue()
     {
-        pyopencl_call_guarded_cleanup(clReleaseCommandQueue, data());
+        pyopencl_call_guarded_cleanup(clReleaseCommandQueue, this);
     }
 
     generic_info
@@ -605,16 +604,16 @@ public:
         switch ((cl_command_queue_info)param_name) {
         case CL_QUEUE_CONTEXT:
             return pyopencl_get_opaque_info(cl_context, context,
-                                            CommandQueue, data(), param_name);
+                                            CommandQueue, this, param_name);
         case CL_QUEUE_DEVICE:
             return pyopencl_get_opaque_info(cl_device_id, device,
-                                            CommandQueue, data(), param_name);
+                                            CommandQueue, this, param_name);
         case CL_QUEUE_REFERENCE_COUNT:
             return pyopencl_get_int_info(cl_uint, CommandQueue,
-                                         data(), param_name);
+                                         this, param_name);
         case CL_QUEUE_PROPERTIES:
             return pyopencl_get_int_info(cl_command_queue_properties,
-                                         CommandQueue, data(), param_name);
+                                         CommandQueue, this, param_name);
         default:
             throw clerror("CommandQueue.get_info", CL_INVALID_VALUE);
         }
@@ -624,7 +623,7 @@ public:
     get_context() const
     {
         cl_context param_value;
-        pyopencl_call_guarded(clGetCommandQueueInfo, data(), CL_QUEUE_CONTEXT,
+        pyopencl_call_guarded(clGetCommandQueueInfo, this, CL_QUEUE_CONTEXT,
                               sizeof(param_value), &param_value, nullptr);
         return std::unique_ptr<context>(
             new context(param_value, /*retain*/ true));
@@ -635,7 +634,7 @@ public:
     set_property(cl_command_queue_properties prop, bool enable) const
     {
         cl_command_queue_properties old_prop;
-        pyopencl_call_guarded(clSetCommandQueueProperty, data(), prop,
+        pyopencl_call_guarded(clSetCommandQueueProperty, this, prop,
                               cast_bool(enable), &old_prop);
         return old_prop;
     }
@@ -643,12 +642,12 @@ public:
     void
     flush() const
     {
-        pyopencl_call_guarded(clFlush, data());
+        pyopencl_call_guarded(clFlush, this);
     }
     void
     finish() const
     {
-        pyopencl_call_guarded(clFinish, data());
+        pyopencl_call_guarded(clFinish, this);
     }
 };
 // }}}
@@ -690,7 +689,7 @@ public:
     }
     ~event()
     {
-        pyopencl_call_guarded_cleanup(clReleaseEvent, data());
+        pyopencl_call_guarded_cleanup(clReleaseEvent, this);
     }
     generic_info
     get_info(cl_uint param_name) const
@@ -698,18 +697,18 @@ public:
         switch ((cl_event_info)param_name) {
         case CL_EVENT_COMMAND_QUEUE:
             return pyopencl_get_opaque_info(cl_command_queue, command_queue,
-                                            Event, data(), param_name);
+                                            Event, this, param_name);
         case CL_EVENT_COMMAND_TYPE:
             return pyopencl_get_int_info(cl_command_type, Event,
-                                         data(), param_name);
+                                         this, param_name);
         case CL_EVENT_COMMAND_EXECUTION_STATUS:
-            return pyopencl_get_int_info(cl_int, Event, data(), param_name);
+            return pyopencl_get_int_info(cl_int, Event, this, param_name);
         case CL_EVENT_REFERENCE_COUNT:
-            return pyopencl_get_int_info(cl_uint, Event, data(), param_name);
+            return pyopencl_get_int_info(cl_uint, Event, this, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1010
         case CL_EVENT_CONTEXT:
             return pyopencl_get_opaque_info(cl_context, context,
-                                            Event, data(), param_name);
+                                            Event, this, param_name);
 #endif
 
         default:
@@ -725,7 +724,7 @@ public:
         case CL_PROFILING_COMMAND_START:
         case CL_PROFILING_COMMAND_END:
             return pyopencl_get_int_info(cl_ulong, EventProfiling,
-                                         data(), param_name);
+                                         this, param_name);
         default:
             throw clerror("Event.get_profiling_info", CL_INVALID_VALUE);
         }
@@ -745,7 +744,7 @@ public:
     {
         auto cb = new event_callback(func);
         try {
-            pyopencl_call_guarded(clSetEventCallback, data(), type,
+            pyopencl_call_guarded(clSetEventCallback, this, type,
                                   &event_callback::cl_call_and_free, cb);
         } catch (...) {
             delete cb;
@@ -810,7 +809,7 @@ public:
     size_t size() const
     {
         size_t param_value;
-        pyopencl_call_guarded(clGetMemObjectInfo, data(), CL_MEM_SIZE,
+        pyopencl_call_guarded(clGetMemObjectInfo, this, CL_MEM_SIZE,
                               sizeof(param_value), &param_value, nullptr);
         return param_value;
     }
@@ -820,12 +819,12 @@ public:
         switch ((cl_mem_info)param_name){
         case CL_MEM_TYPE:
             return pyopencl_get_int_info(cl_mem_object_type, MemObject,
-                                         data(), param_name);
+                                         this, param_name);
         case CL_MEM_FLAGS:
             return pyopencl_get_int_info(cl_mem_flags, MemObject,
-                                         data(), param_name);
+                                         this, param_name);
         case CL_MEM_SIZE:
-            return pyopencl_get_int_info(size_t, MemObject, data(), param_name);
+            return pyopencl_get_int_info(size_t, MemObject, this, param_name);
         case CL_MEM_HOST_PTR:
             throw clerror("MemoryObject.get_info", CL_INVALID_VALUE,
                           "Use MemoryObject.get_host_array to get "
@@ -833,17 +832,17 @@ public:
         case CL_MEM_MAP_COUNT:
         case CL_MEM_REFERENCE_COUNT:
             return pyopencl_get_int_info(cl_uint, MemObject,
-                                         data(), param_name);
+                                         this, param_name);
         case CL_MEM_CONTEXT:
             return pyopencl_get_opaque_info(cl_context, context,
-                                            MemObject, data(), param_name);
+                                            MemObject, this, param_name);
 
 #if PYOPENCL_CL_VERSION >= 0x1010
             // TODO
             //       case CL_MEM_ASSOCIATED_MEMOBJECT:
             //      {
             //        cl_mem param_value;
-            //        PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, (data(), param_name, sizeof(param_value), &param_value, 0));
+            //        PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, (this, param_name, sizeof(param_value), &param_value, 0));
             //        if (param_value == 0)
             //          {
             //            // no associated memory object? no problem.
@@ -853,7 +852,7 @@ public:
             //        return create_mem_object_wrapper(param_value);
             //      }
         case CL_MEM_OFFSET:
-            return pyopencl_get_int_info(size_t, MemObject, data(), param_name);
+            return pyopencl_get_int_info(size_t, MemObject, this, param_name);
 #endif
 
         default:
@@ -884,7 +883,7 @@ public:
     {
         if (!m_valid.exchange(false))
             return;
-        pyopencl_call_guarded_cleanup(clReleaseMemObject, data());
+        pyopencl_call_guarded_cleanup(clReleaseMemObject, this);
     }
     void
     release() const
@@ -893,7 +892,7 @@ public:
             throw clerror("MemoryObject.release", CL_INVALID_VALUE,
                           "trying to double-unref mem object");
         }
-        pyopencl_call_guarded(clReleaseMemObject, data());
+        pyopencl_call_guarded(clReleaseMemObject, this);
     }
     void*
     hostbuf() const
@@ -986,7 +985,7 @@ public:
         if (fmt) {
             memcpy(&m_format, fmt, sizeof(m_format));
         } else {
-            pyopencl_call_guarded(clGetImageInfo, data(), CL_IMAGE_FORMAT,
+            pyopencl_call_guarded(clGetImageInfo, this, CL_IMAGE_FORMAT,
                                   sizeof(m_format), &m_format, nullptr);
         }
     }
@@ -996,7 +995,7 @@ public:
         switch (param_name) {
         case CL_IMAGE_FORMAT:
             return pyopencl_get_int_info(cl_image_format, Image,
-                                         data(), param_name);
+                                         this, param_name);
         case CL_IMAGE_ELEMENT_SIZE:
         case CL_IMAGE_ROW_PITCH:
         case CL_IMAGE_SLICE_PITCH:
@@ -1006,14 +1005,14 @@ public:
 #if PYOPENCL_CL_VERSION >= 0x1020
         case CL_IMAGE_ARRAY_SIZE:
 #endif
-            return pyopencl_get_int_info(size_t, Image, data(), param_name);
+            return pyopencl_get_int_info(size_t, Image, this, param_name);
 
 #if PYOPENCL_CL_VERSION >= 0x1020
             // TODO:
             //    case CL_IMAGE_BUFFER:
             //      {
             //        cl_mem param_value;
-            //        PYOPENCL_CALL_GUARDED(clGetImageInfo, (data(), param_name, sizeof(param_value), &param_value, 0));
+            //        PYOPENCL_CALL_GUARDED(clGetImageInfo, (this, param_name, sizeof(param_value), &param_value, 0));
             //        if (param_value == 0)
             //               {
             //                 // no associated memory object? no problem.
@@ -1025,7 +1024,7 @@ public:
 
         case CL_IMAGE_NUM_MIP_LEVELS:
         case CL_IMAGE_NUM_SAMPLES:
-            return pyopencl_get_int_info(cl_uint, Image, data(), param_name);
+            return pyopencl_get_int_info(cl_uint, Image, this, param_name);
 #endif
 
         default:
@@ -1214,9 +1213,9 @@ class gl_texture : public image {
     {
         switch (param_name) {
         case CL_GL_TEXTURE_TARGET:
-            return pyopencl_get_int_info(GLenum, GLTexture, data(), param_name);
+            return pyopencl_get_int_info(GLenum, GLTexture, this, param_name);
         case CL_GL_MIPMAP_LEVEL:
-            return pyopencl_get_int_info(GLint, GLTexture, data(), param_name);
+            return pyopencl_get_int_info(GLint, GLTexture, this, param_name);
         default:
             throw clerror("MemoryObject.get_gl_texture_info", CL_INVALID_VALUE);
         }
@@ -1229,12 +1228,12 @@ create_from_gl_texture(context &ctx, cl_mem_flags flags, GLenum texture_target,
 {
     if (dims == 2) {
         cl_mem mem = pyopencl_call_guarded(clCreateFromGLTexture2D,
-                                           ctx.data(), flags, texture_target,
+                                           ctx, flags, texture_target,
                                            miplevel, texture);
         return pyopencl_convert_obj(gl_texture, clReleaseMemObject, mem);
     } else if (dims == 3) {
         cl_mem mem = pyopencl_call_guarded(clCreateFromGLTexture3D,
-                                           ctx.data(), flags, texture_target,
+                                           ctx, flags, texture_target,
                                            miplevel, texture);
         return pyopencl_convert_obj(gl_texture, clReleaseMemObject, mem);
     } else {
@@ -1248,7 +1247,7 @@ create_from_gl_texture(context &ctx, cl_mem_flags flags, GLenum texture_target,
   // {
   //   cl_gl_object_type otype;
   //   GLuint gl_name;
-  //   PYOPENCL_CALL_GUARDED(clGetGLObjectInfo, (mem.data(), &otype, &gl_name));
+  //   PYOPENCL_CALL_GUARDED(clGetGLObjectInfo, (mem, &otype, &gl_name));
   //   return py::make_tuple(otype, gl_name);
   // }
 
@@ -1266,7 +1265,7 @@ enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
     auto _mem_objs = buf_from_class<memory_object_holder>(
         mem_objects, num_mem_objects);
     cl_event evt;
-    call_guarded(func, name, cq->data(), num_mem_objects, _mem_objs.get(),
+    call_guarded(func, name, cq, num_mem_objects, _mem_objs.get(),
                  num_wait_for, _wait_for.get(), &evt);
     return new_event(evt);
 }
@@ -1388,7 +1387,7 @@ public:
         cl_buffer_region region = {origin, size};
 
         auto mem = retry_mem_error<cl_mem>([&] {
-                return pyopencl_call_guarded(clCreateSubBuffer, data(), flags,
+                return pyopencl_call_guarded(clCreateSubBuffer, this, flags,
                                              CL_BUFFER_CREATE_TYPE_REGION,
                                              &region);
             });
@@ -1401,7 +1400,7 @@ public:
 
     //         size_t my_length;
     //         PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
-    //             (data(), CL_MEM_SIZE, sizeof(my_length), &my_length, 0));
+    //             (this, CL_MEM_SIZE, sizeof(my_length), &my_length, 0));
 
     // #if PY_VERSION_HEX >= 0x03020000
     //         if (PySlice_GetIndicesEx(slc.ptr(),
@@ -1417,7 +1416,7 @@ public:
 
     //         cl_mem_flags my_flags;
     //         PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
-    //             (data(), CL_MEM_FLAGS, sizeof(my_flags), &my_flags, 0));
+    //             (this, CL_MEM_FLAGS, sizeof(my_flags), &my_flags, 0));
 
     //         return get_sub_region(start, end, my_flags);
     //       }
@@ -1447,8 +1446,8 @@ public:
     {
         if (!m_valid.exchange(false))
             return;
-        pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, m_queue.data(),
-                                      m_mem.data(), m_ptr, 0, nullptr, nullptr);
+        pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, m_queue,
+                                      m_mem, m_ptr, 0, nullptr, nullptr);
     }
     event*
     release(const command_queue *queue, const clobj_t *_wait_for,
@@ -1461,8 +1460,8 @@ public:
         auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
         queue = queue ? queue : &m_queue;
         cl_event evt;
-        pyopencl_call_guarded(clEnqueueUnmapMemObject, queue->data(),
-                              m_mem.data(), m_ptr, num_wait_for,
+        pyopencl_call_guarded(clEnqueueUnmapMemObject, queue,
+                              m_mem, m_ptr, num_wait_for,
                               wait_for.get(), &evt);
         return new_event(evt);
     }
@@ -1492,7 +1491,7 @@ public:
     PYOPENCL_DEF_GET_CLASS_T(SAMPLER);
     sampler(const context *ctx, bool normalized_coordinates,
             cl_addressing_mode am, cl_filter_mode fm)
-        : clobj(pyopencl_call_guarded(clCreateSampler, ctx->data(),
+        : clobj(pyopencl_call_guarded(clCreateSampler, ctx,
                                       normalized_coordinates, am, fm))
     {}
     sampler(cl_sampler samp, bool retain)
@@ -1504,7 +1503,7 @@ public:
     }
     ~sampler()
     {
-        pyopencl_call_guarded_cleanup(clReleaseSampler, data());
+        pyopencl_call_guarded_cleanup(clReleaseSampler, this);
     }
     generic_info
     get_info(cl_uint param_name) const
@@ -1512,19 +1511,19 @@ public:
         switch ((cl_sampler_info)param_name) {
         case CL_SAMPLER_REFERENCE_COUNT:
             return pyopencl_get_int_info(cl_uint, Sampler,
-                                         data(), param_name);
+                                         this, param_name);
         case CL_SAMPLER_CONTEXT:
             return pyopencl_get_opaque_info(cl_context, context,
-                                            Sampler, data(), param_name);
+                                            Sampler, this, param_name);
         case CL_SAMPLER_ADDRESSING_MODE:
             return pyopencl_get_int_info(cl_addressing_mode, Sampler,
-                                         data(), param_name);
+                                         this, param_name);
         case CL_SAMPLER_FILTER_MODE:
             return pyopencl_get_int_info(cl_filter_mode, Sampler,
-                                         data(), param_name);
+                                         this, param_name);
         case CL_SAMPLER_NORMALIZED_COORDS:
             return pyopencl_get_int_info(cl_bool, Sampler,
-                                         data(), param_name);
+                                         this, param_name);
 
         default:
             throw clerror("Sampler.get_info", CL_INVALID_VALUE);
@@ -1553,7 +1552,7 @@ public:
     }
     ~program()
     {
-        pyopencl_call_guarded_cleanup(clReleaseProgram, data());
+        pyopencl_call_guarded_cleanup(clReleaseProgram, this);
     }
     program_kind_type
     kind() const
@@ -1563,7 +1562,7 @@ public:
     PYOPENCL_USE_RESULT pyopencl_buf<cl_device_id>
     get_info__devices() const
     {
-        return pyopencl_get_vec_info(cl_device_id, Program, data(),
+        return pyopencl_get_vec_info(cl_device_id, Program, this,
                                      CL_PROGRAM_DEVICES);
     }
     generic_info
@@ -1572,26 +1571,26 @@ public:
         switch ((cl_program_info)param_name) {
         case CL_PROGRAM_CONTEXT:
             return pyopencl_get_opaque_info(cl_context, context,
-                                            Program, data(), param_name);
+                                            Program, this, param_name);
         case CL_PROGRAM_REFERENCE_COUNT:
         case CL_PROGRAM_NUM_DEVICES:
-            return pyopencl_get_int_info(cl_uint, Program, data(), param_name);
+            return pyopencl_get_int_info(cl_uint, Program, this, param_name);
         case CL_PROGRAM_DEVICES:
             return pyopencl_get_opaque_array_info(
-                cl_device_id, device, Program, data(), param_name);
+                cl_device_id, device, Program, this, param_name);
         case CL_PROGRAM_SOURCE:
-            return pyopencl_get_str_info(Program, data(), param_name);
+            return pyopencl_get_str_info(Program, this, param_name);
         case CL_PROGRAM_BINARY_SIZES:
-            return pyopencl_get_array_info(size_t, Program, data(), param_name);
+            return pyopencl_get_array_info(size_t, Program, this, param_name);
         case CL_PROGRAM_BINARIES: {
-            auto sizes = pyopencl_get_vec_info(size_t, Program, data(),
+            auto sizes = pyopencl_get_vec_info(size_t, Program, this,
                                                CL_PROGRAM_BINARY_SIZES);
             pyopencl_buf<char*> result_ptrs(sizes.len());
             for (size_t i  = 0;i < sizes.len();i++) {
                 result_ptrs[i] = (char*)malloc(sizes[i]);
             }
             try {
-                pyopencl_call_guarded(clGetProgramInfo, data(),
+                pyopencl_call_guarded(clGetProgramInfo, this,
                                       CL_PROGRAM_BINARIES,
                                       sizes.len() * sizeof(char*),
                                       result_ptrs.get(), nullptr);
@@ -1613,9 +1612,9 @@ public:
 
 #if PYOPENCL_CL_VERSION >= 0x1020
         case CL_PROGRAM_NUM_KERNELS:
-            return pyopencl_get_int_info(size_t, Program, data(), param_name);
+            return pyopencl_get_int_info(size_t, Program, this, param_name);
         case CL_PROGRAM_KERNEL_NAMES:
-            return pyopencl_get_str_info(Program, data(), param_name);
+            return pyopencl_get_str_info(Program, this, param_name);
 #endif
         default:
             throw clerror("Program.get_info", CL_INVALID_VALUE);
@@ -1627,15 +1626,15 @@ public:
         switch (param_name) {
         case CL_PROGRAM_BUILD_STATUS:
             return pyopencl_get_int_info(cl_build_status, ProgramBuild,
-                                         data(), dev->data(), param_name);
+                                         this, dev, param_name);
         case CL_PROGRAM_BUILD_OPTIONS:
         case CL_PROGRAM_BUILD_LOG:
-            return pyopencl_get_str_info(ProgramBuild, data(),
-                                         dev->data(), param_name);
+            return pyopencl_get_str_info(ProgramBuild, this,
+                                         dev, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1020
         case CL_PROGRAM_BINARY_TYPE:
             return pyopencl_get_int_info(cl_program_binary_type, ProgramBuild,
-                                         data(), dev->data(), param_name);
+                                         this, dev, param_name);
 #endif
         default:
             throw clerror("Program.get_build_info", CL_INVALID_VALUE);
@@ -1646,7 +1645,7 @@ public:
           const clobj_t *_devices) const
     {
         auto devices = buf_from_class<device>(_devices, num_devices);
-        pyopencl_call_guarded(clBuildProgram, data(), num_devices,
+        pyopencl_call_guarded(clBuildProgram, this, num_devices,
                               devices.get(), options, nullptr, nullptr);
     }
 
@@ -1680,7 +1679,7 @@ public:
     //         // }}}
 
     //         PYOPENCL_CALL_GUARDED(clCompileProgram,
-    //             (data(), num_devices, devices,
+    //             (this, num_devices, devices,
     //              options.c_str(), header_names.size(),
     //              programs.empty() ? nullptr : &programs.front(),
     //              header_name_ptrs.empty() ? nullptr : &header_name_ptrs.front(),
@@ -1709,55 +1708,54 @@ public:
         }
     }
     kernel(const program *prg, const char *kernel_name)
-        : clobj(pyopencl_call_guarded(clCreateKernel, prg->data(),
-                                      kernel_name))
+        : clobj(pyopencl_call_guarded(clCreateKernel, prg, kernel_name))
     {}
     ~kernel()
     {
-        pyopencl_call_guarded_cleanup(clReleaseKernel, data());
+        pyopencl_call_guarded_cleanup(clReleaseKernel, this);
     }
     void
     set_arg_null(cl_uint arg_index) const
     {
         cl_mem m = 0;
-        pyopencl_call_guarded(clSetKernelArg, data(), arg_index,
+        pyopencl_call_guarded(clSetKernelArg, this, arg_index,
                               sizeof(cl_mem), &m);
     }
     void
     set_arg_mem(cl_uint arg_index, const memory_object_holder *mem) const
     {
-        pyopencl_call_guarded(clSetKernelArg, data(), arg_index,
+        pyopencl_call_guarded(clSetKernelArg, this, arg_index,
                               sizeof(cl_mem), &mem->data());
     }
     void
     set_arg_sampler(cl_uint arg_index, const sampler *smp) const
     {
-        pyopencl_call_guarded(clSetKernelArg, data(), arg_index,
+        pyopencl_call_guarded(clSetKernelArg, this, arg_index,
                               sizeof(cl_sampler), &smp->data());
     }
     void
     set_arg_buf(cl_uint arg_index, const void *buffer, size_t size) const
     {
-        pyopencl_call_guarded(clSetKernelArg, data(), arg_index, size, buffer);
+        pyopencl_call_guarded(clSetKernelArg, this, arg_index, size, buffer);
     }
     generic_info
     get_info(cl_uint param_name) const
     {
         switch ((cl_kernel_info)param_name) {
         case CL_KERNEL_FUNCTION_NAME:
-            return pyopencl_get_str_info(Kernel, data(), param_name);
+            return pyopencl_get_str_info(Kernel, this, param_name);
         case CL_KERNEL_NUM_ARGS:
         case CL_KERNEL_REFERENCE_COUNT:
-            return pyopencl_get_int_info(cl_uint, Kernel, data(), param_name);
+            return pyopencl_get_int_info(cl_uint, Kernel, this, param_name);
         case CL_KERNEL_CONTEXT:
             return pyopencl_get_opaque_info(cl_context, context,
-                                            Kernel, data(), param_name);
+                                            Kernel, this, param_name);
         case CL_KERNEL_PROGRAM:
             return pyopencl_get_opaque_info(cl_program, program,
-                                            Kernel, data(), param_name);
+                                            Kernel, this, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1020
         case CL_KERNEL_ATTRIBUTES:
-            return pyopencl_get_str_info(Kernel, data(), param_name);
+            return pyopencl_get_str_info(Kernel, this, param_name);
 #endif
         default:
             throw clerror("Kernel.get_info", CL_INVALID_VALUE);
@@ -1773,16 +1771,16 @@ public:
 #endif
         case CL_KERNEL_WORK_GROUP_SIZE:
             return pyopencl_get_int_info(size_t, KernelWorkGroup,
-                                         data(), dev->data(), param_name);
+                                         this, dev, param_name);
         case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
             return pyopencl_get_array_info(size_t, KernelWorkGroup,
-                                           data(), dev->data(), param_name);
+                                           this, dev, param_name);
         case CL_KERNEL_LOCAL_MEM_SIZE:
 #if PYOPENCL_CL_VERSION >= 0x1010
         case CL_KERNEL_PRIVATE_MEM_SIZE:
 #endif
             return pyopencl_get_int_info(cl_ulong, KernelWorkGroup,
-                                         data(), dev->data(), param_name);
+                                         this, dev, param_name);
         default:
             throw clerror("Kernel.get_work_group_info", CL_INVALID_VALUE);
         }
@@ -1951,7 +1949,7 @@ create_buffer(clobj_t *buffer, clobj_t _ctx, cl_mem_flags flags,
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
             auto mem = retry_mem_error<cl_mem>([&] {
-                    return pyopencl_call_guarded(clCreateBuffer, ctx->data(),
+                    return pyopencl_call_guarded(clCreateBuffer, ctx,
                                                  flags, size, hostbuf);
                 });
             *buffer = new_buffer(mem, (flags & CL_MEM_USE_HOST_PTR ?
@@ -1996,7 +1994,7 @@ create_program_with_source(clobj_t *prog, clobj_t _ctx, const char *src)
     return c_handle_error([&] {
             size_t length = strlen(src);
             cl_program result = pyopencl_call_guarded(
-                clCreateProgramWithSource, ctx->data(), 1, &src, &length);
+                clCreateProgramWithSource, ctx, 1, &src, &length);
             *prog = new_program(result, KND_SOURCE);
         });
 }
@@ -2011,7 +2009,7 @@ create_program_with_binary(clobj_t *prog, clobj_t _ctx,
     pyopencl_buf<cl_int> binary_statuses(num_devices);
     return c_handle_error([&] {
             cl_program result = pyopencl_call_guarded(
-                clCreateProgramWithBinary, ctx->data(), num_devices, devs.get(),
+                clCreateProgramWithBinary, ctx, num_devices, devs.get(),
                 binary_sizes, reinterpret_cast<const unsigned char**>(
                     const_cast<const char**>(binaries)), binary_statuses.get());
             // for (cl_uint i = 0; i < num_devices; ++i)
@@ -2132,7 +2130,7 @@ create_image_2d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
     return c_handle_error([&] {
             auto mem = retry_mem_error<cl_mem>([&] {
                     return pyopencl_call_guarded(
-                        clCreateImage2D, ctx->data(), flags,
+                        clCreateImage2D, ctx, flags,
                         fmt, width, height, pitch, buffer);
                 });
             *img = new_image(mem, (flags & CL_MEM_USE_HOST_PTR ?
@@ -2149,7 +2147,7 @@ create_image_3d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
     return c_handle_error([&] {
             auto mem = retry_mem_error<cl_mem>([&] {
                     return pyopencl_call_guarded(
-                        clCreateImage3D, ctx->data(), flags, fmt, width,
+                        clCreateImage3D, ctx, flags, fmt, width,
                         height, depth, pitch_x, pitch_y, buffer);
                 });
             *img = new_image(mem, (flags & CL_MEM_USE_HOST_PTR ?
@@ -2239,7 +2237,7 @@ enqueue_nd_range_kernel(clobj_t *_evt, clobj_t _queue, clobj_t _knl,
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueNDRangeKernel, queue->data(), knl->data(),
+                        clEnqueueNDRangeKernel, queue, knl,
                         work_dim, global_work_offset, global_work_size,
                         local_work_size, num_wait_for, wait_for.get(), &evt);
                 });
@@ -2258,7 +2256,7 @@ enqueue_task(clobj_t *_evt, clobj_t _queue, clobj_t _knl,
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueTask, queue->data(), knl->data(),
+                        clEnqueueTask, queue, knl,
                         num_wait_for, wait_for.get(), &evt);
                 });
             *_evt = new_event(evt);
@@ -2274,7 +2272,7 @@ enqueue_marker_with_wait_list(clobj_t *_evt, clobj_t _queue,
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
             cl_event evt;
-            pyopencl_call_guarded(clEnqueueMarkerWithWaitList, queue->data(),
+            pyopencl_call_guarded(clEnqueueMarkerWithWaitList, queue,
                                   num_wait_for, wait_for.get(), &evt);
             *_evt = new_event(evt);
         });
@@ -2288,7 +2286,7 @@ enqueue_barrier_with_wait_list(clobj_t *_evt, clobj_t _queue,
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
             cl_event evt;
-            pyopencl_call_guarded(clEnqueueBarrierWithWaitList, queue->data(),
+            pyopencl_call_guarded(clEnqueueBarrierWithWaitList, queue,
                                   num_wait_for, wait_for.get(), &evt);
             *_evt = new_event(evt);
         });
@@ -2302,7 +2300,7 @@ enqueue_wait_for_events(clobj_t _queue, const clobj_t *_wait_for,
     auto queue = static_cast<command_queue*>(_queue);
     auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
-            pyopencl_call_guarded(clEnqueueWaitForEvents, queue->data(),
+            pyopencl_call_guarded(clEnqueueWaitForEvents, queue,
                                   num_wait_for, wait_for.get());
         });
 }
@@ -2313,7 +2311,7 @@ enqueue_marker(clobj_t *_evt, clobj_t _queue)
     auto queue = static_cast<command_queue*>(_queue);
     return c_handle_error([&] {
             cl_event evt;
-            pyopencl_call_guarded(clEnqueueMarker, queue->data(), &evt);
+            pyopencl_call_guarded(clEnqueueMarker, queue, &evt);
             *_evt = new_event(evt);
         });
 }
@@ -2323,7 +2321,7 @@ enqueue_barrier(clobj_t _queue)
 {
     auto queue = static_cast<command_queue*>(_queue);
     return c_handle_error([&] {
-            pyopencl_call_guarded(clEnqueueBarrier, queue->data());
+            pyopencl_call_guarded(clEnqueueBarrier, queue);
         });
 }
 
@@ -2339,8 +2337,8 @@ _convert_memory_map(clobj_t *_evt, cl_event evt, command_queue *queue,
         if (evt) {
             pyopencl_call_guarded_cleanup(clReleaseEvent, evt);
         }
-        pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, queue->data(),
-                                      buf->data(), res, 0, nullptr, nullptr);
+        pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, queue,
+                                      buf, res, 0, nullptr, nullptr);
         throw;
     }
 }
@@ -2360,7 +2358,7 @@ enqueue_read_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueReadBuffer, queue->data(), mem->data(),
+                        clEnqueueReadBuffer, queue, mem,
                         cast_bool(is_blocking), device_offset, size,
                         buffer, num_wait_for, wait_for.get(), &evt);
                 });
@@ -2381,7 +2379,7 @@ enqueue_write_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueWriteBuffer, queue->data(), mem->data(),
+                        clEnqueueWriteBuffer, queue, mem,
                         cast_bool(is_blocking), device_offset,
                         size, buffer, num_wait_for, wait_for.get(), &evt);
                 });
@@ -2402,10 +2400,10 @@ enqueue_copy_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
                 size_t byte_count_src = 0;
                 size_t byte_count_dst = 0;
                 pyopencl_call_guarded(
-                    clGetMemObjectInfo, src->data(), CL_MEM_SIZE,
+                    clGetMemObjectInfo, src, CL_MEM_SIZE,
                     sizeof(byte_count), &byte_count_src, nullptr);
                 pyopencl_call_guarded(
-                    clGetMemObjectInfo, src->data(), CL_MEM_SIZE,
+                    clGetMemObjectInfo, src, CL_MEM_SIZE,
                     sizeof(byte_count), &byte_count_dst, nullptr);
                 byte_count = std::min(byte_count_src, byte_count_dst);
             }
@@ -2413,8 +2411,8 @@ enqueue_copy_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueCopyBuffer, queue->data(), src->data(),
-                        dst->data(), src_offset, dst_offset, byte_count,
+                        clEnqueueCopyBuffer, queue, src,
+                        dst, src_offset, dst_offset, byte_count,
                         num_wait_for, wait_for.get(), &evt);
                 });
             *_evt = new_event(evt);
@@ -2434,7 +2432,7 @@ enqueue_map_buffer(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
             cl_event evt;
             void *res = retry_mem_error<void*>([&] {
                     return pyopencl_call_guarded(
-                        clEnqueueMapBuffer, queue->data(), buf->data(),
+                        clEnqueueMapBuffer, queue, buf,
                         cast_bool(block), flags, offset, size, num_wait_for,
                         wait_for.get(), &evt);
                 });
@@ -2454,7 +2452,7 @@ enqueue_fill_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem, void *pattern,
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueFillBuffer, queue->data(), mem->data(),
+                        clEnqueueFillBuffer, queue, mem,
                         pattern, psize, offset, size, num_wait_for,
                         wait_for.get(), &evt);
                 });
@@ -2483,7 +2481,7 @@ enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueReadImage, queue->data(), img->data(),
+                        clEnqueueReadImage, queue, img,
                         cast_bool(is_blocking), origin, region, row_pitch,
                         slice_pitch, buffer, num_wait_for,
                         wait_for.get(), &evt);
@@ -2510,8 +2508,8 @@ enqueue_copy_image(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueCopyImage, queue->data(), src->data(),
-                        dst->data(), src_origin, dst_origin, region,
+                        clEnqueueCopyImage, queue, src,
+                        dst, src_origin, dst_origin, region,
                         num_wait_for, wait_for.get(), &evt);
                 });
             *_evt = new_event(evt);
@@ -2535,7 +2533,7 @@ enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueWriteImage, queue->data(), img->data(),
+                        clEnqueueWriteImage, queue, img,
                         cast_bool(is_blocking), origin, region, row_pitch,
                         slice_pitch, buffer, num_wait_for,
                         wait_for.get(), &evt);
@@ -2560,7 +2558,7 @@ enqueue_map_image(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
             cl_event evt;
             void *res = retry_mem_error<void*>([&] {
                     return pyopencl_call_guarded(
-                        clEnqueueMapImage, queue->data(), img->data(),
+                        clEnqueueMapImage, queue, img,
                         cast_bool(block), flags, origin, region, row_pitch,
                         slice_pitch, num_wait_for, wait_for.get(), &evt);
                 });
@@ -2677,7 +2675,7 @@ create_from_gl_buffer(clobj_t *ptr, clobj_t _ctx,
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
             cl_mem mem = pyopencl_call_guarded(clCreateFromGLBuffer,
-                                               ctx->data(), flags, bufobj);
+                                               ctx, flags, bufobj);
             *ptr = pyopencl_convert_obj(gl_buffer,
                                         clReleaseMemObject, mem);
         });
@@ -2690,7 +2688,7 @@ create_from_gl_renderbuffer(clobj_t *ptr, clobj_t _ctx,
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
             cl_mem mem = pyopencl_call_guarded(clCreateFromGLRenderbuffer,
-                                               ctx->data(), flags, bufobj);
+                                               ctx, flags, bufobj);
             *ptr = pyopencl_convert_obj(gl_renderbuffer,
                                         clReleaseMemObject, mem);
         });

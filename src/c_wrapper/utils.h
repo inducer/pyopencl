@@ -134,6 +134,42 @@ public:
 };
 
 template<typename CLObj>
+class CLArg<CLObj,
+            typename std::enable_if<
+                std::is_base_of<clobj<typename CLObj::cl_type>,
+                                CLObj>::value>::type> {
+private:
+    CLObj &m_obj;
+public:
+    CLArg(CLObj &obj) : m_obj(obj)
+    {
+    }
+    PYOPENCL_INLINE const typename CLObj::cl_type&
+    convert()
+    {
+        return m_obj.data();
+    }
+};
+
+template<typename CLObj>
+class CLArg<CLObj*,
+            typename std::enable_if<
+                std::is_base_of<clobj<typename CLObj::cl_type>,
+                                CLObj>::value>::type> {
+private:
+    CLObj *m_obj;
+public:
+    CLArg(CLObj *obj) : m_obj(obj)
+    {
+    }
+    PYOPENCL_INLINE const typename CLObj::cl_type&
+    convert()
+    {
+        return m_obj->data();
+    }
+};
+
+template<typename CLObj>
 static PYOPENCL_INLINE CLObj*
 clobj_from_int_ptr(intptr_t ptr)
 {

@@ -94,12 +94,39 @@ public:
 
 // {{{ tracing and error reporting
 
+template<typename T, class = void>
+class CLArg {
+private:
+    T &m_arg;
+public:
+    CLArg(T &arg)
+        : m_arg(arg)
+    {
+    }
+    PYOPENCL_INLINE T&
+    convert()
+    {
+        return m_arg;
+    }
+};
+
+template<typename>
+struct __CLArgGetter {
+    template<typename T>
+    static PYOPENCL_INLINE auto
+    get(T clarg) -> decltype(clarg.convert())
+    {
+        return clarg.convert();
+    }
+};
+
 template<typename... ArgTypes2, typename... ArgTypes>
 static PYOPENCL_INLINE void
 call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     print_call_trace(name);
-    cl_int status_code = func(ArgTypes(args)...);
+    auto argpack = make_argpack<CLArg>(std::forward<ArgTypes2>(args)...);
+    cl_int status_code = argpack.template call<__CLArgGetter>(func);
     if (status_code != CL_SUCCESS) {
         throw clerror(name, status_code);
     }
@@ -111,7 +138,9 @@ call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     print_call_trace(name);
     cl_int status_code = CL_SUCCESS;
-    T res = func(args..., &status_code);
+    auto argpack = make_argpack<CLArg>(std::forward<ArgTypes2>(args)...,
+                                       &status_code);
+    T res = argpack.template call<__CLArgGetter>(func);
     if (status_code != CL_SUCCESS) {
         throw clerror(name, status_code);
     }
@@ -126,7 +155,8 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
                      ArgTypes2&&... args)
 {
     print_call_trace(name);
-    cl_int status_code = func(ArgTypes(args)...);
+    auto argpack = make_argpack<CLArg>(std::forward<ArgTypes2>(args)...);
+    cl_int status_code = argpack.template call<__CLArgGetter>(func);
     if (status_code != CL_SUCCESS) {
         std::cerr
             << ("PyOpenCL WARNING: a clean-up operation failed "
