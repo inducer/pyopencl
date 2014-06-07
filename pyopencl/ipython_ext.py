@@ -23,14 +23,11 @@ class PyOpenCLMagics(Magics):
             except KeyError:
                 ctx = None
 
-        if not isinstance(ctx, cl.Context):
-            ctx = None
-
-        if ctx is None:
+        if ctx is None or not isinstance(ctx, cl.Context):
             raise RuntimeError("unable to locate cl context, which must be "
                     "present in namespace as 'cl_ctx' or 'ctx'")
 
-        prg = cl.Program(ctx, cell.encode("utf8")).build(options=line)
+        prg = cl.Program(ctx, cell.encode("utf8")).build(options=line.encode("utf8"))
 
         for knl in prg.all_kernels():
             self.shell.user_ns[knl.function_name] = knl

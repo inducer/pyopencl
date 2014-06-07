@@ -175,7 +175,7 @@ class Program(object):
 
     def build(self, options=[], devices=None, cache_dir=None):
         if isinstance(options, basestring):
-            options = [str(options)]
+            options = [options.encode("utf8")]
 
         options = (options
                 + _DEFAULT_BUILD_OPTIONS
