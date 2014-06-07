@@ -324,7 +324,8 @@ public:
             // types of AMD dev attrs divined from
             // https://www.khronos.org/registry/cl/api/1.2/cl.hpp
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
-        case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD: DEV_GET_INT_INF(cl_ulong);
+        case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD:
+            return DEV_GET_INT_INF(cl_ulong);
 #endif
             /* FIXME
                #ifdef CL_DEVICE_TOPOLOGY_AMD
@@ -1698,9 +1699,6 @@ new_program(cl_program prog, program_kind_type progkind=KND_UNKNOWN)
 // {{{ kernel
 
 class kernel : public clobj<cl_kernel> {
-private:
-    cl_kernel m_kernel;
-
 public:
     PYOPENCL_DEF_GET_CLASS_T(KERNEL);
     kernel(cl_kernel knl, bool retain)
