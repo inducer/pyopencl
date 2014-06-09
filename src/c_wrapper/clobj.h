@@ -32,6 +32,7 @@ private:
     CLType m_obj;
 public:
     typedef CLType cl_type;
+    PYOPENCL_INLINE
     clobj(CLType obj, bool=false) : m_obj(obj)
     {}
     PYOPENCL_INLINE const CLType&
@@ -91,7 +92,7 @@ clobj_from_int_ptr(intptr_t ptr)
 
 template<typename T, typename T2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<typename T::cl_type>
-buf_from_class(const T2 *buf2, size_t len)
+buf_from_class(T2 *buf2, size_t len)
 {
     pyopencl_buf<typename T::cl_type> buf(len);
     for (size_t i = 0;i < len;i++) {
@@ -102,21 +103,14 @@ buf_from_class(const T2 *buf2, size_t len)
 
 template<typename T, typename T2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<typename T::cl_type>
-buf_from_class(const pyopencl_buf<T2> &&buf)
-{
-    return buf_from_class(buf.get(), buf.len());
-}
-
-template<typename T, typename T2>
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<typename T::cl_type>
-buf_from_class(const pyopencl_buf<T2> &buf)
+buf_from_class(T2 &&buf)
 {
     return buf_from_class(buf.get(), buf.len());
 }
 
 template<typename T, typename T2, typename... ArgTypes>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<clbase*>
-buf_to_base(const T2 *buf2, size_t len, ArgTypes&&... args)
+buf_to_base(T2 *buf2, size_t len, ArgTypes&&... args)
 {
     pyopencl_buf<clbase*> buf(len);
     size_t i = 0;
@@ -137,18 +131,10 @@ buf_to_base(const T2 *buf2, size_t len, ArgTypes&&... args)
 
 template<typename T, typename T2, typename... ArgTypes>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<clbase*>
-buf_to_base(const pyopencl_buf<T2> &&buf2, ArgTypes&&... args)
+buf_to_base(T2 &&buf2, ArgTypes&&... args)
 {
     return buf_to_base<T>(buf2.get(), buf2.len(),
                            std::forward<ArgTypes>(args)...);
-}
-
-template<typename T, typename T2, typename... ArgTypes>
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<clbase*>
-buf_to_base(const pyopencl_buf<T2> &buf2, ArgTypes&&... args)
-{
-    return buf_to_base<T>(buf2.get(), buf2.len(),
-                          std::forward<ArgTypes>(args)...);
 }
 
 }

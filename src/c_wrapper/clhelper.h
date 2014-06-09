@@ -48,52 +48,43 @@ convert_array_info(const char *tname, pyopencl_buf<T> &&_buf)
 #define pyopencl_get_array_info(type, what, args...)                    \
     pyopencl_convert_array_info(type, pyopencl_get_vec_info(type, what, args))
 
-template<typename T, typename Cls>
+template<typename CLObj, typename T>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
-convert_opaque_array_info(pyopencl_buf<T> &buf)
+convert_opaque_array_info(T &&buf)
 {
     generic_info info;
     info.dontfree = 0;
-    info.opaque_class = Cls::get_class_t();
+    info.opaque_class = CLObj::get_class_t();
     info.type = _copy_str(std::string("void*[") + tostring(buf.len()) + "]");
-    info.value = buf_to_base<Cls>(buf).release();
+    info.value = buf_to_base<CLObj>(std::forward<T>(buf)).release();
     return info;
 }
+#define pyopencl_get_opaque_array_info(cls, what, args...)  \
+    pyopencl::convert_opaque_array_info<cls>(               \
+        pyopencl_get_vec_info(cls::cl_type, what, args))
 
-template<typename T, typename Cls>
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
-convert_opaque_array_info(pyopencl_buf<T> &&_buf)
-{
-    pyopencl_buf<T> &buf = _buf;
-    return convert_opaque_array_info<T, Cls>(buf);
-}
-#define pyopencl_get_opaque_array_info(type, cls, what, args...)  \
-    pyopencl::convert_opaque_array_info<type, cls>(              \
-        pyopencl_get_vec_info(type, what, args))
-
-template<typename CLType, typename Cls,
-         typename... ArgTypes, typename... ArgTypes2>
+template<typename CLObj, typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
                 ArgTypes2&&... args)
 {
-    CLType param_value;
+    typename CLObj::cl_type param_value;
     call_guarded(func, name, args..., sizeof(param_value),
                  &param_value, nullptr);
     generic_info info;
     info.dontfree = 0;
-    info.opaque_class = Cls::get_class_t();
+    info.opaque_class = CLObj::get_class_t();
     info.type = "void *";
     if (param_value) {
-        info.value = (void*)(new Cls(param_value, /*retain*/ true));
+        info.value = (void*)(new CLObj(param_value, /*retain*/ true));
     } else {
         info.value = nullptr;
     }
     return info;
 }
-#define pyopencl_get_opaque_info(type, cls, what, args...)              \
-    pyopencl::get_opaque_info<type, cls>(clGet##what##Info,             \
-                                         "clGet" #what "Info", args)
+#define pyopencl_get_opaque_info(clobj, what, args...)              \
+    pyopencl::get_opaque_info<clobj>(clGet##what##Info,             \
+                                     "clGet" #what "Info", args)
 
 template<typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
@@ -163,10 +154,12 @@ get_ext_fun(cl_platform_id plat, const char *name, const char *err)
     }
     return func;
 }
+#define pyopencl_get_ext_fun(plat, name)                                \
+    pyopencl::get_ext_fun<name##_fn>(plat, #name, #name " not available")
 #else
 template<typename T>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
-get_ext_fun(cl_platform_id, const char *name, const char *err)
+get_ext_fun(const char *name, const char *err)
 {
     T func = (T)clGetExtensionFunctionAddress(name);
     if (!func) {
@@ -174,9 +167,9 @@ get_ext_fun(cl_platform_id, const char *name, const char *err)
     }
     return func;
 }
-#endif
 #define pyopencl_get_ext_fun(plat, name)                                \
-    pyopencl::get_ext_fun<name##_fn>(plat, #name, #name " not available")
+    pyopencl::get_ext_fun<name##_fn>(#name, #name " not available")
+#endif
 
 // }}}
 

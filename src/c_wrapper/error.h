@@ -173,9 +173,9 @@ c_handle_error(std::function<void()> func) noexcept
     }
 }
 
-template<typename T>
-static PYOPENCL_INLINE T
-retry_mem_error(std::function<T()> func)
+template<typename Func>
+static PYOPENCL_INLINE auto
+retry_mem_error(Func func) -> decltype(func())
 {
     try {
         return func();

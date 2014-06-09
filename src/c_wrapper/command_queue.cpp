@@ -1,0 +1,131 @@
+#include "command_queue.h"
+#include "device.h"
+#include "context.h"
+#include "event.h"
+#include "clhelper.h"
+
+namespace pyopencl {
+
+command_queue::~command_queue()
+{
+    pyopencl_call_guarded_cleanup(clReleaseCommandQueue, this);
+}
+
+generic_info
+command_queue::get_info(cl_uint param_name) const
+{
+    switch ((cl_command_queue_info)param_name) {
+    case CL_QUEUE_CONTEXT:
+        return pyopencl_get_opaque_info(context, CommandQueue,
+                                        this, param_name);
+    case CL_QUEUE_DEVICE:
+        return pyopencl_get_opaque_info(device, CommandQueue, this, param_name);
+    case CL_QUEUE_REFERENCE_COUNT:
+        return pyopencl_get_int_info(cl_uint, CommandQueue,
+                                     this, param_name);
+    case CL_QUEUE_PROPERTIES:
+        return pyopencl_get_int_info(cl_command_queue_properties,
+                                     CommandQueue, this, param_name);
+    default:
+        throw clerror("CommandQueue.get_info", CL_INVALID_VALUE);
+    }
+}
+
+}
+
+// c wrapper
+// Import all the names in pyopencl namespace for c wrappers.
+using namespace pyopencl;
+
+// Command Queue
+error*
+create_command_queue(clobj_t *queue, clobj_t _ctx,
+                     clobj_t _dev, cl_command_queue_properties props)
+{
+    auto ctx = static_cast<context*>(_ctx);
+    auto py_dev = static_cast<device*>(_dev);
+    return c_handle_error([&] {
+            cl_device_id dev;
+            if (py_dev) {
+                dev = py_dev->data();
+            } else {
+                auto devs = pyopencl_get_vec_info(cl_device_id, Context,
+                                                  ctx, CL_CONTEXT_DEVICES);
+                if (devs.len() == 0) {
+                    throw clerror("CommandQueue", CL_INVALID_VALUE,
+                                  "context doesn't have any devices? -- "
+                                  "don't know which one to default to");
+                }
+                dev = devs[0];
+            }
+            cl_command_queue cl_queue =
+                pyopencl_call_guarded(clCreateCommandQueue, ctx, dev, props);
+            *queue = new command_queue(cl_queue, false);
+        });
+}
+
+error*
+command_queue__finish(clobj_t queue)
+{
+    return c_handle_error([&] {
+            pyopencl_call_guarded(clFinish, static_cast<command_queue*>(queue));
+        });
+}
+
+error*
+command_queue__flush(clobj_t queue)
+{
+    return c_handle_error([&] {
+            pyopencl_call_guarded(clFlush, static_cast<command_queue*>(queue));
+        });
+}
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+error*
+enqueue_marker_with_wait_list(clobj_t *_evt, clobj_t _queue,
+                              const clobj_t *_wait_for, uint32_t num_wait_for)
+{
+    auto queue = static_cast<command_queue*>(_queue);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    return c_handle_error([&] {
+            cl_event evt;
+            pyopencl_call_guarded(clEnqueueMarkerWithWaitList, queue,
+                                  wait_for, &evt);
+            *_evt = new_event(evt);
+        });
+}
+
+error*
+enqueue_barrier_with_wait_list(clobj_t *_evt, clobj_t _queue,
+                               const clobj_t *_wait_for, uint32_t num_wait_for)
+{
+    auto queue = static_cast<command_queue*>(_queue);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    return c_handle_error([&] {
+            cl_event evt;
+            pyopencl_call_guarded(clEnqueueBarrierWithWaitList, queue,
+                                  wait_for, &evt);
+            *_evt = new_event(evt);
+        });
+}
+#endif
+
+error*
+enqueue_marker(clobj_t *_evt, clobj_t _queue)
+{
+    auto queue = static_cast<command_queue*>(_queue);
+    return c_handle_error([&] {
+            cl_event evt;
+            pyopencl_call_guarded(clEnqueueMarker, queue, &evt);
+            *_evt = new_event(evt);
+        });
+}
+
+error*
+enqueue_barrier(clobj_t _queue)
+{
+    auto queue = static_cast<command_queue*>(_queue);
+    return c_handle_error([&] {
+            pyopencl_call_guarded(clEnqueueBarrier, queue);
+        });
+}
