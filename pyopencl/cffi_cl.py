@@ -275,7 +275,7 @@ for type_, d in _constants.iteritems():
 # {{{ exceptions
 
 class Error(Exception):
-    def __init__(self, msg='', routine='', code=0):
+    def __init__(self, msg='', code=0, routine=''):
         self.routine = routine
         assert isinstance(code, int)
         self.code = code
@@ -315,7 +315,7 @@ def _handle_error(error):
         klass = Error
 
     e = klass(routine=_ffi.string(error.routine),
-            code=error.code, msg=_ffi.string(error.msg))
+              code=error.code, msg=_ffi.string(error.msg))
     _lib.free_pointer(error.routine)
     _lib.free_pointer(error.msg)
     _lib.free_pointer(error)
@@ -365,12 +365,12 @@ def _parse_context_properties(properties):
     for prop_tuple in properties:
         if len(prop_tuple) != 2:
             raise RuntimeError("Context", status_code.INVALID_VALUE,
-                    "property tuple must have length 2")
+                               "property tuple must have length 2")
 
         prop, value = prop_tuple
         if prop is None:
             raise RuntimeError("Context", status_code.INVALID_VALUE,
-                    "invalid context property")
+                               "invalid context property")
 
         props.append(prop)
         if prop == context_properties.PLATFORM:
@@ -390,13 +390,13 @@ def _parse_context_properties(properties):
 
             val = (ctypes.cast(value, ctypes.c_void_p)).value
             if val is None:
-                raise LogicError("Context",
-                        status_code.INVALID_VALUE,
-                        "You most likely have not initialized OpenGL properly.")
+                raise LogicError("Context", status_code.INVALID_VALUE,
+                                 "You most likely have not initialized "
+                                 "OpenGL properly.")
             props.append(val)
         else:
             raise RuntimeError("Context", status_code.INVALID_VALUE,
-                    "invalid context property")
+                               "invalid context property")
     props.append(0)
     return _ffi.new('cl_context_properties[]', props)
 
@@ -514,8 +514,8 @@ def _c_buffer_from_obj(obj, writable=False):
             return (obj, len(obj), obj)
         else:
             raise LogicError("", status_code.INVALID_VALUE,
-                    "PyOpencl on PyPy only accepts numpy arrays "
-                    "and scalars arguments")
+                             "PyOpencl on PyPy only accepts numpy arrays "
+                             "and scalars arguments")
 
         # }}}
 
@@ -537,7 +537,8 @@ def _c_buffer_from_obj(obj, writable=False):
         # ctypes check exit status of these, so no need to check for errors.
     except TypeError:
         raise LogicError(routine=None, code=status_code.INVALID_VALUE,
-                msg="un-sized (pure-Python) types not acceptable as arguments")
+                         msg=("un-sized (pure-Python) types not acceptable "
+                              "as arguments"))
 
     return _ffi.cast('void*', addr.value), length.value, obj
 
@@ -563,7 +564,8 @@ class Buffer(MemoryObject):
                     hostbuf, writable=flags & mem_flags.USE_HOST_PTR)
             if size > hostbuf_size:
                 raise RuntimeError("Buffer", status_code.INVALID_VALUE,
-                        "Specified size is greater than host buffer size")
+                                   "Specified size is greater than host "
+                                   "buffer size")
             if size == 0:
                 size = hostbuf_size
 
@@ -597,8 +599,8 @@ class _Program(_Common):
     def _init_binary(self, context, devices, binaries):
         if len(devices) != len(binaries):
             raise RuntimeError("create_program_with_binary",
-                    status_code.INVALID_VALUE,
-                    "device and binary counts don't match")
+                               status_code.INVALID_VALUE,
+                               "device and binary counts don't match")
 
         ptr_program = _ffi.new('clobj_t*')
         ptr_devices = _ffi.new('clobj_t[]', [device.ptr for device in devices])
@@ -740,7 +742,8 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size,
         elif work_dim != len(local_work_size):
             raise RuntimeError("enqueue_nd_range_kernel",
                                status_code.INVALID_VALUE,
-                               "global/local work sizes have differing dimensions")
+                               "global/local work sizes have differing "
+                               "dimensions")
 
         if len(local_work_size) < work_dim:
             local_work_size = (local_work_size +
@@ -1135,7 +1138,7 @@ class Image(MemoryObject):
     def _init_legacy(self, context, flags, format, shape, pitches, buffer):
         if shape is None:
             raise LogicError("Image", status_code.INVALID_VALUE,
-                    "'shape' must be given")
+                             "'shape' must be given")
 
         if buffer is None:
             c_buf, size = _ffi.NULL, 0
@@ -1152,13 +1155,13 @@ class Image(MemoryObject):
                     pitch, = pitches
                 except ValueError:
                     raise LogicError("Image", status_code.INVALID_VALUE,
-                            "invalid length of pitch tuple")
+                                     "invalid length of pitch tuple")
 
             # check buffer size
             if (buffer is not None and
                 max(pitch, width * format.itemsize) * height > size):
                 raise LogicError("Image", status_code.INVALID_VALUE,
-                        "buffer too small")
+                                 "buffer too small")
 
             ptr = _ffi.new('clobj_t*')
             _handle_error(_lib.create_image_2d(
@@ -1175,14 +1178,14 @@ class Image(MemoryObject):
                     pitch_x, pitch_y = pitches
                 except ValueError:
                     raise LogicError("Image", status_code.INVALID_VALUE,
-                            "invalid length of pitch tuple")
+                                     "invalid length of pitch tuple")
 
             # check buffer size
             if (buffer is not None and
                 (max(max(pitch_x, width * format.itemsize) *
                      height, pitch_y) * depth > size)):
                 raise LogicError("Image", status_code.INVALID_VALUE,
-                    "buffer too small")
+                                 "buffer too small")
 
             ptr = _ffi.new('clobj_t*')
             _handle_error(_lib.create_image_3d(
@@ -1194,7 +1197,7 @@ class Image(MemoryObject):
             self.ptr = ptr[0]
         else:
             raise LogicError("Image", status_code.INVALID_VALUE,
-                    "invalid dimension")
+                             "invalid dimension")
 
     def get_image_info(self, param):
         info = _ffi.new('generic_info*')
