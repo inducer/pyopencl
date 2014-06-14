@@ -807,7 +807,7 @@ def _enqueue_marker(queue):
 # {{{ _enqueue_barrier_*
 
 def _enqueue_barrier_with_wait_list(queue, wait_for=None):
-    ptr_event = _ffi.new('cobj_t*')
+    ptr_event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_barrier_with_wait_list(
         ptr_event, queue.ptr, c_wait_for, num_wait_for))
