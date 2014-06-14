@@ -234,7 +234,18 @@ class device_type(_NoInit):
 
 
 class mem_flags(_NoInit):
-    pass
+    @classmethod
+    def _writable(cls, flags):
+        return flags & (cls.READ_WRITE | cls.WRITE_ONLY)
+    @classmethod
+    def _hold_host(cls, flags):
+        return flags & cls.USE_HOST_PTR
+    @classmethod
+    def _use_host(cls, flags):
+        return flags & (cls.USE_HOST_PTR | cls.COPY_HOST_PTR)
+    @classmethod
+    def _host_writable(cls, flags):
+        return cls._writable(flags) and cls._hold_host(flags)
 
 
 class mem_object_type(_NoInit):
@@ -595,7 +606,7 @@ class MemoryMap(_Common):
             'version': 3
         }
 
-def _c_buffer_from_obj(obj, writable=False):
+def _c_buffer_from_obj(obj, writable=False, retain=False):
     """Convert a Python object to a tuple (cdata('void *'), num_bytes, dummy)
     to be able to pass a data stream to a C function. The dummy variable exists
     only to ensure that the Python object referencing the C buffer is not
@@ -611,7 +622,7 @@ def _c_buffer_from_obj(obj, writable=False):
             return (_ffi.cast('void*', obj.__array_interface__['data'][0]),
                     obj.nbytes, obj)
         elif isinstance(obj, np.generic):
-            if writable:
+            if writable or retain:
                 raise TypeError('expected an object with a writable '
                                 'buffer interface.')
             # numpy scalar
@@ -629,6 +640,9 @@ def _c_buffer_from_obj(obj, writable=False):
                 # bytes is not writable
                 raise TypeError('expected an object with a writable '
                                 'buffer interface.')
+            if retain:
+                buff = _ffi.new('char[]', obj)
+                return (buf, len(obj), buf)
             return (obj, len(obj), obj)
         else:
             raise LogicError("", status_code.INVALID_VALUE,
@@ -671,21 +685,25 @@ class Buffer(MemoryObject):
     _id = 'buffer'
 
     def __init__(self, context, flags, size=0, hostbuf=None):
-        if hostbuf is not None and not (
-                flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
+        if hostbuf is not None and not mem_flags._use_host(flags):
             warnings.warn("'hostbuf' was passed, but no memory flags "
-                    "to make use of it.")
+                          "to make use of it.")
 
-        c_hostbuf = _ffi.NULL
         if hostbuf is not None:
-            c_hostbuf, hostbuf_size, _ = _c_buffer_from_obj(
-                    hostbuf, writable=flags & mem_flags.USE_HOST_PTR)
+            need_retain = mem_flags._hold_host(flags)
+            c_hostbuf, hostbuf_size, retained_buf = _c_buffer_from_obj(
+                    hostbuf, writable=mem_flags._host_writable(flags),
+                    retain=need_retain)
+            if need_retain:
+                self.__retained_buf = retained_buf
             if size > hostbuf_size:
                 raise RuntimeError("Buffer", status_code.INVALID_VALUE,
                                    "Specified size is greater than host "
                                    "buffer size")
             if size == 0:
                 size = hostbuf_size
+        else:
+            c_hostbuf = _ffi.NULL
 
         ptr_buffer = _ffi.new('clobj_t*')
         _handle_error(_lib.create_buffer(
@@ -784,9 +802,10 @@ class Kernel(_Common):
         elif isinstance(arg, Sampler):
             _handle_error(_lib.kernel__set_arg_sampler(self.ptr, arg_index, arg.ptr))
         else:
-            # todo: how to handle args other than numpy arrays?
+            # TODO?: handle args other than numpy arrays
             c_buf, size, _ = _c_buffer_from_obj(arg)
-            _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index, c_buf, size))
+            _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
+                                                   c_buf, size))
 
     def get_work_group_info(self, param, device):
         info = _ffi.new('generic_info*')
@@ -971,9 +990,10 @@ def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
 
 def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
         wait_for=None, is_blocking=True):
-    c_buf, size, c_ref = _c_buffer_from_obj(hostbuf)
+    c_buf, size, c_ref = _c_buffer_from_obj(hostbuf, retain=True)
     ptr_event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
+    # TODO??: make get_ward return the correct value here
     _handle_error(_lib.enqueue_write_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
@@ -1065,14 +1085,15 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     if origin_l > 3 or region_l > 3:
         raise RuntimeError("origin or region has too many components",
                            "enqueue_write_image")
-    c_buf, size, _ = _c_buffer_from_obj(hostbuf)
+    c_buf, size, c_ref = _c_buffer_from_obj(hostbuf, retain=True)
     _event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
-    # TODO check buffer size
+    # TODO: check buffer size
+    # TODO??: make get_ward return the correct value here
     _handle_error(_lib.enqueue_read_image(
         _event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
-        bool(is_blocking), _ffi.new_handle(c_buf)))
+        bool(is_blocking), _ffi.new_handle(c_ref)))
     return _create_instance(NannyEvent, _event[0])
 
 def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
@@ -1235,6 +1256,61 @@ def get_supported_image_formats(context, flags, image_type):
 
 # }}}
 
+# {{{ ImageDescriptor
+
+def _write_only_property(*arg):
+    return property().setter(*arg)
+
+class ImageDescriptor:
+    def __init__(self):
+        self.ptr = _ffi.new("cl_image_desc*")
+    @property
+    def image_type(self):
+        return self.ptr.image_type
+    @image_type.setter
+    def image_type(self, t):
+        self.ptr.image_type = t
+    @property
+    def array_size(self):
+        return self.ptr.image_array_size
+    @array_size.setter
+    def array_size(self, s):
+        self.ptr.image_array_size = s
+    @property
+    def num_mip_levels(self):
+        return self.ptr.num_mip_levels
+    @num_mip_levels.setter
+    def num_mip_levels(self, n):
+        self.ptr.num_mip_levels = n
+    @property
+    def num_samples(self):
+        return self.ptr.num_samples
+    @num_samples.setter
+    def num_samples(self, n):
+        self.ptr.num_samples = n
+    @_write_only_property
+    def shape(self, shape):
+        if len(shape) > 3:
+            raise LogicError("shape has too many components",
+                             status_code.INVALID_VALUE, "transfer")
+        desc = self.ptr
+        desc.image_width = shape[0];
+        desc.image_height = shape[1];
+        desc.image_depth = shape[2];
+        desc.image_array_size = shape[2];
+    @_write_only_property
+    def pitches(self, pitches):
+        if len(pitches) > 2:
+            raise LogicError("pitches has too many components",
+                             status_code.INVALID_VALUE, "transfer")
+        desc = self.ptr
+        desc.image_row_pitch = pitches[0];
+        desc.image_slice_pitch = pitches[1];
+    @_write_only_property
+    def buffer(self, buff):
+        self.ptr.buffer = buff.ptr.int_ptr if buff else _ffi.NULL
+
+# }}}
 
 # {{{ Image
 
@@ -1243,26 +1319,35 @@ class Image(MemoryObject):
 
     def __init__(self, *args):
         if len(args) == 5:
-            # > (1,2)
-            context, flags, format, desc, hostbuf = args
-            # TODO WTF???
+            # >= 1.2
+            self.__init_1_2(*args)
         elif len(args) == 6:
-            # legacy init for CL 1.1 and older
-            self._init_legacy(*args)
+            # <= 1.1
+            self.__init_legacy(*args)
 
         else:
             assert False
+    def __init_1_2(self, context, flags, fmt, desc, hostbuf):
+        # TODO
+        pass
 
-    def _init_legacy(self, context, flags, format, shape, pitches, buffer):
+    def __init_legacy(self, context, flags, format, shape, pitches, hostbuf):
         if shape is None:
             raise LogicError("Image", status_code.INVALID_VALUE,
                              "'shape' must be given")
+        if hostbuf is not None and not mem_flags._use_host(flags):
+            warnings.warn("'hostbuf' was passed, but no memory flags "
+                          "to make use of it.")
 
-        if buffer is None:
+        if hostbuf is None:
             c_buf, size = _ffi.NULL, 0
         else:
-            c_buf, size, _ = _c_buffer_from_obj(
-                    buffer, writable=flags & mem_flags.USE_HOST_PTR)
+            need_retain = mem_flags._hold_host(flags)
+            c_buf, size, retained_buf = _c_buffer_from_obj(
+                    hostbuf, writable=mem_flags._host_writable(flags),
+                    retain=need_retain)
+            if need_retain:
+                self.__retained_buf = retained_buf
 
         dims = len(shape)
         if dims == 2:
@@ -1276,7 +1361,7 @@ class Image(MemoryObject):
                                      "invalid length of pitch tuple")
 
             # check buffer size
-            if (buffer is not None and
+            if (hostbuf is not None and
                 max(pitch, width * format.itemsize) * height > size):
                 raise LogicError("Image", status_code.INVALID_VALUE,
                                  "buffer too small")
@@ -1299,7 +1384,7 @@ class Image(MemoryObject):
                                      "invalid length of pitch tuple")
 
             # check buffer size
-            if (buffer is not None and
+            if (hostbuf is not None and
                 (max(max(pitch_x, width * format.itemsize) *
                      height, pitch_y) * depth > size)):
                 raise LogicError("Image", status_code.INVALID_VALUE,

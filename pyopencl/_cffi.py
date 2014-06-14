@@ -84,6 +84,19 @@ typedef struct _cl_image_format {
     cl_channel_type         image_channel_data_type;
 } cl_image_format;
 
+typedef struct _cl_image_desc {
+    cl_mem_object_type      image_type;
+    size_t                  image_width;
+    size_t                  image_height;
+    size_t                  image_depth;
+    size_t                  image_array_size;
+    size_t                  image_row_pitch;
+    size_t                  image_slice_pitch;
+    cl_uint                 num_mip_levels;
+    cl_uint                 num_samples;
+    cl_mem                  buffer;
+} cl_image_desc;
+
 typedef struct _cl_buffer_region {
     size_t                  origin;
     size_t                  size;
