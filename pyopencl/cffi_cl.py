@@ -335,6 +335,8 @@ class Platform(_Common):
         return [_create_instance(Device, devices.ptr[0][i])
                 for i in xrange(devices.size[0])]
 
+def unload_platform_compiler(plat):
+    _handle_error(_lib.platform__unload_compiler(plat.ptr))
 
 def get_platforms():
     platforms = _CArray(_ffi.new('clobj_t**'))
@@ -639,10 +641,10 @@ class _Program(_Common):
         _handle_error(_lib.program__get_build_info(
             self.ptr, device.ptr, param, info))
         return _generic_info_to_python(info)
-    # TODO compile?
-    # create_with_built_in_kernels
-    # link_program
-    # unload_platform_compiler
+
+# TODO compile?
+# create_with_built_in_kernels
+# link_program
 
 # }}}
 

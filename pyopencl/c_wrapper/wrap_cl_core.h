@@ -59,6 +59,7 @@ void populate_constants(void(*add)(const char*, const char*, long value));
 error *get_platforms(clobj_t **ptr_platforms, uint32_t *num_platforms);
 error *platform__get_devices(clobj_t platform, clobj_t **ptr_devices,
                              uint32_t *num_devices, cl_device_type devtype);
+error *platform__unload_compiler(clobj_t plat);
 // Context
 error *create_context(clobj_t *ctx, const cl_context_properties *properties,
                       cl_uint num_devices, const clobj_t *ptr_devices);

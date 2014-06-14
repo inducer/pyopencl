@@ -66,3 +66,14 @@ platform__get_devices(clobj_t _plat, clobj_t **_devices,
             *_devices = buf_to_base<device>(devices).release();
         });
 }
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+error*
+platform__unload_compiler(clobj_t plat)
+{
+    return c_handle_error([&] {
+            pyopencl_call_guarded(clUnloadPlatformCompiler,
+                                  static_cast<platform*>(plat));
+        });
+}
+#endif
