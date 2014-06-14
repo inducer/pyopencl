@@ -220,7 +220,6 @@ class _NoInit(object):
 
 
 # {{{ constant classes
-# These will be overwritten below and exist to placate pyflakes.
 
 class status_code(_NoInit):
     pass
@@ -249,25 +248,142 @@ class channel_order(_NoInit):
 class channel_type(_NoInit):
     pass
 
+
+class program_kind(_NoInit):
+    pass
+
+
+class platform_info(_NoInit):
+    pass
+
+
+class device_info(_NoInit):
+    pass
+
+
+class device_fp_config(_NoInit):
+    pass
+
+
+class device_mem_cache_type(_NoInit):
+    pass
+
+
+class device_local_mem_type(_NoInit):
+    pass
+
+
+class device_exec_capabilities(_NoInit):
+    pass
+
+
+class command_queue_properties(_NoInit):
+    pass
+
+
+class context_info(_NoInit):
+    pass
+
+
+class gl_context_info(_NoInit):
+    pass
+
+
+class command_queue_info(_NoInit):
+    pass
+
+
+class mem_info(_NoInit):
+    pass
+
+
+class image_info(_NoInit):
+    pass
+
+
+class addressing_mode(_NoInit):
+    pass
+
+
+class filter_mode(_NoInit):
+    pass
+
+
+class sampler_info(_NoInit):
+    pass
+
+
+class map_flags(_NoInit):
+    pass
+
+
+class program_info(_NoInit):
+    pass
+
+
+class program_build_info(_NoInit):
+    pass
+
+
+class program_binary_type(_NoInit):
+    pass
+
+
+class kernel_info(_NoInit):
+    pass
+
+
+class kernel_arg_info(_NoInit):
+    pass
+
+
+class kernel_work_group_info(_NoInit):
+    pass
+
+
+class event_info(_NoInit):
+    pass
+
+
+class command_type(_NoInit):
+    pass
+
+
+class command_execution_status(_NoInit):
+    pass
+
+
+class profiling_info(_NoInit):
+    pass
+
+
+class affinity_domain_ext(_NoInit):
+    pass
+
+
+class device_affinity_domain(_NoInit):
+    pass
+
+
+class gl_object_type(_NoInit):
+    pass
+
+
+class gl_texture_info(_NoInit):
+    pass
+
 # }}}
 
+_locals = locals()
 
 @_ffi.callback('void(const char*, const char* name, long value)')
 def _constant_callback(type_, name, value):
-    s_type = _ffi.string(type_)
-    s_name = _ffi.string(name)
-
-    if sys.version_info >= (3,):
-        s_type = s_type.decode()
-        s_name = s_name.decode()
-
-    _constants.setdefault(s_type, {})
-    _constants[s_type][s_name] = value
-
+    setattr(_locals[_ffi.string(type_).decode()],
+            _ffi.string(name).decode(), value)
 _lib.populate_constants(_constant_callback)
 
-for type_, d in _constants.iteritems():
-    locals()[type_] = x = type(type_, (_NoInit,), d)
+del _locals
+del _constant_callback
 
 # }}}
 
