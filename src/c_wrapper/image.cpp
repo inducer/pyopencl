@@ -44,66 +44,6 @@ image::get_image_info(cl_image_info param) const
     }
 }
 
-// {{{ image creation
-
-// #if PYOPENCL_CL_VERSION >= 0x1020
-
-//   PYOPENCL_INLINE
-//   image *create_image_from_desc(
-//       context const &ctx,
-//       cl_mem_flags flags,
-//       cl_image_format const &fmt,
-//       cl_image_desc &desc,
-//       py::object buffer)
-//   {
-//     if (buffer.ptr() != Py_None &&
-//         !(flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR)))
-//       PyErr_Warn(PyExc_UserWarning, "'hostbuf' was passed, "
-//           "but no memory flags to make use of it.");
-
-//     void *buf = 0;
-//     PYOPENCL_BUFFER_SIZE_T len;
-//     py::object *retained_buf_obj = 0;
-
-//     if (buffer.ptr() != Py_None)
-//     {
-//       if (flags & CL_MEM_USE_HOST_PTR)
-//       {
-//         if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
-//           throw py::error_already_set();
-//       }
-//       else
-//       {
-//         if (PyObject_AsReadBuffer(
-//               buffer.ptr(), const_cast<const void **>(&buf), &len))
-//           throw py::error_already_set();
-//       }
-
-//       if (flags & CL_MEM_USE_HOST_PTR)
-//         retained_buf_obj = &buffer;
-//     }
-
-//     PYOPENCL_PRINT_CALL_TRACE("clCreateImage");
-//     cl_int status_code;
-//     cl_mem mem = clCreateImage(ctx.data(), flags, &fmt, &desc, buf, &status_code);
-//     if (status_code != CL_SUCCESS)
-//       throw clerror("clCreateImage", status_code);
-
-//     try
-//     {
-//       return new image(mem, false, retained_buf_obj);
-//     }
-//     catch (...)
-//     {
-//       PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
-//       throw;
-//     }
-//   }
-
-// #endif
-
-// }}}
-
 // {{{ image transfers
 
 //   PYOPENCL_INLINE
@@ -200,6 +140,23 @@ create_image_3d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
                                    buffer : nullptr), fmt);
         });
 }
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+
+error*
+create_image_from_desc(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
+                       cl_image_format *fmt, cl_image_desc *desc, void *buffer)
+{
+    auto ctx = static_cast<context*>(_ctx);
+    return c_handle_error([&] {
+            auto mem = pyopencl_call_guarded(clCreateImage, ctx, flags, fmt,
+                                             desc, buffer);
+            *img = new_image(mem, (flags & CL_MEM_USE_HOST_PTR ?
+                                   buffer : nullptr), fmt);
+        });
+}
+
+#endif
 
 error*
 image__get_image_info(clobj_t _img, cl_image_info param, generic_info *out)

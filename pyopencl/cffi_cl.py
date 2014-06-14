@@ -1168,6 +1168,7 @@ if _lib.have_gl():
 
 # {{{ ImageFormat
 
+# FIXME
 class ImageFormat(object):
     def __new__(cls, channel_order=0, channel_type=0):
         args = [channel_order, channel_type]
@@ -1261,7 +1262,7 @@ def get_supported_image_formats(context, flags, image_type):
 def _write_only_property(*arg):
     return property().setter(*arg)
 
-class ImageDescriptor:
+class ImageDescriptor(object):
     def __init__(self):
         self.ptr = _ffi.new("cl_image_desc*")
     @property
@@ -1290,22 +1291,24 @@ class ImageDescriptor:
         self.ptr.num_samples = n
     @_write_only_property
     def shape(self, shape):
-        if len(shape) > 3:
+        l = len(shape)
+        if l > 3:
             raise LogicError("shape has too many components",
                              status_code.INVALID_VALUE, "transfer")
         desc = self.ptr
-        desc.image_width = shape[0];
-        desc.image_height = shape[1];
-        desc.image_depth = shape[2];
-        desc.image_array_size = shape[2];
+        desc.image_width = shape[0] if l > 0 else 1
+        desc.image_height = shape[1] if l > 1 else 1
+        desc.image_depth = shape[2] if l > 2 else 1
+        desc.image_array_size = desc.image_depth;
     @_write_only_property
     def pitches(self, pitches):
-        if len(pitches) > 2:
+        l = len(pitches)
+        if l > 2:
             raise LogicError("pitches has too many components",
                              status_code.INVALID_VALUE, "transfer")
         desc = self.ptr
-        desc.image_row_pitch = pitches[0];
-        desc.image_slice_pitch = pitches[1];
+        desc.image_row_pitch = pitches[0] if l > 0 else 1
+        desc.image_slice_pitch = pitches[1] if l > 1 else 1
     @_write_only_property
     def buffer(self, buff):
         self.ptr.buffer = buff.ptr.int_ptr if buff else _ffi.NULL
@@ -1324,14 +1327,32 @@ class Image(MemoryObject):
         elif len(args) == 6:
             # <= 1.1
             self.__init_legacy(*args)
-
         else:
             assert False
     def __init_1_2(self, context, flags, fmt, desc, hostbuf):
-        # TODO
-        pass
+        if hostbuf is not None and not mem_flags._use_host(flags):
+            warnings.warn("'hostbuf' was passed, but no memory flags "
+                          "to make use of it.")
 
-    def __init_legacy(self, context, flags, format, shape, pitches, hostbuf):
+        if hostbuf is None:
+            c_buf, size = _ffi.NULL, 0
+        else:
+            need_retain = mem_flags._hold_host(flags)
+            c_buf, size, retained_buf = _c_buffer_from_obj(
+                    hostbuf, writable=mem_flags._host_writable(flags),
+                    retain=need_retain)
+            if need_retain:
+                self.__retained_buf = retained_buf
+
+        ptr = _ffi.new('clobj_t*')
+        _handle_error(_lib.create_image_from_desc(
+            ptr, context.ptr, flags,
+            _ffi.new('struct _cl_image_format*',
+                     (fmt.channel_order, fmt.channel_data_type)),
+            desc.ptr, c_buf))
+        self.ptr = ptr[0]
+
+    def __init_legacy(self, context, flags, fmt, shape, pitches, hostbuf):
         if shape is None:
             raise LogicError("Image", status_code.INVALID_VALUE,
                              "'shape' must be given")
@@ -1362,7 +1383,7 @@ class Image(MemoryObject):
 
             # check buffer size
             if (hostbuf is not None and
-                max(pitch, width * format.itemsize) * height > size):
+                max(pitch, width * fmt.itemsize) * height > size):
                 raise LogicError("Image", status_code.INVALID_VALUE,
                                  "buffer too small")
 
@@ -1370,7 +1391,7 @@ class Image(MemoryObject):
             _handle_error(_lib.create_image_2d(
                 ptr, context.ptr, flags,
                 _ffi.new('struct _cl_image_format*',
-                         (format.channel_order, format.channel_data_type)),
+                         (fmt.channel_order, fmt.channel_data_type)),
                 width, height, pitch, c_buf))
             self.ptr = ptr[0]
         elif dims == 3:
@@ -1385,7 +1406,7 @@ class Image(MemoryObject):
 
             # check buffer size
             if (hostbuf is not None and
-                (max(max(pitch_x, width * format.itemsize) *
+                (max(max(pitch_x, width * fmt.itemsize) *
                      height, pitch_y) * depth > size)):
                 raise LogicError("Image", status_code.INVALID_VALUE,
                                  "buffer too small")
@@ -1394,7 +1415,7 @@ class Image(MemoryObject):
             _handle_error(_lib.create_image_3d(
                 ptr, context.ptr, flags,
                 _ffi.new('struct _cl_image_format *',
-                         (format.channel_order, format.channel_data_type)),
+                         (fmt.channel_order, fmt.channel_data_type)),
                 width, height, depth, pitch_x, pitch_y, c_buf))
 
             self.ptr = ptr[0]

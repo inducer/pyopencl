@@ -41,6 +41,7 @@ public:
     PYOPENCL_USE_RESULT PYOPENCL_INLINE void*
     hostbuf() const
     {
+        // TODO: use this?
         return m_hostbuf;
     }
     PYOPENCL_USE_RESULT size_t

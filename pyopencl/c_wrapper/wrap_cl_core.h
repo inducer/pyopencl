@@ -114,6 +114,9 @@ error *create_image_3d(clobj_t *image, clobj_t context, cl_mem_flags flags,
                        cl_image_format *fmt, size_t width, size_t height,
                        size_t depth, size_t pitch_x, size_t pitch_y,
                        void *buffer);
+error *create_image_from_desc(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
+                              cl_image_format *fmt, cl_image_desc *desc,
+                              void *buffer);
 error *image__get_image_info(clobj_t img, cl_image_info param,
                              generic_info *out);
 type_t image__get_fill_type(clobj_t img);
