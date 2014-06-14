@@ -595,7 +595,7 @@ def test_can_build_binary(ctx_factory):
     device, = ctx.devices
     platform = device.platform
 
-    _skip_if_pocl(device.platform, "pocl doesn't like getting PROGRAM_BINARIES")
+    _skip_if_pocl(platform, "pocl doesn't like getting PROGRAM_BINARIES")
 
     program = cl.Program(ctx, """
     __kernel void simple(__global float *in, __global float *out)
@@ -608,6 +608,21 @@ def test_can_build_binary(ctx_factory):
     foo = cl.Program(ctx, [device], [binary])
     foo.build()
 
+def test_enqueue_barrier_marker(ctx_factory):
+    ctx = ctx_factory()
+    _skip_if_pocl(ctx.devices[0].platform, 'pocl crashes on enqueue_barrier')
+    queue = cl.CommandQueue(ctx)
+    cl.enqueue_barrier(queue)
+    evt1 = cl.enqueue_marker(queue)
+    evt2 = cl.enqueue_marker(queue, wait_for=[evt1])
+    evt3 = cl.enqueue_barrier(queue, wait_for=[evt1, evt2])
+
+def test_wait_for_events(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+    evt1 = cl.enqueue_marker(queue)
+    evt2 = cl.enqueue_marker(queue)
+    cl.wait_for_events([evt1, evt2])
 
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
