@@ -624,6 +624,19 @@ def test_wait_for_events(ctx_factory):
     evt2 = cl.enqueue_marker(queue)
     cl.wait_for_events([evt1, evt2])
 
+def test_unload_compiler(ctx_factory):
+    ctx = ctx_factory()
+    platform = ctx.devices[0].platform
+    if (ctx._get_cl_version() < (1, 2) or
+        cl.get_cl_header_version() < (1, 2)):
+        from pytest import skip
+        skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
+    _skip_if_pocl(platform, 'pocl does not support unloading compiler')
+    if platform.vendor == "Intel(R) Corporation":
+        from pytest import skip
+        skip("Intel proprietary driver does not support unloading compiler")
+    cl.unload_platform_compiler(platform)
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa
