@@ -1344,7 +1344,9 @@ def f2cl(source, free_form=False, strict=True,
         import pyopencl as cl
         ctx = cl.create_some_context()
         cl.Program(ctx, """
+            #ifndef cl_khr_fp64
             #pragma OPENCL EXTENSION cl_khr_fp64: enable
+            #endif
             #include <pyopencl-complex.h>
             """).build()
     return str_mod

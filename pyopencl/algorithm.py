@@ -558,7 +558,9 @@ class RadixSort(object):
 
 _LIST_BUILDER_TEMPLATE = Template("""//CL//
 % if double_support:
+    #ifndef cl_khr_fp64
     #pragma OPENCL EXTENSION cl_khr_fp64: enable
+    #endif
     #define PYOPENCL_DEFINE_CDOUBLE
 % endif
 
