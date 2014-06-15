@@ -8,6 +8,8 @@ namespace pyopencl {
 
 // {{{ memory_object
 
+extern template class clobj<cl_mem>;
+
 class memory_object : public clobj<cl_mem> {
 private:
     mutable volatile std::atomic_bool m_valid;

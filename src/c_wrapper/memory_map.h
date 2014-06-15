@@ -11,6 +11,8 @@ class event;
 
 // {{{ memory_map
 
+extern template class clobj<void*>;
+
 class memory_map : public clobj<void*> {
 private:
     mutable volatile std::atomic_bool m_valid;

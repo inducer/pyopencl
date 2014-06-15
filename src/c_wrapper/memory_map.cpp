@@ -6,6 +6,8 @@
 
 namespace pyopencl {
 
+template class clobj<void*>;
+
 memory_map::~memory_map()
 {
     if (!m_valid.exchange(false))

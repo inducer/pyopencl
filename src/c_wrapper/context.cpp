@@ -5,6 +5,8 @@
 
 namespace pyopencl {
 
+template class clobj<cl_context>;
+
 context::~context()
 {
     pyopencl_call_guarded_cleanup(clReleaseContext, this);

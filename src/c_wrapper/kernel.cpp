@@ -10,6 +10,8 @@
 
 namespace pyopencl {
 
+template class clobj<cl_kernel>;
+
 kernel::~kernel()
 {
     pyopencl_call_guarded_cleanup(clReleaseKernel, this);

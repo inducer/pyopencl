@@ -3,6 +3,8 @@
 
 namespace pyopencl {
 
+template class clobj<cl_device_id>;
+
 device::~device()
 {
     if (false) {

@@ -4,6 +4,8 @@
 
 namespace pyopencl {
 
+template class clobj<cl_mem>;
+
 generic_info
 memory_object::get_info(cl_uint param_name) const
 {

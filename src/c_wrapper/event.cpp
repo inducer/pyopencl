@@ -5,6 +5,9 @@
 #include "pyhelper.h"
 
 namespace pyopencl {
+
+template class clobj<cl_event>;
+
 #if PYOPENCL_CL_VERSION >= 0x1010
 class event_callback {
     std::function<void(cl_int)> m_func;

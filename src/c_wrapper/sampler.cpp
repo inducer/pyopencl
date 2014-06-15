@@ -4,6 +4,8 @@
 
 namespace pyopencl {
 
+template class clobj<cl_sampler>;
+
 sampler::~sampler()
 {
     pyopencl_call_guarded_cleanup(clReleaseSampler, this);

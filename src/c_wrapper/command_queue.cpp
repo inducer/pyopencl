@@ -6,6 +6,8 @@
 
 namespace pyopencl {
 
+template class clobj<cl_command_queue>;
+
 command_queue::~command_queue()
 {
     pyopencl_call_guarded_cleanup(clReleaseCommandQueue, this);

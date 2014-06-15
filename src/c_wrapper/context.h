@@ -7,6 +7,8 @@ namespace pyopencl {
 
 // {{{ context
 
+extern template class clobj<cl_context>;
+
 class context : public clobj<cl_context> {
 public:
     PYOPENCL_DEF_CL_CLASS(CONTEXT);

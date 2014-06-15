@@ -7,6 +7,8 @@ namespace pyopencl {
 
 // {{{ command_queue
 
+extern template class clobj<cl_command_queue>;
+
 class command_queue : public clobj<cl_command_queue> {
 public:
     PYOPENCL_DEF_CL_CLASS(COMMAND_QUEUE);

@@ -7,6 +7,8 @@ namespace pyopencl {
 
 // {{{ event
 
+extern template class clobj<cl_event>;
+
 class event : public clobj<cl_event> {
 public:
     PYOPENCL_DEF_CL_CLASS(EVENT);

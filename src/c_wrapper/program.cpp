@@ -5,6 +5,8 @@
 
 namespace pyopencl {
 
+template class clobj<cl_program>;
+
 program::~program()
 {
     pyopencl_call_guarded_cleanup(clReleaseProgram, this);

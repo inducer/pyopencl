@@ -9,6 +9,8 @@ class device;
 
 // {{{ kernel
 
+extern template class clobj<cl_kernel>;
+
 class kernel : public clobj<cl_kernel> {
 public:
     PYOPENCL_DEF_CL_CLASS(KERNEL);

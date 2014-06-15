@@ -7,6 +7,8 @@ namespace pyopencl {
 
 // {{{ platform
 
+extern template class clobj<cl_platform_id>;
+
 class platform : public clobj<cl_platform_id> {
 public:
     using clobj::clobj;

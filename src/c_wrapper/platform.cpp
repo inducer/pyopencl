@@ -4,6 +4,8 @@
 
 namespace pyopencl {
 
+template class clobj<cl_platform_id>;
+
 generic_info
 platform::get_info(cl_uint param_name) const
 {

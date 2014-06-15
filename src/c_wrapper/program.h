@@ -9,6 +9,8 @@ class device;
 
 // {{{ program
 
+extern template class clobj<cl_program>;
+
 class program : public clobj<cl_program> {
 private:
     program_kind_type m_program_kind;

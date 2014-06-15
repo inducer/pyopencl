@@ -7,6 +7,8 @@ namespace pyopencl {
 
 // {{{ sampler
 
+extern template class clobj<cl_sampler>;
+
 class sampler : public clobj<cl_sampler> {
 public:
     PYOPENCL_DEF_CL_CLASS(SAMPLER);

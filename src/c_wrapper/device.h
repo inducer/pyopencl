@@ -7,6 +7,8 @@ namespace pyopencl {
 
 // {{{ device
 
+extern template class clobj<cl_device_id>;
+
 class device : public clobj<cl_device_id> {
 public:
     PYOPENCL_DEF_CL_CLASS(DEVICE);
