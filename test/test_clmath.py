@@ -132,7 +132,7 @@ def test_atan2(ctx_factory):
     queue = cl.CommandQueue(context)
 
     for s in sizes:
-        a = (cl_array.arange(queue, s, dtype=np.float32) - s / 2) / 100
+        a = (cl_array.arange(queue, s, dtype=np.float32) - np.float32(s / 2)) / 100
         a2 = (s / 2 - 1 - cl_array.arange(queue, s, dtype=np.float32)) / 100
         b = clmath.atan2(a, a2)
 
@@ -149,7 +149,7 @@ def test_atan2pi(ctx_factory):
     queue = cl.CommandQueue(context)
 
     for s in sizes:
-        a = (cl_array.arange(queue, s, dtype=np.float32) - s / 2) / 100
+        a = (cl_array.arange(queue, s, dtype=np.float32) - np.float32(s / 2)) / 100
         a2 = (s / 2 - 1 - cl_array.arange(queue, s, dtype=np.float32)) / 100
         b = clmath.atan2pi(a, a2)
 

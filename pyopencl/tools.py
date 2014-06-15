@@ -404,18 +404,20 @@ def get_arg_offset_adjuster_code(arg_types):
 def get_gl_sharing_context_properties():
     ctx_props = cl.context_properties
 
-    from OpenGL import platform as gl_platform, GLX, WGL
+    from OpenGL import platform as gl_platform
 
     props = []
 
     import sys
     if sys.platform in ["linux", "linux2"]:
+        from OpenGL import GLX
         props.append(
             (ctx_props.GL_CONTEXT_KHR, gl_platform.GetCurrentContext()))
         props.append(
                 (ctx_props.GLX_DISPLAY_KHR,
                     GLX.glXGetCurrentDisplay()))
     elif sys.platform == "win32":
+        from OpenGL import WGL
         props.append(
             (ctx_props.GL_CONTEXT_KHR, gl_platform.GetCurrentContext()))
         props.append(
