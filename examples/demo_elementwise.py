@@ -1,26 +1,34 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import numpy as np
 import pyopencl as cl
-import pyopencl.array as cl_array
-import numpy
+import pyopencl.array
+from pyopencl.elementwise import ElementwiseKernel
+
+n = 10
+a_np = np.random.randn(n).astype(np.float32)
+b_np = np.random.randn(n).astype(np.float32)
 
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
-n = 10
-a_gpu = cl_array.to_device(
-        queue, numpy.random.randn(n).astype(numpy.float32))
-b_gpu = cl_array.to_device(
-        queue, numpy.random.randn(n).astype(numpy.float32))
+a_g = cl.array.to_device(queue, a_np)
+b_g = cl.array.to_device(queue, b_np)
 
-from pyopencl.elementwise import ElementwiseKernel
 lin_comb = ElementwiseKernel(ctx,
-        "float a, float *x, "
-        "float b, float *y, "
-        "float *z",
-        "z[i] = a*x[i] + b*y[i]",
-        "linear_combination")
+    "float k1, float *a_g, float k2, float *b_g, float *res_g",
+    "res_g[i] = k1 * a_g[i] + k2 * b_g[i]",
+    "lin_comb"
+)
 
-c_gpu = cl_array.empty_like(a_gpu)
-lin_comb(5, a_gpu, 6, b_gpu, c_gpu)
+res_g = cl.array.empty_like(a_g)
+lin_comb(2, a_g, 3, b_g, res_g)
 
-import numpy.linalg as la
-assert la.norm((c_gpu - (5*a_gpu+6*b_gpu)).get()) < 1e-5
+# Check on GPU with PyOpenCL Array:
+print((res_g - (2 * a_g + 3 * b_g)).get())
+
+# Check on CPU with Numpy:
+res_np = res_g.get()
+print(res_np - (2 * a_np + 3 * b_np))
+print(np.linalg.norm(res_np - (2 * a_np + 3 * b_np)))
