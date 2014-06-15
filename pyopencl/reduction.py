@@ -47,7 +47,7 @@ KERNEL = """//CL//
     #define REDUCE(a, b) (${reduce_expr})
 
     % if double_support:
-        #ifndef cl_khr_fp64
+        #if __OPENCL_VERSION__ <= CL_VERSION_1_1
         #pragma OPENCL EXTENSION cl_khr_fp64: enable
         #endif
         #define PYOPENCL_DEFINE_CDOUBLE

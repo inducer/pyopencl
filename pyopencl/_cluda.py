@@ -50,7 +50,7 @@ CLUDA_PREAMBLE = """
 #define GDIM_2 get_num_groups(2)
 
 % if double_support:
-    #ifndef cl_khr_fp64
+    #if __OPENCL_VERSION__ <= CL_VERSION_1_1
     #pragma OPENCL EXTENSION cl_khr_fp64: enable
     #endif
 % endif
