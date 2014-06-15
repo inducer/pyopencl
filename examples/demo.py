@@ -1,30 +1,32 @@
-import pyopencl as cl
-import numpy
-import numpy.linalg as la
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-a = numpy.random.rand(50000).astype(numpy.float32)
-b = numpy.random.rand(50000).astype(numpy.float32)
+import numpy as np
+import pyopencl as cl
+
+a_np = np.random.rand(50000).astype(np.float32)
+b_np = np.random.rand(50000).astype(np.float32)
 
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
 mf = cl.mem_flags
-a_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
-b_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b)
-dest_buf = cl.Buffer(ctx, mf.WRITE_ONLY, b.nbytes)
+a_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a_np)
+b_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b_np)
 
 prg = cl.Program(ctx, """
-    __kernel void sum(__global const float *a,
-    __global const float *b, __global float *c)
-    {
-      int gid = get_global_id(0);
-      c[gid] = a[gid] + b[gid];
-    }
-    """).build()
+__kernel void sum(__global const float *a_g, __global const float *b_g, __global float *res_g) {
+  int gid = get_global_id(0);
+  res_g[gid] = a_g[gid] + b_g[gid];
+}
+""").build()
 
-prg.sum(queue, a.shape, None, a_buf, b_buf, dest_buf)
+res_g = cl.Buffer(ctx, mf.WRITE_ONLY, a_np.nbytes)
+prg.sum(queue, a_np.shape, None, a_g, b_g, res_g)
 
-a_plus_b = numpy.empty_like(a)
-cl.enqueue_copy(queue, a_plus_b, dest_buf)
+res_np = np.empty_like(a_np)
+cl.enqueue_copy(queue, res_np, res_g)
 
-print(la.norm(a_plus_b - (a+b)), la.norm(a_plus_b))
+# Check on CPU with Numpy:
+print(res_np - (a_np + b_np))
+print(np.linalg.norm(res_np - (a_np + b_np)))
