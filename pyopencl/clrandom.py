@@ -167,7 +167,11 @@ class RanluxGenerator(object):
     def generate_settings_defines(self, include_double_pragma=True):
         lines = []
         if include_double_pragma and self.support_double:
-            lines.append("#pragma OPENCL EXTENSION cl_khr_fp64 : enable")
+            lines.append("""
+                #ifndef cl_khr_fp64
+                #pragma OPENCL EXTENSION cl_khr_fp64: enable
+                #endif
+                """)
 
         lines.append("#define RANLUXCL_LUX %d" % self.luxury)
 
