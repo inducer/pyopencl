@@ -505,8 +505,12 @@ class _CDeclList:
 
         if self.saw_double:
             result = (
-                    "#pragma OPENCL EXTENSION cl_khr_fp64: enable\n"
-                    "#define PYOPENCL_DEFINE_CDOUBLE\n"
+                    """
+                    #ifndef cl_khr_fp64
+                    #pragma OPENCL EXTENSION cl_khr_fp64: enable
+                    #endif
+                    #define PYOPENCL_DEFINE_CDOUBLE
+                    """
                     + result)
 
         return result
