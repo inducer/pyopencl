@@ -168,7 +168,7 @@ class RanluxGenerator(object):
         lines = []
         if include_double_pragma and self.support_double:
             lines.append("""
-                #ifndef cl_khr_fp64
+                #if __OPENCL_VERSION__ <= CL_VERSION_1_1
                 #pragma OPENCL EXTENSION cl_khr_fp64: enable
                 #endif
                 """)

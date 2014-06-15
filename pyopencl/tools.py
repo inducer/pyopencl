@@ -491,7 +491,7 @@ class _CDeclList:
         if self.saw_double:
             result = (
                     """
-                    #ifndef cl_khr_fp64
+                    #if __OPENCL_VERSION__ <= CL_VERSION_1_1
                     #pragma OPENCL EXTENSION cl_khr_fp64: enable
                     #endif
                     #define PYOPENCL_DEFINE_CDOUBLE
@@ -507,6 +507,7 @@ else:
     _memoize_match_dtype_to_c_struct = memoize(
         key=lambda device, name, dtype, context=None:
         (device, name, _dtype_to_key(dtype), context))
+
 
 @_memoize_match_dtype_to_c_struct
 def match_dtype_to_c_struct(device, name, dtype, context=None):
@@ -659,9 +660,10 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 if _dtype_hashable:
     _memoize_dtype_to_c_struct = memoize
 else:
-    import json as _json
+    import json as _json  # noqa
     _memoize_dtype_to_c_struct = memoize(
         key=lambda device, dtype: (device, _dtype_to_key(dtype)))
+
 
 @_memoize_dtype_to_c_struct
 def dtype_to_c_struct(device, dtype):
