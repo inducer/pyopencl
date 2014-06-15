@@ -58,10 +58,11 @@ KERNEL = """//CL//
     typedef ${out_type} out_type;
 
     __kernel void ${name}(
-      __global out_type *out, ${arguments},
+      __global out_type *out__base, long out__offset, ${arguments},
       unsigned int seq_count, unsigned int n)
     {
-       ${arg_prep}
+        __global out_type *out = (__global out_type *) ((__global char *) out__base + out__offset);
+        ${arg_prep}
 
         __local out_type ldata[GROUP_SIZE];
 
@@ -267,7 +268,7 @@ def get_reduction_kernel(stage,
     inf.arg_types = arguments
 
     inf.kernel.set_scalar_arg_dtypes(
-            [None]
+            [None, np.int64]
             + get_arg_list_scalar_arg_dtypes(inf.arg_types)
             + [np.uint32]*2)
 
@@ -332,6 +333,7 @@ class ReductionKernel:
         queue = kwargs.pop("queue", None)
         wait_for = kwargs.pop("wait_for", None)
         return_event = kwargs.pop("return_event", False)
+        out = kwargs.pop("out", None)
 
         if kwargs:
             raise TypeError("invalid keyword argument to reduction kernel")
@@ -373,7 +375,9 @@ class ReductionKernel:
                 macrogroup_size = group_count*stage_inf.group_size
                 seq_count = (sz + macrogroup_size - 1) // macrogroup_size
 
-            if group_count == 1:
+            if group_count == 1 and out is not None:
+                result = out
+            elif group_count == 1:
                 result = empty(use_queue,
                         (), self.dtype_out,
                         allocator=repr_vec.allocator)
@@ -386,7 +390,7 @@ class ReductionKernel:
                     use_queue,
                     (group_count*stage_inf.group_size,),
                     (stage_inf.group_size,),
-                    *([result.data]+invocation_args+[seq_count, sz]),
+                    *([result.base_data, result.offset] + invocation_args + [seq_count, sz]),
                     **dict(wait_for=wait_for))
             wait_for = [last_evt]
 
