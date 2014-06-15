@@ -857,9 +857,6 @@ class NannyEvent(Event):
 #   enqueue_read_buffer_rect
 #   enqueue_write_buffer_rect
 #   enqueue_copy_buffer_rect
-#   get_image_format_channel_count
-#   get_image_format_dtype_size
-#   get_image_format_item_size
 
 # }}}
 
@@ -1165,23 +1162,33 @@ if _lib.have_gl():
 
 # }}}
 
+def _cffi_property(_name=None, read=True, write=True):
+    def _deco(get_ptr):
+        name = _name if _name else get_ptr.__name__
+        return property((lambda self: getattr(get_ptr(self), name)) if read
+                        else (lambda self: None),
+                        (lambda self, v: setattr(get_ptr(self), name, v))
+                        if write else (lambda self, v: None))
+    return _deco
 
 # {{{ ImageFormat
 
-# FIXME
 class ImageFormat(object):
-    def __new__(cls, channel_order=0, channel_type=0):
-        args = [channel_order, channel_type]
-        cls = type(cls.__name__, (cls,), {})
+    # Hack around fmt.__dict__ check in test_wrapper.py
+    __dict__ = {}
+    __slots__ = ('ptr',)
+    def __init__(self, channel_order=0, channel_type=0):
+        self.ptr = _ffi.new("cl_image_format*")
+        self.channel_order = channel_order
+        self.channel_data_type = channel_type
 
-        cls.channel_order = property(
-                lambda self: args[0],
-                lambda self, v: args.__setitem__(0, v))
-        cls.channel_data_type = property(
-                lambda self: args[1],
-                lambda self, v: args.__setitem__(1, v))
+    @_cffi_property('image_channel_order')
+    def channel_order(self):
+        return self.ptr
 
-        return object.__new__(cls)
+    @_cffi_property('image_channel_data_type')
+    def channel_data_type(self):
+        return self.ptr
 
     @property
     def channel_count(self):
@@ -1263,32 +1270,21 @@ def _write_only_property(*arg):
     return property().setter(*arg)
 
 class ImageDescriptor(object):
+    __slots__ = ('ptr',)
     def __init__(self):
         self.ptr = _ffi.new("cl_image_desc*")
-    @property
+    @_cffi_property()
     def image_type(self):
-        return self.ptr.image_type
-    @image_type.setter
-    def image_type(self, t):
-        self.ptr.image_type = t
-    @property
+        return self.ptr
+    @_cffi_property('image_array_size')
     def array_size(self):
-        return self.ptr.image_array_size
-    @array_size.setter
-    def array_size(self, s):
-        self.ptr.image_array_size = s
-    @property
+        return self.ptr
+    @_cffi_property()
     def num_mip_levels(self):
-        return self.ptr.num_mip_levels
-    @num_mip_levels.setter
-    def num_mip_levels(self, n):
-        self.ptr.num_mip_levels = n
-    @property
+        return self.ptr
+    @_cffi_property()
     def num_samples(self):
-        return self.ptr.num_samples
-    @num_samples.setter
-    def num_samples(self, n):
-        self.ptr.num_samples = n
+        return self.ptr
     @_write_only_property
     def shape(self, shape):
         l = len(shape)
@@ -1345,11 +1341,8 @@ class Image(MemoryObject):
                 self.__retained_buf = retained_buf
 
         ptr = _ffi.new('clobj_t*')
-        _handle_error(_lib.create_image_from_desc(
-            ptr, context.ptr, flags,
-            _ffi.new('struct _cl_image_format*',
-                     (fmt.channel_order, fmt.channel_data_type)),
-            desc.ptr, c_buf))
+        _handle_error(_lib.create_image_from_desc(ptr, context.ptr, flags,
+                                                  fmt.ptr, desc.ptr, c_buf))
         self.ptr = ptr[0]
 
     def __init_legacy(self, context, flags, fmt, shape, pitches, hostbuf):
@@ -1388,11 +1381,8 @@ class Image(MemoryObject):
                                  "buffer too small")
 
             ptr = _ffi.new('clobj_t*')
-            _handle_error(_lib.create_image_2d(
-                ptr, context.ptr, flags,
-                _ffi.new('struct _cl_image_format*',
-                         (fmt.channel_order, fmt.channel_data_type)),
-                width, height, pitch, c_buf))
+            _handle_error(_lib.create_image_2d(ptr, context.ptr, flags, fmt.ptr,
+                                               width, height, pitch, c_buf))
             self.ptr = ptr[0]
         elif dims == 3:
             width, height, depth = shape
@@ -1413,9 +1403,7 @@ class Image(MemoryObject):
 
             ptr = _ffi.new('clobj_t*')
             _handle_error(_lib.create_image_3d(
-                ptr, context.ptr, flags,
-                _ffi.new('struct _cl_image_format *',
-                         (fmt.channel_order, fmt.channel_data_type)),
+                ptr, context.ptr, flags, fmt.ptr,
                 width, height, depth, pitch_x, pitch_y, c_buf))
 
             self.ptr = ptr[0]
