@@ -13,16 +13,14 @@ extern template class clobj<cl_mem>;
 class memory_object : public clobj<cl_mem> {
 private:
     mutable volatile std::atomic_bool m_valid;
-    void *m_hostbuf;
 public:
     PYOPENCL_INLINE
-    memory_object(cl_mem mem, bool retain, void *hostbuf=0)
+    memory_object(cl_mem mem, bool retain)
         : clobj(mem), m_valid(true)
     {
         if (retain) {
             pyopencl_call_guarded(clRetainMemObject, this);
         }
-        m_hostbuf = hostbuf;
     }
     PYOPENCL_INLINE
     memory_object(const memory_object &mem)
@@ -40,12 +38,6 @@ public:
         pyopencl_call_guarded(clReleaseMemObject, this);
     }
 #if 0
-    PYOPENCL_USE_RESULT PYOPENCL_INLINE void*
-    hostbuf() const
-    {
-        // TODO: use this?
-        return m_hostbuf;
-    }
     PYOPENCL_USE_RESULT size_t
     size() const
     {

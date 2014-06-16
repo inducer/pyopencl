@@ -5,6 +5,12 @@
 
 namespace pyopencl {
 
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE buffer*
+new_buffer(cl_mem mem)
+{
+    return pyopencl_convert_obj(buffer, clReleaseMemObject, mem);
+}
+
 #if PYOPENCL_CL_VERSION >= 0x1010
 PYOPENCL_USE_RESULT buffer*
 buffer::get_sub_region(size_t origin, size_t size, cl_mem_flags flags) const
@@ -64,8 +70,7 @@ create_buffer(clobj_t *buffer, clobj_t _ctx, cl_mem_flags flags,
                     return pyopencl_call_guarded(clCreateBuffer, ctx,
                                                  flags, size, hostbuf);
                 });
-            *buffer = new_buffer(mem, (flags & CL_MEM_USE_HOST_PTR ?
-                                       hostbuf : nullptr));
+            *buffer = new_buffer(mem);
         });
 }
 

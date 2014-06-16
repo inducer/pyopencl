@@ -5,6 +5,12 @@
 
 namespace pyopencl {
 
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE image*
+new_image(cl_mem mem, const cl_image_format *fmt)
+{
+    return pyopencl_convert_obj(image, clReleaseMemObject, mem, fmt);
+}
+
 generic_info
 image::get_image_info(cl_image_info param) const
 {
@@ -119,8 +125,7 @@ create_image_2d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
                         clCreateImage2D, ctx, flags,
                         fmt, width, height, pitch, buffer);
                 });
-            *img = new_image(mem, (flags & CL_MEM_USE_HOST_PTR ?
-                                   buffer : nullptr), fmt);
+            *img = new_image(mem, fmt);
         });
 }
 
@@ -136,8 +141,7 @@ create_image_3d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
                         clCreateImage3D, ctx, flags, fmt, width,
                         height, depth, pitch_x, pitch_y, buffer);
                 });
-            *img = new_image(mem, (flags & CL_MEM_USE_HOST_PTR ?
-                                   buffer : nullptr), fmt);
+            *img = new_image(mem, fmt);
         });
 }
 
@@ -151,8 +155,7 @@ create_image_from_desc(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
     return c_handle_error([&] {
             auto mem = pyopencl_call_guarded(clCreateImage, ctx, flags, fmt,
                                              desc, buffer);
-            *img = new_image(mem, (flags & CL_MEM_USE_HOST_PTR ?
-                                   buffer : nullptr), fmt);
+            *img = new_image(mem, fmt);
         });
 }
 

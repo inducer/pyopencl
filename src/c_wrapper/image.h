@@ -14,9 +14,8 @@ private:
 public:
     PYOPENCL_DEF_CL_CLASS(IMAGE);
     PYOPENCL_INLINE
-    image(cl_mem mem, bool retain, void *hostbuf=0,
-          const cl_image_format *fmt=0)
-        : memory_object(mem, retain, hostbuf)
+    image(cl_mem mem, bool retain, const cl_image_format *fmt=0)
+        : memory_object(mem, retain)
     {
         if (fmt) {
             m_format = *fmt;
@@ -43,11 +42,6 @@ public:
         }
     }
 };
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE image*
-new_image(cl_mem mem, void *buff, const cl_image_format *fmt)
-{
-    return pyopencl_convert_obj(image, clReleaseMemObject, mem, buff, fmt);
-}
 
 // }}}
 
