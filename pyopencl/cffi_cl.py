@@ -515,8 +515,8 @@ def _parse_context_properties(properties):
                 'CGL_SHAREGROUP_KHR',
                 )]:
 
-            val = (ctypes.cast(value, ctypes.c_void_p)).value
-            if val is None:
+            val = int(_ffi.cast('intptr_t', value))
+            if not val:
                 raise LogicError("Context", status_code.INVALID_VALUE,
                                  "You most likely have not initialized "
                                  "OpenGL properly.")
