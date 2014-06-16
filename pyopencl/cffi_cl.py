@@ -810,9 +810,9 @@ class Kernel(_Common):
         elif isinstance(arg, MemoryObjectHolder):
             _handle_error(_lib.kernel__set_arg_mem(self.ptr, arg_index, arg.ptr))
         elif isinstance(arg, Sampler):
-            _handle_error(_lib.kernel__set_arg_sampler(self.ptr, arg_index, arg.ptr))
+            _handle_error(_lib.kernel__set_arg_sampler(self.ptr, arg_index,
+                                                       arg.ptr))
         else:
-            # TODO?: handle args other than numpy arrays
             c_buf, size, _ = _c_buffer_from_obj(arg)
             _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
                                                    c_buf, size))
