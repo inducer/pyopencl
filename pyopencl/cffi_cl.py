@@ -846,11 +846,20 @@ def wait_for_events(wait_for):
     _handle_error(_lib.wait_for_events(*_clobj_list(wait_for)))
 
 class NannyEvent(Event):
+    class _Data(object):
+        __slots__ = ('ward', 'ref')
+        def __init__(self, ward, ref):
+            self.ward = ward
+            self.ref = ref
+    @classmethod
+    def _handle(cls, ward, ref=None):
+        return _ffi.new_handle(cls._Data(ward, ref))
+
     def get_ward(self):
         _handle = _lib.nanny_event__get_ward(self.ptr)
         if _handle == _ffi.NULL:
             return
-        return _ffi.from_handle(_handle)
+        return _ffi.from_handle(_handle).ward
 
 # TODO
 #   UserEvent
@@ -974,7 +983,7 @@ def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
     _handle_error(_lib.enqueue_read_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
-        _ffi.new_handle(hostbuf)))
+        NannyEvent._handle(hostbuf)))
     return NannyEvent._create(ptr_event[0])
 
 
@@ -993,11 +1002,10 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
     c_buf, size, c_ref = _c_buffer_from_obj(hostbuf, retain=True)
     ptr_event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
-    # TODO??: make get_ward return the correct value here
     _handle_error(_lib.enqueue_write_buffer(
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
-        _ffi.new_handle(c_ref)))
+        NannyEvent._handle(hostbuf, c_ref)))
     return NannyEvent._create(ptr_event[0])
 
 # PyPy bug report: https://bitbucket.org/pypy/pypy/issue/1777/unable-to-create-proper-numpy-array-from
@@ -1058,7 +1066,7 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     _handle_error(_lib.enqueue_read_image(
         ptr_event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
-        bool(is_blocking), _ffi.new_handle(c_buf)))
+        bool(is_blocking), NannyEvent._handle(hostbuf)))
     return NannyEvent._create(ptr_event[0])
 
 def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
@@ -1087,11 +1095,10 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     _event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     # TODO: check buffer size
-    # TODO??: make get_ward return the correct value here
     _handle_error(_lib.enqueue_read_image(
         _event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
-        bool(is_blocking), _ffi.new_handle(c_ref)))
+        bool(is_blocking), NannyEvent._handle(hostbuf, c_ref)))
     return NannyEvent._create(_event[0])
 
 def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
