@@ -585,6 +585,20 @@ class MemoryObjectHolder(_Common):
 class MemoryObject(MemoryObjectHolder):
     def __init__(self, hostbuf=None):
         self.__hostbuf = hostbuf
+    def _handle_buf_flags(self, flags):
+        if self.__hostbuf is None:
+            return _ffi.NULL, 0, None
+        if not mem_flags._use_host(flags):
+            warnings.warn("'hostbuf' was passed, but no memory flags "
+                          "to make use of it.")
+
+        need_retain = mem_flags._hold_host(flags)
+        c_hostbuf, hostbuf_size, retained_buf = _c_buffer_from_obj(
+            self.__hostbuf, writable=mem_flags._host_writable(flags),
+            retain=need_retain)
+        if need_retain:
+            self.__retained_buf = retained_buf
+        return c_hostbuf, hostbuf_size, retained_buf
     @property
     def hostbuf(self):
         return self.__hostbuf
@@ -691,26 +705,14 @@ class Buffer(MemoryObject):
 
     def __init__(self, context, flags, size=0, hostbuf=None):
         MemoryObject.__init__(self, hostbuf)
-        # TODO move this to memory object?
-        if hostbuf is not None and not mem_flags._use_host(flags):
-            warnings.warn("'hostbuf' was passed, but no memory flags "
-                          "to make use of it.")
-
+        c_hostbuf, hostbuf_size, retained_buf = self._handle_buf_flags(flags)
         if hostbuf is not None:
-            need_retain = mem_flags._hold_host(flags)
-            c_hostbuf, hostbuf_size, retained_buf = _c_buffer_from_obj(
-                    hostbuf, writable=mem_flags._host_writable(flags),
-                    retain=need_retain)
-            if need_retain:
-                self.__retained_buf = retained_buf
             if size > hostbuf_size:
                 raise RuntimeError("Buffer", status_code.INVALID_VALUE,
                                    "Specified size is greater than host "
                                    "buffer size")
             if size == 0:
                 size = hostbuf_size
-        else:
-            c_hostbuf = _ffi.NULL
 
         ptr_buffer = _ffi.new('clobj_t*')
         _handle_error(_lib.create_buffer(
@@ -1140,9 +1142,10 @@ class GLBuffer(MemoryObject):
 
     def __init__(self, context, flags, bufobj):
         MemoryObject.__init__(self, bufobj)
+        c_buf, bufsize, retained = self._handle_buf_flags(flags)
         ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.create_from_gl_buffer(
-            ptr, context.ptr, flags, bufobj))
+            ptr, context.ptr, flags, c_buf))
         self.ptr = ptr[0]
 
 
@@ -1151,9 +1154,10 @@ class GLRenderBuffer(MemoryObject):
 
     def __init__(self, context, flags, bufobj):
         MemoryObject.__init__(self, bufobj)
+        c_buf, bufsize, retained = self._handle_buf_flags(flags)
         ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.create_from_gl_renderbuffer(
-            ptr, context.ptr, flags, bufobj))
+            ptr, context.ptr, flags, c_buf))
         self.ptr = ptr[0]
 
 
@@ -1340,44 +1344,18 @@ class Image(MemoryObject):
             assert False
     def __init_1_2(self, context, flags, fmt, desc, hostbuf):
         MemoryObject.__init__(self, hostbuf)
-        if hostbuf is not None and not mem_flags._use_host(flags):
-            warnings.warn("'hostbuf' was passed, but no memory flags "
-                          "to make use of it.")
-
-        if hostbuf is None:
-            c_buf, size = _ffi.NULL, 0
-        else:
-            need_retain = mem_flags._hold_host(flags)
-            c_buf, size, retained_buf = _c_buffer_from_obj(
-                    hostbuf, writable=mem_flags._host_writable(flags),
-                    retain=need_retain)
-            if need_retain:
-                self.__retained_buf = retained_buf
-
+        c_buf, size, retained_buf = self._handle_buf_flags(flags)
         ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.create_image_from_desc(ptr, context.ptr, flags,
                                                   fmt.ptr, desc.ptr, c_buf))
         self.ptr = ptr[0]
 
     def __init_legacy(self, context, flags, fmt, shape, pitches, hostbuf):
-        MemoryObject.__init__(self, hostbuf)
         if shape is None:
             raise LogicError("Image", status_code.INVALID_VALUE,
                              "'shape' must be given")
-        if hostbuf is not None and not mem_flags._use_host(flags):
-            warnings.warn("'hostbuf' was passed, but no memory flags "
-                          "to make use of it.")
-
-        if hostbuf is None:
-            c_buf, size = _ffi.NULL, 0
-        else:
-            need_retain = mem_flags._hold_host(flags)
-            c_buf, size, retained_buf = _c_buffer_from_obj(
-                    hostbuf, writable=mem_flags._host_writable(flags),
-                    retain=need_retain)
-            if need_retain:
-                self.__retained_buf = retained_buf
-
+        MemoryObject.__init__(self, hostbuf)
+        c_buf, size, retained_buf = self._handle_buf_flags(flags)
         dims = len(shape)
         if dims == 2:
             width, height = shape
