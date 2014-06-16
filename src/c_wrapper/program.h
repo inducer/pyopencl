@@ -80,11 +80,6 @@ public:
     //       }
     // #endif
 };
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE program*
-new_program(cl_program prog, program_kind_type progkind=KND_UNKNOWN)
-{
-    return pyopencl_convert_obj(program, clReleaseProgram, prog, progkind);
-}
 
 // }}}
 
