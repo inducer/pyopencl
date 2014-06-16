@@ -48,7 +48,7 @@ typedef struct {
 int get_cl_version();
 void free_pointer(void*);
 void free_pointer_array(void**, uint32_t size);
-void set_py_funcs(int (*_gc)(), void (*_ref)(void*), void (*_deref)(void*),
+void set_py_funcs(int (*_gc)(), void *(*_ref)(void*), void (*_deref)(void*),
                   void (*_call)(void*, cl_int));
 int have_gl();
 

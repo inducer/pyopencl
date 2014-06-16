@@ -847,7 +847,10 @@ def wait_for_events(wait_for):
 
 class NannyEvent(Event):
     def get_ward(self):
-        return _ffi.from_handle(_lib.nanny_event__get_ward(self.ptr))
+        _handle = _lib.nanny_event__get_ward(self.ptr)
+        if _handle == _ffi.NULL:
+            return
+        return _ffi.from_handle(_handle)
 
 # TODO
 #   UserEvent

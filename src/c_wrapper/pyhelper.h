@@ -37,7 +37,7 @@ public:
 
 namespace py {
 extern WrapFunc<int()> gc;
-extern WrapFunc<void(void*)> ref;
+extern WrapFunc<void*(void*)> ref;
 extern WrapFunc<void(void*)> deref;
 extern WrapFunc<void(void*, cl_int)> call;
 }

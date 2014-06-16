@@ -143,11 +143,15 @@ event__set_callback(clobj_t _evt, cl_int type, void *pyobj)
 {
     auto evt = static_cast<event*>(_evt);
     return c_handle_error([&] {
-            evt->set_callback(type, [=] (cl_int status) {
-                    py::call(pyobj, status);
-                    py::deref(pyobj);
-                });
-            py::ref(pyobj);
+            pyobj = py::ref(pyobj);
+            try {
+                evt->set_callback(type, [=] (cl_int status) {
+                        py::call(pyobj, status);
+                        py::deref(pyobj);
+                    });
+            } catch (...) {
+                py::deref(pyobj);
+            }
         });
 }
 #endif

@@ -43,10 +43,10 @@ private:
     void *m_ward;
 public:
     nanny_event(cl_event evt, bool retain, void *ward=nullptr)
-        : event(evt, retain), m_ward(ward)
+        : event(evt, retain), m_ward(nullptr)
     {
         if (ward) {
-            py::ref(ward);
+            m_ward = py::ref(ward);
         }
     }
     ~nanny_event();

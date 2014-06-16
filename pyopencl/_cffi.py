@@ -187,9 +187,16 @@ def _py_deref(handle):
     except:
         pass
 
-@_ffi.callback('void(void*)')
+# TODO:
+# Not sure if cffi always return the same address for the same object
+# Unless it is, this function might return a different pointer from its input
+# and should only be called once.
+@_ffi.callback('void*(void*)')
 def _py_ref(handle):
+    obj = _ffi.from_handle(handle)
+    handle = _ffi.new_handle(obj)
     _pyrefs[handle] = handle
+    return handle
 
 @_ffi.callback('void(void*, cl_int)')
 def _py_call(handle, status):
