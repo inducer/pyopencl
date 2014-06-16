@@ -249,6 +249,7 @@ def main():
                                 "src/c_wrapper/sampler.cpp",
                                 "src/c_wrapper/program.cpp",
                                 "src/c_wrapper/kernel.cpp",
+                                "src/c_wrapper/debug.cpp",
                                 ],
                                include_dirs=(
                                    conf["CL_INC_DIR"]

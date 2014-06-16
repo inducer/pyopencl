@@ -54,6 +54,8 @@ int have_gl();
 
 unsigned bitlog2(unsigned long v);
 void populate_constants(void(*add)(const char*, const char*, long value));
+int get_debug();
+void set_debug(int debug);
 
 // Platform
 error *get_platforms(clobj_t **ptr_platforms, uint32_t *num_platforms);
