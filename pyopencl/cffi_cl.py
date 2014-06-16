@@ -111,7 +111,7 @@ def _generic_info_to_python(info):
             }[info.opaque_class]
 
         def ci(ptr):
-            ins = _create_instance(klass, ptr)
+            ins = klass._create(ptr)
             if info.opaque_class == _lib.CLASS_PROGRAM:  # TODO: HACK?
                 from . import Program
                 return Program(ins)
@@ -162,15 +162,14 @@ def _clobj_list(objs):
     return _ffi.new('clobj_t[]', [ev.ptr for ev in objs]), len(objs)
 
 
-def _create_instance(cls, ptr):
-    ins = cls.__new__(cls)
-    ins.ptr = ptr
-    return ins
-
-
 # {{{ common base class
 
 class _Common(object):
+    @classmethod
+    def _create(cls, ptr):
+        self = cls.__new__(cls)
+        self.ptr = ptr
+        return self
     ptr = _ffi.NULL
 
     def __del__(self):
@@ -196,7 +195,7 @@ class _Common(object):
         ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.clobj__from_int_ptr(
             ptr, int_ptr_value, getattr(_lib, 'CLASS_%s' % cls._id.upper())))
-        return _create_instance(cls, ptr[0])
+        return cls._create(ptr[0])
 
 # }}}
 
@@ -459,7 +458,7 @@ class Platform(_Common):
         devices = _CArray(_ffi.new('clobj_t**'))
         _handle_error(_lib.platform__get_devices(
             self.ptr, devices.ptr, devices.size, device_type))
-        return [_create_instance(Device, devices.ptr[0][i])
+        return [Device._create(devices.ptr[0][i])
                 for i in xrange(devices.size[0])]
 
 def unload_platform_compiler(plat):
@@ -468,7 +467,7 @@ def unload_platform_compiler(plat):
 def get_platforms():
     platforms = _CArray(_ffi.new('clobj_t**'))
     _handle_error(_lib.get_platforms(platforms.ptr, platforms.size))
-    return [_create_instance(Platform, platforms.ptr[0][i])
+    return [Platform._create(platforms.ptr[0][i])
             for i in xrange(platforms.size[0])]
 
 # }}}
@@ -590,14 +589,9 @@ class MemoryObject(MemoryObjectHolder):
     # TODO hostbuf?
 
 class MemoryMap(_Common):
-    def release(self, queue=None, wait_for=None):
-        c_wait_for, num_wait_for = _clobj_list(wait_for)
-        _event = _ffi.new('clobj_t*')
-        _handle_error(_lib.memory_map__release(
-            self.ptr, queue.ptr if queue is not None else _ffi.NULL,
-            c_wait_for, num_wait_for, _event))
-        return _create_instance(Event, _event[0])
-    def _init_array(self, shape, typestr, strides):
+    @classmethod
+    def _create(cls, ptr, shape, typestr, strides):
+        self = _Common._create.__func__(cls, ptr)
         self.__array_interface__ = {
             'shape': shape,
             'typestr': typestr,
@@ -605,6 +599,14 @@ class MemoryMap(_Common):
             'data': (int(_lib.clobj__int_ptr(self.ptr)), False),
             'version': 3
         }
+        return self
+    def release(self, queue=None, wait_for=None):
+        c_wait_for, num_wait_for = _clobj_list(wait_for)
+        _event = _ffi.new('clobj_t*')
+        _handle_error(_lib.memory_map__release(
+            self.ptr, queue.ptr if queue is not None else _ffi.NULL,
+            c_wait_for, num_wait_for, _event))
+        return Event._create(_event[0])
 
 def _c_buffer_from_obj(obj, writable=False, retain=False):
     """Convert a Python object to a tuple (cdata('void *'), num_bytes, dummy)
@@ -844,8 +846,6 @@ def wait_for_events(wait_for):
     _handle_error(_lib.wait_for_events(*_clobj_list(wait_for)))
 
 class NannyEvent(Event):
-    # TODO disable/handle write to buffer from bytes since the data may be moved
-    # by GC
     def get_ward(self):
         return _ffi.from_handle(_lib.nanny_event__get_ward(self.ptr))
 
@@ -907,7 +907,7 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size,
     _handle_error(_lib.enqueue_nd_range_kernel(
         ptr_event, queue.ptr, kernel.ptr, work_dim, c_global_work_offset,
         c_global_work_size, c_local_work_size, c_wait_for, num_wait_for))
-    return _create_instance(Event, ptr_event[0])
+    return Event._create(ptr_event[0])
 
 # }}}
 
@@ -918,7 +918,7 @@ def enqueue_task(queue, kernel, wait_for=None):
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_task(
         _event, queue.ptr, kernel.ptr, c_wait_for, num_wait_for))
-    return _create_instance(Event, ptr_event[0])
+    return Event._create(ptr_event[0])
 
 # }}}
 
@@ -929,12 +929,12 @@ def _enqueue_marker_with_wait_list(queue, wait_for=None):
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_marker_with_wait_list(
         ptr_event, queue.ptr, c_wait_for, num_wait_for))
-    return _create_instance(Event, ptr_event[0])
+    return Event._create(ptr_event[0])
 
 def _enqueue_marker(queue):
     ptr_event = _ffi.new('clobj_t*')
     _handle_error(_lib.enqueue_marker(ptr_event, queue.ptr))
-    return _create_instance(Event, ptr_event[0])
+    return Event._create(ptr_event[0])
 
 # }}}
 
@@ -945,7 +945,7 @@ def _enqueue_barrier_with_wait_list(queue, wait_for=None):
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_barrier_with_wait_list(
         ptr_event, queue.ptr, c_wait_for, num_wait_for))
-    return _create_instance(Event, ptr_event[0])
+    return Event._create(ptr_event[0])
 
 def _enqueue_barrier(queue):
     _handle_error(_lib.enqueue_barrier(queue.ptr))
@@ -972,7 +972,7 @@ def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
         _ffi.new_handle(hostbuf)))
-    return _create_instance(NannyEvent, ptr_event[0])
+    return NannyEvent._create(ptr_event[0])
 
 
 def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
@@ -982,7 +982,7 @@ def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
     _handle_error(_lib.enqueue_copy_buffer(
         ptr_event, queue.ptr, src.ptr, dst.ptr, byte_count, src_offset,
         dst_offset, c_wait_for, num_wait_for))
-    return _create_instance(Event, ptr_event[0])
+    return Event._create(ptr_event[0])
 
 
 def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
@@ -995,7 +995,7 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
         ptr_event, queue.ptr, mem.ptr, c_buf, size, device_offset,
         c_wait_for, num_wait_for, bool(is_blocking),
         _ffi.new_handle(c_ref)))
-    return _create_instance(NannyEvent, ptr_event[0])
+    return NannyEvent._create(ptr_event[0])
 
 # PyPy bug report: https://bitbucket.org/pypy/pypy/issue/1777/unable-to-create-proper-numpy-array-from
 def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
@@ -1024,10 +1024,8 @@ def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
     _handle_error(_lib.enqueue_map_buffer(_event, _map, queue.ptr, buf.ptr,
                                           flags, offset, byte_size, c_wait_for,
                                           num_wait_for, bool(is_blocking)))
-    event = _create_instance(Event, _event[0])
-    map = _create_instance(MemoryMap, _map[0])
-    map._init_array(shape, dtype.str, strides)
-    return np.asarray(map), event
+    return (np.asarray(MemoryMap._create(_map[0], shape, dtype.str, strides)),
+            Event._create(_event[0]))
 
 def _enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
     c_pattern, psize, c_ref = _c_buffer_from_obj(pattern)
@@ -1036,7 +1034,7 @@ def _enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
     _handle_error(_lib.enqueue_fill_buffer(
         _event, queue.ptr, mem.ptr, c_pattern, psize, offset, size,
         c_wait_for, num_wait_for))
-    return _create_instance(Event, ptr_event[0])
+    return Event._create(ptr_event[0])
 
 # }}}
 
@@ -1058,7 +1056,7 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
         ptr_event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
         bool(is_blocking), _ffi.new_handle(c_buf)))
-    return _create_instance(NannyEvent, ptr_event[0])
+    return NannyEvent._create(ptr_event[0])
 
 def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
                         wait_for=None):
@@ -1073,7 +1071,7 @@ def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
     _handle_error(_lib.enqueue_copy_image(
         _event, queue.ptr, src.ptr, dest.ptr, src_origin, src_origin_l,
         dest_origin, dest_origin_l, region, region_l, c_wait_for, num_wait_for))
-    return _create_instance(Event, ptr_event[0])
+    return Event._create(ptr_event[0])
 
 def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
                          slice_pitch=0, wait_for=None, is_blocking=True):
@@ -1091,7 +1089,7 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
         _event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
         bool(is_blocking), _ffi.new_handle(c_ref)))
-    return _create_instance(NannyEvent, _event[0])
+    return NannyEvent._create(_event[0])
 
 def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
                       order="C", strides=None, wait_for=None, is_blocking=True):
@@ -1109,10 +1107,8 @@ def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
                                          flags, origin, origin_l, region,
                                          region_l, _row_pitch, _slice_pitch,
                                          c_wait_for, num_wait_for, is_blocking))
-    event = _create_instance(Event, _event[0])
-    map = _create_instance(MemoryMap, _map[0])
-    map._init_array(shape, dtype.str, strides)
-    return np.asarray(map), event, _row_pitch[0], _slice_pitch[0]
+    return (np.asarray(MemoryMap._create(_map[0], shape, dtype.str, strides)),
+            Event._create(_event[0]), _row_pitch[0], _slice_pitch[0])
 
 # TODO: fill_image copy_buffer_to_image copy_image_to_buffer
 
@@ -1151,7 +1147,7 @@ def _create_gl_enqueue(what):
         c_mem_objects, num_mem_objects = _clobj_list(mem_objects)
         _handle_error(what(ptr_event, queue.ptr, c_mem_objects, num_mem_objects,
                            c_wait_for, num_wait_for))
-        return _create_instance(Event, ptr_event[0])
+        return Event._create(ptr_event[0])
     return enqueue_gl_objects
 
 if _lib.have_gl():
