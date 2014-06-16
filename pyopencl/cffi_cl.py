@@ -160,7 +160,7 @@ def _generic_info_to_python(info):
 def _clobj_list(objs):
     if objs is None:
         return _ffi.NULL, 0
-    return _ffi.new('clobj_t[]', [ev.ptr for ev in objs]), len(objs)
+    return [ev.ptr for ev in objs], len(objs)
 
 
 # {{{ common base class
@@ -542,11 +542,11 @@ class Context(_Common):
                 raise RuntimeError("Context", status_code.INVALID_VALUE,
                                    "one of 'devices' or 'dev_type' "
                                    "must be None")
-            ptr_devices = _ffi.new('clobj_t[]',
-                                   [device.ptr for device in devices])
+            ptr_devices, num_devices = _clobj_list(devices)
             ptr_ctx = _ffi.new('clobj_t*')
-            _handle_error(_lib.create_context(
-                ptr_ctx, c_props, len(ptr_devices), ptr_devices))
+            # TODO parameter order? (for clobj_list)
+            _handle_error(_lib.create_context(ptr_ctx, c_props,
+                                              num_devices, ptr_devices))
 
         else:  # TODO: from dev_type
             raise NotImplementedError()
@@ -749,13 +749,14 @@ class _Program(_Common):
                                "device and binary counts don't match")
 
         ptr_program = _ffi.new('clobj_t*')
-        ptr_devices = [device.ptr for device in devices]
+        ptr_devices, num_devices = _clobj_list(devices)
         ptr_binaries = [_ffi.new('unsigned char[]', binary)
                         for binary in binaries]
         binary_sizes = [len(b) for b in binaries]
 
+        # TODO parameter order? (for clobj_list)
         _handle_error(_lib.create_program_with_binary(
-            ptr_program, context.ptr, len(ptr_devices), ptr_devices,
+            ptr_program, context.ptr, num_devices, ptr_devices,
             ptr_binaries, binary_sizes))
 
         self.ptr = ptr_program[0]
@@ -768,15 +769,8 @@ class _Program(_Common):
     def _build(self, options=None, devices=None):
         if options is None:
             options = ""
-        #if devices is None: devices = self.get_info(0x1163)
-        if devices is None:
-            num_devices = 0
-            ptr_devices = _ffi.NULL
-        else:
-            ptr_devices = _ffi.new('clobj_t[]',
-                                   [device.ptr for device in devices])
-            num_devices = len(devices)
-
+        # TODO? reverse parameter order
+        ptr_devices, num_devices = _clobj_list(devices)
         _handle_error(_lib.program__build(self.ptr, _to_cstring(options),
                                           num_devices, ptr_devices))
 
@@ -916,17 +910,14 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size,
         raise NotImplementedError("global_work_offset")
 
     c_global_work_offset = _ffi.NULL
-    c_global_work_size = _ffi.new('const size_t[]', global_work_size)
     if local_work_size is None:
-        c_local_work_size = _ffi.NULL
-    else:
-        c_local_work_size = _ffi.new('const size_t[]', local_work_size)
+        local_work_size = _ffi.NULL
 
     ptr_event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_nd_range_kernel(
         ptr_event, queue.ptr, kernel.ptr, work_dim, c_global_work_offset,
-        c_global_work_size, c_local_work_size, c_wait_for, num_wait_for))
+        global_work_size, local_work_size, c_wait_for, num_wait_for))
     return Event._create(ptr_event[0])
 
 # }}}
