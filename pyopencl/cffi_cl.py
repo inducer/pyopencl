@@ -583,9 +583,13 @@ class MemoryObjectHolder(_Common):
 
 
 class MemoryObject(MemoryObjectHolder):
+    def __init__(self, hostbuf=None):
+        self.__hostbuf = hostbuf
+    @property
+    def hostbuf(self):
+        return self.__hostbuf
     def release(self):
         _handle_error(_lib.memory_object__release(self.ptr))
-    # TODO hostbuf?
 
 class MemoryMap(_Common):
     @classmethod
@@ -686,6 +690,8 @@ class Buffer(MemoryObject):
     _id = 'buffer'
 
     def __init__(self, context, flags, size=0, hostbuf=None):
+        MemoryObject.__init__(self, hostbuf)
+        # TODO move this to memory object?
         if hostbuf is not None and not mem_flags._use_host(flags):
             warnings.warn("'hostbuf' was passed, but no memory flags "
                           "to make use of it.")
@@ -1133,6 +1139,7 @@ class GLBuffer(MemoryObject):
     _id = 'gl_buffer'
 
     def __init__(self, context, flags, bufobj):
+        MemoryObject.__init__(self, bufobj)
         ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.create_from_gl_buffer(
             ptr, context.ptr, flags, bufobj))
@@ -1143,6 +1150,7 @@ class GLRenderBuffer(MemoryObject):
     _id = 'gl_renderbuffer'
 
     def __init__(self, context, flags, bufobj):
+        MemoryObject.__init__(self, bufobj)
         ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.create_from_gl_renderbuffer(
             ptr, context.ptr, flags, bufobj))
@@ -1331,6 +1339,7 @@ class Image(MemoryObject):
         else:
             assert False
     def __init_1_2(self, context, flags, fmt, desc, hostbuf):
+        MemoryObject.__init__(self, hostbuf)
         if hostbuf is not None and not mem_flags._use_host(flags):
             warnings.warn("'hostbuf' was passed, but no memory flags "
                           "to make use of it.")
@@ -1351,6 +1360,7 @@ class Image(MemoryObject):
         self.ptr = ptr[0]
 
     def __init_legacy(self, context, flags, fmt, shape, pitches, hostbuf):
+        MemoryObject.__init__(self, hostbuf)
         if shape is None:
             raise LogicError("Image", status_code.INVALID_VALUE,
                              "'shape' must be given")
