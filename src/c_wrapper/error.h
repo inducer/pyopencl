@@ -1,6 +1,7 @@
 #include "wrap_cl.h"
 #include "pyhelper.h"
 #include "clobj.h"
+#include "debug.h"
 
 #include <string.h>
 #include <stdexcept>
@@ -13,8 +14,6 @@
 #define __PYOPENCL_ERROR_H
 
 namespace pyopencl {
-
-#ifdef PYOPENCL_TRACE
 
 template<typename FirstType, typename... ArgTypes>
 static PYOPENCL_INLINE void
@@ -34,6 +33,8 @@ _print_args(std::ostream &stm, FirstType &&arg1)
 static PYOPENCL_INLINE void
 print_call_trace(const char *name)
 {
+    if (!DEBUG_ON)
+        return;
     std::cerr << name << std::endl;
 }
 
@@ -41,20 +42,12 @@ template<typename... ArgTypes>
 static PYOPENCL_INLINE void
 print_call_trace(const char *name, ArgTypes&&... args)
 {
+    if (!DEBUG_ON)
+        return;
     std::cerr << name << "(";
     _print_args(std::cerr, args...);
     std::cerr << ")" << std::endl;
 }
-
-#else
-
-template<typename... ArgTypes>
-static PYOPENCL_INLINE void
-print_call_trace(ArgTypes&&...)
-{
-}
-
-#endif
 
 // {{{ error
 

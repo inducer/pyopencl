@@ -7,6 +7,13 @@
 namespace pyopencl {
 
 extern bool debug_enabled;
+#ifdef PYOPENCL_TRACE
+#define DEFAULT_DEBUG true
+#else
+#define DEFAULT_DEBUG false
+#endif
+
+#define DEBUG_ON (PYOPENCL_EXPECT(debug_enabled, DEFAULT_DEBUG))
 
 }
 

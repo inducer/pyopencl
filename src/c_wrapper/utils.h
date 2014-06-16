@@ -9,6 +9,15 @@
 #ifndef __PYOPENCL_UTILS_H
 #define __PYOPENCL_UTILS_H
 
+#if (defined(__GNUC__) && (__GNUC__ > 2))
+#  define PYOPENCL_EXPECT(exp, var) __builtin_expect(exp, var)
+#else
+#  define PYOPENCL_EXPECT(exp, var) (exp)
+#endif
+
+#define PYOPENCL_LIKELY(x) pyopencl_expect(bool(x), true)
+#define PYOPENCL_UNLIKELY(x) pyopencl_expect(bool(x), false)
+
 template<class T>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE std::string
 tostring(const T& v)

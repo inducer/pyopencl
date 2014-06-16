@@ -7,11 +7,7 @@ static PYOPENCL_INLINE bool
 _get_debug_env()
 {
     const char *env = getenv("PYOPENCL_DEBUG");
-#ifdef PYOPENCL_TRACE
-    const bool default_debug = true;
-#else
-    const bool default_debug = false;
-#endif
+    const bool default_debug = DEFAULT_DEBUG;
     if (!env) {
         return default_debug;
     }
