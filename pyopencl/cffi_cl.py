@@ -3,6 +3,7 @@ from __future__ import division
 __copyright__ = """
 Copyright (C) 2013 Marko Bencun
 Copyright (C) 2014 Andreas Kloeckner
+Copyright (C) 2014 Yichao Yu
 """
 
 __license__ = """
