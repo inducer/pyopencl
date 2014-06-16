@@ -11,7 +11,7 @@ namespace pyopencl {
     add("program_kind", "UNKNOWN", KND_UNKNOWN);
     add("program_kind", "SOURCE", KND_SOURCE);
     add("program_kind", "BINARY", KND_BINARY);
-    
+
     // status_code
     ADD_ATTR("status_code", , SUCCESS);
     ADD_ATTR("status_code", , DEVICE_NOT_FOUND);

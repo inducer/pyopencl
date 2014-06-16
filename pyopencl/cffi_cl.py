@@ -504,8 +504,7 @@ def _parse_context_properties(properties):
         if prop == context_properties.PLATFORM:
             props.append(value.int_ptr)
 
-        # TODO: used to be ifdef _WIN32? Why?
-        elif prop == getattr(context_properties, "WGL_HDC_KHR"):
+        elif prop == getattr(context_properties, "WGL_HDC_KHR", None):
             props.append(value)
 
         elif prop in [getattr(context_properties, key, None) for key in (
