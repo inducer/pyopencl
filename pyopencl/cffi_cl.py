@@ -749,14 +749,14 @@ class _Program(_Common):
                                "device and binary counts don't match")
 
         ptr_program = _ffi.new('clobj_t*')
-        ptr_devices = _ffi.new('clobj_t[]', [device.ptr for device in devices])
-        ptr_binaries = [_ffi.new('char[]', binary) for binary in binaries]
-        binary_sizes = _ffi.new('size_t[]', map(len, binaries))
+        ptr_devices = [device.ptr for device in devices]
+        ptr_binaries = [_ffi.new('unsigned char[]', binary)
+                        for binary in binaries]
+        binary_sizes = [len(b) for b in binaries]
 
-        # TODO correct type for binaries
         _handle_error(_lib.create_program_with_binary(
             ptr_program, context.ptr, len(ptr_devices), ptr_devices,
-            _ffi.new('char*[]', ptr_binaries), binary_sizes))
+            ptr_binaries, binary_sizes))
 
         self.ptr = ptr_program[0]
 

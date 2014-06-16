@@ -113,7 +113,7 @@ create_program_with_source(clobj_t *prog, clobj_t _ctx, const char *src)
 error*
 create_program_with_binary(clobj_t *prog, clobj_t _ctx,
                            cl_uint num_devices, const clobj_t *devices,
-                           char **binaries, size_t *binary_sizes)
+                           const unsigned char **binaries, size_t *binary_sizes)
 {
     auto ctx = static_cast<context*>(_ctx);
     const auto devs = buf_from_class<device>(devices, num_devices);
@@ -121,8 +121,7 @@ create_program_with_binary(clobj_t *prog, clobj_t _ctx,
     return c_handle_error([&] {
             cl_program result = pyopencl_call_guarded(
                 clCreateProgramWithBinary, ctx, devs,
-                binary_sizes, reinterpret_cast<const unsigned char**>(
-                    const_cast<const char**>(binaries)), binary_statuses.get());
+                binary_sizes, binaries, binary_statuses.get());
             // for (cl_uint i = 0; i < num_devices; ++i)
             //   std::cout << i << ":" << binary_statuses[i] << std::endl;
             *prog = new_program(result, KND_BINARY);

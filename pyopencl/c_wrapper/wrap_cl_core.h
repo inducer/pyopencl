@@ -88,7 +88,8 @@ error *create_program_with_source(clobj_t *program, clobj_t context,
                                   const char *src);
 error *create_program_with_binary(clobj_t *program, clobj_t context,
                                   cl_uint num_devices, const clobj_t *devices,
-                                  char **binaries, size_t *binary_sizes);
+                                  const unsigned char **binaries,
+                                  size_t *binary_sizes);
 error *program__build(clobj_t program, const char *options,
                       cl_uint num_devices, const clobj_t *devices);
 error *program__kind(clobj_t program, int *kind);
