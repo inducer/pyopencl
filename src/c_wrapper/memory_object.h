@@ -33,7 +33,7 @@ public:
     void
     release() const
     {
-        if (!m_valid.exchange(false)) {
+        if (PYOPENCL_UNLIKELY(!m_valid.exchange(false))) {
             throw clerror("MemoryObject.release", CL_INVALID_VALUE,
                           "trying to double-unref mem object");
         }

@@ -173,7 +173,7 @@ retry_mem_error(Func func) -> decltype(func())
     try {
         return func();
     } catch (clerror &e) {
-        if (!e.is_out_of_memory() || !py::gc()) {
+        if (PYOPENCL_LIKELY(!e.is_out_of_memory()) || !py::gc()) {
             throw;
         }
     }

@@ -15,8 +15,8 @@
 #  define PYOPENCL_EXPECT(exp, var) (exp)
 #endif
 
-#define PYOPENCL_LIKELY(x) pyopencl_expect(bool(x), true)
-#define PYOPENCL_UNLIKELY(x) pyopencl_expect(bool(x), false)
+#define PYOPENCL_LIKELY(x) PYOPENCL_EXPECT(bool(x), true)
+#define PYOPENCL_UNLIKELY(x) PYOPENCL_EXPECT(bool(x), false)
 
 template<class T>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE std::string
