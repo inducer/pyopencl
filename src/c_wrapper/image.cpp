@@ -177,7 +177,7 @@ image__get_fill_type(clobj_t img)
 }
 
 error*
-enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
+enqueue_read_image(clobj_t *evt, clobj_t _queue, clobj_t _mem,
                    const size_t *_origin, size_t origin_l,
                    const size_t *_region, size_t region_l, void *buffer,
                    size_t row_pitch, size_t slice_pitch,
@@ -190,19 +190,18 @@ enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
     ConstBuffer<size_t, 3> origin(_origin, origin_l);
     ConstBuffer<size_t, 3> region(_region, region_l);
     return c_handle_error([&] {
-            cl_event evt;
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueReadImage, queue, img,
                         cast_bool(is_blocking), origin, region, row_pitch,
-                        slice_pitch, buffer, wait_for, &evt);
+                        slice_pitch, buffer, wait_for,
+                        nanny_event_out(evt, pyobj));
                 });
-            *_evt = new_nanny_event(evt, pyobj);
         });
 }
 
 error*
-enqueue_copy_image(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
+enqueue_copy_image(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
                    const size_t *_src_origin, size_t src_origin_l,
                    const size_t *_dst_origin, size_t dst_origin_l,
                    const size_t *_region, size_t region_l,
@@ -216,18 +215,16 @@ enqueue_copy_image(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
     ConstBuffer<size_t, 3> dst_origin(_dst_origin, dst_origin_l);
     ConstBuffer<size_t, 3> region(_region, region_l);
     return c_handle_error([&] {
-            cl_event evt;
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueCopyImage, queue, src, dst, src_origin,
-                        dst_origin, region, wait_for, &evt);
+                        dst_origin, region, wait_for, event_out(evt));
                 });
-            *_evt = new_event(evt);
         });
 }
 
 error*
-enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
+enqueue_write_image(clobj_t *evt, clobj_t _queue, clobj_t _mem,
                     const size_t *_origin, size_t origin_l,
                     const size_t *_region, size_t region_l,
                     const void *buffer, size_t row_pitch, size_t slice_pitch,
@@ -240,14 +237,13 @@ enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
     ConstBuffer<size_t, 3> origin(_origin, origin_l);
     ConstBuffer<size_t, 3> region(_region, region_l);
     return c_handle_error([&] {
-            cl_event evt;
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueWriteImage, queue, img,
                         cast_bool(is_blocking), origin, region, row_pitch,
-                        slice_pitch, buffer, wait_for, &evt);
+                        slice_pitch, buffer, wait_for,
+                        nanny_event_out(evt, pyobj));
                 });
-            *_evt = new_nanny_event(evt, pyobj);
         });
 }
 

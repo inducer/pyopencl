@@ -84,42 +84,36 @@ command_queue__flush(clobj_t queue)
 
 #if PYOPENCL_CL_VERSION >= 0x1020
 error*
-enqueue_marker_with_wait_list(clobj_t *_evt, clobj_t _queue,
+enqueue_marker_with_wait_list(clobj_t *evt, clobj_t _queue,
                               const clobj_t *_wait_for, uint32_t num_wait_for)
 {
     auto queue = static_cast<command_queue*>(_queue);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
-            cl_event evt;
             pyopencl_call_guarded(clEnqueueMarkerWithWaitList, queue,
-                                  wait_for, &evt);
-            *_evt = new_event(evt);
+                                  wait_for, event_out(evt));
         });
 }
 
 error*
-enqueue_barrier_with_wait_list(clobj_t *_evt, clobj_t _queue,
+enqueue_barrier_with_wait_list(clobj_t *evt, clobj_t _queue,
                                const clobj_t *_wait_for, uint32_t num_wait_for)
 {
     auto queue = static_cast<command_queue*>(_queue);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
-            cl_event evt;
             pyopencl_call_guarded(clEnqueueBarrierWithWaitList, queue,
-                                  wait_for, &evt);
-            *_evt = new_event(evt);
+                                  wait_for, event_out(evt));
         });
 }
 #endif
 
 error*
-enqueue_marker(clobj_t *_evt, clobj_t _queue)
+enqueue_marker(clobj_t *evt, clobj_t _queue)
 {
     auto queue = static_cast<command_queue*>(_queue);
     return c_handle_error([&] {
-            cl_event evt;
-            pyopencl_call_guarded(clEnqueueMarker, queue, &evt);
-            *_evt = new_event(evt);
+            pyopencl_call_guarded(clEnqueueMarker, queue, event_out(evt));
         });
 }
 

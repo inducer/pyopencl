@@ -181,6 +181,50 @@ public:
     }
 };
 
+class OutArg {
+};
+
+template<typename T>
+class CLArg<T, typename std::enable_if<
+                      std::is_base_of<OutArg, T>::value>::type> {
+private:
+    bool m_finished;
+    bool m_need_cleanup;
+    T &m_arg;
+public:
+    CLArg(T &arg)
+        : m_finished(false), m_need_cleanup(true), m_arg(arg)
+    {
+    }
+    CLArg(CLArg<T> &&other) noexcept
+        : m_finished(other.m_finished), m_need_cleanup(other.m_need_cleanup),
+        m_arg(other.m_arg)
+    {}
+    PYOPENCL_INLINE auto
+    convert()
+        -> decltype(m_arg.get())
+    {
+        return m_arg.get();
+    }
+    PYOPENCL_INLINE void
+    finish()
+    {
+        m_arg.finish();
+        m_finished = true;
+    }
+    PYOPENCL_INLINE void
+    cleanup()
+    {
+        m_need_cleanup = false;
+    }
+    ~CLArg()
+    {
+        if (m_need_cleanup) {
+            m_arg.cleanup(m_finished);
+        }
+    }
+};
+
 template<typename T>
 struct _D {
     void operator()(T *p) {

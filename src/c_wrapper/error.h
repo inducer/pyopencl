@@ -97,13 +97,93 @@ struct __CLArgGetter {
     }
 };
 
+template<typename T, class = void>
+struct __CLFinish {
+    static PYOPENCL_INLINE void
+    call(T)
+    {
+    }
+};
+
+template<typename T>
+struct __CLFinish<T, decltype((void)(std::declval<T>().finish()))> {
+    static PYOPENCL_INLINE void
+    call(T v)
+    {
+        v.finish();
+    }
+};
+
+template<typename T, class = void>
+struct __CLCleanup {
+    static PYOPENCL_INLINE void
+    call(T)
+    {
+    }
+};
+
+template<typename T>
+struct __CLCleanup<T, decltype((void)(std::declval<T>().cleanup()))> {
+    static PYOPENCL_INLINE void
+    call(T v)
+    {
+        v.cleanup();
+    }
+};
+
+template<template<typename...> class Caller, size_t n, typename T>
+struct __CLCall {
+    static PYOPENCL_INLINE void
+    call(T &&t)
+    {
+        __CLCall<Caller, n - 1, T>::call(std::forward<T>(t));
+        Caller<decltype(std::get<n>(t))>::call(std::get<n>(t));
+    }
+};
+
+template<template<typename...> class Caller, typename T>
+struct __CLCall<Caller, 0, T> {
+    static PYOPENCL_INLINE void
+    call(T &&t)
+    {
+        Caller<decltype(std::get<0>(t))>::call(std::get<0>(t));
+    }
+};
+
+template<typename... Types>
+class CLArgPack : public ArgPack<CLArg, Types...> {
+public:
+    using ArgPack<CLArg, Types...>::ArgPack;
+    template<typename Func>
+    PYOPENCL_INLINE auto
+    clcall(Func func)
+        -> decltype(this->template call<__CLArgGetter>(func))
+    {
+        auto res = this->template call<__CLArgGetter>(func);
+        typename CLArgPack::tuple_base *that = this;
+        __CLCall<__CLFinish, sizeof...(Types) - 1,
+                 decltype(*that)>::call(*that);
+        __CLCall<__CLCleanup, sizeof...(Types) - 1,
+                 decltype(*that)>::call(*that);
+        return res;
+    }
+};
+
+template<typename... Types>
+static PYOPENCL_INLINE CLArgPack<typename std::remove_reference<Types>::type...>
+make_clargpack(Types&&... args)
+{
+    return CLArgPack<typename std::remove_reference<Types>::type...>(
+        std::forward<Types>(args)...);
+}
+
 template<typename... ArgTypes2, typename... ArgTypes>
 static PYOPENCL_INLINE void
 call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     print_call_trace(name);
-    auto argpack = make_argpack<CLArg>(std::forward<ArgTypes2>(args)...);
-    cl_int status_code = argpack.template call<__CLArgGetter>(func);
+    auto argpack = make_clargpack(std::forward<ArgTypes2>(args)...);
+    cl_int status_code = argpack.clcall(func);
     if (status_code != CL_SUCCESS) {
         throw clerror(name, status_code);
     }
@@ -115,9 +195,9 @@ call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     print_call_trace(name);
     cl_int status_code = CL_SUCCESS;
-    auto argpack = make_argpack<CLArg>(std::forward<ArgTypes2>(args)...,
-                                       &status_code);
-    T res = argpack.template call<__CLArgGetter>(func);
+    auto argpack = make_clargpack(std::forward<ArgTypes2>(args)...,
+                                  &status_code);
+    T res = argpack.clcall(func);
     if (status_code != CL_SUCCESS) {
         throw clerror(name, status_code);
     }
@@ -132,8 +212,8 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
                      ArgTypes2&&... args)
 {
     print_call_trace(name);
-    auto argpack = make_argpack<CLArg>(std::forward<ArgTypes2>(args)...);
-    cl_int status_code = argpack.template call<__CLArgGetter>(func);
+    auto argpack = make_clargpack(std::forward<ArgTypes2>(args)...);
+    cl_int status_code = argpack.clcall(func);
     if (status_code != CL_SUCCESS) {
         std::cerr
             << ("PyOpenCL WARNING: a clean-up operation failed "

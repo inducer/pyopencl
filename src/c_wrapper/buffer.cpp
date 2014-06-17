@@ -75,7 +75,7 @@ create_buffer(clobj_t *buffer, clobj_t _ctx, cl_mem_flags flags,
 }
 
 error*
-enqueue_read_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
+enqueue_read_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem,
                     void *buffer, size_t size, size_t device_offset,
                     const clobj_t *_wait_for, uint32_t num_wait_for,
                     int is_blocking, void *pyobj)
@@ -84,19 +84,17 @@ enqueue_read_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object*>(_mem);
     return c_handle_error([&] {
-            cl_event evt;
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueReadBuffer, queue, mem,
                         cast_bool(is_blocking), device_offset, size,
-                        buffer, wait_for, &evt);
+                        buffer, wait_for, nanny_event_out(evt, pyobj));
                 });
-            *_evt = new_nanny_event(evt, pyobj);
         });
 }
 
 error*
-enqueue_write_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
+enqueue_write_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem,
                      const void *buffer, size_t size, size_t device_offset,
                      const clobj_t *_wait_for, uint32_t num_wait_for,
                      int is_blocking, void *pyobj)
@@ -105,19 +103,17 @@ enqueue_write_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object*>(_mem);
     return c_handle_error([&] {
-            cl_event evt;
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueWriteBuffer, queue, mem,
                         cast_bool(is_blocking), device_offset, size, buffer,
-                        wait_for, &evt);
+                        wait_for, nanny_event_out(evt, pyobj));
                 });
-            *_evt = new_nanny_event(evt, pyobj);
         });
 }
 
 error*
-enqueue_copy_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
+enqueue_copy_buffer(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
                     ptrdiff_t byte_count, size_t src_offset, size_t dst_offset,
                     const clobj_t *_wait_for, uint32_t num_wait_for)
 {
@@ -138,18 +134,16 @@ enqueue_copy_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
             }
             const auto wait_for = buf_from_class<event>(_wait_for,
                                                         num_wait_for);
-            cl_event evt;
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueCopyBuffer, queue, src, dst, src_offset,
-                        dst_offset, byte_count, wait_for, &evt);
+                        dst_offset, byte_count, wait_for, event_out(evt));
                 });
-            *_evt = new_event(evt);
         });
 }
 
 error*
-enqueue_fill_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem, void *pattern,
+enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
                     size_t psize, size_t offset, size_t size,
                     const clobj_t *_wait_for, uint32_t num_wait_for)
 {
@@ -157,12 +151,10 @@ enqueue_fill_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem, void *pattern,
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object*>(_mem);
     return c_handle_error([&] {
-            cl_event evt;
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueFillBuffer, queue, mem, pattern, psize,
-                        offset, size, wait_for, &evt);
+                        offset, size, wait_for, event_out(evt));
                 });
-            *_evt = new_event(evt);
         });
 }

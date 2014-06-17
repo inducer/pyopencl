@@ -24,12 +24,10 @@ public:
         : clobj(ptr), m_valid(true), m_queue(*queue), m_mem(*mem)
     {}
     ~memory_map();
-    event *release(const command_queue *queue, const clobj_t *_wait_for,
-                   uint32_t num_wait_for) const;
+    void release(clobj_t *evt, const command_queue *queue,
+                 const clobj_t *wait_for, uint32_t num_wait_for) const;
     generic_info get_info(cl_uint) const;
     intptr_t intptr() const;
-    static memory_map *convert(clobj_t*, cl_event, command_queue *queue,
-                               memory_object *buf, void *res);
 };
 
 // }}}

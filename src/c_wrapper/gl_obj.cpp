@@ -57,18 +57,16 @@ typedef cl_int (*clEnqueueGLObjectFunc)(cl_command_queue, cl_uint,
                                         const cl_mem*, cl_uint,
                                         const cl_event*, cl_event*);
 
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE event*
+static PYOPENCL_INLINE void
 enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
-                   command_queue *cq, const clobj_t *mem_objects,
+                   clobj_t *evt, command_queue *cq, const clobj_t *mem_objects,
                    uint32_t num_mem_objects, const clobj_t *wait_for,
                    uint32_t num_wait_for)
 {
     const auto _wait_for = buf_from_class<event>(wait_for, num_wait_for);
     const auto _mem_objs = buf_from_class<memory_object>(
         mem_objects, num_mem_objects);
-    cl_event evt;
-    call_guarded(func, name, cq, _mem_objs, _wait_for, &evt);
-    return new_event(evt);
+    call_guarded(func, name, cq, _mem_objs, _wait_for, event_out(evt));
 }
 #define enqueue_gl_objects(what, args...)                       \
     enqueue_gl_objects(clEnqueue##what##GLObjects,              \
@@ -175,8 +173,7 @@ create_from_gl_buffer(clobj_t *ptr, clobj_t _ctx,
     return c_handle_error([&] {
             cl_mem mem = pyopencl_call_guarded(clCreateFromGLBuffer,
                                                ctx, flags, bufobj);
-            *ptr = pyopencl_convert_obj(gl_buffer,
-                                        clReleaseMemObject, mem);
+            *ptr = pyopencl_convert_obj(gl_buffer, clReleaseMemObject, mem);
         });
 }
 
@@ -194,27 +191,27 @@ create_from_gl_renderbuffer(clobj_t *ptr, clobj_t _ctx,
 }
 
 error*
-enqueue_acquire_gl_objects(clobj_t *_evt, clobj_t queue,
+enqueue_acquire_gl_objects(clobj_t *evt, clobj_t queue,
                            const clobj_t *mem_objects,
                            uint32_t num_mem_objects,
                            const clobj_t *wait_for, uint32_t num_wait_for)
 {
     return c_handle_error([&] {
-            *_evt = enqueue_gl_objects(
-                Acquire, static_cast<command_queue*>(queue),
+            enqueue_gl_objects(
+                Acquire, evt, static_cast<command_queue*>(queue),
                 mem_objects, num_mem_objects, wait_for, num_wait_for);
         });
 }
 
 error*
-enqueue_release_gl_objects(clobj_t *event, clobj_t queue,
+enqueue_release_gl_objects(clobj_t *evt, clobj_t queue,
                            const clobj_t *mem_objects,
                            uint32_t num_mem_objects,
                            const clobj_t *wait_for, uint32_t num_wait_for)
 {
     return c_handle_error([&] {
-            *event = enqueue_gl_objects(
-                Release, static_cast<command_queue*>(queue),
+            enqueue_gl_objects(
+                Release, evt, static_cast<command_queue*>(queue),
                 mem_objects, num_mem_objects, wait_for, num_wait_for);
         });
 }

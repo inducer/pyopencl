@@ -16,9 +16,9 @@ memory_map::~memory_map()
                                   m_mem, this, 0, nullptr, nullptr);
 }
 
-event*
-memory_map::release(const command_queue *queue, const clobj_t *_wait_for,
-                    uint32_t num_wait_for) const
+void
+memory_map::release(clobj_t *evt, const command_queue *queue,
+                    const clobj_t *_wait_for, uint32_t num_wait_for) const
 {
     if (!m_valid.exchange(false)) {
         throw clerror("MemoryMap.release", CL_INVALID_VALUE,
@@ -26,10 +26,8 @@ memory_map::release(const command_queue *queue, const clobj_t *_wait_for,
     }
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     queue = queue ? queue : &m_queue;
-    cl_event evt;
     pyopencl_call_guarded(clEnqueueUnmapMemObject, queue,
-                          m_mem, this, wait_for, &evt);
-    return new_event(evt);
+                          m_mem, this, wait_for, event_out(evt));
 }
 
 generic_info
@@ -42,6 +40,20 @@ intptr_t
 memory_map::intptr() const
 {
     return m_valid ? (intptr_t)data() : 0;
+}
+
+memory_map*
+convert_memory_map(clobj_t evt, command_queue *queue,
+                   memory_object *buf, void *res)
+{
+    try {
+        return new memory_map(queue, buf, res);
+    } catch (...) {
+        delete evt;
+        pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, queue,
+                                      buf, res, 0, nullptr, nullptr);
+        throw;
+    }
 }
 
 }
@@ -58,7 +70,7 @@ memory_map__release(clobj_t _map, clobj_t _queue, const clobj_t *_wait_for,
     auto map = static_cast<memory_map*>(_map);
     auto queue = static_cast<command_queue*>(_queue);
     return c_handle_error([&] {
-            *evt = map->release(queue, _wait_for, num_wait_for);
+            map->release(evt, queue, _wait_for, num_wait_for);
         });
 }
 
@@ -68,26 +80,8 @@ memory_map__data(clobj_t _map)
     return static_cast<memory_map*>(_map)->data();
 }
 
-memory_map*
-memory_map::convert(clobj_t *_evt, cl_event evt, command_queue *queue,
-                    memory_object *buf, void *res)
-{
-    try {
-        *_evt = new event(evt, false);
-        evt = 0;
-        return new memory_map(queue, buf, res);
-    } catch (...) {
-        if (evt) {
-            pyopencl_call_guarded_cleanup(clReleaseEvent, evt);
-        }
-        pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, queue,
-                                      buf, res, 0, nullptr, nullptr);
-        throw;
-    }
-}
-
 error*
-enqueue_map_image(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
+enqueue_map_image(clobj_t *evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
                   cl_map_flags flags, const size_t *_origin, size_t origin_l,
                   const size_t *_region, size_t region_l, size_t *row_pitch,
                   size_t *slice_pitch, const clobj_t *_wait_for,
@@ -99,18 +93,18 @@ enqueue_map_image(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
     ConstBuffer<size_t, 3> origin(_origin, origin_l);
     ConstBuffer<size_t, 3> region(_region, region_l);
     return c_handle_error([&] {
-            cl_event evt;
             void *res = retry_mem_error([&] {
                     return pyopencl_call_guarded(
                         clEnqueueMapImage, queue, img, cast_bool(block), flags,
-                        origin, region, row_pitch, slice_pitch, wait_for, &evt);
+                        origin, region, row_pitch, slice_pitch, wait_for,
+                        event_out(evt));
                 });
-            *map = memory_map::convert(_evt, evt, queue, img, res);
+            *map = convert_memory_map(*evt, queue, img, res);
         });
 }
 
 error*
-enqueue_map_buffer(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
+enqueue_map_buffer(clobj_t *evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
                    cl_map_flags flags, size_t offset, size_t size,
                    const clobj_t *_wait_for, uint32_t num_wait_for,
                    int block)
@@ -119,12 +113,11 @@ enqueue_map_buffer(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
     auto buf = static_cast<buffer*>(_mem);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
-            cl_event evt;
             void *res = retry_mem_error([&] {
                     return pyopencl_call_guarded(
                         clEnqueueMapBuffer, queue, buf, cast_bool(block),
-                        flags, offset, size, wait_for, &evt);
+                        flags, offset, size, wait_for, event_out(evt));
                 });
-            *map = memory_map::convert(_evt, evt, queue, buf, res);
+            *map = convert_memory_map(*evt, queue, buf, res);
         });
 }

@@ -32,10 +32,11 @@ public:
     void set_callback(cl_int type, const std::function<void(cl_int)> &func);
 #endif
 };
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE event*
-new_event(cl_event evt)
+static PYOPENCL_INLINE auto
+event_out(clobj_t *ret)
+    -> decltype(pyopencl_outarg(event, ret, clReleaseEvent))
 {
-    return pyopencl_convert_obj(event, clReleaseEvent, evt);
+    return pyopencl_outarg(event, ret, clReleaseEvent);
 }
 
 class nanny_event : public event {
@@ -57,10 +58,11 @@ public:
     }
     void finished();
 };
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE event*
-new_nanny_event(cl_event evt, void *ward)
+static PYOPENCL_INLINE auto
+nanny_event_out(clobj_t *ret, void *ward)
+    -> decltype(pyopencl_outarg(nanny_event, ret, clReleaseEvent, ward))
 {
-    return pyopencl_convert_obj(nanny_event, clReleaseEvent, evt, ward);
+    return pyopencl_outarg(nanny_event, ret, clReleaseEvent, ward);
 }
 
 // }}}

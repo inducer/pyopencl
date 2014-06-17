@@ -26,7 +26,7 @@ struct gens<0, S...> {
 };
 
 template<typename Function, int... S, typename... Arg2>
-static inline auto
+static PYOPENCL_INLINE auto
 _call_func(Function func, seq<S...>, std::tuple<Arg2...> &args)
     -> decltype(func(std::forward<Arg2>(std::get<S>(args))...))
 {
@@ -34,7 +34,7 @@ _call_func(Function func, seq<S...>, std::tuple<Arg2...> &args)
 }
 
 template<typename Function, typename T>
-static inline auto
+static PYOPENCL_INLINE auto
 call_tuple(Function &&func, T &&args)
     -> decltype(_call_func(std::forward<Function>(func),
                            typename gens<std::tuple_size<T>::value>::type(),
@@ -52,51 +52,60 @@ using _ArgPackBase = std::tuple<Convert<_ArgType<Types> >...>;
 
 template<template<typename...> class Convert, typename... Types>
 class ArgPack : public _ArgPackBase<Convert, Types...> {
-    typedef _ArgPackBase<Convert, Types...> _base;
+public:
+    typedef _ArgPackBase<Convert, Types...> tuple_base;
+private:
     template<typename T>
-    static inline std::tuple<T>
+    static PYOPENCL_INLINE std::tuple<T>
     ensure_tuple(T &&v)
     {
         return std::tuple<T>(std::forward<T>(v));
     }
     template<typename... T>
-    static inline std::tuple<T...>
+    static PYOPENCL_INLINE std::tuple<T...>
     ensure_tuple(std::tuple<T...> &&t)
     {
         return t;
+    }
+    static PYOPENCL_INLINE std::tuple<>
+    ensure_tuple()
+    {
+        return std::tuple<>();
     }
 
     template<typename T>
     using ArgConvert = Convert<_ArgType<T> >;
     template<template<typename...> class Getter, int... S>
-    inline auto
+    PYOPENCL_INLINE auto
     __get(seq<S...>)
-    -> decltype(std::tuple_cat(ensure_tuple(Getter<ArgConvert<Types> >::get(
-                                                std::get<S>(*(_base*)this)))...))
+    -> decltype(std::tuple_cat(
+                    ensure_tuple(Getter<ArgConvert<Types> >::get(
+                                     std::get<S>(*(tuple_base*)this)))...))
     {
-        return std::tuple_cat(ensure_tuple(Getter<ArgConvert<Types> >::get(
-                                               std::get<S>(*(_base*)this)))...);
+        return std::tuple_cat(
+            ensure_tuple(Getter<ArgConvert<Types> >::get(
+                             std::get<S>(*(tuple_base*)this)))...);
     }
 public:
     template<typename... Types2>
     ArgPack(Types2&&... arg_orig)
-        : _base(ArgConvert<Types2>(arg_orig)...)
+        : tuple_base(ArgConvert<Types2>(arg_orig)...)
     {
     }
     ArgPack(ArgPack<Convert, Types...> &&other)
-        : _base(static_cast<_base&&>(other))
+        : tuple_base(static_cast<tuple_base&&>(other))
     {
     }
     // GCC Bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=57543
     template<template<typename...> class Getter>
-    inline auto
+    PYOPENCL_INLINE auto
     get() -> decltype(this->__get<Getter>(
                           typename gens<sizeof...(Types)>::type()))
     {
         return __get<Getter>(typename gens<sizeof...(Types)>::type());
     }
     template<template<typename...> class Getter, typename Func>
-    inline auto
+    PYOPENCL_INLINE auto
     call(Func func)
         -> decltype(call_tuple(func, this->get<Getter>()))
     {
@@ -105,7 +114,7 @@ public:
 };
 
 template<template<typename...> class Convert, typename... Types>
-static inline ArgPack<Convert, _ArgType<Types>...>
+static PYOPENCL_INLINE ArgPack<Convert, _ArgType<Types>...>
 make_argpack(Types&&... args)
 {
     return ArgPack<Convert, _ArgType<Types>...>(
