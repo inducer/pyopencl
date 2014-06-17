@@ -19,6 +19,7 @@ private:
     command_queue m_queue;
     memory_object m_mem;
 public:
+    constexpr static const char *class_name = "MEMORY_MAP";
     PYOPENCL_INLINE
     memory_map(const command_queue *queue, const memory_object *mem, void *ptr)
         : clobj(ptr), m_valid(true), m_queue(*queue), m_mem(*mem)

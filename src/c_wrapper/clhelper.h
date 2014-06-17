@@ -54,7 +54,7 @@ convert_opaque_array_info(T &&buf)
 {
     generic_info info;
     info.dontfree = 0;
-    info.opaque_class = CLObj::get_class_t();
+    info.opaque_class = CLObj::class_id;
     info.type = _copy_str(std::string("void*[") + tostring(buf.len()) + "]");
     info.value = buf_to_base<CLObj>(std::forward<T>(buf)).release();
     return info;
@@ -73,7 +73,7 @@ get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
                  &param_value, nullptr);
     generic_info info;
     info.dontfree = 0;
-    info.opaque_class = CLObj::get_class_t();
+    info.opaque_class = CLObj::class_id;
     info.type = "void *";
     if (param_value) {
         info.value = (void*)(new CLObj(param_value, /*retain*/ true));
@@ -194,11 +194,10 @@ public:
     PYOPENCL_INLINE void
     print(std::ostream &stm)
     {
-        // TODO
         if (!out) {
             stm << &m_clobj;
         } else {
-            stm << *m_ret << "<" << m_clobj << ">";
+            stm << CLObj::class_name << "(" << *m_ret << ")<" << m_clobj << ">";
         }
     }
 };

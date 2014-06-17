@@ -3,12 +3,9 @@
 #ifndef __PYOPENCL_CLOBJ_H
 #define __PYOPENCL_CLOBJ_H
 
-#define PYOPENCL_DEF_CL_CLASS(name)             \
-    static PYOPENCL_INLINE class_t              \
-    get_class_t()                               \
-    {                                           \
-        return CLASS_##name;                    \
-    }
+#define PYOPENCL_DEF_CL_CLASS(name)                     \
+    constexpr static class_t class_id = CLASS_##name;   \
+    constexpr static const char *class_name = #name;
 
 namespace pyopencl {
 
@@ -51,8 +48,7 @@ template<typename CLObj>
 static PYOPENCL_INLINE void
 _print_clobj(std::ostream &stm, CLObj *obj)
 {
-    // TODO
-    stm << obj << "<" << obj->data() << ">";
+    stm << CLObj::class_name << "(" << obj << ")<" << obj->data() << ">";
 }
 
 template<typename CLObj>
@@ -63,7 +59,6 @@ class CLArg<CLObj,
 private:
     CLObj &m_obj;
 public:
-    constexpr static bool is_out = false;
     CLArg(CLObj &obj) : m_obj(obj)
     {
     }
@@ -88,7 +83,6 @@ class CLArg<CLObj*,
 private:
     CLObj *m_obj;
 public:
-    constexpr static bool is_out = false;
     CLArg(CLObj *obj) : m_obj(obj)
     {
     }

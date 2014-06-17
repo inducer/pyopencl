@@ -14,6 +14,7 @@ class memory_object : public clobj<cl_mem> {
 private:
     mutable volatile std::atomic_bool m_valid;
 public:
+    constexpr static const char *class_name = "MEMORY_OBJECT";
     PYOPENCL_INLINE
     memory_object(cl_mem mem, bool retain)
         : clobj(mem), m_valid(true)
