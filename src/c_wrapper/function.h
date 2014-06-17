@@ -67,11 +67,6 @@ private:
     {
         return t;
     }
-    static PYOPENCL_INLINE std::tuple<>
-    ensure_tuple()
-    {
-        return std::tuple<>();
-    }
 
     template<typename T>
     using ArgConvert = Convert<_ArgType<T> >;

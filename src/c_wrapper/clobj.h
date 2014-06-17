@@ -48,6 +48,14 @@ public:
 };
 
 template<typename CLObj>
+static PYOPENCL_INLINE void
+_print_clobj(std::ostream &stm, CLObj *obj)
+{
+    // TODO
+    stm << obj << "<" << obj->data() << ">";
+}
+
+template<typename CLObj>
 class CLArg<CLObj,
             typename std::enable_if<
                 std::is_base_of<clobj<typename CLObj::cl_type>,
@@ -55,6 +63,7 @@ class CLArg<CLObj,
 private:
     CLObj &m_obj;
 public:
+    constexpr static bool is_out = false;
     CLArg(CLObj &obj) : m_obj(obj)
     {
     }
@@ -62,6 +71,12 @@ public:
     convert() const
     {
         return m_obj.data();
+    }
+    template<bool>
+    PYOPENCL_INLINE void
+    print(std::ostream &stm)
+    {
+        _print_clobj(stm, &m_obj);
     }
 };
 
@@ -73,6 +88,7 @@ class CLArg<CLObj*,
 private:
     CLObj *m_obj;
 public:
+    constexpr static bool is_out = false;
     CLArg(CLObj *obj) : m_obj(obj)
     {
     }
@@ -80,6 +96,12 @@ public:
     convert() const
     {
         return m_obj->data();
+    }
+    template<bool>
+    PYOPENCL_INLINE void
+    print(std::ostream &stm)
+    {
+        _print_clobj(stm, m_obj);
     }
 };
 

@@ -15,40 +15,6 @@
 
 namespace pyopencl {
 
-template<typename FirstType, typename... ArgTypes>
-static PYOPENCL_INLINE void
-_print_args(std::ostream &stm, FirstType &&arg1, ArgTypes&&... args)
-{
-    stm << arg1 << "; ";
-    _print_args(stm, std::forward<ArgTypes>(args)...);
-}
-
-template<typename FirstType>
-static PYOPENCL_INLINE void
-_print_args(std::ostream &stm, FirstType &&arg1)
-{
-    stm << arg1 << "; ";
-}
-
-static PYOPENCL_INLINE void
-print_call_trace(const char *name)
-{
-    if (!DEBUG_ON)
-        return;
-    std::cerr << name << std::endl;
-}
-
-template<typename... ArgTypes>
-static PYOPENCL_INLINE void
-print_call_trace(const char *name, ArgTypes&&... args)
-{
-    if (!DEBUG_ON)
-        return;
-    std::cerr << name << "(";
-    _print_args(std::cerr, args...);
-    std::cerr << ")" << std::endl;
-}
-
 // {{{ error
 
 class clerror : public std::runtime_error {
@@ -131,22 +97,55 @@ struct __CLCleanup<T, decltype((void)(std::declval<T>().cleanup()))> {
     }
 };
 
+template<typename T, class = void>
+struct __CLPrintOut {
+    static PYOPENCL_INLINE void
+    call(T, std::ostream&)
+    {
+    }
+};
+
+template<typename T>
+struct __CLPrintOut<T, typename std::enable_if<T::is_out>::type> {
+    static PYOPENCL_INLINE void
+    call(T v, std::ostream &stm)
+    {
+        v.template print<true>(stm);
+        stm << ", ";
+    }
+};
+
+template<typename T, class = void>
+struct __CLPrint {
+    static PYOPENCL_INLINE void
+    call(T v, std::ostream &stm)
+    {
+        v.template print<false>(stm);
+        stm << ", ";
+    }
+};
+
 template<template<typename...> class Caller, size_t n, typename T>
 struct __CLCall {
+    template<typename... Ts>
     static PYOPENCL_INLINE void
-    call(T &&t)
+    call(T &&t, Ts&&... ts)
     {
-        __CLCall<Caller, n - 1, T>::call(std::forward<T>(t));
-        Caller<decltype(std::get<n>(t))>::call(std::get<n>(t));
+        __CLCall<Caller, n - 1, T>::call(std::forward<T>(t),
+                                         std::forward<Ts>(ts)...);
+        Caller<decltype(std::get<n>(t))>::call(std::get<n>(t),
+                                               std::forward<Ts>(ts)...);
     }
 };
 
 template<template<typename...> class Caller, typename T>
 struct __CLCall<Caller, 0, T> {
+    template<typename... Ts>
     static PYOPENCL_INLINE void
-    call(T &&t)
+    call(T &&t, Ts&&... ts)
     {
-        Caller<decltype(std::get<0>(t))>::call(std::get<0>(t));
+        Caller<decltype(std::get<0>(t))>::call(std::get<0>(t),
+                                               std::forward<Ts>(ts)...);
     }
 };
 
@@ -156,11 +155,19 @@ public:
     using ArgPack<CLArg, Types...>::ArgPack;
     template<typename Func>
     PYOPENCL_INLINE auto
-    clcall(Func func)
+    clcall(Func func, const char *name)
         -> decltype(this->template call<__CLArgGetter>(func))
     {
-        auto res = this->template call<__CLArgGetter>(func);
         typename CLArgPack::tuple_base *that = this;
+        if (DEBUG_ON) {
+            std::cerr << name << "(";
+            __CLCall<__CLPrint, sizeof...(Types) - 1,
+                     decltype(*that)>::call(*that, std::cerr);
+            std::cerr << name << ") = ";
+            // TODO print results
+            std::cerr << std::endl;
+        }
+        auto res = this->template call<__CLArgGetter>(func);
         __CLCall<__CLFinish, sizeof...(Types) - 1,
                  decltype(*that)>::call(*that);
         __CLCall<__CLCleanup, sizeof...(Types) - 1,
@@ -181,9 +188,8 @@ template<typename... ArgTypes2, typename... ArgTypes>
 static PYOPENCL_INLINE void
 call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
-    print_call_trace(name);
     auto argpack = make_clargpack(std::forward<ArgTypes2>(args)...);
-    cl_int status_code = argpack.clcall(func);
+    cl_int status_code = argpack.clcall(func, name);
     if (status_code != CL_SUCCESS) {
         throw clerror(name, status_code);
     }
@@ -193,11 +199,12 @@ template<typename T, typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
 call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
-    print_call_trace(name);
     cl_int status_code = CL_SUCCESS;
-    auto argpack = make_clargpack(std::forward<ArgTypes2>(args)...,
-                                  &status_code);
-    T res = argpack.clcall(func);
+    // This magically turns off a weird gcc warning of uninitialized variable.
+    auto p = &status_code;
+    auto &_p = p;
+    auto argpack = make_clargpack(std::forward<ArgTypes2>(args)..., _p);
+    T res = argpack.clcall(func, name);
     if (status_code != CL_SUCCESS) {
         throw clerror(name, status_code);
     }
@@ -211,9 +218,8 @@ static PYOPENCL_INLINE void
 call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
                      ArgTypes2&&... args)
 {
-    print_call_trace(name);
     auto argpack = make_clargpack(std::forward<ArgTypes2>(args)...);
-    cl_int status_code = argpack.clcall(func);
+    cl_int status_code = argpack.clcall(func, name);
     if (status_code != CL_SUCCESS) {
         std::cerr
             << ("PyOpenCL WARNING: a clean-up operation failed "

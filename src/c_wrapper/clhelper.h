@@ -190,6 +190,17 @@ public:
             call_guarded_cleanup(m_release, m_name, m_clobj);
         }
     }
+    template<bool out>
+    PYOPENCL_INLINE void
+    print(std::ostream &stm)
+    {
+        // TODO
+        if (!out) {
+            stm << &m_clobj;
+        } else {
+            stm << *m_ret << "<" << m_clobj << ">";
+        }
+    }
 };
 
 template<typename CLObj, typename... T>
@@ -234,6 +245,14 @@ get_ext_fun(const char *name, const char *err)
 
 // }}}
 
+}
+
+static PYOPENCL_INLINE std::ostream&
+operator<<(std::ostream &stm, const cl_image_format &fmt)
+{
+    stm << "channel_order: " << fmt.image_channel_order
+        << "channel_data_type: " << fmt.image_channel_data_type;
+    return stm;
 }
 
 #endif

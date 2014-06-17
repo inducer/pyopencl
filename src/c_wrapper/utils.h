@@ -29,11 +29,36 @@ tostring(const T& v)
 
 namespace pyopencl {
 
+// TODO
+template<typename T, bool, class = void>
+struct CLGenericArgPrinter {
+    static PYOPENCL_INLINE void
+    print(std::ostream &stm, T &arg)
+    {
+        stm << arg;
+    }
+};
+
+template<bool out>
+struct CLGenericArgPrinter<std::nullptr_t, out, void> {
+    static PYOPENCL_INLINE void
+    print(std::ostream &stm, std::nullptr_t&)
+    {
+        stm << (void*)nullptr;
+    }
+};
+
+template<typename T, class = void>
+struct CLGenericArgOut {
+    constexpr static bool value = false;
+};
+
 template<typename T, class = void>
 class CLArg {
 private:
     T &m_arg;
 public:
+    constexpr static bool is_out = CLGenericArgOut<T>::value;
     CLArg(T &arg) noexcept
         : m_arg(arg)
     {}
@@ -44,6 +69,12 @@ public:
     convert() noexcept
     {
         return m_arg;
+    }
+    template<bool out>
+    PYOPENCL_INLINE void
+    print(std::ostream &stm)
+    {
+        CLGenericArgPrinter<T, out>::print(stm, m_arg);
     }
 };
 
@@ -66,6 +97,7 @@ protected:
     }
 public:
     typedef T type;
+    constexpr static size_t ele_size = sizeof(T);
     constexpr static ArgType arg_type = AT;
     ArgBuffer(T *buf, size_t l) noexcept
         : m_buf(buf), m_len(l)
@@ -144,6 +176,38 @@ struct _ArgBufferConverter<Buff, typename std::enable_if<
 };
 
 template<typename Buff>
+static PYOPENCL_INLINE void
+_print_buf(std::ostream &stm, Buff &&buff, ArgType arg_type, bool content)
+{
+    typedef decltype(buff.len()) len_t;
+    len_t len = buff.len();
+    typedef typename std::remove_reference<Buff>::type _Buff;
+    size_t ele_size = _Buff::ele_size;
+    if (content) {
+        stm << "[";
+        for (len_t i = 0;i < len;i++) {
+            stm << buff.get()[i];
+            if (i != len - 1) {
+                stm << ", ";
+            }
+        }
+        stm << "] <";
+    }
+    switch (arg_type) {
+    case ArgType::SizeOf:
+        stm << ele_size * len << ", ";
+    case ArgType::Length:
+        stm << len << ", ";
+    default:
+        break;
+    }
+    stm << buff.get();
+    if (content) {
+        stm << ">";
+    }
+}
+
+template<typename Buff>
 class CLArg<Buff, typename std::enable_if<std::is_base_of<
                                               ArgBuffer<typename Buff::type,
                                                         Buff::arg_type>,
@@ -151,6 +215,8 @@ class CLArg<Buff, typename std::enable_if<std::is_base_of<
 private:
     Buff &m_buff;
 public:
+    constexpr static bool is_out = !(std::is_const<Buff>::value ||
+                                     std::is_const<typename Buff::type>::value);
     CLArg(Buff &buff) noexcept
         : m_buff(buff)
     {}
@@ -162,6 +228,12 @@ public:
         -> decltype(_ArgBufferConverter<Buff>::convert(m_buff))
     {
         return _ArgBufferConverter<Buff>::convert(m_buff);
+    }
+    template<bool out>
+    PYOPENCL_INLINE void
+    print(std::ostream &stm)
+    {
+        _print_buf(stm, m_buff, Buff::arg_type, out || !is_out);
     }
 };
 
@@ -192,6 +264,7 @@ private:
     bool m_need_cleanup;
     T &m_arg;
 public:
+    constexpr static bool is_out = true;
     CLArg(T &arg)
         : m_finished(false), m_need_cleanup(true), m_arg(arg)
     {
@@ -223,6 +296,12 @@ public:
             m_arg.cleanup(m_finished);
         }
     }
+    template<bool out>
+    PYOPENCL_INLINE void
+    print(std::ostream &stm)
+    {
+        m_arg.template print<out>(stm);
+    }
 };
 
 template<typename T>
@@ -236,6 +315,7 @@ template<typename T>
 class pyopencl_buf : public std::unique_ptr<T, _D<T> > {
     size_t m_len;
 public:
+    constexpr static size_t ele_size = sizeof(T);
     pyopencl_buf(size_t len=1) :
         std::unique_ptr<T, _D<T> >((T*)(len ? malloc(sizeof(T) * len) :
                                         nullptr)),
@@ -275,6 +355,9 @@ class CLArg<Buff, typename std::enable_if<
 private:
     Buff &m_buff;
 public:
+    constexpr static bool is_out =
+        !(std::is_const<Buff>::value ||
+          std::is_const<typename Buff::element_type>::value);
     CLArg(Buff &buff) noexcept
         : m_buff(buff)
     {}
@@ -286,6 +369,12 @@ public:
         -> decltype(std::make_tuple(m_buff.len(), m_buff.get()))
     {
         return std::make_tuple(m_buff.len(), m_buff.get());
+    }
+    template<bool out>
+    PYOPENCL_INLINE void
+    print(std::ostream &stm)
+    {
+        _print_buf(stm, m_buff, ArgType::Length, out || !is_out);
     }
 };
 
