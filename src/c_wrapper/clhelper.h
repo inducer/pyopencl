@@ -70,7 +70,7 @@ get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
 {
     typename CLObj::cl_type param_value;
     call_guarded(func, name, args..., sizeof(param_value),
-                 &param_value, nullptr);
+                 out_arg(&param_value), nullptr);
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = CLObj::class_id;
@@ -94,8 +94,7 @@ get_str_info(cl_int (*func)(ArgTypes...), const char *name,
     size_t param_value_size;
     call_guarded(func, name, args..., 0, nullptr, &param_value_size);
     pyopencl_buf<char> param_value(param_value_size);
-    call_guarded(func, name, args..., param_value_size,
-                 param_value.get(), &param_value_size);
+    call_guarded(func, name, args..., param_value, &param_value_size);
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = CLASS_NONE;
@@ -112,7 +111,8 @@ get_int_info(cl_int (*func)(ArgTypes...), const char *name,
              const char *tpname, ArgTypes2&&... args)
 {
     pyopencl_buf<T> param_value;
-    call_guarded(func, name, args..., sizeof(T), param_value.get(), nullptr);
+    call_guarded(func, name, args..., sizeof(T),
+                 out_arg(param_value.get()), nullptr);
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = CLASS_NONE;
@@ -158,13 +158,13 @@ class _CLObjOutArg : public OutArg {
 public:
     PYOPENCL_INLINE
     _CLObjOutArg(clobj_t *ret, cl_int (*release)(CLType),
-                 const char *name, T... t1)
+                 const char *name, T... t1) noexcept
         : m_ret(ret), m_clobj(nullptr), m_release(release),
           m_name(name), m_t1(t1...)
     {
     }
     PYOPENCL_INLINE
-    _CLObjOutArg(_CLObjOutArg<CLObj, T...> &&other)
+    _CLObjOutArg(_CLObjOutArg<CLObj, T...> &&other) noexcept
         : m_ret(other.m_ret), m_clobj(other.m_clobj),
           m_release(other.m_release), m_name(other.m_name)
     {
@@ -176,14 +176,14 @@ public:
         return &m_clobj;
     }
     PYOPENCL_INLINE void
-    finish()
+    convert()
     {
         *m_ret = __new_obj(typename gens<sizeof...(T)>::type());
     }
     PYOPENCL_INLINE void
-    cleanup(bool finished)
+    cleanup(bool converted)
     {
-        if (finished) {
+        if (converted) {
             delete *m_ret;
             *m_ret = nullptr;
         } else {
@@ -197,7 +197,7 @@ public:
         if (!out) {
             stm << &m_clobj;
         } else {
-            stm << CLObj::class_name << "(" << *m_ret << ")<" << m_clobj << ">";
+            stm << "*(" << &m_clobj << "): " << m_clobj;
         }
     }
 };

@@ -253,26 +253,65 @@ public:
     }
 };
 
-class OutArg {
+struct OutArg {
+    PYOPENCL_INLINE void
+    convert()
+    {}
+    PYOPENCL_INLINE void
+    cleanup(bool)
+    {}
 };
+
+template<typename T>
+class _SimpleOutArg : public OutArg {
+    T *m_t;
+public:
+    _SimpleOutArg(T *t)
+        : m_t(t)
+    {}
+    PYOPENCL_INLINE T*
+    get()
+    {
+        return m_t;
+    }
+    template<bool out>
+    PYOPENCL_INLINE void
+    print(std::ostream &stm)
+    {
+        if (!out) {
+            stm << m_t;
+        } else {
+            stm << "*(" << m_t << "): " << *m_t;
+        }
+    }
+};
+
+template<typename T>
+static PYOPENCL_INLINE _SimpleOutArg<T>
+out_arg(T *t)
+{
+    return _SimpleOutArg<T>(t);
+}
 
 template<typename T>
 class CLArg<T, typename std::enable_if<
                       std::is_base_of<OutArg, T>::value>::type> {
 private:
-    bool m_finished;
+    bool m_converted;
     bool m_need_cleanup;
     T &m_arg;
 public:
     constexpr static bool is_out = true;
     CLArg(T &arg)
-        : m_finished(false), m_need_cleanup(true), m_arg(arg)
+        : m_converted(false), m_need_cleanup(false), m_arg(arg)
     {
     }
     CLArg(CLArg<T> &&other) noexcept
-        : m_finished(other.m_finished), m_need_cleanup(other.m_need_cleanup),
+        : m_converted(other.m_converted), m_need_cleanup(other.m_need_cleanup),
         m_arg(other.m_arg)
-    {}
+    {
+        other.m_need_cleanup = false;
+    }
     PYOPENCL_INLINE auto
     convert()
         -> decltype(m_arg.get())
@@ -280,20 +319,20 @@ public:
         return m_arg.get();
     }
     PYOPENCL_INLINE void
-    finish()
+    finish(bool converted) noexcept
     {
-        m_arg.finish();
-        m_finished = true;
+        m_need_cleanup = !converted;
     }
     PYOPENCL_INLINE void
-    cleanup()
+    post()
     {
-        m_need_cleanup = false;
+        m_arg.convert();
+        m_converted = true;
     }
     ~CLArg()
     {
         if (m_need_cleanup) {
-            m_arg.cleanup(m_finished);
+            m_arg.cleanup(m_converted);
         }
     }
     template<bool out>

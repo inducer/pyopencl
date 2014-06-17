@@ -66,22 +66,22 @@ struct __CLArgGetter {
 template<typename T, class = void>
 struct __CLFinish {
     static PYOPENCL_INLINE void
-    call(T)
+    call(T, bool)
     {
     }
 };
 
 template<typename T>
-struct __CLFinish<T, decltype((void)(std::declval<T>().finish()))> {
+struct __CLFinish<T, decltype((void)(std::declval<T>().finish(true)))> {
     static PYOPENCL_INLINE void
-    call(T v)
+    call(T v, bool converted)
     {
-        v.finish();
+        v.finish(converted);
     }
 };
 
 template<typename T, class = void>
-struct __CLCleanup {
+struct __CLPost {
     static PYOPENCL_INLINE void
     call(T)
     {
@@ -89,11 +89,11 @@ struct __CLCleanup {
 };
 
 template<typename T>
-struct __CLCleanup<T, decltype((void)(std::declval<T>().cleanup()))> {
+struct __CLPost<T, decltype((void)(std::declval<T>().post()))> {
     static PYOPENCL_INLINE void
     call(T v)
     {
-        v.cleanup();
+        v.post();
     }
 };
 
@@ -106,7 +106,8 @@ struct __CLPrintOut {
 };
 
 template<typename T>
-struct __CLPrintOut<T, typename std::enable_if<T::is_out>::type> {
+struct __CLPrintOut<T, typename std::enable_if<
+                           std::remove_reference<T>::type::is_out>::type> {
     static PYOPENCL_INLINE void
     call(T v, std::ostream &stm)
     {
@@ -159,20 +160,28 @@ public:
         -> decltype(this->template call<__CLArgGetter>(func))
     {
         typename CLArgPack::tuple_base *that = this;
+        auto res = this->template call<__CLArgGetter>(func);
         if (DEBUG_ON) {
             std::cerr << name << "(";
             __CLCall<__CLPrint, sizeof...(Types) - 1,
                      decltype(*that)>::call(*that, std::cerr);
-            std::cerr << name << ") = ";
-            // TODO print results
-            std::cerr << std::endl;
+            std::cerr << ") = (" << res << ", ";
+            __CLCall<__CLPrintOut, sizeof...(Types) - 1,
+                     decltype(*that)>::call(*that, std::cerr);
+            std::cerr << ")" << std::endl;
         }
-        auto res = this->template call<__CLArgGetter>(func);
-        __CLCall<__CLFinish, sizeof...(Types) - 1,
-                 decltype(*that)>::call(*that);
-        __CLCall<__CLCleanup, sizeof...(Types) - 1,
-                 decltype(*that)>::call(*that);
         return res;
+    }
+    PYOPENCL_INLINE void
+    finish()
+    {
+        typename CLArgPack::tuple_base *that = this;
+        __CLCall<__CLFinish, sizeof...(Types) - 1,
+                 decltype(*that)>::call(*that, false);
+        __CLCall<__CLPost, sizeof...(Types) - 1,
+                 decltype(*that)>::call(*that);
+        __CLCall<__CLFinish, sizeof...(Types) - 1,
+                 decltype(*that)>::call(*that, true);
     }
 };
 
@@ -193,6 +202,7 @@ call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
     if (status_code != CL_SUCCESS) {
         throw clerror(name, status_code);
     }
+    argpack.finish();
 }
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
@@ -208,6 +218,7 @@ call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
     if (status_code != CL_SUCCESS) {
         throw clerror(name, status_code);
     }
+    argpack.finish();
     return res;
 }
 #define pyopencl_call_guarded(func, args...)    \
@@ -225,6 +236,8 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
             << ("PyOpenCL WARNING: a clean-up operation failed "
                 "(dead context maybe?)") << std::endl
             << name << " failed with code " << status_code << std::endl;
+    } else {
+        argpack.finish();
     }
 }
 #define pyopencl_call_guarded_cleanup(func, args...)    \
