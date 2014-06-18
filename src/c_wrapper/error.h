@@ -152,6 +152,18 @@ struct __CLCall<Caller, 0, T> {
 
 template<typename... Types>
 class CLArgPack : public ArgPack<CLArg, Types...> {
+    template<typename T> void
+    _print_trace(T &res, const char *name)
+    {
+        typename CLArgPack::tuple_base *that = this;
+        std::cerr << name << "(";
+        __CLCall<__CLPrint, sizeof...(Types) - 1,
+                 decltype(*that)>::call(*that, std::cerr);
+        std::cerr << ") = (" << res << ", ";
+        __CLCall<__CLPrintOut, sizeof...(Types) - 1,
+                 decltype(*that)>::call(*that, std::cerr);
+        std::cerr << ")" << std::endl;
+    }
 public:
     using ArgPack<CLArg, Types...>::ArgPack;
     template<typename Func>
@@ -161,14 +173,7 @@ public:
     {
         auto res = this->template call<__CLArgGetter>(func);
         if (DEBUG_ON) {
-            typename CLArgPack::tuple_base *that = this;
-            std::cerr << name << "(";
-            __CLCall<__CLPrint, sizeof...(Types) - 1,
-                     decltype(*that)>::call(*that, std::cerr);
-            std::cerr << ") = (" << res << ", ";
-            __CLCall<__CLPrintOut, sizeof...(Types) - 1,
-                     decltype(*that)>::call(*that, std::cerr);
-            std::cerr << ")" << std::endl;
+            _print_trace(res, name);
         }
         return res;
     }
