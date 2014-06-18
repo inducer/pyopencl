@@ -110,10 +110,10 @@ context__get_supported_image_formats(clobj_t _ctx, cl_mem_flags flags,
     return c_handle_error([&] {
             cl_uint num;
             pyopencl_call_guarded(clGetSupportedImageFormats, ctx, flags,
-                                  image_type, 0, nullptr, make_argbuf(num));
+                                  image_type, 0, nullptr, arg_buf(num));
             pyopencl_buf<cl_image_format> formats(num);
             pyopencl_call_guarded(clGetSupportedImageFormats, ctx, flags,
-                                  image_type, formats, make_argbuf(num));
+                                  image_type, formats, arg_buf(num));
             *out = pyopencl_convert_array_info(cl_image_format, formats);
         });
 }

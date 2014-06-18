@@ -118,14 +118,14 @@ public:
 
 template<ArgType AT=ArgType::None, typename T>
 static PYOPENCL_INLINE ArgBuffer<T, AT>
-make_argbuf(T &buf)
+arg_buf(T &buf)
 {
     return ArgBuffer<T, AT>(&buf, 1);
 }
 
 template<ArgType AT=ArgType::None, typename T>
 static PYOPENCL_INLINE ArgBuffer<T, AT>
-make_argbuf(T *buf, size_t l)
+arg_buf(T *buf, size_t l)
 {
     return ArgBuffer<T, AT>(buf, l);
 }
