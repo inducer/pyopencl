@@ -303,39 +303,7 @@ public:
 };
 
 struct OutArg {
-    PYOPENCL_INLINE void
-    convert()
-    {}
-    PYOPENCL_INLINE void
-    cleanup(bool)
-    {}
 };
-
-template<typename T>
-class _SimpleOutArg : public OutArg {
-    T *m_t;
-public:
-    _SimpleOutArg(T *t)
-        : m_t(t)
-    {}
-    PYOPENCL_INLINE T*
-    get()
-    {
-        return m_t;
-    }
-    PYOPENCL_INLINE void
-    print(std::ostream &stm, bool out=false)
-    {
-        print_arg(stm, *m_t, out);
-    }
-};
-
-template<typename T>
-static PYOPENCL_INLINE _SimpleOutArg<T>
-out_arg(T *t)
-{
-    return _SimpleOutArg<T>(t);
-}
 
 template<typename T>
 class CLArg<T, typename std::enable_if<
