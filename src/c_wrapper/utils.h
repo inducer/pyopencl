@@ -240,6 +240,7 @@ class ConstBuffer : public ArgBuffer<const T, AT> {
 private:
     T m_intern_buf[n];
     ConstBuffer(ConstBuffer<T, n, AT>&&) = delete;
+    ConstBuffer() = delete;
 public:
     ConstBuffer(const T *buf, size_t l)
         : ArgBuffer<const T, AT>(buf, n)
@@ -351,11 +352,14 @@ class pyopencl_buf : public std::unique_ptr<T, _D<T> > {
     size_t m_len;
 public:
     constexpr static size_t ele_size = sizeof(T);
-    pyopencl_buf(size_t len=1) :
-        std::unique_ptr<T, _D<T> >((T*)(len ? malloc(sizeof(T) * len) :
-                                        nullptr)),
-        m_len(len)
+    PYOPENCL_INLINE
+    pyopencl_buf(size_t len=1)
+        : std::unique_ptr<T, _D<T> >((T*)(len ? malloc(sizeof(T) * (len + 1)) :
+                                          nullptr)), m_len(len)
     {
+        if (len) {
+            memset((void*)this->get(), 0, (len + 1) * sizeof(T));
+        }
     }
     PYOPENCL_INLINE size_t
     len() const
@@ -378,7 +382,8 @@ public:
         if (len == m_len)
             return;
         m_len = len;
-        this->reset((T*)realloc((void*)this->release(), len * sizeof(T)));
+        this->reset((T*)realloc((void*)this->release(),
+                                (len + 1) * sizeof(T)));
     }
 };
 
