@@ -98,7 +98,7 @@ template<typename>
 struct __CLArgGetter {
     template<typename T>
     static PYOPENCL_INLINE auto
-    get(T clarg) -> decltype(clarg.convert())
+    get(T&& clarg) -> decltype(clarg.convert())
     {
         return clarg.convert();
     }

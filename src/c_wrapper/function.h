@@ -35,7 +35,7 @@ _call_func(Function func, seq<S...>, std::tuple<Arg2...> &args)
 
 template<typename Function, typename T>
 static inline auto
-call_tuple(Function &&func, T args)
+call_tuple(Function &&func, T &&args)
     -> decltype(_call_func(std::forward<Function>(func),
                            typename gens<std::tuple_size<T>::value>::type(),
                            args))
@@ -54,16 +54,16 @@ template<template<typename...> class Convert, typename... Types>
 class ArgPack : public _ArgPackBase<Convert, Types...> {
     typedef _ArgPackBase<Convert, Types...> _base;
     template<typename T>
-    static inline std::tuple<T&&>
+    static inline std::tuple<T>
     ensure_tuple(T &&v)
     {
-        return std::tuple<T&&>(std::forward<T>(v));
+        return std::tuple<T>(std::forward<T>(v));
     }
     template<typename... T>
-    static inline std::tuple<T...>&&
+    static inline std::tuple<T...>
     ensure_tuple(std::tuple<T...> &&t)
     {
-        return std::move(t);
+        return t;
     }
 
     template<typename T>
@@ -83,7 +83,7 @@ public:
         : _base(ArgConvert<Types2>(arg_orig)...)
     {
     }
-    ArgPack(ArgPack &&other)
+    ArgPack(ArgPack<Convert, Types...> &&other)
         : _base(static_cast<_base&&>(other))
     {
     }

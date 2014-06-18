@@ -30,17 +30,18 @@ public:
         }
     }
 
-    pyopencl_buf<cl_device_id> get_devices(cl_device_type devtype) const;
+    PYOPENCL_USE_RESULT PYOPENCL_INLINE pyopencl_buf<cl_device_id>
+    get_devices(cl_device_type devtype) const;
 };
 
 
-PYOPENCL_USE_RESULT PYOPENCL_INLINE pyopencl_buf<cl_device_id>
+pyopencl_buf<cl_device_id>
 platform::get_devices(cl_device_type devtype) const
 {
     cl_uint num_devices = 0;
     try {
-        pyopencl_call_guarded(clGetDeviceIDs,
-                              this, devtype, 0, nullptr, &num_devices);
+        pyopencl_call_guarded(clGetDeviceIDs, this, devtype, 0, nullptr,
+                              make_argbuf(num_devices));
     } catch (const clerror &e) {
         if (e.code() != CL_DEVICE_NOT_FOUND)
             throw e;
@@ -49,8 +50,8 @@ platform::get_devices(cl_device_type devtype) const
     pyopencl_buf<cl_device_id> devices(num_devices);
     if (num_devices == 0)
         return devices;
-    pyopencl_call_guarded(clGetDeviceIDs, this, devtype, num_devices,
-                          devices.get(), &num_devices);
+    pyopencl_call_guarded(clGetDeviceIDs, this, devtype, devices,
+                          make_argbuf(num_devices));
     return devices;
 }
 
@@ -86,16 +87,16 @@ public:
 #if PYOPENCL_CL_VERSION >= 0x1020
                 cl_platform_id plat;
                 pyopencl_call_guarded(clGetDeviceInfo, this,
-                                      CL_DEVICE_PLATFORM, sizeof(plat),
-                                      &plat, nullptr);
+                                      CL_DEVICE_PLATFORM, make_sizearg(plat),
+                                      nullptr);
 #endif
                 pyopencl_call_guarded(
-                    pyopencl_get_ext_fun(plat, clRetainDeviceEXT), did);
+                    pyopencl_get_ext_fun(plat, clRetainDeviceEXT), this);
             }
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
             else if (ref_type == REF_CL_1_2) {
-                pyopencl_call_guarded(clRetainDevice, did);
+                pyopencl_call_guarded(clRetainDevice, this);
             }
 #endif
 
@@ -115,8 +116,9 @@ public:
         else if (m_ref_type == REF_FISSION_EXT) {
 #if PYOPENCL_CL_VERSION >= 0x1020
             cl_platform_id plat;
-            pyopencl_call_guarded(clGetDeviceInfo, this, CL_DEVICE_PLATFORM,
-                                  sizeof(plat), &plat, nullptr);
+            pyopencl_call_guarded_cleanup(
+                clGetDeviceInfo, this, CL_DEVICE_PLATFORM,
+                make_sizearg(plat), nullptr);
 #endif
             pyopencl_call_guarded_cleanup(
                 pyopencl_get_ext_fun(plat, clReleaseDeviceEXT), this);
@@ -124,7 +126,7 @@ public:
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
         else if (m_ref_type == REF_CL_1_2) {
-            pyopencl_call_guarded(clReleaseDevice, this);
+            pyopencl_call_guarded_cleanup(clReleaseDevice, this);
         }
 #endif
     }
@@ -430,7 +432,7 @@ public:
         : clobj(ctx)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainContext, ctx);
+            pyopencl_call_guarded(clRetainContext, this);
         }
     }
     ~context()
@@ -508,13 +510,13 @@ public:
     get_supported_image_formats(cl_mem_flags flags,
                                 cl_mem_object_type image_type) const
     {
-        cl_uint num_image_formats;
+        cl_uint num;
         pyopencl_call_guarded(clGetSupportedImageFormats, this, flags,
-                              image_type, 0, nullptr, &num_image_formats);
-        pyopencl_buf<cl_image_format> formats(num_image_formats);
+                              image_type, 0, nullptr,
+                              make_argbuf(num));
+        pyopencl_buf<cl_image_format> formats(num);
         pyopencl_call_guarded(clGetSupportedImageFormats, this, flags,
-                              image_type, formats.len(),
-                              formats.get(), nullptr);
+                              image_type, formats, make_argbuf(num));
         return pyopencl_convert_array_info(cl_image_format, formats);
     }
 };
@@ -551,7 +553,7 @@ public:
         : clobj(q)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainCommandQueue, q);
+            pyopencl_call_guarded(clRetainCommandQueue, this);
         }
     }
     command_queue(const context *ctx, const device *py_dev=0,
@@ -592,7 +594,7 @@ public:
     {
         cl_context param_value;
         pyopencl_call_guarded(clGetCommandQueueInfo, this, CL_QUEUE_CONTEXT,
-                              sizeof(param_value), &param_value, nullptr);
+                              make_sizearg(param_value), nullptr);
         return std::unique_ptr<context>(
             new context(param_value, /*retain*/ true));
     }
@@ -603,7 +605,7 @@ public:
     {
         cl_command_queue_properties old_prop;
         pyopencl_call_guarded(clSetCommandQueueProperty, this, prop,
-                              cast_bool(enable), &old_prop);
+                              cast_bool(enable), make_argbuf(old_prop));
         return old_prop;
     }
 #endif
@@ -652,7 +654,7 @@ public:
         : clobj(event)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainEvent, event);
+            pyopencl_call_guarded(clRetainEvent, this);
         }
     }
     ~event()
@@ -703,7 +705,9 @@ public:
     void
     wait()
     {
-        pyopencl_call_guarded(clWaitForEvents, 1, &data());
+        const cl_event *evt = &data();
+        pyopencl_call_guarded(clWaitForEvents,
+                              make_argbuf<ArgType::Length>(evt, 1));
         finished();
     }
 #if PYOPENCL_CL_VERSION >= 0x1010
@@ -778,7 +782,7 @@ public:
     {
         size_t param_value;
         pyopencl_call_guarded(clGetMemObjectInfo, this, CL_MEM_SIZE,
-                              sizeof(param_value), &param_value, nullptr);
+                              make_sizearg(param_value), nullptr);
         return param_value;
     }
     generic_info
@@ -838,7 +842,7 @@ public:
         : memory_object_holder(mem), m_valid(true)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainMemObject, mem);
+            pyopencl_call_guarded(clRetainMemObject, this);
         }
         if (hostbuf) {
             m_hostbuf = hostbuf;
@@ -954,7 +958,7 @@ public:
             memcpy(&m_format, fmt, sizeof(m_format));
         } else {
             pyopencl_call_guarded(clGetImageInfo, this, CL_IMAGE_FORMAT,
-                                  sizeof(m_format), &m_format, nullptr);
+                                  make_sizearg(m_format), nullptr);
         }
     }
     generic_info
@@ -1229,12 +1233,11 @@ enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
                    uint32_t num_mem_objects, const clobj_t *wait_for,
                    uint32_t num_wait_for)
 {
-    auto _wait_for = buf_from_class<event>(wait_for, num_wait_for);
-    auto _mem_objs = buf_from_class<memory_object_holder>(
+    const auto _wait_for = buf_from_class<event>(wait_for, num_wait_for);
+    const auto _mem_objs = buf_from_class<memory_object_holder>(
         mem_objects, num_mem_objects);
     cl_event evt;
-    call_guarded(func, name, cq, num_mem_objects, _mem_objs.get(),
-                 num_wait_for, _wait_for.get(), &evt);
+    call_guarded(func, name, cq, _mem_objs, _wait_for, &evt);
     return new_event(evt);
 }
 #define enqueue_gl_objects(what, args...)                       \
@@ -1400,22 +1403,21 @@ new_buffer(cl_mem mem, void *buff)
 
 // {{{ memory_map
 
-class memory_map : public clbase {
+class memory_map : public clobj<void*> {
 private:
     mutable volatile std::atomic_bool m_valid;
     command_queue m_queue;
     memory_object m_mem;
-    void *m_ptr;
 public:
     memory_map(const command_queue *queue, const memory_object *mem, void *ptr)
-        : m_valid(true), m_queue(*queue), m_mem(*mem), m_ptr(ptr)
+        : clobj(ptr), m_valid(true), m_queue(*queue), m_mem(*mem)
     {}
     ~memory_map()
     {
         if (!m_valid.exchange(false))
             return;
         pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, m_queue,
-                                      m_mem, m_ptr, 0, nullptr, nullptr);
+                                      m_mem, this, 0, nullptr, nullptr);
     }
     event*
     release(const command_queue *queue, const clobj_t *_wait_for,
@@ -1425,28 +1427,22 @@ public:
             throw clerror("MemoryMap.release", CL_INVALID_VALUE,
                           "trying to double-unref mem map");
         }
-        auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+        const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
         queue = queue ? queue : &m_queue;
         cl_event evt;
         pyopencl_call_guarded(clEnqueueUnmapMemObject, queue,
-                              m_mem, m_ptr, num_wait_for,
-                              wait_for.get(), &evt);
+                              m_mem, this, wait_for, &evt);
         return new_event(evt);
-    }
-    intptr_t
-    intptr() const
-    {
-        return (intptr_t)data();
     }
     generic_info
     get_info(cl_uint) const
     {
         throw clerror("MemoryMap.get_info", CL_INVALID_VALUE);
     }
-    void*
-    data() const
+    intptr_t
+    intptr() const
     {
-        return m_valid ? m_ptr : nullptr;
+        return m_valid ? (intptr_t)data() : 0;
     }
 };
 
@@ -1466,7 +1462,7 @@ public:
         : clobj(samp)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainSampler, samp);
+            pyopencl_call_guarded(clRetainSampler, this);
         }
     }
     ~sampler()
@@ -1515,7 +1511,7 @@ public:
         : clobj(prog), m_program_kind(progkind)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainProgram, prog);
+            pyopencl_call_guarded(clRetainProgram, this);
         }
     }
     ~program()
@@ -1612,9 +1608,9 @@ public:
     build(const char *options, cl_uint num_devices,
           const clobj_t *_devices) const
     {
-        auto devices = buf_from_class<device>(_devices, num_devices);
-        pyopencl_call_guarded(clBuildProgram, this, num_devices,
-                              devices.get(), options, nullptr, nullptr);
+        const auto devices = buf_from_class<device>(_devices, num_devices);
+        pyopencl_call_guarded(clBuildProgram, this, devices, options,
+                              nullptr, nullptr);
     }
 
     // #if PYOPENCL_CL_VERSION >= 0x1020
@@ -1672,7 +1668,7 @@ public:
         : clobj(knl)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainKernel, knl);
+            pyopencl_call_guarded(clRetainKernel, this);
         }
     }
     kernel(const program *prg, const char *kernel_name)
@@ -1685,21 +1681,20 @@ public:
     void
     set_arg_null(cl_uint arg_index) const
     {
-        cl_mem m = 0;
-        pyopencl_call_guarded(clSetKernelArg, this, arg_index,
-                              sizeof(cl_mem), &m);
+        const cl_mem m = 0;
+        pyopencl_call_guarded(clSetKernelArg, this, arg_index, make_sizearg(m));
     }
     void
     set_arg_mem(cl_uint arg_index, const memory_object_holder *mem) const
     {
         pyopencl_call_guarded(clSetKernelArg, this, arg_index,
-                              sizeof(cl_mem), &mem->data());
+                              make_sizearg(mem->data()));
     }
     void
     set_arg_sampler(cl_uint arg_index, const sampler *smp) const
     {
         pyopencl_call_guarded(clSetKernelArg, this, arg_index,
-                              sizeof(cl_sampler), &smp->data());
+                              make_sizearg(smp->data()));
     }
     void
     set_arg_buf(cl_uint arg_index, const void *buffer, size_t size) const
@@ -1832,10 +1827,11 @@ get_platforms(clobj_t **_platforms, uint32_t *num_platforms)
 {
     return c_handle_error([&] {
             *num_platforms = 0;
-            pyopencl_call_guarded(clGetPlatformIDs, 0, nullptr, num_platforms);
+            pyopencl_call_guarded(clGetPlatformIDs, 0, nullptr,
+                                  make_argbuf(*num_platforms));
             pyopencl_buf<cl_platform_id> platforms(*num_platforms);
-            pyopencl_call_guarded(clGetPlatformIDs, *num_platforms,
-                                  platforms.get(), num_platforms);
+            pyopencl_call_guarded(clGetPlatformIDs, platforms,
+                                  make_argbuf(*num_platforms));
             *_platforms = buf_to_base<platform>(platforms).release();
         });
 }
@@ -1859,12 +1855,12 @@ create_context(clobj_t *_ctx, const cl_context_properties *properties,
                cl_uint num_devices, const clobj_t *_devices)
 {
     return c_handle_error([&] {
-            auto devices = buf_from_class<device>(_devices, num_devices);
+            const auto devices = buf_from_class<device>(_devices, num_devices);
             *_ctx = new context(
                 pyopencl_call_guarded(
                     clCreateContext,
                     const_cast<cl_context_properties*>(properties),
-                    num_devices, devices.get(), nullptr, nullptr), false);
+                    devices, nullptr, nullptr), false);
         });
 }
 
@@ -1973,11 +1969,11 @@ create_program_with_binary(clobj_t *prog, clobj_t _ctx,
                            char **binaries, size_t *binary_sizes)
 {
     auto ctx = static_cast<context*>(_ctx);
-    auto devs = buf_from_class<device>(devices, num_devices);
+    const auto devs = buf_from_class<device>(devices, num_devices);
     pyopencl_buf<cl_int> binary_statuses(num_devices);
     return c_handle_error([&] {
             cl_program result = pyopencl_call_guarded(
-                clCreateProgramWithBinary, ctx, num_devices, devs.get(),
+                clCreateProgramWithBinary, ctx, devs,
                 binary_sizes, reinterpret_cast<const unsigned char**>(
                     const_cast<const char**>(binaries)), binary_statuses.get());
             // for (cl_uint i = 0; i < num_devices; ++i)
@@ -2175,10 +2171,9 @@ event__set_callback(clobj_t _evt, cl_int type, void *pyobj)
 error*
 wait_for_events(const clobj_t *_wait_for, uint32_t num_wait_for)
 {
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
-            pyopencl_call_guarded(clWaitForEvents,
-                                  num_wait_for, wait_for.get());
+            pyopencl_call_guarded(clWaitForEvents, wait_for);
         });
 }
 
@@ -2200,14 +2195,14 @@ enqueue_nd_range_kernel(clobj_t *_evt, clobj_t _queue, clobj_t _knl,
 {
     auto queue = static_cast<command_queue*>(_queue);
     auto knl = static_cast<kernel*>(_knl);
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
                         clEnqueueNDRangeKernel, queue, knl,
                         work_dim, global_work_offset, global_work_size,
-                        local_work_size, num_wait_for, wait_for.get(), &evt);
+                        local_work_size, wait_for, &evt);
                 });
             *_evt = new_event(evt);
         });
@@ -2219,13 +2214,12 @@ enqueue_task(clobj_t *_evt, clobj_t _queue, clobj_t _knl,
 {
     auto queue = static_cast<command_queue*>(_queue);
     auto knl = static_cast<kernel*>(_knl);
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueTask, queue, knl,
-                        num_wait_for, wait_for.get(), &evt);
+                        clEnqueueTask, queue, knl, wait_for, &evt);
                 });
             *_evt = new_event(evt);
         });
@@ -2237,11 +2231,11 @@ enqueue_marker_with_wait_list(clobj_t *_evt, clobj_t _queue,
                               const clobj_t *_wait_for, uint32_t num_wait_for)
 {
     auto queue = static_cast<command_queue*>(_queue);
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
             cl_event evt;
             pyopencl_call_guarded(clEnqueueMarkerWithWaitList, queue,
-                                  num_wait_for, wait_for.get(), &evt);
+                                  wait_for, &evt);
             *_evt = new_event(evt);
         });
 }
@@ -2251,11 +2245,11 @@ enqueue_barrier_with_wait_list(clobj_t *_evt, clobj_t _queue,
                                const clobj_t *_wait_for, uint32_t num_wait_for)
 {
     auto queue = static_cast<command_queue*>(_queue);
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
             cl_event evt;
             pyopencl_call_guarded(clEnqueueBarrierWithWaitList, queue,
-                                  num_wait_for, wait_for.get(), &evt);
+                                  wait_for, &evt);
             *_evt = new_event(evt);
         });
 }
@@ -2266,10 +2260,9 @@ enqueue_wait_for_events(clobj_t _queue, const clobj_t *_wait_for,
                         uint32_t num_wait_for)
 {
     auto queue = static_cast<command_queue*>(_queue);
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
-            pyopencl_call_guarded(clEnqueueWaitForEvents, queue,
-                                  num_wait_for, wait_for.get());
+            pyopencl_call_guarded(clEnqueueWaitForEvents, queue, wait_for);
         });
 }
 
@@ -2319,7 +2312,7 @@ enqueue_read_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                     const clobj_t *_wait_for, uint32_t num_wait_for,
                     int is_blocking, void *pyobj)
 {
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object_holder*>(_mem);
     return c_handle_error([&] {
@@ -2328,7 +2321,7 @@ enqueue_read_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                     pyopencl_call_guarded(
                         clEnqueueReadBuffer, queue, mem,
                         cast_bool(is_blocking), device_offset, size,
-                        buffer, num_wait_for, wait_for.get(), &evt);
+                        buffer, wait_for, &evt);
                 });
             *_evt = new_nanny_event(evt, pyobj);
         });
@@ -2340,7 +2333,7 @@ enqueue_write_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                      const clobj_t *_wait_for, uint32_t num_wait_for,
                      int is_blocking, void *pyobj)
 {
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object_holder*>(_mem);
     return c_handle_error([&] {
@@ -2348,8 +2341,8 @@ enqueue_write_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
                         clEnqueueWriteBuffer, queue, mem,
-                        cast_bool(is_blocking), device_offset,
-                        size, buffer, num_wait_for, wait_for.get(), &evt);
+                        cast_bool(is_blocking), device_offset, size, buffer,
+                        wait_for, &evt);
                 });
             *_evt = new_nanny_event(evt, pyobj);
         });
@@ -2375,13 +2368,13 @@ enqueue_copy_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
                     sizeof(byte_count), &byte_count_dst, nullptr);
                 byte_count = std::min(byte_count_src, byte_count_dst);
             }
-            auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+            const auto wait_for = buf_from_class<event>(_wait_for,
+                                                        num_wait_for);
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueCopyBuffer, queue, src,
-                        dst, src_offset, dst_offset, byte_count,
-                        num_wait_for, wait_for.get(), &evt);
+                        clEnqueueCopyBuffer, queue, src, dst, src_offset,
+                        dst_offset, byte_count, wait_for, &evt);
                 });
             *_evt = new_event(evt);
         });
@@ -2393,16 +2386,15 @@ enqueue_map_buffer(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
                    const clobj_t *_wait_for, uint32_t num_wait_for,
                    int block)
 {
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto buf = static_cast<buffer*>(_mem);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
             cl_event evt;
             void *res = retry_mem_error<void*>([&] {
                     return pyopencl_call_guarded(
-                        clEnqueueMapBuffer, queue, buf,
-                        cast_bool(block), flags, offset, size, num_wait_for,
-                        wait_for.get(), &evt);
+                        clEnqueueMapBuffer, queue, buf, cast_bool(block),
+                        flags, offset, size, wait_for, &evt);
                 });
             *map = _convert_memory_map(_evt, evt, queue, buf, res);
         });
@@ -2413,16 +2405,15 @@ enqueue_fill_buffer(clobj_t *_evt, clobj_t _queue, clobj_t _mem, void *pattern,
                     size_t psize, size_t offset, size_t size,
                     const clobj_t *_wait_for, uint32_t num_wait_for)
 {
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object_holder*>(_mem);
     return c_handle_error([&] {
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueFillBuffer, queue, mem,
-                        pattern, psize, offset, size, num_wait_for,
-                        wait_for.get(), &evt);
+                        clEnqueueFillBuffer, queue, mem, pattern, psize,
+                        offset, size, wait_for, &evt);
                 });
             *_evt = new_event(evt);
         });
@@ -2440,7 +2431,7 @@ enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                    const clobj_t *_wait_for, uint32_t num_wait_for,
                    int is_blocking, void *pyobj)
 {
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(_mem);
     ConstBuffer<size_t, 3> origin(_origin, origin_l);
@@ -2451,8 +2442,7 @@ enqueue_read_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                     pyopencl_call_guarded(
                         clEnqueueReadImage, queue, img,
                         cast_bool(is_blocking), origin, region, row_pitch,
-                        slice_pitch, buffer, num_wait_for,
-                        wait_for.get(), &evt);
+                        slice_pitch, buffer, wait_for, &evt);
                 });
             *_evt = new_nanny_event(evt, pyobj);
         });
@@ -2465,7 +2455,7 @@ enqueue_copy_image(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
                    const size_t *_region, size_t region_l,
                    const clobj_t *_wait_for, uint32_t num_wait_for)
 {
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto src = static_cast<image*>(_src);
     auto dst = static_cast<image*>(_dst);
@@ -2476,9 +2466,8 @@ enqueue_copy_image(clobj_t *_evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
             cl_event evt;
             retry_mem_error<void>([&] {
                     pyopencl_call_guarded(
-                        clEnqueueCopyImage, queue, src,
-                        dst, src_origin, dst_origin, region,
-                        num_wait_for, wait_for.get(), &evt);
+                        clEnqueueCopyImage, queue, src, dst, src_origin,
+                        dst_origin, region, wait_for, &evt);
                 });
             *_evt = new_event(evt);
         });
@@ -2492,9 +2481,9 @@ enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                     const clobj_t *_wait_for, uint32_t num_wait_for,
                     int is_blocking, void *pyobj)
 {
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(_mem);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     ConstBuffer<size_t, 3> origin(_origin, origin_l);
     ConstBuffer<size_t, 3> region(_region, region_l);
     return c_handle_error([&] {
@@ -2503,8 +2492,7 @@ enqueue_write_image(clobj_t *_evt, clobj_t _queue, clobj_t _mem,
                     pyopencl_call_guarded(
                         clEnqueueWriteImage, queue, img,
                         cast_bool(is_blocking), origin, region, row_pitch,
-                        slice_pitch, buffer, num_wait_for,
-                        wait_for.get(), &evt);
+                        slice_pitch, buffer, wait_for, &evt);
                 });
             *_evt = new_nanny_event(evt, pyobj);
         });
@@ -2517,18 +2505,17 @@ enqueue_map_image(clobj_t *_evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
                   size_t *slice_pitch, const clobj_t *_wait_for,
                   uint32_t num_wait_for, int block)
 {
-    auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(_mem);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     ConstBuffer<size_t, 3> origin(_origin, origin_l);
     ConstBuffer<size_t, 3> region(_region, region_l);
     return c_handle_error([&] {
             cl_event evt;
             void *res = retry_mem_error<void*>([&] {
                     return pyopencl_call_guarded(
-                        clEnqueueMapImage, queue, img,
-                        cast_bool(block), flags, origin, region, row_pitch,
-                        slice_pitch, num_wait_for, wait_for.get(), &evt);
+                        clEnqueueMapImage, queue, img, cast_bool(block), flags,
+                        origin, region, row_pitch, slice_pitch, wait_for, &evt);
                 });
             *map = _convert_memory_map(_evt, evt, queue, img, res);
         });
