@@ -38,6 +38,10 @@ public:
     {}
 };
 
+extern template void print_clobj<gl_buffer>(std::ostream&, const gl_buffer*);
+extern template void print_clobj<gl_renderbuffer>(std::ostream&,
+                                                  const gl_renderbuffer*);
+
 class gl_texture : public image {
   public:
     PYOPENCL_INLINE

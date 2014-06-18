@@ -7,6 +7,11 @@
 namespace pyopencl {
 
 template class clobj<cl_command_queue>;
+template void print_arg<cl_command_queue>(std::ostream&,
+                                          const cl_command_queue&, bool);
+template void print_clobj<command_queue>(std::ostream&, const command_queue*);
+template void print_buf<cl_command_queue>(
+    std::ostream&, const cl_command_queue*, size_t, ArgType, bool, bool);
 
 command_queue::~command_queue()
 {

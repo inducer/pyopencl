@@ -7,6 +7,10 @@
 namespace pyopencl {
 
 template class clobj<cl_event>;
+template void print_arg<cl_event>(std::ostream&, const cl_event&, bool);
+template void print_clobj<event>(std::ostream&, const event*);
+template void print_buf<cl_event>(std::ostream&, const cl_event*,
+                                  size_t, ArgType, bool, bool);
 
 #if PYOPENCL_CL_VERSION >= 0x1010
 class event_callback {

@@ -5,6 +5,9 @@
 namespace pyopencl {
 
 template class clobj<cl_mem>;
+template void print_arg<cl_mem>(std::ostream&, const cl_mem&, bool);
+template void print_buf<cl_mem>(std::ostream&, const cl_mem*,
+                                size_t, ArgType, bool, bool);
 
 generic_info
 memory_object::get_info(cl_uint param_name) const

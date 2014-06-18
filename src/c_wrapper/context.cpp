@@ -6,6 +6,10 @@
 namespace pyopencl {
 
 template class clobj<cl_context>;
+template void print_arg<cl_context>(std::ostream&, const cl_context&, bool);
+template void print_clobj<context>(std::ostream&, const context*);
+template void print_buf<cl_context>(std::ostream&, const cl_context*,
+                                    size_t, ArgType, bool, bool);
 
 context::~context()
 {

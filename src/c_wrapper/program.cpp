@@ -6,6 +6,10 @@
 namespace pyopencl {
 
 template class clobj<cl_program>;
+template void print_arg<cl_program>(std::ostream&, const cl_program&, bool);
+template void print_clobj<program>(std::ostream&, const program*);
+template void print_buf<cl_program>(std::ostream&, const cl_program*,
+                                    size_t, ArgType, bool, bool);
 
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE program*
 new_program(cl_program prog, program_kind_type progkind=KND_UNKNOWN)

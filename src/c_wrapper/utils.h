@@ -79,8 +79,10 @@ print_buf(std::ostream &stm, const T *p, size_t len,
         switch (arg_type) {
         case ArgType::SizeOf:
             stm << ele_size * len << ", ";
+            break;
         case ArgType::Length:
             stm << len << ", ";
+            break;
         default:
             break;
         }
@@ -88,6 +90,17 @@ print_buf(std::ostream &stm, const T *p, size_t len,
         if (content) {
             stm << ">";
         }
+    }
+}
+
+template<typename T>
+void
+print_arg(std::ostream &stm, const T &v, bool out)
+{
+    if (!out) {
+        stm << (const void*)&v;
+    } else {
+        stm << "*(" << (const void*)&v << "): " << v;
     }
 }
 extern template void print_buf<char>(std::ostream&, const char*, size_t,
@@ -313,11 +326,7 @@ public:
     PYOPENCL_INLINE void
     print(std::ostream &stm, bool out=false)
     {
-        if (!out) {
-            stm << m_t;
-        } else {
-            stm << "*(" << m_t << "): " << *m_t;
-        }
+        print_arg(stm, *m_t, out);
     }
 };
 

@@ -8,6 +8,10 @@ namespace pyopencl {
 // {{{ command_queue
 
 extern template class clobj<cl_command_queue>;
+extern template void print_arg<cl_command_queue>(
+    std::ostream&, const cl_command_queue&, bool);
+extern template void print_buf<cl_command_queue>(
+    std::ostream&, const cl_command_queue*, size_t, ArgType, bool, bool);
 
 class command_queue : public clobj<cl_command_queue> {
 public:
@@ -53,6 +57,9 @@ public:
 
 #endif
 };
+
+extern template void print_clobj<command_queue>(std::ostream&,
+                                                const command_queue*);
 
 // }}}
 

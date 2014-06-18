@@ -7,6 +7,9 @@
 namespace pyopencl {
 
 template class clobj<void*>;
+template void print_arg<void*>(std::ostream&, void *const&, bool);
+template void print_buf<void*>(std::ostream&, void *const*,
+                               size_t, ArgType, bool, bool);
 
 memory_map::~memory_map()
 {

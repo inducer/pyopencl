@@ -22,6 +22,8 @@ public:
 #endif
 };
 
+extern template void print_clobj<buffer>(std::ostream&, const buffer*);
+
 // }}}
 
 }

@@ -8,6 +8,9 @@ namespace pyopencl {
 // {{{ event
 
 extern template class clobj<cl_event>;
+extern template void print_arg<cl_event>(std::ostream&, const cl_event&, bool);
+extern template void print_buf<cl_event>(std::ostream&, const cl_event*,
+                                         size_t, ArgType, bool, bool);
 
 class event : public clobj<cl_event> {
 public:
@@ -38,6 +41,8 @@ event_out(clobj_t *ret)
 {
     return pyopencl_outarg(event, ret, clReleaseEvent);
 }
+
+extern template void print_clobj<event>(std::ostream&, const event*);
 
 class nanny_event : public event {
 private:

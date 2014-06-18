@@ -8,6 +8,10 @@ namespace pyopencl {
 // {{{ context
 
 extern template class clobj<cl_context>;
+extern template void print_arg<cl_context>(std::ostream&,
+                                           const cl_context&, bool);
+extern template void print_buf<cl_context>(std::ostream&, const cl_context*,
+                                           size_t, ArgType, bool, bool);
 
 class context : public clobj<cl_context> {
 public:
@@ -23,6 +27,8 @@ public:
     ~context();
     generic_info get_info(cl_uint param_name) const;
 };
+
+extern template void print_clobj<context>(std::ostream&, const context*);
 
 // }}}
 

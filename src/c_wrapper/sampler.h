@@ -8,6 +8,10 @@ namespace pyopencl {
 // {{{ sampler
 
 extern template class clobj<cl_sampler>;
+extern template void print_arg<cl_sampler>(std::ostream&,
+                                           const cl_sampler&, bool);
+extern template void print_buf<cl_sampler>(std::ostream&, const cl_sampler*,
+                                           size_t, ArgType, bool, bool);
 
 class sampler : public clobj<cl_sampler> {
 public:
@@ -23,6 +27,8 @@ public:
     ~sampler();
     generic_info get_info(cl_uint param_name) const;
 };
+
+extern template void print_clobj<sampler>(std::ostream&, const sampler*);
 
 // }}}
 

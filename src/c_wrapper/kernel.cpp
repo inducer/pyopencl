@@ -11,6 +11,10 @@
 namespace pyopencl {
 
 template class clobj<cl_kernel>;
+template void print_arg<cl_kernel>(std::ostream&, const cl_kernel&, bool);
+template void print_clobj<kernel>(std::ostream&, const kernel*);
+template void print_buf<cl_kernel>(std::ostream&, const cl_kernel*,
+                                   size_t, ArgType, bool, bool);
 
 kernel::~kernel()
 {

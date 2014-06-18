@@ -6,6 +6,72 @@
 
 namespace pyopencl {
 
+template<typename CLObj, typename... T>
+class _CLObjOutArg : public OutArg {
+    typedef typename CLObj::cl_type CLType;
+    clobj_t *const m_ret;
+    CLType m_clobj;
+    cl_int (*m_release)(CLType);
+    const char *m_name;
+    std::tuple<T...> m_t1;
+    template<int... S>
+    PYOPENCL_INLINE CLObj*
+    __new_obj(seq<S...>)
+    {
+        return new CLObj(m_clobj, false, std::get<S>(m_t1)...);
+    }
+public:
+    PYOPENCL_INLINE
+    _CLObjOutArg(clobj_t *ret, cl_int (*release)(CLType),
+                 const char *name, T... t1) noexcept
+        : m_ret(ret), m_clobj(nullptr), m_release(release),
+          m_name(name), m_t1(t1...)
+    {
+    }
+    PYOPENCL_INLINE
+    _CLObjOutArg(_CLObjOutArg<CLObj, T...> &&other) noexcept
+        : m_ret(other.m_ret), m_clobj(other.m_clobj),
+          m_release(other.m_release), m_name(other.m_name)
+    {
+        std::swap(m_t1, other.m_t1);
+    }
+    PYOPENCL_INLINE typename CLObj::cl_type*
+    get()
+    {
+        return &m_clobj;
+    }
+    PYOPENCL_INLINE void
+    convert()
+    {
+        *m_ret = __new_obj(typename gens<sizeof...(T)>::type());
+    }
+    PYOPENCL_INLINE void
+    cleanup(bool converted)
+    {
+        if (converted) {
+            delete *m_ret;
+            *m_ret = nullptr;
+        } else {
+            call_guarded_cleanup(m_release, m_name, m_clobj);
+        }
+    }
+    PYOPENCL_INLINE void
+    print(std::ostream &stm, bool out=false) const
+    {
+        print_arg(stm, m_clobj, out);
+    }
+};
+
+template<typename CLObj, typename... T>
+static PYOPENCL_INLINE _CLObjOutArg<CLObj, T...>
+make_cloutarg(clobj_t *ret, cl_int (*release)(typename CLObj::cl_type),
+              const char *name, T... t1)
+{
+    return _CLObjOutArg<CLObj, T...>(ret, release, name, t1...);
+}
+#define pyopencl_outarg(type, ret, func, args...)               \
+    pyopencl::make_cloutarg<type>(ret, func, #func, ##args)
+
 // {{{ GetInfo helpers
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
@@ -141,76 +207,6 @@ convert_obj(cl_int (*clRelease)(CLType), const char *name, CLType cl_obj,
 #define pyopencl_convert_obj(type, func, args...)       \
     pyopencl::convert_obj<type>(func, #func, args)
 
-template<typename CLObj, typename... T>
-class _CLObjOutArg : public OutArg {
-    typedef typename CLObj::cl_type CLType;
-    clobj_t *const m_ret;
-    CLType m_clobj;
-    cl_int (*m_release)(CLType);
-    const char *m_name;
-    std::tuple<T...> m_t1;
-    template<int... S>
-    PYOPENCL_INLINE CLObj*
-    __new_obj(seq<S...>)
-    {
-        return new CLObj(m_clobj, false, std::get<S>(m_t1)...);
-    }
-public:
-    PYOPENCL_INLINE
-    _CLObjOutArg(clobj_t *ret, cl_int (*release)(CLType),
-                 const char *name, T... t1) noexcept
-        : m_ret(ret), m_clobj(nullptr), m_release(release),
-          m_name(name), m_t1(t1...)
-    {
-    }
-    PYOPENCL_INLINE
-    _CLObjOutArg(_CLObjOutArg<CLObj, T...> &&other) noexcept
-        : m_ret(other.m_ret), m_clobj(other.m_clobj),
-          m_release(other.m_release), m_name(other.m_name)
-    {
-        std::swap(m_t1, other.m_t1);
-    }
-    PYOPENCL_INLINE typename CLObj::cl_type*
-    get()
-    {
-        return &m_clobj;
-    }
-    PYOPENCL_INLINE void
-    convert()
-    {
-        *m_ret = __new_obj(typename gens<sizeof...(T)>::type());
-    }
-    PYOPENCL_INLINE void
-    cleanup(bool converted)
-    {
-        if (converted) {
-            delete *m_ret;
-            *m_ret = nullptr;
-        } else {
-            call_guarded_cleanup(m_release, m_name, m_clobj);
-        }
-    }
-    PYOPENCL_INLINE void
-    print(std::ostream &stm, bool out=false)
-    {
-        if (!out) {
-            stm << &m_clobj;
-        } else {
-            stm << "*(" << &m_clobj << "): " << m_clobj;
-        }
-    }
-};
-
-template<typename CLObj, typename... T>
-static PYOPENCL_INLINE _CLObjOutArg<CLObj, T...>
-make_cloutarg(clobj_t *ret, cl_int (*release)(typename CLObj::cl_type),
-              const char *name, T... t1)
-{
-    return _CLObjOutArg<CLObj, T...>(ret, release, name, t1...);
-}
-#define pyopencl_outarg(type, ret, func, args...)               \
-    pyopencl::make_cloutarg<type>(ret, func, #func, ##args)
-
 // {{{ extension function pointers
 
 #if PYOPENCL_CL_VERSION >= 0x1020
@@ -249,7 +245,7 @@ static PYOPENCL_INLINE std::ostream&
 operator<<(std::ostream &stm, const cl_image_format &fmt)
 {
     stm << "channel_order: " << fmt.image_channel_order
-        << "channel_data_type: " << fmt.image_channel_data_type;
+        << ",\nchannel_data_type: " << fmt.image_channel_data_type;
     return stm;
 }
 

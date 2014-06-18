@@ -10,6 +10,10 @@ class device;
 // {{{ kernel
 
 extern template class clobj<cl_kernel>;
+extern template void print_arg<cl_kernel>(std::ostream&,
+                                          const cl_kernel&, bool);
+extern template void print_buf<cl_kernel>(std::ostream&, const cl_kernel*,
+                                          size_t, ArgType, bool, bool);
 
 class kernel : public clobj<cl_kernel> {
 public:
@@ -58,6 +62,8 @@ public:
     //       }
     // #endif
 };
+
+extern template void print_clobj<kernel>(std::ostream&, const kernel*);
 
 // }}}
 

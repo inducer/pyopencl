@@ -5,6 +5,8 @@
 
 namespace pyopencl {
 
+template void print_clobj<buffer>(std::ostream&, const buffer*);
+
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE buffer*
 new_buffer(cl_mem mem)
 {

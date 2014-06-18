@@ -5,6 +5,10 @@
 namespace pyopencl {
 
 template class clobj<cl_sampler>;
+template void print_arg<cl_sampler>(std::ostream&, const cl_sampler&, bool);
+template void print_clobj<sampler>(std::ostream&, const sampler*);
+template void print_buf<cl_sampler>(std::ostream&, const cl_sampler*,
+                                    size_t, ArgType, bool, bool);
 
 sampler::~sampler()
 {

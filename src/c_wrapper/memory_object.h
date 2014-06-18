@@ -9,6 +9,9 @@ namespace pyopencl {
 // {{{ memory_object
 
 extern template class clobj<cl_mem>;
+extern template void print_arg<cl_mem>(std::ostream&, const cl_mem&, bool);
+extern template void print_buf<cl_mem>(std::ostream&, const cl_mem*,
+                                       size_t, ArgType, bool, bool);
 
 class memory_object : public clobj<cl_mem> {
 private:

@@ -4,6 +4,11 @@
 namespace pyopencl {
 
 template class clobj<cl_device_id>;
+template void print_arg<cl_device_id>(std::ostream&,
+                                      const cl_device_id&, bool);
+template void print_clobj<device>(std::ostream&, const device*);
+template void print_buf<cl_device_id>(std::ostream&, const cl_device_id*,
+                                      size_t, ArgType, bool, bool);
 
 device::~device()
 {

@@ -43,6 +43,8 @@ public:
     }
 };
 
+extern template void print_clobj<image>(std::ostream&, const image*);
+
 // }}}
 
 }

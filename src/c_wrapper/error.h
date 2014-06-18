@@ -108,7 +108,7 @@ struct __CLPrintOut {
 template<typename T>
 struct __CLPrintOut<T, typename std::enable_if<
                            std::remove_reference<T>::type::is_out>::type> {
-    static PYOPENCL_INLINE void
+    static inline void
     call(T v, std::ostream &stm)
     {
         v.print(stm, true);
@@ -118,7 +118,7 @@ struct __CLPrintOut<T, typename std::enable_if<
 
 template<typename T, class = void>
 struct __CLPrint {
-    static PYOPENCL_INLINE void
+    static inline void
     call(T v, std::ostream &stm)
     {
         v.print(stm);
@@ -159,9 +159,9 @@ public:
     clcall(Func func, const char *name)
         -> decltype(this->template call<__CLArgGetter>(func))
     {
-        typename CLArgPack::tuple_base *that = this;
         auto res = this->template call<__CLArgGetter>(func);
         if (DEBUG_ON) {
+            typename CLArgPack::tuple_base *that = this;
             std::cerr << name << "(";
             __CLCall<__CLPrint, sizeof...(Types) - 1,
                      decltype(*that)>::call(*that, std::cerr);
@@ -249,7 +249,7 @@ c_handle_error(std::function<void()> func) noexcept
     try {
         func();
         return nullptr;
-    } catch(const clerror &e) {
+    } catch (const clerror &e) {
         auto err = (::error*)malloc(sizeof(::error));
         err->routine = strdup(e.routine());
         err->msg = strdup(e.what());

@@ -5,6 +5,8 @@
 
 namespace pyopencl {
 
+template void print_clobj<image>(std::ostream&, const image*);
+
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE image*
 new_image(cl_mem mem, const cl_image_format *fmt)
 {

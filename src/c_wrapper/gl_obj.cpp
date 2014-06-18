@@ -8,6 +8,10 @@
 
 namespace pyopencl {
 
+template void print_clobj<gl_buffer>(std::ostream&, const gl_buffer*);
+template void print_clobj<gl_renderbuffer>(std::ostream&,
+                                           const gl_renderbuffer*);
+
 generic_info
 gl_texture::get_gl_texture_info(cl_gl_texture_info param_name) const
 {

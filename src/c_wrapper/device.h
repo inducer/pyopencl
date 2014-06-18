@@ -8,6 +8,10 @@ namespace pyopencl {
 // {{{ device
 
 extern template class clobj<cl_device_id>;
+extern template void print_arg<cl_device_id>(std::ostream&,
+                                             const cl_device_id&, bool);
+extern template void print_buf<cl_device_id>(std::ostream&, const cl_device_id*,
+                                             size_t, ArgType, bool, bool);
 
 class device : public clobj<cl_device_id> {
 public:
@@ -129,6 +133,8 @@ public:
     //       }
     // #endif
 };
+
+extern template void print_clobj<device>(std::ostream&, const device*);
 
 // }}}
 

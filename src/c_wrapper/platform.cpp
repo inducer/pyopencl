@@ -5,6 +5,11 @@
 namespace pyopencl {
 
 template class clobj<cl_platform_id>;
+template void print_arg<cl_platform_id>(std::ostream&,
+                                        const cl_platform_id&, bool);
+template void print_clobj<platform>(std::ostream&, const platform*);
+template void print_buf<cl_platform_id>(std::ostream&, const cl_platform_id*,
+                                        size_t, ArgType, bool, bool);
 
 generic_info
 platform::get_info(cl_uint param_name) const

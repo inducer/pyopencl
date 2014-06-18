@@ -12,6 +12,9 @@ class event;
 // {{{ memory_map
 
 extern template class clobj<void*>;
+extern template void print_arg<void*>(std::ostream&, void *const&, bool);
+extern template void print_buf<void*>(std::ostream&, void *const*,
+                                      size_t, ArgType, bool, bool);
 
 class memory_map : public clobj<void*> {
 private:

@@ -10,6 +10,10 @@ class device;
 // {{{ program
 
 extern template class clobj<cl_program>;
+extern template void print_arg<cl_program>(std::ostream&,
+                                           const cl_program&, bool);
+extern template void print_buf<cl_program>(std::ostream&, const cl_program*,
+                                           size_t, ArgType, bool, bool);
 
 class program : public clobj<cl_program> {
 private:
@@ -80,6 +84,8 @@ public:
     //       }
     // #endif
 };
+
+extern template void print_clobj<program>(std::ostream&, const program*);
 
 // }}}
 
