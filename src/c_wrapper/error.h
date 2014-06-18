@@ -111,18 +111,22 @@ struct __CLPrintOut<T, typename std::enable_if<
     static inline void
     call(T v, std::ostream &stm)
     {
-        v.print(stm, true);
         stm << ", ";
+        v.print(stm, true);
     }
 };
 
 template<typename T, class = void>
 struct __CLPrint {
     static inline void
-    call(T v, std::ostream &stm)
+    call(T v, std::ostream &stm, bool &&first)
     {
+        if (!first) {
+            stm << ", ";
+        } else {
+            first = false;
+        }
         v.print(stm);
-        stm << ", ";
     }
 };
 
@@ -158,8 +162,8 @@ class CLArgPack : public ArgPack<CLArg, Types...> {
         typename CLArgPack::tuple_base *that = this;
         std::cerr << name << "(";
         __CLCall<__CLPrint, sizeof...(Types) - 1,
-                 decltype(*that)>::call(*that, std::cerr);
-        std::cerr << ") = (" << res << ", ";
+                 decltype(*that)>::call(*that, std::cerr, true);
+        std::cerr << ") = (" << res;
         __CLCall<__CLPrintOut, sizeof...(Types) - 1,
                  decltype(*that)>::call(*that, std::cerr);
         std::cerr << ")" << std::endl;
