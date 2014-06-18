@@ -90,6 +90,19 @@ print_buf(std::ostream &stm, const T *p, size_t len,
         }
     }
 }
+extern template void print_buf<char>(std::ostream&, const char*, size_t,
+                                     ArgType, bool, bool);
+extern template void print_buf<cl_int>(std::ostream&, const cl_int*, size_t,
+                                       ArgType, bool, bool);
+extern template void print_buf<cl_uint>(std::ostream&, const cl_uint*, size_t,
+                                        ArgType, bool, bool);
+extern template void print_buf<cl_long>(std::ostream&, const cl_long*, size_t,
+                                        ArgType, bool, bool);
+extern template void print_buf<cl_ulong>(std::ostream&, const cl_ulong*, size_t,
+                                         ArgType, bool, bool);
+extern template void print_buf<cl_image_format>(std::ostream&,
+                                                const cl_image_format*, size_t,
+                                                ArgType, bool, bool);
 
 // TODO
 template<typename T, class = void>
