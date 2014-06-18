@@ -4,36 +4,6 @@
 
 #include <stdlib.h>
 
-// {{{ extension function pointers
-
-#if PYOPENCL_CL_VERSION >= 0x1020
-template<typename T>
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
-pyopencl_get_ext_fun(cl_platform_id plat, const char *name, const char *err)
-{
-    T func = (T)clGetExtensionFunctionAddressForPlatform(plat, name);
-    if (!func) {
-        throw pyopencl::clerror(name, CL_INVALID_VALUE, err);
-    }
-    return func;
-}
-#else
-template<typename T>
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
-pyopencl_get_ext_fun(cl_platform_id, const char *name, const char *err)
-{
-    T func = (T)clGetExtensionFunctionAddress(name);
-    if (!func) {
-        throw pyopencl::clerror(name, CL_INVALID_VALUE, err);
-    }
-    return func;
-}
-#endif
-#define pyopencl_get_ext_fun(plat, name)                                \
-    pyopencl_get_ext_fun<name##_fn>(plat, #name, #name " not available")
-
-// }}}
-
 namespace pyopencl {
 
 // {{{ platform
@@ -41,7 +11,7 @@ namespace pyopencl {
 class platform : public clobj<cl_platform_id> {
 public:
     using clobj::clobj;
-    PYOPENCL_DEF_GET_CLASS_T(PLATFORM);
+    PYOPENCL_DEF_CL_CLASS(PLATFORM);
     generic_info
     get_info(cl_uint param_name) const
     {
@@ -91,7 +61,7 @@ platform::get_devices(cl_device_type devtype) const
 
 class device : public clobj<cl_device_id> {
 public:
-    PYOPENCL_DEF_GET_CLASS_T(DEVICE);
+    PYOPENCL_DEF_CL_CLASS(DEVICE);
     enum reference_type_t {
         REF_NOT_OWNABLE,
         REF_FISSION_EXT,
@@ -455,7 +425,7 @@ public:
 
 class context : public clobj<cl_context> {
 public:
-    PYOPENCL_DEF_GET_CLASS_T(CONTEXT);
+    PYOPENCL_DEF_CL_CLASS(CONTEXT);
     context(cl_context ctx, bool retain)
         : clobj(ctx)
     {
@@ -576,7 +546,7 @@ private:
         return pyopencl_call_guarded(clCreateCommandQueue, ctx, dev, props);
     }
 public:
-    PYOPENCL_DEF_GET_CLASS_T(COMMAND_QUEUE);
+    PYOPENCL_DEF_CL_CLASS(COMMAND_QUEUE);
     command_queue(cl_command_queue q, bool retain)
         : clobj(q)
     {
@@ -677,7 +647,7 @@ private:
     };
 #endif
 public:
-    PYOPENCL_DEF_GET_CLASS_T(EVENT);
+    PYOPENCL_DEF_CL_CLASS(EVENT);
     event(cl_event event, bool retain)
         : clobj(event)
     {
@@ -975,7 +945,7 @@ class image : public memory_object {
 private:
     cl_image_format m_format;
 public:
-    PYOPENCL_DEF_GET_CLASS_T(IMAGE);
+    PYOPENCL_DEF_CL_CLASS(IMAGE);
     image(cl_mem mem, bool retain, void *hostbuf=0,
           const cl_image_format *fmt=0)
         : memory_object(mem, retain, hostbuf)
@@ -1187,7 +1157,7 @@ get_apple_cgl_share_group()
 
 class gl_buffer : public memory_object {
 public:
-    PYOPENCL_DEF_GET_CLASS_T(GL_BUFFER);
+    PYOPENCL_DEF_CL_CLASS(GL_BUFFER);
     gl_buffer(cl_mem mem, bool retain, void *hostbuf=0)
         : memory_object(mem, retain, hostbuf)
     {}
@@ -1195,7 +1165,7 @@ public:
 
 class gl_renderbuffer : public memory_object {
 public:
-    PYOPENCL_DEF_GET_CLASS_T(GL_RENDERBUFFER);
+    PYOPENCL_DEF_CL_CLASS(GL_RENDERBUFFER);
     gl_renderbuffer(cl_mem mem, bool retain, void *hostbuf=0)
         : memory_object(mem, retain, hostbuf)
     {}
@@ -1373,7 +1343,7 @@ static PYOPENCL_INLINE buffer *new_buffer(cl_mem mem, void *buff=0);
 
 class buffer : public memory_object {
 public:
-    PYOPENCL_DEF_GET_CLASS_T(BUFFER);
+    PYOPENCL_DEF_CL_CLASS(BUFFER);
     buffer(cl_mem mem, bool retain, void *hostbuf=0)
         : memory_object(mem, retain, hostbuf)
     {}
@@ -1486,7 +1456,7 @@ public:
 
 class sampler : public clobj<cl_sampler> {
 public:
-    PYOPENCL_DEF_GET_CLASS_T(SAMPLER);
+    PYOPENCL_DEF_CL_CLASS(SAMPLER);
     sampler(const context *ctx, bool normalized_coordinates,
             cl_addressing_mode am, cl_filter_mode fm)
         : clobj(pyopencl_call_guarded(clCreateSampler, ctx,
@@ -1539,7 +1509,7 @@ private:
     program_kind_type m_program_kind;
 
 public:
-    PYOPENCL_DEF_GET_CLASS_T(PROGRAM);
+    PYOPENCL_DEF_CL_CLASS(PROGRAM);
     program(cl_program prog, bool retain,
             program_kind_type progkind=KND_UNKNOWN)
         : clobj(prog), m_program_kind(progkind)
@@ -1697,7 +1667,7 @@ new_program(cl_program prog, program_kind_type progkind=KND_UNKNOWN)
 
 class kernel : public clobj<cl_kernel> {
 public:
-    PYOPENCL_DEF_GET_CLASS_T(KERNEL);
+    PYOPENCL_DEF_CL_CLASS(KERNEL);
     kernel(cl_kernel knl, bool retain)
         : clobj(knl)
     {

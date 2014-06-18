@@ -152,7 +152,7 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
     pyopencl::call_guarded_cleanup(func, #func, args)
 
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE ::error*
-c_handle_error(std::function<void()> func)
+c_handle_error(std::function<void()> func) noexcept
 {
     try {
         func();

@@ -150,6 +150,36 @@ convert_obj(cl_int (*clRelease)(CLType), const char *name, CLType cl_obj,
 #define pyopencl_convert_obj(type, func, args...)       \
     pyopencl::convert_obj<type>(func, #func, args)
 
+// {{{ extension function pointers
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+template<typename T>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
+get_ext_fun(cl_platform_id plat, const char *name, const char *err)
+{
+    T func = (T)clGetExtensionFunctionAddressForPlatform(plat, name);
+    if (!func) {
+        throw pyopencl::clerror(name, CL_INVALID_VALUE, err);
+    }
+    return func;
+}
+#else
+template<typename T>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
+get_ext_fun(cl_platform_id, const char *name, const char *err)
+{
+    T func = (T)clGetExtensionFunctionAddress(name);
+    if (!func) {
+        throw pyopencl::clerror(name, CL_INVALID_VALUE, err);
+    }
+    return func;
+}
+#endif
+#define pyopencl_get_ext_fun(plat, name)                                \
+    pyopencl::get_ext_fun<name##_fn>(plat, #name, #name " not available")
+
+// }}}
+
 }
 
 #endif

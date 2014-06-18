@@ -3,7 +3,7 @@
 #ifndef __PYOPENCL_CLOBJ_H
 #define __PYOPENCL_CLOBJ_H
 
-#define PYOPENCL_DEF_GET_CLASS_T(name)          \
+#define PYOPENCL_DEF_CL_CLASS(name)             \
     static PYOPENCL_INLINE class_t              \
     get_class_t()                               \
     {                                           \
@@ -58,7 +58,7 @@ public:
     {
     }
     PYOPENCL_INLINE const typename CLObj::cl_type&
-    convert()
+    convert() const
     {
         return m_obj.data();
     }
@@ -76,7 +76,7 @@ public:
     {
     }
     PYOPENCL_INLINE const typename CLObj::cl_type&
-    convert()
+    convert() const
     {
         return m_obj->data();
     }
