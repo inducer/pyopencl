@@ -84,7 +84,7 @@ private:
 public:
     template<typename... Types2>
     ArgPack(Types2&&... arg_orig)
-        : tuple_base(ArgConvert<Types2>(arg_orig)...)
+        : tuple_base(ArgConvert<_ArgType<Types> >(arg_orig)...)
     {
     }
     ArgPack(ArgPack<Convert, Types...> &&other)
