@@ -67,7 +67,6 @@ public:
     {
         return m_obj.data();
     }
-    template<bool>
     PYOPENCL_INLINE void
     print(std::ostream &stm)
     {
@@ -91,7 +90,6 @@ public:
     {
         return m_obj->data();
     }
-    template<bool>
     PYOPENCL_INLINE void
     print(std::ostream &stm)
     {

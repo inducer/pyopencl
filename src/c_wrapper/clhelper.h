@@ -190,9 +190,8 @@ public:
             call_guarded_cleanup(m_release, m_name, m_clobj);
         }
     }
-    template<bool out>
     PYOPENCL_INLINE void
-    print(std::ostream &stm)
+    print(std::ostream &stm, bool out=false)
     {
         if (!out) {
             stm << &m_clobj;

@@ -111,7 +111,7 @@ struct __CLPrintOut<T, typename std::enable_if<
     static PYOPENCL_INLINE void
     call(T v, std::ostream &stm)
     {
-        v.template print<true>(stm);
+        v.print(stm, true);
         stm << ", ";
     }
 };
@@ -121,7 +121,7 @@ struct __CLPrint {
     static PYOPENCL_INLINE void
     call(T v, std::ostream &stm)
     {
-        v.template print<false>(stm);
+        v.print(stm);
         stm << ", ";
     }
 };

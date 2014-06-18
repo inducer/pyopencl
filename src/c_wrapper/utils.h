@@ -30,19 +30,19 @@ tostring(const T& v)
 namespace pyopencl {
 
 // TODO
-template<typename T, bool, class = void>
+template<typename T, class = void>
 struct CLGenericArgPrinter {
     static PYOPENCL_INLINE void
-    print(std::ostream &stm, T &arg)
+    print(std::ostream &stm, T &arg, bool)
     {
         stm << arg;
     }
 };
 
-template<bool out>
-struct CLGenericArgPrinter<std::nullptr_t, out, void> {
+template<>
+struct CLGenericArgPrinter<std::nullptr_t, void> {
     static PYOPENCL_INLINE void
-    print(std::ostream &stm, std::nullptr_t&)
+    print(std::ostream &stm, std::nullptr_t&, bool)
     {
         stm << (void*)nullptr;
     }
@@ -70,11 +70,10 @@ public:
     {
         return m_arg;
     }
-    template<bool out>
     PYOPENCL_INLINE void
-    print(std::ostream &stm)
+    print(std::ostream &stm, bool out=false)
     {
-        CLGenericArgPrinter<T, out>::print(stm, m_arg);
+        CLGenericArgPrinter<T>::print(stm, m_arg, out);
     }
 };
 
@@ -229,9 +228,8 @@ public:
     {
         return _ArgBufferConverter<Buff>::convert(m_buff);
     }
-    template<bool out>
     PYOPENCL_INLINE void
-    print(std::ostream &stm)
+    print(std::ostream &stm, bool out=false)
     {
         _print_buf(stm, m_buff, Buff::arg_type, out || !is_out);
     }
@@ -274,9 +272,8 @@ public:
     {
         return m_t;
     }
-    template<bool out>
     PYOPENCL_INLINE void
-    print(std::ostream &stm)
+    print(std::ostream &stm, bool out=false)
     {
         if (!out) {
             stm << m_t;
@@ -335,11 +332,10 @@ public:
             m_arg.cleanup(m_converted);
         }
     }
-    template<bool out>
     PYOPENCL_INLINE void
-    print(std::ostream &stm)
+    print(std::ostream &stm, bool out=false)
     {
-        m_arg.template print<out>(stm);
+        m_arg.print(stm, out);
     }
 };
 
@@ -409,9 +405,8 @@ public:
     {
         return std::make_tuple(m_buff.len(), m_buff.get());
     }
-    template<bool out>
     PYOPENCL_INLINE void
-    print(std::ostream &stm)
+    print(std::ostream &stm, bool out=false)
     {
         _print_buf(stm, m_buff, ArgType::Length, out || !is_out);
     }
