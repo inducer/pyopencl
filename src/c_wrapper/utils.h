@@ -398,6 +398,18 @@ public:
         this->reset((T*)realloc((void*)this->release(),
                                 (len + 1) * sizeof(T)));
     }
+    template<ArgType AT=ArgType::Length>
+    PYOPENCL_INLINE ArgBuffer<T, AT>
+    to_arg()
+    {
+        return ArgBuffer<T, AT>(this->get(), m_len);
+    }
+    template<ArgType AT=ArgType::Length>
+    PYOPENCL_INLINE ArgBuffer<const T, AT>
+    to_arg() const
+    {
+        return ArgBuffer<const T, AT>(this->get(), m_len);
+    }
 };
 
 template<typename Buff>
