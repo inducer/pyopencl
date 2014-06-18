@@ -45,10 +45,11 @@ public:
 };
 
 template<typename CLObj>
-static PYOPENCL_INLINE void
-_print_clobj(std::ostream &stm, CLObj *obj)
+void
+print_clobj(std::ostream &stm, const CLObj *obj)
 {
-    stm << CLObj::class_name << "(" << obj << ")<" << obj->data() << ">";
+    stm << CLObj::class_name << "(" << (const void*)obj << ")<"
+        << (const void*)obj->data() << ">";
 }
 
 template<typename CLObj>
@@ -70,7 +71,7 @@ public:
     PYOPENCL_INLINE void
     print(std::ostream &stm)
     {
-        _print_clobj(stm, &m_obj);
+        print_clobj(stm, &m_obj);
     }
 };
 
@@ -93,7 +94,7 @@ public:
     PYOPENCL_INLINE void
     print(std::ostream &stm)
     {
-        _print_clobj(stm, m_obj);
+        print_clobj(stm, m_obj);
     }
 };
 
