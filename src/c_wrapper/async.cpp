@@ -1,4 +1,5 @@
 #include "async.h"
+#include "function.h"
 
 #include <queue>
 #include <thread>
@@ -14,7 +15,7 @@ private:
     std::mutex m_mutex;
     std::condition_variable m_cond;
 public:
-    T
+    PYOPENCL_INLINE T
     pop()
     {
         std::unique_lock<std::mutex> mlock(m_mutex);
@@ -25,10 +26,11 @@ public:
         m_queue.pop();
         return item;
     }
-    void
+    PYOPENCL_INLINE void
     push(const T &item)
     {
         {
+            // Sub scope for the lock
             std::unique_lock<std::mutex> mlock(m_mutex);
             m_queue.push(item);
         }
@@ -58,12 +60,12 @@ private:
         t.detach();
     }
 public:
-    void
+    PYOPENCL_INLINE void
     ensure_thread()
     {
         std::call_once(m_flag, &AsyncCaller::start_thread, this);
     }
-    void
+    PYOPENCL_INLINE void
     push(const std::function<void()> &func)
     {
         ensure_thread();

@@ -5,7 +5,9 @@
 
 namespace pyopencl {
 
+// Start the helper thread
 void init_async();
+// Call @func in the helper thread
 void call_async(const std::function<void()> &func);
 
 }
