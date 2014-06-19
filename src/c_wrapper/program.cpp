@@ -101,15 +101,22 @@ program::get_build_info(const device *dev, cl_program_build_info param) const
 // Import all the names in pyopencl namespace for c wrappers.
 using namespace pyopencl;
 
+typedef cl_program (*_clCreateProgramWithSourceType)(
+    cl_context, cl_uint, const char* const*, const size_t*, cl_int*);
+
+const static _clCreateProgramWithSourceType _clCreateProgramWithSource =
+    reinterpret_cast<_clCreateProgramWithSourceType>(clCreateProgramWithSource);
+
 // Program
 error*
-create_program_with_source(clobj_t *prog, clobj_t _ctx, const char *src)
+create_program_with_source(clobj_t *prog, clobj_t _ctx, const char *_src)
 {
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
-            size_t length = strlen(src);
+            const auto &src = _src;
+            const size_t length = strlen(src);
             cl_program result = pyopencl_call_guarded(
-                clCreateProgramWithSource, ctx, 1, &src, &length);
+                _clCreateProgramWithSource, ctx, len_arg(src), buf_arg(length));
             *prog = new_program(result, KND_SOURCE);
         });
 }

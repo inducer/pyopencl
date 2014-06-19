@@ -29,6 +29,15 @@ tostring(const T& v)
 
 namespace pyopencl {
 
+template<typename T, class = void>
+struct CLGenericArgPrinter {
+    static PYOPENCL_INLINE void
+    print(std::ostream &stm, T &arg)
+    {
+        stm << arg;
+    }
+};
+
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE void*
 cl_memdup(const void *p, size_t size)
 {
@@ -60,7 +69,7 @@ _print_buf_content(std::ostream &stm, const T *p, size_t len)
         stm << "[";
     }
     for (size_t i = 0;i < len;i++) {
-        stm << p[i];
+        CLGenericArgPrinter<const T>::print(stm, p[i]);
         if (i != len - 1) {
             stm << ", ";
         }
@@ -93,9 +102,10 @@ print_buf(std::ostream &stm, const T *p, size_t len,
         bool need_quote = content || arg_type != ArgType::None;
         if (content) {
             _print_buf_content(stm, p, len);
+            stm << " ";
         }
         if (need_quote) {
-            stm << " <";
+            stm << "<";
         }
         switch (arg_type) {
         case ArgType::SizeOf:
@@ -138,16 +148,6 @@ extern template void print_buf<cl_image_format>(std::ostream&,
                                                 const cl_image_format*, size_t,
                                                 ArgType, bool, bool);
 
-// TODO
-template<typename T, class = void>
-struct CLGenericArgPrinter {
-    static PYOPENCL_INLINE void
-    print(std::ostream &stm, T &arg)
-    {
-        stm << arg;
-    }
-};
-
 template<>
 struct CLGenericArgPrinter<std::nullptr_t, void> {
     static PYOPENCL_INLINE void
@@ -158,8 +158,9 @@ struct CLGenericArgPrinter<std::nullptr_t, void> {
 };
 
 template<typename T>
-struct CLGenericArgPrinter<T, enable_if_t<std::is_same<const char*, T>::value ||
-                                          std::is_same<char*, T>::value> > {
+struct CLGenericArgPrinter<
+    T, enable_if_t<std::is_same<const char*, rm_const_t<T> >::value ||
+                   std::is_same<char*, rm_const_t<T> >::value> > {
     static PYOPENCL_INLINE void
     print(std::ostream &stm, const char *str)
     {
@@ -250,6 +251,13 @@ static PYOPENCL_INLINE auto
 size_arg(T &&buf) -> decltype(buf_arg<ArgType::SizeOf>(std::forward<T>(buf)))
 {
     return buf_arg<ArgType::SizeOf>(std::forward<T>(buf));
+}
+
+template<typename T>
+static PYOPENCL_INLINE auto
+len_arg(T &&buf) -> decltype(buf_arg<ArgType::Length>(std::forward<T>(buf)))
+{
+    return buf_arg<ArgType::Length>(std::forward<T>(buf));
 }
 
 template<typename Buff, class = void>
@@ -464,7 +472,7 @@ struct _ToArgBuffer<AT, T, enable_if_t<is_pyopencl_buf<T>::value &&
 
 template<typename Buff>
 using __pyopencl_buf_arg_type =
-    rm_ref_t<decltype(buf_arg<ArgType::Length>(std::declval<Buff&>()))>;
+    rm_ref_t<decltype(len_arg(std::declval<Buff&>()))>;
 
 template<typename Buff>
 class CLArg<Buff, enable_if_t<is_pyopencl_buf<Buff>::value> >
@@ -474,7 +482,7 @@ class CLArg<Buff, enable_if_t<is_pyopencl_buf<Buff>::value> >
 public:
     PYOPENCL_INLINE
     CLArg(Buff &buff) noexcept
-        : CLArg<BufType>(m_buff), m_buff(buf_arg<ArgType::Length>(buff))
+        : CLArg<BufType>(m_buff), m_buff(len_arg(buff))
     {}
     PYOPENCL_INLINE
     CLArg(CLArg<Buff> &&other) noexcept

@@ -14,6 +14,8 @@ namespace pyopencl {
 
 template<typename T>
 using rm_ref_t = typename std::remove_reference<T>::type;
+template<typename T>
+using rm_const_t = typename std::remove_const<T>::type;
 template<bool B, class T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
