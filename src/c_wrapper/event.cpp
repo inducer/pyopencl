@@ -79,7 +79,7 @@ event::get_profiling_info(cl_profiling_info param) const
 void
 event::wait()
 {
-    pyopencl_call_guarded(clWaitForEvents, arg_buf<ArgType::Length>(data()));
+    pyopencl_call_guarded(clWaitForEvents, buf_arg<ArgType::Length>(data()));
     finished();
 }
 

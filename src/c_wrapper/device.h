@@ -40,7 +40,7 @@ public:
 #if PYOPENCL_CL_VERSION >= 0x1020
                 cl_platform_id plat;
                 pyopencl_call_guarded(clGetDeviceInfo, this,
-                                      CL_DEVICE_PLATFORM, make_sizearg(plat),
+                                      CL_DEVICE_PLATFORM, size_arg(plat),
                                       nullptr);
 #endif
                 pyopencl_call_guarded(

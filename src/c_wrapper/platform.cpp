@@ -40,10 +40,10 @@ get_platforms(clobj_t **_platforms, uint32_t *num_platforms)
     return c_handle_error([&] {
             *num_platforms = 0;
             pyopencl_call_guarded(clGetPlatformIDs, 0, nullptr,
-                                  arg_buf(*num_platforms));
+                                  buf_arg(*num_platforms));
             pyopencl_buf<cl_platform_id> platforms(*num_platforms);
             pyopencl_call_guarded(clGetPlatformIDs, platforms,
-                                  arg_buf(*num_platforms));
+                                  buf_arg(*num_platforms));
             *_platforms = buf_to_base<platform>(platforms).release();
         });
 }
@@ -57,7 +57,7 @@ platform__get_devices(clobj_t _plat, clobj_t **_devices,
             *num_devices = 0;
             try {
                 pyopencl_call_guarded(clGetDeviceIDs, plat, devtype, 0, nullptr,
-                                      arg_buf(*num_devices));
+                                      buf_arg(*num_devices));
             } catch (const clerror &e) {
                 if (e.code() != CL_DEVICE_NOT_FOUND)
                     throw e;
@@ -69,7 +69,7 @@ platform__get_devices(clobj_t _plat, clobj_t **_devices,
             }
             pyopencl_buf<cl_device_id> devices(*num_devices);
             pyopencl_call_guarded(clGetDeviceIDs, plat, devtype, devices,
-                                  arg_buf(*num_devices));
+                                  buf_arg(*num_devices));
             *_devices = buf_to_base<device>(devices).release();
         });
 }

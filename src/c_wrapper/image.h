@@ -21,7 +21,7 @@ public:
             m_format = *fmt;
         } else {
             pyopencl_call_guarded(clGetImageInfo, this, CL_IMAGE_FORMAT,
-                                  make_sizearg(m_format), nullptr);
+                                  size_arg(m_format), nullptr);
         }
     }
     PYOPENCL_USE_RESULT generic_info get_image_info(cl_image_info param) const;

@@ -47,7 +47,7 @@ public:
     {
         size_t param_value;
         pyopencl_call_guarded(clGetMemObjectInfo, this, CL_MEM_SIZE,
-                              make_sizearg(param_value), nullptr);
+                              size_arg(param_value), nullptr);
         return param_value;
     }
 #endif

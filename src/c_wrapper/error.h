@@ -217,7 +217,7 @@ PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
 call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     cl_int status_code = CL_SUCCESS;
-    auto status_arg = arg_buf(status_code);
+    auto status_arg = buf_arg(status_code);
     auto argpack = make_clargpack(std::forward<ArgTypes2>(args)..., status_arg);
     T res = argpack.clcall(func, name);
     if (status_code != CL_SUCCESS) {

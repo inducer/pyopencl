@@ -208,7 +208,7 @@ struct _ToArgBuffer {
 
 template<ArgType AT=ArgType::None, typename T>
 static PYOPENCL_INLINE auto
-arg_buf(T &&buf)
+buf_arg(T &&buf)
     -> decltype(_ToArgBuffer<AT, T>::convert(std::forward<T>(buf)))
 {
     return _ToArgBuffer<AT, T>::convert(std::forward<T>(buf));
@@ -216,14 +216,14 @@ arg_buf(T &&buf)
 
 template<ArgType AT=ArgType::None, typename T>
 static PYOPENCL_INLINE ArgBuffer<T, AT>
-arg_buf(T *buf, size_t l)
+buf_arg(T *buf, size_t l)
 {
     return ArgBuffer<T, AT>(buf, l);
 }
 
 template<typename T>
 static PYOPENCL_INLINE ArgBuffer<T, ArgType::SizeOf>
-make_sizearg(T &buf)
+size_arg(T &buf)
 {
     return ArgBuffer<T, ArgType::SizeOf>(&buf, 1);
 }
@@ -444,7 +444,7 @@ struct _ToArgBuffer<AT, T, enable_if_t<is_pyopencl_buf<T>::value &&
 
 template<typename Buff>
 using __pyopencl_buf_arg_type =
-    rm_ref_t<decltype(arg_buf<ArgType::Length>(std::declval<Buff&>()))>;
+    rm_ref_t<decltype(buf_arg<ArgType::Length>(std::declval<Buff&>()))>;
 
 template<typename Buff>
 class CLArg<Buff, enable_if_t<is_pyopencl_buf<Buff>::value> >
@@ -454,7 +454,7 @@ class CLArg<Buff, enable_if_t<is_pyopencl_buf<Buff>::value> >
 public:
     PYOPENCL_INLINE
     CLArg(Buff &buff) noexcept
-        : CLArg<BufType>(m_buff), m_buff(arg_buf<ArgType::Length>(buff))
+        : CLArg<BufType>(m_buff), m_buff(buf_arg<ArgType::Length>(buff))
     {}
     PYOPENCL_INLINE
     CLArg(CLArg<Buff> &&other) noexcept

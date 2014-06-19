@@ -39,7 +39,7 @@ public:
     {
         cl_context param_value;
         pyopencl_call_guarded(clGetCommandQueueInfo, this, CL_QUEUE_CONTEXT,
-                              make_sizearg(param_value), nullptr);
+                              size_arg(param_value), nullptr);
         return std::unique_ptr<context>(
             new context(param_value, /*retain*/ true));
     }
@@ -50,7 +50,7 @@ public:
     {
         cl_command_queue_properties old_prop;
         pyopencl_call_guarded(clSetCommandQueueProperty, this, prop,
-                              cast_bool(enable), arg_buf(old_prop));
+                              cast_bool(enable), buf_arg(old_prop));
         return old_prop;
     }
 #endif

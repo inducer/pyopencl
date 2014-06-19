@@ -90,8 +90,7 @@ kernel__set_arg_null(clobj_t _knl, cl_uint arg_index)
     auto knl = static_cast<kernel*>(_knl);
     return c_handle_error([&] {
             const cl_mem m = 0;
-            pyopencl_call_guarded(clSetKernelArg, knl,
-                                  arg_index, make_sizearg(m));
+            pyopencl_call_guarded(clSetKernelArg, knl, arg_index, size_arg(m));
         });
 }
 
@@ -102,7 +101,7 @@ kernel__set_arg_mem(clobj_t _knl, cl_uint arg_index, clobj_t _mem)
     auto mem = static_cast<memory_object*>(_mem);
     return c_handle_error([&] {
             pyopencl_call_guarded(clSetKernelArg, knl, arg_index,
-                                  make_sizearg(mem->data()));
+                                  size_arg(mem->data()));
         });
 }
 
@@ -113,7 +112,7 @@ kernel__set_arg_sampler(clobj_t _knl, cl_uint arg_index, clobj_t _samp)
     auto samp = static_cast<sampler*>(_samp);
     return c_handle_error([&] {
             pyopencl_call_guarded(clSetKernelArg, knl, arg_index,
-                                  make_sizearg(samp->data()));
+                                  size_arg(samp->data()));
         });
 }
 

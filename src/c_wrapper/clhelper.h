@@ -136,7 +136,7 @@ get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
 {
     typename CLObj::cl_type param_value;
     call_guarded(func, name, args..., sizeof(param_value),
-                 arg_buf(param_value), nullptr);
+                 buf_arg(param_value), nullptr);
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = CLObj::class_id;
@@ -178,7 +178,7 @@ get_int_info(cl_int (*func)(ArgTypes...), const char *name,
 {
     pyopencl_buf<T> param_value;
     call_guarded(func, name, args..., sizeof(T),
-                 arg_buf(*param_value.get()), nullptr);
+                 buf_arg(*param_value.get()), nullptr);
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = CLASS_NONE;
