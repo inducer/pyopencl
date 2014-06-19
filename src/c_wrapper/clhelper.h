@@ -80,9 +80,9 @@ get_vec_info(cl_int (*func)(ArgTypes...), const char *name,
              ArgTypes2&&... args)
 {
     size_t size = 0;
-    call_guarded(func, name, args..., 0, nullptr, &size);
+    call_guarded(func, name, args..., 0, nullptr, buf_arg(size));
     pyopencl_buf<T> buf(size / sizeof(T));
-    call_guarded(func, name, args..., size, buf.get(), &size);
+    call_guarded(func, name, args..., size_arg(buf), buf_arg(size));
     return buf;
 }
 #define pyopencl_get_vec_info(type, what, args...)                      \
@@ -135,8 +135,7 @@ get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
                 ArgTypes2&&... args)
 {
     typename CLObj::cl_type param_value;
-    call_guarded(func, name, args..., sizeof(param_value),
-                 buf_arg(param_value), nullptr);
+    call_guarded(func, name, args..., size_arg(param_value), nullptr);
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = CLObj::class_id;
@@ -157,10 +156,10 @@ PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 get_str_info(cl_int (*func)(ArgTypes...), const char *name,
              ArgTypes2&&... args)
 {
-    size_t param_value_size;
-    call_guarded(func, name, args..., 0, nullptr, &param_value_size);
-    pyopencl_buf<char> param_value(param_value_size);
-    call_guarded(func, name, args..., param_value, &param_value_size);
+    size_t size;
+    call_guarded(func, name, args..., 0, nullptr, buf_arg(size));
+    pyopencl_buf<char> param_value(size);
+    call_guarded(func, name, args..., param_value, buf_arg(size));
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = CLASS_NONE;
@@ -176,14 +175,13 @@ PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 get_int_info(cl_int (*func)(ArgTypes...), const char *name,
              const char *tpname, ArgTypes2&&... args)
 {
-    pyopencl_buf<T> param_value;
-    call_guarded(func, name, args..., sizeof(T),
-                 buf_arg(*param_value.get()), nullptr);
+    T value;
+    call_guarded(func, name, args..., size_arg(value), nullptr);
     generic_info info;
     info.dontfree = 0;
     info.opaque_class = CLASS_NONE;
     info.type = tpname;
-    info.value = (void*)param_value.release();
+    info.value = cl_memdup(&value);
     return info;
 }
 #define pyopencl_get_int_info(type, what, args...)                      \

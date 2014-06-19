@@ -29,6 +29,23 @@ tostring(const T& v)
 
 namespace pyopencl {
 
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE void*
+cl_memdup(const void *p, size_t size)
+{
+    void *res = malloc(size);
+    memcpy(res, p, size);
+    return res;
+}
+
+template<typename T>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE T*
+cl_memdup(const T *p)
+{
+    // Not supported by libstdc++ yet...
+    // static_assert(std::is_trivially_copy_constructible<T>::value);
+    return static_cast<T*>(cl_memdup(static_cast<const void*>(p), sizeof(T)));
+}
+
 enum class ArgType {
     None,
     SizeOf,
@@ -206,8 +223,7 @@ struct _ToArgBuffer {
 
 template<ArgType AT=ArgType::None, typename T>
 static PYOPENCL_INLINE auto
-buf_arg(T &&buf)
-    -> decltype(_ToArgBuffer<AT, T>::convert(std::forward<T>(buf)))
+buf_arg(T &&buf) -> decltype(_ToArgBuffer<AT, T>::convert(std::forward<T>(buf)))
 {
     return _ToArgBuffer<AT, T>::convert(std::forward<T>(buf));
 }
@@ -220,10 +236,10 @@ buf_arg(T *buf, size_t l)
 }
 
 template<typename T>
-static PYOPENCL_INLINE ArgBuffer<T, ArgType::SizeOf>
-size_arg(T &buf)
+static PYOPENCL_INLINE auto
+size_arg(T &&buf) -> decltype(buf_arg<ArgType::SizeOf>(std::forward<T>(buf)))
 {
-    return ArgBuffer<T, ArgType::SizeOf>(&buf, 1);
+    return buf_arg<ArgType::SizeOf>(std::forward<T>(buf));
 }
 
 template<typename Buff, class = void>
