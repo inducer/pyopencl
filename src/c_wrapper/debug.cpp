@@ -7,9 +7,33 @@ namespace pyopencl {
 void
 dbg_print_str(std::ostream &stm, const char *str, size_t len)
 {
-    // TODO escape
     stm << '"';
-    stm.write(str, len);
+    for (size_t i = 0;i < len;i++) {
+        char escaped = 0;
+#define escape_char(in, out)                    \
+        case in:                                \
+            escaped = out;                      \
+            break
+        switch (str[i]) {
+            escape_char('\'', '\'');
+            escape_char('\"', '\"');
+            escape_char('\?', '\?');
+            escape_char('\\', '\\');
+            escape_char('\0', '0');
+            escape_char('\a', 'a');
+            escape_char('\b', 'b');
+            escape_char('\f', 'f');
+            escape_char('\r', 'r');
+            escape_char('\v', 'v');
+        default:
+            break;
+        }
+        if (escaped) {
+            stm << '\\' << escaped;
+        } else {
+            stm << str[i];
+        }
+    }
     stm << '"';
 }
 
