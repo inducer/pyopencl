@@ -1,5 +1,6 @@
 #include "wrap_cl.h"
-#include "utils.h"
+#include "function.h"
+#include <string.h>
 
 #ifndef __PYOPENCL_DEBUG_H
 #define __PYOPENCL_DEBUG_H
@@ -14,6 +15,13 @@ extern bool debug_enabled;
 #endif
 
 #define DEBUG_ON (PYOPENCL_EXPECT(debug_enabled, DEFAULT_DEBUG))
+
+void dbg_print_str(std::ostream&, const char*, size_t);
+static PYOPENCL_INLINE void
+dbg_print_str(std::ostream &stm, const char *str)
+{
+    return dbg_print_str(stm, str, strlen(str));
+}
 
 }
 

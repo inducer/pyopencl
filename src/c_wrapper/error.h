@@ -1,7 +1,6 @@
 #include "wrap_cl.h"
 #include "pyhelper.h"
 #include "clobj.h"
-#include "debug.h"
 
 #include <string.h>
 #include <stdexcept>

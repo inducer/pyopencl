@@ -1,7 +1,17 @@
 #include "debug.h"
+#include <iostream>
 #include <stdlib.h>
 
 namespace pyopencl {
+
+void
+dbg_print_str(std::ostream &stm, const char *str, size_t len)
+{
+    // TODO escape
+    stm << '"';
+    stm.write(str, len);
+    stm << '"';
+}
 
 static PYOPENCL_INLINE bool
 _get_debug_env()

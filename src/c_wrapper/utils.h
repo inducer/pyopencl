@@ -1,5 +1,6 @@
 #include "wrap_cl.h"
 #include "function.h"
+#include "debug.h"
 
 #include <string>
 #include <sstream>
@@ -83,10 +84,7 @@ template<>
 PYOPENCL_INLINE void
 _print_buf_content<char>(std::ostream &stm, const char *p, size_t len)
 {
-    // TODO escape
-    stm << '"';
-    stm.write(p, len);
-    stm << '"';
+    dbg_print_str(stm, p, len);
 }
 
 template<typename T>
@@ -164,7 +162,7 @@ struct CLGenericArgPrinter<
     static PYOPENCL_INLINE void
     print(std::ostream &stm, const char *str)
     {
-        _print_buf_content<char>(stm, str, strlen(str));
+        dbg_print_str(stm, str);
     }
 };
 
