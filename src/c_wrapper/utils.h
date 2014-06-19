@@ -74,6 +74,7 @@ template<>
 PYOPENCL_INLINE void
 _print_buf_content<char>(std::ostream &stm, const char *p, size_t len)
 {
+    // TODO escape
     stm << '"';
     stm.write(p, len);
     stm << '"';
@@ -89,8 +90,11 @@ print_buf(std::ostream &stm, const T *p, size_t len,
         stm << "*(" << (const void*)p << "): ";
         _print_buf_content(stm, p, len);
     } else {
+        bool need_quote = content || arg_type != ArgType::None;
         if (content) {
             _print_buf_content(stm, p, len);
+        }
+        if (need_quote) {
             stm << " <";
         }
         switch (arg_type) {
@@ -104,7 +108,7 @@ print_buf(std::ostream &stm, const T *p, size_t len,
             break;
         }
         stm << (const void*)p;
-        if (content) {
+        if (need_quote) {
             stm << ">";
         }
     }
@@ -138,7 +142,7 @@ extern template void print_buf<cl_image_format>(std::ostream&,
 template<typename T, class = void>
 struct CLGenericArgPrinter {
     static PYOPENCL_INLINE void
-    print(std::ostream &stm, T &arg, bool)
+    print(std::ostream &stm, T &arg)
     {
         stm << arg;
     }
@@ -147,21 +151,27 @@ struct CLGenericArgPrinter {
 template<>
 struct CLGenericArgPrinter<std::nullptr_t, void> {
     static PYOPENCL_INLINE void
-    print(std::ostream &stm, std::nullptr_t&, bool)
+    print(std::ostream &stm, std::nullptr_t&)
     {
         stm << (void*)nullptr;
     }
 };
 
-template<typename T, class = void>
-struct CLGenericArgOut : std::false_type {};
+template<typename T>
+struct CLGenericArgPrinter<T, enable_if_t<std::is_same<const char*, T>::value ||
+                                          std::is_same<char*, T>::value> > {
+    static PYOPENCL_INLINE void
+    print(std::ostream &stm, const char *str)
+    {
+        _print_buf_content<char>(stm, str, strlen(str));
+    }
+};
 
 template<typename T, class = void>
 class CLArg {
 private:
     T &m_arg;
 public:
-    constexpr static bool is_out = CLGenericArgOut<T>::value;
     CLArg(T &arg) noexcept
         : m_arg(arg)
     {}
@@ -174,9 +184,9 @@ public:
         return m_arg;
     }
     PYOPENCL_INLINE void
-    print(std::ostream &stm, bool out=false)
+    print(std::ostream &stm)
     {
-        CLGenericArgPrinter<T>::print(stm, m_arg, out);
+        CLGenericArgPrinter<T>::print(stm, m_arg);
     }
 };
 
