@@ -50,7 +50,7 @@ public:
     {
         cl_command_queue_properties old_prop;
         pyopencl_call_guarded(clSetCommandQueueProperty, this, prop,
-                              cast_bool(enable), buf_arg(old_prop));
+                              enable, buf_arg(old_prop));
         return old_prop;
     }
 #endif

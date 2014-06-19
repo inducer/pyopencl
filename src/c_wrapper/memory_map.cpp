@@ -98,7 +98,7 @@ enqueue_map_image(clobj_t *evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
     return c_handle_error([&] {
             void *res = retry_mem_error([&] {
                     return pyopencl_call_guarded(
-                        clEnqueueMapImage, queue, img, cast_bool(block), flags,
+                        clEnqueueMapImage, queue, img, bool(block), flags,
                         origin, region, row_pitch, slice_pitch, wait_for,
                         event_out(evt));
                 });
@@ -118,7 +118,7 @@ enqueue_map_buffer(clobj_t *evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
     return c_handle_error([&] {
             void *res = retry_mem_error([&] {
                     return pyopencl_call_guarded(
-                        clEnqueueMapBuffer, queue, buf, cast_bool(block),
+                        clEnqueueMapBuffer, queue, buf, bool(block),
                         flags, offset, size, wait_for, event_out(evt));
                 });
             *map = convert_memory_map(*evt, queue, buf, res);

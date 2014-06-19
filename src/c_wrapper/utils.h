@@ -189,6 +189,23 @@ public:
     }
 };
 
+template<>
+class CLArg<bool> : public CLArg<cl_bool> {
+    cl_bool m_arg;
+public:
+    CLArg(bool arg) noexcept
+        : CLArg<cl_bool>(m_arg), m_arg(arg ? CL_TRUE : CL_FALSE)
+    {}
+    CLArg(CLArg<bool> &&other) noexcept
+        : CLArg<bool>(bool(other.m_arg))
+    {}
+    PYOPENCL_INLINE void
+    print(std::ostream &stm)
+    {
+        stm << (m_arg ? "true" : "false");
+    }
+};
+
 template<typename T, ArgType AT=ArgType::None>
 class ArgBuffer {
 private:
@@ -487,13 +504,6 @@ public:
         : CLArg<BufType>(m_buff), m_buff(std::move(other.m_buff))
     {}
 };
-
-template<typename T>
-static PYOPENCL_INLINE cl_bool
-cast_bool(const T &v)
-{
-    return v ? CL_TRUE : CL_FALSE;
-}
 
 // FIXME
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE char*

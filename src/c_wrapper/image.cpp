@@ -195,7 +195,7 @@ enqueue_read_image(clobj_t *evt, clobj_t _queue, clobj_t _mem,
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueReadImage, queue, img,
-                        cast_bool(is_blocking), origin, region, row_pitch,
+                        bool(is_blocking), origin, region, row_pitch,
                         slice_pitch, buffer, wait_for,
                         nanny_event_out(evt, pyobj));
                 });
@@ -242,7 +242,7 @@ enqueue_write_image(clobj_t *evt, clobj_t _queue, clobj_t _mem,
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueWriteImage, queue, img,
-                        cast_bool(is_blocking), origin, region, row_pitch,
+                        bool(is_blocking), origin, region, row_pitch,
                         slice_pitch, buffer, wait_for,
                         nanny_event_out(evt, pyobj));
                 });

@@ -89,7 +89,7 @@ enqueue_read_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem,
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueReadBuffer, queue, mem,
-                        cast_bool(is_blocking), device_offset, size,
+                        bool(is_blocking), device_offset, size,
                         buffer, wait_for, nanny_event_out(evt, pyobj));
                 });
         });
@@ -108,7 +108,7 @@ enqueue_write_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem,
             retry_mem_error([&] {
                     pyopencl_call_guarded(
                         clEnqueueWriteBuffer, queue, mem,
-                        cast_bool(is_blocking), device_offset, size, buffer,
+                        bool(is_blocking), device_offset, size, buffer,
                         wait_for, nanny_event_out(evt, pyobj));
                 });
         });
