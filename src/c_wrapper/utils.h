@@ -137,9 +137,7 @@ struct CLGenericArgPrinter<std::nullptr_t, void> {
 };
 
 template<typename T, class = void>
-struct CLGenericArgOut {
-    constexpr static bool value = false;
-};
+struct CLGenericArgOut : std::false_type {};
 
 template<typename T, class = void>
 class CLArg {
@@ -411,16 +409,12 @@ template<typename T>
 using pyopencl_buf_ele_t = typename rm_ref_t<T>::element_type;
 
 template<typename T, class = void>
-struct is_pyopencl_buf {
-    constexpr static bool value = false;
-};
+struct is_pyopencl_buf : std::false_type {};
 
 template<typename T>
 struct is_pyopencl_buf<
     T, enable_if_t<std::is_base_of<pyopencl_buf<pyopencl_buf_ele_t<T> >,
-                                   rm_ref_t<T> >::value> > {
-    constexpr static bool value = true;
-};
+                                   rm_ref_t<T> >::value> > : std::true_type {};
 
 template<ArgType AT, typename T>
 struct _ToArgBuffer<AT, T, enable_if_t<is_pyopencl_buf<T>::value &&

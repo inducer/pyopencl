@@ -98,6 +98,12 @@ struct __CLPost<T, decltype((void)(std::declval<T>().post()))> {
 };
 
 template<typename T, class = void>
+struct is_out_arg : std::false_type {};
+
+template<typename T>
+struct is_out_arg<T, enable_if_t<rm_ref_t<T>::is_out> > : std::true_type {};
+
+template<typename T, class = void>
 struct __CLPrintOut {
     static PYOPENCL_INLINE void
     call(T, std::ostream&)
@@ -106,7 +112,7 @@ struct __CLPrintOut {
 };
 
 template<typename T>
-struct __CLPrintOut<T, enable_if_t<rm_ref_t<T>::is_out> > {
+struct __CLPrintOut<T, enable_if_t<is_out_arg<T>::value> > {
     static inline void
     call(T v, std::ostream &stm)
     {
@@ -124,6 +130,9 @@ struct __CLPrint {
             stm << ", ";
         } else {
             first = false;
+        }
+        if (is_out_arg<T>::value) {
+            stm << "{out}";
         }
         v.print(stm);
     }
@@ -162,7 +171,7 @@ class CLArgPack : public ArgPack<CLArg, Types...> {
         std::cerr << name << "(";
         __CLCall<__CLPrint, sizeof...(Types) - 1,
                  decltype(*that)>::call(*that, std::cerr, true);
-        std::cerr << ") = (" << res;
+        std::cerr << ") = (ret: " << res;
         __CLCall<__CLPrintOut, sizeof...(Types) - 1,
                  decltype(*that)>::call(*that, std::cerr);
         std::cerr << ")" << std::endl;
