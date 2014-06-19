@@ -197,11 +197,21 @@ public:
     }
 };
 
+template<ArgType AT, typename T, class = void>
+struct _ToArgBuffer {
+    static PYOPENCL_INLINE ArgBuffer<rm_ref_t<T>, AT>
+    convert(T &buf)
+    {
+        return ArgBuffer<rm_ref_t<T>, AT>(&buf, 1);
+    }
+};
+
 template<ArgType AT=ArgType::None, typename T>
-static PYOPENCL_INLINE ArgBuffer<T, AT>
-arg_buf(T &buf)
+static PYOPENCL_INLINE auto
+arg_buf(T &&buf)
+    -> decltype(_ToArgBuffer<AT, T>::convert(std::forward<T>(buf)))
 {
-    return ArgBuffer<T, AT>(&buf, 1);
+    return _ToArgBuffer<AT, T>::convert(std::forward<T>(buf));
 }
 
 template<ArgType AT=ArgType::None, typename T>
@@ -222,8 +232,8 @@ template<typename Buff, class = void>
 struct _ArgBufferConverter;
 
 template<typename Buff>
-struct _ArgBufferConverter<Buff, typename std::enable_if<
-                                     Buff::arg_type == ArgType::None>::type> {
+struct _ArgBufferConverter<Buff,
+                           enable_if_t<Buff::arg_type == ArgType::None> > {
     static PYOPENCL_INLINE typename Buff::type*
     convert(Buff &buff)
     {
@@ -232,8 +242,8 @@ struct _ArgBufferConverter<Buff, typename std::enable_if<
 };
 
 template<typename Buff>
-struct _ArgBufferConverter<Buff, typename std::enable_if<
-                                     Buff::arg_type == ArgType::SizeOf>::type> {
+struct _ArgBufferConverter<Buff,
+                           enable_if_t<Buff::arg_type == ArgType::SizeOf> > {
     static PYOPENCL_INLINE auto
     convert(Buff &buff)
         -> decltype(std::make_tuple(sizeof(typename Buff::type) * buff.len(),
@@ -245,8 +255,8 @@ struct _ArgBufferConverter<Buff, typename std::enable_if<
 };
 
 template<typename Buff>
-struct _ArgBufferConverter<Buff, typename std::enable_if<
-                                     Buff::arg_type == ArgType::Length>::type> {
+struct _ArgBufferConverter<Buff,
+                           enable_if_t<Buff::arg_type == ArgType::Length> > {
     static PYOPENCL_INLINE auto
     convert(Buff &buff)
         -> decltype(std::make_tuple(buff.len(), buff.get()))
@@ -256,15 +266,13 @@ struct _ArgBufferConverter<Buff, typename std::enable_if<
 };
 
 template<typename Buff>
-class CLArg<Buff, typename std::enable_if<std::is_base_of<
-                                              ArgBuffer<typename Buff::type,
+class CLArg<Buff, enable_if_t<std::is_base_of<ArgBuffer<typename Buff::type,
                                                         Buff::arg_type>,
-                                              Buff>::value>::type> {
+                                              Buff>::value> > {
 private:
     Buff &m_buff;
 public:
-    constexpr static bool is_out = !(std::is_const<Buff>::value ||
-                                     std::is_const<typename Buff::type>::value);
+    constexpr static bool is_out = !std::is_const<typename Buff::type>::value;
     CLArg(Buff &buff) noexcept
         : m_buff(buff)
     {}
@@ -306,8 +314,7 @@ struct OutArg {
 };
 
 template<typename T>
-class CLArg<T, typename std::enable_if<
-                      std::is_base_of<OutArg, T>::value>::type> {
+class CLArg<T, enable_if_t<std::is_base_of<OutArg, T>::value> > {
 private:
     bool m_converted;
     bool m_need_cleanup;
@@ -412,35 +419,36 @@ public:
     }
 };
 
+template<typename T, class = void>
+struct is_pyopencl_buf {
+    constexpr static bool value = false;
+};
+
+template<typename T>
+struct is_pyopencl_buf<
+    T, enable_if_t<std::is_base_of<pyopencl_buf<typename T::element_type>,
+                                   T>::value> > {
+    constexpr static bool value = true;
+};
+
 template<typename Buff>
-class CLArg<Buff, typename std::enable_if<
-                      std::is_base_of<
-                          pyopencl_buf<typename Buff::element_type>,
-                          Buff>::value>::type> {
-private:
-    Buff &m_buff;
+using __pyopencl_buf_arg_type =
+    rm_ref_t<decltype(std::declval<Buff>().to_arg())>;
+
+template<typename Buff>
+class CLArg<Buff, enable_if_t<is_pyopencl_buf<Buff>::value> >
+    : public CLArg<__pyopencl_buf_arg_type<Buff> > {
+    typedef __pyopencl_buf_arg_type<Buff> BufType;
+    BufType m_buff;
 public:
-    constexpr static bool is_out =
-        !(std::is_const<Buff>::value ||
-          std::is_const<typename Buff::element_type>::value);
+    PYOPENCL_INLINE
     CLArg(Buff &buff) noexcept
-        : m_buff(buff)
+        : CLArg<BufType>(m_buff), m_buff(buff.to_arg())
     {}
+    PYOPENCL_INLINE
     CLArg(CLArg<Buff> &&other) noexcept
-        : m_buff(other.m_buff)
+        : CLArg<BufType>(m_buff), m_buff(std::move(other.m_buff))
     {}
-    PYOPENCL_INLINE auto
-    convert() const noexcept
-        -> decltype(std::make_tuple(m_buff.len(), m_buff.get()))
-    {
-        return std::make_tuple(m_buff.len(), m_buff.get());
-    }
-    PYOPENCL_INLINE void
-    print(std::ostream &stm, bool out=false)
-    {
-        print_buf(stm, m_buff.get(), m_buff.len(), ArgType::Length,
-                  out || !is_out, out);
-    }
 };
 
 template<typename T>

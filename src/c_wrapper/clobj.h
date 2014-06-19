@@ -53,10 +53,8 @@ print_clobj(std::ostream &stm, const CLObj *obj)
 }
 
 template<typename CLObj>
-class CLArg<CLObj,
-            typename std::enable_if<
-                std::is_base_of<clobj<typename CLObj::cl_type>,
-                                CLObj>::value>::type> {
+class CLArg<CLObj, enable_if_t<std::is_base_of<clobj<typename CLObj::cl_type>,
+                                               CLObj>::value> > {
 private:
     CLObj &m_obj;
 public:
@@ -76,10 +74,8 @@ public:
 };
 
 template<typename CLObj>
-class CLArg<CLObj*,
-            typename std::enable_if<
-                std::is_base_of<clobj<typename CLObj::cl_type>,
-                                CLObj>::value>::type> {
+class CLArg<CLObj*, enable_if_t<std::is_base_of<clobj<typename CLObj::cl_type>,
+                                                CLObj>::value> > {
 private:
     CLObj *m_obj;
 public:

@@ -12,6 +12,11 @@
 
 namespace pyopencl {
 
+template<typename T>
+using rm_ref_t = typename std::remove_reference<T>::type;
+template<bool B, class T = void>
+using enable_if_t = typename std::enable_if<B, T>::type;
+
 template<int...>
 struct seq {
 };
@@ -44,11 +49,8 @@ call_tuple(Function &&func, T &&args)
                       typename gens<std::tuple_size<T>::value>::type(), args);
 }
 
-template<typename T>
-using _ArgType = typename std::remove_reference<T>::type;
-
 template<template<typename...> class Convert, typename... Types>
-using _ArgPackBase = std::tuple<Convert<_ArgType<Types> >...>;
+using _ArgPackBase = std::tuple<Convert<rm_ref_t<Types> >...>;
 
 template<template<typename...> class Convert, typename... Types>
 class ArgPack : public _ArgPackBase<Convert, Types...> {
@@ -69,7 +71,7 @@ private:
     }
 
     template<typename T>
-    using ArgConvert = Convert<_ArgType<T> >;
+    using ArgConvert = Convert<rm_ref_t<T> >;
     template<template<typename...> class Getter, int... S>
     PYOPENCL_INLINE auto
     __get(seq<S...>)
@@ -84,7 +86,7 @@ private:
 public:
     template<typename... Types2>
     ArgPack(Types2&&... arg_orig)
-        : tuple_base(ArgConvert<_ArgType<Types> >(arg_orig)...)
+        : tuple_base(ArgConvert<rm_ref_t<Types> >(arg_orig)...)
     {
     }
     ArgPack(ArgPack<Convert, Types...> &&other)
@@ -109,11 +111,10 @@ public:
 };
 
 template<template<typename...> class Convert, typename... Types>
-static PYOPENCL_INLINE ArgPack<Convert, _ArgType<Types>...>
+static PYOPENCL_INLINE ArgPack<Convert, rm_ref_t<Types>...>
 make_argpack(Types&&... args)
 {
-    return ArgPack<Convert, _ArgType<Types>...>(
-        std::forward<Types>(args)...);
+    return ArgPack<Convert, rm_ref_t<Types>...>(std::forward<Types>(args)...);
 }
 
 }

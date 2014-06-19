@@ -106,8 +106,7 @@ struct __CLPrintOut {
 };
 
 template<typename T>
-struct __CLPrintOut<T, typename std::enable_if<
-                           std::remove_reference<T>::type::is_out>::type> {
+struct __CLPrintOut<T, enable_if_t<rm_ref_t<T>::is_out> > {
     static inline void
     call(T v, std::ostream &stm)
     {
@@ -195,11 +194,10 @@ public:
 };
 
 template<typename... Types>
-static PYOPENCL_INLINE CLArgPack<typename std::remove_reference<Types>::type...>
+static PYOPENCL_INLINE CLArgPack<rm_ref_t<Types>...>
 make_clargpack(Types&&... args)
 {
-    return CLArgPack<typename std::remove_reference<Types>::type...>(
-        std::forward<Types>(args)...);
+    return CLArgPack<rm_ref_t<Types>...>(std::forward<Types>(args)...);
 }
 
 template<typename... ArgTypes2, typename... ArgTypes>
