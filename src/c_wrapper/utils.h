@@ -405,19 +405,10 @@ public:
         this->reset((T*)realloc((void*)this->release(),
                                 (len + 1) * sizeof(T)));
     }
-    template<ArgType AT=ArgType::Length>
-    PYOPENCL_INLINE ArgBuffer<T, AT>
-    to_arg()
-    {
-        return ArgBuffer<T, AT>(this->get(), m_len);
-    }
-    template<ArgType AT=ArgType::Length>
-    PYOPENCL_INLINE ArgBuffer<const T, AT>
-    to_arg() const
-    {
-        return ArgBuffer<const T, AT>(this->get(), m_len);
-    }
 };
+
+template<typename T>
+using pyopencl_buf_ele_t = typename rm_ref_t<T>::element_type;
 
 template<typename T, class = void>
 struct is_pyopencl_buf {
@@ -426,14 +417,34 @@ struct is_pyopencl_buf {
 
 template<typename T>
 struct is_pyopencl_buf<
-    T, enable_if_t<std::is_base_of<pyopencl_buf<typename T::element_type>,
-                                   T>::value> > {
+    T, enable_if_t<std::is_base_of<pyopencl_buf<pyopencl_buf_ele_t<T> >,
+                                   rm_ref_t<T> >::value> > {
     constexpr static bool value = true;
+};
+
+template<ArgType AT, typename T>
+struct _ToArgBuffer<AT, T, enable_if_t<is_pyopencl_buf<T>::value &&
+                                       std::is_const<rm_ref_t<T> >::value> > {
+    static PYOPENCL_INLINE ArgBuffer<const pyopencl_buf_ele_t<T>, AT>
+    convert(T &&buf)
+    {
+        return ArgBuffer<const pyopencl_buf_ele_t<T>, AT>(buf.get(), buf.len());
+    }
+};
+
+template<ArgType AT, typename T>
+struct _ToArgBuffer<AT, T, enable_if_t<is_pyopencl_buf<T>::value &&
+                                       !std::is_const<rm_ref_t<T> >::value> > {
+    static PYOPENCL_INLINE ArgBuffer<pyopencl_buf_ele_t<T>, AT>
+    convert(T &&buf)
+    {
+        return ArgBuffer<pyopencl_buf_ele_t<T>, AT>(buf.get(), buf.len());
+    }
 };
 
 template<typename Buff>
 using __pyopencl_buf_arg_type =
-    rm_ref_t<decltype(std::declval<Buff>().to_arg())>;
+    rm_ref_t<decltype(arg_buf<ArgType::Length>(std::declval<Buff&>()))>;
 
 template<typename Buff>
 class CLArg<Buff, enable_if_t<is_pyopencl_buf<Buff>::value> >
@@ -443,7 +454,7 @@ class CLArg<Buff, enable_if_t<is_pyopencl_buf<Buff>::value> >
 public:
     PYOPENCL_INLINE
     CLArg(Buff &buff) noexcept
-        : CLArg<BufType>(m_buff), m_buff(buff.to_arg())
+        : CLArg<BufType>(m_buff), m_buff(arg_buf<ArgType::Length>(buff))
     {}
     PYOPENCL_INLINE
     CLArg(CLArg<Buff> &&other) noexcept
