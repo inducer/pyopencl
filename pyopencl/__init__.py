@@ -878,10 +878,10 @@ enqueue_write_buffer = _mark_copy_deprecated(_cl._enqueue_write_buffer)
 enqueue_copy_buffer = _mark_copy_deprecated(_cl._enqueue_copy_buffer)
 
 
-# if _cl.get_cl_header_version() >= (1, 1):
-#     enqueue_read_buffer_rect = _mark_copy_deprecated(_cl._enqueue_read_buffer_rect)
-#     enqueue_write_buffer_rect = _mark_copy_deprecated(_cl._enqueue_write_buffer_rect)
-#     enqueue_copy_buffer_rect = _mark_copy_deprecated(_cl._enqueue_copy_buffer_rect)
+if _cl.get_cl_header_version() >= (1, 1):
+    enqueue_read_buffer_rect = _mark_copy_deprecated(_cl._enqueue_read_buffer_rect)
+    enqueue_write_buffer_rect = _mark_copy_deprecated(_cl._enqueue_write_buffer_rect)
+    enqueue_copy_buffer_rect = _mark_copy_deprecated(_cl._enqueue_copy_buffer_rect)
 
 
 def enqueue_copy(queue, dest, src, **kwargs):

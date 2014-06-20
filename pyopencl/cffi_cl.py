@@ -868,9 +868,6 @@ class NannyEvent(Event):
 #   enqueue_migrate_mem_objects
 #   enqueue_migrate_mem_objects_ext
 #   create_sub_buffer
-#   enqueue_read_buffer_rect
-#   enqueue_write_buffer_rect
-#   enqueue_copy_buffer_rect
 
 # }}}
 
@@ -985,16 +982,6 @@ def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
     return NannyEvent._create(ptr_event[0])
 
 
-def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
-        dst_offset=0, wait_for=None):
-    ptr_event = _ffi.new('clobj_t*')
-    c_wait_for, num_wait_for = _clobj_list(wait_for)
-    _handle_error(_lib.enqueue_copy_buffer(
-        ptr_event, queue.ptr, src.ptr, dst.ptr, byte_count, src_offset,
-        dst_offset, c_wait_for, num_wait_for))
-    return Event._create(ptr_event[0])
-
-
 def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
         wait_for=None, is_blocking=True):
     c_buf, size, c_ref = _c_buffer_from_obj(hostbuf, retain=True)
@@ -1005,6 +992,111 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
         c_wait_for, num_wait_for, bool(is_blocking),
         NannyEvent._handle(hostbuf, c_ref)))
     return NannyEvent._create(ptr_event[0])
+
+
+def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
+        dst_offset=0, wait_for=None):
+    ptr_event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_copy_buffer(
+        ptr_event, queue.ptr, src.ptr, dst.ptr, byte_count, src_offset,
+        dst_offset, c_wait_for, num_wait_for))
+    return Event._create(ptr_event[0])
+
+
+def _enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin,
+                              host_origin, region, buffer_pitches=None,
+                              host_pitches=None wait_for=None,
+                              is_blocking=True):
+    buffer_origin = tuple(buffer_origin)
+    host_origin = tuple(host_origin)
+    region = tuple(region)
+    if buffer_pitches is None:
+        buffer_pitches = _ffi.NULL
+        buffer_pitches_l = 0
+    if host_pitches is None:
+        host_pitches = _ffi.NULL
+        host_pitches_l = 0
+    buffer_origin_l = len(buffer_origin)
+    host_origin_l = len(host_origin)
+    region_l = len(region)
+    if (buffer_origin_l > 3 or host_origin_l > 3 or region_l > 3 or
+        buffer_pitches_l > 2 or host_pitches_l > 2):
+        raise RuntimeError("(buffer/host)_origin, (buffer/host)_pitches or "
+                           "region has too many components",
+                           status_code.INVALID_VALUE,
+                           "enqueue_read_buffer_rect")
+    c_buf, size, _ = _c_buffer_from_obj(hostbuf, writable=True)
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_read_buffer_rect(
+        _event, queue.ptr, mem.ptr, c_buf, buffer_origin, buffer_origin_l,
+        host_origin, host_origin_l, region, region_l, buffer_pitches,
+        buffer_pitches_l, host_pitches, host_pitches_l, c_wait_for,
+        num_wait_for, bool(is_blocking), NannyEvent._handle(hostbuf)))
+    return NannyEvent._create(_event[0])
+
+
+def _enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin,
+                               host_origin, region, buffer_pitches=None,
+                               host_pitches=None wait_for=None,
+                               is_blocking=True):
+    buffer_origin = tuple(buffer_origin)
+    host_origin = tuple(host_origin)
+    region = tuple(region)
+    if buffer_pitches is None:
+        buffer_pitches = _ffi.NULL
+        buffer_pitches_l = 0
+    if host_pitches is None:
+        host_pitches = _ffi.NULL
+        host_pitches_l = 0
+    buffer_origin_l = len(buffer_origin)
+    host_origin_l = len(host_origin)
+    region_l = len(region)
+    if (buffer_origin_l > 3 or host_origin_l > 3 or region_l > 3 or
+        buffer_pitches_l > 2 or host_pitches_l > 2):
+        raise RuntimeError("(buffer/host)_origin, (buffer/host)_pitches or "
+                           "region has too many components",
+                           status_code.INVALID_VALUE,
+                           "enqueue_write_buffer_rect")
+    c_buf, size, c_ref = _c_buffer_from_obj(hostbuf, retain=True)
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_write_buffer_rect(
+        _event, queue.ptr, mem.ptr, c_buf, buffer_origin, buffer_origin_l,
+        host_origin, host_origin_l, region, region_l, buffer_pitches,
+        buffer_pitches_l, host_pitches, host_pitches_l, c_wait_for,
+        num_wait_for, bool(is_blocking), NannyEvent._handle(hostbuf, c_ref)))
+    return NannyEvent._create(_event[0])
+
+
+def _enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region,
+                              src_pitches=None, dst_pitches=None wait_for=None):
+    src_origin = tuple(src_origin)
+    dst_origin = tuple(dst_origin)
+    region = tuple(region)
+    if src_pitches is None:
+        src_pitches = _ffi.NULL
+        src_pitches_l = 0
+    if dst_pitches is None:
+        dst_pitches = _ffi.NULL
+        dst_pitches_l = 0
+    src_origin_l = len(src_origin)
+    dst_origin_l = len(dst_origin)
+    region_l = len(region)
+    if (src_origin_l > 3 or dst_origin_l > 3 or region_l > 3 or
+        src_pitches_l > 2 or dst_pitches_l > 2):
+        raise RuntimeError("(src/dst)_origin, (src/dst)_pitches or "
+                           "region has too many components",
+                           status_code.INVALID_VALUE,
+                           "enqueue_copy_buffer_rect")
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_copy_buffer_rect(
+        _event, queue.ptr, src.ptr, dst.ptr, src_origin, src_origin_l,
+        dst_origin, dst_origin_l, region, region_l, src_pitches,
+        src_pitches_l, dst_pitches, dst_pitches_l, c_wait_for, num_wait_for))
+    return Event._create(_event[0])
 
 # PyPy bug report: https://bitbucket.org/pypy/pypy/issue/1777/unable-to-create-proper-numpy-array-from
 def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
