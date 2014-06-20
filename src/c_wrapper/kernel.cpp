@@ -147,13 +147,10 @@ enqueue_nd_range_kernel(clobj_t *evt, clobj_t _queue, clobj_t _knl,
     auto queue = static_cast<command_queue*>(_queue);
     auto knl = static_cast<kernel*>(_knl);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueNDRangeKernel, queue, knl,
-                        work_dim, global_work_offset, global_work_size,
-                        local_work_size, wait_for, event_out(evt));
-                });
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(clEnqueueNDRangeKernel, queue, knl, work_dim,
+                                  global_work_offset, global_work_size,
+                                  local_work_size, wait_for, event_out(evt));
         });
 }
 
@@ -164,10 +161,8 @@ enqueue_task(clobj_t *evt, clobj_t _queue, clobj_t _knl,
     auto queue = static_cast<command_queue*>(_queue);
     auto knl = static_cast<kernel*>(_knl);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueTask, queue, knl, wait_for, event_out(evt));
-                });
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(clEnqueueTask, queue, knl, wait_for,
+                                  event_out(evt));
         });
 }

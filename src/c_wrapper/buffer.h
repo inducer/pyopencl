@@ -17,7 +17,7 @@ public:
     {}
 
 #if PYOPENCL_CL_VERSION >= 0x1010
-    PYOPENCL_USE_RESULT buffer *get_sub_region(size_t origin, size_t size,
+    PYOPENCL_USE_RESULT buffer *get_sub_region(size_t orig, size_t size,
                                                cl_mem_flags flags) const;
 #endif
 };

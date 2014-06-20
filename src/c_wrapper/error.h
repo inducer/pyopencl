@@ -256,7 +256,7 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
 #define pyopencl_call_guarded_cleanup(func, args...)    \
     pyopencl::call_guarded_cleanup(func, #func, args)
 
-PYOPENCL_USE_RESULT static PYOPENCL_INLINE ::error*
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE error*
 c_handle_error(std::function<void()> func) noexcept
 {
     try {
@@ -290,6 +290,12 @@ retry_mem_error(Func func) -> decltype(func())
         }
     }
     return func();
+}
+
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE error*
+c_handle_retry_mem_error(std::function<void()> func) noexcept
+{
+    return c_handle_error([&] {retry_mem_error(func);});
 }
 
 // }}}

@@ -59,21 +59,21 @@ image::get_image_info(cl_image_info param) const
 //       command_queue &cq,
 //       memory_object_holder &src,
 //       memory_object_holder &dest,
-//       py::object py_origin,
-//       py::object py_region,
+//       py::object py_orig,
+//       py::object py_reg,
 //       size_t offset,
 //       py::object py_wait_for
 //       )
 //   {
 //     PYOPENCL_PARSE_WAIT_FOR;
-//     COPY_PY_COORD_TRIPLE(origin);
-//     COPY_PY_REGION_TRIPLE(region);
+//     COPY_PY_COORD_TRIPLE(orig);
+//     COPY_PY_REGION_TRIPLE(reg);
 
 //     cl_event evt;
 //     PYOPENCL_RETRY_IF_MEM_ERROR(
 //       PYOPENCL_CALL_GUARDED(clEnqueueCopyImageToBuffer, (
 //             cq.data(), src.data(), dest.data(),
-//             origin, region, offset,
+//             orig, reg, offset,
 //             PYOPENCL_WAITLIST_ARGS, &evt
 //             ));
 //       );
@@ -86,20 +86,20 @@ image::get_image_info(cl_image_info param) const
 //       memory_object_holder &src,
 //       memory_object_holder &dest,
 //       size_t offset,
-//       py::object py_origin,
-//       py::object py_region,
+//       py::object py_orig,
+//       py::object py_reg,
 //       py::object py_wait_for
 //       )
 //   {
 //     PYOPENCL_PARSE_WAIT_FOR;
-//     COPY_PY_COORD_TRIPLE(origin);
-//     COPY_PY_REGION_TRIPLE(region);
+//     COPY_PY_COORD_TRIPLE(orig);
+//     COPY_PY_REGION_TRIPLE(reg);
 
 //     cl_event evt;
 //     PYOPENCL_RETRY_IF_MEM_ERROR(
 //       PYOPENCL_CALL_GUARDED(clEnqueueCopyBufferToImage, (
 //             cq.data(), src.data(), dest.data(),
-//             offset, origin, region,
+//             offset, orig, reg,
 //             PYOPENCL_WAITLIST_ARGS, &evt
 //             ));
 //       );
@@ -118,15 +118,12 @@ using namespace pyopencl;
 error*
 create_image_2d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
                 cl_image_format *fmt, size_t width, size_t height,
-                size_t pitch, void *buffer)
+                size_t pitch, void *buf)
 {
     auto ctx = static_cast<context*>(_ctx);
-    return c_handle_error([&] {
-            auto mem = retry_mem_error([&] {
-                    return pyopencl_call_guarded(
-                        clCreateImage2D, ctx, flags,
-                        fmt, width, height, pitch, buffer);
-                });
+    return c_handle_retry_mem_error([&] {
+            auto mem = pyopencl_call_guarded(clCreateImage2D, ctx, flags, fmt,
+                                             width, height, pitch, buf);
             *img = new_image(mem, fmt);
         });
 }
@@ -134,15 +131,13 @@ create_image_2d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
 error*
 create_image_3d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
                 cl_image_format *fmt, size_t width, size_t height,
-                size_t depth, size_t pitch_x, size_t pitch_y, void *buffer)
+                size_t depth, size_t pitch_x, size_t pitch_y, void *buf)
 {
     auto ctx = static_cast<context*>(_ctx);
-    return c_handle_error([&] {
-            auto mem = retry_mem_error([&] {
-                    return pyopencl_call_guarded(
-                        clCreateImage3D, ctx, flags, fmt, width,
-                        height, depth, pitch_x, pitch_y, buffer);
-                });
+    return c_handle_retry_mem_error([&] {
+            auto mem = pyopencl_call_guarded(clCreateImage3D, ctx, flags, fmt,
+                                             width, height, depth, pitch_x,
+                                             pitch_y, buf);
             *img = new_image(mem, fmt);
         });
 }
@@ -151,12 +146,12 @@ create_image_3d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
 
 error*
 create_image_from_desc(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
-                       cl_image_format *fmt, cl_image_desc *desc, void *buffer)
+                       cl_image_format *fmt, cl_image_desc *desc, void *buf)
 {
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
             auto mem = pyopencl_call_guarded(clCreateImage, ctx, flags, fmt,
-                                             desc, buffer);
+                                             desc, buf);
             *img = new_image(mem, fmt);
         });
 }
@@ -180,94 +175,80 @@ image__get_fill_type(clobj_t img)
 
 error*
 enqueue_read_image(clobj_t *evt, clobj_t _queue, clobj_t _mem,
-                   const size_t *_origin, size_t origin_l,
-                   const size_t *_region, size_t region_l, void *buffer,
+                   const size_t *_orig, size_t orig_l,
+                   const size_t *_reg, size_t reg_l, void *buf,
                    size_t row_pitch, size_t slice_pitch,
                    const clobj_t *_wait_for, uint32_t num_wait_for,
-                   int is_blocking, void *pyobj)
+                   int block, void *pyobj)
 {
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(_mem);
-    ConstBuffer<size_t, 3> origin(_origin, origin_l);
-    ConstBuffer<size_t, 3> region(_region, region_l, 1);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueReadImage, queue, img,
-                        bool(is_blocking), origin, region, row_pitch,
-                        slice_pitch, buffer, wait_for,
-                        nanny_event_out(evt, pyobj));
-                });
+    ConstBuffer<size_t, 3> orig(_orig, orig_l);
+    ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(clEnqueueReadImage, queue, img, bool(block),
+                                  orig, reg, row_pitch, slice_pitch, buf,
+                                  wait_for, nanny_event_out(evt, pyobj));
         });
 }
 
 error*
 enqueue_copy_image(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
-                   const size_t *_src_origin, size_t src_origin_l,
-                   const size_t *_dst_origin, size_t dst_origin_l,
-                   const size_t *_region, size_t region_l,
+                   const size_t *_src_orig, size_t src_orig_l,
+                   const size_t *_dst_orig, size_t dst_orig_l,
+                   const size_t *_reg, size_t reg_l,
                    const clobj_t *_wait_for, uint32_t num_wait_for)
 {
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto src = static_cast<image*>(_src);
     auto dst = static_cast<image*>(_dst);
-    ConstBuffer<size_t, 3> src_origin(_src_origin, src_origin_l);
-    ConstBuffer<size_t, 3> dst_origin(_dst_origin, dst_origin_l);
-    ConstBuffer<size_t, 3> region(_region, region_l, 1);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueCopyImage, queue, src, dst, src_origin,
-                        dst_origin, region, wait_for, event_out(evt));
-                });
+    ConstBuffer<size_t, 3> src_orig(_src_orig, src_orig_l);
+    ConstBuffer<size_t, 3> dst_orig(_dst_orig, dst_orig_l);
+    ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(clEnqueueCopyImage, queue, src, dst, src_orig,
+                                  dst_orig, reg, wait_for, event_out(evt));
         });
 }
 
 error*
 enqueue_write_image(clobj_t *evt, clobj_t _queue, clobj_t _mem,
-                    const size_t *_origin, size_t origin_l,
-                    const size_t *_region, size_t region_l,
-                    const void *buffer, size_t row_pitch, size_t slice_pitch,
+                    const size_t *_orig, size_t orig_l,
+                    const size_t *_reg, size_t reg_l,
+                    const void *buf, size_t row_pitch, size_t slice_pitch,
                     const clobj_t *_wait_for, uint32_t num_wait_for,
-                    int is_blocking, void *pyobj)
+                    int block, void *pyobj)
 {
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(_mem);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
-    ConstBuffer<size_t, 3> origin(_origin, origin_l);
-    ConstBuffer<size_t, 3> region(_region, region_l, 1);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueWriteImage, queue, img,
-                        bool(is_blocking), origin, region, row_pitch,
-                        slice_pitch, buffer, wait_for,
-                        nanny_event_out(evt, pyobj));
-                });
+    ConstBuffer<size_t, 3> orig(_orig, orig_l);
+    ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(clEnqueueWriteImage, queue, img, bool(block),
+                                  orig, reg, row_pitch, slice_pitch, buf,
+                                  wait_for, nanny_event_out(evt, pyobj));
         });
 }
 
 #if PYOPENCL_CL_VERSION >= 0x1020
 error*
 enqueue_fill_image(clobj_t *evt, clobj_t _queue, clobj_t mem,
-                   const void *color, const size_t *_origin, size_t origin_l,
-                   const size_t *_region, size_t region_l,
+                   const void *color, const size_t *_orig, size_t orig_l,
+                   const size_t *_reg, size_t reg_l,
                    const clobj_t *_wait_for, uint32_t num_wait_for)
 {
     // TODO debug color
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(mem);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
-    ConstBuffer<size_t, 3> origin(_origin, origin_l);
-    ConstBuffer<size_t, 3> region(_region, region_l, 1);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueFillImage, queue, img, color, origin, region,
-                        wait_for, event_out(evt));
-                });
+    ConstBuffer<size_t, 3> orig(_orig, orig_l);
+    ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(clEnqueueFillImage, queue, img, color, orig,
+                                  reg, wait_for, event_out(evt));
         });
 }
 #endif

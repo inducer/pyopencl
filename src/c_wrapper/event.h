@@ -36,8 +36,7 @@ public:
 #endif
 };
 static PYOPENCL_INLINE auto
-event_out(clobj_t *ret)
-    -> decltype(pyopencl_outarg(event, ret, clReleaseEvent))
+event_out(clobj_t *ret) -> decltype(pyopencl_outarg(event, ret, clReleaseEvent))
 {
     return pyopencl_outarg(event, ret, clReleaseEvent);
 }

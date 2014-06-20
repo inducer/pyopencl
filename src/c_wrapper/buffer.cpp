@@ -15,14 +15,13 @@ new_buffer(cl_mem mem)
 
 #if PYOPENCL_CL_VERSION >= 0x1010
 PYOPENCL_USE_RESULT buffer*
-buffer::get_sub_region(size_t origin, size_t size, cl_mem_flags flags) const
+buffer::get_sub_region(size_t orig, size_t size, cl_mem_flags flags) const
 {
-    cl_buffer_region region = {origin, size};
+    cl_buffer_region reg = {orig, size};
 
     auto mem = retry_mem_error([&] {
             return pyopencl_call_guarded(clCreateSubBuffer, this, flags,
-                                         CL_BUFFER_CREATE_TYPE_REGION,
-                                         &region);
+                                         CL_BUFFER_CREATE_TYPE_REGION, &reg);
         });
     return new_buffer(mem);
 }
@@ -67,11 +66,9 @@ create_buffer(clobj_t *buffer, clobj_t _ctx, cl_mem_flags flags,
               size_t size, void *hostbuf)
 {
     auto ctx = static_cast<context*>(_ctx);
-    return c_handle_error([&] {
-            auto mem = retry_mem_error([&] {
-                    return pyopencl_call_guarded(clCreateBuffer, ctx,
-                                                 flags, size, hostbuf);
-                });
+    return c_handle_retry_mem_error([&] {
+            auto mem = pyopencl_call_guarded(clCreateBuffer, ctx,
+                                             flags, size, hostbuf);
             *buffer = new_buffer(mem);
         });
 }
@@ -80,18 +77,15 @@ error*
 enqueue_read_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem,
                     void *buffer, size_t size, size_t device_offset,
                     const clobj_t *_wait_for, uint32_t num_wait_for,
-                    int is_blocking, void *pyobj)
+                    int block, void *pyobj)
 {
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object*>(_mem);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueReadBuffer, queue, mem,
-                        bool(is_blocking), device_offset, size,
-                        buffer, wait_for, nanny_event_out(evt, pyobj));
-                });
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(
+                clEnqueueReadBuffer, queue, mem, bool(block), device_offset,
+                size, buffer, wait_for, nanny_event_out(evt, pyobj));
         });
 }
 
@@ -99,18 +93,15 @@ error*
 enqueue_write_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem,
                      const void *buffer, size_t size, size_t device_offset,
                      const clobj_t *_wait_for, uint32_t num_wait_for,
-                     int is_blocking, void *pyobj)
+                     int block, void *pyobj)
 {
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object*>(_mem);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueWriteBuffer, queue, mem,
-                        bool(is_blocking), device_offset, size, buffer,
-                        wait_for, nanny_event_out(evt, pyobj));
-                });
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(
+                clEnqueueWriteBuffer, queue, mem, bool(block), device_offset,
+                size, buffer, wait_for, nanny_event_out(evt, pyobj));
         });
 }
 
@@ -153,12 +144,10 @@ enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object*>(_mem);
     // TODO debug print pattern
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueFillBuffer, queue, mem, pattern, psize,
-                        offset, size, wait_for, event_out(evt));
-                });
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(clEnqueueFillBuffer, queue, mem, pattern,
+                                  psize, offset, size, wait_for,
+                                  event_out(evt));
         });
 }
 
@@ -184,14 +173,11 @@ enqueue_read_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *buf,
     ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
     ConstBuffer<size_t, 2> buf_pitches(_buf_pitches, buf_pitches_l);
     ConstBuffer<size_t, 2> host_pitches(_host_pitches, host_pitches_l);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueReadBufferRect, queue, mem, bool(block),
-                        buf_orig, host_orig, reg, buf_pitches[0],
-                        buf_pitches[1], host_pitches[0], host_pitches[1],
-                        buf, wait_for, nanny_event_out(evt, pyobj));
-                });
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(
+                clEnqueueReadBufferRect, queue, mem, bool(block), buf_orig,
+                host_orig, reg, buf_pitches[0], buf_pitches[1], host_pitches[0],
+                host_pitches[1], buf, wait_for, nanny_event_out(evt, pyobj));
         });
 }
 
@@ -213,14 +199,11 @@ enqueue_write_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *buf,
     ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
     ConstBuffer<size_t, 2> buf_pitches(_buf_pitches, buf_pitches_l);
     ConstBuffer<size_t, 2> host_pitches(_host_pitches, host_pitches_l);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueWriteBufferRect, queue, mem, bool(block),
-                        buf_orig, host_orig, reg, buf_pitches[0],
-                        buf_pitches[1], host_pitches[0], host_pitches[1],
-                        buf, wait_for, nanny_event_out(evt, pyobj));
-                });
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(
+                clEnqueueWriteBufferRect, queue, mem, bool(block), buf_orig,
+                host_orig, reg, buf_pitches[0], buf_pitches[1], host_pitches[0],
+                host_pitches[1], buf, wait_for, nanny_event_out(evt, pyobj));
         });
 }
 
@@ -242,14 +225,11 @@ enqueue_copy_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _src,
     ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
     ConstBuffer<size_t, 2> src_pitches(_src_pitches, src_pitches_l);
     ConstBuffer<size_t, 2> dst_pitches(_dst_pitches, dst_pitches_l);
-    return c_handle_error([&] {
-            retry_mem_error([&] {
-                    pyopencl_call_guarded(
-                        clEnqueueCopyBufferRect, queue, src, dst,
-                        src_orig, dst_orig, reg, src_pitches[0],
-                        src_pitches[1], dst_pitches[0], dst_pitches[1],
-                        wait_for, event_out(evt));
-                });
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(
+                clEnqueueCopyBufferRect, queue, src, dst, src_orig, dst_orig,
+                reg, src_pitches[0], src_pitches[1], dst_pitches[0],
+                dst_pitches[1], wait_for, event_out(evt));
         });
 }
 

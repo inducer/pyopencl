@@ -310,8 +310,7 @@ template<typename Buff>
 struct _ArgBufferConverter<Buff,
                            enable_if_t<Buff::arg_type == ArgType::Length> > {
     static PYOPENCL_INLINE auto
-    convert(Buff &buff)
-        -> decltype(std::make_tuple(buff.len(), buff.get()))
+    convert(Buff &buff) -> decltype(std::make_tuple(buff.len(), buff.get()))
     {
         return std::make_tuple(buff.len(), buff.get());
     }
@@ -389,8 +388,7 @@ public:
         other.m_need_cleanup = false;
     }
     PYOPENCL_INLINE auto
-    convert()
-        -> decltype(m_arg.get())
+    convert() -> decltype(m_arg.get())
     {
         return m_arg.get();
     }

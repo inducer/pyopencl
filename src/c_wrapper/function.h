@@ -105,8 +105,7 @@ public:
     }
     template<template<typename...> class Getter, typename Func>
     PYOPENCL_INLINE auto
-    call(Func func)
-        -> decltype(call_tuple(func, this->get<Getter>()))
+    call(Func func) -> decltype(call_tuple(func, this->get<Getter>()))
     {
         return call_tuple(func, this->get<Getter>());
     }

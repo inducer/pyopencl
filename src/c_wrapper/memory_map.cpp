@@ -85,23 +85,20 @@ memory_map__data(clobj_t _map)
 
 error*
 enqueue_map_image(clobj_t *evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
-                  cl_map_flags flags, const size_t *_origin, size_t origin_l,
-                  const size_t *_region, size_t region_l, size_t *row_pitch,
+                  cl_map_flags flags, const size_t *_orig, size_t orig_l,
+                  const size_t *_reg, size_t reg_l, size_t *row_pitch,
                   size_t *slice_pitch, const clobj_t *_wait_for,
                   uint32_t num_wait_for, int block)
 {
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(_mem);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
-    ConstBuffer<size_t, 3> origin(_origin, origin_l);
-    ConstBuffer<size_t, 3> region(_region, region_l, 1);
-    return c_handle_error([&] {
-            void *res = retry_mem_error([&] {
-                    return pyopencl_call_guarded(
-                        clEnqueueMapImage, queue, img, bool(block), flags,
-                        origin, region, row_pitch, slice_pitch, wait_for,
-                        event_out(evt));
-                });
+    ConstBuffer<size_t, 3> orig(_orig, orig_l);
+    ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
+    return c_handle_retry_mem_error([&] {
+            void *res = pyopencl_call_guarded(
+                clEnqueueMapImage, queue, img, bool(block), flags, orig,
+                reg, row_pitch, slice_pitch, wait_for, event_out(evt));
             *map = convert_memory_map(*evt, queue, img, res);
         });
 }
@@ -115,12 +112,10 @@ enqueue_map_buffer(clobj_t *evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
     auto queue = static_cast<command_queue*>(_queue);
     auto buf = static_cast<buffer*>(_mem);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
-    return c_handle_error([&] {
-            void *res = retry_mem_error([&] {
-                    return pyopencl_call_guarded(
-                        clEnqueueMapBuffer, queue, buf, bool(block),
-                        flags, offset, size, wait_for, event_out(evt));
-                });
+    return c_handle_retry_mem_error([&] {
+            void *res = pyopencl_call_guarded(
+                clEnqueueMapBuffer, queue, buf, bool(block),
+                flags, offset, size, wait_for, event_out(evt));
             *map = convert_memory_map(*evt, queue, buf, res);
         });
 }
