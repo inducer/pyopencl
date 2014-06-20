@@ -77,7 +77,11 @@ Sums and counts ("reduce")
             The returned :class:`pyopencl.Event` corresponds only to part of the
             execution of the reduction. It is not suitable for profiling.
 
-    .. versionadded: 2011.1
+    .. versionadded:: 2011.1
+
+    .. versionchanged:: 2014.2
+
+        Added *out* parameter.
 
 Here's a usage example::
 
@@ -170,7 +174,7 @@ in PyOpenCL:
 Making Custom Scan Kernels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded: 2013.1
+.. versionadded:: 2013.1
 
 .. autoclass:: GenericScanKernel
 
