@@ -64,38 +64,12 @@ public:
     ~device();
 
     generic_info get_info(cl_uint param_name) const;
-    // TODO: sub-devices
-    // #if PYOPENCL_CL_VERSION >= 0x1020
-    //       py::list create_sub_devices(py::object py_properties)
-    //       {
-    //         std::vector<cl_device_partition_property> properties;
+#if PYOPENCL_CL_VERSION >= 0x1020
+    PYOPENCL_USE_RESULT pyopencl_buf<clobj_t>
+    create_sub_devices(const cl_device_partition_property *props);
+#endif
 
-    //         COPY_PY_LIST(cl_device_partition_property, properties);
-    //         properties.push_back(0);
-
-    //         cl_device_partition_property *props_ptr
-    //           = properties.empty( ) ? nullptr : &properties.front();
-
-    //         cl_uint num_entries;
-    //         PYOPENCL_CALL_GUARDED(clCreateSubDevices,
-    //             (m_device, props_ptr, 0, nullptr, &num_entries));
-
-    //         std::vector<cl_device_id> result;
-    //         result.resize(num_entries);
-
-    //         PYOPENCL_CALL_GUARDED(clCreateSubDevices,
-    //             (m_device, props_ptr, num_entries, &result.front(), nullptr));
-
-    //         py::list py_result;
-    //         BOOST_FOREACH(cl_device_id did, result)
-    //           py_result.append(handle_from_new_ptr(
-    //                 new pyopencl::device(did, /*retain*/true,
-    //                   device::REF_CL_1_2)));
-    //         return py_result;
-    //       }
-    // #endif
-
-    // #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     //       py::list create_sub_devices_ext(py::object py_properties)
     //       {
     //         std::vector<cl_device_partition_property_ext> properties;
@@ -131,7 +105,7 @@ public:
     //                   device::REF_FISSION_EXT)));
     //         return py_result;
     //       }
-    // #endif
+#endif
 };
 
 extern template void print_clobj<device>(std::ostream&, const device*);

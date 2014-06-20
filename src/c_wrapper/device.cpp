@@ -249,4 +249,38 @@ device::get_info(cl_uint param_name) const
     }
 }
 
+#if PYOPENCL_CL_VERSION >= 0x1020
+PYOPENCL_USE_RESULT pyopencl_buf<clobj_t>
+device::create_sub_devices(const cl_device_partition_property *props)
+{
+    // TODO debug print cl_device_partition_property
+    cl_uint num_devices;
+    pyopencl_call_guarded(clCreateSubDevices, this, props, 0, nullptr,
+                          buf_arg(num_devices));
+    pyopencl_buf<cl_device_id> devices(num_devices);
+    pyopencl_call_guarded(clCreateSubDevices, this, props, devices,
+                          buf_arg(num_devices));
+    return buf_to_base<device>(devices);
 }
+#endif
+
+}
+
+// c wrapper
+// Import all the names in pyopencl namespace for c wrappers.
+using namespace pyopencl;
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+error*
+device__create_sub_devices(clobj_t _dev, clobj_t **_devs,
+                           const cl_device_partition_property *props,
+                           uint32_t *num_devices)
+{
+    auto dev = static_cast<device*>(_dev);
+    return c_handle_error([&] {
+            auto devs = dev->create_sub_devices(props);
+            *num_devices = (uint32_t)devs.len();
+            *_devs = devs.release();
+        });
+}
+#endif
