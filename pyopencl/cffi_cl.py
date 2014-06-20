@@ -493,13 +493,13 @@ def _parse_context_properties(properties):
 
     for prop_tuple in properties:
         if len(prop_tuple) != 2:
-            raise RuntimeError("Context", status_code.INVALID_VALUE,
-                               "property tuple must have length 2")
+            raise RuntimeError("property tuple must have length 2",
+                               status_code.INVALID_VALUE, "Context")
 
         prop, value = prop_tuple
         if prop is None:
-            raise RuntimeError("Context", status_code.INVALID_VALUE,
-                               "invalid context property")
+            raise RuntimeError("invalid context property",
+                               status_code.INVALID_VALUE, "Context")
 
         props.append(prop)
         if prop == context_properties.PLATFORM:
@@ -518,13 +518,13 @@ def _parse_context_properties(properties):
 
             val = int(_ffi.cast('intptr_t', value))
             if not val:
-                raise LogicError("Context", status_code.INVALID_VALUE,
-                                 "You most likely have not initialized "
-                                 "OpenGL properly.")
+                raise LogicError("You most likely have not initialized "
+                                 "OpenGL properly.",
+                                 status_code.INVALID_VALUE, "Context")
             props.append(val)
         else:
-            raise RuntimeError("Context", status_code.INVALID_VALUE,
-                               "invalid context property")
+            raise RuntimeError("invalid context property",
+                               status_code.INVALID_VALUE, "Context")
     props.append(0)
     return _ffi.new('cl_context_properties[]', props)
 
@@ -539,9 +539,9 @@ class Context(_Common):
         # from device list
         if devices is not None:
             if dev_type is not None:
-                raise RuntimeError("Context", status_code.INVALID_VALUE,
-                                   "one of 'devices' or 'dev_type' "
-                                   "must be None")
+                raise RuntimeError("one of 'devices' or 'dev_type' "
+                                   "must be None",
+                                   status_code.INVALID_VALUE, "Context")
             ptr_devices, num_devices = _clobj_list(devices)
             ptr_ctx = _ffi.new('clobj_t*')
             # TODO parameter order? (for clobj_list)
@@ -665,9 +665,9 @@ def _c_buffer_from_obj(obj, writable=False, retain=False):
                 return (buf, len(obj), buf)
             return (obj, len(obj), obj)
         else:
-            raise LogicError("", status_code.INVALID_VALUE,
-                             "PyOpencl on PyPy only accepts numpy arrays "
-                             "and scalars arguments")
+            raise LogicError("PyOpencl on PyPy only accepts numpy arrays "
+                             "and scalars arguments",
+                             status_code.INVALID_VALUE)
 
         # }}}
 
@@ -709,9 +709,9 @@ class Buffer(MemoryObject):
         c_hostbuf, hostbuf_size, retained_buf = self._handle_buf_flags(flags)
         if hostbuf is not None:
             if size > hostbuf_size:
-                raise RuntimeError("Buffer", status_code.INVALID_VALUE,
-                                   "Specified size is greater than host "
-                                   "buffer size")
+                raise RuntimeError("Specified size is greater than host "
+                                   "buffer size",
+                                   status_code.INVALID_VALUE, "Buffer")
             if size == 0:
                 size = hostbuf_size
 
@@ -744,9 +744,9 @@ class _Program(_Common):
 
     def _init_binary(self, context, devices, binaries):
         if len(devices) != len(binaries):
-            raise RuntimeError("create_program_with_binary",
+            raise RuntimeError("device and binary counts don't match",
                                status_code.INVALID_VALUE,
-                               "device and binary counts don't match")
+                               "create_program_with_binary")
 
         ptr_program = _ffi.new('clobj_t*')
         ptr_devices, num_devices = _clobj_list(devices)
@@ -888,10 +888,9 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size,
         if g_times_l:
             work_dim = max(work_dim, len(local_work_size))
         elif work_dim != len(local_work_size):
-            raise RuntimeError("enqueue_nd_range_kernel",
-                               status_code.INVALID_VALUE,
-                               "global/local work sizes have differing "
-                               "dimensions")
+            raise RuntimeError("global/local work sizes have differing "
+                               "dimensions", status_code.INVALID_VALUE,
+                               "enqueue_nd_range_kernel")
 
         if len(local_work_size) < work_dim:
             local_work_size = (local_work_size +
@@ -1025,7 +1024,7 @@ def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
             strides = f_contigous_strides(byte_size, shape)
         else:
             raise RuntimeError("unrecognized order specifier %s" % order,
-                               'enqueue_map_buffer')
+                               status_code.INVALID_VALUE, 'enqueue_map_buffer')
     for s in shape:
         byte_size *= s
     c_wait_for, num_wait_for = _clobj_list(wait_for)
@@ -1057,7 +1056,7 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     region_l = len(region)
     if origin_l > 3 or region_l > 3:
         raise RuntimeError("origin or region has too many components",
-                           "enqueue_read_image")
+                           status_code.INVALID_VALUE, "enqueue_read_image")
     c_buf, size, _ = _c_buffer_from_obj(hostbuf, writable=True)
     ptr_event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
@@ -1075,7 +1074,7 @@ def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
     region_l = len(region)
     if src_origin_l > 3 or dest_origin_l > 3 or region_l > 3:
         raise RuntimeError("(src/dest)origin or region has too many components",
-                           "enqueue_copy_image")
+                           status_code.INVALID_VALUE, "enqueue_copy_image")
     _event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_copy_image(
@@ -1089,7 +1088,7 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     region_l = len(region)
     if origin_l > 3 or region_l > 3:
         raise RuntimeError("origin or region has too many components",
-                           "enqueue_write_image")
+                           status_code.INVALID_VALUE, "enqueue_write_image")
     c_buf, size, c_ref = _c_buffer_from_obj(hostbuf, retain=True)
     _event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
@@ -1106,7 +1105,7 @@ def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
     region_l = len(region)
     if origin_l > 3 or region_l > 3:
         raise RuntimeError("origin or region has too many components",
-                           "enqueue_map_image")
+                           status_code.INVALID_VALUE, "enqueue_map_image")
     _event = _ffi.new('clobj_t*')
     _map = _ffi.new('clobj_t*')
     _row_pitch = _ffi.new('size_t*')
@@ -1214,9 +1213,9 @@ class ImageFormat(object):
                 channel_order.LUMINANCE: 1,
             }[self.channel_order]
         except KeyError:
-            raise LogicError("ImageFormat.channel_count",
+            raise LogicError("unrecognized channel order",
                              status_code.INVALID_VALUE,
-                             "unrecognized channel order")
+                             "ImageFormat.channel_count")
 
     @property
     def dtype_size(self):
@@ -1239,9 +1238,9 @@ class ImageFormat(object):
                 channel_type.FLOAT: 4,
             }[self.channel_data_type]
         except KeyError:
-            raise LogicError("ImageFormat.channel_dtype_size",
+            raise LogicError("unrecognized channel data type",
                              status_code.INVALID_VALUE,
-                             "unrecognized channel data type")
+                             "ImageFormat.channel_dtype_size")
 
     @property
     def itemsize(self):
@@ -1344,8 +1343,8 @@ class Image(MemoryObject):
 
     def __init_legacy(self, context, flags, fmt, shape, pitches, hostbuf):
         if shape is None:
-            raise LogicError("Image", status_code.INVALID_VALUE,
-                             "'shape' must be given")
+            raise LogicError("'shape' must be given",
+                             status_code.INVALID_VALUE, "Image")
         MemoryObject.__init__(self, hostbuf)
         c_buf, size, retained_buf = self._handle_buf_flags(flags)
         dims = len(shape)
@@ -1356,14 +1355,14 @@ class Image(MemoryObject):
                 try:
                     pitch, = pitches
                 except ValueError:
-                    raise LogicError("Image", status_code.INVALID_VALUE,
-                                     "invalid length of pitch tuple")
+                    raise LogicError("invalid length of pitch tuple",
+                                     status_code.INVALID_VALUE, "Image")
 
             # check buffer size
             if (hostbuf is not None and
                 max(pitch, width * fmt.itemsize) * height > size):
-                raise LogicError("Image", status_code.INVALID_VALUE,
-                                 "buffer too small")
+                raise LogicError("buffer too small",
+                                 status_code.INVALID_VALUE, "Image")
 
             ptr = _ffi.new('clobj_t*')
             _handle_error(_lib.create_image_2d(ptr, context.ptr, flags, fmt.ptr,
@@ -1376,15 +1375,15 @@ class Image(MemoryObject):
                 try:
                     pitch_x, pitch_y = pitches
                 except ValueError:
-                    raise LogicError("Image", status_code.INVALID_VALUE,
-                                     "invalid length of pitch tuple")
+                    raise LogicError("invalid length of pitch tuple",
+                                     status_code.INVALID_VALUE, "Image")
 
             # check buffer size
             if (hostbuf is not None and
                 (max(max(pitch_x, width * fmt.itemsize) *
                      height, pitch_y) * depth > size)):
-                raise LogicError("Image", status_code.INVALID_VALUE,
-                                 "buffer too small")
+                raise LogicError("buffer too small",
+                                 status_code.INVALID_VALUE, "Image")
 
             ptr = _ffi.new('clobj_t*')
             _handle_error(_lib.create_image_3d(
@@ -1393,8 +1392,8 @@ class Image(MemoryObject):
 
             self.ptr = ptr[0]
         else:
-            raise LogicError("Image", status_code.INVALID_VALUE,
-                             "invalid dimension")
+            raise LogicError("invalid dimension",
+                             status_code.INVALID_VALUE, "Image")
 
     def get_image_info(self, param):
         info = _ffi.new('generic_info*')
@@ -1408,8 +1407,8 @@ class Image(MemoryObject):
         elif self.type == mem_object_type.IMAGE3D:
             return (self.width, self.height, self.depth)
         else:
-            raise LogicError("Image", status_code.INVALID_VALUE,
-                             "only images have shapes")
+            raise LogicError("only images have shapes",
+                             status_code.INVALID_VALUE, "Image")
 
 # }}}
 
