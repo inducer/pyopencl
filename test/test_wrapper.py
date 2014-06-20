@@ -38,6 +38,10 @@ except ImportError:
 else:
     faulthandler.enable()
 
+def _skip_if_pocl(plat, msg='unsupported by pocl'):
+    if plat.vendor == "The pocl project":
+        import pytest
+        pytest.skip(msg)
 
 def test_get_info(ctx_factory):
     ctx = ctx_factory()
@@ -73,6 +77,12 @@ def test_get_info(ctx_factory):
                 pocl_quirks),
             (("The pocl project", "Portable Computing Language",
                 "OpenCL 1.2 pocl 0.9"),
+                pocl_quirks),
+            (("The pocl project", "Portable Computing Language",
+                "OpenCL 1.2 pocl 0.10-pre"),
+                pocl_quirks),
+            (("The pocl project", "Portable Computing Language",
+                "OpenCL 1.2 pocl 0.10"),
                 pocl_quirks),
             (("Apple", "Apple",
                 "OpenCL 1.2 (Apr 25 2013 18:32:06)"),
@@ -173,6 +183,7 @@ def test_get_info(ctx_factory):
                 try_attr_form=False)
 
     # crashes on intel...
+    # and pocl does not support CL_ADDRESS_CLAMP
     if device.image_support and platform.vendor not in [
             "Intel(R) Corporation",
             "The pocl project",
@@ -226,6 +237,7 @@ def test_int_ptr(ctx_factory):
     do_test(a_buf)
 
     # crashes on intel...
+    # and pocl does not support CL_ADDRESS_CLAMP
     if device.image_support and platform.vendor not in [
             "Intel(R) Corporation",
             "The pocl project",
@@ -250,12 +262,8 @@ def test_invalid_kernel_names_cause_failures(ctx_factory):
         { a[get_global_id(0)] *= 2; }
         """).build()
 
-    if ctx.devices[0].platform.vendor == "The pocl project":
-        # https://bugs.launchpad.net/pocl/+bug/1184464
-
-        import pytest
-        pytest.skip("pocl doesn't like invalid kernel names")
-
+    # https://bugs.launchpad.net/pocl/+bug/1184464
+    _skip_if_pocl(device.platform, "pocl doesn't like invalid kernel names")
     try:
         prg.sam
         raise RuntimeError("invalid kernel name did not cause error")
@@ -337,12 +345,7 @@ def test_image_2d(ctx_factory):
     if "Intel" in device.vendor and "31360.31426" in device.version:
         from pytest import skip
         skip("images crashy on %s" % device)
-    if "pocl" in device.platform.vendor and (
-            "0.8" in device.platform.version or
-            "0.9" in device.platform.version
-            ):
-        from pytest import skip
-        skip("images crashy on %s" % device)
+    _skip_if_pocl(device.platform, 'pocl does not support CL_ADDRESS_CLAMP')
 
     prg = cl.Program(context, """
         __kernel void copy_image(
@@ -414,6 +417,7 @@ def test_image_3d(ctx_factory):
     if device.platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("images crashy on %s" % device)
+    _skip_if_pocl(device.platform, 'pocl does not support CL_ADDRESS_CLAMP')
 
     prg = cl.Program(context, """
         __kernel void copy_image_plane(
@@ -591,11 +595,7 @@ def test_can_build_binary(ctx_factory):
     device, = ctx.devices
     platform = device.platform
 
-    if (platform.vendor == "The pocl project" and
-            platform.name == "Portable Computing Language"):
-        # Segfault on pocl 0.9
-        from pytest import skip
-        skip("pocl doesn't like getting PROGRAM_BINARIES")
+    _skip_if_pocl(platform, "pocl doesn't like getting PROGRAM_BINARIES")
 
     program = cl.Program(ctx, """
     __kernel void simple(__global float *in, __global float *out)
@@ -608,6 +608,34 @@ def test_can_build_binary(ctx_factory):
     foo = cl.Program(ctx, [device], [binary])
     foo.build()
 
+def test_enqueue_barrier_marker(ctx_factory):
+    ctx = ctx_factory()
+    _skip_if_pocl(ctx.devices[0].platform, 'pocl crashes on enqueue_barrier')
+    queue = cl.CommandQueue(ctx)
+    cl.enqueue_barrier(queue)
+    evt1 = cl.enqueue_marker(queue)
+    evt2 = cl.enqueue_marker(queue, wait_for=[evt1])
+    evt3 = cl.enqueue_barrier(queue, wait_for=[evt1, evt2])
+
+def test_wait_for_events(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+    evt1 = cl.enqueue_marker(queue)
+    evt2 = cl.enqueue_marker(queue)
+    cl.wait_for_events([evt1, evt2])
+
+def test_unload_compiler(ctx_factory):
+    ctx = ctx_factory()
+    platform = ctx.devices[0].platform
+    if (ctx._get_cl_version() < (1, 2) or
+        cl.get_cl_header_version() < (1, 2)):
+        from pytest import skip
+        skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
+    _skip_if_pocl(platform, 'pocl does not support unloading compiler')
+    if platform.vendor == "Intel(R) Corporation":
+        from pytest import skip
+        skip("Intel proprietary driver does not support unloading compiler")
+    cl.unload_platform_compiler(platform)
 
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
