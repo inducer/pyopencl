@@ -152,6 +152,7 @@ enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object*>(_mem);
+    // TODO debug print pattern
     return c_handle_error([&] {
             retry_mem_error([&] {
                     pyopencl_call_guarded(
@@ -160,3 +161,97 @@ enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
                 });
         });
 }
+
+// {{{ rectangular transfers
+
+#if PYOPENCL_CL_VERSION >= 0x1010
+
+error*
+enqueue_read_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *buf,
+                         const size_t *_buf_orig, size_t buf_orig_l,
+                         const size_t *_host_orig, size_t host_orig_l,
+                         const size_t *_reg, size_t reg_l,
+                         const size_t *_buf_pitches, size_t buf_pitches_l,
+                         const size_t *_host_pitches, size_t host_pitches_l,
+                         const clobj_t *_wait_for, uint32_t num_wait_for,
+                         int block, void *pyobj)
+{
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    auto queue = static_cast<command_queue*>(_queue);
+    auto mem = static_cast<memory_object*>(_mem);
+    ConstBuffer<size_t, 3> buf_orig(_buf_orig, buf_orig_l);
+    ConstBuffer<size_t, 3> host_orig(_host_orig, host_orig_l);
+    ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
+    ConstBuffer<size_t, 2> buf_pitches(_buf_pitches, buf_pitches_l);
+    ConstBuffer<size_t, 2> host_pitches(_host_pitches, host_pitches_l);
+    return c_handle_error([&] {
+            retry_mem_error([&] {
+                    pyopencl_call_guarded(
+                        clEnqueueReadBufferRect, queue, mem, bool(block),
+                        buf_orig, host_orig, reg, buf_pitches[0],
+                        buf_pitches[1], host_pitches[0], host_pitches[1],
+                        buf, wait_for, nanny_event_out(evt, pyobj));
+                });
+        });
+}
+
+error*
+enqueue_write_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *buf,
+                          const size_t *_buf_orig, size_t buf_orig_l,
+                          const size_t *_host_orig, size_t host_orig_l,
+                          const size_t *_reg, size_t reg_l,
+                          const size_t *_buf_pitches, size_t buf_pitches_l,
+                          const size_t *_host_pitches, size_t host_pitches_l,
+                          const clobj_t *_wait_for, uint32_t num_wait_for,
+                          int block, void *pyobj)
+{
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    auto queue = static_cast<command_queue*>(_queue);
+    auto mem = static_cast<memory_object*>(_mem);
+    ConstBuffer<size_t, 3> buf_orig(_buf_orig, buf_orig_l);
+    ConstBuffer<size_t, 3> host_orig(_host_orig, host_orig_l);
+    ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
+    ConstBuffer<size_t, 2> buf_pitches(_buf_pitches, buf_pitches_l);
+    ConstBuffer<size_t, 2> host_pitches(_host_pitches, host_pitches_l);
+    return c_handle_error([&] {
+            retry_mem_error([&] {
+                    pyopencl_call_guarded(
+                        clEnqueueWriteBufferRect, queue, mem, bool(block),
+                        buf_orig, host_orig, reg, buf_pitches[0],
+                        buf_pitches[1], host_pitches[0], host_pitches[1],
+                        buf, wait_for, nanny_event_out(evt, pyobj));
+                });
+        });
+}
+
+error*
+enqueue_copy_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _src,
+                         clobj_t _dst, const size_t *_src_orig,
+                         size_t src_orig_l, const size_t *_dst_orig,
+                         size_t dst_orig_l, const size_t *_reg, size_t reg_l,
+                         const size_t *_src_pitches, size_t src_pitches_l,
+                         const size_t *_dst_pitches, size_t dst_pitches_l,
+                         const clobj_t *_wait_for, uint32_t num_wait_for)
+{
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    auto queue = static_cast<command_queue*>(_queue);
+    auto src = static_cast<memory_object*>(_src);
+    auto dst = static_cast<memory_object*>(_dst);
+    ConstBuffer<size_t, 3> src_orig(_src_orig, src_orig_l);
+    ConstBuffer<size_t, 3> dst_orig(_dst_orig, dst_orig_l);
+    ConstBuffer<size_t, 3> reg(_reg, reg_l, 1);
+    ConstBuffer<size_t, 2> src_pitches(_src_pitches, src_pitches_l);
+    ConstBuffer<size_t, 2> dst_pitches(_dst_pitches, dst_pitches_l);
+    return c_handle_error([&] {
+            retry_mem_error([&] {
+                    pyopencl_call_guarded(
+                        clEnqueueCopyBufferRect, queue, src, dst,
+                        src_orig, dst_orig, reg, src_pitches[0],
+                        src_pitches[1], dst_pitches[0], dst_pitches[1],
+                        wait_for, event_out(evt));
+                });
+        });
+}
+
+#endif
+// }}}

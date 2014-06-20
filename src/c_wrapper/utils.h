@@ -231,6 +231,11 @@ public:
     {
         return m_buf;
     }
+    PYOPENCL_INLINE T&
+    operator[](int i) const
+    {
+        return this->get()[i];
+    }
     PYOPENCL_INLINE size_t
     len() const noexcept
     {
