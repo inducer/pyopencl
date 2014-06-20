@@ -1127,7 +1127,25 @@ def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
     return (np.asarray(MemoryMap._create(_map[0], shape, dtype.str, strides)),
             Event._create(_event[0]), _row_pitch[0], _slice_pitch[0])
 
-# TODO: fill_image copy_buffer_to_image copy_image_to_buffer
+def enqueue_fill_image(queue, img, color, origin, region, wait_for=None):
+    origin = tuple(origin)
+    region = tuple(region)
+    origin_l = len(origin)
+    region_l = len(region)
+    color_l = len(color)
+    if origin_l > 3 or region_l > 3 or color_l > 4:
+        raise RuntimeError("origin, region or color has too many components",
+                           status_code.INVALID_VALUE, "enqueue_fill_image")
+    color = np.array(color).astype(img._fill_type)
+    c_color = _ffi.cast('void*', color.__array_interface__['data'][0])
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_fill_image(_event, queue.ptr, img.ptr,
+                                          c_color, origin, origin_l, region,
+                                          region_l, c_wait_for, num_wait_for))
+    return Event._create(ptr_event[0])
+
+# TODO: copy_buffer_to_image copy_image_to_buffer
 
 # }}}
 
@@ -1330,6 +1348,32 @@ class ImageDescriptor(object):
 
 # {{{ Image
 
+_int_dtype = ({
+    8: np.int64,
+    4: np.int32,
+    2: np.int16,
+    1: np.int8,
+})[_ffi.sizeof('int')]
+
+_uint_dtype = ({
+    8: np.uint64,
+    4: np.uint32,
+    2: np.uint16,
+    1: np.uint8,
+})[_ffi.sizeof('unsigned')]
+
+_float_dtype = ({
+    8: np.float64,
+    4: np.float32,
+    2: np.float16,
+})[_ffi.sizeof('float')]
+
+_fill_dtype_dict = {
+    _lib.TYPE_INT: _int_dtype,
+    _lib.TYPE_UINT: _uint_dtype,
+    _lib.TYPE_FLOAT: _float_dtype,
+    }
+
 class Image(MemoryObject):
     _id = 'image'
 
@@ -1342,6 +1386,7 @@ class Image(MemoryObject):
             self.__init_legacy(*args)
         else:
             assert False
+        self._fill_type = _fill_dtype_dict[_lib.image__get_fill_type(self.ptr)]
     def __init_1_2(self, context, flags, fmt, desc, hostbuf):
         MemoryObject.__init__(self, hostbuf)
         c_buf, size, retained_buf = self._handle_buf_flags(flags)
