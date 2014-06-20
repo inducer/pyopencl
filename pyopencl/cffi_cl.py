@@ -221,50 +221,19 @@ class _NoInit(object):
 
 # {{{ constant classes
 
-class status_code(_NoInit):
-    pass
-
-
-class context_properties(_NoInit):
-    pass
-
-
-class device_type(_NoInit):
-    pass
-
-
-class mem_flags(_NoInit):
-    @classmethod
-    def _writable(cls, flags):
-        return flags & (cls.READ_WRITE | cls.WRITE_ONLY)
-    @classmethod
-    def _hold_host(cls, flags):
-        return flags & cls.USE_HOST_PTR
-    @classmethod
-    def _use_host(cls, flags):
-        return flags & (cls.USE_HOST_PTR | cls.COPY_HOST_PTR)
-    @classmethod
-    def _host_writable(cls, flags):
-        return cls._writable(flags) and cls._hold_host(flags)
-
-
-class mem_object_type(_NoInit):
-    pass
-
-
-class channel_order(_NoInit):
-    pass
-
-
-class channel_type(_NoInit):
-    pass
-
-
 class program_kind(_NoInit):
     pass
 
 
+class status_code(_NoInit):
+    pass
+
+
 class platform_info(_NoInit):
+    pass
+
+
+class device_type(_NoInit):
     pass
 
 
@@ -300,7 +269,38 @@ class gl_context_info(_NoInit):
     pass
 
 
+class context_properties(_NoInit):
+    pass
+
+
 class command_queue_info(_NoInit):
+    pass
+
+
+class mem_flags(_NoInit):
+    @classmethod
+    def _writable(cls, flags):
+        return flags & (cls.READ_WRITE | cls.WRITE_ONLY)
+    @classmethod
+    def _hold_host(cls, flags):
+        return flags & cls.USE_HOST_PTR
+    @classmethod
+    def _use_host(cls, flags):
+        return flags & (cls.USE_HOST_PTR | cls.COPY_HOST_PTR)
+    @classmethod
+    def _host_writable(cls, flags):
+        return cls._writable(flags) and cls._hold_host(flags)
+
+
+class channel_order(_NoInit):
+    pass
+
+
+class channel_type(_NoInit):
+    pass
+
+
+class mem_object_type(_NoInit):
     pass
 
 
@@ -348,6 +348,14 @@ class kernel_arg_info(_NoInit):
     pass
 
 
+class kernel_arg_address_qualifier(_NoInit):
+    pass
+
+
+class kernel_arg_access_qualifier(_NoInit):
+    pass
+
+
 class kernel_work_group_info(_NoInit):
     pass
 
@@ -368,7 +376,19 @@ class profiling_info(_NoInit):
     pass
 
 
+class mem_migration_flags(_NoInit):
+    pass
+
+
+class device_partition_property_ext(_NoInit):
+    pass
+
+
 class affinity_domain_ext(_NoInit):
+    pass
+
+
+class device_partition_property(_NoInit):
     pass
 
 
@@ -382,6 +402,11 @@ class gl_object_type(_NoInit):
 
 class gl_texture_info(_NoInit):
     pass
+
+
+class migrate_mem_object_flags_ext(_NoInit):
+    pass
+
 
 # }}}
 

@@ -4,8 +4,11 @@
 extern "C"
 namespace pyopencl {
   void populate_constants(void(*add)(const char*, const char*, long value)) {
-#define ADD_ATTR(TYPE, PREFIX, NAME)		\
-    add(TYPE, #NAME, CL_##PREFIX##NAME)
+
+#define _ADD_ATTR(TYPE, PREFIX, NAME, SUFFIX, ...)      \
+      add(TYPE, #NAME, CL_##PREFIX##NAME##SUFFIX)
+#define ADD_ATTR(TYPE, PREFIX, NAME, EXTRA...)  \
+      _ADD_ATTR(TYPE, PREFIX, NAME, EXTRA)
 
     // program_kind
     add("program_kind", "UNKNOWN", KND_UNKNOWN);
@@ -28,6 +31,7 @@ namespace pyopencl {
     ADD_ATTR("status_code", , IMAGE_FORMAT_NOT_SUPPORTED);
     ADD_ATTR("status_code", , BUILD_PROGRAM_FAILURE);
     ADD_ATTR("status_code", , MAP_FAILURE);
+
     ADD_ATTR("status_code", , INVALID_VALUE);
     ADD_ATTR("status_code", , INVALID_DEVICE_TYPE);
     ADD_ATTR("status_code", , INVALID_PLATFORM);
@@ -61,17 +65,21 @@ namespace pyopencl {
     ADD_ATTR("status_code", , INVALID_GL_OBJECT);
     ADD_ATTR("status_code", , INVALID_BUFFER_SIZE);
     ADD_ATTR("status_code", , INVALID_MIP_LEVEL);
+
 #if defined(cl_khr_icd) && (cl_khr_icd >= 1)
     ADD_ATTR("status_code", , PLATFORM_NOT_FOUND_KHR);
 #endif
+
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
     ADD_ATTR("status_code", , INVALID_GL_SHAREGROUP_REFERENCE_KHR);
 #endif
+
 #if PYOPENCL_CL_VERSION >= 0x1010
     ADD_ATTR("status_code", , MISALIGNED_SUB_BUFFER_OFFSET);
     ADD_ATTR("status_code", , EXEC_STATUS_ERROR_FOR_EVENTS_IN_WAIT_LIST);
     ADD_ATTR("status_code", , INVALID_GLOBAL_WORK_SIZE);
 #endif
+
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("status_code", , COMPILE_PROGRAM_FAILURE);
     ADD_ATTR("status_code", , LINKER_NOT_AVAILABLE);
@@ -83,11 +91,14 @@ namespace pyopencl {
     ADD_ATTR("status_code", , INVALID_LINKER_OPTIONS);
     ADD_ATTR("status_code", , INVALID_DEVICE_PARTITION_COUNT);
 #endif
+
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     ADD_ATTR("status_code", , DEVICE_PARTITION_FAILED_EXT);
     ADD_ATTR("status_code", , INVALID_PARTITION_COUNT_EXT);
     ADD_ATTR("status_code", , INVALID_PARTITION_NAME_EXT);
 #endif
+
+
     // platform_info
     ADD_ATTR("platform_info", PLATFORM_, PROFILE);
     ADD_ATTR("platform_info", PLATFORM_, VERSION);
@@ -96,6 +107,8 @@ namespace pyopencl {
 #if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
     ADD_ATTR("platform_info", PLATFORM_, EXTENSIONS);
 #endif
+
+
     // device_type
     ADD_ATTR("device_type", DEVICE_TYPE_, DEFAULT);
     ADD_ATTR("device_type", DEVICE_TYPE_, CPU);
@@ -105,6 +118,8 @@ namespace pyopencl {
     ADD_ATTR("device_type", DEVICE_TYPE_, CUSTOM);
 #endif
     ADD_ATTR("device_type", DEVICE_TYPE_, ALL);
+
+
     // device_info
     ADD_ATTR("device_info", DEVICE_, TYPE);
     ADD_ATTR("device_info", DEVICE_, VENDOR_ID);
@@ -160,7 +175,6 @@ namespace pyopencl {
     ADD_ATTR("device_info", , DRIVER_VERSION);
     ADD_ATTR("device_info", DEVICE_, VERSION);
     ADD_ATTR("device_info", DEVICE_, PROFILE);
-    ADD_ATTR("device_info", DEVICE_, VERSION);
     ADD_ATTR("device_info", DEVICE_, EXTENSIONS);
     ADD_ATTR("device_info", DEVICE_, PLATFORM);
 #if PYOPENCL_CL_VERSION >= 0x1010
@@ -223,6 +237,7 @@ namespace pyopencl {
 #ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
     ADD_ATTR("device_info", DEVICE_, LOCAL_MEM_BANKS_AMD);
 #endif
+
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
     ADD_ATTR("device_info", DEVICE_, MAX_ATOMIC_COUNTERS_EXT);
 #endif
@@ -251,6 +266,8 @@ namespace pyopencl {
     ADD_ATTR("device_info", DEVICE_, IMAGE_PITCH_ALIGNMENT);
     ADD_ATTR("device_info", DEVICE_, IMAGE_BASE_ADDRESS_ALIGNMENT);
 #endif
+
+
     // device_fp_config
     ADD_ATTR("device_fp_config", FP_, DENORM);
     ADD_ATTR("device_fp_config", FP_, INF_NAN);
@@ -264,25 +281,35 @@ namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("device_fp_config", FP_, CORRECTLY_ROUNDED_DIVIDE_SQRT);
 #endif
+
+
     // device_mem_cache_type
     ADD_ATTR("device_mem_cache_type",  , NONE);
     ADD_ATTR("device_mem_cache_type",  , READ_ONLY_CACHE);
     ADD_ATTR("device_mem_cache_type",  , READ_WRITE_CACHE);
+
+
     // device_local_mem_type
     ADD_ATTR("device_local_mem_type",  , LOCAL);
     ADD_ATTR("device_local_mem_type",  , GLOBAL);
+
+
     // device_exec_capabilities
     ADD_ATTR("device_exec_capabilities", EXEC_, KERNEL);
     ADD_ATTR("device_exec_capabilities", EXEC_, NATIVE_KERNEL);
 #ifdef CL_EXEC_IMMEDIATE_EXECUTION_INTEL
     ADD_ATTR("device_exec_capabilities", EXEC_, IMMEDIATE_EXECUTION_INTEL);
 #endif
+
+
     // command_queue_properties
     ADD_ATTR("command_queue_properties", QUEUE_, OUT_OF_ORDER_EXEC_MODE_ENABLE);
     ADD_ATTR("command_queue_properties", QUEUE_, PROFILING_ENABLE);
 #ifdef CL_QUEUE_IMMEDIATE_EXECUTION_ENABLE_INTEL
     ADD_ATTR("command_queue_properties", QUEUE_, IMMEDIATE_EXECUTION_ENABLE_INTEL);
 #endif
+
+
     // context_info
     ADD_ATTR("context_info", CONTEXT_, REFERENCE_COUNT);
     ADD_ATTR("context_info", CONTEXT_, DEVICES);
@@ -293,11 +320,15 @@ namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("context_info", CONTEXT_, INTEROP_USER_SYNC);
 #endif
+
+
     // gl_context_info
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
     ADD_ATTR("gl_context_info", , CURRENT_DEVICE_FOR_GL_CONTEXT_KHR);
     ADD_ATTR("gl_context_info", , DEVICES_FOR_GL_CONTEXT_KHR);
 #endif
+
+
     // context_properties
     ADD_ATTR("context_properties", CONTEXT_, PLATFORM);
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
@@ -313,11 +344,15 @@ namespace pyopencl {
 #ifdef CL_CONTEXT_OFFLINE_DEVICES_AMD
     ADD_ATTR("context_properties", CONTEXT_, OFFLINE_DEVICES_AMD);
 #endif
+
+
     // command_queue_info
     ADD_ATTR("command_queue_info", QUEUE_, CONTEXT);
     ADD_ATTR("command_queue_info", QUEUE_, DEVICE);
     ADD_ATTR("command_queue_info", QUEUE_, REFERENCE_COUNT);
     ADD_ATTR("command_queue_info", QUEUE_, PROPERTIES);
+
+
     // mem_flags
     ADD_ATTR("mem_flags", MEM_, READ_WRITE);
     ADD_ATTR("mem_flags", MEM_, WRITE_ONLY);
@@ -333,6 +368,8 @@ namespace pyopencl {
     ADD_ATTR("mem_flags", MEM_, HOST_READ_ONLY);
     ADD_ATTR("mem_flags", MEM_, HOST_NO_ACCESS);
 #endif
+
+
     // channel_order
     ADD_ATTR("channel_order",  , R);
     ADD_ATTR("channel_order",  , A);
@@ -348,6 +385,8 @@ namespace pyopencl {
     ADD_ATTR("channel_order",  , RGx);
     ADD_ATTR("channel_order",  , RGBx);
 #endif
+
+
     // channel_type
     ADD_ATTR("channel_type",  , SNORM_INT8);
     ADD_ATTR("channel_type",  , SNORM_INT16);
@@ -364,6 +403,8 @@ namespace pyopencl {
     ADD_ATTR("channel_type",  , UNSIGNED_INT32);
     ADD_ATTR("channel_type",  , HALF_FLOAT);
     ADD_ATTR("channel_type",  , FLOAT);
+
+
     // mem_object_type
     ADD_ATTR("mem_object_type", MEM_OBJECT_, BUFFER);
     ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE2D);
@@ -374,6 +415,8 @@ namespace pyopencl {
     ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE1D_ARRAY);
     ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE1D_BUFFER);
 #endif
+
+
     // mem_info
     ADD_ATTR("mem_info", MEM_, TYPE);
     ADD_ATTR("mem_info", MEM_, FLAGS);
@@ -386,6 +429,8 @@ namespace pyopencl {
     ADD_ATTR("mem_info", MEM_, ASSOCIATED_MEMOBJECT);
     ADD_ATTR("mem_info", MEM_, OFFSET);
 #endif
+
+
     // image_info
     ADD_ATTR("image_info", IMAGE_, FORMAT);
     ADD_ATTR("image_info", IMAGE_, ELEMENT_SIZE);
@@ -400,6 +445,8 @@ namespace pyopencl {
     ADD_ATTR("image_info", IMAGE_, NUM_MIP_LEVELS);
     ADD_ATTR("image_info", IMAGE_, NUM_SAMPLES);
 #endif
+
+
     // addressing_mode
     ADD_ATTR("addressing_mode", ADDRESS_, NONE);
     ADD_ATTR("addressing_mode", ADDRESS_, CLAMP_TO_EDGE);
@@ -408,21 +455,29 @@ namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1010
     ADD_ATTR("addressing_mode", ADDRESS_, MIRRORED_REPEAT);
 #endif
+
+
     // filter_mode
     ADD_ATTR("filter_mode", FILTER_, NEAREST);
     ADD_ATTR("filter_mode", FILTER_, LINEAR);
+
+
     // sampler_info
     ADD_ATTR("sampler_info", SAMPLER_, REFERENCE_COUNT);
     ADD_ATTR("sampler_info", SAMPLER_, CONTEXT);
     ADD_ATTR("sampler_info", SAMPLER_, NORMALIZED_COORDS);
     ADD_ATTR("sampler_info", SAMPLER_, ADDRESSING_MODE);
     ADD_ATTR("sampler_info", SAMPLER_, FILTER_MODE);
+
+
     // map_flags
     ADD_ATTR("map_flags", MAP_, READ);
     ADD_ATTR("map_flags", MAP_, WRITE);
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("map_flags", MAP_, WRITE_INVALIDATE_REGION);
 #endif
+
+
     // program_info
     ADD_ATTR("program_info", PROGRAM_, REFERENCE_COUNT);
     ADD_ATTR("program_info", PROGRAM_, CONTEXT);
@@ -435,6 +490,8 @@ namespace pyopencl {
     ADD_ATTR("program_info", PROGRAM_, NUM_KERNELS);
     ADD_ATTR("program_info", PROGRAM_, KERNEL_NAMES);
 #endif
+
+
     // program_build_info
     ADD_ATTR("program_build_info", PROGRAM_BUILD_, STATUS);
     ADD_ATTR("program_build_info", PROGRAM_BUILD_, OPTIONS);
@@ -442,6 +499,8 @@ namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("program_build_info", PROGRAM_, BINARY_TYPE);
 #endif
+
+
     // program_binary_type
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("program_binary_type", PROGRAM_BINARY_TYPE_, NONE);
@@ -449,6 +508,8 @@ namespace pyopencl {
     ADD_ATTR("program_binary_type", PROGRAM_BINARY_TYPE_, LIBRARY);
     ADD_ATTR("program_binary_type", PROGRAM_BINARY_TYPE_, EXECUTABLE);
 #endif
+
+
     // kernel_info
     ADD_ATTR("kernel_info", KERNEL_, FUNCTION_NAME);
     ADD_ATTR("kernel_info", KERNEL_, NUM_ARGS);
@@ -458,6 +519,8 @@ namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("kernel_info", KERNEL_, ATTRIBUTES);
 #endif
+
+
     // kernel_arg_info
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("kernel_arg_info", KERNEL_ARG_, ADDRESS_QUALIFIER);
@@ -465,18 +528,26 @@ namespace pyopencl {
     ADD_ATTR("kernel_arg_info", KERNEL_ARG_, TYPE_NAME);
     ADD_ATTR("kernel_arg_info", KERNEL_ARG_, NAME);
 #endif
+
+
+    // kernel_arg_address_qualifier
 #if PYOPENCL_CL_VERSION >= 0x1020
-    ADD_ATTR("kernel_arg_info", KERNEL_ARG_ADDRESS_, GLOBAL);
-    ADD_ATTR("kernel_arg_info", KERNEL_ARG_ADDRESS_, LOCAL);
-    ADD_ATTR("kernel_arg_info", KERNEL_ARG_ADDRESS_, CONSTANT);
-    ADD_ATTR("kernel_arg_info", KERNEL_ARG_ADDRESS_, PRIVATE);
+    ADD_ATTR("kernel_arg_address_qualifier", KERNEL_ARG_ADDRESS_, GLOBAL);
+    ADD_ATTR("kernel_arg_address_qualifier", KERNEL_ARG_ADDRESS_, LOCAL);
+    ADD_ATTR("kernel_arg_address_qualifier", KERNEL_ARG_ADDRESS_, CONSTANT);
+    ADD_ATTR("kernel_arg_address_qualifier", KERNEL_ARG_ADDRESS_, PRIVATE);
 #endif
+
+
+    // kernel_arg_access_qualifier
 #if PYOPENCL_CL_VERSION >= 0x1020
-    ADD_ATTR("kernel_arg_info", KERNEL_ARG_ACCESS_, READ_ONLY);
-    ADD_ATTR("kernel_arg_info", KERNEL_ARG_ACCESS_, WRITE_ONLY);
-    ADD_ATTR("kernel_arg_info", KERNEL_ARG_ACCESS_, READ_WRITE);
-    ADD_ATTR("kernel_arg_info", KERNEL_ARG_ACCESS_, NONE);
+    ADD_ATTR("kernel_arg_access_qualifier", KERNEL_ARG_ACCESS_, READ_ONLY);
+    ADD_ATTR("kernel_arg_access_qualifier", KERNEL_ARG_ACCESS_, WRITE_ONLY);
+    ADD_ATTR("kernel_arg_access_qualifier", KERNEL_ARG_ACCESS_, READ_WRITE);
+    ADD_ATTR("kernel_arg_access_qualifier", KERNEL_ARG_ACCESS_, NONE);
 #endif
+
+
     // kernel_work_group_info
     ADD_ATTR("kernel_work_group_info", KERNEL_, WORK_GROUP_SIZE);
     ADD_ATTR("kernel_work_group_info", KERNEL_, COMPILE_WORK_GROUP_SIZE);
@@ -488,6 +559,8 @@ namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("kernel_work_group_info", KERNEL_, GLOBAL_WORK_SIZE);
 #endif
+
+
     // event_info
     ADD_ATTR("event_info", EVENT_, COMMAND_QUEUE);
     ADD_ATTR("event_info", EVENT_, COMMAND_TYPE);
@@ -496,6 +569,8 @@ namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1010
     ADD_ATTR("event_info", EVENT_, CONTEXT);
 #endif
+
+
     // command_type
     ADD_ATTR("command_type", COMMAND_, NDRANGE_KERNEL);
     ADD_ATTR("command_type", COMMAND_, TASK);
@@ -529,31 +604,67 @@ namespace pyopencl {
     ADD_ATTR("command_type", COMMAND_, FILL_BUFFER);
     ADD_ATTR("command_type", COMMAND_, FILL_IMAGE);
 #endif
+
+
     // command_execution_status
     ADD_ATTR("command_execution_status", , COMPLETE);
     ADD_ATTR("command_execution_status", , RUNNING);
     ADD_ATTR("command_execution_status", , SUBMITTED);
     ADD_ATTR("command_execution_status", , QUEUED);
+
+
     // profiling_info
     ADD_ATTR("profiling_info", PROFILING_COMMAND_, QUEUED);
     ADD_ATTR("profiling_info", PROFILING_COMMAND_, SUBMIT);
     ADD_ATTR("profiling_info", PROFILING_COMMAND_, START);
     ADD_ATTR("profiling_info", PROFILING_COMMAND_, END);
+
+
+    // mem_migration_flags
 #if PYOPENCL_CL_VERSION >= 0x1020
-    ADD_ATTR("profiling_info", MIGRATE_MEM_OBJECT_, HOST);
-    ADD_ATTR("profiling_info", MIGRATE_MEM_OBJECT_, CONTENT_UNDEFINED);
+    ADD_ATTR("mem_migration_flags", MIGRATE_MEM_OBJECT_, HOST);
+    ADD_ATTR("mem_migration_flags", MIGRATE_MEM_OBJECT_, CONTENT_UNDEFINED);
 #endif
+
+
+    // device_partition_property_ext
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
+    ADD_ATTR("device_partition_property_ext",
+             DEVICE_PARTITION_, EQUALLY, _EXT);
+    ADD_ATTR("device_partition_property_ext",
+             DEVICE_PARTITION_, BY_COUNTS, _EXT);
+    ADD_ATTR("device_partition_property_ext",
+             DEVICE_PARTITION_, BY_NAMES, _EXT);
+    ADD_ATTR("device_partition_property_ext",
+             DEVICE_PARTITION_, BY_AFFINITY_DOMAIN, _EXT);
+    ADD_ATTR("device_partition_property_ext", , PROPERTIES_LIST_END, _EXT);
+    ADD_ATTR("device_partition_property_ext", ,
+             PARTITION_BY_COUNTS_LIST_END, _EXT);
+    ADD_ATTR("device_partition_property_ext", ,
+             PARTITION_BY_NAMES_LIST_END, _EXT);
 #endif
+
+
     // affinity_domain_ext
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
+    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, L1_CACHE, _EXT);
+    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, L2_CACHE, _EXT);
+    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, L3_CACHE, _EXT);
+    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, L4_CACHE, _EXT);
+    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, NUMA, _EXT);
+    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, NEXT_FISSIONABLE, _EXT);
 #endif
+
+
+    // device_partition_property
 #if PYOPENCL_CL_VERSION >= 0x1020
-    ADD_ATTR("affinity_domain_ext", DEVICE_PARTITION_, EQUALLY);
-    ADD_ATTR("affinity_domain_ext", DEVICE_PARTITION_, BY_COUNTS);
-    ADD_ATTR("affinity_domain_ext", DEVICE_PARTITION_, BY_COUNTS_LIST_END);
-    ADD_ATTR("affinity_domain_ext", DEVICE_PARTITION_, BY_AFFINITY_DOMAIN);
+    ADD_ATTR("device_partition_property", DEVICE_PARTITION_, EQUALLY);
+    ADD_ATTR("device_partition_property", DEVICE_PARTITION_, BY_COUNTS);
+    ADD_ATTR("device_partition_property", DEVICE_PARTITION_, BY_COUNTS_LIST_END);
+    ADD_ATTR("device_partition_property", DEVICE_PARTITION_, BY_AFFINITY_DOMAIN);
 #endif
+
+
     // device_affinity_domain
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("device_affinity_domain", DEVICE_AFFINITY_DOMAIN_, NUMA);
@@ -561,22 +672,29 @@ namespace pyopencl {
     ADD_ATTR("device_affinity_domain", DEVICE_AFFINITY_DOMAIN_, L3_CACHE);
     ADD_ATTR("device_affinity_domain", DEVICE_AFFINITY_DOMAIN_, L2_CACHE);
     ADD_ATTR("device_affinity_domain", DEVICE_AFFINITY_DOMAIN_, L1_CACHE);
-    ADD_ATTR("device_affinity_domain", DEVICE_AFFINITY_DOMAIN_, NEXT_PARTITIONABLE);
+    ADD_ATTR("device_affinity_domain", DEVICE_AFFINITY_DOMAIN_,
+             NEXT_PARTITIONABLE);
 #endif
+
+
 #ifdef HAVE_GL
     // gl_object_type
     ADD_ATTR("gl_object_type", GL_OBJECT_, BUFFER);
     ADD_ATTR("gl_object_type", GL_OBJECT_, TEXTURE2D);
     ADD_ATTR("gl_object_type", GL_OBJECT_, TEXTURE3D);
     ADD_ATTR("gl_object_type", GL_OBJECT_, RENDERBUFFER);
+
+
     // gl_texture_info
     ADD_ATTR("gl_texture_info", GL_, TEXTURE_TARGET);
     ADD_ATTR("gl_texture_info", GL_, MIPMAP_LEVEL);
 #endif
+
+
     // migrate_mem_object_flags_ext
 #ifdef cl_ext_migrate_memobject
+    ADD_ATTR("migrate_mem_object_flags_ext", MIGRATE_MEM_OBJECT_, HOST, _EXT);
 #endif
-
   }
 
 };
