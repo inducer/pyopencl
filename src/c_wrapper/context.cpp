@@ -92,16 +92,32 @@ using namespace pyopencl;
 
 // Context
 error*
-create_context(clobj_t *_ctx, const cl_context_properties *properties,
+create_context(clobj_t *_ctx, const cl_context_properties *props,
                cl_uint num_devices, const clobj_t *_devices)
 {
+    // TODO debug print properties
     return c_handle_error([&] {
             const auto devices = buf_from_class<device>(_devices, num_devices);
             *_ctx = new context(
                 pyopencl_call_guarded(
                     clCreateContext,
-                    const_cast<cl_context_properties*>(properties),
+                    const_cast<cl_context_properties*>(props),
                     devices, nullptr, nullptr), false);
+        });
+}
+
+// Context
+error*
+create_context_from_type(clobj_t *_ctx, const cl_context_properties *props,
+                         cl_device_type dev_type)
+{
+    // TODO debug print properties
+    return c_handle_error([&] {
+            *_ctx = new context(
+                pyopencl_call_guarded(
+                    clCreateContextFromType,
+                    const_cast<cl_context_properties*>(props),
+                    dev_type, nullptr, nullptr), false);
         });
 }
 

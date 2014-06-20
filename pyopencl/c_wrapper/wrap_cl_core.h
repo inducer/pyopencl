@@ -63,8 +63,11 @@ error *platform__get_devices(clobj_t platform, clobj_t **ptr_devices,
                              uint32_t *num_devices, cl_device_type devtype);
 error *platform__unload_compiler(clobj_t plat);
 // Context
-error *create_context(clobj_t *ctx, const cl_context_properties *properties,
+error *create_context(clobj_t *ctx, const cl_context_properties *props,
                       cl_uint num_devices, const clobj_t *ptr_devices);
+error *create_context_from_type(clobj_t *_ctx,
+                                const cl_context_properties *props,
+                                cl_device_type dev_type);
 error *context__get_supported_image_formats(clobj_t context, cl_mem_flags flags,
                                             cl_mem_object_type image_type,
                                             generic_info *out);

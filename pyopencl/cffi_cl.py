@@ -487,10 +487,10 @@ class Device(_Common):
 # {{{ Context
 
 def _parse_context_properties(properties):
-    props = []
     if properties is None:
         return _ffi.NULL
 
+    props = []
     for prop_tuple in properties:
         if len(prop_tuple) != 2:
             raise RuntimeError("property tuple must have length 2",
@@ -526,7 +526,7 @@ def _parse_context_properties(properties):
             raise RuntimeError("invalid context property",
                                status_code.INVALID_VALUE, "Context")
     props.append(0)
-    return _ffi.new('cl_context_properties[]', props)
+    return props
 
 
 class Context(_Common):
@@ -536,22 +536,26 @@ class Context(_Common):
         c_props = _parse_context_properties(properties)
         status_code = _ffi.new('cl_int*')
 
-        # from device list
+        _ctx = _ffi.new('clobj_t*')
         if devices is not None:
+            # from device list
             if dev_type is not None:
                 raise RuntimeError("one of 'devices' or 'dev_type' "
                                    "must be None",
                                    status_code.INVALID_VALUE, "Context")
-            ptr_devices, num_devices = _clobj_list(devices)
-            ptr_ctx = _ffi.new('clobj_t*')
+            _devices, num_devices = _clobj_list(devices)
             # TODO parameter order? (for clobj_list)
-            _handle_error(_lib.create_context(ptr_ctx, c_props,
-                                              num_devices, ptr_devices))
+            _handle_error(_lib.create_context(_ctx, c_props,
+                                              num_devices, _devices))
 
-        else:  # TODO: from dev_type
-            raise NotImplementedError()
+        else:
+            # from device type
+            if dev_type is None:
+                dev_type = device_type.DEFAULT
+            _handle_error(_lib.create_context_from_type(_ctx, c_props,
+                                                        dev_type))
 
-        self.ptr = ptr_ctx[0]
+        self.ptr = _ctx[0]
 
 # }}}
 
@@ -997,7 +1001,7 @@ def _enqueue_read_buffer(queue, mem, hostbuf, device_offset=0,
 
 
 def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
-        wait_for=None, is_blocking=True):
+                          wait_for=None, is_blocking=True):
     c_buf, size, c_ref = _c_buffer_from_obj(hostbuf, retain=True)
     ptr_event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
@@ -1020,7 +1024,7 @@ def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
 
 def _enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin,
                               host_origin, region, buffer_pitches=None,
-                              host_pitches=None wait_for=None,
+                              host_pitches=None, wait_for=None,
                               is_blocking=True):
     buffer_origin = tuple(buffer_origin)
     host_origin = tuple(host_origin)
@@ -1053,7 +1057,7 @@ def _enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin,
 
 def _enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin,
                                host_origin, region, buffer_pitches=None,
-                               host_pitches=None wait_for=None,
+                               host_pitches=None, wait_for=None,
                                is_blocking=True):
     buffer_origin = tuple(buffer_origin)
     host_origin = tuple(host_origin)
@@ -1085,7 +1089,8 @@ def _enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin,
 
 
 def _enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region,
-                              src_pitches=None, dst_pitches=None wait_for=None):
+                              src_pitches=None, dst_pitches=None,
+                              wait_for=None):
     src_origin = tuple(src_origin)
     dst_origin = tuple(dst_origin)
     region = tuple(region)
