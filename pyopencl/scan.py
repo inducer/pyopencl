@@ -783,6 +783,7 @@ _IGNORED_WORDS = set("""
         pragma __attribute__ __global __kernel __local
         get_local_size get_local_id cl_khr_fp64 reqd_work_group_size
         get_num_groups barrier get_group_id
+        CL_VERSION_1_1 __OPENCL_VERSION__
 
         _final_update _debug_scan kernel_name
 
