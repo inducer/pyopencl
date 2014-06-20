@@ -347,11 +347,16 @@ private:
     ConstBuffer(ConstBuffer<T, n, AT>&&) = delete;
     ConstBuffer() = delete;
 public:
-    ConstBuffer(const T *buf, size_t l)
+    ConstBuffer(const T *buf, size_t l, T content=0)
         : ArgBuffer<const T, AT>(buf, n)
     {
         if (l < n) {
-            memcpy(m_intern_buf, buf, sizeof(T) * std::min(l, n));
+            memcpy(m_intern_buf, buf, sizeof(T) * l);
+            if (content) {
+                for (size_t i = l;i < n;i++) {
+                    m_intern_buf[i] = content;
+                }
+            }
             this->set(m_intern_buf);
         }
     }

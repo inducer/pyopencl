@@ -190,7 +190,7 @@ enqueue_read_image(clobj_t *evt, clobj_t _queue, clobj_t _mem,
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(_mem);
     ConstBuffer<size_t, 3> origin(_origin, origin_l);
-    ConstBuffer<size_t, 3> region(_region, region_l);
+    ConstBuffer<size_t, 3> region(_region, region_l, 1);
     return c_handle_error([&] {
             retry_mem_error([&] {
                     pyopencl_call_guarded(
@@ -215,7 +215,7 @@ enqueue_copy_image(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
     auto dst = static_cast<image*>(_dst);
     ConstBuffer<size_t, 3> src_origin(_src_origin, src_origin_l);
     ConstBuffer<size_t, 3> dst_origin(_dst_origin, dst_origin_l);
-    ConstBuffer<size_t, 3> region(_region, region_l);
+    ConstBuffer<size_t, 3> region(_region, region_l, 1);
     return c_handle_error([&] {
             retry_mem_error([&] {
                     pyopencl_call_guarded(
@@ -237,7 +237,7 @@ enqueue_write_image(clobj_t *evt, clobj_t _queue, clobj_t _mem,
     auto img = static_cast<image*>(_mem);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     ConstBuffer<size_t, 3> origin(_origin, origin_l);
-    ConstBuffer<size_t, 3> region(_region, region_l);
+    ConstBuffer<size_t, 3> region(_region, region_l, 1);
     return c_handle_error([&] {
             retry_mem_error([&] {
                     pyopencl_call_guarded(

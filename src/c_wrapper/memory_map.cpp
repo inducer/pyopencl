@@ -94,7 +94,7 @@ enqueue_map_image(clobj_t *evt, clobj_t *map, clobj_t _queue, clobj_t _mem,
     auto img = static_cast<image*>(_mem);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     ConstBuffer<size_t, 3> origin(_origin, origin_l);
-    ConstBuffer<size_t, 3> region(_region, region_l);
+    ConstBuffer<size_t, 3> region(_region, region_l, 1);
     return c_handle_error([&] {
             void *res = retry_mem_error([&] {
                     return pyopencl_call_guarded(
