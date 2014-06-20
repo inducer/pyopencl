@@ -78,6 +78,7 @@ error *create_buffer(clobj_t *buffer, clobj_t context, cl_mem_flags flags,
                      size_t size, void *hostbuf);
 error *buffer__get_sub_region(clobj_t *_sub_buf, clobj_t _buf, size_t orig,
                               size_t size, cl_mem_flags flags);
+error *buffer__getitem(clobj_t *_ret, clobj_t _buf, ssize_t start, ssize_t end);
 // Memory Object
 error *memory_object__release(clobj_t obj);
 // Memory Map

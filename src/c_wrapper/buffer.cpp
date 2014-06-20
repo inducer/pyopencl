@@ -26,32 +26,32 @@ buffer::get_sub_region(size_t orig, size_t size, cl_mem_flags flags) const
     return new_buffer(mem);
 }
 
-//       buffer *getitem(py::slice slc) const
-//       {
-//         PYOPENCL_BUFFER_SIZE_T start, end, stride, length;
-
-//         size_t my_length;
-//         PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
-//             (this, CL_MEM_SIZE, sizeof(my_length), &my_length, 0));
-
-// #if PY_VERSION_HEX >= 0x03020000
-//         if (PySlice_GetIndicesEx(slc.ptr(),
-// #else
-//         if (PySlice_GetIndicesEx(reinterpret_cast<PySliceObject *>(slc.ptr()),
-// #endif
-//               my_length, &start, &end, &stride, &length) != 0)
-//           throw py::error_already_set();
-
-//         if (stride != 1)
-//           throw clerror("Buffer.__getitem__", CL_INVALID_VALUE,
-//               "Buffer slice must have stride 1");
-
-//         cl_mem_flags my_flags;
-//         PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
-//             (this, CL_MEM_FLAGS, sizeof(my_flags), &my_flags, 0));
-
-//         return get_sub_region(start, end, my_flags);
-//       }
+PYOPENCL_USE_RESULT buffer*
+buffer::getitem(ssize_t start, ssize_t end) const
+{
+    ssize_t length;
+    pyopencl_call_guarded(clGetMemObjectInfo, this, CL_MEM_SIZE,
+                          size_arg(length), nullptr);
+    if (PYOPENCL_UNLIKELY(length <= 0))
+        throw clerror("Buffer.__getitem__", CL_INVALID_VALUE,
+                      "Cannot get the length of the buffer.");
+    if (end == 0 || end > length) {
+        end = length;
+    } else if (end < 0) {
+        end += length;
+    }
+    if (start < 0) {
+        start += length;
+    }
+    if (end <= start || start < 0)
+        throw clerror("Buffer.__getitem__", CL_INVALID_VALUE,
+                      "Buffer slice should have end > start >= 0");
+    cl_mem_flags flags;
+    pyopencl_call_guarded(clGetMemObjectInfo, this, CL_MEM_FLAGS,
+                          size_arg(flags), nullptr);
+    flags &= ~CL_MEM_COPY_HOST_PTR;
+    return get_sub_region((size_t)start, (size_t)(end - start), flags);
+}
 #endif
 
 }
@@ -242,6 +242,15 @@ buffer__get_sub_region(clobj_t *_sub_buf, clobj_t _buf, size_t orig,
     auto buf = static_cast<buffer*>(_buf);
     return c_handle_error([&] {
             *_sub_buf = buf->get_sub_region(orig, size, flags);
+        });
+}
+
+error*
+buffer__getitem(clobj_t *_ret, clobj_t _buf, ssize_t start, ssize_t end)
+{
+    auto buf = static_cast<buffer*>(_buf);
+    return c_handle_error([&] {
+            *_ret = buf->getitem(start, end);
         });
 }
 

@@ -726,9 +726,16 @@ class Buffer(MemoryObject):
                                                   size, flags))
         sub_buf = self._create(_sub_buf[0])
         MemoryObject.__init__(sub_buf, None)
-        sub_buf._handle_buf_flags(flags)
 
-    # TODO __getitem__ ?
+    def __getitem__(self, idx):
+        if not (idx.step == 1 or idx.stop is None):
+            raise RuntimeError("Buffer slice must have stride 1",
+                               status_code.INVALID_VALUE, "Buffer.__getitem__")
+        _ret = _ffi.new('clobj_t*')
+        _handle_error(_lib.buffer__getitem(
+            _ret, self.ptr, idx.start or 0, idx.stop or 0))
+        ret = self._create(_ret[0])
+        MemoryObject.__init__(ret, None)
 
 # }}}
 
