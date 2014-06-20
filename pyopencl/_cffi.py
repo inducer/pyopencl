@@ -102,6 +102,19 @@ typedef struct _cl_buffer_region {
     size_t                  size;
 } cl_buffer_region;
 
+/* cl_ext.h */
+typedef cl_ulong  cl_device_partition_property_ext;
+typedef cl_uint   cl_image_pitch_info_qcom;
+typedef struct _cl_mem_ext_host_ptr {
+    cl_uint  allocation_type;
+    cl_uint  host_cache_policy;
+} cl_mem_ext_host_ptr;
+typedef struct _cl_mem_ion_host_ptr {
+    cl_mem_ext_host_ptr  ext_host_ptr;
+    int                  ion_filedesc;
+    void*                ion_hostptr;
+} cl_mem_ion_host_ptr;
+
 /* c++ class pointer */
 typedef struct clbase *clobj_t;
 """

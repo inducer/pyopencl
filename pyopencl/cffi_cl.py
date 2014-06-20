@@ -618,7 +618,6 @@ class CommandQueue(_Common):
         _handle_error(_lib.command_queue__finish(self.ptr))
     def flush(self):
         _handle_error(_lib.command_queue__flush(self.ptr))
-    # TODO get_context?
     # TODO set_property
 
 class MemoryObjectHolder(_Common):
