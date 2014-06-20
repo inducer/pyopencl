@@ -720,6 +720,14 @@ class Buffer(MemoryObject):
             ptr_buffer, context.ptr, flags, size, c_hostbuf))
         self.ptr = ptr_buffer[0]
 
+    def get_sub_region(self, origin, size, flags=0):
+        _sub_buf = _ffi.new('clobj_t*')
+        _handle_error(_lib.buffer__get_sub_region(_sub_buf, self.ptr, orig,
+                                                  size, flags))
+        sub_buf = self._create(_sub_buf[0])
+        MemoryObject.__init__(sub_buf, None)
+        sub_buf._handle_buf_flags(flags)
+
     # TODO __getitem__ ?
 
 # }}}
@@ -867,7 +875,6 @@ class NannyEvent(Event):
 #   UserEvent
 #   enqueue_migrate_mem_objects
 #   enqueue_migrate_mem_objects_ext
-#   create_sub_buffer
 
 # }}}
 

@@ -151,9 +151,9 @@ enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
         });
 }
 
-// {{{ rectangular transfers
-
 #if PYOPENCL_CL_VERSION >= 0x1010
+
+// {{{ rectangular transfers
 
 error*
 enqueue_read_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *buf,
@@ -233,5 +233,16 @@ enqueue_copy_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _src,
         });
 }
 
-#endif
 // }}}
+
+error*
+buffer__get_sub_region(clobj_t *_sub_buf, clobj_t _buf, size_t orig,
+                       size_t size, cl_mem_flags flags)
+{
+    auto buf = static_cast<buffer*>(_buf);
+    return c_handle_error([&] {
+            *_sub_buf = buf->get_sub_region(orig, size, flags);
+        });
+}
+
+#endif
