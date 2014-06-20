@@ -187,10 +187,9 @@ def _py_deref(handle):
     except:
         pass
 
-# TODO:
-# Not sure if cffi always return the same address for the same object
-# Unless it is, this function might return a different pointer from its input
-# and should only be called once.
+# return a new reference of the object pointed to by the handle.
+# The return value might be different with the input (on PyPy).
+# _py_deref should be called (once) when the object is not needed anymore.
 @_ffi.callback('void*(void*)')
 def _py_ref(handle):
     obj = _ffi.from_handle(handle)
