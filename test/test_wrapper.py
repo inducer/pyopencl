@@ -38,10 +38,12 @@ except ImportError:
 else:
     faulthandler.enable()
 
+
 def _skip_if_pocl(plat, msg='unsupported by pocl'):
     if plat.vendor == "The pocl project":
         import pytest
         pytest.skip(msg)
+
 
 def test_get_info(ctx_factory):
     ctx = ctx_factory()
@@ -608,6 +610,7 @@ def test_can_build_binary(ctx_factory):
     foo = cl.Program(ctx, [device], [binary])
     foo.build()
 
+
 def test_enqueue_barrier_marker(ctx_factory):
     ctx = ctx_factory()
     _skip_if_pocl(ctx.devices[0].platform, 'pocl crashes on enqueue_barrier')
@@ -615,7 +618,8 @@ def test_enqueue_barrier_marker(ctx_factory):
     cl.enqueue_barrier(queue)
     evt1 = cl.enqueue_marker(queue)
     evt2 = cl.enqueue_marker(queue, wait_for=[evt1])
-    evt3 = cl.enqueue_barrier(queue, wait_for=[evt1, evt2])
+    cl.enqueue_barrier(queue, wait_for=[evt1, evt2])
+
 
 def test_wait_for_events(ctx_factory):
     ctx = ctx_factory()
@@ -624,11 +628,12 @@ def test_wait_for_events(ctx_factory):
     evt2 = cl.enqueue_marker(queue)
     cl.wait_for_events([evt1, evt2])
 
+
 def test_unload_compiler(ctx_factory):
     ctx = ctx_factory()
     platform = ctx.devices[0].platform
     if (ctx._get_cl_version() < (1, 2) or
-        cl.get_cl_header_version() < (1, 2)):
+            cl.get_cl_header_version() < (1, 2)):
         from pytest import skip
         skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
     _skip_if_pocl(platform, 'pocl does not support unloading compiler')
