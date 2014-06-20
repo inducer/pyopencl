@@ -1052,6 +1052,8 @@ def _enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
 
 def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
                         slice_pitch=0, wait_for=None, is_blocking=True):
+    origin = tuple(origin)
+    region = tuple(region)
     origin_l = len(origin)
     region_l = len(region)
     if origin_l > 3 or region_l > 3:
@@ -1069,6 +1071,9 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
 
 def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
                         wait_for=None):
+    src_origin = tuple(src_origin)
+    dest_region = tuple(dest_region)
+    region = tuple(region)
     src_origin_l = len(src_origin)
     dest_origin_l = len(dest_origin)
     region_l = len(region)
@@ -1084,6 +1089,8 @@ def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
 
 def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
                          slice_pitch=0, wait_for=None, is_blocking=True):
+    origin = tuple(origin)
+    region = tuple(region)
     origin_l = len(origin)
     region_l = len(region)
     if origin_l > 3 or region_l > 3:
@@ -1101,6 +1108,8 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
 
 def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
                       order="C", strides=None, wait_for=None, is_blocking=True):
+    origin = tuple(origin)
+    region = tuple(region)
     origin_l = len(origin)
     region_l = len(region)
     if origin_l > 3 or region_l > 3:
