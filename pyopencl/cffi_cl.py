@@ -510,7 +510,14 @@ class Device(_Common):
             self.ptr, devices.ptr, devices.size, props))
         return [Device._create(devices.ptr[0][i])
                 for i in xrange(devices.size[0])]
-    # TODO create_sub_devices_ext
+    def create_sub_devices_ext(self, props):
+        props = (tuple(props) +
+                 (device_partition_property_ext.PROPERTIES_LIST_END,))
+        devices = _CArray(_ffi.new('clobj_t**'))
+        _handle_error(_lib.device__create_sub_devices_ext(
+            self.ptr, devices.ptr, devices.size, props))
+        return [Device._create(devices.ptr[0][i])
+                for i in xrange(devices.size[0])]
 
 # }}}
 

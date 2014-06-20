@@ -253,14 +253,36 @@ device::get_info(cl_uint param_name) const
 PYOPENCL_USE_RESULT pyopencl_buf<clobj_t>
 device::create_sub_devices(const cl_device_partition_property *props)
 {
-    // TODO debug print cl_device_partition_property
+    // TODO debug print props
     cl_uint num_devices;
     pyopencl_call_guarded(clCreateSubDevices, this, props, 0, nullptr,
                           buf_arg(num_devices));
     pyopencl_buf<cl_device_id> devices(num_devices);
     pyopencl_call_guarded(clCreateSubDevices, this, props, devices,
                           buf_arg(num_devices));
-    return buf_to_base<device>(devices);
+    return buf_to_base<device>(devices, true, device::REF_CL_1_2);
+}
+#endif
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
+PYOPENCL_USE_RESULT pyopencl_buf<clobj_t>
+device::create_sub_devices_ext(const cl_device_partition_property_ext *props)
+{
+#if PYOPENCL_CL_VERSION >= 0x1020
+    cl_platform_id plat;
+    pyopencl_call_guarded(clGetDeviceInfo, this, CL_DEVICE_PLATFORM,
+                          size_arg(plat), nullptr);
+#endif
+    auto clCreateSubDevicesEXT =
+        pyopencl_get_ext_fun(plat, clCreateSubDevicesEXT);
+
+    // TODO debug print props
+    cl_uint num_devices;
+    pyopencl_call_guarded(clCreateSubDevicesEXT, this, props, 0, nullptr,
+                          buf_arg(num_devices));
+    pyopencl_buf<cl_device_id> devices(num_devices);
+    pyopencl_call_guarded(clCreateSubDevicesEXT, this, props, devices,
+                          buf_arg(num_devices));
+    return buf_to_base<device>(devices, true, device::REF_FISSION_EXT);
 }
 #endif
 
@@ -279,6 +301,21 @@ device__create_sub_devices(clobj_t _dev, clobj_t **_devs,
     auto dev = static_cast<device*>(_dev);
     return c_handle_error([&] {
             auto devs = dev->create_sub_devices(props);
+            *num_devices = (uint32_t)devs.len();
+            *_devs = devs.release();
+        });
+}
+#endif
+
+#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
+error*
+device__create_sub_devices_ext(clobj_t _dev, clobj_t **_devs,
+                               uint32_t *num_devices,
+                               const cl_device_partition_property_ext *props)
+{
+    auto dev = static_cast<device*>(_dev);
+    return c_handle_error([&] {
+            auto devs = dev->create_sub_devices_ext(props);
             *num_devices = (uint32_t)devs.len();
             *_devs = devs.release();
         });
