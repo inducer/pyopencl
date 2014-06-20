@@ -49,9 +49,8 @@ Sums and counts ("reduce")
 
     Vectors in *map_expr* should be indexed by the variable *i*. *reduce_expr*
     uses the formal values "a" and "b" to indicate two operands of a binary
-    reduction operation. If you do not specify a *map_expr*, "in[i]" -- and
-    therefore the presence of only one input argument -- is automatically
-    assumed.
+    reduction operation. If you do not specify a *map_expr*, ``in[i]`` is
+    automatically assumed and treated as the only one input argument.
 
     *dtype_out* specifies the :class:`numpy.dtype` in which the reduction is
     performed and in which the result is returned. *neutral* is specified as
@@ -62,9 +61,13 @@ Sums and counts ("reduce")
     :meth:`pyopencl.Program.build`. *preamble* specifies a string of code that
     is inserted before the actual kernels.
 
-    .. method:: __call__(*args, queue=None, wait_for=None, return_event=False)
+    .. method:: __call__(*args, queue=None, wait_for=None, return_event=False, out=None)
 
         |explain-waitfor|
+
+        With *out* the resulting single-entry :class:`pyopencl.array.Array` can
+        be specified. Because offsets are supported one can store results
+        anywhere (e.g. ``out=a[3]``).
 
         :return: the resulting scalar as a single-entry :class:`pyopencl.array.Array`
             if *return_event* is *False*, otherwise a tuple ``(scalar_array, event)``.
@@ -74,7 +77,11 @@ Sums and counts ("reduce")
             The returned :class:`pyopencl.Event` corresponds only to part of the
             execution of the reduction. It is not suitable for profiling.
 
-    .. versionadded: 2011.1
+    .. versionadded:: 2011.1
+
+    .. versionchanged:: 2014.2
+
+        Added *out* parameter.
 
 Here's a usage example::
 
@@ -167,7 +174,7 @@ in PyOpenCL:
 Making Custom Scan Kernels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. versionadded: 2013.1
+.. versionadded:: 2013.1
 
 .. autoclass:: GenericScanKernel
 
