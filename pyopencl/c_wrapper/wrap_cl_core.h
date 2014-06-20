@@ -200,6 +200,11 @@ error *enqueue_map_image(clobj_t *_evt, clobj_t *map, clobj_t _queue,
                          size_t *row_pitch, size_t *slice_pitch,
                          const clobj_t *_wait_for, uint32_t num_wait_for,
                          int block);
+error *enqueue_fill_image(clobj_t *evt, clobj_t _queue, clobj_t mem,
+                          const void *color, const size_t *_origin,
+                          size_t origin_l, const size_t *_region,
+                          size_t region_l, const clobj_t *_wait_for,
+                          uint32_t num_wait_for);
 // CL Object
 intptr_t clobj__int_ptr(clobj_t obj);
 error *clobj__get_info(clobj_t obj, cl_uint param, generic_info *out);

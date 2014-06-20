@@ -250,35 +250,24 @@ enqueue_write_image(clobj_t *evt, clobj_t _queue, clobj_t _mem,
 }
 
 #if PYOPENCL_CL_VERSION >= 0x1020
-//   PYOPENCL_INLINE
-//   event *enqueue_fill_image(
-//       command_queue &cq,
-//       memory_object_holder &mem,
-//       py::object color,
-//       py::object py_origin, py::object py_region,
-//       py::object py_wait_for
-//       )
-//   {
-//     PYOPENCL_PARSE_WAIT_FOR;
-
-//     COPY_PY_COORD_TRIPLE(origin);
-//     COPY_PY_REGION_TRIPLE(region);
-
-//     const void *color_buf;
-//     PYOPENCL_BUFFER_SIZE_T color_len;
-
-//     if (PyObject_AsReadBuffer(color.ptr(), &color_buf, &color_len))
-//       throw py::error_already_set();
-
-//     cl_event evt;
-//     PYOPENCL_RETRY_IF_MEM_ERROR(
-//       PYOPENCL_CALL_GUARDED(clEnqueueFillImage, (
-//             cq.data(),
-//             mem.data(),
-//             color_buf, origin, region,
-//             PYOPENCL_WAITLIST_ARGS, &evt
-//             ));
-//       );
-//     PYOPENCL_RETURN_NEW_EVENT(evt);
-//   }
+error*
+enqueue_fill_image(clobj_t *evt, clobj_t _queue, clobj_t mem,
+                   const void *color, const size_t *_origin, size_t origin_l,
+                   const size_t *_region, size_t region_l,
+                   const clobj_t *_wait_for, uint32_t num_wait_for)
+{
+    // TODO debug color
+    auto queue = static_cast<command_queue*>(_queue);
+    auto img = static_cast<image*>(mem);
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    ConstBuffer<size_t, 3> origin(_origin, origin_l);
+    ConstBuffer<size_t, 3> region(_region, region_l, 1);
+    return c_handle_error([&] {
+            retry_mem_error([&] {
+                    pyopencl_call_guarded(
+                        clEnqueueFillImage, queue, img, color, origin, region,
+                        wait_for, event_out(evt));
+                });
+        });
+}
 #endif
