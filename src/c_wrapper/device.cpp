@@ -273,8 +273,8 @@ using namespace pyopencl;
 #if PYOPENCL_CL_VERSION >= 0x1020
 error*
 device__create_sub_devices(clobj_t _dev, clobj_t **_devs,
-                           const cl_device_partition_property *props,
-                           uint32_t *num_devices)
+                           uint32_t *num_devices,
+                           const cl_device_partition_property *props)
 {
     auto dev = static_cast<device*>(_dev);
     return c_handle_error([&] {

@@ -64,8 +64,8 @@ error *platform__get_devices(clobj_t platform, clobj_t **ptr_devices,
 error *platform__unload_compiler(clobj_t plat);
 // Device
 error *device__create_sub_devices(clobj_t _dev, clobj_t **_devs,
-                                  const cl_device_partition_property *props,
-                                  uint32_t *num_devices);
+                                  uint32_t *num_devices,
+                                  const cl_device_partition_property *props);
 // Context
 error *create_context(clobj_t *ctx, const cl_context_properties *props,
                       cl_uint num_devices, const clobj_t *ptr_devices);

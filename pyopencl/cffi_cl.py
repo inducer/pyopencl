@@ -503,7 +503,13 @@ def get_platforms():
 
 class Device(_Common):
     _id = 'device'
-    # TODO create_sub_devices
+    def create_sub_devices(self, props):
+        props = tuple(props) + (0,)
+        devices = _CArray(_ffi.new('clobj_t**'))
+        _handle_error(_lib.device__create_sub_devices(
+            self.ptr, devices.ptr, devices.size, props))
+        return [Device._create(devices.ptr[0][i])
+                for i in xrange(devices.size[0])]
     # TODO create_sub_devices_ext
 
 # }}}
