@@ -256,14 +256,15 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
 #define pyopencl_call_guarded_cleanup(func, args...)    \
     pyopencl::call_guarded_cleanup(func, #func, args)
 
+template<typename Func>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE error*
-c_handle_error(std::function<void()> func) noexcept
+c_handle_error(Func func) noexcept
 {
     try {
         func();
         return nullptr;
     } catch (const clerror &e) {
-        auto err = (::error*)malloc(sizeof(::error));
+        auto err = (error*)malloc(sizeof(error));
         err->routine = strdup(e.routine());
         err->msg = strdup(e.what());
         err->code = e.code();
@@ -271,7 +272,7 @@ c_handle_error(std::function<void()> func) noexcept
         return err;
     } catch (const std::exception &e) {
         /* non-pyopencl exceptions need to be converted as well */
-        auto err = (::error*)malloc(sizeof(::error));
+        auto err = (error*)malloc(sizeof(error));
         err->other = 1;
         err->msg = strdup(e.what());
         return err;
@@ -292,10 +293,11 @@ retry_mem_error(Func func) -> decltype(func())
     return func();
 }
 
+template<typename Func>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE error*
-c_handle_retry_mem_error(std::function<void()> func) noexcept
+c_handle_retry_mem_error(Func &&func) noexcept
 {
-    return c_handle_error([&] {retry_mem_error(func);});
+    return c_handle_error([&] {retry_mem_error(std::forward<Func>(func));});
 }
 
 // }}}
