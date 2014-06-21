@@ -4,6 +4,9 @@
 #include "async.h"
 #include "pyhelper.h"
 
+#include <atomic>
+#include <thread>
+
 namespace pyopencl {
 
 template class clobj<cl_event>;
@@ -12,14 +15,37 @@ template void print_clobj<event>(std::ostream&, const event*);
 template void print_buf<cl_event>(std::ostream&, const cl_event*,
                                   size_t, ArgType, bool, bool);
 
+class event_private {
+    mutable volatile std::atomic_bool m_finished;
+    virtual void
+    finish() noexcept
+    {}
+public:
+    virtual
+    ~event_private()
+    {}
+    void
+    call_finish() noexcept
+    {
+        if (m_finished.exchange(true))
+            return;
+        finish();
+    }
+    bool
+    is_finished() noexcept
+    {
+        return m_finished;
+    }
+};
+
 #if PYOPENCL_CL_VERSION >= 0x1010
 class event_callback {
     std::function<void(cl_int)> m_func;
-    event_callback(const std::function<void(cl_int)> &func)
+    event_callback(const std::function<void(cl_int)> &func) noexcept
         : m_func(func)
     {}
     static void
-    cl_call_and_free(cl_event, cl_int status, void *data)
+    cl_call_and_free(cl_event, cl_int status, void *data) noexcept
     {
         auto cb = static_cast<event_callback*>(data);
         auto func = cb->m_func;
@@ -34,8 +60,53 @@ class event_callback {
 };
 #endif
 
+event::event(cl_event event, bool retain, event_private *p)
+    : clobj(event), m_p(p)
+{
+    if (retain) {
+        try {
+            pyopencl_call_guarded(clRetainEvent, this);
+        } catch (...) {
+            delete m_p;
+            throw;
+        }
+    }
+}
+
+void
+event::release_private() noexcept
+{
+    if (!m_p)
+        return;
+    if (m_p->is_finished()) {
+        delete m_p;
+        return;
+    }
+#if PYOPENCL_CL_VERSION >= 0x1010
+    if (support_cb) {
+        pyopencl_call_guarded_cleanup(clSetEventCallback, this, CL_COMPLETE,
+                                      [] (cl_event, cl_int, void *data) {
+                                          event_private *p =
+                                              static_cast<event_private*>(data);
+                                          p->call_finish();
+                                          delete p;
+                                      }, (void*)m_p);
+    } else {
+#endif
+        std::thread t([] (cl_event evt, event_private *p) {
+                pyopencl_call_guarded_cleanup(clWaitForEvents, len_arg(evt));
+                p->call_finish();
+                delete p;
+            }, data(), m_p);
+        t.detach();
+#if PYOPENCL_CL_VERSION >= 0x1010
+    }
+#endif
+}
+
 event::~event()
 {
+    release_private();
     pyopencl_call_guarded_cleanup(clReleaseEvent, this);
 }
 
@@ -77,10 +148,12 @@ event::get_profiling_info(cl_profiling_info param) const
 }
 
 void
-event::wait()
+event::wait() const
 {
     pyopencl_call_guarded(clWaitForEvents, len_arg(data()));
-    finished();
+    if (m_p) {
+        m_p->call_finish();
+    }
 }
 
 #if PYOPENCL_CL_VERSION >= 0x1010
@@ -99,20 +172,39 @@ event::set_callback(cl_int type, const std::function<void(cl_int)> &func)
 }
 #endif
 
-nanny_event::~nanny_event()
-{
-    if (m_ward) {
-        wait();
+class nanny_event_private : public event_private {
+    void *m_ward;
+    void finished() noexcept
+    {
+        void *ward = m_ward;
+        m_ward = nullptr;
+        py::deref(ward);
     }
+    ~nanny_event_private()
+    {}
+public:
+    nanny_event_private(void *ward)
+        : m_ward(nullptr)
+    {
+        m_ward = py::ref(ward);
+    }
+    PYOPENCL_USE_RESULT PYOPENCL_INLINE void*
+    get_ward() const noexcept
+    {
+        return m_ward;
+    }
+};
+
+nanny_event::nanny_event(cl_event evt, bool retain, void *ward)
+    : event(evt, retain, ward ? new nanny_event_private(ward) : nullptr)
+{
 }
 
-void
-nanny_event::finished()
+PYOPENCL_USE_RESULT void*
+nanny_event::get_ward() const noexcept
 {
-    // No lock needed because multiple release is safe here.
-    void *ward = m_ward;
-    m_ward = nullptr;
-    py::deref(ward);
+    return (get_p() ? static_cast<nanny_event_private*>(get_p())->get_ward() :
+            nullptr);
 }
 
 }
