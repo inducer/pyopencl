@@ -4,6 +4,8 @@
 
 namespace pyopencl {
 
+std::mutex dbg_lock;
+
 void
 dbg_print_str(std::ostream &stm, const char *str, size_t len)
 {

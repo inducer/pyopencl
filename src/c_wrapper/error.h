@@ -26,6 +26,7 @@ public:
         : std::runtime_error(msg), m_routine(rout), m_code(c)
     {
         if (DEBUG_ON) {
+            std::lock_guard<std::mutex> lock(dbg_lock);
             std::cerr << rout << ";" << msg<< ";" << c << std::endl;
         }
     }
@@ -186,6 +187,7 @@ public:
     {
         auto res = this->template call<__CLArgGetter>(func);
         if (DEBUG_ON) {
+            std::lock_guard<std::mutex> lock(dbg_lock);
             _print_trace(res, name);
         }
         return res;
