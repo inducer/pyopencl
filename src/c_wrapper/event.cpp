@@ -87,6 +87,7 @@ event::release_private() noexcept
         }
     }
 #endif
+#if 0
     std::thread t([] (cl_event evt, event_private *p) {
             pyopencl_call_guarded_cleanup(clWaitForEvents, len_arg(evt));
             p->call_finish();
@@ -95,6 +96,11 @@ event::release_private() noexcept
         }, data(), m_p);
     t.detach();
     return false;
+#else
+    wait();
+    delete m_p;
+    return true;
+#endif
 }
 
 event::~event()
