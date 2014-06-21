@@ -60,7 +60,7 @@ free_pointer_array(void **p, uint32_t size)
 intptr_t
 clobj__int_ptr(clobj_t obj)
 {
-    return obj->intptr();
+    return PYOPENCL_LIKELY(obj) ? obj->intptr() : 0l;
 }
 
 static PYOPENCL_INLINE clobj_t
@@ -110,6 +110,9 @@ error*
 clobj__get_info(clobj_t obj, cl_uint param, generic_info *out)
 {
     return c_handle_error([&] {
+            if (PYOPENCL_UNLIKELY(!obj)) {
+                throw clerror("NULL input", CL_INVALID_VALUE);
+            }
             *out = obj->get_info(param);
         });
 }
