@@ -140,6 +140,7 @@ type_t image__get_fill_type(clobj_t img);
 error *event__get_profiling_info(clobj_t event, cl_profiling_info param,
                                  generic_info *out);
 error *event__wait(clobj_t event);
+void event__set_support_cb(clobj_t _evt, int support);
 error *event__set_callback(clobj_t _evt, cl_int type, void *pyobj);
 error *wait_for_events(const clobj_t *_wait_for, uint32_t num_wait_for);
 // Nanny Event

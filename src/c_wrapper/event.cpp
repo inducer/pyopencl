@@ -198,6 +198,13 @@ event__wait(clobj_t evt)
 }
 
 #if PYOPENCL_CL_VERSION >= 0x1010
+void
+event__set_support_cb(clobj_t _evt, int support)
+{
+    auto evt = static_cast<event*>(_evt);
+    evt->support_cb = support;
+}
+
 error*
 event__set_callback(clobj_t _evt, cl_int type, void *pyobj)
 {
