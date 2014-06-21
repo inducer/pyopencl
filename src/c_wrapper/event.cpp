@@ -1,11 +1,9 @@
 #include "event.h"
 #include "command_queue.h"
 #include "context.h"
-#include "async.h"
 #include "pyhelper.h"
 
 #include <atomic>
-#include <thread>
 
 namespace pyopencl {
 
@@ -38,28 +36,6 @@ public:
     }
 };
 
-#if PYOPENCL_CL_VERSION >= 0x1010
-class event_callback {
-    std::function<void(cl_int)> m_func;
-    event_callback(const std::function<void(cl_int)> &func) noexcept
-        : m_func(func)
-    {}
-    static void
-    cl_call_and_free(cl_event, cl_int status, void *data) noexcept
-    {
-        auto cb = static_cast<event_callback*>(data);
-        auto func = cb->m_func;
-        try {
-            call_async([func, status] {func(status);});
-        } catch (...) {
-        }
-        delete cb;
-    }
-
-    friend class event;
-};
-#endif
-
 event::event(cl_event event, bool retain, event_private *p)
     : clobj(event), m_p(p)
 {
@@ -84,13 +60,13 @@ event::release_private() noexcept
     }
 #if PYOPENCL_CL_VERSION >= 0x1010
     if (support_cb) {
-        pyopencl_call_guarded_cleanup(clSetEventCallback, this, CL_COMPLETE,
-                                      [] (cl_event, cl_int, void *data) {
-                                          event_private *p =
-                                              static_cast<event_private*>(data);
-                                          p->call_finish();
-                                          delete p;
-                                      }, (void*)m_p);
+        pyopencl_call_guarded_cleanup(
+            clSetEventCallback, this, CL_COMPLETE,
+            [] (cl_event, cl_int, void *data) {
+                event_private *p = static_cast<event_private*>(data);
+                p->call_finish();
+                delete p;
+            }, (void*)m_p);
     } else {
 #endif
         std::thread t([] (cl_event evt, event_private *p) {
@@ -155,22 +131,6 @@ event::wait() const
         m_p->call_finish();
     }
 }
-
-#if PYOPENCL_CL_VERSION >= 0x1010
-void
-event::set_callback(cl_int type, const std::function<void(cl_int)> &func)
-{
-    auto cb = new event_callback(func);
-    try {
-        pyopencl_call_guarded(clSetEventCallback, this, type,
-                              &event_callback::cl_call_and_free, cb);
-    } catch (...) {
-        delete cb;
-        throw;
-    }
-    init_async();
-}
-#endif
 
 class nanny_event_private : public event_private {
     void *m_ward;

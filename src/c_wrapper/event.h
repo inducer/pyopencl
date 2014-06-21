@@ -1,4 +1,5 @@
 #include "clhelper.h"
+#include <thread>
 
 #ifndef __PYOPENCL_EVENT_H
 #define __PYOPENCL_EVENT_H
@@ -33,7 +34,27 @@ public:
     void wait() const;
 #if PYOPENCL_CL_VERSION >= 0x1010
     bool support_cb;
-    void set_callback(cl_int type, const std::function<void(cl_int)> &func);
+    template<typename Func>
+    PYOPENCL_INLINE void
+    set_callback(cl_int type, Func &&_func)
+    {
+        auto func = new rm_ref_t<Func>(std::forward<Func>(_func));
+        try {
+            pyopencl_call_guarded(
+                clSetEventCallback, this, type,
+                [] (cl_event, cl_int status, void *data) {
+                    rm_ref_t<Func> *func = static_cast<rm_ref_t<Func>*>(data);
+                    std::thread t([func, status] () {
+                            (*func)(status);
+                            delete func;
+                        });
+                    t.detach();
+                }, (void*)func);
+        } catch (...) {
+            delete func;
+            throw;
+        }
+    }
 #endif
 };
 static PYOPENCL_INLINE auto

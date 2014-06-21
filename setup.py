@@ -235,7 +235,6 @@ def main():
                                 "src/c_wrapper/wrap_constants.cpp",
                                 "src/c_wrapper/bitlog.cpp",
                                 "src/c_wrapper/pyhelper.cpp",
-                                "src/c_wrapper/async.cpp",
                                 "src/c_wrapper/platform.cpp",
                                 "src/c_wrapper/device.cpp",
                                 "src/c_wrapper/context.cpp",
