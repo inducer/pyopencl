@@ -25,7 +25,9 @@ public:
     clerror(const char *rout, cl_int c, const char *msg="")
         : std::runtime_error(msg), m_routine(rout), m_code(c)
     {
-        std::cout << rout <<";" << msg<< ";" << c << std::endl;
+        if (DEBUG_ON) {
+            std::cerr << rout << ";" << msg<< ";" << c << std::endl;
+        }
     }
     PYOPENCL_INLINE const char*
     routine() const
