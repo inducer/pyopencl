@@ -60,13 +60,18 @@ event::release_private() noexcept
     }
 #if PYOPENCL_CL_VERSION >= 0x1010
     if (support_cb) {
-        pyopencl_call_guarded_cleanup(
-            clSetEventCallback, this, CL_COMPLETE,
-            [] (cl_event, cl_int, void *data) {
-                event_private *p = static_cast<event_private*>(data);
+        try {
+            event_private *p = m_p;
+            set_callback(CL_COMPLETE, [p] (cl_int) {
                 p->call_finish();
                 delete p;
-            }, (void*)m_p);
+            });
+        } catch (const clerror &e) {
+            std::cerr
+                << ("PyOpenCL WARNING: a clean-up operation failed "
+                    "(dead context maybe?)") << std::endl
+                << e.what() << " failed with code " << e.code() << std::endl;
+        }
     } else {
 #endif
         std::thread t([] (cl_event evt, event_private *p) {
