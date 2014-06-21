@@ -189,6 +189,18 @@ nanny_event::get_ward() const noexcept
             nullptr);
 }
 
+#if PYOPENCL_CL_VERSION >= 0x1010
+class user_event : public event {
+public:
+    using event::event;
+    PYOPENCL_INLINE void
+    set_status(cl_int status)
+    {
+        pyopencl_call_guarded(clSetUserEventStatus, this, status);
+    }
+};
+#endif
+
 }
 
 // c wrapper
@@ -266,3 +278,26 @@ enqueue_wait_for_events(clobj_t _queue, const clobj_t *_wait_for,
             pyopencl_call_guarded(clEnqueueWaitForEvents, queue, wait_for);
         });
 }
+
+#if PYOPENCL_CL_VERSION >= 0x1010
+
+error*
+create_user_event(clobj_t *_evt, clobj_t _ctx)
+{
+    auto ctx = static_cast<context*>(_ctx);
+    return c_handle_error([&] {
+            auto evt = pyopencl_call_guarded(clCreateUserEvent, ctx);
+            *_evt = pyopencl_convert_obj(user_event, clReleaseEvent, evt);
+        });
+}
+
+error*
+user_event__set_status(clobj_t _evt, cl_int status)
+{
+    auto evt = static_cast<user_event*>(_evt);
+    return c_handle_error([&] {
+            evt->set_status(status);
+        });
+}
+
+#endif

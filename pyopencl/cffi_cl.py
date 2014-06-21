@@ -930,8 +930,15 @@ class NannyEvent(Event):
             return
         return _ffi.from_handle(_handle).ward
 
+class UserEvent(Event):
+    def __init__(self, ctx):
+        _evt = _ffi.new('clobj_t*')
+        _handle_error(_lib.create_user_event(_evt, ctx.ptr))
+        self.ptr = _evt[0]
+    def set_status(self, status):
+        _handle_error(_lib.user_event__set_status(self.ptr, status))
+
 # TODO
-#   UserEvent
 #   enqueue_migrate_mem_objects
 #   enqueue_migrate_mem_objects_ext
 

@@ -145,6 +145,9 @@ error *event__set_callback(clobj_t _evt, cl_int type, void *pyobj);
 error *wait_for_events(const clobj_t *_wait_for, uint32_t num_wait_for);
 // Nanny Event
 void *nanny_event__get_ward(clobj_t evt);
+// User Event
+error *create_user_event(clobj_t *_evt, clobj_t _ctx);
+error *user_event__set_status(clobj_t _evt, cl_int status);
 // enqueue_*
 error *enqueue_nd_range_kernel(clobj_t *event, clobj_t queue,
                                clobj_t kernel, cl_uint work_dim,
