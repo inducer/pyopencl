@@ -237,6 +237,14 @@ call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 #define pyopencl_call_guarded(func, args...)    \
     pyopencl::call_guarded(func, #func, args)
 
+static PYOPENCL_INLINE void
+cleanup_print_error(cl_int status_code, const char *name) noexcept
+{
+    std::cerr << ("PyOpenCL WARNING: a clean-up operation failed "
+                  "(dead context maybe?)") << std::endl
+              << name << " failed with code " << status_code << std::endl;
+}
+
 template<typename... ArgTypes, typename... ArgTypes2>
 static PYOPENCL_INLINE void
 call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
@@ -245,10 +253,7 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
     auto argpack = make_clargpack(std::forward<ArgTypes2>(args)...);
     cl_int status_code = argpack.clcall(func, name);
     if (status_code != CL_SUCCESS) {
-        std::cerr
-            << ("PyOpenCL WARNING: a clean-up operation failed "
-                "(dead context maybe?)") << std::endl
-            << name << " failed with code " << status_code << std::endl;
+        cleanup_print_error(status_code, name);
     } else {
         argpack.finish();
     }

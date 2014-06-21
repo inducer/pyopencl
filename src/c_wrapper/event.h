@@ -17,7 +17,8 @@ class event_private;
 
 class event : public clobj<cl_event> {
     event_private *m_p;
-    void release_private() noexcept;
+    // return whether the event need to be released.
+    PYOPENCL_USE_RESULT bool release_private() noexcept;
 protected:
     PYOPENCL_INLINE event_private*
     get_p() const

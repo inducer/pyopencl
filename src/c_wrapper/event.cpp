@@ -15,10 +15,11 @@ template void print_buf<cl_event>(std::ostream&, const cl_event*,
 
 class event_private {
     mutable volatile std::atomic_bool m_finished;
-    virtual void
-    finish() noexcept
-    {}
+    virtual void finish() noexcept = 0;
 public:
+    event_private()
+        : m_finished(false)
+    {}
     virtual
     ~event_private()
     {}
@@ -43,52 +44,64 @@ event::event(cl_event event, bool retain, event_private *p)
         try {
             pyopencl_call_guarded(clRetainEvent, this);
         } catch (...) {
+            m_p->call_finish();
             delete m_p;
             throw;
         }
     }
 }
 
-void
+bool
 event::release_private() noexcept
 {
     if (!m_p)
-        return;
+        return true;
     if (m_p->is_finished()) {
         delete m_p;
-        return;
+        return true;
     }
 #if PYOPENCL_CL_VERSION >= 0x1010
-    if (support_cb) {
+    cl_int status = 0;
+    try {
+        pyopencl_call_guarded(clGetEventInfo, this,
+                              CL_EVENT_COMMAND_EXECUTION_STATUS,
+                              size_arg(status), nullptr);
+    } catch (const clerror &e) {
+        cleanup_print_error(e.code(), e.what());
+        m_p->call_finish();
+        delete m_p;
+        return true;
+    }
+    // Event Callback may not be run immediately when the event is already
+    // completed.
+    if (support_cb && status > CL_COMPLETE) {
         try {
             event_private *p = m_p;
             set_callback(CL_COMPLETE, [p] (cl_int) {
-                p->call_finish();
-                delete p;
-            });
+                    p->call_finish();
+                    delete p;
+                });
+            return true;
         } catch (const clerror &e) {
-            std::cerr
-                << ("PyOpenCL WARNING: a clean-up operation failed "
-                    "(dead context maybe?)") << std::endl
-                << e.what() << " failed with code " << e.code() << std::endl;
+            cleanup_print_error(e.code(), e.what());
         }
-    } else {
-#endif
-        std::thread t([] (cl_event evt, event_private *p) {
-                pyopencl_call_guarded_cleanup(clWaitForEvents, len_arg(evt));
-                p->call_finish();
-                delete p;
-            }, data(), m_p);
-        t.detach();
-#if PYOPENCL_CL_VERSION >= 0x1010
     }
 #endif
+    std::thread t([] (cl_event evt, event_private *p) {
+            pyopencl_call_guarded_cleanup(clWaitForEvents, len_arg(evt));
+            p->call_finish();
+            pyopencl_call_guarded_cleanup(clReleaseEvent, evt);
+            delete p;
+        }, data(), m_p);
+    t.detach();
+    return false;
 }
 
 event::~event()
 {
-    release_private();
-    pyopencl_call_guarded_cleanup(clReleaseEvent, this);
+    if (release_private()) {
+        pyopencl_call_guarded_cleanup(clReleaseEvent, this);
+    }
 }
 
 generic_info
@@ -139,14 +152,12 @@ event::wait() const
 
 class nanny_event_private : public event_private {
     void *m_ward;
-    void finished() noexcept
+    void finish() noexcept
     {
         void *ward = m_ward;
         m_ward = nullptr;
         py::deref(ward);
     }
-    ~nanny_event_private()
-    {}
 public:
     nanny_event_private(void *ward)
         : m_ward(nullptr)
