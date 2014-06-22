@@ -629,10 +629,8 @@ def test_wait_for_events(ctx_factory):
     cl.wait_for_events([evt1, evt2])
 
 
-def test_unload_compiler(ctx_factory):
-    ctx = ctx_factory()
-    platform = ctx.devices[0].platform
-    if (ctx._get_cl_version() < (1, 2) or
+def test_unload_compiler(platform):
+    if (platform._get_cl_version() < (1, 2) or
             cl.get_cl_header_version() < (1, 2)):
         from pytest import skip
         skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
