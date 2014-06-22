@@ -627,6 +627,14 @@ namespace pyopencl {
 #endif
 
 
+    // mem_migration_flags_ext
+#ifdef cl_ext_migrate_memobject
+    ADD_ATTR("mem_migration_flags_ext", MIGRATE_MEM_OBJECT_, HOST, _EXT);
+    ADD_ATTR("mem_migration_flags_ext", MIGRATE_MEM_OBJECT_,
+             CONTENT_UNDEFINED, _EXT);
+#endif
+
+
     // device_partition_property_ext
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     ADD_ATTR("device_partition_property_ext",

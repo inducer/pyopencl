@@ -378,6 +378,10 @@ class mem_migration_flags(_NoInit):
     pass
 
 
+class mem_migration_flags_ext(_NoInit):
+    pass
+
+
 class device_partition_property_ext(_NoInit):
     pass
 

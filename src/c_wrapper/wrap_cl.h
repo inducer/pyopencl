@@ -59,6 +59,10 @@
 
 #endif
 
+#ifndef cl_ext_migrate_memobject
+typedef cl_bitfield cl_mem_migration_flags_ext;
+#endif
+
 namespace pyopencl {
 struct clbase;
 }
