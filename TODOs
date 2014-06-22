@@ -5,9 +5,6 @@
 - enqueue_nd_range_kernel size/offset mess
 
 - CommandQueue.set_property
-- _Program.compile
-- _Program.link
-- _Program.all_kernels
 - ?LocalMemory
 - get_apple_cgl_share_group
 - GLBuffer

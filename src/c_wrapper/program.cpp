@@ -2,6 +2,7 @@
 #include "device.h"
 #include "context.h"
 #include "clhelper.h"
+#include "kernel.h"
 
 namespace pyopencl {
 
@@ -95,17 +96,36 @@ program::get_build_info(const device *dev, cl_program_build_info param) const
     }
 }
 
+#if PYOPENCL_CL_VERSION >= 0x1020
+void
+program::compile(const char *opts, const clobj_t *_devs, size_t num_devs,
+                 const clobj_t *_prgs, const char *const *names,
+                 size_t num_hdrs)
+{
+    const auto devs = buf_from_class<device>(_devs, num_devs);
+    const auto prgs = buf_from_class<program>(_prgs, num_hdrs);
+    pyopencl_call_guarded(clCompileProgram, this, devs, opts, prgs,
+                          buf_arg(names, num_hdrs), nullptr, nullptr);
+}
+#endif
+
+pyopencl_buf<clobj_t>
+program::all_kernels()
+{
+    cl_uint num_knls;
+    pyopencl_call_guarded(clCreateKernelsInProgram, this, 0, nullptr,
+                          buf_arg(num_knls));
+    pyopencl_buf<cl_kernel> knls(num_knls);
+    pyopencl_call_guarded(clCreateKernelsInProgram, this, knls,
+                          buf_arg(num_knls));
+    return buf_to_base<kernel>(knls, true);
+}
+
 }
 
 // c wrapper
 // Import all the names in pyopencl namespace for c wrappers.
 using namespace pyopencl;
-
-typedef cl_program (*_clCreateProgramWithSourceType)(
-    cl_context, cl_uint, const char* const*, const size_t*, cl_int*);
-
-const static _clCreateProgramWithSourceType _clCreateProgramWithSource =
-    reinterpret_cast<_clCreateProgramWithSourceType>(clCreateProgramWithSource);
 
 // Program
 error*
@@ -116,7 +136,7 @@ create_program_with_source(clobj_t *prog, clobj_t _ctx, const char *_src)
             const auto &src = _src;
             const size_t length = strlen(src);
             cl_program result = pyopencl_call_guarded(
-                _clCreateProgramWithSource, ctx, len_arg(src), buf_arg(length));
+                clCreateProgramWithSource, ctx, len_arg(src), buf_arg(length));
             *prog = new_program(result, KND_SOURCE);
         });
 }
@@ -184,4 +204,41 @@ program__create_with_builtin_kernels(clobj_t *_prg, clobj_t _ctx,
             *_prg = new_program(prg);
         });
 }
+
+error*
+program__compile(clobj_t _prg, const char *opts, const clobj_t *_devs,
+                 size_t num_devs, const clobj_t *_prgs,
+                 const char *const *names, size_t num_hdrs)
+{
+    auto prg = static_cast<program*>(_prg);
+    return c_handle_error([&] {
+            prg->compile(opts, _devs, num_devs, _prgs, names, num_hdrs);
+        });
+}
+
+error*
+program__link(clobj_t *_prg, clobj_t _ctx, const clobj_t *_prgs,
+              size_t num_prgs, const char *opts, const clobj_t *_devs,
+              size_t num_devs)
+{
+    const auto devs = buf_from_class<device>(_devs, num_devs);
+    const auto prgs = buf_from_class<program>(_prgs, num_prgs);
+    auto ctx = static_cast<context*>(_ctx);
+    return c_handle_error([&] {
+            auto prg = pyopencl_call_guarded(clLinkProgram, ctx, devs, opts,
+                                             prgs, nullptr, nullptr);
+            *_prg = new_program(prg);
+        });
+}
 #endif
+
+error*
+program__all_kernels(clobj_t _prg, clobj_t **_knl, uint32_t *size)
+{
+    auto prg = static_cast<program*>(_prg);
+    return c_handle_error([&] {
+            auto knls = prg->all_kernels();
+            *size = knls.len();
+            *_knl = knls.release();
+        });
+}

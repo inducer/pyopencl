@@ -113,6 +113,13 @@ error *program__create_with_builtin_kernels(clobj_t *_prg, clobj_t _ctx,
                                             const clobj_t *_devs,
                                             uint32_t num_devs,
                                             const char *names);
+error *program__compile(clobj_t _prg, const char *opts, const clobj_t *_devs,
+                        size_t num_devs, const clobj_t *_prgs,
+                        const char *const *names, size_t num_hdrs);
+error *program__link(clobj_t *_prg, clobj_t _ctx, const clobj_t *_prgs,
+                     size_t num_prgs, const char *opts,
+                     const clobj_t *_devs, size_t num_devs);
+error *program__all_kernels(clobj_t _prg, clobj_t **_knl, uint32_t *size);
 // Sampler
 error *create_sampler(clobj_t *sampler, clobj_t context, int norm_coords,
                       cl_addressing_mode am, cl_filter_mode fm);

@@ -881,6 +881,24 @@ class _Program(_Common):
             self.ptr, device.ptr, param, info))
         return _generic_info_to_python(info)
 
+    def compile(options="", devices=None, headers=[]):
+        _devs, num_devs = _clobj_list(devices)
+        _prgs, names = zip(*((prg.ptr, _to_cstring(name))
+                             for (name, prg) in headers))
+        _handle_error(_lib.program__compile(
+            self.ptr, _to_cstring(options), _devs, num_devs,
+            _prgs, names, len(names)))
+
+    @classmethod
+    def link(cls, context, programs, options="", devices=None):
+        _devs, num_devs = _clobj_list(devices)
+        _prgs, num_prgs = _clobj_list(programs)
+        _prg = _ffi.new('clobj_t*')
+        _handle_error(_lib.program__link(
+            _prg, context.ptr, _prgs, num_prgs, _to_cstring(options),
+            _devs, num_devs))
+        return cls._create(_prg[0])
+
     @classmethod
     def create_with_builtin_kernels(cls, context, devices, kernel_names):
         _devs, num_devs = _clobj_list(devices)
@@ -888,6 +906,12 @@ class _Program(_Common):
         _handle_error(_lib.program__create_with_builtin_kernels(
             _prg, context.ptr, _devs, num_devs, _to_cstring(kernel_names)))
         return cls._create(_prg[0])
+
+    def all_kernels(self):
+        knls = _CArray(_ffi.new('clobj_t**'))
+        _handle_error(_lib.platform__get_devices(
+            self.ptr, knl.ptr, knl.size))
+        return [Kernel._create(knl.ptr[0][i]) for i in xrange(knl.size[0])]
 
 # }}}
 

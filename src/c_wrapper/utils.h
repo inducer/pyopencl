@@ -226,15 +226,15 @@ public:
     ArgBuffer(ArgBuffer<T, AT> &&other) noexcept
         : ArgBuffer(other.m_buf, other.m_len)
     {}
-    PYOPENCL_INLINE T*
+    PYOPENCL_INLINE rm_const_t<T>*
     get() const noexcept
     {
-        return m_buf;
+        return const_cast<rm_const_t<T>*>(m_buf);
     }
     PYOPENCL_INLINE T&
     operator[](int i) const
     {
-        return this->get()[i];
+        return m_buf[i];
     }
     PYOPENCL_INLINE size_t
     len() const noexcept
@@ -288,8 +288,8 @@ struct _ArgBufferConverter;
 template<typename Buff>
 struct _ArgBufferConverter<Buff,
                            enable_if_t<Buff::arg_type == ArgType::None> > {
-    static PYOPENCL_INLINE typename Buff::type*
-    convert(Buff &buff)
+    static PYOPENCL_INLINE auto
+    convert(Buff &buff) -> decltype(buff.get())
     {
         return buff.get();
     }
