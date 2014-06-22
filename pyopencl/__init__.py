@@ -222,6 +222,11 @@ class Program(object):
         try:
             return build_func()
         except _cl.RuntimeError as e:
+            from pytools import Record
+
+            class ErrorRecord(Record):
+                pass
+
             what = e.what
             if options:
                 what = what + "\n(options: %s)" % " ".join(options)
@@ -236,7 +241,14 @@ class Program(object):
 
                 what = what + "\n(source saved as %s)" % srcfile.name
 
-            err = _cl.RuntimeError(msg=what, routine=e.routine, code=e.code)
+            code = e.code
+            routine = e.routine
+
+            err = _cl.RuntimeError(
+                    ErrorRecord(
+                        what=lambda: what,
+                        code=lambda: code,
+                        routine=lambda: routine))
 
         # Python 3.2 outputs the whole list of currently active exceptions
         # This serves to remove one (redundant) level from that nesting.
@@ -421,11 +433,22 @@ def _add_functionality():
         try:
             self._build(options=options, devices=devices)
         except Error as e:
+            from pytools import Record
+
+            class ErrorRecord(Record):
+                pass
+
             what = e.what + "\n\n" + (75*"="+"\n").join(
                     "Build on %s:\n\n%s" % (dev, log)
                     for dev, log in self._get_build_logs())
+            code = e.code
+            routine = e.routine
 
-            err = _cl.RuntimeError(msg=what, routine=e.routine, code=e.code)
+            err = _cl.RuntimeError(
+                    ErrorRecord(
+                        what=lambda: what,
+                        code=lambda: code,
+                        routine=lambda: routine))
 
         if err is not None:
             # Python 3.2 outputs the whole list of currently active exceptions
@@ -710,37 +733,37 @@ def _add_functionality():
 
     # }}}
 
-    # # {{{ Error
+    # {{{ Error
 
-    # def error_str(self):
-    #     val = self.args[0]
-    #     try:
-    #         val.routine
-    #     except AttributeError:
-    #         return str(val)
-    #     else:
-    #         result = "%s failed: %s" % (val.routine(),
-    #                 status_code.to_string(val.code(), "<unknown error %d>")
-    #                 .lower().replace("_", " "))
-    #         if val.what():
-    #             result += " - " + val.what()
-    #         return result
+    def error_str(self):
+        val = self.args[0]
+        try:
+            val.routine
+        except AttributeError:
+            return str(val)
+        else:
+            result = "%s failed: %s" % (val.routine(),
+                    status_code.to_string(val.code(), "<unknown error %d>")
+                    .lower().replace("_", " "))
+            if val.what():
+                result += " - " + val.what()
+            return result
 
-    # def error_code(self):
-    #     return self.args[0].code()
+    def error_code(self):
+        return self.args[0].code()
 
-    # def error_routine(self):
-    #     return self.args[0].routine()
+    def error_routine(self):
+        return self.args[0].routine()
 
-    # def error_what(self):
-    #     return self.args[0].what()
+    def error_what(self):
+        return self.args[0].what()
 
-    # Error.__str__ = error_str
-    # Error.code = property(error_code)
-    # Error.routine = property(error_routine)
-    # Error.what = property(error_what)
+    Error.__str__ = error_str
+    Error.code = property(error_code)
+    Error.routine = property(error_routine)
+    Error.what = property(error_what)
 
-    # # }}}
+    # }}}
 
     # if _cl.have_gl():
     #     def gl_object_get_gl_object(self):

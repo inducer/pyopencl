@@ -428,12 +428,24 @@ del _constant_callback
 # {{{ exceptions
 
 class Error(Exception):
-    def __init__(self, msg='', code=0, routine=''):
-        self.routine = routine
-        assert isinstance(code, int)
-        self.code = code
-        self.what = msg
-        super(Error, self).__init__(msg)
+    class __ErrorRecord(object):
+        __slots__ = ('_routine', '_code', '_what')
+        def __init__(self, msg='', code=0, routine=''):
+            self._routine = routine
+            assert isinstance(code, int)
+            self._code = code
+            self._what = msg
+        def routine(self):
+            return self._routine
+        def code(self):
+            return self._code
+        def what(self):
+            return self._what
+    def __init__(self, *a, **kw):
+        if len(a) == 1 and not kw and hasattr(a[0], 'what'):
+            super(Error, self).__init__(a[0])
+        else:
+            super(Error, self).__init__(self.__ErrorRecord(*a, **kw))
 
 
 class MemoryError(Error):
