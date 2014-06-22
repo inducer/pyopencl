@@ -1354,8 +1354,8 @@ def enqueue_fill_image(queue, img, color, origin, region, wait_for=None):
     return Event._create(ptr_event[0])
 
 
-def enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset,
-                                 wait_for=None):
+def _enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset,
+                                  wait_for=None):
     origin = tuple(origin)
     region = tuple(region)
     origin_l = len(origin)
@@ -1372,8 +1372,8 @@ def enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset,
     return Event._create(ptr_event[0])
 
 
-def enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region,
-                                 wait_for=None):
+def _enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region,
+                                  wait_for=None):
     origin = tuple(origin)
     region = tuple(region)
     origin_l = len(origin)
