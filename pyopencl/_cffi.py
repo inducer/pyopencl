@@ -115,6 +115,8 @@ typedef struct _cl_mem_ion_host_ptr {
     void*                ion_hostptr;
 } cl_mem_ion_host_ptr;
 
+typedef cl_bitfield         cl_mem_migration_flags_ext;
+
 /* c++ class pointer */
 typedef struct clbase *clobj_t;
 """
