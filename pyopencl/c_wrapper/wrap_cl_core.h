@@ -260,6 +260,15 @@ error *enqueue_fill_image(clobj_t *evt, clobj_t _queue, clobj_t mem,
                           size_t origin_l, const size_t *_region,
                           size_t region_l, const clobj_t *_wait_for,
                           uint32_t num_wait_for);
+error *enqueue_copy_image_to_buffer(clobj_t *evt, clobj_t _queue, clobj_t _src,
+                                    clobj_t _dst, const size_t *_orig, size_t,
+                                    const size_t *_reg, size_t, size_t offset,
+                                    const clobj_t *_wait_for, uint32_t);
+error *enqueue_copy_buffer_to_image(clobj_t *evt, clobj_t _queue, clobj_t _src,
+                                    clobj_t _dst, size_t offset,
+                                    const size_t *_orig, size_t,
+                                    const size_t *_reg, size_t,
+                                    const clobj_t *_wait_for, uint32_t);
 // CL Object
 intptr_t clobj__int_ptr(clobj_t obj);
 error *clobj__get_info(clobj_t obj, cl_uint param, generic_info *out);

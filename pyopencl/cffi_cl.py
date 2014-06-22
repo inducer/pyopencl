@@ -1353,6 +1353,42 @@ def enqueue_fill_image(queue, img, color, origin, region, wait_for=None):
                                           region_l, c_wait_for, num_wait_for))
     return Event._create(ptr_event[0])
 
+
+def enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset,
+                                 wait_for=None):
+    origin = tuple(origin)
+    region = tuple(region)
+    origin_l = len(origin)
+    region_l = len(region)
+    if origin_l > 3 or region_l > 3:
+        raise RuntimeError("origin or region has too many components",
+                           status_code.INVALID_VALUE,
+                           "enqueue_copy_image_to_buffer")
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_copy_image_to_buffer(
+        _event, queue.ptr, src.ptr, dest.ptr, origin, origin_l, region,
+        region_l, offset, c_wait_for, num_wait_for))
+    return Event._create(ptr_event[0])
+
+
+def enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region,
+                                 wait_for=None):
+    origin = tuple(origin)
+    region = tuple(region)
+    origin_l = len(origin)
+    region_l = len(region)
+    if origin_l > 3 or region_l > 3:
+        raise RuntimeError("origin or region has too many components",
+                           status_code.INVALID_VALUE,
+                           "enqueue_copy_buffer_to_image")
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_copy_buffer_to_image(
+        _event, queue.ptr, src.ptr, dest.ptr, offset, origin, origin_l,
+        region, region_l, c_wait_for, num_wait_for))
+    return Event._create(ptr_event[0])
+
 # }}}
 
 # {{{ gl interop
