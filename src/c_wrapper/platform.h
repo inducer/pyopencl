@@ -23,6 +23,8 @@ public:
 
 extern template void print_clobj<platform>(std::ostream&, const platform*);
 
+void get_platform_version(cl_platform_id plat, int *major, int *minor);
+
 // }}}
 
 }

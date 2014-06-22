@@ -2,6 +2,9 @@
 #include "device.h"
 #include "clhelper.h"
 
+#include <stdlib.h>
+#include <regex>
+
 namespace pyopencl {
 
 template class clobj<cl_platform_id>;
@@ -26,6 +29,33 @@ platform::get_info(cl_uint param_name) const
     default:
         throw clerror("Platform.get_info", CL_INVALID_VALUE);
     }
+}
+
+static const std::regex ver_regex("^OpenCL ([0-9]+)\\.([0-9]+).*");
+
+void
+get_platform_version(cl_platform_id plat, int *major, int *minor)
+{
+    char s_buff[128];
+    size_t size;
+    pyopencl_buf<char> d_buff(0);
+    char *name = s_buff;
+    pyopencl_call_guarded(clGetPlatformInfo, plat, CL_PLATFORM_VERSION,
+                          0, nullptr, buf_arg(size));
+    if (size > sizeof(s_buff)) {
+        d_buff.resize(size);
+        name = d_buff.get();
+    }
+    pyopencl_call_guarded(clGetPlatformInfo, plat, CL_PLATFORM_VERSION,
+                          size_arg(name, size), buf_arg(size));
+    std::cmatch ver_match;
+    if (!std::regex_match(name, ver_match, ver_regex)) {
+        throw clerror("get_platform_version", CL_INVALID_VALUE,
+                      "platform returned non-conformant "
+                      "platform version string");
+    }
+    *major = atoi(name + ver_match.position(1));
+    *minor = atoi(name + ver_match.position(2));
 }
 
 }
