@@ -109,6 +109,10 @@ error *program__build(clobj_t program, const char *options,
 error *program__kind(clobj_t program, int *kind);
 error *program__get_build_info(clobj_t program, clobj_t device,
                                cl_program_build_info param, generic_info *out);
+error *program__create_with_builtin_kernels(clobj_t *_prg, clobj_t _ctx,
+                                            const clobj_t *_devs,
+                                            uint32_t num_devs,
+                                            const char *names);
 // Sampler
 error *create_sampler(clobj_t *sampler, clobj_t context, int norm_coords,
                       cl_addressing_mode am, cl_filter_mode fm);

@@ -881,6 +881,14 @@ class _Program(_Common):
             self.ptr, device.ptr, param, info))
         return _generic_info_to_python(info)
 
+    @classmethod
+    def create_with_builtin_kernels(cls, context, devices, kernel_names):
+        _devs, num_devs = _clobj_list(devices)
+        _prg = _ffi.new('clobj_t*')
+        _handle_error(_lib.program__create_with_builtin_kernels(
+            _prg, context.ptr, _devs, num_devs, _to_cstring(kernel_names)))
+        return cls._create(_prg[0])
+
 # }}}
 
 

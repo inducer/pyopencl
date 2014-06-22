@@ -5,7 +5,6 @@
 - enqueue_nd_range_kernel size/offset mess
 
 - CommandQueue.set_property
-- _Program.create_with_built_in_kernels
 - _Program.compile
 - _Program.link
 - _Program.all_kernels

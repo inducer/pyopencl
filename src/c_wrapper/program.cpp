@@ -169,3 +169,19 @@ program__get_build_info(clobj_t _prog, clobj_t _dev,
             *out = prog->get_build_info(dev, param);
         });
 }
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+error*
+program__create_with_builtin_kernels(clobj_t *_prg, clobj_t _ctx,
+                                     const clobj_t *_devs, uint32_t num_devs,
+                                     const char *names)
+{
+    const auto devs = buf_from_class<device>(_devs, num_devs);
+    auto ctx = static_cast<context*>(_ctx);
+    return c_handle_error([&] {
+            auto prg = pyopencl_call_guarded(clCreateProgramWithBuiltInKernels,
+                                             ctx, devs, names);
+            *_prg = new_program(prg);
+        });
+}
+#endif
