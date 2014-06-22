@@ -266,18 +266,20 @@ buf_arg(T *buf, size_t l)
     return ArgBuffer<T, AT>(buf, l);
 }
 
-template<typename T>
+template<typename... T>
 static PYOPENCL_INLINE auto
-size_arg(T &&buf) -> decltype(buf_arg<ArgType::SizeOf>(std::forward<T>(buf)))
+size_arg(T&&... buf)
+    -> decltype(buf_arg<ArgType::SizeOf>(std::forward<T>(buf)...))
 {
-    return buf_arg<ArgType::SizeOf>(std::forward<T>(buf));
+    return buf_arg<ArgType::SizeOf>(std::forward<T>(buf)...);
 }
 
-template<typename T>
+template<typename... T>
 static PYOPENCL_INLINE auto
-len_arg(T &&buf) -> decltype(buf_arg<ArgType::Length>(std::forward<T>(buf)))
+len_arg(T&&... buf)
+    -> decltype(buf_arg<ArgType::Length>(std::forward<T>(buf)...))
 {
-    return buf_arg<ArgType::Length>(std::forward<T>(buf));
+    return buf_arg<ArgType::Length>(std::forward<T>(buf)...);
 }
 
 template<typename Buff, class = void>
