@@ -618,7 +618,6 @@ class CommandQueue(_Common):
         _handle_error(_lib.command_queue__finish(self.ptr))
     def flush(self):
         _handle_error(_lib.command_queue__flush(self.ptr))
-    # TODO set_property
 
 
 def _norm_shape_dtype(shape, dtype, order="C", strides=None, name=""):
@@ -881,10 +880,6 @@ class _Program(_Common):
             self.ptr, device.ptr, param, info))
         return _generic_info_to_python(info)
 
-# TODO compile?
-# create_with_built_in_kernels
-# link_program
-
 # }}}
 
 
@@ -917,8 +912,6 @@ class Kernel(_Common):
         _handle_error(_lib.kernel__get_work_group_info(
             self.ptr, param, device.ptr, info))
         return _generic_info_to_python(info)
-    # TODO get_arg_info
-    #  create_kernels_in_program
 
 # }}}
 
@@ -982,10 +975,6 @@ class UserEvent(Event):
         self.ptr = _evt[0]
     def set_status(self, status):
         _handle_error(_lib.user_event__set_status(self.ptr, status))
-
-# TODO
-#   enqueue_migrate_mem_objects
-#   enqueue_migrate_mem_objects_ext
 
 # }}}
 
@@ -1346,8 +1335,6 @@ def enqueue_fill_image(queue, img, color, origin, region, wait_for=None):
                                           region_l, c_wait_for, num_wait_for))
     return Event._create(ptr_event[0])
 
-# TODO: copy_buffer_to_image copy_image_to_buffer
-
 # }}}
 
 # {{{ gl interop
@@ -1682,7 +1669,7 @@ class Sampler(_Common):
 # }}}
 
 
-# {{{ GLTexture (TODO)
+# {{{ GLTexture
 
 class GLTexture(Image):
     _id = 'gl_texture'
