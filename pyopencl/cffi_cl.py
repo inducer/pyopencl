@@ -641,12 +641,11 @@ def _norm_shape_dtype(shape, dtype, order="C", strides=None, name=""):
 
 class cffi_array(np.ndarray):
     __array_priority__ = -100.0
-    def __new__(cls, ptr, shape, dtype, strides, base=None):
+    def __new__(cls, buf, shape, dtype, strides, base=None):
         self = np.ndarray.__new__(cls, shape, dtype=dtype,
-                                  buffer=ffi.buffer(ptr),
-                                  strides=strides)
+                                  buffer=buf, strides=strides)
         if base is None:
-            base = ptr
+            base = buf
         self.__base = base
         return self
     @property
@@ -661,7 +660,8 @@ class MemoryObjectHolder(_Common):
         _hostptr = _ffi.new('void**')
         _size = _ffi.new('size_t*')
         _handle_error(memory_object__get_host_array(self.ptr, _hostptr, _size))
-        ary = cffi_array(_hostptr[0], shape, dtype, strides, self)
+        ary = cffi_array(_ffi.buffer(_hostptr[0], _size[0]), shape,
+                         dtype, strides, self)
         if ary.nbytes > _size[0]:
             raise LogicError("Resulting array is larger than memory object.",
                              status_code.INVALID_VALUE,
