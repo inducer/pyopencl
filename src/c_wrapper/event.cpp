@@ -64,7 +64,13 @@ release_private_use_cb(event *evt)
         // is already completed.
         if (status <= CL_COMPLETE)
             return false;
-        return evt->support_cb;
+        cl_context ctx;
+        pyopencl_call_guarded(clGetEventInfo, evt, CL_EVENT_CONTEXT,
+                              size_arg(ctx), nullptr);
+        int major;
+        int minor;
+        context::get_version(ctx, &major, &minor);
+        return (major > 1) || (major >= 1 && minor >= 1);
     } catch (const clerror &e) {
         cleanup_print_error(e.code(), e.what());
         return false;

@@ -918,17 +918,6 @@ class Kernel(_Common):
 class Event(_Common):
     _id = 'event'
 
-    @classmethod
-    def _create(cls, ptr):
-        self = _Common._create.__func__(cls, ptr)
-        try:
-            if (self.context._get_cl_version() >= (1, 1) and
-                get_cl_header_version() >= (1, 1)):
-                _lib.event__set_support_cb(ptr, 1);
-        except:
-            pass
-        return self
-
     def __init__(self):
         pass
 
