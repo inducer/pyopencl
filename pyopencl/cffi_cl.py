@@ -42,10 +42,13 @@ from .compyte.array import f_contiguous_strides, c_contiguous_strides
 _PYPY = '__pypy__' in sys.builtin_module_names
 
 try:
-    _unicode = unicode
+    _unicode = eval('unicode')
+    _ffi_pystr = _ffi.string
 except:
     _unicode = str
     _bytes = bytes
+    def _ffi_pystr(s):
+        return _ffi.string(s).decode()
 else:
     try:
         _bytes = bytes
@@ -93,10 +96,7 @@ class _CArray(object):
 # {{{ GetInfo support
 
 def _generic_info_to_python(info):
-    type_ = _ffi.string(info.type)
-    if sys.version_info >= (3,):
-        type_ = type_.decode()
-
+    type_ = _ffi_pystr(info.type)
     value = _ffi.cast(type_, info.value)
 
     if info.opaque_class != _lib.CLASS_NONE:
@@ -125,11 +125,9 @@ def _generic_info_to_python(info):
         else:
             return ci(value)
     if type_ == 'char*':
-        ret = _ffi.string(value)
-        if sys.version_info >= (3,):
-            ret = ret.decode()
+        ret = _ffi_pystr(value)
     elif type_.startswith('char*['):
-        ret = map(_ffi.string, value)
+        ret = map(_ffi_pystr, value)
         _lib.free_pointer_array(info.value, len(value))
     elif type_.endswith(']'):
         if type_.startswith('char['):
@@ -414,8 +412,7 @@ _locals = locals()
 
 @_ffi.callback('void(const char*, const char* name, long value)')
 def _constant_callback(type_, name, value):
-    setattr(_locals[_ffi.string(type_).decode()],
-            _ffi.string(name).decode(), value)
+    setattr(_locals[_ffi_pystr(type_)], _ffi_pystr(name), value)
 _lib.populate_constants(_constant_callback)
 
 del _locals
@@ -453,7 +450,7 @@ def _handle_error(error):
     if error.other == 1:
         # non-pyopencl exceptions are handled here
         import exceptions
-        e = exceptions.RuntimeError(_ffi.string(error.msg))
+        e = exceptions.RuntimeError(_ffi_pystr(error.msg))
         _lib.free_pointer(error.msg)
         _lib.free_pointer(error)
         raise e
@@ -466,8 +463,8 @@ def _handle_error(error):
     else:
         klass = Error
 
-    e = klass(routine=_ffi.string(error.routine),
-              code=error.code, msg=_ffi.string(error.msg))
+    e = klass(routine=_ffi_pystr(error.routine),
+              code=error.code, msg=_ffi_pystr(error.msg))
     _lib.free_pointer(error.routine)
     _lib.free_pointer(error.msg)
     _lib.free_pointer(error)
