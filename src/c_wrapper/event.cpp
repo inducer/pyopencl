@@ -78,14 +78,14 @@ release_private_use_cb(event *evt)
 }
 #endif
 
-bool
+void
 event::release_private() noexcept
 {
     if (!m_p)
-        return true;
+        return;
     if (m_p->is_finished()) {
         delete m_p;
-        return true;
+        return;
     }
 #if PYOPENCL_CL_VERSION >= 0x1010
     if (release_private_use_cb(this)) {
@@ -95,33 +95,20 @@ event::release_private() noexcept
                     p->call_finish();
                     delete p;
                 });
-            return true;
+            return;
         } catch (const clerror &e) {
             cleanup_print_error(e.code(), e.what());
         }
     }
 #endif
-#if 0
-    std::thread t([] (cl_event evt, event_private *p) {
-            pyopencl_call_guarded_cleanup(clWaitForEvents, len_arg(evt));
-            p->call_finish();
-            pyopencl_call_guarded_cleanup(clReleaseEvent, evt);
-            delete p;
-        }, data(), m_p);
-    t.detach();
-    return false;
-#else
     wait();
     delete m_p;
-    return true;
-#endif
 }
 
 event::~event()
 {
-    if (release_private()) {
-        pyopencl_call_guarded_cleanup(clReleaseEvent, this);
-    }
+    release_private();
+    pyopencl_call_guarded_cleanup(clReleaseEvent, this);
 }
 
 generic_info
@@ -241,12 +228,6 @@ event__wait(clobj_t evt)
 }
 
 #if PYOPENCL_CL_VERSION >= 0x1010
-void
-event__set_support_cb(clobj_t _evt, int support)
-{
-    auto evt = static_cast<event*>(_evt);
-    evt->support_cb = support;
-}
 
 error*
 event__set_callback(clobj_t _evt, cl_int type, void *pyobj)

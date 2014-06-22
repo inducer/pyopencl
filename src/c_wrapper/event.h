@@ -18,7 +18,7 @@ class event_private;
 class event : public clobj<cl_event> {
     event_private *m_p;
     // return whether the event need to be released.
-    PYOPENCL_USE_RESULT bool release_private() noexcept;
+    void release_private() noexcept;
 protected:
     PYOPENCL_INLINE event_private*
     get_p() const
@@ -34,7 +34,6 @@ public:
     get_profiling_info(cl_profiling_info param) const;
     void wait() const;
 #if PYOPENCL_CL_VERSION >= 0x1010
-    bool support_cb;
     template<typename Func>
     PYOPENCL_INLINE void
     set_callback(cl_int type, Func &&_func)
