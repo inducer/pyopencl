@@ -9,17 +9,6 @@ namespace pyopencl {
 
 // {{{ gl interop
 
-#ifdef __APPLE__
-static PYOPENCL_INLINE cl_context_properties
-get_apple_cgl_share_group()
-{
-    CGLContextObj kCGLContext = CGLGetCurrentContext();
-    CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
-
-    return (cl_context_properties)kCGLShareGroup;
-}
-#endif /* __APPLE__ */
-
 class gl_buffer : public memory_object {
 public:
     PYOPENCL_DEF_CL_CLASS(GL_BUFFER);

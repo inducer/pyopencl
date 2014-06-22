@@ -6,7 +6,6 @@
 
 - CommandQueue.set_property
 - ?LocalMemory
-- get_apple_cgl_share_group
 - GLBuffer
 - GLRenderBuffer
 - GLTexture

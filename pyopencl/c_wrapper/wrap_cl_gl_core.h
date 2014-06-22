@@ -10,3 +10,4 @@ error *enqueue_acquire_gl_objects(
 error *enqueue_release_gl_objects(
     clobj_t *event, clobj_t queue, const clobj_t *mem_objects,
     uint32_t num_mem_objects, const clobj_t *wait_for, uint32_t num_wait_for);
+cl_context_properties get_apple_cgl_share_group();

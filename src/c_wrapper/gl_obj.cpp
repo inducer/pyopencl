@@ -231,3 +231,14 @@ have_gl()
     return 0;
 #endif
 }
+
+#ifdef __APPLE__
+cl_context_properties
+get_apple_cgl_share_group()
+{
+    CGLContextObj kCGLContext = CGLGetCurrentContext();
+    CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
+
+    return (cl_context_properties)kCGLShareGroup;
+}
+#endif /* __APPLE__ */

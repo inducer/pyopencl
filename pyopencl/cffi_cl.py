@@ -1468,6 +1468,10 @@ if _lib.have_gl():
         _lib.enqueue_acquire_gl_objects)
     enqueue_release_gl_objects = _create_gl_enqueue(
         _lib.enqueue_release_gl_objects)
+    try:
+        get_apple_cgl_share_group = _lib.get_apple_cgl_share_group
+    except AttributeError:
+        pass
 
 # }}}
 
