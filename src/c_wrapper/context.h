@@ -16,6 +16,7 @@ extern template void print_buf<cl_context>(std::ostream&, const cl_context*,
 class context : public clobj<cl_context> {
 public:
     PYOPENCL_DEF_CL_CLASS(CONTEXT);
+    void get_version(cl_context ctx, int *major, int *minor);
     PYOPENCL_INLINE
     context(cl_context ctx, bool retain)
         : clobj(ctx)

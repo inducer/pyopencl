@@ -11,6 +11,28 @@ template void print_clobj<context>(std::ostream&, const context*);
 template void print_buf<cl_context>(std::ostream&, const cl_context*,
                                     size_t, ArgType, bool, bool);
 
+void
+context::get_version(cl_context ctx, int *major, int *minor)
+{
+    cl_device_id s_buff[16];
+    size_t size;
+    pyopencl_buf<cl_device_id> d_buff(0);
+    cl_device_id *devs = s_buff;
+    pyopencl_call_guarded(clGetContextInfo, ctx, CL_CONTEXT_DEVICES,
+                          0, nullptr, buf_arg(size));
+    if (PYOPENCL_UNLIKELY(!size)) {
+        throw clerror("Context.get_version", CL_INVALID_VALUE,
+                      "Cannot get devices from context.");
+    }
+    if (PYOPENCL_UNLIKELY(size > sizeof(s_buff))) {
+        d_buff.resize(size / sizeof(cl_device_id));
+        devs = d_buff.get();
+    }
+    pyopencl_call_guarded(clGetContextInfo, ctx, CL_CONTEXT_DEVICES,
+                          size_arg(devs, size), buf_arg(size));
+    device::get_version(devs[0], major, minor);
+}
+
 context::~context()
 {
     pyopencl_call_guarded_cleanup(clReleaseContext, this);

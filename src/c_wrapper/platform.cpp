@@ -42,7 +42,7 @@ platform::get_version(cl_platform_id plat, int *major, int *minor)
     char *name = s_buff;
     pyopencl_call_guarded(clGetPlatformInfo, plat, CL_PLATFORM_VERSION,
                           0, nullptr, buf_arg(size));
-    if (size > sizeof(s_buff)) {
+    if (PYOPENCL_UNLIKELY(size > sizeof(s_buff))) {
         d_buff.resize(size);
         name = d_buff.get();
     }
@@ -50,7 +50,7 @@ platform::get_version(cl_platform_id plat, int *major, int *minor)
                           size_arg(name, size), buf_arg(size));
     std::cmatch ver_match;
     if (!std::regex_match(name, ver_match, ver_regex)) {
-        throw clerror("get_platform_version", CL_INVALID_VALUE,
+        throw clerror("Platform.get_version", CL_INVALID_VALUE,
                       "platform returned non-conformant "
                       "platform version string");
     }
