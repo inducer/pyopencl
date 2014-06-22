@@ -15,20 +15,22 @@ public:
     PYOPENCL_DEF_CL_CLASS(IMAGE);
     PYOPENCL_INLINE
     image(cl_mem mem, bool retain, const cl_image_format *fmt=0)
-        : memory_object(mem, retain)
+        : memory_object(mem, retain), m_format(fmt ? *fmt : cl_image_format())
+    {}
+    PYOPENCL_INLINE const cl_image_format&
+    format()
     {
-        if (fmt) {
-            m_format = *fmt;
-        } else {
+        if (!m_format.image_channel_data_type) {
             pyopencl_call_guarded(clGetImageInfo, this, CL_IMAGE_FORMAT,
                                   size_arg(m_format), nullptr);
         }
+        return m_format;
     }
     PYOPENCL_USE_RESULT generic_info get_image_info(cl_image_info param) const;
     PYOPENCL_INLINE type_t
     get_fill_type()
     {
-        switch (m_format.image_channel_data_type) {
+        switch (format().image_channel_data_type) {
         case CL_SIGNED_INT8:
         case CL_SIGNED_INT16:
         case CL_SIGNED_INT32:
