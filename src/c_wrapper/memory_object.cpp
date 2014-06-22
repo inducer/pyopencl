@@ -76,3 +76,15 @@ memory_object__release(clobj_t obj)
             static_cast<memory_object*>(obj)->release();
         });
 }
+
+error*
+memory_object__get_host_array(clobj_t _obj, void **hostptr, size_t *size)
+{
+    auto obj = static_cast<memory_object*>(_obj);
+    return c_handle_error([&] {
+            pyopencl_call_guarded(clGetMemObjectInfo, obj, CL_MEM_HOST_PTR,
+                                  size_arg(*hostptr), nullptr);
+            pyopencl_call_guarded(clGetMemObjectInfo, obj, CL_MEM_SIZE,
+                                  size_arg(*size), nullptr);
+        });
+}

@@ -620,8 +620,53 @@ class CommandQueue(_Common):
         _handle_error(_lib.command_queue__flush(self.ptr))
     # TODO set_property
 
+
+def _norm_shape_dtype(shape, dtype, order="C", strides=None, name=""):
+    dtype = np.dtype(dtype)
+    if not isinstance(shape, tuple):
+        try:
+            shape = tuple(shape)
+        except:
+            shape = (shape,)
+    if strides is None:
+        if order == "cC":
+            strides = c_contigous_strides(byte_size, shape)
+        elif order == "cF":
+            strides = f_contigous_strides(byte_size, shape)
+        else:
+            raise RuntimeError("unrecognized order specifier %s" % order,
+                               status_code.INVALID_VALUE, name)
+    return dtype, shape, strides
+
+
+class cffi_array(np.ndarray):
+    __array_priority__ = -100.0
+    def __new__(cls, ptr, shape, dtype, strides, base=None):
+        self = np.ndarray.__new__(cls, shape, dtype=dtype,
+                                  buffer=ffi.buffer(ptr),
+                                  strides=strides)
+        if base is None:
+            base = ptr
+        self.__base = base
+        return self
+    @property
+    def base(self):
+        return self.__base
+
+
 class MemoryObjectHolder(_Common):
-    pass
+    def get_host_array(self, shape, dtype, order="C"):
+        dtype, shape, strides = _norm_shape_dtype(
+            shape, dtype, order, None, 'MemoryObjectHolder.get_host_array')
+        _hostptr = _ffi.new('void**')
+        _size = _ffi.new('size_t*')
+        _handle_error(memory_object__get_host_array(self.ptr, _hostptr, _size))
+        ary = cffi_array(_hostptr[0], shape, dtype, strides, self)
+        if ary.nbytes > _size[0]:
+            raise LogicError("Resulting array is larger than memory object.",
+                             status_code.INVALID_VALUE,
+                             "MemoryObjectHolder.get_host_array")
+        return ary
 
 
 class MemoryObject(MemoryObjectHolder):
@@ -1176,21 +1221,9 @@ def _enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region,
 def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
                        order="C", strides=None, wait_for=None,
                        is_blocking=True):
-    dtype = np.dtype(dtype)
-    if not isinstance(shape, tuple):
-        try:
-            shape = tuple(shape)
-        except:
-            shape = (shape,)
+    dtype, shape, strides = _norm_shape_dtype(shape, dtype, order, strides,
+                                              'enqueue_map_buffer')
     byte_size = dtype.itemsize
-    if strides is None:
-        if order == "cC":
-            strides = c_contigous_strides(byte_size, shape)
-        elif order == "cF":
-            strides = f_contigous_strides(byte_size, shape)
-        else:
-            raise RuntimeError("unrecognized order specifier %s" % order,
-                               status_code.INVALID_VALUE, 'enqueue_map_buffer')
     for s in shape:
         byte_size *= s
     c_wait_for, num_wait_for = _clobj_list(wait_for)
@@ -1281,6 +1314,8 @@ def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
     if origin_l > 3 or region_l > 3:
         raise RuntimeError("origin or region has too many components",
                            status_code.INVALID_VALUE, "enqueue_map_image")
+    dtype, shape, strides = _norm_shape_dtype(shape, dtype, order, strides,
+                                              'enqueue_map_image')
     _event = _ffi.new('clobj_t*')
     _map = _ffi.new('clobj_t*')
     _row_pitch = _ffi.new('size_t*')

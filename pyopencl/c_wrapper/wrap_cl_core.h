@@ -91,6 +91,7 @@ error *buffer__get_sub_region(clobj_t *_sub_buf, clobj_t _buf, size_t orig,
 error *buffer__getitem(clobj_t *_ret, clobj_t _buf, ssize_t start, ssize_t end);
 // Memory Object
 error *memory_object__release(clobj_t obj);
+error *memory_object__get_host_array(clobj_t, void **hostptr, size_t *size);
 // Memory Map
 error *memory_map__release(clobj_t _map, clobj_t _queue,
                            const clobj_t *_wait_for, uint32_t num_wait_for,
