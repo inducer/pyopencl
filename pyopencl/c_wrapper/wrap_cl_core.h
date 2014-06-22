@@ -123,6 +123,8 @@ error *kernel__set_arg_buf(clobj_t kernel, cl_uint arg_index,
 error *kernel__get_work_group_info(clobj_t kernel,
                                    cl_kernel_work_group_info param,
                                    clobj_t device, generic_info *out);
+error *kernel__get_arg_info(clobj_t _knl, cl_uint idx,
+                            cl_kernel_arg_info param, generic_info *out);
 // Image
 error *create_image_2d(clobj_t *image, clobj_t context, cl_mem_flags flags,
                        cl_image_format *fmt, size_t width, size_t height,

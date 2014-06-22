@@ -13,7 +13,6 @@
 - _Program.compile
 - _Program.link
 - _Program.all_kernels
-- Kernel.get_arg_info
 - ?LocalMemory
 - get_apple_cgl_share_group
 - GLBuffer

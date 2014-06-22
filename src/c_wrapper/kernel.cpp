@@ -67,6 +67,26 @@ kernel::get_work_group_info(cl_kernel_work_group_info param,
     }
 }
 
+#if PYOPENCL_CL_VERSION >= 0x1020
+PYOPENCL_USE_RESULT generic_info
+kernel::get_arg_info(cl_uint idx, cl_kernel_arg_info param) const
+{
+    switch (param) {
+    case CL_KERNEL_ARG_ADDRESS_QUALIFIER:
+        return pyopencl_get_int_info(cl_kernel_arg_address_qualifier,
+                                     KernelArg, this, idx, param);
+    case CL_KERNEL_ARG_ACCESS_QUALIFIER:
+        return pyopencl_get_int_info(cl_kernel_arg_access_qualifier,
+                                     KernelArg, this, idx, param);
+    case CL_KERNEL_ARG_TYPE_NAME:
+    case CL_KERNEL_ARG_NAME:
+        return pyopencl_get_str_info(KernelArg, this, idx, param);
+    default:
+        throw clerror("Kernel.get_arg_info", CL_INVALID_VALUE);
+    }
+}
+#endif
+
 }
 
 // c wrapper
@@ -136,6 +156,18 @@ kernel__get_work_group_info(clobj_t _knl, cl_kernel_work_group_info param,
             *out = knl->get_work_group_info(param, dev);
         });
 }
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+error*
+kernel__get_arg_info(clobj_t _knl, cl_uint idx, cl_kernel_arg_info param,
+                     generic_info *out)
+{
+    auto knl = static_cast<kernel*>(_knl);
+    return c_handle_error([&] {
+            *out = knl->get_arg_info(idx, param);
+        });
+}
+#endif
 
 error*
 enqueue_nd_range_kernel(clobj_t *evt, clobj_t _queue, clobj_t _knl,

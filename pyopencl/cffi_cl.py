@@ -910,6 +910,11 @@ class Kernel(_Common):
             self.ptr, param, device.ptr, info))
         return _generic_info_to_python(info)
 
+    def get_arg_info(self, idx, param):
+        info = _ffi.new('generic_info*')
+        _handle_error(_lib.kernel__get_arg_info(self.ptr, idx, param, info))
+        return _generic_info_to_python(info)
+
 # }}}
 
 
