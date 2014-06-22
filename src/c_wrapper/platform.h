@@ -15,6 +15,7 @@ extern template void print_buf<cl_platform_id>(
 
 class platform : public clobj<cl_platform_id> {
 public:
+    static void get_version(cl_platform_id plat, int *major, int *minor);
     using clobj::clobj;
     PYOPENCL_DEF_CL_CLASS(PLATFORM);
 
@@ -22,8 +23,6 @@ public:
 };
 
 extern template void print_clobj<platform>(std::ostream&, const platform*);
-
-void get_platform_version(cl_platform_id plat, int *major, int *minor);
 
 // }}}
 

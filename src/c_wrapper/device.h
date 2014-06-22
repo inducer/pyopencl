@@ -26,6 +26,7 @@ private:
     reference_type_t m_ref_type;
 
 public:
+    static void get_version(cl_device_id dev, int *major, int *minor);
     device(cl_device_id did, bool retain=false,
            reference_type_t ref_type=REF_NOT_OWNABLE)
         : clobj(did), m_ref_type(ref_type)

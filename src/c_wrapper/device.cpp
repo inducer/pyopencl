@@ -10,6 +10,15 @@ template void print_clobj<device>(std::ostream&, const device*);
 template void print_buf<cl_device_id>(std::ostream&, const cl_device_id*,
                                       size_t, ArgType, bool, bool);
 
+void
+device::get_version(cl_device_id dev, int *major, int *minor)
+{
+    cl_platform_id plat;
+    pyopencl_call_guarded(clGetDeviceInfo, dev, CL_DEVICE_PLATFORM,
+                          size_arg(plat), nullptr);
+    platform::get_version(plat, major, minor);
+}
+
 device::~device()
 {
     if (false) {

@@ -34,7 +34,7 @@ platform::get_info(cl_uint param_name) const
 static const std::regex ver_regex("^OpenCL ([0-9]+)\\.([0-9]+).*");
 
 void
-get_platform_version(cl_platform_id plat, int *major, int *minor)
+platform::get_version(cl_platform_id plat, int *major, int *minor)
 {
     char s_buff[128];
     size_t size;
