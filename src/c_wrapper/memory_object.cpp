@@ -1,5 +1,7 @@
 #include "memory_object.h"
 #include "context.h"
+#include "event.h"
+#include "command_queue.h"
 #include "clhelper.h"
 
 namespace pyopencl {
@@ -88,3 +90,52 @@ memory_object__get_host_array(clobj_t _obj, void **hostptr, size_t *size)
                                   size_arg(*size), nullptr);
         });
 }
+
+#if PYOPENCL_CL_VERSION >= 0x1020
+error*
+enqueue_migrate_mem_objects(clobj_t *evt, clobj_t _queue,
+                            const clobj_t *_mem_obj, uint32_t num_mem_obj,
+                            cl_mem_migration_flags flags,
+                            const clobj_t *_wait_for, uint32_t num_wait_for)
+{
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto mem_obj = buf_from_class<memory_object>(_mem_obj, num_mem_obj);
+    auto queue = static_cast<command_queue*>(_queue);
+    return c_handle_retry_mem_error([&] {
+            pyopencl_call_guarded(clEnqueueMigrateMemObjects, queue,
+                                  mem_obj, flags, wait_for, event_out(evt));
+        });
+}
+#endif
+
+#ifdef cl_ext_migrate_memobject
+error*
+enqueue_migrate_mem_object_ext(clobj_t *evt, clobj_t _queue,
+                               const clobj_t *_mem_obj, uint32_t num_mem_obj,
+                               cl_mem_migration_flags_ext flags,
+                               const clobj_t *_wait_for, uint32_t num_wait_for)
+{
+    const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
+    const auto mem_obj = buf_from_class<memory_object>(_mem_obj, num_mem_obj);
+    auto queue = static_cast<command_queue*>(_queue);
+    return c_handle_error([&] {
+#if PYOPENCL_CL_VERSION >= 0x1020
+            // {{{ get platform
+            cl_device_id dev;
+            pyopencl_call_guarded(clGetCommandQueueInfo, queue, CL_QUEUE_DEVICE,
+                                  size_arg(dev), nullptr);
+            cl_platform_id plat;
+            pyopencl_call_guarded(clGetDeviceInfo, dev, CL_DEVICE_PLATFORM,
+                                  size_arg(plat), nullptr);
+            // }}}
+#endif
+            auto clEnqueueMigrateMemObjectEXT =
+                pyopencl_get_ext_fun(plat, clEnqueueMigrateMemObjectEXT);
+            retry_mem_error([&] {
+                    pyopencl_call_guarded(clEnqueueMigrateMemObjectsEXT, queue,
+                                          mem_obj, flags, wait_for,
+                                          event_out(evt));
+                });
+        });
+}
+#endif

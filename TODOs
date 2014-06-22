@@ -5,8 +5,6 @@
 - enqueue_nd_range_kernel size/offset mess
 
 - CommandQueue.set_property
-- enqueue_migrate_mem_objects
-- enqueue_migrate_mem_objects_ext
 - _enqueue_copy_image_to_buffer
 - _enqueue_copy_buffer_to_image
 - _Program.create_with_built_in_kernels

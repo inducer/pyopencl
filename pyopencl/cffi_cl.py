@@ -1057,6 +1057,29 @@ def _enqueue_barrier(queue):
 
 # }}}
 
+# {{{ enqueue_migrate_mem_object*
+
+def enqueue_migrate_mem_objects(queue, mem_objects, flags, wait_for=None):
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    c_mem_objs, num_mem_objs = _clobj_list(mem_objects)
+    _handle_error(_lib.enqueue_migrate_mem_objects(
+        _event, queue.ptr, c_mem_objs, num_mem_objs, flags,
+        c_wait_for, num_wait_for))
+    return Event._create(_event[0])
+
+
+def enqueue_migrate_mem_object_ext(queue, mem_objects, flags, wait_for=None):
+    _event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    c_mem_objs, num_mem_objs = _clobj_list(mem_objects)
+    _handle_error(_lib.enqueue_migrate_mem_object_ext(
+        _event, queue.ptr, c_mem_objs, num_mem_objs, flags,
+        c_wait_for, num_wait_for))
+    return Event._create(_event[0])
+
+# }}}
+
 # {{{ _enqueue_wait_for_events
 
 def _enqueue_wait_for_events(queue, wait_for=None):
@@ -1093,7 +1116,7 @@ def _enqueue_write_buffer(queue, mem, hostbuf, device_offset=0,
 
 
 def _enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0,
-        dst_offset=0, wait_for=None):
+                         dst_offset=0, wait_for=None):
     ptr_event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_copy_buffer(
