@@ -51,6 +51,27 @@ event::event(cl_event event, bool retain, event_private *p)
     }
 }
 
+#if PYOPENCL_CL_VERSION >= 0x1010
+static PYOPENCL_INLINE bool
+release_private_use_cb(event *evt)
+{
+    try {
+        cl_int status = 0;
+        pyopencl_call_guarded(clGetEventInfo, evt,
+                              CL_EVENT_COMMAND_EXECUTION_STATUS,
+                              size_arg(status), nullptr);
+        // Event Callback may not be run immediately when the event
+        // is already completed.
+        if (status <= CL_COMPLETE)
+            return false;
+        return evt->support_cb;
+    } catch (const clerror &e) {
+        cleanup_print_error(e.code(), e.what());
+        return false;
+    }
+}
+#endif
+
 bool
 event::release_private() noexcept
 {
@@ -61,20 +82,7 @@ event::release_private() noexcept
         return true;
     }
 #if PYOPENCL_CL_VERSION >= 0x1010
-    cl_int status = 0;
-    try {
-        pyopencl_call_guarded(clGetEventInfo, this,
-                              CL_EVENT_COMMAND_EXECUTION_STATUS,
-                              size_arg(status), nullptr);
-    } catch (const clerror &e) {
-        cleanup_print_error(e.code(), e.what());
-        m_p->call_finish();
-        delete m_p;
-        return true;
-    }
-    // Event Callback may not be run immediately when the event is already
-    // completed.
-    if (support_cb && status > CL_COMPLETE) {
+    if (release_private_use_cb(this)) {
         try {
             event_private *p = m_p;
             set_callback(CL_COMPLETE, [p] (cl_int) {
