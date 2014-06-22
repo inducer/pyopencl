@@ -640,6 +640,24 @@ def test_unload_compiler(platform):
         skip("Intel proprietary driver does not support unloading compiler")
     cl.unload_platform_compiler(platform)
 
+
+def test_platform_get_devices(platform):
+    dev_types = [cl.device_type.ACCELERATOR, cl.device_type.ALL,
+                 cl.device_type.CPU, cl.device_type.DEFAULT, cl.device_type.GPU]
+    try:
+        if platform._get_cl_version() >= (1, 2):
+            dev_types.append(cl.device_type.CUSTOM)
+    except:
+        pass
+    for dev_type in dev_types:
+        devs = platform.get_devices(dev_type)
+        if dev_type in (cl.device_type.DEFAULT,
+                        cl.device_type.ALL,
+                        getattr(cl.device_type, 'CUSTOM', None)):
+            continue
+        for dev in devs:
+            assert dev.type == dev_type
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa
