@@ -567,6 +567,32 @@ def _add_functionality():
 
     # }}}
 
+    # {{{ ImageFormat
+
+    def image_format_repr(self):
+        return "ImageFormat(%s, %s)" % (
+                channel_order.to_string(self.channel_order,
+                    "<unknown channel order 0x%x>"),
+                channel_type.to_string(self.channel_data_type,
+                    "<unknown channel data type 0x%x>"))
+
+    def image_format_eq(self, other):
+        return (self.channel_order == other.channel_order
+                and self.channel_data_type == other.channel_data_type)
+
+    def image_format_ne(self, other):
+        return not image_format_eq(self, other)
+
+    def image_format_hash(self):
+        return hash((type(self), self.channel_order, self.channel_data_type))
+
+    ImageFormat.__repr__ = image_format_repr
+    ImageFormat.__eq__ = image_format_eq
+    ImageFormat.__ne__ = image_format_ne
+    ImageFormat.__hash__ = image_format_hash
+
+    # }}}
+
     # {{{ Image
 
     image_old_init = Image.__init__
@@ -670,8 +696,17 @@ def _add_functionality():
             else:
                 return self.event.get_image_info(inf_attr)
 
+    def image_shape(self):
+        if self.type == mem_object_type.IMAGE2D:
+            return (self.width, self.height)
+        elif self.type == mem_object_type.IMAGE3D:
+            return (self.width, self.height, self.depth)
+        else:
+            raise LogicError("only images have shapes")
+
     Image.__init__ = image_init
     Image.image = property(_ImageInfoGetter)
+    Image.shape = property(image_shape)
 
     # }}}
 

@@ -1515,23 +1515,6 @@ class ImageFormat(object):
     def itemsize(self):
         return self.channel_count * self.dtype_size
 
-    def __repr__(self):
-        return "ImageFormat(%s, %s)" % (
-                channel_order.to_string(self.channel_order,
-                    "<unknown channel order 0x%x>"),
-                channel_type.to_string(self.channel_data_type,
-                    "<unknown channel data type 0x%x>"))
-
-    def __eq__(self, other):
-        return (self.channel_order == other.channel_order
-                and self.channel_data_type == other.channel_data_type)
-
-    def __ne__(self, other):
-        return not self.__eq__(self, other)
-
-    def __hash__(self):
-        return hash((ImageFormat, self.channel_order, self.channel_data_type))
-
 
 def get_supported_image_formats(context, flags, image_type):
     info = _ffi.new('generic_info*')
@@ -1695,16 +1678,6 @@ class Image(MemoryObject):
         info = _ffi.new('generic_info*')
         _handle_error(_lib.image__get_image_info(self.ptr, param, info))
         return _generic_info_to_python(info)
-
-    @property
-    def shape(self):
-        if self.type == mem_object_type.IMAGE2D:
-            return (self.width, self.height)
-        elif self.type == mem_object_type.IMAGE3D:
-            return (self.width, self.height, self.depth)
-        else:
-            raise LogicError("only images have shapes",
-                             status_code.INVALID_VALUE, "Image")
 
 # }}}
 
