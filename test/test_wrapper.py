@@ -694,6 +694,19 @@ def test_user_event(ctx_factory):
         raise RuntimeError('cl.wait_for_events timeout on UserEvent')
     assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
+
+def test_buffer_get_host_array(ctx_factory):
+    ctx = ctx_factory()
+    mf = cl.mem_flags
+
+    host_buf = np.random.rand(25).astype(np.float32)
+    buf = cl.Buffer(ctx, mf.READ_WRITE | mf.USE_HOST_PTR, hostbuf=host_buf)
+    host_buf2 = buf.get_host_array(25, np.float32)
+    assert (host_buf == host_buf2).all()
+    assert (host_buf.__array_interface__['data'][0] ==
+            host_buf.__array_interface__['data'][0])
+    assert host_buf2.base is buf
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa
