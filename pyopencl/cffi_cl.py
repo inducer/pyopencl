@@ -641,10 +641,10 @@ def _norm_shape_dtype(shape, dtype, order="C", strides=None, name=""):
         except:
             shape = (shape,)
     if strides is None:
-        if order == "cC":
-            strides = c_contigous_strides(byte_size, shape)
-        elif order == "cF":
-            strides = f_contigous_strides(byte_size, shape)
+        if order in "cC":
+            strides = c_contiguous_strides(dtype.itemsize, shape)
+        elif order in "fF":
+            strides = f_contiguous_strides(dtype.itemsize, shape)
         else:
             raise RuntimeError("unrecognized order specifier %s" % order,
                                status_code.INVALID_VALUE, name)
@@ -671,7 +671,8 @@ class MemoryObjectHolder(_Common):
             shape, dtype, order, None, 'MemoryObjectHolder.get_host_array')
         _hostptr = _ffi.new('void**')
         _size = _ffi.new('size_t*')
-        _handle_error(memory_object__get_host_array(self.ptr, _hostptr, _size))
+        _handle_error(_lib.memory_object__get_host_array(self.ptr, _hostptr,
+                                                         _size))
         ary = cffi_array(_ffi.buffer(_hostptr[0], _size[0]), shape,
                          dtype, strides, self)
         if ary.nbytes > _size[0]:
