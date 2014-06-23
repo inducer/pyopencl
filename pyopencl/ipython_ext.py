@@ -6,9 +6,7 @@ import pyopencl as cl
 
 
 def _try_to_utf8(text):
-    if isinstance(text, str):
-        return text
-    elif isinstance(text, unicode):
+    if isinstance(text, unicode):
         return text.encode("utf8")
     return text
 
