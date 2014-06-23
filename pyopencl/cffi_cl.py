@@ -111,19 +111,12 @@ def _generic_info_to_python(info):
             _lib.CLASS_COMMAND_QUEUE: CommandQueue
             }[info.opaque_class]
 
-        def ci(ptr):
-            ins = klass._create(ptr)
-            if info.opaque_class == _lib.CLASS_PROGRAM:  # TODO: HACK?
-                from . import Program
-                return Program(ins)
-            return ins
-
         if type_.endswith(']'):
-            ret = map(ci, value)
+            ret = map(klass._create, value)
             _lib.free_pointer(info.value)
             return ret
         else:
-            return ci(value)
+            return klass._create(value)
     if type_ == 'char*':
         ret = _ffi_pystr(value)
     elif type_.startswith('char*['):
