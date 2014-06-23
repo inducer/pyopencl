@@ -644,11 +644,9 @@ def test_unload_compiler(platform):
 def test_platform_get_devices(platform):
     dev_types = [cl.device_type.ACCELERATOR, cl.device_type.ALL,
                  cl.device_type.CPU, cl.device_type.DEFAULT, cl.device_type.GPU]
-    try:
-        if platform._get_cl_version() >= (1, 2):
-            dev_types.append(cl.device_type.CUSTOM)
-    except:
-        pass
+    if (platform._get_cl_version() >= (1, 2) and
+        cl.get_cl_header_version() >= (1, 2)):
+        dev_types.append(cl.device_type.CUSTOM)
     for dev_type in dev_types:
         devs = platform.get_devices(dev_type)
         if dev_type in (cl.device_type.DEFAULT,
@@ -657,6 +655,44 @@ def test_platform_get_devices(platform):
             continue
         for dev in devs:
             assert dev.type == dev_type
+
+
+def test_user_event(ctx_factory):
+    ctx = ctx_factory()
+    if (ctx._get_cl_version() < (1, 1) and
+        cl.get_cl_header_version() < (1, 1)):
+        from pytest import skip
+        skip("UserEvent is only available in OpenCL 1.1")
+    status = {}
+    def event_waiter1(e, key):
+        e.wait()
+        status[key] = True
+    def event_waiter2(e, key):
+        cl.wait_for_events([e])
+        status[key] = True
+    from threading import Thread
+    from time import sleep
+    evt = cl.UserEvent(ctx)
+    Thread(target=event_waiter1, args=(evt, 1)).start()
+    sleep(.05)
+    if status.get(1, False):
+        raise RuntimeError('UserEvent triggered before set_status')
+    evt.set_status(cl.command_execution_status.COMPLETE)
+    sleep(.05)
+    if not status.get(1, False):
+        raise RuntimeError('UserEvent.wait timeout')
+    assert evt.command_execution_status == cl.command_execution_status.COMPLETE
+
+    evt = cl.UserEvent(ctx)
+    Thread(target=event_waiter2, args=(evt, 2)).start()
+    sleep(.05)
+    if status.get(2, False):
+        raise RuntimeError('UserEvent triggered before set_status')
+    evt.set_status(cl.command_execution_status.COMPLETE)
+    sleep(.05)
+    if not status.get(2, False):
+        raise RuntimeError('cl.wait_for_events timeout on UserEvent')
+    assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
