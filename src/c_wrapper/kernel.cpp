@@ -142,7 +142,8 @@ kernel__set_arg_buf(clobj_t _knl, cl_uint arg_index,
 {
     auto knl = static_cast<kernel*>(_knl);
     return c_handle_error([&] {
-            pyopencl_call_guarded(clSetKernelArg, knl, arg_index, size, buffer);
+            pyopencl_call_guarded(clSetKernelArg, knl, arg_index,
+                                  size_arg(buffer, size));
         });
 }
 

@@ -1,5 +1,7 @@
 #include "debug.h"
 #include <iostream>
+#include <ios>
+#include <iomanip>
 #include <stdlib.h>
 
 namespace pyopencl {
@@ -37,6 +39,17 @@ dbg_print_str(std::ostream &stm, const char *str, size_t len)
         }
     }
     stm << '"';
+}
+
+void
+dbg_print_bytes(std::ostream &stm, const unsigned char *bytes, size_t len)
+{
+    stm << '"';
+    for (size_t i = 0;i < len;i++) {
+        stm << "\\x" << std::hex << std::setfill('0')
+            << std::setw(2) << bytes[i];
+    }
+    stm << std::dec << '"';
 }
 
 static PYOPENCL_INLINE bool

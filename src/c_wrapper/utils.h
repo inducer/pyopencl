@@ -62,6 +62,12 @@ enum class ArgType {
     Length,
 };
 
+template<typename T, class = void>
+struct type_size : std::integral_constant<size_t, sizeof(T)> {};
+template<typename T>
+struct type_size<T, enable_if_t<std::is_same<rm_const_t<T>, void>::value> > :
+        std::integral_constant<size_t, 1> {};
+
 template<typename T>
 static PYOPENCL_INLINE void
 _print_buf_content(std::ostream &stm, const T *p, size_t len)
@@ -87,20 +93,43 @@ _print_buf_content<char>(std::ostream &stm, const char *p, size_t len)
     dbg_print_str(stm, p, len);
 }
 
+template<>
+PYOPENCL_INLINE void
+_print_buf_content<unsigned char>(std::ostream &stm,
+                                  const unsigned char *p, size_t len)
+{
+    dbg_print_bytes(stm, p, len);
+}
+
+template<>
+PYOPENCL_INLINE void
+_print_buf_content<void>(std::ostream &stm, const void *p, size_t len)
+{
+    dbg_print_bytes(stm, static_cast<const unsigned char*>(p), len);
+}
+
 template<typename T>
 void
 print_buf(std::ostream &stm, const T *p, size_t len,
           ArgType arg_type, bool content, bool out)
 {
-    const size_t ele_size = sizeof(T);
+    const size_t ele_size = type_size<T>::value;
     if (out) {
         stm << "*(" << (const void*)p << "): ";
-        _print_buf_content(stm, p, len);
+        if (p) {
+            _print_buf_content(stm, p, len);
+        } else {
+            stm << "NULL";
+        }
     } else {
         bool need_quote = content || arg_type != ArgType::None;
         if (content) {
-            _print_buf_content(stm, p, len);
-            stm << " ";
+            if (p) {
+                _print_buf_content(stm, p, len);
+                stm << " ";
+            } else {
+                stm << "NULL ";
+            }
         }
         if (need_quote) {
             stm << "<";
@@ -231,7 +260,8 @@ public:
     {
         return const_cast<rm_const_t<T>*>(m_buf);
     }
-    PYOPENCL_INLINE T&
+    template<typename T2 = T>
+    PYOPENCL_INLINE T2&
     operator[](int i) const
     {
         return m_buf[i];
@@ -300,11 +330,11 @@ struct _ArgBufferConverter<Buff,
                            enable_if_t<Buff::arg_type == ArgType::SizeOf> > {
     static PYOPENCL_INLINE auto
     convert(Buff &buff)
-        -> decltype(std::make_tuple(sizeof(typename Buff::type) * buff.len(),
-                                    buff.get()))
+        -> decltype(std::make_tuple(type_size<typename Buff::type>::value *
+                                    buff.len(), buff.get()))
     {
-        return std::make_tuple(sizeof(typename Buff::type) * buff.len(),
-                               buff.get());
+        return std::make_tuple(type_size<typename Buff::type>::value *
+                               buff.len(), buff.get());
     }
 };
 
@@ -357,7 +387,7 @@ public:
         : ArgBuffer<const T, AT>(buf, n)
     {
         if (l < n) {
-            memcpy(m_intern_buf, buf, sizeof(T) * l);
+            memcpy(m_intern_buf, buf, type_size<T>::value * l);
             if (content) {
                 for (size_t i = l;i < n;i++) {
                     m_intern_buf[i] = content;
