@@ -5,7 +5,6 @@
 - enqueue_nd_range_kernel size/offset mess
 
 - CommandQueue.set_property
-- ?LocalMemory
 - GLBuffer
 - GLRenderBuffer
 - GLTexture

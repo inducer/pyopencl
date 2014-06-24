@@ -658,6 +658,15 @@ class cffi_array(np.ndarray):
         return self.__base
 
 
+class LocalMemory(object):
+    __slots__ = ('_size',)
+    def __init__(self, size):
+        self._size = size
+    @property
+    def size(self):
+        return self._size
+
+
 class MemoryObjectHolder(_Common):
     def get_host_array(self, shape, dtype, order="C"):
         dtype, shape, strides = _norm_shape_dtype(
@@ -941,6 +950,9 @@ class Kernel(_Common):
         elif isinstance(arg, Sampler):
             _handle_error(_lib.kernel__set_arg_sampler(self.ptr, arg_index,
                                                        arg.ptr))
+        elif isinstance(arg, LocalMemory):
+            _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
+                                                   _ffi.NULL, arg.size))
         else:
             c_buf, size, _ = _c_buffer_from_obj(arg)
             _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
