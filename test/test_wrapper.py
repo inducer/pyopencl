@@ -707,17 +707,17 @@ def test_buffer_get_host_array(ctx_factory):
             host_buf.__array_interface__['data'][0])
     assert host_buf2.base is buf
 
+    buf = cl.Buffer(ctx, mf.READ_WRITE | mf.ALLOC_HOST_PTR, size=100)
     try:
-        buf = cl.Buffer(ctx, mf.READ_WRITE | mf.ALLOC_HOST_PTR, size=100)
         host_buf2 = buf.get_host_array(25, np.float32)
         assert False, ("MemoryObject.get_host_array should not accept buffer "
                        "without USE_HOST_PTR")
     except cl.LogicError:
         pass
 
+    host_buf = np.random.rand(25).astype(np.float32)
+    buf = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=host_buf)
     try:
-        host_buf = np.random.rand(25).astype(np.float32)
-        buf = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=host_buf)
         host_buf2 = buf.get_host_array(25, np.float32)
         assert False, ("MemoryObject.get_host_array should not accept buffer "
                        "without USE_HOST_PTR")
