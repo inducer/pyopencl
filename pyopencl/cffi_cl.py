@@ -1077,7 +1077,7 @@ def enqueue_task(queue, kernel, wait_for=None):
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_task(
         _event, queue.ptr, kernel.ptr, c_wait_for, num_wait_for))
-    return Event._create(ptr_event[0])
+    return Event._create(_event[0])
 
 # }}}
 
@@ -1299,7 +1299,7 @@ def _enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
     _handle_error(_lib.enqueue_fill_buffer(
         _event, queue.ptr, mem.ptr, c_pattern, psize, offset, size,
         c_wait_for, num_wait_for))
-    return Event._create(ptr_event[0])
+    return Event._create(_event[0])
 
 # }}}
 
@@ -1341,7 +1341,7 @@ def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
     _handle_error(_lib.enqueue_copy_image(
         _event, queue.ptr, src.ptr, dest.ptr, src_origin, src_origin_l,
         dest_origin, dest_origin_l, region, region_l, c_wait_for, num_wait_for))
-    return Event._create(ptr_event[0])
+    return Event._create(_event[0])
 
 def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
                          slice_pitch=0, wait_for=None, is_blocking=True):
@@ -1401,7 +1401,7 @@ def enqueue_fill_image(queue, img, color, origin, region, wait_for=None):
     _handle_error(_lib.enqueue_fill_image(_event, queue.ptr, img.ptr,
                                           c_color, origin, origin_l, region,
                                           region_l, c_wait_for, num_wait_for))
-    return Event._create(ptr_event[0])
+    return Event._create(_event[0])
 
 
 def _enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset,
@@ -1419,7 +1419,7 @@ def _enqueue_copy_image_to_buffer(queue, src, dest, origin, region, offset,
     _handle_error(_lib.enqueue_copy_image_to_buffer(
         _event, queue.ptr, src.ptr, dest.ptr, origin, origin_l, region,
         region_l, offset, c_wait_for, num_wait_for))
-    return Event._create(ptr_event[0])
+    return Event._create(_event[0])
 
 
 def _enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region,
@@ -1437,7 +1437,7 @@ def _enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region,
     _handle_error(_lib.enqueue_copy_buffer_to_image(
         _event, queue.ptr, src.ptr, dest.ptr, offset, origin, origin_l,
         region, region_l, c_wait_for, num_wait_for))
-    return Event._create(ptr_event[0])
+    return Event._create(_event[0])
 
 # }}}
 
