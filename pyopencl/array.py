@@ -648,22 +648,83 @@ class Array(object):
         size (not necessarily shape) and dtype.
         """
 
+        if not self.size:
+            return ary or np.empty(self.shape, self.dtype)
+
+        index = 0
+        order = None
+        prev_stride = None
+        new_strides = []
+        for stride in self.strides:
+            if prev_stride:
+                if not order and stride > prev_stride:
+                    order = 'F'
+                elif not order and stride < prev_stride:
+                    order = 'C'
+                elif ((order == 'F' and stride < prev_stride) or
+                      (order == 'C' and stride > prev_stride)):
+                    raise TypeError(
+                        "Array must have row- or column-major layout")
+            new_strides = map(lambda x: x * self.shape[index], new_strides)
+            new_strides.append(1)
+            prev_stride = stride
+            index += 1
+        if not order: order = 'C' # All strides equal, making things tricky
+        new_strides = map(lambda x: x * self.dtype.itemsize, new_strides)
+        new_strides = list(new_strides)
+
+        element_strides = list(map(lambda x: int(x / self.dtype.itemsize),
+                                   self.strides))
+
+        if order == 'F':
+            new_strides.reverse()
+            element_strides.reverse()
+
         if ary is None:
             ary = np.empty(self.shape, self.dtype)
 
-            ary = _as_strided(ary, strides=self.strides)
+            #if self.flags.forc:
+            #    ary = _as_strided(ary, strides=self.strides)
+            #    cl.enqueue_copy(queue or self.queue, ary, self.base_data,
+            #                    device_offset=self.offset,
+            #                    is_blocking=not async)  
+            #    return ary
+            
+            ary = _as_strided(ary, strides = new_strides)
+            
         else:
             if ary.size != self.size:
                 raise TypeError("'ary' has non-matching size")
             if ary.dtype != self.dtype:
                 raise TypeError("'ary' has non-matching type")
 
-        assert self.flags.forc, "Array in get() must be contiguous"
+        # Copy in chunks according to shape
+        # If 3d, we need n_3 2d slices, where n_3 is the size of the 3rd dim
+        # If 4d, we need n_4 3d slices, where n_4 is the size of the 4th dim
+        # If 5d, we need n_5 4d slices, where n_5 is the size of the 5th dim
+        #             or (n_5 * n_4) 3d chunks
+        # If 6d, we need n_6 * n_5 * n_5 3d chunks
 
-        if self.size:
-            cl.enqueue_copy(queue or self.queue, ary, self.base_data,
-                    device_offset=self.offset,
-                    is_blocking=not async)
+        region = list(self.shape)
+        region[0] *= self.dtype.itemsize
+
+        if len(self.shape) == 2:
+            row_pitch = element_strides[0] * element_strides[1] * self.dtype.itemsize
+            slice_pitch = 1
+        else:
+            row_pitch = element_strides[1] * element_strides[2] * self.dtype.itemsize
+            slice_pitch = row_pitch * self.shape[0]
+        pitches = (row_pitch, slice_pitch)
+
+        print("Info1:", self.shape, self.strides, element_strides, new_strides)
+        print("Info2:", region, pitches)
+
+        cl.enqueue_copy(queue or self.queue, ary, self.base_data,
+                        buffer_origin=(self.offset, 0, 0),
+                        host_origin=(0, 0, 0),
+                        region=tuple(region),
+                        buffer_pitches=pitches,
+                        host_pitches=(0,0))
 
         return ary
 
