@@ -669,7 +669,7 @@ class Array(object):
             new_strides.append(1)
             prev_stride = stride
             index += 1
-        if not order: order = 'C' # All strides equal, making things tricky
+        if not order: order = 'C'
         new_strides = map(lambda x: x * self.dtype.itemsize, new_strides)
         new_strides = list(new_strides)
 
@@ -683,27 +683,20 @@ class Array(object):
         if ary is None:
             ary = np.empty(self.shape, self.dtype)
 
-            #if self.flags.forc:
-            #    ary = _as_strided(ary, strides=self.strides)
-            #    cl.enqueue_copy(queue or self.queue, ary, self.base_data,
-            #                    device_offset=self.offset,
-            #                    is_blocking=not async)  
-            #    return ary
-            
+            if self.flags.forc:
+                ary = _as_strided(ary, strides=self.strides)
+                cl.enqueue_copy(queue or self.queue, ary, self.base_data,
+                                device_offset=self.offset,
+                                is_blocking=not async)
+                return ary
+
             ary = _as_strided(ary, strides = new_strides)
-            
+
         else:
             if ary.size != self.size:
                 raise TypeError("'ary' has non-matching size")
             if ary.dtype != self.dtype:
                 raise TypeError("'ary' has non-matching type")
-
-        # Copy in chunks according to shape
-        # If 3d, we need n_3 2d slices, where n_3 is the size of the 3rd dim
-        # If 4d, we need n_4 3d slices, where n_4 is the size of the 4th dim
-        # If 5d, we need n_5 4d slices, where n_5 is the size of the 5th dim
-        #             or (n_5 * n_4) 3d chunks
-        # If 6d, we need n_6 * n_5 * n_5 3d chunks
 
         region = list(self.shape)
         region[0] *= self.dtype.itemsize
@@ -711,19 +704,18 @@ class Array(object):
         if len(self.shape) == 2:
             row_pitch = element_strides[0] * element_strides[1] * self.dtype.itemsize
             slice_pitch = 1
-        else:
-            row_pitch = element_strides[1] * element_strides[2] * self.dtype.itemsize
+        elif len(self.shape) == 3:
+            row_pitch = element_strides[-1] * element_strides[-2] * self.dtype.itemsize
             slice_pitch = row_pitch * self.shape[0]
-        pitches = (row_pitch, slice_pitch)
-
-        print("Info1:", self.shape, self.strides, element_strides, new_strides)
-        print("Info2:", region, pitches)
+        else:
+            raise TypeError(
+                "Only 2- or 3-D non-contiguous arrays are currently supported")
 
         cl.enqueue_copy(queue or self.queue, ary, self.base_data,
                         buffer_origin=(self.offset, 0, 0),
                         host_origin=(0, 0, 0),
                         region=tuple(region),
-                        buffer_pitches=pitches,
+                        buffer_pitches=(row_pitch, slice_pitch),
                         host_pitches=(0,0))
 
         return ary
