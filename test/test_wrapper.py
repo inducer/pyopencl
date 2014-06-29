@@ -659,7 +659,7 @@ def test_enqueue_task(ctx_factory):
     """).build()
     knl = prg.reverse
 
-    n = 1000000
+    n = 100
     a = np.random.rand(n).astype(np.float32)
     b = np.empty_like(a)
 
@@ -669,8 +669,9 @@ def test_enqueue_task(ctx_factory):
     knl.set_args(buf1, buf2, np.int32(n))
     cl.enqueue_task(queue, knl)
 
-    cl.enqueue_read_buffer(queue, buf2, b).wait()
+    cl.enqueue_copy(queue, b, buf2).wait()
     assert la.norm(a[::-1] - b) == 0
+
 
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
