@@ -20,9 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-
-
-
 CLUDA_PREAMBLE = """
 #define local_barrier() barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -50,12 +47,8 @@ CLUDA_PREAMBLE = """
 #define GDIM_2 get_num_groups(2)
 
 % if double_support:
-    #if __OPENCL_VERSION__ <= CL_VERSION_1_1
+    #if __OPENCL_C_VERSION__ < 120
     #pragma OPENCL EXTENSION cl_khr_fp64: enable
     #endif
 % endif
 """
-
-
-
-
