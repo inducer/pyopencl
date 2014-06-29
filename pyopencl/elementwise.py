@@ -127,7 +127,7 @@ def get_elwise_kernel_and_types(context, arguments, operation,
             if arg.dtype in [np.float64, np.complex128]:
                 if not have_double_pragma:
                     pragmas.append("""
-                        #if __OPENCL_VERSION__ <= CL_VERSION_1_1
+                        #if __OPENCL_C_VERSION__ < 120
                         #pragma OPENCL EXTENSION cl_khr_fp64: enable
                         #endif
                         #define PYOPENCL_DEFINE_CDOUBLE
@@ -846,7 +846,7 @@ def get_float_binary_func_kernel(context, func_name, x_dtype, y_dtype,
     if (np.array(0, x_dtype) * np.array(0, y_dtype)).itemsize > 4:
         arg_type = 'double'
         preamble = """
-        #if __OPENCL_VERSION__ <= CL_VERSION_1_1
+        #if __OPENCL_C_VERSION__ < 120
         #pragma OPENCL EXTENSION cl_khr_fp64: enable
         #endif
         #define PYOPENCL_DEFINE_CDOUBLE
@@ -920,7 +920,7 @@ def get_bessel_kernel(context, which_func, out_dtype=np.float64,
         "z[i] = bessel_%sn(ord_n, x[i])" % which_func,
         name="bessel_%sn_kernel" % which_func,
         preamble="""
-        #if __OPENCL_VERSION__ <= CL_VERSION_1_1
+        #if __OPENCL_C_VERSION__ < 120
         #pragma OPENCL EXTENSION cl_khr_fp64: enable
         #endif
         #define PYOPENCL_DEFINE_CDOUBLE
