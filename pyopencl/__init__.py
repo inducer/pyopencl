@@ -340,7 +340,20 @@ def _add_functionality():
     def platform_repr(self):
         return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
 
+    def platform_get_cl_version(self):
+        import re
+        version_string = self.version
+        match = re.match(r"^OpenCL ([0-9]+)\.([0-9]+) .*$", version_string)
+        if match is None:
+            raise RuntimeError("platform %s returned non-conformant "
+                               "platform version string '%s'" %
+                               (self, version_string))
+
+        return int(match.group(1)), int(match.group(2))
+
+
     Platform.__repr__ = platform_repr
+    Platform._get_cl_version = platform_get_cl_version
 
     # }}}
 
@@ -367,16 +380,7 @@ def _add_functionality():
                 ", ".join(repr(dev) for dev in self.devices))
 
     def context_get_cl_version(self):
-        import re
-        platform = self.devices[0].platform
-        plat_version_string = platform.version
-        match = re.match(r"^OpenCL ([0-9]+)\.([0-9]+) .*$",
-                plat_version_string)
-        if match is None:
-            raise RuntimeError("platform %s returned non-conformant "
-                    "platform version string '%s'" % (platform, plat_version_string))
-
-        return int(match.group(1)), int(match.group(2))
+        return self.devices[0].platform._get_cl_version()
 
     Context.__repr__ = context_repr
     from pytools import memoize_method

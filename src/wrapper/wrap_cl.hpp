@@ -4236,6 +4236,13 @@ namespace pyopencl
     PyArray_Descr *tp_descr;
     if (PyArray_DescrConverter(dtype.ptr(), &tp_descr) != NPY_SUCCEED)
       throw py::error_already_set();
+    cl_mem_flags mem_flags;
+    PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+            (mem_obj.data(), CL_MEM_FLAGS, sizeof(mem_flags), &mem_flags, 0));
+    if (!(mem_flags & CL_MEM_USE_HOST_PTR))
+      throw pyopencl::error("MemoryObject.get_host_array", CL_INVALID_VALUE,
+                            "Only MemoryObject with USE_HOST_PTR "
+                            "is supported.");
 
     py::extract<npy_intp> shape_as_int(shape);
     std::vector<npy_intp> dims;
