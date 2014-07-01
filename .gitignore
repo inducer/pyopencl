@@ -52,6 +52,7 @@ _build
 __pycache__
 *.o
 .ipynb_checkpoints
+cscope.*
 
 # needed by jenkins env
 .env

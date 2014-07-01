@@ -629,10 +629,8 @@ def test_wait_for_events(ctx_factory):
     cl.wait_for_events([evt1, evt2])
 
 
-def test_unload_compiler(ctx_factory):
-    ctx = ctx_factory()
-    platform = ctx.devices[0].platform
-    if (ctx._get_cl_version() < (1, 2) or
+def test_unload_compiler(platform):
+    if (platform._get_cl_version() < (1, 2) or
             cl.get_cl_header_version() < (1, 2)):
         from pytest import skip
         skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
@@ -671,6 +669,94 @@ def test_enqueue_task(ctx_factory):
 
     cl.enqueue_copy(queue, b, buf2).wait()
     assert la.norm(a[::-1] - b) == 0
+
+
+def test_platform_get_devices(platform):
+    dev_types = [cl.device_type.ACCELERATOR, cl.device_type.ALL,
+                 cl.device_type.CPU, cl.device_type.DEFAULT, cl.device_type.GPU]
+    if (platform._get_cl_version() >= (1, 2) and
+            cl.get_cl_header_version() >= (1, 2)):
+        dev_types.append(cl.device_type.CUSTOM)
+    for dev_type in dev_types:
+        devs = platform.get_devices(dev_type)
+        if dev_type in (cl.device_type.DEFAULT,
+                        cl.device_type.ALL,
+                        getattr(cl.device_type, 'CUSTOM', None)):
+            continue
+        for dev in devs:
+            assert dev.type == dev_type
+
+
+def test_user_event(ctx_factory):
+    ctx = ctx_factory()
+    if (ctx._get_cl_version() < (1, 1) and
+            cl.get_cl_header_version() < (1, 1)):
+        from pytest import skip
+        skip("UserEvent is only available in OpenCL 1.1")
+
+    status = {}
+
+    def event_waiter1(e, key):
+        e.wait()
+        status[key] = True
+
+    def event_waiter2(e, key):
+        cl.wait_for_events([e])
+        status[key] = True
+
+    from threading import Thread
+    from time import sleep
+    evt = cl.UserEvent(ctx)
+    Thread(target=event_waiter1, args=(evt, 1)).start()
+    sleep(.05)
+    if status.get(1, False):
+        raise RuntimeError('UserEvent triggered before set_status')
+    evt.set_status(cl.command_execution_status.COMPLETE)
+    sleep(.05)
+    if not status.get(1, False):
+        raise RuntimeError('UserEvent.wait timeout')
+    assert evt.command_execution_status == cl.command_execution_status.COMPLETE
+
+    evt = cl.UserEvent(ctx)
+    Thread(target=event_waiter2, args=(evt, 2)).start()
+    sleep(.05)
+    if status.get(2, False):
+        raise RuntimeError('UserEvent triggered before set_status')
+    evt.set_status(cl.command_execution_status.COMPLETE)
+    sleep(.05)
+    if not status.get(2, False):
+        raise RuntimeError('cl.wait_for_events timeout on UserEvent')
+    assert evt.command_execution_status == cl.command_execution_status.COMPLETE
+
+
+def test_buffer_get_host_array(ctx_factory):
+    ctx = ctx_factory()
+    mf = cl.mem_flags
+
+    host_buf = np.random.rand(25).astype(np.float32)
+    buf = cl.Buffer(ctx, mf.READ_WRITE | mf.USE_HOST_PTR, hostbuf=host_buf)
+    host_buf2 = buf.get_host_array(25, np.float32)
+    assert (host_buf == host_buf2).all()
+    assert (host_buf.__array_interface__['data'][0] ==
+            host_buf.__array_interface__['data'][0])
+    assert host_buf2.base is buf
+
+    buf = cl.Buffer(ctx, mf.READ_WRITE | mf.ALLOC_HOST_PTR, size=100)
+    try:
+        host_buf2 = buf.get_host_array(25, np.float32)
+        assert False, ("MemoryObject.get_host_array should not accept buffer "
+                       "without USE_HOST_PTR")
+    except cl.LogicError:
+        pass
+
+    host_buf = np.random.rand(25).astype(np.float32)
+    buf = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=host_buf)
+    try:
+        host_buf2 = buf.get_host_array(25, np.float32)
+        assert False, ("MemoryObject.get_host_array should not accept buffer "
+                       "without USE_HOST_PTR")
+    except cl.LogicError:
+        pass
 
 
 if __name__ == "__main__":
