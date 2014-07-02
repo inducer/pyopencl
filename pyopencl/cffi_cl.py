@@ -31,8 +31,6 @@ import warnings
 import numpy as np
 import sys
 
-# TODO: can we do without ctypes?
-import ctypes
 from pyopencl._cffi import _ffi, _lib
 from .compyte.array import f_contiguous_strides, c_contiguous_strides
 
@@ -60,12 +58,6 @@ def _to_cstring(s):
     if isinstance(s, _unicode):
         return s.encode()
     return s
-
-try:
-    # Python 2.6 doesn't have this.
-    _ssize_t = ctypes.c_ssize_t
-except AttributeError:
-    _ssize_t = ctypes.c_size_t
 
 # }}}
 
@@ -707,6 +699,7 @@ class MemoryObject(MemoryObjectHolder):
     def release(self):
         _handle_error(_lib.memory_object__release(self.ptr))
 
+
 class MemoryMap(_Common):
     @classmethod
     def _create(cls, ptr, shape, typestr, strides):
@@ -727,18 +720,26 @@ class MemoryMap(_Common):
             c_wait_for, num_wait_for, _event))
         return Event._create(_event[0])
 
-def _c_buffer_from_obj(obj, writable=False, retain=False):
-    """Convert a Python object to a tuple (cdata('void *'), num_bytes, dummy)
-    to be able to pass a data stream to a C function. The dummy variable exists
-    only to ensure that the Python object referencing the C buffer is not
-    garbage collected at the end of this function, making the C buffer itself
-    invalid.
-    """
 
-    if _PYPY:
-        # {{{ special case: numpy (also works with numpypy)
+if _PYPY:
+    # Convert a Python object to a tuple (ptr, num_bytes, ref) to be able to
+    # pass a data stream to a C function where @ptr can be passed to a pointer
+    # argument and @num_bytes is the number of bytes. For certain types or
+    # when @writable or @retain is True, @ref is the object which keep the
+    # pointer converted from @ptr object valid.
+    def _c_buffer_from_obj(obj, writable=False, retain=False):
+        # {{{ special case: for numpy types and bytes
 
-        if isinstance(obj, np.ndarray):
+        if isinstance(obj, bytes):
+            if writable:
+                # bytes is not writable
+                raise TypeError('expected an object with a writable '
+                                'buffer interface.')
+            if retain:
+                buf = _ffi.new('char[]', obj)
+                return (buf, len(obj), buf)
+            return (obj, len(obj), obj)
+        elif isinstance(obj, np.ndarray):
             # numpy array
             return (_ffi.cast('void*', obj.__array_interface__['data'][0]),
                     obj.nbytes, obj)
@@ -756,46 +757,43 @@ def _c_buffer_from_obj(obj, writable=False, retain=False):
             s_array = obj[()]
             return (_ffi.cast('void*', s_array.__array_interface__['data'][0]),
                     s_array.nbytes, s_array)
-        elif isinstance(obj, bytes):
-            if writable:
-                # bytes is not writable
-                raise TypeError('expected an object with a writable '
-                                'buffer interface.')
-            if retain:
-                buff = _ffi.new('char[]', obj)
-                return (buf, len(obj), buf)
-            return (obj, len(obj), obj)
-        else:
-            raise LogicError("PyOpencl on PyPy only accepts numpy arrays "
-                             "and scalars arguments",
-                             status_code.INVALID_VALUE)
+        raise LogicError("PyOpencl on PyPy only accepts numpy arrays "
+                         "and scalars arguments", status_code.INVALID_VALUE)
+        # }}}
+else:
+    import ctypes
+    try:
+        # Python 2.6 doesn't have this.
+        _ssize_t = ctypes.c_ssize_t
+    except AttributeError:
+        _ssize_t = ctypes.c_size_t
 
+
+    def _c_buffer_from_obj(obj, writable=False, retain=False):
+        # {{{ fall back to the old CPython buffer protocol API
+
+        addr = ctypes.c_void_p()
+        length = _ssize_t()
+
+        try:
+            if writable:
+                ctypes.pythonapi.PyObject_AsWriteBuffer(
+                    ctypes.py_object(obj), ctypes.byref(addr),
+                    ctypes.byref(length))
+            else:
+                ctypes.pythonapi.PyObject_AsReadBuffer(
+                    ctypes.py_object(obj), ctypes.byref(addr),
+                    ctypes.byref(length))
+
+                # ctypes check exit status of these, so no need to check
+                # for errors.
+        except TypeError:
+            raise LogicError(routine=None, code=status_code.INVALID_VALUE,
+                             msg=("un-sized (pure-Python) types not "
+                                  "acceptable as arguments"))
         # }}}
 
-    # TODO: is there a cross-interpreter solution?
-
-    # {{{ fall back to the old CPython buffer protocol API
-
-    addr = ctypes.c_void_p()
-    length = _ssize_t()
-
-    try:
-        if writable:
-            ctypes.pythonapi.PyObject_AsWriteBuffer(
-                    ctypes.py_object(obj), ctypes.byref(addr), ctypes.byref(length))
-        else:
-            ctypes.pythonapi.PyObject_AsReadBuffer(
-                    ctypes.py_object(obj), ctypes.byref(addr), ctypes.byref(length))
-
-        # ctypes check exit status of these, so no need to check for errors.
-    except TypeError:
-        raise LogicError(routine=None, code=status_code.INVALID_VALUE,
-                         msg=("un-sized (pure-Python) types not acceptable "
-                              "as arguments"))
-
-    return _ffi.cast('void*', addr.value), length.value, obj
-
-    # }}}
+        return _ffi.cast('void*', addr.value), length.value, obj
 
 # }}}
 
@@ -925,8 +923,8 @@ class _Program(_Common):
     def all_kernels(self):
         knls = _CArray(_ffi.new('clobj_t**'))
         _handle_error(_lib.platform__get_devices(
-            self.ptr, knl.ptr, knl.size))
-        return [Kernel._create(knl.ptr[0][i]) for i in xrange(knl.size[0])]
+            self.ptr, knls.ptr, knls.size))
+        return [Kernel._create(knls.ptr[0][i]) for i in xrange(knls.size[0])]
 
 # }}}
 
