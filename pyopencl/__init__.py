@@ -765,12 +765,12 @@ def _add_functionality():
 
     # }}}
 
-    # if _cl.have_gl():
-    #     def gl_object_get_gl_object(self):
-    #         return self.get_gl_object_info()[1]
+    if _cl.have_gl():
+        def gl_object_get_gl_object(self):
+            return self.get_gl_object_info()[1]
 
-    #     GLBuffer.gl_object = property(gl_object_get_gl_object)
-    #     GLTexture.gl_object = property(gl_object_get_gl_object)
+        GLBuffer.gl_object = property(gl_object_get_gl_object)
+        GLTexture.gl_object = property(gl_object_get_gl_object)
 
 _add_functionality()
 

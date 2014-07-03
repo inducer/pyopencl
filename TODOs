@@ -2,6 +2,7 @@
 - generic_info
 - Incorporate fixes in C++ stuff from after the fork
 - compare and tests
+- MemoryPool
 - enqueue_nd_range_kernel size/offset mess
 
 - CommandQueue.set_property

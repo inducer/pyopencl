@@ -1445,7 +1445,15 @@ def have_gl():
     return bool(_lib.have_gl())
 
 
-class GLBuffer(MemoryObject):
+class _GLObject(object):
+    def get_gl_object_info(self):
+        otype = _ffi.new('cl_gl_object_type*')
+        gl_name = _ffi.new('GLuint*')
+        _handle_error(_lib.get_gl_object_info(self.ptr, otype, gl_name))
+        return otype[0], gl_name[0]
+
+
+class GLBuffer(MemoryObject, _GLObject):
     _id = 'gl_buffer'
 
     def __init__(self, context, flags, bufobj):
@@ -1457,7 +1465,7 @@ class GLBuffer(MemoryObject):
         self.ptr = ptr[0]
 
 
-class GLRenderBuffer(MemoryObject):
+class GLRenderBuffer(MemoryObject, _GLObject):
     _id = 'gl_renderbuffer'
 
     def __init__(self, context, flags, bufobj):
@@ -1750,7 +1758,7 @@ class Sampler(_Common):
 
 # {{{ GLTexture
 
-class GLTexture(Image):
+class GLTexture(Image, _GLObject):
     _id = 'gl_texture'
 
     def __init__(self, context, flags, texture_target, miplevel, texture, dims):

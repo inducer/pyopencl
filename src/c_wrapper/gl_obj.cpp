@@ -47,16 +47,6 @@ create_from_gl_texture(const context *ctx, cl_mem_flags flags,
 }
 #endif
 
-// TODO:
-// PYOPENCL_INLINE
-// py::tuple get_gl_object_info(memory_object_holder const &mem)
-// {
-//   cl_gl_object_type otype;
-//   GLuint gl_name;
-//   PYOPENCL_CALL_GUARDED(clGetGLObjectInfo, (mem, &otype, &gl_name));
-//   return py::make_tuple(otype, gl_name);
-// }
-
 typedef cl_int (*clEnqueueGLObjectFunc)(cl_command_queue, cl_uint,
                                         const cl_mem*, cl_uint,
                                         const cl_event*, cl_event*);
@@ -155,3 +145,13 @@ get_apple_cgl_share_group()
     return (cl_context_properties)kCGLShareGroup;
 }
 #endif /* __APPLE__ */
+
+error*
+get_gl_object_info(clobj_t mem, cl_gl_object_type *otype, GLuint *gl_name)
+{
+    auto globj = static_cast<memory_object*>(mem);
+    return c_handle_error([&] {
+            pyopencl_call_guarded(clGetGLObjectInfo, globj, buf_arg(*otype),
+                                  buf_arg(*gl_name));
+        });
+}

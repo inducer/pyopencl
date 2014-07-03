@@ -117,6 +117,12 @@ typedef struct _cl_mem_ion_host_ptr {
 
 typedef cl_bitfield         cl_mem_migration_flags_ext;
 
+/* cl_gl.h */
+typedef cl_uint     cl_gl_object_type;
+typedef cl_uint     cl_gl_texture_info;
+typedef cl_uint     cl_gl_platform_info;
+typedef struct __GLsync *cl_GLsync;
+
 /* c++ class pointer */
 typedef struct clbase *clobj_t;
 """
