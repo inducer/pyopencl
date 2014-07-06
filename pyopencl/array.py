@@ -672,8 +672,10 @@ class Array(object):
 
         queue = queue or self.queue
         result = self._new_like_me()
-        cl.enqueue_copy(queue, result.base_data, self.base_data,
-                src_offset=self.offset, byte_count=self.nbytes)
+
+        if self.nbytes:
+            cl.enqueue_copy(queue, result.base_data, self.base_data,
+                    src_offset=self.offset, byte_count=self.nbytes)
 
         return result
 
