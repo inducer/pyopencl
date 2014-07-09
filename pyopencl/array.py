@@ -820,9 +820,9 @@ class Array(object):
         strides = None
         if dtype is None:
             dtype = self.dtype
-        else:
-            if dtype == self.dtype:
-                strides = self.strides
+
+        if dtype == self.dtype:
+            strides = self.strides
 
         queue = queue or self.queue
         if queue is not None:
