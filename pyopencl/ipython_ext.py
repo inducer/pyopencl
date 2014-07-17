@@ -33,7 +33,9 @@ class PyOpenCLMagics(Magics):
             raise RuntimeError("unable to locate cl context, which must be "
                     "present in namespace as 'cl_ctx' or 'ctx'")
 
-        prg = cl.Program(ctx, _try_to_utf8(cell)).build(options=_try_to_utf8(line).strip())
+        opts, args = self.parse_options(line,'o:')
+        build_options = opts.get('o', '')
+        prg = cl.Program(ctx, _try_to_utf8(cell)).build(options=_try_to_utf8(build_options).strip())
 
         for knl in prg.all_kernels():
             self.shell.user_ns[knl.function_name] = knl
