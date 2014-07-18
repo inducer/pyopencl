@@ -5,6 +5,12 @@ from IPython.core.magic import (magics_class, Magics, cell_magic)
 import pyopencl as cl
 
 
+def _try_to_utf8(text):
+    if isinstance(text, unicode):
+        return text.encode("utf8")
+    return text
+
+
 @magics_class
 class PyOpenCLMagics(Magics):
     @cell_magic
@@ -23,11 +29,13 @@ class PyOpenCLMagics(Magics):
             except KeyError:
                 ctx = None
 
-        if ctx is None:
+        if ctx is None or not isinstance(ctx, cl.Context):
             raise RuntimeError("unable to locate cl context, which must be "
                     "present in namespace as 'cl_ctx' or 'ctx'")
 
-        prg = cl.Program(ctx, cell.encode("utf8")).build()
+        opts, args = self.parse_options(line,'o:')
+        build_options = opts.get('o', '')
+        prg = cl.Program(ctx, _try_to_utf8(cell)).build(options=_try_to_utf8(build_options).strip())
 
         for knl in prg.all_kernels():
             self.shell.user_ns[knl.function_name] = knl
