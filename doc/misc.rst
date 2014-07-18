@@ -37,6 +37,8 @@ and then use the ``%%cl_kernel`` 'cell-magic' command. See `this notebook
 <http://nbviewer.ipython.org/urls/raw.githubusercontent.com/pyopencl/pyopencl/master/examples/ipython-demo.ipynb>`_
 (which ships with PyOpenCL) for a demonstration.
 
+You can pass build options to be used for building the program executable by using the ``-o`` flag on the first line of the cell (next to the ``%%cl_kernel`` directive). For example: `%%cl_kernel -o "-cl-fast-relaxed-math"``.
+
 .. versionadded:: 2014.1
 
 Guidelines
