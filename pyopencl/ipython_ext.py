@@ -60,13 +60,13 @@ class PyOpenCLMagics(Magics):
 
 
     @line_magic
-    def cl_run_kernel(self, line):
+    def cl_kernel_from_file(self, line):
         kernel, build_options = self._load_kernel_and_options(line)
         self._run_kernel(kernel, build_options)
 
 
     @line_magic
-    def cl_load_kernel(self, line):
+    def cl_load_edit_kernel(self, line):
         kernel, build_options = self._load_kernel_and_options(line)
         header = "%%cl_kernel"
 
