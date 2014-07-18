@@ -719,6 +719,45 @@ def test_view_and_strides(ctx_factory):
         assert (y.get() == X.get()[:3, :5]).all()
 
 
+def test_event_management(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+
+    x = clrand(queue, (5, 10), dtype=np.float32)
+    assert len(x.events) == 1, len(x._events)
+
+    x.finish()
+
+    assert len(x.events) == 0
+
+    y = x+x
+    assert len(y.events) == 1
+    y = x*x
+    assert len(y.events) == 1
+    y = 2*x
+    assert len(y.events) == 1
+    y = 2/x
+    assert len(y.events) == 1
+    y = x/2
+    assert len(y.events) == 1
+    y = x**2
+    assert len(y.events) == 1
+    y = 2**x
+    assert len(y.events) == 1
+
+    for i in range(10):
+        x.fill(0)
+
+    assert len(x.events) == 10
+
+    for i in range(1000):
+        x.fill(0)
+
+    assert len(x.events) < 100
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
     # tests.
