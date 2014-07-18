@@ -292,13 +292,19 @@ class RanluxGenerator(object):
     def fill_uniform(self, ary, a=0, b=1, queue=None):
         """Fill *ary* with uniformly distributed random numbers in the interval
         *(a, b)*, endpoints excluded.
+
+        :return: a :class:`pyopencl.Event`
+
+        .. versionchanged:: 2014.1.1
+
+            Added return value.
         """
 
         if queue is None:
             queue = ary.queue
 
         knl, size_multiplier = self.get_gen_kernel(ary.dtype, "uniform")
-        knl(queue,
+        return knl(queue,
                 (self.num_work_items,), None,
                 self.state.data, ary.data, ary.size*size_multiplier,
                 b-a, a)
@@ -317,13 +323,17 @@ class RanluxGenerator(object):
     def fill_normal(self, ary, mu=0, sigma=1, queue=None):
         """Fill *ary* with normally distributed numbers with mean *mu* and
         standard deviation *sigma*.
+
+        .. versionchanged:: 2014.1.1
+
+            Added return value.
         """
 
         if queue is None:
             queue = ary.queue
 
         knl, size_multiplier = self.get_gen_kernel(ary.dtype, "normal")
-        knl(queue,
+        return knl(queue,
                 (self.num_work_items,), self.wg_size,
                 self.state.data, ary.data, ary.size*size_multiplier, sigma, mu)
 
@@ -335,7 +345,8 @@ class RanluxGenerator(object):
 
         result = cl_array.empty(*args, **kwargs)
 
-        self.fill_normal(result, queue=result.queue, mu=mu, sigma=sigma)
+        result.add_event(
+                self.fill_normal(result, queue=result.queue, mu=mu, sigma=sigma))
         return result
 
     @memoize_method
@@ -393,7 +404,8 @@ def rand(queue, shape, dtype, luxury=None, a=0, b=1):
     from pyopencl.array import Array
     gen = _get_generator(queue, luxury)
     result = Array(queue, shape, dtype)
-    gen.fill_uniform(result, a=a, b=b)
+    result.add_event(
+            gen.fill_uniform(result, a=a, b=b))
     return result
 
 
