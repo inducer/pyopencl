@@ -470,14 +470,6 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
 
 def create_built_program_from_source_cached(ctx, src, options=[], devices=None,
         cache_dir=None):
-    # FIXME REMOVE
-    if cache_dir is not False:
-        prg, already_built = _create_built_program_from_source_cached(
-                ctx, src, options, devices, cache_dir)
-    else:
-        prg = _cl._Program(ctx, src)
-        already_built = False
-    # FIXME END REMOVE
     try:
         if cache_dir is not False:
             prg, already_built = _create_built_program_from_source_cached(
