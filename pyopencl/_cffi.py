@@ -137,7 +137,12 @@ def _get_wrapcl_so_names():
         yield os.path.join(current_directory, "_wrapcl" + ext)
 
     from distutils.sysconfig import get_config_var
-    yield os.path.join(current_directory, "_wrapcl" + get_config_var('EXT_SUFFIX'))
+    # "SO" is apparently deprecated, but changing this to "EXT_SUFFIX"
+    # as recommended breaks Py2 and PyPy3, as reported by @yuyichao
+    # on 2014-07-20.
+    #
+    # You've been warned. Change "SO" with care.
+    yield os.path.join(current_directory, "_wrapcl" + get_config_var("SO"))
 
 
 def _import_library():
