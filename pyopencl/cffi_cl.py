@@ -118,10 +118,7 @@ def _generic_info_to_python(info):
         if type_.startswith('char['):
             # This is usually a CL binary, which may contain NUL characters
             # that should be preserved.
-            if sys.version_info < (3,):
-                ret = ''.join(a[0] for a in value)
-            else:
-                ret = bytes(_ffi.buffer(value))
+            ret = _bytes(_ffi.buffer(value))
 
         elif type_.startswith('generic_info['):
             ret = list(map(_generic_info_to_python, value))
