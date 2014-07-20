@@ -219,7 +219,7 @@ class Program(object):
     def _build_and_catch_errors(self, build_func, options, source=None):
         try:
             return build_func()
-        except _cl.RuntimeError, e:
+        except _cl.RuntimeError as e:
             what = e.what
             if options:
                 what = what + "\n(options: %s)" % " ".join(options)
@@ -418,7 +418,7 @@ def _add_functionality():
         err = None
         try:
             self._build(options=options, devices=devices)
-        except Error, e:
+        except Error as e:
             what = e.what + "\n\n" + (75*"="+"\n").join(
                     "Build on %s:\n\n%s" % (dev, log)
                     for dev, log in self._get_build_logs())
@@ -537,7 +537,7 @@ def _add_functionality():
                         self.set_arg(i, pack(arg_type_char, arg))
                     else:
                         self.set_arg(i, arg)
-        except LogicError, e:
+        except LogicError as e:
             if i is not None:
                 advice = ""
                 from pyopencl.array import Array
@@ -742,7 +742,7 @@ def create_some_context(interactive=None, answers=None):
 
     def cc_print(s):
         if interactive:
-            print s
+            print(s)
 
     def get_input(prompt):
         if answers:

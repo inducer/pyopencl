@@ -99,6 +99,9 @@ class _CArrays(_CArray):
 
 def _generic_info_to_python(info):
     type_ = _ffi.string(info.type)
+    if sys.version_info >= (3,):
+        type_ = type_.decode()
+
     value = _ffi.cast(type_, info.value)
 
     if info.opaque_class != _lib.CLASS_NONE:
@@ -128,12 +131,22 @@ def _generic_info_to_python(info):
             return ci(value)
     if type_ == 'char*':
         ret = _ffi.string(value)
+        if sys.version_info >= (3,):
+            ret = ret.decode()
     elif type_.startswith('char*['):
         ret = map(_ffi.string, value)
+        if sys.version_info >= (3,):
+            ret = [s.decode() for s in ret]
         _lib.pyopencl_free_pointer_array(info.value, len(value))
     elif type_.endswith(']'):
         if type_.startswith('char['):
-            ret = ''.join(a[0] for a in value)
+            # This is usually a CL binary, which may contain NUL characters
+            # that should be preserved.
+            if sys.version_info < (3,):
+                ret = ''.join(a[0] for a in value)
+            else:
+                ret = bytes(_ffi.buffer(value))
+
         elif type_.startswith('generic_info['):
             ret = list(map(_generic_info_to_python, value))
         elif type_.startswith('cl_image_format['):
@@ -257,14 +270,19 @@ class channel_type(_NoInit):
 @_ffi.callback('void(const char*, const char* name, long value)')
 def _constant_callback(type_, name, value):
     s_type = _ffi.string(type_)
+    s_name = _ffi.string(name)
+
+    if sys.version_info >= (3,):
+        s_type = s_type.decode()
+        s_name = s_name.decode()
+
     _constants.setdefault(s_type, {})
-    _constants[s_type][_ffi.string(name)] = value
+    _constants[s_type][s_name] = value
+
 _lib.populate_constants(_constant_callback)
 
 for type_, d in _constants.iteritems():
-    if sys.version_info >= (3,):
-        type_ = type_.decode()
-    locals()[type_] = type(type_, (_NoInit,), d)
+    locals()[type_] = x = type(type_, (_NoInit,), d)
 
 # }}}
 
