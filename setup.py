@@ -216,6 +216,10 @@ def main():
             # build info
             packages=["pyopencl", "pyopencl.characterize", "pyopencl.compyte"],
 
+            setup_requires=[
+                "numpy",
+                ],
+
             install_requires=[
                 "pytools>=2014.2",
                 "pytest>=2",
