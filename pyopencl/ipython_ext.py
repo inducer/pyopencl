@@ -71,7 +71,7 @@ class PyOpenCLMagics(Magics):
         header = "%%cl_kernel"
 
         if build_options:
-            header = "%s %s" % (header, build_options)
+            header = '%s -o "%s"' % (header, build_options)
 
         content = "%s\n\n%s" % (header, kernel)
 
