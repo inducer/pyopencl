@@ -37,9 +37,7 @@ import re
 
 from pyopencl.compyte.dtypes import (  # noqa
         get_or_register_dtype, TypeNameNotKnown,
-        register_dtype, dtype_to_ctype,
-        dtype_hashable as _dtype_hashable,
-        dtype_to_key as _dtype_to_key)
+        register_dtype, dtype_to_ctype)
 
 
 def _register_types():
@@ -515,16 +513,8 @@ class _CDeclList:
 
         return result
 
-if _dtype_hashable:
-    _memoize_match_dtype_to_c_struct = memoize
-else:
-    import json as _json
-    _memoize_match_dtype_to_c_struct = memoize(
-        key=lambda device, name, dtype, context=None:
-        (device, name, _dtype_to_key(dtype), context))
 
-
-@_memoize_match_dtype_to_c_struct
+@memoize
 def match_dtype_to_c_struct(device, name, dtype, context=None):
     """Return a tuple `(dtype, c_decl)` such that the C struct declaration
     in `c_decl` and the structure :class:`numpy.dtype` instance `dtype`
@@ -672,15 +662,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     return dtype, c_decl
 
-if _dtype_hashable:
-    _memoize_dtype_to_c_struct = memoize
-else:
-    import json as _json  # noqa
-    _memoize_dtype_to_c_struct = memoize(
-        key=lambda device, dtype: (device, _dtype_to_key(dtype)))
 
-
-@_memoize_dtype_to_c_struct
+@memoize
 def dtype_to_c_struct(device, dtype):
     matched_dtype, c_decl = match_dtype_to_c_struct(
             device, dtype_to_ctype(dtype), dtype)
