@@ -63,6 +63,14 @@
 typedef cl_bitfield cl_mem_migration_flags_ext;
 #endif
 
+#if PYOPENCL_CL_VERSION < 0x1020
+typedef intptr_t cl_device_partition_property;
+#endif
+
+#ifndef cl_ext_device_fission
+typedef cl_ulong cl_device_partition_property_ext;
+#endif
+
 namespace pyopencl {
 struct clbase;
 }
