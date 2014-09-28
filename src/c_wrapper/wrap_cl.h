@@ -59,12 +59,15 @@
 
 #endif
 
-#ifndef cl_ext_migrate_memobject
-typedef cl_bitfield cl_mem_migration_flags_ext;
-#endif
-
 #if PYOPENCL_CL_VERSION < 0x1020
 typedef intptr_t cl_device_partition_property;
+typedef cl_uint cl_kernel_arg_info;
+typedef struct _cl_image_desc cl_image_desc;
+typedef cl_bitfield cl_mem_migration_flags;
+#endif
+
+#ifndef cl_ext_migrate_memobject
+typedef cl_bitfield cl_mem_migration_flags_ext;
 #endif
 
 #ifndef cl_ext_device_fission
