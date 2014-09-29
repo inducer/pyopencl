@@ -135,6 +135,8 @@ enqueue_copy_buffer(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
         });
 }
 
+#if PYOPENCL_CL_VERSION >= 0x1020
+
 error*
 enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
                     size_t psize, size_t offset, size_t size,
@@ -150,6 +152,8 @@ enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
                                   event_out(evt));
         });
 }
+
+#endif
 
 #if PYOPENCL_CL_VERSION >= 0x1010
 
