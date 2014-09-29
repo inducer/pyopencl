@@ -51,7 +51,9 @@
 #define PYOPENCL_CL_VERSION PYOPENCL_PRETEND_CL_VERSION
 #else
 
-#if defined(CL_VERSION_1_2)
+#if defined(CL_VERSION_2_0)
+#define PYOPENCL_CL_VERSION 0x2000
+#elif defined(CL_VERSION_1_2)
 #define PYOPENCL_CL_VERSION 0x1020
 #elif defined(CL_VERSION_1_1)
 #define PYOPENCL_CL_VERSION 0x1010
@@ -61,7 +63,20 @@
 
 #endif
 
-#if PYOPENCL_CL_VERSION < 0x1020
+#ifndef(CL_VERSION_2_0)
+typedef void* CLeglImageKHR;
+typedef void* CLeglDisplayKHR;
+typedef void* CLeglSyncKHR;
+typedef intptr_t cl_egl_image_properties_khr;
+typedef cl_bitfield         cl_device_svm_capabilities;
+typedef cl_bitfield         cl_svm_mem_flags;
+typedef intptr_t            cl_pipe_properties;
+typedef cl_uint             cl_pipe_info;
+typedef cl_bitfield         cl_sampler_properties;
+typedef cl_uint             cl_kernel_exec_info;
+#endif
+
+#ifndef(CL_VERSION_1_2)
 typedef intptr_t cl_device_partition_property;
 typedef cl_uint cl_kernel_arg_info;
 typedef struct _cl_image_desc cl_image_desc;
