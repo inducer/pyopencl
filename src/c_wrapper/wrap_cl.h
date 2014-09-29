@@ -63,7 +63,7 @@
 
 #endif
 
-#ifndef(CL_VERSION_2_0)
+#ifndef CL_VERSION_2_0
 typedef void* CLeglImageKHR;
 typedef void* CLeglDisplayKHR;
 typedef void* CLeglSyncKHR;
@@ -76,7 +76,7 @@ typedef cl_bitfield         cl_sampler_properties;
 typedef cl_uint             cl_kernel_exec_info;
 #endif
 
-#ifndef(CL_VERSION_1_2)
+#ifndef CL_VERSION_1_2
 typedef intptr_t cl_device_partition_property;
 typedef cl_uint cl_kernel_arg_info;
 typedef struct _cl_image_desc cl_image_desc;
