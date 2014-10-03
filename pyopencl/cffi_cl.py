@@ -45,6 +45,7 @@ try:
 except:
     _unicode = str
     _bytes = bytes
+
     def _ffi_pystr(s):
         return _ffi.string(s).decode()
 else:
@@ -261,12 +262,15 @@ class mem_flags(_NoInit):
     @classmethod
     def _writable(cls, flags):
         return flags & (cls.READ_WRITE | cls.WRITE_ONLY)
+
     @classmethod
     def _hold_host(cls, flags):
         return flags & cls.USE_HOST_PTR
+
     @classmethod
     def _use_host(cls, flags):
         return flags & (cls.USE_HOST_PTR | cls.COPY_HOST_PTR)
+
     @classmethod
     def _host_writable(cls, flags):
         return cls._writable(flags) and cls._hold_host(flags)
@@ -396,9 +400,12 @@ class migrate_mem_object_flags_ext(_NoInit):
 
 _locals = locals()
 
+
 @_ffi.callback('void(const char*, const char* name, long value)')
 def _constant_callback(type_, name, value):
-    setattr(_locals[_ffi_pystr(type_)], _ffi_pystr(name), value)
+    setattr(_locals[_ffi_pystr(type_)], _ffi_pystr(name), value)  # noqa
+
+
 _lib.populate_constants(_constant_callback)
 
 del _locals
@@ -410,24 +417,29 @@ del _constant_callback
 # {{{ exceptions
 
 class Error(Exception):
-    class __ErrorRecord(object):
+    class _ErrorRecord(object):
         __slots__ = ('_routine', '_code', '_what')
+
         def __init__(self, msg='', code=0, routine=''):
             self._routine = routine
             assert isinstance(code, int)
             self._code = code
             self._what = msg
+
         def routine(self):
             return self._routine
+
         def code(self):
             return self._code
+
         def what(self):
             return self._what
+
     def __init__(self, *a, **kw):
         if len(a) == 1 and not kw and hasattr(a[0], 'what'):
             super(Error, self).__init__(a[0])
         else:
-            super(Error, self).__init__(self.__ErrorRecord(*a, **kw))
+            super(Error, self).__init__(self._ErrorRecord(*a, **kw))
 
 
 class MemoryError(Error):
@@ -475,6 +487,7 @@ def _handle_error(error):
 
 class Platform(_Common):
     _id = 'platform'
+
     def get_devices(self, device_type=device_type.ALL):
         devices = _CArray(_ffi.new('clobj_t**'))
         _handle_error(_lib.platform__get_devices(
@@ -482,8 +495,10 @@ class Platform(_Common):
         return [Device._create(devices.ptr[0][i])
                 for i in xrange(devices.size[0])]
 
+
 def unload_platform_compiler(plat):
     _handle_error(_lib.platform__unload_compiler(plat.ptr))
+
 
 def get_platforms():
     platforms = _CArray(_ffi.new('clobj_t**'))
@@ -498,6 +513,7 @@ def get_platforms():
 
 class Device(_Common):
     _id = 'device'
+
     def create_sub_devices(self, props):
         props = tuple(props) + (0,)
         devices = _CArray(_ffi.new('clobj_t**'))
@@ -505,6 +521,7 @@ class Device(_Common):
             self.ptr, devices.ptr, devices.size, props))
         return [Device._create(devices.ptr[0][i])
                 for i in xrange(devices.size[0])]
+
     def create_sub_devices_ext(self, props):
         props = (tuple(props) +
                  (device_partition_property_ext.PROPERTIES_LIST_END,))
@@ -609,8 +626,10 @@ class CommandQueue(_Common):
             _ffi.NULL if device is None else device.ptr, properties))
 
         self.ptr = ptr_command_queue[0]
+
     def finish(self):
         _handle_error(_lib.command_queue__finish(self.ptr))
+
     def flush(self):
         _handle_error(_lib.command_queue__flush(self.ptr))
 
@@ -635,6 +654,7 @@ def _norm_shape_dtype(shape, dtype, order="C", strides=None, name=""):
 
 class cffi_array(np.ndarray):
     __array_priority__ = -100.0
+
     def __new__(cls, buf, shape, dtype, strides, base=None):
         self = np.ndarray.__new__(cls, shape, dtype=dtype,
                                   buffer=buf, strides=strides)
@@ -642,6 +662,7 @@ class cffi_array(np.ndarray):
             base = buf
         self.__base = base
         return self
+
     @property
     def base(self):
         return self.__base
@@ -649,8 +670,10 @@ class cffi_array(np.ndarray):
 
 class LocalMemory(object):
     __slots__ = ('_size',)
+
     def __init__(self, size):
         self._size = size
+
     @property
     def size(self):
         return self._size
@@ -676,6 +699,7 @@ class MemoryObjectHolder(_Common):
 class MemoryObject(MemoryObjectHolder):
     def __init__(self, hostbuf=None):
         self.__hostbuf = hostbuf
+
     def _handle_buf_flags(self, flags):
         if self.__hostbuf is None:
             return _ffi.NULL, 0, None
@@ -690,9 +714,11 @@ class MemoryObject(MemoryObjectHolder):
         if need_retain:
             self.__retained_buf = retained_buf
         return c_hostbuf, hostbuf_size, retained_buf
+
     @property
     def hostbuf(self):
         return self.__hostbuf
+
     def release(self):
         _handle_error(_lib.memory_object__release(self.ptr))
 
@@ -709,6 +735,7 @@ class MemoryMap(_Common):
             'version': 3
         }
         return self
+
     def release(self, queue=None, wait_for=None):
         c_wait_for, num_wait_for = _clobj_list(wait_for)
         _event = _ffi.new('clobj_t*')
@@ -765,7 +792,6 @@ else:
     except AttributeError:
         _ssize_t = ctypes.c_size_t
 
-
     def _c_buffer_from_obj(obj, writable=False, retain=False):
         # {{{ fall back to the old CPython buffer protocol API
 
@@ -818,7 +844,7 @@ class Buffer(MemoryObject):
 
     def get_sub_region(self, origin, size, flags=0):
         _sub_buf = _ffi.new('clobj_t*')
-        _handle_error(_lib.buffer__get_sub_region(_sub_buf, self.ptr, orig,
+        _handle_error(_lib.buffer__get_sub_region(_sub_buf, self.ptr, origin,
                                                   size, flags))
         sub_buf = self._create(_sub_buf[0])
         MemoryObject.__init__(sub_buf, None)
@@ -891,7 +917,7 @@ class _Program(_Common):
             self.ptr, device.ptr, param, info))
         return _generic_info_to_python(info)
 
-    def compile(options="", devices=None, headers=[]):
+    def compile(self, options="", devices=None, headers=[]):
         _devs, num_devs = _clobj_list(devices)
         _prgs, names = zip(*((prg.ptr, _to_cstring(name))
                              for (name, prg) in headers))
@@ -989,15 +1015,19 @@ class Event(_Common):
         _handle_error(_lib.event__set_callback(self.ptr, _type,
                                                _ffi.new_handle(_func)))
 
+
 def wait_for_events(wait_for):
     _handle_error(_lib.wait_for_events(*_clobj_list(wait_for)))
+
 
 class NannyEvent(Event):
     class _Data(object):
         __slots__ = ('ward', 'ref')
+
         def __init__(self, ward, ref):
             self.ward = ward
             self.ref = ref
+
     @classmethod
     def _handle(cls, ward, ref=None):
         return _ffi.new_handle(cls._Data(ward, ref))
@@ -1008,11 +1038,13 @@ class NannyEvent(Event):
             return
         return _ffi.from_handle(_handle).ward
 
+
 class UserEvent(Event):
     def __init__(self, ctx):
         _evt = _ffi.new('clobj_t*')
         _handle_error(_lib.create_user_event(_evt, ctx.ptr))
         self.ptr = _evt[0]
+
     def set_status(self, status):
         _handle_error(_lib.user_event__set_status(self.ptr, status))
 
@@ -1065,6 +1097,7 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size,
 
 # }}}
 
+
 # {{{ enqueue_task
 
 def enqueue_task(queue, kernel, wait_for=None):
@@ -1076,6 +1109,7 @@ def enqueue_task(queue, kernel, wait_for=None):
 
 # }}}
 
+
 # {{{ _enqueue_marker_*
 
 def _enqueue_marker_with_wait_list(queue, wait_for=None):
@@ -1085,12 +1119,14 @@ def _enqueue_marker_with_wait_list(queue, wait_for=None):
         ptr_event, queue.ptr, c_wait_for, num_wait_for))
     return Event._create(ptr_event[0])
 
+
 def _enqueue_marker(queue):
     ptr_event = _ffi.new('clobj_t*')
     _handle_error(_lib.enqueue_marker(ptr_event, queue.ptr))
     return Event._create(ptr_event[0])
 
 # }}}
+
 
 # {{{ _enqueue_barrier_*
 
@@ -1101,10 +1137,12 @@ def _enqueue_barrier_with_wait_list(queue, wait_for=None):
         ptr_event, queue.ptr, c_wait_for, num_wait_for))
     return Event._create(ptr_event[0])
 
+
 def _enqueue_barrier(queue):
     _handle_error(_lib.enqueue_barrier(queue.ptr))
 
 # }}}
+
 
 # {{{ enqueue_migrate_mem_object*
 
@@ -1129,6 +1167,7 @@ def enqueue_migrate_mem_object_ext(queue, mem_objects, flags, wait_for=None):
 
 # }}}
 
+
 # {{{ _enqueue_wait_for_events
 
 def _enqueue_wait_for_events(queue, wait_for=None):
@@ -1137,6 +1176,7 @@ def _enqueue_wait_for_events(queue, wait_for=None):
                                                num_wait_for))
 
 # }}}
+
 
 # {{{ _enqueue_*_buffer
 
@@ -1191,7 +1231,7 @@ def _enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin,
     host_origin_l = len(host_origin)
     region_l = len(region)
     if (buffer_origin_l > 3 or host_origin_l > 3 or region_l > 3 or
-        buffer_pitches_l > 2 or host_pitches_l > 2):
+            buffer_pitches_l > 2 or host_pitches_l > 2):
         raise RuntimeError("(buffer/host)_origin, (buffer/host)_pitches or "
                            "region has too many components",
                            status_code.INVALID_VALUE,
@@ -1224,7 +1264,7 @@ def _enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin,
     host_origin_l = len(host_origin)
     region_l = len(region)
     if (buffer_origin_l > 3 or host_origin_l > 3 or region_l > 3 or
-        buffer_pitches_l > 2 or host_pitches_l > 2):
+            buffer_pitches_l > 2 or host_pitches_l > 2):
         raise RuntimeError("(buffer/host)_origin, (buffer/host)_pitches or "
                            "region has too many components",
                            status_code.INVALID_VALUE,
@@ -1256,7 +1296,7 @@ def _enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region,
     dst_origin_l = len(dst_origin)
     region_l = len(region)
     if (src_origin_l > 3 or dst_origin_l > 3 or region_l > 3 or
-        src_pitches_l > 2 or dst_pitches_l > 2):
+            src_pitches_l > 2 or dst_pitches_l > 2):
         raise RuntimeError("(src/dst)_origin, (src/dst)_pitches or "
                            "region has too many components",
                            status_code.INVALID_VALUE,
@@ -1269,7 +1309,8 @@ def _enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region,
         src_pitches_l, dst_pitches, dst_pitches_l, c_wait_for, num_wait_for))
     return Event._create(_event[0])
 
-# PyPy bug report: https://bitbucket.org/pypy/pypy/issue/1777/unable-to-create-proper-numpy-array-from
+
+# PyPy bug report: https://bitbucket.org/pypy/pypy/issue/1777/unable-to-create-proper-numpy-array-from  # noqa
 def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
                        order="C", strides=None, wait_for=None,
                        is_blocking=True):
@@ -1286,6 +1327,7 @@ def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
                                           num_wait_for, bool(is_blocking)))
     return (np.asarray(MemoryMap._create(_map[0], shape, dtype.str, strides)),
             Event._create(_event[0]))
+
 
 def _enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
     c_pattern, psize, c_ref = _c_buffer_from_obj(pattern)
@@ -1320,10 +1362,10 @@ def _enqueue_read_image(queue, mem, origin, region, hostbuf, row_pitch=0,
         bool(is_blocking), NannyEvent._handle(hostbuf)))
     return NannyEvent._create(ptr_event[0])
 
+
 def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
                         wait_for=None):
     src_origin = tuple(src_origin)
-    dest_region = tuple(dest_region)
     region = tuple(region)
     src_origin_l = len(src_origin)
     dest_origin_l = len(dest_origin)
@@ -1337,6 +1379,7 @@ def _enqueue_copy_image(queue, src, dest, src_origin, dest_origin, region,
         _event, queue.ptr, src.ptr, dest.ptr, src_origin, src_origin_l,
         dest_origin, dest_origin_l, region, region_l, c_wait_for, num_wait_for))
     return Event._create(_event[0])
+
 
 def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
                          slice_pitch=0, wait_for=None, is_blocking=True):
@@ -1356,6 +1399,7 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
         bool(is_blocking), NannyEvent._handle(hostbuf, c_ref)))
     return NannyEvent._create(_event[0])
+
 
 def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
                       order="C", strides=None, wait_for=None, is_blocking=True):
@@ -1379,6 +1423,7 @@ def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
                                          c_wait_for, num_wait_for, is_blocking))
     return (np.asarray(MemoryMap._create(_map[0], shape, dtype.str, strides)),
             Event._create(_event[0]), _row_pitch[0], _slice_pitch[0])
+
 
 def enqueue_fill_image(queue, img, color, origin, region, wait_for=None):
     origin = tuple(origin)
@@ -1435,6 +1480,7 @@ def _enqueue_copy_buffer_to_image(queue, src, dest, offset, origin, region,
     return Event._create(_event[0])
 
 # }}}
+
 
 # {{{ gl interop
 
@@ -1496,6 +1542,7 @@ if _lib.have_gl():
 
 # }}}
 
+
 def _cffi_property(_name=None, read=True, write=True):
     def _deco(get_ptr):
         name = _name if _name else get_ptr.__name__
@@ -1505,12 +1552,14 @@ def _cffi_property(_name=None, read=True, write=True):
                         if write else (lambda self, v: None))
     return _deco
 
+
 # {{{ ImageFormat
 
 class ImageFormat(object):
     # Hack around fmt.__dict__ check in test_wrapper.py
     __dict__ = {}
     __slots__ = ('ptr',)
+
     def __init__(self, channel_order=0, channel_type=0):
         self.ptr = _ffi.new("cl_image_format*")
         self.channel_order = channel_order
@@ -1581,27 +1630,35 @@ def get_supported_image_formats(context, flags, image_type):
 
 # }}}
 
+
 # {{{ ImageDescriptor
 
 def _write_only_property(*arg):
     return property().setter(*arg)
 
+
 class ImageDescriptor(object):
     __slots__ = ('ptr',)
+
     def __init__(self):
         self.ptr = _ffi.new("cl_image_desc*")
+
     @_cffi_property()
     def image_type(self):
         return self.ptr
+
     @_cffi_property('image_array_size')
     def array_size(self):
         return self.ptr
+
     @_cffi_property()
     def num_mip_levels(self):
         return self.ptr
+
     @_cffi_property()
     def num_samples(self):
         return self.ptr
+
     @_write_only_property
     def shape(self, shape):
         l = len(shape)
@@ -1612,7 +1669,8 @@ class ImageDescriptor(object):
         desc.image_width = shape[0] if l > 0 else 1
         desc.image_height = shape[1] if l > 1 else 1
         desc.image_depth = shape[2] if l > 2 else 1
-        desc.image_array_size = desc.image_depth;
+        desc.image_array_size = desc.image_depth
+
     @_write_only_property
     def pitches(self, pitches):
         l = len(pitches)
@@ -1622,6 +1680,7 @@ class ImageDescriptor(object):
         desc = self.ptr
         desc.image_row_pitch = pitches[0] if l > 0 else 1
         desc.image_slice_pitch = pitches[1] if l > 1 else 1
+
     @_write_only_property
     def buffer(self, buff):
         self.ptr.buffer = buff.ptr.int_ptr if buff else _ffi.NULL
@@ -1656,6 +1715,7 @@ _fill_dtype_dict = {
     _lib.TYPE_FLOAT: _float_dtype,
     }
 
+
 class Image(MemoryObject):
     _id = 'image'
 
@@ -1669,6 +1729,7 @@ class Image(MemoryObject):
         else:
             assert False
         self._fill_type = _fill_dtype_dict[_lib.image__get_fill_type(self.ptr)]
+
     def __init_1_2(self, context, flags, fmt, desc, hostbuf):
         MemoryObject.__init__(self, hostbuf)
         c_buf, size, retained_buf = self._handle_buf_flags(flags)
@@ -1696,7 +1757,7 @@ class Image(MemoryObject):
 
             # check buffer size
             if (hostbuf is not None and
-                max(pitch, width * fmt.itemsize) * height > size):
+                    max(pitch, width * fmt.itemsize) * height > size):
                 raise LogicError("buffer too small",
                                  status_code.INVALID_VALUE, "Image")
 

@@ -25,10 +25,10 @@ THE SOFTWARE.
 """
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
+from pytools import Record as _Record
 
 try:
     import pyopencl.cffi_cl as _cl
-    #import pyopencl._cl as _cl
 except ImportError:
     import os
     from os.path import dirname, join, realpath
@@ -40,7 +40,6 @@ except ImportError:
 
 
 import numpy as np
-#from pyopencl._cl import *  # noqa
 from pyopencl.cffi_cl import *  # noqa
 import inspect as _inspect
 
@@ -63,6 +62,10 @@ def compiler_output(text):
         warn("Non-empty compiler output encountered. Set the "
                 "environment variable PYOPENCL_COMPILER_OUTPUT=1 "
                 "to see more.", CompilerWarning)
+
+
+class _ErrorRecord(_Record):
+    pass
 
 
 # {{{ find pyopencl shipped source code
@@ -222,11 +225,6 @@ class Program(object):
         try:
             return build_func()
         except _cl.RuntimeError as e:
-            from pytools import Record
-
-            class ErrorRecord(Record):
-                pass
-
             what = e.what
             if options:
                 what = what + "\n(options: %s)" % " ".join(options)
@@ -245,7 +243,7 @@ class Program(object):
             routine = e.routine
 
             err = _cl.RuntimeError(
-                    ErrorRecord(
+                    _ErrorRecord(
                         what=lambda: what,
                         code=lambda: code,
                         routine=lambda: routine))
@@ -287,27 +285,17 @@ def link_program(context, programs, options=[], devices=None):
 
 def _add_functionality():
     cls_to_info_cls = {
-            _cl.Platform:
-                (_cl.Platform.get_info, _cl.platform_info),
-            _cl.Device:
-                (_cl.Device.get_info, _cl.device_info),
-            _cl.Context:
-                (_cl.Context.get_info, _cl.context_info),
-            _cl.CommandQueue:
-                (_cl.CommandQueue.get_info, _cl.command_queue_info),
-            _cl.Event:
-                (_cl.Event.get_info, _cl.event_info),
-            _cl.MemoryObjectHolder:
-                (MemoryObjectHolder.get_info, _cl.mem_info),
-            Image:
-                (_cl.Image.get_image_info, _cl.image_info),
-            Program:
-                (Program.get_info, _cl.program_info),
-            Kernel:
-                (Kernel.get_info, _cl.kernel_info),
-            _cl.Sampler:
-                (Sampler.get_info, _cl.sampler_info),
-            }
+        _cl.Platform: (_cl.Platform.get_info, _cl.platform_info),
+        _cl.Device: (_cl.Device.get_info, _cl.device_info),
+        _cl.Context: (_cl.Context.get_info, _cl.context_info),
+        _cl.CommandQueue: (_cl.CommandQueue.get_info, _cl.command_queue_info),
+        _cl.Event: (_cl.Event.get_info, _cl.event_info),
+        _cl.MemoryObjectHolder: (MemoryObjectHolder.get_info, _cl.mem_info),
+        Image: (_cl.Image.get_image_info, _cl.image_info),
+        Program: (Program.get_info, _cl.program_info),
+        Kernel: (Kernel.get_info, _cl.kernel_info),
+        _cl.Sampler: (Sampler.get_info, _cl.sampler_info),
+        }
 
     def to_string(cls, value, default_format=None):
         for name in dir(cls):
@@ -356,7 +344,6 @@ def _add_functionality():
                                (self, version_string))
 
         return int(match.group(1)), int(match.group(2))
-
 
     Platform.__repr__ = platform_repr
     Platform._get_cl_version = platform_get_cl_version
@@ -433,11 +420,6 @@ def _add_functionality():
         try:
             self._build(options=options, devices=devices)
         except Error as e:
-            from pytools import Record
-
-            class ErrorRecord(Record):
-                pass
-
             what = e.what + "\n\n" + (75*"="+"\n").join(
                     "Build on %s:\n\n%s" % (dev, log)
                     for dev, log in self._get_build_logs())
@@ -445,7 +427,7 @@ def _add_functionality():
             routine = e.routine
 
             err = _cl.RuntimeError(
-                    ErrorRecord(
+                    _ErrorRecord(
                         what=lambda: what,
                         code=lambda: code,
                         routine=lambda: routine))
@@ -690,12 +672,12 @@ def _add_functionality():
             # legacy init for CL 1.1 and older
             if is_array:
                 raise TypeError("'is_array=True' is not supported for CL < 1.2")
-            #if num_mip_levels is not None:
-                #raise TypeError(
-                #      "'num_mip_levels' argument is not supported for CL < 1.2")
-            #if num_samples is not None:
-                #raise TypeError(
-                #       "'num_samples' argument is not supported for CL < 1.2")
+            # if num_mip_levels is not None:
+                # raise TypeError(
+                #       "'num_mip_levels' argument is not supported for CL < 1.2")
+            # if num_samples is not None:
+                # raise TypeError(
+                #        "'num_samples' argument is not supported for CL < 1.2")
             if buffer is not None:
                 raise TypeError("'buffer' argument is not supported for CL < 1.2")
 
@@ -1219,8 +1201,6 @@ def enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
         warn("The context for this queue does not declare OpenCL 1.2 support, so "
                 "the next thing you might see is a crash")
     return _cl._enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for)
-
-
 
 # }}}
 
