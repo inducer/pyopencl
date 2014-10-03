@@ -3,9 +3,9 @@
 #ifndef __PYOPENCL_GL_OBJ_H
 #define __PYOPENCL_GL_OBJ_H
 
-#ifdef HAVE_GL
-
 namespace pyopencl {
+
+#ifdef HAVE_GL
 
 // {{{ gl interop
 

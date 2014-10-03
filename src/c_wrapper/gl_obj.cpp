@@ -123,6 +123,16 @@ enqueue_release_gl_objects(clobj_t *evt, clobj_t queue,
         });
 }
 
+error*
+get_gl_object_info(clobj_t mem, cl_gl_object_type *otype, GLuint *gl_name)
+{
+    auto globj = static_cast<memory_object*>(mem);
+    return c_handle_error([&] {
+            pyopencl_call_guarded(clGetGLObjectInfo, globj, buf_arg(*otype),
+                                  buf_arg(*gl_name));
+        });
+}
+
 #endif
 
 int
@@ -145,13 +155,3 @@ get_apple_cgl_share_group()
     return (cl_context_properties)kCGLShareGroup;
 }
 #endif /* __APPLE__ */
-
-error*
-get_gl_object_info(clobj_t mem, cl_gl_object_type *otype, GLuint *gl_name)
-{
-    auto globj = static_cast<memory_object*>(mem);
-    return c_handle_error([&] {
-            pyopencl_call_guarded(clGetGLObjectInfo, globj, buf_arg(*otype),
-                                  buf_arg(*gl_name));
-        });
-}
