@@ -11,3 +11,7 @@
 - GLTexture
 - get_gl_context_info_khr
 - ?clEnqueueNativeKernel
+
+- Buffer interface functions should really use new-style buffer interface
+  (old-style does not work in Py3)
+  https://github.com/numpy/numpy/issues/4747
