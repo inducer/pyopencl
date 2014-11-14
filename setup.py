@@ -208,6 +208,7 @@ def main():
                 "pytools>=2014.2",
                 "pytest>=2",
                 "decorator>=3.2.0",
+                "appdirs>=1.4.0",
                 # "Mako>=0.3.6",
                 ],
 
