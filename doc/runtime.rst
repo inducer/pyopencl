@@ -386,6 +386,15 @@ Buffers
 
     :class:`Buffer` inherits from :class:`MemoryObject`.
 
+    .. note::
+
+        Python also defines a type of `buffer object
+        <https://docs.python.org/3.4/c-api/buffer.html>`_,
+        and PyOpenCL interacts with those, too, as the host-side
+        target of :func:`enqueue_copy`. Make sure to always be
+        clear on whether a :class:`Buffer` or a Python buffer
+        object is needed.
+
     Note that actual memory allocation in OpenCL may be deferred.
     Buffers are attached to a :class:`Context` and are only
     moved to a device once the buffer is used on that device.
