@@ -1102,9 +1102,9 @@ class GenericScanKernel(_GenericScanKernelBase):
 
                 if have_sol_above_floor:
                     # delete all solutions not meeting the wg size floor
-                    solutions = [(total, k_group_size, wg_size)
-                            for total, k_group_size, wg_size in solutions
-                            if wg_size >= wg_size_floor]
+                    solutions = [(total, try_k_group_size, try_wg_size)
+                            for total, try_k_group_size, try_wg_size in solutions
+                            if try_wg_size >= wg_size_floor]
                     break
 
         _, k_group_size, max_scan_wg_size = max(solutions)

@@ -918,6 +918,10 @@ class _CLFakeArrayModule:
         from pyopencl.array import empty
         return empty(self.queue, shape, dtype, order=order)
 
+    def hstack(self, arrays):
+        from pyopencl.array import hstack
+        return hstack(arrays, self.queue)
+
 
 def array_module(a):
     if isinstance(a, np.ndarray):

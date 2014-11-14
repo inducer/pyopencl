@@ -338,16 +338,15 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
             option_idx += 1
 
     if cache_dir is None:
-        from tempfile import gettempdir
-        import getpass
-        cache_dir = join(gettempdir(),
-                "pyopencl-compiler-cache-v2-uid%s-py%s" % (
-                    getpass.getuser(), ".".join(str(i) for i in sys.version_info)))
+        import appdirs
+        cache_dir = join(appdirs.user_cache_dir("pyopencl", "pyopencl"),
+                "pyopencl-compiler-cache-v2-py%s" % (
+                    ".".join(str(i) for i in sys.version_info),))
 
     # {{{ ensure cache directory exists
 
     try:
-        os.mkdir(cache_dir)
+        os.makedirs(cache_dir)
     except OSError, e:
         from errno import EEXIST
         if e.errno != EEXIST:

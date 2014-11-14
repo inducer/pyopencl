@@ -180,6 +180,7 @@ def main():
         import os.path
         current_directory = os.path.dirname(__file__)
 
+        import shutil
         shutil.rmtree(os.path.join(current_directory,
             'pyopencl', '__pycache__/'), ignore_errors=True)
 
@@ -225,6 +226,7 @@ def main():
                 "pytest>=2",
                 "decorator>=3.2.0",
                 "cffi>=0.7.2",
+                "appdirs>=1.4.0",
                 # "Mako>=0.3.6",
                 ],
 
