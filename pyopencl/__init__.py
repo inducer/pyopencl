@@ -938,6 +938,15 @@ def enqueue_copy(queue, dest, src, **kwargs):
     :return: A :class:`NannyEvent` if the transfer involved a
         host-side buffer, otherwise an :class:`Event`.
 
+    .. note::
+
+        Two types of 'buffer' occur in the arguments to this function,
+        :class:`Buffer` and 'host-side buffers'. The latter are
+        defined by Python and commonly called `buffer objects
+        <https://docs.python.org/3.4/c-api/buffer.html>`_.
+        Make sure to always be clear on whether a :class:`Buffer` or a
+        Python buffer object is needed.
+
     .. ------------------------------------------------------------------------
     .. rubric :: Transfer :class:`Buffer` ↔ host
     .. ------------------------------------------------------------------------
