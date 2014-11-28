@@ -3,6 +3,7 @@ from __future__ import division
 from IPython.core.magic import (magics_class, Magics, cell_magic, line_magic)
 
 import pyopencl as cl
+import sys
 
 
 def _try_to_utf8(text):
@@ -14,8 +15,10 @@ def _try_to_utf8(text):
 @magics_class
 class PyOpenCLMagics(Magics):
     def _run_kernel(self, kernel, options):
-        kernel = _try_to_utf8(kernel)
-        options = _try_to_utf8(options).strip()
+        if sys.version_info < (3,):
+            kernel = _try_to_utf8(kernel)
+            options = _try_to_utf8(options).strip()
+
         try:
             ctx = self.shell.user_ns["cl_ctx"]
         except KeyError:
@@ -34,36 +37,32 @@ class PyOpenCLMagics(Magics):
             raise RuntimeError("unable to locate cl context, which must be "
                     "present in namespace as 'cl_ctx' or 'ctx'")
 
-        prg = cl.Program(ctx, kernel).build(options=options)
+        prg = cl.Program(ctx, kernel).build(options=options.split())
 
         for knl in prg.all_kernels():
             self.shell.user_ns[knl.function_name] = knl
-
 
     @cell_magic
     def cl_kernel(self, line, cell):
         kernel = cell
 
-        opts, args = self.parse_options(line,'o:')
+        opts, args = self.parse_options(line, 'o:')
         build_options = opts.get('o', '')
 
         self._run_kernel(kernel, build_options)
 
-
     def _load_kernel_and_options(self, line):
-        opts, args = self.parse_options(line,'o:f:')
+        opts, args = self.parse_options(line, 'o:f:')
 
         build_options = opts.get('o')
         kernel = self.shell.find_user_code(opts.get('f') or args)
 
         return kernel, build_options
 
-
     @line_magic
     def cl_kernel_from_file(self, line):
         kernel, build_options = self._load_kernel_and_options(line)
         self._run_kernel(kernel, build_options)
-
 
     @line_magic
     def cl_load_edit_kernel(self, line):

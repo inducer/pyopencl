@@ -719,6 +719,24 @@ def test_view_and_strides(ctx_factory):
         assert (y.get() == X.get()[:3, :5]).all()
 
 
+def test_meshmode_view(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    n = 2
+    result = cl.array.empty(queue, (2, n*6), np.float64)
+
+    def view(z):
+        return z[..., n*3:n*6].reshape(z.shape[:-1] + (n, 3))
+
+    result = result.with_queue(queue)
+    result.fill(0)
+    view(result)[0].fill(1)
+    view(result)[1].fill(1)
+    x = result.get()
+    assert (view(x) == 1).all()
+
+
 def test_event_management(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
