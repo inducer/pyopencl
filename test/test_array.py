@@ -148,7 +148,7 @@ def test_mix_complex(ctx_factory):
 
                     err = la.norm(host_result-dev_result)/la.norm(host_result)
                     print(err)
-                    correct = err < 1e-5
+                    correct = err < 1e-4
                     if not correct:
                         print(host_result)
                         print(dev_result)
@@ -724,7 +724,7 @@ def test_meshmode_view(ctx_factory):
     queue = cl.CommandQueue(context)
 
     n = 2
-    result = cl.array.empty(queue, (2, n*6), np.float64)
+    result = cl.array.empty(queue, (2, n*6), np.float32)
 
     def view(z):
         return z[..., n*3:n*6].reshape(z.shape[:-1] + (n, 3))
