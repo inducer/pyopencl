@@ -818,8 +818,6 @@ def create_some_context(interactive=None, answers=None):
 
     if not platforms:
         raise Error("no platforms found")
-    elif len(platforms) == 1:
-        platform, = platforms
     else:
         if not answers:
             cc_print("Choose platform:")
