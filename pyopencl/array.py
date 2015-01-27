@@ -1296,8 +1296,14 @@ class Array(object):
         if isinstance(shape[0], tuple) or isinstance(shape[0], list):
             shape = tuple(shape[0])
 
-        if any(s < 0 for s in shape):
-            raise NotImplementedError("negative/automatic shapes not supported")
+        if -1 in shape:
+            shape = list(shape)
+            idx = shape.index(-1)
+            size = -reduce(lambda x, y: x * y, shape, 1)
+            shape[idx] = self.size // size
+            if any(s < 0 for s in shape):
+                raise ValueError("can only specify one unknown dimension")
+            shape = tuple(shape)
 
         if shape == self.shape:
             return self._new_with_changes(

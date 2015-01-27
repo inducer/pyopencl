@@ -776,6 +776,28 @@ def test_event_management(ctx_factory):
     assert len(x.events) < 100
 
 
+def test_reshape(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = np.arange(128).reshape(8, 16).astype(np.float32)
+    a_dev = cl_array.to_device(queue, a)
+
+    # different ways to specify the shape
+    a_dev.reshape(4, 32)
+    a_dev.reshape((4, 32))
+    a_dev.reshape([4, 32])
+
+    # using -1 as unknown dimension
+    assert a_dev.reshape(-1, 32).shape == (4, 32)
+    assert a_dev.reshape((32, -1)).shape == (32, 4)
+    assert a_dev.reshape(((8, -1, 4))).shape == (8, 4, 4)
+
+    import pytest
+    with pytest.raises(ValueError):
+        a_dev.reshape(-1, -1, 4)
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
     # tests.
