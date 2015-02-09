@@ -148,7 +148,7 @@ def test_mix_complex(ctx_factory):
 
                     err = la.norm(host_result-dev_result)/la.norm(host_result)
                     print(err)
-                    correct = err < 1e-5
+                    correct = err < 1e-4
                     if not correct:
                         print(host_result)
                         print(dev_result)
@@ -719,6 +719,24 @@ def test_view_and_strides(ctx_factory):
         assert (y.get() == X.get()[:3, :5]).all()
 
 
+def test_meshmode_view(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    n = 2
+    result = cl.array.empty(queue, (2, n*6), np.float32)
+
+    def view(z):
+        return z[..., n*3:n*6].reshape(z.shape[:-1] + (n, 3))
+
+    result = result.with_queue(queue)
+    result.fill(0)
+    view(result)[0].fill(1)
+    view(result)[1].fill(1)
+    x = result.get()
+    assert (view(x) == 1).all()
+
+
 def test_event_management(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -756,6 +774,28 @@ def test_event_management(ctx_factory):
         x.fill(0)
 
     assert len(x.events) < 100
+
+
+def test_reshape(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = np.arange(128).reshape(8, 16).astype(np.float32)
+    a_dev = cl_array.to_device(queue, a)
+
+    # different ways to specify the shape
+    a_dev.reshape(4, 32)
+    a_dev.reshape((4, 32))
+    a_dev.reshape([4, 32])
+
+    # using -1 as unknown dimension
+    assert a_dev.reshape(-1, 32).shape == (4, 32)
+    assert a_dev.reshape((32, -1)).shape == (32, 4)
+    assert a_dev.reshape(((8, -1, 4))).shape == (8, 4, 4)
+
+    import pytest
+    with pytest.raises(ValueError):
+        a_dev.reshape(-1, -1, 4)
 
 
 if __name__ == "__main__":

@@ -1288,20 +1288,118 @@ class Array(object):
             raise TypeError("unexpected keyword arguments: %s"
                     % kwargs.keys())
 
+        if order not in "CF":
+            raise ValueError("order must be either 'C' or 'F'")
+
         # TODO: add more error-checking, perhaps
+
         if isinstance(shape[0], tuple) or isinstance(shape[0], list):
             shape = tuple(shape[0])
 
-        if shape == self.shape:
-            return self
+        if -1 in shape:
+            shape = list(shape)
+            idx = shape.index(-1)
+            size = -reduce(lambda x, y: x * y, shape, 1)
+            shape[idx] = self.size // size
+            if any(s < 0 for s in shape):
+                raise ValueError("can only specify one unknown dimension")
+            shape = tuple(shape)
 
-        size = reduce(lambda x, y: x * y, shape, 1)
+        if shape == self.shape:
+            return self._new_with_changes(
+                    data=self.base_data, offset=self.offset, shape=shape,
+                    strides=self.strides)
+
+        import operator
+        size = reduce(operator.mul, shape, 1)
         if size != self.size:
             raise ValueError("total size of new array must be unchanged")
 
+        # {{{ determine reshaped strides
+
+        # copied and translated from
+        # https://github.com/numpy/numpy/blob/4083883228d61a3b571dec640185b5a5d983bf59/numpy/core/src/multiarray/shape.c  # noqa
+
+        newdims = shape
+        newnd = len(newdims)
+
+        # Remove axes with dimension 1 from the old array. They have no effect
+        # but would need special cases since their strides do not matter.
+
+        olddims = []
+        oldstrides = []
+        for oi in range(len(self.shape)):
+            s = self.shape[oi]
+            if s != 1:
+                olddims.append(s)
+                oldstrides.append(self.strides[oi])
+
+        oldnd = len(olddims)
+
+        newstrides = [-1]*len(newdims)
+
+        # oi to oj and ni to nj give the axis ranges currently worked with
+        oi = 0
+        oj = 1
+        ni = 0
+        nj = 1
+        while ni < newnd and oi < oldnd:
+            np = newdims[ni]
+            op = olddims[oi]
+
+            while np != op:
+                if np < op:
+                    # Misses trailing 1s, these are handled later
+                    np *= newdims[nj]
+                    nj += 1
+                else:
+                    op *= olddims[oj]
+                    oj += 1
+
+            # Check whether the original axes can be combined
+            for ok in range(oi, oj-1):
+                if order == "F":
+                    if oldstrides[ok+1] != olddims[ok]*oldstrides[ok]:
+                        raise ValueError("cannot reshape without copy")
+                else:
+                    # C order
+                    if (oldstrides[ok] != olddims[ok+1]*oldstrides[ok+1]):
+                        raise ValueError("cannot reshape without copy")
+
+            # Calculate new strides for all axes currently worked with
+            if order == "F":
+                newstrides[ni] = oldstrides[oi]
+                for nk in xrange(ni+1, nj):
+                    newstrides[nk] = newstrides[nk - 1]*newdims[nk - 1]
+            else:
+                # C order
+                newstrides[nj - 1] = oldstrides[oj - 1]
+                for nk in range(nj-1, ni, -1):
+                    newstrides[nk - 1] = newstrides[nk]*newdims[nk]
+
+            ni = nj
+            nj += 1
+
+            oi = oj
+            oj += 1
+
+        # Set strides corresponding to trailing 1s of the new shape.
+        if ni >= 1:
+            last_stride = newstrides[ni - 1]
+        else:
+            last_stride = self.dtype.itemsize
+
+        if order == "F":
+            last_stride *= newdims[ni - 1]
+
+        for nk in range(ni, len(shape)):
+            newstrides[nk] = last_stride
+
+        # }}}
+
         return self._new_with_changes(
                 data=self.base_data, offset=self.offset, shape=shape,
-                strides=_make_strides(self.dtype.itemsize, shape, order))
+                strides=tuple(newstrides))
 
     def ravel(self):
         """Returns flattened array containing the same data."""

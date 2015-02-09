@@ -285,17 +285,17 @@ def link_program(context, programs, options=[], devices=None):
 
 def _add_functionality():
     cls_to_info_cls = {
-        _cl.Platform: (_cl.Platform.get_info, _cl.platform_info),
-        _cl.Device: (_cl.Device.get_info, _cl.device_info),
-        _cl.Context: (_cl.Context.get_info, _cl.context_info),
-        _cl.CommandQueue: (_cl.CommandQueue.get_info, _cl.command_queue_info),
-        _cl.Event: (_cl.Event.get_info, _cl.event_info),
-        _cl.MemoryObjectHolder: (MemoryObjectHolder.get_info, _cl.mem_info),
-        Image: (_cl.Image.get_image_info, _cl.image_info),
-        Program: (Program.get_info, _cl.program_info),
-        Kernel: (Kernel.get_info, _cl.kernel_info),
-        _cl.Sampler: (Sampler.get_info, _cl.sampler_info),
-        }
+            _cl.Platform: (_cl.Platform.get_info, _cl.platform_info),
+            _cl.Device: (_cl.Device.get_info, _cl.device_info),
+            _cl.Context: (_cl.Context.get_info, _cl.context_info),
+            _cl.CommandQueue: (_cl.CommandQueue.get_info, _cl.command_queue_info),
+            _cl.Event: (_cl.Event.get_info, _cl.event_info),
+            _cl.MemoryObjectHolder: (MemoryObjectHolder.get_info, _cl.mem_info),
+            Image: (_cl.Image.get_image_info, _cl.image_info),
+            Program: (Program.get_info, _cl.program_info),
+            Kernel: (Kernel.get_info, _cl.kernel_info),
+            _cl.Sampler: (Sampler.get_info, _cl.sampler_info),
+            }
 
     def to_string(cls, value, default_format=None):
         for name in dir(cls):
@@ -802,8 +802,6 @@ def create_some_context(interactive=None, answers=None):
 
     if not platforms:
         raise Error("no platforms found")
-    elif len(platforms) == 1:
-        platform, = platforms
     else:
         if not answers:
             cc_print("Choose platform:")
