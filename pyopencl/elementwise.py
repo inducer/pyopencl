@@ -383,7 +383,7 @@ def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
 
     args = [
             VectorArg(dtype, "dest%d" % i)
-                for i in range(vec_count)
+            for i in range(vec_count)
             ] + [
                 VectorArg(idx_dtype, "gmem_dest_idx", with_offset=True),
                 VectorArg(idx_dtype, "gmem_src_idx", with_offset=True),
