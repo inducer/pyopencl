@@ -150,7 +150,6 @@ void hank103u(cdouble_t z, int *ier, cdouble_t *h0, cdouble_t *h1, int ifexpon)
 
   cdouble_t ccex;
   cdouble_t cd;
-  double com;
   double d;
   double done;
   cdouble_t ima = {0.0e0, 1.0e0};
@@ -160,7 +159,6 @@ void hank103u(cdouble_t z, int *ier, cdouble_t *h0, cdouble_t *h1, int ifexpon)
   double thresh3;
   cdouble_t zzz9;
   * ier = 0;
-  com = cdouble_real(z);
   if (cdouble_imag(z) >= 0)
     goto label_1200;
 
