@@ -1,3 +1,11 @@
+WARNING: Pending a relicense, the file
+
+* `./pyopencl/cl/pyopencl-hankel-complex.cl`
+
+on this branch, unlike the rest of the software, are licensed under GPL.
+
+------------------------
+
 PyOpenCL lets you access GPUs and other massively parallel compute
 devices from Python. It tries to offer computing goodness in the
 spirit of its sister project `PyCUDA <http://mathema.tician.de/software/pycuda>`_:

@@ -28,6 +28,8 @@
 // multiplication (float2*float1) is defined for these types,
 // but do not match the rules of complex arithmetic.
 
+#pragma once
+
 #define PYOPENCL_DECLARE_COMPLEX_TYPE_INT(REAL_TP, REAL_3LTR, TPROOT, TP) \
   \
   REAL_TP TPROOT##_real(TP a) { return a.x; } \

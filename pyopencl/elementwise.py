@@ -912,20 +912,84 @@ def get_ldexp_kernel(context, out_dtype=np.float32, sig_dtype=np.float32,
 @context_dependent_memoize
 def get_bessel_kernel(context, which_func, out_dtype=np.float64,
                       order_dtype=np.int32, x_dtype=np.float64):
+    if x_dtype.kind != "c":
+        return get_elwise_kernel(context, [
+            VectorArg(out_dtype, "z", with_offset=True),
+            ScalarArg(order_dtype, "ord_n"),
+            VectorArg(x_dtype, "x", with_offset=True),
+            ],
+            "z[i] = bessel_%sn(ord_n, x[i])" % which_func,
+            name="bessel_%sn_kernel" % which_func,
+            preamble="""
+            #if __OPENCL_C_VERSION__ < 120
+            #pragma OPENCL EXTENSION cl_khr_fp64: enable
+            #endif
+            #define PYOPENCL_DEFINE_CDOUBLE
+            #include <pyopencl-bessel-%s.cl>
+            """ % which_func)
+    else:
+        if which_func != "j":
+            raise NotImplementedError("complex arguments for Bessel Y")
+
+        if x_dtype != np.complex128:
+            raise NotImplementedError("non-complex double dtype")
+        if x_dtype != out_dtype:
+            raise NotImplementedError("different input/output types")
+
+        return get_elwise_kernel(context, [
+            VectorArg(out_dtype, "z", with_offset=True),
+            ScalarArg(order_dtype, "ord_n"),
+            VectorArg(x_dtype, "x", with_offset=True),
+            ],
+            """
+            cdouble_t jv_loc;
+            cdouble_t jvp1_loc;
+            bessel_j_complex(ord_n, x[i], &jv_loc, &jvp1_loc);
+            z[i] = jv_loc;
+            """,
+            name="bessel_j_complex_kernel",
+            preamble="""
+            #if __OPENCL_C_VERSION__ < 120
+            #pragma OPENCL EXTENSION cl_khr_fp64: enable
+            #endif
+            #define PYOPENCL_DEFINE_CDOUBLE
+            #include <pyopencl-complex.h>
+            #include <pyopencl-bessel-j-complex.cl>
+            """)
+
+
+@context_dependent_memoize
+def get_hankel_01_kernel(context, out_dtype, x_dtype):
+    if x_dtype != np.complex128:
+        raise NotImplementedError("non-complex double dtype")
+    if x_dtype != out_dtype:
+        raise NotImplementedError("different input/output types")
+
+    from warnings import warn
+    warn("Your program is now GPL-licensed through use of the complex "
+            "Hankel function")
+
     return get_elwise_kernel(context, [
-        VectorArg(out_dtype, "z", with_offset=True),
-        ScalarArg(order_dtype, "ord_n"),
+        VectorArg(out_dtype, "h0", with_offset=True),
+        VectorArg(out_dtype, "h1", with_offset=True),
         VectorArg(x_dtype, "x", with_offset=True),
         ],
-        "z[i] = bessel_%sn(ord_n, x[i])" % which_func,
-        name="bessel_%sn_kernel" % which_func,
+        """
+        cdouble_t h0_loc;
+        cdouble_t h1_loc;
+        hankel_01_complex(x[i], &h0_loc, &h1_loc, 1);
+        h0[i] = h0_loc;
+        h1[i] = h1_loc;
+        """,
+        name="hankel_complex_kernel",
         preamble="""
         #if __OPENCL_C_VERSION__ < 120
         #pragma OPENCL EXTENSION cl_khr_fp64: enable
         #endif
         #define PYOPENCL_DEFINE_CDOUBLE
-        #include <pyopencl-bessel-%s.cl>
-        """ % which_func)
+        #include <pyopencl-complex.h>
+        #include <pyopencl-hankel-complex.cl>
+        """)
 
 
 @context_dependent_memoize
