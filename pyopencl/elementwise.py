@@ -392,7 +392,7 @@ def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
                 for i in range(vec_count)
             ] + [
                 ScalarArg(idx_dtype, "offset%d" % i)
-                    for i in range(vec_count) if with_offsets
+                for i in range(vec_count) if with_offsets
             ]
 
     if with_offsets:
@@ -421,7 +421,7 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
 
     args = [
             VectorArg(dtype, "dest%d" % i, with_offset=True)
-                for i in range(vec_count)
+            for i in range(vec_count)
             ] + [
                 VectorArg(idx_dtype, "gmem_dest_idx", with_offset=True),
             ] + [
