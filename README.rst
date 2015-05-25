@@ -1,6 +1,7 @@
 WARNING: Pending a relicense, the file
 
 * `./pyopencl/cl/pyopencl-hankel-complex.cl`
+* `./pyopencl/cl/pyopencl-bessel-j-complex.cl`
 
 on this branch, unlike the rest of the software, are licensed under GPL.
 
