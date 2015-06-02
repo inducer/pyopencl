@@ -965,10 +965,6 @@ def get_hankel_01_kernel(context, out_dtype, x_dtype):
     if x_dtype != out_dtype:
         raise NotImplementedError("different input/output types")
 
-    from warnings import warn
-    warn("Your program is now GPL-licensed through use of the complex "
-            "Hankel function")
-
     return get_elwise_kernel(context, [
         VectorArg(out_dtype, "h0", with_offset=True),
         VectorArg(out_dtype, "h1", with_offset=True),
