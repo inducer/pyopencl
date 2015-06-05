@@ -1427,7 +1427,7 @@ void ${name_prefix}_debug_scan(
             ${arg_ctypes[arg_name]} ${name};
             %if ife_offset < 0:
                 if (i+${ife_offset} >= 0)
-                    ${name} = ${arg_name}[i+offset];
+                    ${name} = ${arg_name}[i+${ife_offset}];
             %else:
                 ${name} = ${arg_name}[i];
             %endif
