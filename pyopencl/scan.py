@@ -1419,7 +1419,7 @@ void ${name_prefix}_debug_scan(
     const index_type N)
 {
     scan_type item = ${neutral};
-    scan_type prev_item;
+    scan_type last_item;
 
     for (index_type i = 0; i < N; ++i)
     {
@@ -1435,12 +1435,12 @@ void ${name_prefix}_debug_scan(
 
         scan_type my_val = INPUT_EXPR(i);
 
-        prev_item = item;
+        last_item = item;
         %if is_segmented:
             bool is_seg_start = IS_SEG_START(i, my_val);
         %endif
 
-        item = SCAN_EXPR(prev_item, my_val,
+        item = SCAN_EXPR(last_item, my_val,
             %if is_segmented:
                 is_seg_start
             %else:
