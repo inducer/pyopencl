@@ -1,37 +1,37 @@
 Python 2.7 AMD CPU:
   script:
   - py_version=2.7
-  - cl_dev=amd_a10
+  - cl_dev=amd_pu
   - EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python2.7
-  - amd-cl-a10
+  - amd-cl-cpu
   except:
   - tags
 Python 3.4 AMD CPU:
   script:
   - py_version=3.4
-  - cl_dev=amd_a10
+  - cl_dev=amd_pu
   - EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3.4
-  - amd-cl-a10
+  - amd-cl-cpu
   except:
   - tags
 Python 2.6 AMD CPU:
   script:
   - py_version=2.6
-  - cl_dev=amd_a10
+  - cl_dev=amd_pu
   - EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python2.6
-  - amd-cl-a10
+  - amd-cl-cpu
   except:
   - tags
 Python 2.7 K20:
