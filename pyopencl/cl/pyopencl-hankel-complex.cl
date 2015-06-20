@@ -103,17 +103,17 @@ void hankel_01_complex(cdouble_t z, cdouble_t *h0, cdouble_t *h1, int ifexpon)
   ;
 
   zu = cdouble_conj(z);
-  zr = (- 1) * zu;
+  zr = cdouble_rmul(- 1, zu);
   hank103u(zu, & ier, & h0u, & h1u, ifexpon);
   hank103r(zr, & ier, & h0r, & h1r, ifexpon);
   if (ifexpon == 1)
     goto label_3000;
 
-  subt = cdouble_real(cdouble_abs(cdouble_imag(zu)));
-  cd = cdouble_exp(cdouble_fromreal((- 1) * subt) + cdouble_mul(ima, zu));
+  subt = fabs(cdouble_imag(zu));
+  cd = cdouble_exp(cdouble_add(cdouble_fromreal((- 1) * subt), cdouble_mul(ima, zu)));
   h0u = cdouble_mul(h0u, cd);
   h1u = cdouble_mul(h1u, cd);
-  cd = cdouble_exp(cdouble_fromreal((- 1) * subt) + cdouble_mul(ima, zr));
+  cd = cdouble_exp(cdouble_add(cdouble_fromreal((- 1) * subt), cdouble_mul(ima, zr)));
   h0r = cdouble_mul(h0r, cd);
   h1r = cdouble_mul(h1r, cd);
   label_3000:
@@ -121,27 +121,27 @@ void hankel_01_complex(cdouble_t z, cdouble_t *h0, cdouble_t *h1, int ifexpon)
 
   half_ = 1;
   half_ = half_ / 2;
-  y0 = cdouble_divide(half_ * (h0u + h0r), ima);
-  fj0 = ((- 1) * half_) * (h0u + ((- 1) * h0r));
-  y1 = cdouble_divide(((- 1) * half_) * (h1u + ((- 1) * h1r)), ima);
-  fj1 = half_ * (h1u + h1r);
-  z2 = (- 1) * cdouble_conj(z);
+  y0 = cdouble_divide(cdouble_rmul(half_, cdouble_add(h0u, h0r)), ima);
+  fj0 = cdouble_rmul((- 1) * half_, cdouble_add(h0u, cdouble_rmul(- 1, h0r)));
+  y1 = cdouble_divide(cdouble_rmul((- 1) * half_, cdouble_add(h1u, cdouble_rmul(- 1, h1r))), ima);
+  fj1 = cdouble_rmul(half_, cdouble_add(h1u, h1r));
+  z2 = cdouble_rmul(- 1, cdouble_conj(z));
   cclog = cdouble_log(z2);
-  ser2 = y0 + ((- 1) * cdouble_mul((2 * fj0) / pi, cclog));
-  ser3 = y1 + ((- 1) * cdouble_mul((2 * fj1) / pi, cclog));
+  ser2 = cdouble_add(y0, cdouble_rmul(- 1, cdouble_mul(cdouble_divider(cdouble_rmul(2, fj0), pi), cclog)));
+  ser3 = cdouble_add(y1, cdouble_rmul(- 1, cdouble_mul(cdouble_divider(cdouble_rmul(2, fj1), pi), cclog)));
   fj0 = cdouble_conj(fj0);
-  fj1 = (- 1) * cdouble_conj(fj1);
+  fj1 = cdouble_rmul(- 1, cdouble_conj(fj1));
   ser2 = cdouble_conj(ser2);
-  ser3 = (- 1) * cdouble_conj(ser3);
+  ser3 = cdouble_rmul(- 1, cdouble_conj(ser3));
   cclog = cdouble_log(z);
-  y0 = ser2 + cdouble_mul((2 * fj0) / pi, cclog);
-  y1 = ser3 + cdouble_mul((2 * fj1) / pi, cclog);
-  * h0 = fj0 + cdouble_mul(ima, y0);
-  * h1 = fj1 + cdouble_mul(ima, y1);
+  y0 = cdouble_add(ser2, cdouble_mul(cdouble_divider(cdouble_rmul(2, fj0), pi), cclog));
+  y1 = cdouble_add(ser3, cdouble_mul(cdouble_divider(cdouble_rmul(2, fj1), pi), cclog));
+  * h0 = cdouble_add(fj0, cdouble_mul(ima, y0));
+  * h1 = cdouble_add(fj1, cdouble_mul(ima, y1));
   if (ifexpon == 1)
     return;
 
-  cd = cdouble_exp(cdouble_fromreal(subt) + ((- 1) * cdouble_mul(ima, z)));
+  cd = cdouble_exp(cdouble_add(cdouble_fromreal(subt), cdouble_rmul(- 1, cdouble_mul(ima, z))));
   * h0 = cdouble_mul(* h0, cd);
   * h1 = cdouble_mul(* h1, cd);
 }
@@ -158,6 +158,7 @@ void hank103u(cdouble_t z, int *ier, cdouble_t *h0, cdouble_t *h1, int ifexpon)
 
   cdouble_t ccex;
   cdouble_t cd;
+  double com;
   double d;
   double done;
   cdouble_t ima = {0.0e0, 1.0e0};
@@ -167,6 +168,7 @@ void hank103u(cdouble_t z, int *ier, cdouble_t *h0, cdouble_t *h1, int ifexpon)
   double thresh3;
   cdouble_t zzz9;
   * ier = 0;
+  com = cdouble_real(z);
   if (cdouble_imag(z) >= 0)
     goto label_1200;
 
@@ -234,7 +236,7 @@ void hank103p(__constant cdouble_t *p, int m, cdouble_t z, cdouble_t *f)
   * f = p[m - 1];
   for (i = m + (- 1); i >= 1; i += - 1)
   {
-    * f = cdouble_mul(* f, z) + p[i - 1];
+    * f = cdouble_add(cdouble_mul(* f, z), p[i - 1]);
     label_1200:
     ;
 
@@ -275,10 +277,10 @@ void hank103a(cdouble_t z, cdouble_t *h0, cdouble_t *h1, int ifexpon)
   qq1 = cdouble_fromreal(hank103a_q1[m - 1]);
   for (i = m + (- 1); i >= 1; i += - 1)
   {
-    pp = cdouble_fromreal(hank103a_p[i - 1]) + cdouble_mul(pp, zinv22);
-    pp1 = cdouble_fromreal(hank103a_p1[i - 1]) + cdouble_mul(pp1, zinv22);
-    qq = cdouble_fromreal(hank103a_q[i - 1]) + cdouble_mul(qq, zinv22);
-    qq1 = cdouble_fromreal(hank103a_q1[i - 1]) + cdouble_mul(qq1, zinv22);
+    pp = cdouble_add(cdouble_fromreal(hank103a_p[i - 1]), cdouble_mul(pp, zinv22));
+    pp1 = cdouble_add(cdouble_fromreal(hank103a_p1[i - 1]), cdouble_mul(pp1, zinv22));
+    qq = cdouble_add(cdouble_fromreal(hank103a_q[i - 1]), cdouble_mul(qq, zinv22));
+    qq1 = cdouble_add(cdouble_fromreal(hank103a_q1[i - 1]), cdouble_mul(qq1, zinv22));
     label_1600:
     ;
 
@@ -290,11 +292,11 @@ void hank103a(cdouble_t z, cdouble_t *h0, cdouble_t *h1, int ifexpon)
   if (ifexpon == 1)
     cccexp = cdouble_exp(cdouble_mul(ima, z));
 
-  cdd = cdouble_sqrt((2 / pi) * zinv);
-  * h0 = pp + cdouble_mul(ima, qq);
+  cdd = cdouble_sqrt(cdouble_rmul(2 / pi, zinv));
+  * h0 = cdouble_add(pp, cdouble_mul(ima, qq));
   * h0 = cdouble_mul(cdouble_mul(cdouble_mul(cdd, cdumb), cccexp), * h0);
-  * h1 = pp1 + cdouble_mul(ima, qq1);
-  * h1 = (- 1) * cdouble_mul(cdouble_mul(cdouble_mul(cdouble_mul(cdd, cccexp), cdumb), * h1), ima);
+  * h1 = cdouble_add(pp1, cdouble_mul(ima, qq1));
+  * h1 = cdouble_rmul(- 1, cdouble_mul(cdouble_mul(cdouble_mul(cdouble_mul(cdd, cccexp), cdumb), * h1), ima));
 }
 
 __constant double hank103l_cj0[] = {0.1000000000000000e+01, (- 1) * 0.2500000000000000e+00, 0.1562500000000000e-01, (- 1) * 0.4340277777777778e-03, 0.6781684027777778e-05, (- 1) * 0.6781684027777778e-07, 0.4709502797067901e-09, (- 1) * 0.2402807549524439e-11, 0.9385966990329841e-14, (- 1) * 0.2896903392077112e-16, 0.7242258480192779e-19, (- 1) * 0.1496334396734045e-21, 0.2597802772107717e-24, (- 1) * 0.3842903509035085e-27, 0.4901662639075363e-30, (- 1) * 0.5446291821194848e-33};
@@ -329,29 +331,29 @@ void hank103l(cdouble_t z, cdouble_t *h0, cdouble_t *h1, int ifexpon)
   cd = cdouble_fromreal(1);
   for (i = 1; i <= m; i += 1)
   {
-    fj0 = fj0 + (hank103l_cj0[i - 1] * cd);
-    fj1 = fj1 + (hank103l_cj1[i - 1] * cd);
-    y1 = y1 + (hank103l_ser2der[i - 1] * cd);
+    fj0 = cdouble_add(fj0, cdouble_rmul(hank103l_cj0[i - 1], cd));
+    fj1 = cdouble_add(fj1, cdouble_rmul(hank103l_cj1[i - 1], cd));
+    y1 = cdouble_add(y1, cdouble_rmul(hank103l_ser2der[i - 1], cd));
     cd = cdouble_mul(cd, z2);
-    y0 = y0 + (hank103l_ser2[i - 1] * cd);
+    y0 = cdouble_add(y0, cdouble_rmul(hank103l_ser2[i - 1], cd));
     label_1800:
     ;
 
   }
 
-  fj1 = (- 1) * cdouble_mul(fj1, z);
-  cdddlog = cdouble_fromreal(gamma) + cdouble_log(z / two);
-  y0 = cdouble_mul(cdddlog, fj0) + y0;
-  y0 = (two / pi) * y0;
+  fj1 = cdouble_rmul(- 1, cdouble_mul(fj1, z));
+  cdddlog = cdouble_add(cdouble_fromreal(gamma), cdouble_log(cdouble_divider(z, two)));
+  y0 = cdouble_add(cdouble_mul(cdddlog, fj0), y0);
+  y0 = cdouble_rmul(two / pi, y0);
   y1 = cdouble_mul(y1, z);
-  y1 = (((- 1) * cdouble_mul(cdddlog, fj1)) + cdouble_divide(fj0, z)) + y1;
-  y1 = (((- 1) * two) * y1) / pi;
-  * h0 = fj0 + cdouble_mul(ima, y0);
-  * h1 = fj1 + cdouble_mul(ima, y1);
+  y1 = cdouble_add(cdouble_add(cdouble_rmul(- 1, cdouble_mul(cdddlog, fj1)), cdouble_divide(fj0, z)), y1);
+  y1 = cdouble_divider(cdouble_rmul((- 1) * two, y1), pi);
+  * h0 = cdouble_add(fj0, cdouble_mul(ima, y0));
+  * h1 = cdouble_add(fj1, cdouble_mul(ima, y1));
   if (ifexpon == 1)
     return;
 
-  cd = cdouble_exp((- 1) * cdouble_mul(ima, z));
+  cd = cdouble_exp(cdouble_rmul(- 1, cdouble_mul(ima, z)));
   * h0 = cdouble_mul(* h0, cd);
   * h1 = cdouble_mul(* h1, cd);
 }
@@ -439,3 +441,4 @@ void hank103r(cdouble_t z, int *ier, cdouble_t *h0, cdouble_t *h1, int ifexpon)
 
   hank103a(z, & (* h0), & (* h1), ifexpon);
 }
+

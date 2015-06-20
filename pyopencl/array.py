@@ -60,7 +60,7 @@ except:
 
 # {{{ vector types
 
-class vec:
+class vec:  # noqa
     pass
 
 
@@ -271,7 +271,7 @@ class ArrayHasOffsetError(ValueError):
         ValueError.__init__(self, val)
 
 
-class _copy_queue:
+class _copy_queue:  # noqa
     pass
 
 

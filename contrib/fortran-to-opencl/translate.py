@@ -309,6 +309,17 @@ class TypeInferenceMapper(CombineMapper):
             else:
                 raise RuntimeError("unexpected complex type")
 
+        elif name in ["imag", "real", "abs", "dble"]:
+            arg, = expr.parameters
+            base_dtype = self.rec(arg)
+
+            if base_dtype == np.complex128:
+                return np.dtype(np.float64)
+            elif base_dtype == np.complex64:
+                return np.dtype(np.float32)
+            else:
+                return base_dtype
+
         else:
             return CombineMapper.map_call(self, expr)
 
@@ -340,12 +351,23 @@ class ComplexCCodeMapper(CCodeMapperBase):
             complexes = [child for child in expr.children
                     if 'c' == self.infer_type(child).kind]
 
-            from pymbolic.mapper.stringifier import PREC_SUM
+            from pymbolic.mapper.stringifier import PREC_SUM, PREC_NONE
             real_sum = self.join_rec(" + ", reals, PREC_SUM)
-            complex_sum = self.join_rec(" + ", complexes, PREC_SUM)
+
+            if len(complexes) == 1:
+                myprec = PREC_SUM
+            else:
+                myprec = PREC_NONE
+
+            complex_sum = self.rec(complexes[0], myprec)
+            for child in complexes[1:]:
+                complex_sum = "%s_add(%s, %s)" % (
+                        tgt_name, complex_sum,
+                        self.rec(child, PREC_NONE))
 
             if real_sum:
-                result = "%s_fromreal(%s) + %s" % (tgt_name, real_sum, complex_sum)
+                result = "%s_add(%s_fromreal(%s), %s)" % (
+                        tgt_name, tgt_name, real_sum, complex_sum)
             else:
                 result = complex_sum
 
@@ -380,8 +402,7 @@ class ComplexCCodeMapper(CCodeMapperBase):
                         self.rec(child, PREC_NONE))
 
             if real_prd:
-                # elementwise semantics are correct
-                result = "%s * %s" % (real_prd, complex_prd)
+                result = "%s_rmul(%s, %s)" % (tgt_name, real_prd, complex_prd)
             else:
                 result = complex_prd
 
@@ -397,8 +418,10 @@ class ComplexCCodeMapper(CCodeMapperBase):
         if not (n_complex or d_complex):
             return CCodeMapperBase.map_quotient(self, expr, enclosing_prec)
         elif n_complex and not d_complex:
-            # elementwise semnatics are correct
-            return CCodeMapperBase.map_quotient(self, expr, enclosing_prec)
+            return "%s_divider(%s, %s)" % (
+                    self.complex_type_name(tgt_dtype),
+                    self.rec(expr.numerator, PREC_NONE),
+                    self.rec(expr.denominator, PREC_NONE))
         elif not n_complex and d_complex:
             return "%s_rdivide(%s, %s)" % (
                     self.complex_type_name(tgt_dtype),
@@ -478,20 +501,18 @@ class CCodeMapper(ComplexCCodeMapper):
         from pymbolic.mapper.stringifier import PREC_NONE
 
         tgt_dtype = self.infer_type(expr)
+        arg_dtypes = [self.infer_type(par) for par in expr.parameters]
 
         name = expr.function.name
         if 'f' == tgt_dtype.kind and name == "abs":
             name = "fabs"
 
-        if 'c' == tgt_dtype.kind:
+        elif 'c' == tgt_dtype.kind:
             if name in ["conjg", "dconjg"]:
                 name = "conj"
 
             if name[:2] == "cd" and name[2:] in ["log", "exp", "sqrt"]:
                 name = name[2:]
-
-            if name == "aimag":
-                name = "imag"
 
             if name == "dble":
                 name = "real"
@@ -499,6 +520,22 @@ class CCodeMapper(ComplexCCodeMapper):
             name = "%s_%s" % (
                     self.complex_type_name(tgt_dtype),
                     name)
+
+        elif name in ["aimag", "real", "imag"] and tgt_dtype.kind == "f":
+            arg_dtype, = arg_dtypes
+
+            if name == "aimag":
+                name = "imag"
+
+            name = "%s_%s" % (
+                    self.complex_type_name(arg_dtype),
+                    name)
+
+        elif 'c' == tgt_dtype.kind and name == "abs":
+            arg_dtype, = arg_dtypes
+
+            name = "%s_abs" % (
+                    self.complex_type_name(arg_dtype))
 
         return self.format("%s(%s)",
                 name,
@@ -1370,6 +1407,13 @@ def f2cl_files(source_file, target_file, **kwargs):
 
 
 if __name__ == "__main__":
+    import logging
+    console = logging.StreamHandler()
+    console.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('fparser').addHandler(console)
+
     from cgen.opencl import CLConstant
 
     if 0:

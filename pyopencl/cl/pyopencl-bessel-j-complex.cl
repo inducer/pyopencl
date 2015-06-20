@@ -54,7 +54,8 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
 
   cdouble_t z_half, mz_half2, mz_half_2k, z_half_v, z_half_vp1;
 
-  cdouble_t ima = {0.0e0, 1.0e0};
+  cdouble_t ima = cdouble_new(0, 1);
+  cdouble_t neg_ima = cdouble_new(0, -1);
 
   cdouble_t zinv, ztmp;
   cdouble_t j_nm1, j_n, j_np1;
@@ -87,7 +88,7 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
   {
     z_half = cdouble_divider(z,2.0);
 
-    mz_half2 = (-1)*cdouble_mul(z_half,z_half);
+    mz_half2 = cdouble_neg(cdouble_mul(z_half, z_half));
 
     z_half_v = cdouble_powr(z_half, v);
     z_half_vp1 = cdouble_mul(z_half_v, z_half);
@@ -105,15 +106,18 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
     k_factorial_inv = 1.0;
 
     // compute the power series of bessel j function
-    mz_half_2k = (cdouble_t)(1.0,0);
+    mz_half_2k = cdouble_new(1.0, 0);
 
-    *j_v = 0;
-    *j_vp1 = 0;
+    *j_v = cdouble_new(0, 0);
+    *j_vp1 = cdouble_new(0, 0);
 
     for ( k = 0; k < kmax; k++ )
     {
-      *j_v = *j_v + cdouble_mulr(mz_half_2k, kv_factorial_inv*k_factorial_inv);
-      *j_vp1 = *j_vp1 + cdouble_mulr(mz_half_2k, kvp1_factorial_inv*k_factorial_inv);
+      *j_v = cdouble_add(
+          *j_v,
+          cdouble_mulr(mz_half_2k, kv_factorial_inv*k_factorial_inv));
+      *j_vp1 = cdouble_add(*j_vp1,
+          cdouble_mulr(mz_half_2k, kvp1_factorial_inv*k_factorial_inv));
 
       mz_half_2k = cdouble_mul(mz_half_2k, mz_half2);
       k_factorial_inv /= (k+1);
@@ -131,8 +135,8 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
 
   // {{{ use recurrence for large z
 
-  j_nm1 = 0;
-  j_n = 1;
+  j_nm1 = cdouble_new(0, 0);
+  j_n = cdouble_new(1, 0);
 
   n = v;
 
@@ -140,7 +144,9 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
 
   while (true)
   {
-    j_np1 = cdouble_mul((2*n*zinv),j_n) - j_nm1;
+    j_np1 = cdouble_sub(
+        cdouble_mul(cdouble_rmul(2*n, zinv), j_n),
+        j_nm1);
 
     n += 1;
     j_nm1 = j_n;
@@ -148,8 +154,8 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
 
     if (n > nmax)
     {
-      *j_v = nan(0x8e55e1u);
-      *j_vp1 = nan(0x8e55e1u);
+      *j_v = cdouble_new(nan(0x8e55e1u), 0);
+      *j_vp1 = cdouble_new(nan(0x8e55e1u), 0);
       return;
     }
 
@@ -162,20 +168,16 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
   // Record the number of times of the missed rescalings
   // for j_v and j_vp1.
 
-
-  unscaled_j_np1 = 0;
-  unscaled_j_n = 1;
+  unscaled_j_np1 = cdouble_new(0, 0);
+  unscaled_j_n = cdouble_new(1, 0);
 
   // Use normalization condition http://dlmf.nist.gov/10.12#E5
-  psi = 0;
+  psi = cdouble_new(0, 0);
 
   if (cdouble_imag(z) <= 0)
-  {
     zmul = ima;
-  } else
-  {
-    zmul = (-1)*ima;
-  }
+  else
+    zmul = neg_ima;
 
   zsn = cdouble_powr(zmul, n%4);
 
@@ -186,13 +188,15 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
 
   while (n > 0)
   {
-    ztmp = cdouble_mul(2*n*zinv, unscaled_j_n) - unscaled_j_np1;
+    ztmp = cdouble_sub(
+        cdouble_mul(cdouble_rmul(2*n, zinv), unscaled_j_n),
+        unscaled_j_np1);
     dd = pow(cdouble_real(ztmp), 2) + pow(cdouble_imag(ztmp), 2);
 
     unscaled_j_nm1 = ztmp;
 
 
-    psi = psi + cdouble_mul(unscaled_j_n, zsn);
+    psi = cdouble_add(psi, cdouble_mul(unscaled_j_n, zsn));
     zsn = cdouble_mul(zsn, zmulinv);
 
     n -= 1;
@@ -215,14 +219,14 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
 
   }
 
-  psi = 2*psi + unscaled_j_n;
+  psi = cdouble_add(cdouble_rmul(2, psi), unscaled_j_n);
 
   if ( cdouble_imag(z) <= 0 )
   {
     scaling = cdouble_divide( cdouble_exp( cdouble_mul(ima,z) ), psi);
   } else
   {
-    scaling = cdouble_divide( cdouble_exp( cdouble_mul(-1*ima,z) ), psi);
+    scaling = cdouble_divide( cdouble_exp( cdouble_mul(neg_ima,z) ), psi);
   }
   vscaling = pow(upbound_inv, vscale);
   vp1scaling = pow(upbound_inv, vp1scale);
