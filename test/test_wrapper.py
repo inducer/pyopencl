@@ -684,7 +684,7 @@ def test_platform_get_devices(platform):
                         getattr(cl.device_type, 'CUSTOM', None)):
             continue
         for dev in devs:
-            assert dev.type == dev_type
+            assert dev.type & dev_type == dev_type
 
 
 def test_user_event(ctx_factory):
