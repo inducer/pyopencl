@@ -89,7 +89,7 @@ KERNEL = r"""//CL//
           cur_size = group_size
         %>
 
-        % while cur_size > no_sync_size:
+        % while cur_size > 1:
             barrier(CLK_LOCAL_MEM_FENCE);
 
             <%
@@ -107,40 +107,6 @@ KERNEL = r"""//CL//
             <% cur_size = new_size %>
 
         % endwhile
-
-        % if cur_size > 1:
-            ## we need to synchronize one last time for entry into the
-            ## no-sync region.
-
-            barrier(CLK_LOCAL_MEM_FENCE);
-
-            <%
-            # NB: There's an exact duplicate of this calculation in the
-            # %while loop below.
-
-            new_size = cur_size // 2
-            assert new_size * 2 == cur_size
-            %>
-
-            if (lid < ${new_size})
-            {
-                __local volatile out_type *lvdata = ldata;
-                % while cur_size > 1:
-                    <%
-                    new_size = cur_size // 2
-                    assert new_size * 2 == cur_size
-                    %>
-
-                    lvdata[lid] = REDUCE(
-                      lvdata[lid],
-                      lvdata[lid + ${new_size}]);
-
-                    <% cur_size = new_size %>
-
-                % endwhile
-
-            }
-        % endif
 
         if (lid == 0) out[get_group_id(0)] = ldata[0];
     }
@@ -186,24 +152,6 @@ def _get_reduction_source(
 
     # }}}
 
-    # {{{ compute synchronization-less group size
-
-    def get_dev_no_sync_size(device):
-        from pyopencl.characterize import get_simd_group_size
-        result = get_simd_group_size(device, out_type_size)
-
-        if result is None:
-            from warnings import warn
-            warn("Reduction might be unnecessarily slow: "
-                    "can't query SIMD group size")
-            return 1
-
-        return result
-
-    no_sync_size = min(get_dev_no_sync_size(dev) for dev in devices)
-
-    # }}}
-
     from mako.template import Template
     from pytools import all
     from pyopencl.characterize import has_double_support
@@ -211,7 +159,6 @@ def _get_reduction_source(
         out_type=out_type,
         arguments=", ".join(arg.declarator() for arg in parsed_args),
         group_size=group_size,
-        no_sync_size=no_sync_size,
         neutral=neutral,
         reduce_expr=_process_code_for_macro(reduce_expr),
         map_expr=_process_code_for_macro(map_expr),
