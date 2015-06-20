@@ -43,6 +43,15 @@ class TranslationError(RuntimeError):
     pass
 
 
+def complex_type_name(dtype):
+    if dtype == np.complex64:
+        return "cfloat"
+    if dtype == np.complex128:
+        return "cdouble"
+    else:
+        raise RuntimeError
+
+
 # {{{ AST components
 
 def dtype_to_ctype(dtype):
@@ -329,14 +338,6 @@ class ComplexCCodeMapper(CCodeMapperBase):
         CCodeMapperBase.__init__(self)
         self.infer_type = infer_type
 
-    def complex_type_name(self, dtype):
-        if dtype == np.complex64:
-            return "cfloat"
-        if dtype == np.complex128:
-            return "cdouble"
-        else:
-            raise RuntimeError
-
     def map_sum(self, expr, enclosing_prec):
         tgt_dtype = self.infer_type(expr)
         is_complex = tgt_dtype.kind == 'c'
@@ -344,7 +345,7 @@ class ComplexCCodeMapper(CCodeMapperBase):
         if not is_complex:
             return CCodeMapperBase.map_sum(self, expr, enclosing_prec)
         else:
-            tgt_name = self.complex_type_name(tgt_dtype)
+            tgt_name = complex_type_name(tgt_dtype)
 
             reals = [child for child in expr.children
                     if 'c' != self.infer_type(child).kind]
@@ -380,7 +381,7 @@ class ComplexCCodeMapper(CCodeMapperBase):
         if not is_complex:
             return CCodeMapperBase.map_product(self, expr, enclosing_prec)
         else:
-            tgt_name = self.complex_type_name(tgt_dtype)
+            tgt_name = complex_type_name(tgt_dtype)
 
             reals = [child for child in expr.children
                     if 'c' != self.infer_type(child).kind]
@@ -419,17 +420,17 @@ class ComplexCCodeMapper(CCodeMapperBase):
             return CCodeMapperBase.map_quotient(self, expr, enclosing_prec)
         elif n_complex and not d_complex:
             return "%s_divider(%s, %s)" % (
-                    self.complex_type_name(tgt_dtype),
+                    complex_type_name(tgt_dtype),
                     self.rec(expr.numerator, PREC_NONE),
                     self.rec(expr.denominator, PREC_NONE))
         elif not n_complex and d_complex:
             return "%s_rdivide(%s, %s)" % (
-                    self.complex_type_name(tgt_dtype),
+                    complex_type_name(tgt_dtype),
                     self.rec(expr.numerator, PREC_NONE),
                     self.rec(expr.denominator, PREC_NONE))
         else:
             return "%s_divide(%s, %s)" % (
-                    self.complex_type_name(tgt_dtype),
+                    complex_type_name(tgt_dtype),
                     self.rec(expr.numerator, PREC_NONE),
                     self.rec(expr.denominator, PREC_NONE))
 
@@ -456,12 +457,12 @@ class ComplexCCodeMapper(CCodeMapperBase):
 
                 if b_complex and not e_complex:
                     return "%s_powr(%s, %s)" % (
-                            self.complex_type_name(tgt_dtype),
+                            complex_type_name(tgt_dtype),
                             self.rec(expr.base, PREC_NONE),
                             self.rec(expr.exponent, PREC_NONE))
                 else:
                     return "%s_pow(%s, %s)" % (
-                            self.complex_type_name(tgt_dtype),
+                            complex_type_name(tgt_dtype),
                             self.rec(expr.base, PREC_NONE),
                             self.rec(expr.exponent, PREC_NONE))
 
@@ -518,7 +519,7 @@ class CCodeMapper(ComplexCCodeMapper):
                 name = "real"
 
             name = "%s_%s" % (
-                    self.complex_type_name(tgt_dtype),
+                    complex_type_name(tgt_dtype),
                     name)
 
         elif name in ["aimag", "real", "imag"] and tgt_dtype.kind == "f":
@@ -528,14 +529,14 @@ class CCodeMapper(ComplexCCodeMapper):
                 name = "imag"
 
             name = "%s_%s" % (
-                    self.complex_type_name(arg_dtype),
+                    complex_type_name(arg_dtype),
                     name)
 
         elif 'c' == tgt_dtype.kind and name == "abs":
             arg_dtype, = arg_dtypes
 
             name = "%s_abs" % (
-                    self.complex_type_name(arg_dtype))
+                    complex_type_name(arg_dtype))
 
         return self.format("%s(%s)",
                 name,
@@ -563,7 +564,10 @@ class CCodeMapper(ComplexCCodeMapper):
         from pymbolic.mapper.stringifier import PREC_NONE
         if expr.dtype.kind == "c":
             r, i = expr.value
-            return "{ %s, %s }" % (self.rec(r, PREC_NONE), self.rec(i, PREC_NONE))
+            return "%s_new(%s, %s)" % (
+                    complex_type_name(expr.dtype),
+                    self.rec(r, PREC_NONE),
+                    self.rec(i, PREC_NONE))
         else:
             return expr.value
 

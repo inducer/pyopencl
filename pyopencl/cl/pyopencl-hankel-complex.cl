@@ -76,7 +76,7 @@ void hankel_01_complex(cdouble_t z, cdouble_t *h0, cdouble_t *h1, int ifexpon)
   cdouble_t h1u;
   double half_;
   int ier;
-  cdouble_t ima = {0.0e0, 1.0e0};
+  cdouble_t ima = cdouble_new(0.0e0, 1.0e0);
   double pi = 0.31415926535897932e+01;
   cdouble_t ser2;
   cdouble_t ser3;
@@ -161,7 +161,7 @@ void hank103u(cdouble_t z, int *ier, cdouble_t *h0, cdouble_t *h1, int ifexpon)
   double com;
   double d;
   double done;
-  cdouble_t ima = {0.0e0, 1.0e0};
+  cdouble_t ima = cdouble_new(0.0e0, 1.0e0);
   int m;
   double thresh1;
   double thresh2;
@@ -252,10 +252,10 @@ void hank103a(cdouble_t z, cdouble_t *h0, cdouble_t *h1, int ifexpon)
 {
   cdouble_t cccexp;
   cdouble_t cdd;
-  cdouble_t cdumb = {0.70710678118654757e+00, (- 1) * 0.70710678118654746e+00};
+  cdouble_t cdumb = cdouble_new(0.70710678118654757e+00, (- 1) * 0.70710678118654746e+00);
   double done = 1.0e0;
   int i;
-  cdouble_t ima = {0.0e0, 1.0e0};
+  cdouble_t ima = cdouble_new(0.0e0, 1.0e0);
   int m;
 
 
@@ -313,7 +313,7 @@ void hank103l(cdouble_t z, cdouble_t *h0, cdouble_t *h1, int ifexpon)
   cdouble_t fj1;
   double gamma = 0.5772156649015328606e+00;
   int i;
-  cdouble_t ima = {0.0e0, 1.0e0};
+  cdouble_t ima = cdouble_new(0.0e0, 1.0e0);
   int m;
   double pi = 0.31415926535897932e+01;
 
@@ -373,7 +373,7 @@ void hank103r(cdouble_t z, int *ier, cdouble_t *h0, cdouble_t *h1, int ifexpon)
   cdouble_t cdd;
   double d;
   double done;
-  cdouble_t ima = {0.0e0, 1.0e0};
+  cdouble_t ima = cdouble_new(0.0e0, 1.0e0);
   int m;
   double thresh1;
   double thresh2;

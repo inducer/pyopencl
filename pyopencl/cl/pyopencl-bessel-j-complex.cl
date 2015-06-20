@@ -72,12 +72,12 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
   {
     if (v == 0)
     {
-      *j_v = (cdouble_t)(1,0);
-      *j_vp1 = 0;
+      *j_v = cdouble_new(1, 0);
+      *j_vp1 = cdouble_new(0, 0);
     } else
     {
-      *j_v = 0;
-      *j_vp1 = 0;
+      *j_v = cdouble_new(0, 0);
+      *j_vp1 = cdouble_new(0, 0);
     }
     return;
   }
