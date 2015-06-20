@@ -823,8 +823,8 @@ class ListOfListsBuilder:
         from pyopencl.tools import VectorArg, OtherArg
         kernel_list_args = [
                 VectorArg(index_dtype, "plb_%s_count" % name)
-                    for name, dtype in self.list_names_and_dtypes
-                    if name not in self.count_sharing]
+                for name, dtype in self.list_names_and_dtypes
+                if name not in self.count_sharing]
 
         user_list_args = []
         for name, dtype in self.list_names_and_dtypes:
