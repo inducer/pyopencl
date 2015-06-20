@@ -383,7 +383,7 @@ def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
 
     args = [
             VectorArg(dtype, "dest%d" % i)
-                for i in range(vec_count)
+            for i in range(vec_count)
             ] + [
                 VectorArg(idx_dtype, "gmem_dest_idx", with_offset=True),
                 VectorArg(idx_dtype, "gmem_src_idx", with_offset=True),
@@ -392,7 +392,7 @@ def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
                 for i in range(vec_count)
             ] + [
                 ScalarArg(idx_dtype, "offset%d" % i)
-                    for i in range(vec_count) if with_offsets
+                for i in range(vec_count) if with_offsets
             ]
 
     if with_offsets:
@@ -421,7 +421,7 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
 
     args = [
             VectorArg(dtype, "dest%d" % i, with_offset=True)
-                for i in range(vec_count)
+            for i in range(vec_count)
             ] + [
                 VectorArg(idx_dtype, "gmem_dest_idx", with_offset=True),
             ] + [
@@ -525,7 +525,6 @@ def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
 
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
-    z_is_complex = dtype_z.kind == "c"
 
     if x_is_complex:
         ax = "%s_mul(a, x[i])" % complex_dtype_to_name(dtype_x)
@@ -539,9 +538,15 @@ def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
     if not x_is_complex and y_is_complex:
         ax = "%s_fromreal(%s)" % (complex_dtype_to_name(dtype_y), ax)
 
-    result = "%s + %s" % (ax, by)
-    if z_is_complex:
-        result = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), result)
+    if x_is_complex or y_is_complex:
+        result = (
+                "{root}_add({root}_cast({ax}), {root}_cast({by}))"
+                .format(
+                    ax=ax,
+                    by=by,
+                    root=complex_dtype_to_name(dtype_z)))
+    else:
+        result = "%s + %s" % (ax, by)
 
     return get_elwise_kernel(context,
             "%(tp_z)s *z, %(tp_x)s a, %(tp_x)s *x, %(tp_y)s b, %(tp_y)s *y" % {
@@ -562,24 +567,27 @@ def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
     z_is_complex = dtype_z.kind == "c"
 
     ax = "a*x[i]"
-    if a_is_complex and x_is_complex:
+    if x_is_complex:
+        a = "a"
+        x = "x[i]"
+
+        if dtype_x != dtype_z:
+            x = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), x)
+
+        if a_is_complex:
+            if dtype_a != dtype_z:
+                a = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), a)
+
+            ax = "%s_mul(%s, %s)" % (complex_dtype_to_name(dtype_z), a, x)
+        else:
+            ax = "%s_rmul(%s, %s)" % (complex_dtype_to_name(dtype_z), a, x)
+    elif a_is_complex:
         a = "a"
         x = "x[i]"
 
         if dtype_a != dtype_z:
             a = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), a)
-        if dtype_x != dtype_z:
-            x = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), x)
-
-        ax = "%s_mul(%s, %s)" % (complex_dtype_to_name(dtype_z), a, x)
-
-    # The following two are workarounds for Apple on OS X 10.8.
-    # They're not really necessary.
-
-    elif a_is_complex and not x_is_complex:
-        ax = "a*((%s) x[i])" % dtype_to_ctype(real_dtype(dtype_a))
-    elif not a_is_complex and x_is_complex:
-        ax = "((%s) a)*x[i]" % dtype_to_ctype(real_dtype(dtype_x))
+        ax = "%s_mulr(%s, %s)" % (complex_dtype_to_name(dtype_z), a, x)
 
     b = "b"
     if z_is_complex and not b_is_complex:
@@ -592,6 +600,14 @@ def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
         ax = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), ax)
         b = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), b)
 
+    if a_is_complex or x_is_complex or b_is_complex:
+        expr = "{root}_add({ax}, {b})".format(
+                ax=ax,
+                b=b,
+                root=complex_dtype_to_name(dtype_z))
+    else:
+        expr = "%s + %s" % (ax, b)
+
     return get_elwise_kernel(context,
             "%(tp_z)s *z, %(tp_a)s a, %(tp_x)s *x,%(tp_b)s b" % {
                 "tp_a": dtype_to_ctype(dtype_a),
@@ -599,7 +615,7 @@ def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
                 "tp_b": dtype_to_ctype(dtype_b),
                 "tp_z": dtype_to_ctype(dtype_z),
                 },
-            "z[i] = %s + %s" % (ax, b),
+            "z[i] = " + expr,
             name="axpb")
 
 
@@ -607,7 +623,6 @@ def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
 def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z):
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
-    z_is_complex = dtype_z.kind == "c"
 
     x = "x[i]"
     y = "y[i]"
@@ -619,12 +634,12 @@ def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z):
 
     if x_is_complex and y_is_complex:
         xy = "%s_mul(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
-
+    elif x_is_complex and not y_is_complex:
+        xy = "%s_mulr(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+    elif not x_is_complex and y_is_complex:
+        xy = "%s_rmul(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
     else:
         xy = "%s * %s" % (x, y)
-
-    if z_is_complex:
-        xy = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), xy)
 
     return get_elwise_kernel(context,
             "%(tp_z)s *z, %(tp_x)s *x, %(tp_y)s *y" % {
@@ -654,8 +669,9 @@ def get_divide_kernel(context, dtype_x, dtype_y, dtype_z):
     if x_is_complex and y_is_complex:
         xoy = "%s_divide(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
     elif not x_is_complex and y_is_complex:
-
         xoy = "%s_rdivide(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+    elif x_is_complex and not y_is_complex:
+        xoy = "%s_divider(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
     else:
         xoy = "%s / %s" % (x, y)
 
@@ -691,7 +707,9 @@ def get_rdivide_elwise_kernel(context, dtype_x, dtype_y, dtype_z):
     if x_is_complex and y_is_complex:
         yox = "%s_divide(%s, %s)" % (complex_dtype_to_name(dtype_z), y, x)
     elif not y_is_complex and x_is_complex:
-        yox = "%s_rdivide(%s, %s)" % (complex_dtype_to_name(dtype_x), y, x)
+        yox = "%s_rdivide(%s, %s)" % (complex_dtype_to_name(dtype_z), y, x)
+    elif y_is_complex and not x_is_complex:
+        yox = "%s_divider(%s, %s)" % (complex_dtype_to_name(dtype_z), y, x)
     else:
         yox = "%s / %s" % (y, x)
 
@@ -728,16 +746,18 @@ def get_reverse_kernel(context, dtype):
 @context_dependent_memoize
 def get_arange_kernel(context, dtype):
     if dtype.kind == "c":
-        i = "%s_fromreal(i)" % complex_dtype_to_name(dtype)
+        expr = (
+                "{root}_add(start, {root}_rmul(i, step))"
+                .format(root=complex_dtype_to_name(dtype)))
     else:
-        i = "(%s) i" % dtype_to_ctype(dtype)
+        expr = "start + ((%s) i)*step" % dtype_to_ctype(dtype)
 
     return get_elwise_kernel(context, [
         VectorArg(dtype, "z", with_offset=True),
         ScalarArg(dtype, "start"),
         ScalarArg(dtype, "step"),
         ],
-        "z[i] = start + %s*step" % i,
+        "z[i] = " + expr,
         name="arange")
 
 
@@ -912,20 +932,80 @@ def get_ldexp_kernel(context, out_dtype=np.float32, sig_dtype=np.float32,
 @context_dependent_memoize
 def get_bessel_kernel(context, which_func, out_dtype=np.float64,
                       order_dtype=np.int32, x_dtype=np.float64):
+    if x_dtype.kind != "c":
+        return get_elwise_kernel(context, [
+            VectorArg(out_dtype, "z", with_offset=True),
+            ScalarArg(order_dtype, "ord_n"),
+            VectorArg(x_dtype, "x", with_offset=True),
+            ],
+            "z[i] = bessel_%sn(ord_n, x[i])" % which_func,
+            name="bessel_%sn_kernel" % which_func,
+            preamble="""
+            #if __OPENCL_C_VERSION__ < 120
+            #pragma OPENCL EXTENSION cl_khr_fp64: enable
+            #endif
+            #define PYOPENCL_DEFINE_CDOUBLE
+            #include <pyopencl-bessel-%s.cl>
+            """ % which_func)
+    else:
+        if which_func != "j":
+            raise NotImplementedError("complex arguments for Bessel Y")
+
+        if x_dtype != np.complex128:
+            raise NotImplementedError("non-complex double dtype")
+        if x_dtype != out_dtype:
+            raise NotImplementedError("different input/output types")
+
+        return get_elwise_kernel(context, [
+            VectorArg(out_dtype, "z", with_offset=True),
+            ScalarArg(order_dtype, "ord_n"),
+            VectorArg(x_dtype, "x", with_offset=True),
+            ],
+            """
+            cdouble_t jv_loc;
+            cdouble_t jvp1_loc;
+            bessel_j_complex(ord_n, x[i], &jv_loc, &jvp1_loc);
+            z[i] = jv_loc;
+            """,
+            name="bessel_j_complex_kernel",
+            preamble="""
+            #if __OPENCL_C_VERSION__ < 120
+            #pragma OPENCL EXTENSION cl_khr_fp64: enable
+            #endif
+            #define PYOPENCL_DEFINE_CDOUBLE
+            #include <pyopencl-complex.h>
+            #include <pyopencl-bessel-j-complex.cl>
+            """)
+
+
+@context_dependent_memoize
+def get_hankel_01_kernel(context, out_dtype, x_dtype):
+    if x_dtype != np.complex128:
+        raise NotImplementedError("non-complex double dtype")
+    if x_dtype != out_dtype:
+        raise NotImplementedError("different input/output types")
+
     return get_elwise_kernel(context, [
-        VectorArg(out_dtype, "z", with_offset=True),
-        ScalarArg(order_dtype, "ord_n"),
+        VectorArg(out_dtype, "h0", with_offset=True),
+        VectorArg(out_dtype, "h1", with_offset=True),
         VectorArg(x_dtype, "x", with_offset=True),
         ],
-        "z[i] = bessel_%sn(ord_n, x[i])" % which_func,
-        name="bessel_%sn_kernel" % which_func,
+        """
+        cdouble_t h0_loc;
+        cdouble_t h1_loc;
+        hankel_01_complex(x[i], &h0_loc, &h1_loc, 1);
+        h0[i] = h0_loc;
+        h1[i] = h1_loc;
+        """,
+        name="hankel_complex_kernel",
         preamble="""
         #if __OPENCL_C_VERSION__ < 120
         #pragma OPENCL EXTENSION cl_khr_fp64: enable
         #endif
         #define PYOPENCL_DEFINE_CDOUBLE
-        #include <pyopencl-bessel-%s.cl>
-        """ % which_func)
+        #include <pyopencl-complex.h>
+        #include <pyopencl-hankel-complex.cl>
+        """)
 
 
 @context_dependent_memoize

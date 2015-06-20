@@ -110,12 +110,21 @@ other software to be turned into the corresponding :mod:`pyopencl` objects.
 User-visible Changes
 ====================
 
-Version 2014.1
+Version 2015.2
 --------------
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/pyopencl/pyopencl>`_
+
+Version 2015.1
+--------------
+
+* Support for new-style buffer protocol
+* Numerous fixes
+
+Version 2014.1
+--------------
 
 * :ref:`ipython-integration`
 * Bug fixes

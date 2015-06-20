@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -21,8 +21,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
+
 import math
 import numpy as np
+
+import pytest
 
 
 def have_cl():
@@ -321,6 +324,127 @@ def test_bessel(ctx_factory):
                     pt.loglog(a, np.abs(cl_bessel-pyfmm_bessel), label="vs pyfmmlib")
                 pt.legend()
                 pt.show()
+
+
+@pytest.mark.parametrize("ref_src", ["pyfmmlib", "scipy"])
+def test_complex_bessel(ctx_factory, ref_src):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    if not has_double_support(ctx.devices[0]):
+        from pytest import skip
+        skip("no double precision support--cannot test complex bessel function")
+
+    v = 40
+    n = 10**5
+
+    np.random.seed(13)
+    z = (
+        np.logspace(-5, 2, n)
+        * np.exp(1j * 2 * np.pi * np.random.rand(n)))
+
+    if ref_src == "pyfmmlib":
+        pyfmmlib = pytest.importorskip("pyfmmlib")
+
+        jv_ref = np.zeros(len(z), 'complex')
+
+        vin = v+1
+
+        for i in range(len(z)):
+            ier, fjs, _, _ = pyfmmlib.jfuns2d(vin, z[i], 1, 0, 10000)
+            assert ier == 0
+            jv_ref[i] = fjs[v]
+
+    elif ref_src == "scipy":
+        spec = pytest.importorskip("scipy.special")
+        jv_ref = spec.jv(v, z)
+
+    else:
+        raise ValueError("ref_src")
+
+    z_dev = cl_array.to_device(queue, z)
+
+    jv_dev = clmath.bessel_jn(v, z_dev)
+
+    abs_err_jv = np.abs(jv_dev.get() - jv_ref)
+    abs_jv_ref = np.abs(jv_ref)
+    rel_err_jv = abs_err_jv/abs_jv_ref
+
+    # use absolute error instead if the function value itself is too small
+    tiny = 1e-300
+    ind = abs_jv_ref < tiny
+    rel_err_jv[ind] = abs_err_jv[ind]
+
+    # if the reference value is inf or nan, set the error to zero
+    ind1 = np.isinf(abs_jv_ref)
+    ind2 = np.isnan(abs_jv_ref)
+
+    rel_err_jv[ind1] = 0
+    rel_err_jv[ind2] = 0
+
+    if 0:
+        print(abs(z))
+        print(np.abs(jv_ref))
+        print(np.abs(jv_dev.get()))
+        print(rel_err_jv)
+
+    max_err = np.max(rel_err_jv)
+    assert max_err <= 2e-13, max_err
+
+    print("Jv", np.max(rel_err_jv))
+
+    if 0:
+        import matplotlib.pyplot as pt
+        pt.loglog(np.abs(z), rel_err_jv)
+        pt.show()
+
+
+@pytest.mark.parametrize("ref_src", ["pyfmmlib", "scipy"])
+def test_hankel_01_complex(ctx_factory, ref_src):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    n = 10**6
+    np.random.seed(11)
+    z = (
+        np.logspace(-5, 2, n)
+        * np.exp(1j * 2 * np.pi * np.random.rand(n)))
+
+    def get_err(check, ref):
+        return np.max(np.abs(check-ref)) / np.max(np.abs(ref))
+
+    if ref_src == "pyfmmlib":
+        pyfmmlib = pytest.importorskip("pyfmmlib")
+        h0_ref, h1_ref = pyfmmlib.hank103_vec(z, ifexpon=1)
+    elif ref_src == "scipy":
+        spec = pytest.importorskip("scipy.special")
+        h0_ref = spec.hankel1(0, z)
+        h1_ref = spec.hankel1(1, z)
+
+    else:
+        raise ValueError("ref_src")
+
+    z_dev = cl_array.to_device(queue, z)
+
+    h0_dev, h1_dev = clmath.hankel_01(z_dev)
+
+    rel_err_h0 = np.abs(h0_dev.get() - h0_ref)/np.abs(h0_ref)
+    rel_err_h1 = np.abs(h1_dev.get() - h1_ref)/np.abs(h1_ref)
+
+    max_rel_err_h0 = np.max(rel_err_h0)
+    max_rel_err_h1 = np.max(rel_err_h1)
+
+    print("H0", max_rel_err_h0)
+    print("H1", max_rel_err_h1)
+
+    assert max_rel_err_h0 < 4e-13
+    assert max_rel_err_h1 < 2e-13
+
+    if 0:
+        import matplotlib.pyplot as pt
+        pt.loglog(np.abs(z), rel_err_h0)
+        pt.loglog(np.abs(z), rel_err_h1)
+        pt.show()
 
 
 if __name__ == "__main__":

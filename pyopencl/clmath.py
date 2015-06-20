@@ -240,13 +240,28 @@ def _bessel_yn(result, n, x):
                                          np.dtype(type(n)), x.dtype)
 
 
+@cl_array.elwise_kernel_runner
+def _hankel_01(h0, h1, x):
+    if h0.dtype != h1.dtype:
+        raise TypeError("types of h0 and h1 must match")
+    return elementwise.get_hankel_01_kernel(
+            h0.context, h0.dtype, x.dtype)
+
+
 def bessel_jn(n, x, queue=None):
     result = x._new_like_me(queue=queue)
-    _bessel_jn(result, n, x)
+    _bessel_jn(result, n, x, queue=queue)
     return result
 
 
 def bessel_yn(n, x, queue=None):
     result = x._new_like_me(queue=queue)
-    _bessel_yn(result, n, x)
+    _bessel_yn(result, n, x, queue=queue)
     return result
+
+
+def hankel_01(x, queue=None):
+    h0 = x._new_like_me(queue=queue)
+    h1 = x._new_like_me(queue=queue)
+    _hankel_01(h0, h1, x, queue=queue)
+    return h0, h1

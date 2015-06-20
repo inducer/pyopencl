@@ -62,7 +62,7 @@ def test_get_info(ctx_factory):
             (cl.Program, cl.program_info.KERNEL_NAMES),
             (cl.Program, cl.program_info.NUM_KERNELS),
         ])
-    CRASH_QUIRKS = [
+    CRASH_QUIRKS = [  # noqa
             (("NVIDIA Corporation", "NVIDIA CUDA",
                 "OpenCL 1.0 CUDA 3.0.1"),
                 [
@@ -92,7 +92,7 @@ def test_get_info(ctx_factory):
                     (cl.Program, cl.program_info.SOURCE),
                     ]),
             ]
-    QUIRKS = []
+    QUIRKS = []  # noqa
 
     plat_quirk_key = (
             platform.vendor,
@@ -684,7 +684,7 @@ def test_platform_get_devices(platform):
                         getattr(cl.device_type, 'CUSTOM', None)):
             continue
         for dev in devs:
-            assert dev.type == dev_type
+            assert dev.type & dev_type == dev_type
 
 
 def test_user_event(ctx_factory):

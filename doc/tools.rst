@@ -26,7 +26,7 @@ the available memory.
 Using :class:`pyopencl.array.Array` instances with a :class:`MemoryPool` is
 not complicated::
 
-    mem_pool = cl_tools.MemoryPool(cl_tools.ImmediateAllocator(queue))
+    mem_pool = pyopencl.tools.MemoryPool(pyopencl.tools.ImmediateAllocator(queue))
     a_dev = cl_array.arange(queue, 2000, dtype=np.float32, allocator=mem_pool)
 
 .. class:: PooledBuffer

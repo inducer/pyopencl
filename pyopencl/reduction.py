@@ -41,7 +41,7 @@ import numpy as np
 
 # {{{ kernel source
 
-KERNEL = """//CL//
+KERNEL = r"""//CL//
     #define GROUP_SIZE ${group_size}
     #define READ_AND_MAP(i) (${map_expr})
     #define REDUCE(a, b) (${reduce_expr})
@@ -63,7 +63,8 @@ KERNEL = """//CL//
       __global out_type *out__base, long out__offset, ${arguments},
       unsigned int seq_count, unsigned int n)
     {
-        __global out_type *out = (__global out_type *) ((__global char *) out__base + out__offset);
+        __global out_type *out = (__global out_type *) (
+            (__global char *) out__base + out__offset);
         ${arg_prep}
 
         __local out_type ldata[GROUP_SIZE];
@@ -88,7 +89,7 @@ KERNEL = """//CL//
           cur_size = group_size
         %>
 
-        % while cur_size > no_sync_size:
+        % while cur_size > 1:
             barrier(CLK_LOCAL_MEM_FENCE);
 
             <%
@@ -106,40 +107,6 @@ KERNEL = """//CL//
             <% cur_size = new_size %>
 
         % endwhile
-
-        % if cur_size > 1:
-            ## we need to synchronize one last time for entry into the
-            ## no-sync region.
-
-            barrier(CLK_LOCAL_MEM_FENCE);
-
-            <%
-            # NB: There's an exact duplicate of this calculation in the
-            # %while loop below.
-
-            new_size = cur_size // 2
-            assert new_size * 2 == cur_size
-            %>
-
-            if (lid < ${new_size})
-            {
-                __local volatile out_type *lvdata = ldata;
-                % while cur_size > 1:
-                    <%
-                    new_size = cur_size // 2
-                    assert new_size * 2 == cur_size
-                    %>
-
-                    lvdata[lid] = REDUCE(
-                      lvdata[lid],
-                      lvdata[lid + ${new_size}]);
-
-                    <% cur_size = new_size %>
-
-                % endwhile
-
-            }
-        % endif
 
         if (lid == 0) out[get_group_id(0)] = ldata[0];
     }
@@ -185,24 +152,6 @@ def _get_reduction_source(
 
     # }}}
 
-    # {{{ compute synchronization-less group size
-
-    def get_dev_no_sync_size(device):
-        from pyopencl.characterize import get_simd_group_size
-        result = get_simd_group_size(device, out_type_size)
-
-        if result is None:
-            from warnings import warn
-            warn("Reduction might be unnecessarily slow: "
-                    "can't query SIMD group size")
-            return 1
-
-        return result
-
-    no_sync_size = min(get_dev_no_sync_size(dev) for dev in devices)
-
-    # }}}
-
     from mako.template import Template
     from pytools import all
     from pyopencl.characterize import has_double_support
@@ -210,7 +159,6 @@ def _get_reduction_source(
         out_type=out_type,
         arguments=", ".join(arg.declarator() for arg in parsed_args),
         group_size=group_size,
-        no_sync_size=no_sync_size,
         neutral=neutral,
         reduce_expr=_process_code_for_macro(reduce_expr),
         map_expr=_process_code_for_macro(map_expr),
@@ -325,8 +273,8 @@ class ReductionKernel:
                 "that have at least one vector argument"
 
     def __call__(self, *args, **kwargs):
-        MAX_GROUP_COUNT = 1024
-        SMALL_SEQ_COUNT = 4
+        MAX_GROUP_COUNT = 1024  # noqa
+        SMALL_SEQ_COUNT = 4  # noqa
 
         from pyopencl.array import empty
 
@@ -392,7 +340,8 @@ class ReductionKernel:
                     use_queue,
                     (group_count*stage_inf.group_size,),
                     (stage_inf.group_size,),
-                    *([result.base_data, result.offset] + invocation_args + [seq_count, sz]),
+                    *([result.base_data, result.offset]
+                        + invocation_args + [seq_count, sz]),
                     **dict(wait_for=wait_for))
             wait_for = [last_evt]
 
@@ -473,7 +422,15 @@ def get_sum_kernel(ctx, dtype_out, dtype_in):
     if dtype_out is None:
         dtype_out = dtype_in
 
-    return ReductionKernel(ctx, dtype_out, "0", "a+b",
+    reduce_expr = "a+b"
+    neutral_expr = "0"
+    if dtype_out.kind == "c":
+        from pyopencl.elementwise import complex_dtype_to_name
+        dtname = complex_dtype_to_name(dtype_out)
+        reduce_expr = "%s_add(a, b)" % dtname
+        neutral_expr = "%s_new(0, 0)" % dtname
+
+    return ReductionKernel(ctx, dtype_out, neutral_expr, reduce_expr,
             arguments="const %(tp)s *in"
             % {"tp": dtype_to_ctype(dtype_in)})
 
@@ -492,49 +449,30 @@ def _get_dot_expr(dtype_out, dtype_a, dtype_b, conjugate_first,
                 dtype_a.type(0), dtype_b.type(0),
                 has_double_support)
 
-    a_real_dtype = dtype_a.type(0).real.dtype
-    b_real_dtype = dtype_b.type(0).real.dtype
-    out_real_dtype = dtype_out.type(0).real.dtype
-
     a_is_complex = dtype_a.kind == "c"
     b_is_complex = dtype_b.kind == "c"
-    out_is_complex = dtype_out.kind == "c"
 
     from pyopencl.elementwise import complex_dtype_to_name
 
-    if a_is_complex and b_is_complex:
-        a = "a[%s]" % index_expr
-        b = "b[%s]" % index_expr
-        if dtype_a != dtype_out:
-            a = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), a)
-        if dtype_b != dtype_out:
-            b = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), b)
+    a = "a[%s]" % index_expr
+    b = "b[%s]" % index_expr
 
-        if conjugate_first and a_is_complex:
-            a = "%s_conj(%s)" % (
-                    complex_dtype_to_name(dtype_out), a)
+    if a_is_complex and (dtype_a != dtype_out):
+        a = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), a)
+    if b_is_complex and (dtype_b != dtype_out):
+        b = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), b)
 
-        map_expr = "%s_mul(%s, %s)" % (
-                complex_dtype_to_name(dtype_out), a, b)
+    if a_is_complex and conjugate_first and a_is_complex:
+        a = "%s_conj(%s)" % (
+                complex_dtype_to_name(dtype_out), a)
+
+    if a_is_complex and not b_is_complex:
+        map_expr = "%s_mulr(%s, %s)" % (complex_dtype_to_name(dtype_out), a, b)
+    elif not a_is_complex and b_is_complex:
+        map_expr = "%s_rmul(%s, %s)" % (complex_dtype_to_name(dtype_out), a, b)
+    elif a_is_complex and b_is_complex:
+        map_expr = "%s_mul(%s, %s)" % (complex_dtype_to_name(dtype_out), a, b)
     else:
-        a = "a[%s]" % index_expr
-        b = "b[%s]" % index_expr
-
-        if out_is_complex:
-            if a_is_complex and dtype_a != dtype_out:
-                a = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), a)
-            if b_is_complex and dtype_b != dtype_out:
-                b = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), b)
-
-            if not a_is_complex and a_real_dtype != out_real_dtype:
-                a = "(%s) (%s)" % (dtype_to_ctype(out_real_dtype), a)
-            if not b_is_complex and b_real_dtype != out_real_dtype:
-                b = "(%s) (%s)" % (dtype_to_ctype(out_real_dtype), b)
-
-        if conjugate_first and a_is_complex:
-            a = "%s_conj(%s)" % (
-                    complex_dtype_to_name(dtype_out), a)
-
         map_expr = "%s*%s" % (a, b)
 
     return map_expr, dtype_out, dtype_b
@@ -548,14 +486,22 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None,
             dtype_out, dtype_a, dtype_b, conjugate_first,
             has_double_support=has_double_support(ctx.devices[0]))
 
-    return ReductionKernel(ctx, dtype_out, neutral="0",
-            reduce_expr="a+b", map_expr=map_expr,
-            arguments=
-            "const %(tp_a)s *a, "
-            "const %(tp_b)s *b" % {
-                "tp_a": dtype_to_ctype(dtype_a),
-                "tp_b": dtype_to_ctype(dtype_b),
-                })
+    reduce_expr = "a+b"
+    neutral_expr = "0"
+    if dtype_out.kind == "c":
+        from pyopencl.elementwise import complex_dtype_to_name
+        dtname = complex_dtype_to_name(dtype_out)
+        reduce_expr = "%s_add(a, b)" % dtname
+        neutral_expr = "%s_new(0, 0)" % dtname
+
+    return ReductionKernel(ctx, dtype_out, neutral=neutral_expr,
+            reduce_expr=reduce_expr, map_expr=map_expr,
+            arguments=(
+                "const %(tp_a)s *a, "
+                "const %(tp_b)s *b" % {
+                    "tp_a": dtype_to_ctype(dtype_a),
+                    "tp_b": dtype_to_ctype(dtype_b),
+                    }))
 
 
 @context_dependent_memoize
@@ -570,14 +516,14 @@ def get_subset_dot_kernel(ctx, dtype_out, dtype_subset, dtype_a=None, dtype_b=No
     # important: lookup_tbl must be first--it controls the length
     return ReductionKernel(ctx, dtype_out, neutral="0",
             reduce_expr="a+b", map_expr=map_expr,
-            arguments=
-            "const %(tp_lut)s *lookup_tbl, "
-            "const %(tp_a)s *a, "
-            "const %(tp_b)s *b" % {
-            "tp_lut": dtype_to_ctype(dtype_subset),
-            "tp_a": dtype_to_ctype(dtype_a),
-            "tp_b": dtype_to_ctype(dtype_b),
-            })
+            arguments=(
+                "const %(tp_lut)s *lookup_tbl, "
+                "const %(tp_a)s *a, "
+                "const %(tp_b)s *b" % {
+                    "tp_lut": dtype_to_ctype(dtype_subset),
+                    "tp_a": dtype_to_ctype(dtype_a),
+                    "tp_b": dtype_to_ctype(dtype_b),
+                    }))
 
 
 def get_minmax_neutral(what, dtype):
@@ -628,12 +574,13 @@ def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
             neutral=get_minmax_neutral(what, dtype),
             reduce_expr="%(reduce_expr)s" % {"reduce_expr": reduce_expr},
             map_expr="in[lookup_tbl[i]]",
-            arguments=
-            "const %(tp_lut)s *lookup_tbl, "
-            "const %(tp)s *in" % {
-            "tp": dtype_to_ctype(dtype),
-            "tp_lut": dtype_to_ctype(dtype_subset),
-            }, preamble="#define MY_INFINITY (1./0)")
+            arguments=(
+                "const %(tp_lut)s *lookup_tbl, "
+                "const %(tp)s *in" % {
+                    "tp": dtype_to_ctype(dtype),
+                    "tp_lut": dtype_to_ctype(dtype_subset),
+                    }),
+            preamble="#define MY_INFINITY (1./0)")
 
 # }}}
 
