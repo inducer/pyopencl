@@ -313,19 +313,6 @@ def get_simd_group_size(dev, type_size):
 
     if dev.type & cl.device_type.CPU:
         # implicit assumption: Impl. will vectorize
-
-        if type_size == 1:
-            return dev.preferred_vector_width_char
-        elif type_size == 2:
-            return dev.preferred_vector_width_short
-        elif type_size == 4:
-            return dev.preferred_vector_width_float
-        elif type_size == 8:
-            return dev.preferred_vector_width_double
-        else:
-            from warnings import warn
-            warn("unexpected dtype size in get_simd_group on CPU device, "
-                    "guessing group width 1")
-            return 1
+        return 1
 
     return None

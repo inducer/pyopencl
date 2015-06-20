@@ -41,7 +41,7 @@ import numpy as np
 
 # {{{ kernel source
 
-KERNEL = """//CL//
+KERNEL = r"""//CL//
     #define GROUP_SIZE ${group_size}
     #define READ_AND_MAP(i) (${map_expr})
     #define REDUCE(a, b) (${reduce_expr})
