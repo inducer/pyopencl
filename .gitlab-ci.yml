@@ -39,7 +39,7 @@ Python 2.7 K20:
   script:
   - export PY_EXE=python2.7
   - export PYOPENCL_TEST=nvi:k20
-  - exprot EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
@@ -51,7 +51,7 @@ PyPy AMD CPU:
   script:
   - export PY_EXE=pypy
   - export PYOPENCL_TEST=amd:pu
-  - exprot EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
