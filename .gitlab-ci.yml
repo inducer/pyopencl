@@ -1,7 +1,7 @@
 Python 2.7 AMD CPU:
   script:
   - py_version=2.7
-  - cl_dev=amd_pu
+  - export PYOPENCL_TEST=amd:pu
   - EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -13,7 +13,7 @@ Python 2.7 AMD CPU:
 Python 3.4 AMD CPU:
   script:
   - py_version=3.4
-  - cl_dev=amd_pu
+  - export PYOPENCL_TEST=amd:pu
   - EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -25,7 +25,7 @@ Python 3.4 AMD CPU:
 Python 2.6 AMD CPU:
   script:
   - py_version=2.6
-  - cl_dev=amd_pu
+  - export PYOPENCL_TEST=amd:pu
   - EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -37,7 +37,7 @@ Python 2.6 AMD CPU:
 Python 2.7 K20:
   script:
   - py_version=2.7
-  - cl_dev=nvi_k20
+  - export PYOPENCL_TEST=nvi:k20
   - EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
