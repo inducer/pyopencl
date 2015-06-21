@@ -24,7 +24,7 @@ lines:
 .. doctest::
 
     >>> my_struct = np.dtype([("field1", np.int32), ("field2", np.float32)])
-    >>> print my_struct
+    >>> print(my_struct)
     [('field1', '<i4'), ('field2', '<f4')]
 
 .. note::
@@ -41,7 +41,7 @@ match our dtype against CL's version:
 
     >>> my_struct, my_struct_c_decl = cl.tools.match_dtype_to_c_struct(
     ...    ctx.devices[0], "my_struct", my_struct)
-    >>> print my_struct_c_decl
+    >>> print(my_struct_c_decl)
     typedef struct {
       int field1;
       float field2;
@@ -64,7 +64,7 @@ the device:
     >>> ary_host["field1"].fill(217)
     >>> ary_host["field2"].fill(1000)
     >>> ary_host[13]["field2"] = 12
-    >>> print ary_host
+    >>> print(ary_host)
     [(217, 1000.0) (217, 1000.0) (217, 1000.0) (217, 1000.0) (217, 1000.0)
      (217, 1000.0) (217, 1000.0) (217, 1000.0) (217, 1000.0) (217, 1000.0)
      (217, 1000.0) (217, 1000.0) (217, 1000.0) (217, 12.0) (217, 1000.0)
@@ -84,7 +84,7 @@ We can then operate on the array with our own kernels:
     ...     """).build()
 
     >>> evt = prg.set_to_1(queue, ary.shape, None, ary.data)
-    >>> print ary
+    >>> print(ary)
     [(1, 1000.0) (1, 1000.0) (1, 1000.0) (1, 1000.0) (1, 1000.0) (1, 1000.0)
      (1, 1000.0) (1, 1000.0) (1, 1000.0) (1, 1000.0) (1, 1000.0) (1, 1000.0)
      (1, 1000.0) (1, 12.0) (1, 1000.0) (1, 1000.0) (1, 1000.0) (1, 1000.0)
@@ -92,11 +92,13 @@ We can then operate on the array with our own kernels:
 
 as well as with PyOpenCL's built-in operations:
 
+.. doctest::
+
     >>> from pyopencl.elementwise import ElementwiseKernel
     >>> elwise = ElementwiseKernel(ctx, "my_struct *a", "a[i].field1 = 2;",
     ...    preamble=my_struct_c_decl)
     >>> evt = elwise(ary)
-    >>> print ary
+    >>> print(ary)
     [(2, 1000.0) (2, 1000.0) (2, 1000.0) (2, 1000.0) (2, 1000.0) (2, 1000.0)
      (2, 1000.0) (2, 1000.0) (2, 1000.0) (2, 1000.0) (2, 1000.0) (2, 1000.0)
      (2, 1000.0) (2, 12.0) (2, 1000.0) (2, 1000.0) (2, 1000.0) (2, 1000.0)
