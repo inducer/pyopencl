@@ -766,9 +766,16 @@ _add_functionality()
 
 def create_some_context(interactive=None, answers=None):
     import os
-    if answers is None and "PYOPENCL_CTX" in os.environ:
-        ctx_spec = os.environ["PYOPENCL_CTX"]
-        answers = ctx_spec.split(":")
+    if answers is None:
+        if "PYOPENCL_CTX" in os.environ:
+            ctx_spec = os.environ["PYOPENCL_CTX"]
+            answers = ctx_spec.split(":")
+
+        if "PYOPENCL_TEST" in os.environ:
+            from pyopencl.tools import get_test_platforms_and_devices
+            for plat, devs in get_test_platforms_and_devices():
+                for dev in devs:
+                    return Context([dev])
 
     if answers is not None:
         pre_provided_answers = answers
