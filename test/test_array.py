@@ -1,8 +1,5 @@
 #! /usr/bin/env python
-from __future__ import division, with_statement
-from __future__ import absolute_import
-from __future__ import print_function
-from six.moves import range
+from __future__ import division, with_statement, absolute_import, print_function
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -29,6 +26,8 @@ THE SOFTWARE.
 import numpy as np
 import numpy.linalg as la
 import sys
+
+from six.moves import range
 
 import pyopencl as cl
 import pyopencl.array as cl_array
@@ -475,12 +474,12 @@ def test_stride_preservation(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    A = np.random.rand(3, 3)
-    AT = A.T
-    print(AT.flags.f_contiguous, AT.flags.c_contiguous)
-    AT_GPU = cl_array.to_device(queue, AT)
-    print(AT_GPU.flags.f_contiguous, AT_GPU.flags.c_contiguous)
-    assert np.allclose(AT_GPU.get(), AT)
+    a = np.random.rand(3, 3)
+    at = a.T
+    print(at.flags.f_contiguous, at.flags.c_contiguous)
+    at_gpu = cl_array.to_device(queue, at)
+    print(at_gpu.flags.f_contiguous, at_gpu.flags.c_contiguous)
+    assert np.allclose(at_gpu.get(), at)
 
 
 def test_nan_arithmetic(ctx_factory):
@@ -661,18 +660,18 @@ def test_any_all(ctx_factory):
     l = 20000
     a_dev = cl_array.zeros(queue, (l,), dtype=np.int8)
 
-    assert not a_dev.all()
-    assert not a_dev.any()
+    assert not a_dev.all().get()
+    assert not a_dev.any().get()
 
     a_dev[15213] = 1
 
-    assert not a_dev.all()
-    assert a_dev.any()
+    assert not a_dev.all().get()
+    assert a_dev.any().get()
 
     a_dev.fill(1)
 
-    assert a_dev.all()
-    assert a_dev.any()
+    assert a_dev.all().get()
+    assert a_dev.any().get()
 
 # }}}
 
@@ -710,16 +709,16 @@ def test_view_and_strides(ctx_factory):
 
     from pyopencl.clrandom import rand as clrand
 
-    X = clrand(queue, (5, 10), dtype=np.float32)
-    Y = X[:3, :5]
-    y = Y.view()
+    x = clrand(queue, (5, 10), dtype=np.float32)
+    y = x[:3, :5]
+    yv = y.view()
 
-    assert y.shape == Y.shape
-    assert y.strides == Y.strides
+    assert yv.shape == y.shape
+    assert yv.strides == y.strides
 
     import pytest
     with pytest.raises(AssertionError):
-        assert (y.get() == X.get()[:3, :5]).all()
+        assert (yv.get() == x.get()[:3, :5]).all()
 
 
 def test_meshmode_view(ctx_factory):
