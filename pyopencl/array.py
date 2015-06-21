@@ -1,6 +1,11 @@
 """CL device arrays."""
 
 from __future__ import division
+from __future__ import absolute_import
+import six
+from six.moves import range
+from six.moves import zip
+from functools import reduce
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -129,7 +134,7 @@ def _create_vector_types():
                 array = eval("array(padded_args, dtype=dtype)",
                         dict(array=np.array, padded_args=padded_args,
                         dtype=dtype))
-                for key, val in kwargs.items():
+                for key, val in list(kwargs.items()):
                     array[key] = val
                 return array
 
@@ -159,7 +164,7 @@ def splay(queue, n, kernel_specific_max_wg_size=None):
     max_work_items = _builtin_min(128, dev.max_work_group_size)
 
     if kernel_specific_max_wg_size is not None:
-        from __builtin__ import min
+        from six.moves.builtins import min
         max_work_items = min(max_work_items, kernel_specific_max_wg_size)
 
     min_work_items = _builtin_min(32, max_work_items)
@@ -512,7 +517,7 @@ class Array(object):
             if sys.version_info >= (3,):
                 admissible_types = (int, np.integer)
             else:
-                admissible_types = (int, long, np.integer)
+                admissible_types = (np.integer,) + six.integer_types
 
             if not isinstance(shape, admissible_types):
                 raise TypeError("shape must either be iterable or "
@@ -1286,7 +1291,7 @@ class Array(object):
         order = kwargs.pop("order", "C")
         if kwargs:
             raise TypeError("unexpected keyword arguments: %s"
-                    % kwargs.keys())
+                    % list(kwargs.keys()))
 
         if order not in "CF":
             raise ValueError("order must be either 'C' or 'F'")
@@ -1369,7 +1374,7 @@ class Array(object):
             # Calculate new strides for all axes currently worked with
             if order == "F":
                 newstrides[ni] = oldstrides[oi]
-                for nk in xrange(ni+1, nj):
+                for nk in range(ni+1, nj):
                     newstrides[nk] = newstrides[nk - 1]*newdims[nk - 1]
             else:
                 # C order
@@ -1780,7 +1785,7 @@ def arange(queue, *args, **kwargs):
         raise ValueError("too many arguments")
 
     admissible_names = ["start", "stop", "step", "dtype", "allocator"]
-    for k, v in kwargs.iteritems():
+    for k, v in six.iteritems(kwargs):
         if k in admissible_names:
             if getattr(inf, k) is None:
                 setattr(inf, k, v)

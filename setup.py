@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 
@@ -109,11 +111,6 @@ def main():
     exec(compile(version_file_contents, "pyopencl/version.py", 'exec'), ver_dic)
 
     SEPARATOR = "-"*75
-    try:
-        from distutils.command.build_py import build_py_2to3 as build_py
-    except ImportError:
-        # 2.x
-        from distutils.command.build_py import build_py
 
     try:
         import mako  # noqa
@@ -246,8 +243,6 @@ def main():
                         ]
                     },
 
-            # 2to3 invocation
-            cmdclass={'build_py': build_py},
             zip_safe=False)
 
 

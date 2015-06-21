@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import setuptools  # noqa
 from setuptools import Extension
 
@@ -278,11 +280,11 @@ class ConfigSchema:
         if "__builtins__" in filevars:
             del filevars["__builtins__"]
 
-        for key, value in config.items():
+        for key, value in list(config.items()):
             if value is not None:
                 filevars[key] = value
 
-        keys = filevars.keys()
+        keys = list(filevars.keys())
         keys.sort()
 
         outf = open(filename, "w")

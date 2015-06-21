@@ -1,4 +1,7 @@
 from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
+from six.moves import range
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -77,12 +80,12 @@ def _get_time(queue, f, timer_factory=None, desired_duration=0.1,
     while True:
         timer = timer_factory(queue)
 
-        for i in xrange(warmup_rounds):
+        for i in range(warmup_rounds):
             f()
         warmup_rounds = 0
 
         timer.start()
-        for i in xrange(count):
+        for i in range(count):
             timer.add_event(f())
         timer.stop()
 
@@ -191,7 +194,7 @@ def _get_full_machine_kernel_rate(queue, src, args, name="benchmark", timer_fact
     while True:
         elapsed = _get_time(queue, f, timer_factory=timer_factory)
         rate = global_size/elapsed
-        print global_size, rate, num_dips
+        print(global_size, rate, num_dips)
 
         keep_trying = not rates
 

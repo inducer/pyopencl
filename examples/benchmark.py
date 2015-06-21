@@ -1,6 +1,7 @@
 # example provided by Roger Pau Monn'e
 
 from __future__ import print_function
+from __future__ import absolute_import
 import pyopencl as cl
 import numpy
 import numpy.linalg as la

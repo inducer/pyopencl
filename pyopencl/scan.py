@@ -1,6 +1,10 @@
 """Scan primitive."""
 
 from __future__ import division
+from __future__ import absolute_import
+import six
+from six.moves import range
+from six.moves import zip
 
 __copyright__ = """
 Copyright 2011-2012 Andreas Kloeckner
@@ -1237,7 +1241,7 @@ class GenericScanKernel(_GenericScanKernelBase):
 
                 + k_group_size*wg_size*sum(
                     arg_dtypes[arg_name].itemsize
-                    for arg_name, ife_offsets in fetch_expr_offsets.items()
+                    for arg_name, ife_offsets in list(fetch_expr_offsets.items())
                     if -1 in ife_offsets or len(ife_offsets) > 1))
 
     def build_scan_kernel(self, max_wg_size, arguments, input_expr,
@@ -1536,7 +1540,7 @@ class _LegacyScanKernelBase(GenericScanKernel):
         if output_ary is None:
             output_ary = input_ary
 
-        if isinstance(output_ary, (str, unicode)) and output_ary == "new":
+        if isinstance(output_ary, (str, six.text_type)) and output_ary == "new":
             output_ary = cl.array.empty_like(input_ary, allocator=allocator)
 
         if input_ary.shape != output_ary.shape:

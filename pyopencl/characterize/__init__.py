@@ -1,4 +1,8 @@
 from __future__ import division
+from __future__ import absolute_import
+import six
+from six.moves import range
+from six.moves import zip
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -211,7 +215,7 @@ def why_not_local_access_conflict_free(dev, itemsize,
     for work_item_axis in range(rank):
 
         bank_accesses = {}
-        for work_item_id in xrange(sim_wi):
+        for work_item_id in range(sim_wi):
             addr = 0
             addr_mult = itemsize
 
@@ -238,10 +242,10 @@ def why_not_local_access_conflict_free(dev, itemsize,
                     "w.item %s -> %s" % (work_item_id, idx[::-1]))
 
         conflict_multiplicity = max(
-                len(acc) for acc in bank_accesses.itervalues())
+                len(acc) for acc in six.itervalues(bank_accesses))
 
         if conflict_multiplicity > 1:
-            for bank, acc in bank_accesses.iteritems():
+            for bank, acc in six.iteritems(bank_accesses):
                 if len(acc) == conflict_multiplicity:
                     conflicts.append(
                             (conflict_multiplicity,

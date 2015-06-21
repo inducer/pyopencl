@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import pyopencl as cl
 import pyopencl.array as cl_array
 import numpy
@@ -48,7 +50,7 @@ complex_prod(5, a_gpu, b_gpu, c_gpu)
 
 c_gpu_real = cl_array.empty(queue, len(a_gpu), dtype=numpy.float32)
 real_part(c_gpu, c_gpu_real)
-print c_gpu.get().real - c_gpu_real.get()
+print(c_gpu.get().real - c_gpu_real.get())
 
-print la.norm(c_gpu.get() - (5*a_gpu.get()*b_gpu.get()))
+print(la.norm(c_gpu.get() - (5*a_gpu.get()*b_gpu.get())))
 assert la.norm(c_gpu.get() - (5*a_gpu.get()*b_gpu.get())) < 1e-5

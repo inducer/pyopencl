@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import pyopencl as cl
 from optparse import OptionParser
 
@@ -76,8 +78,8 @@ for platform in cl.get_platforms():
                                     str_chd_type(iform.channel_data_type))
                                 for iform in formats)
 
-                    print "%s %s FORMATS: %s\n" % (
+                    print("%s %s FORMATS: %s\n" % (
                             cl.mem_object_type.to_string(itype),
                             cl.mem_flags.to_string(mf),
-                            formats)
+                            formats))
             del ctx

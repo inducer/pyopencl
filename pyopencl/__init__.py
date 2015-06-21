@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
+import six
+from six.moves import zip
+from six.moves import input
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -114,7 +119,7 @@ class Program(object):
             context, source = arg1, arg2
 
             import sys
-            if isinstance(source, unicode) and sys.version_info < (3,):
+            if isinstance(source, six.text_type) and sys.version_info < (3,):
                 from warnings import warn
                 warn("Received OpenCL source code in Unicode, "
                      "should be ASCII string. Attempting conversion.",
@@ -178,7 +183,7 @@ class Program(object):
     def build(self, options=[], devices=None, cache_dir=None):
         if isinstance(options, str):
             options = [options]
-        elif isinstance(options, unicode):
+        elif isinstance(options, six.text_type):
             options = [options.encode("utf8")]
 
         options = (options
@@ -219,7 +224,7 @@ class Program(object):
     def _build_and_catch_errors(self, build_func, options, source=None):
         try:
             return build_func()
-        except _cl.RuntimeError, e:
+        except _cl.RuntimeError as e:
             from pytools import Record
 
             class ErrorRecord(Record):
@@ -319,8 +324,8 @@ def _add_functionality():
 
         return property(result)
 
-    for cls, (info_method, info_class) in cls_to_info_cls.iteritems():
-        for info_name, info_value in info_class.__dict__.iteritems():
+    for cls, (info_method, info_class) in six.iteritems(cls_to_info_cls):
+        for info_name, info_value in six.iteritems(info_class.__dict__):
             if info_name == "to_string" or info_name.startswith("_"):
                 continue
 
@@ -419,7 +424,7 @@ def _add_functionality():
         err = None
         try:
             self._build(options=options, devices=devices)
-        except Exception, e:
+        except Exception as e:
             from pytools import Record
 
             class ErrorRecord(Record):
@@ -504,7 +509,7 @@ def _add_functionality():
         if kwargs:
             raise TypeError(
                     "Kernel.__call__ recived unexpected keyword arguments: %s"
-                    % ", ".join(kwargs.keys()))
+                    % ", ".join(list(kwargs.keys())))
 
         self.set_args(*args)
 
@@ -549,7 +554,7 @@ def _add_functionality():
                         self.set_arg(i, pack(arg_type_char, arg))
                     else:
                         self.set_arg(i, arg)
-        except LogicError, e:
+        except LogicError as e:
             if i is not None:
                 advice = ""
                 from pyopencl.array import Array
@@ -796,7 +801,7 @@ def create_some_context(interactive=None, answers=None):
 
     def cc_print(s):
         if interactive:
-            print s
+            print(s)
 
     def get_input(prompt):
         if answers:
@@ -804,7 +809,7 @@ def create_some_context(interactive=None, answers=None):
         elif not interactive:
             return ''
         else:
-            user_input = raw_input(prompt)
+            user_input = input(prompt)
             user_inputs.append(user_input)
             return user_input
 

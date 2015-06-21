@@ -1,4 +1,8 @@
 from __future__ import division, with_statement
+from __future__ import absolute_import
+from __future__ import print_function
+import six
+from six.moves import range
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -170,11 +174,11 @@ class FortranExpressionParser(ExpressionParserBase):
             if value.startswith("."):
                 prev_value = value
                 value = "0"+value
-                print value, prev_value
+                print(value, prev_value)
             elif value.startswith("-."):
                 prev_value = value
                 value = "-0"+value[1:]
-                print value, prev_value
+                print(value, prev_value)
             return TypedLiteral(value, dtype)
 
         elif next_tag is _identifier:
@@ -604,8 +608,8 @@ class Scope(object):
 
     def known_names(self):
         return (self.used_names
-                | set(self.dim_map.iterkeys())
-                | set(self.type_map.iterkeys()))
+                | set(six.iterkeys(self.dim_map))
+                | set(six.iterkeys(self.type_map)))
 
     def is_known(self, name):
         return (name in self.used_names
@@ -1314,7 +1318,7 @@ class F2CLTranslator(FTreeWalkerBase):
                         % node.loopcontrol)
 
             if not isinstance(step, int):
-                print type(step)
+                print(type(step))
                 raise TranslationError(
                         "non-constant steps not yet supported: %s" % step)
 
