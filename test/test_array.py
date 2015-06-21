@@ -660,18 +660,18 @@ def test_any_all(ctx_factory):
     l = 20000
     a_dev = cl_array.zeros(queue, (l,), dtype=np.int8)
 
-    assert not a_dev.all()
-    assert not a_dev.any()
+    assert not a_dev.all().get()
+    assert not a_dev.any().get()
 
     a_dev[15213] = 1
 
-    assert not a_dev.all()
-    assert a_dev.any()
+    assert not a_dev.all().get()
+    assert a_dev.any().get()
 
     a_dev.fill(1)
 
-    assert a_dev.all()
-    assert a_dev.any()
+    assert a_dev.all().get()
+    assert a_dev.any().get()
 
 # }}}
 
