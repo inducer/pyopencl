@@ -10,6 +10,19 @@ Python 2.7 AMD CPU:
   - amd-cl-cpu
   except:
   - tags
+Python 2.7 Intel CPU:
+  script:
+  - export PY_EXE=python2.7
+  - export PYOPENCL_TEST="intel(r):pu"
+  - export EXTRA_INSTALL="numpy mako"
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python2.7
+  - intel-cl-cpu
+  except:
+  - tags
+  - cffi
 Python 3.4 AMD CPU:
   script:
   - export PY_EXE=python3.4
@@ -47,15 +60,16 @@ Python 2.7 K20:
   - cuda
   except:
   - tags
-PyPy AMD CPU:
+PyPy Intel CPU:
   script:
   - export PY_EXE=pypy
-  - export PYOPENCL_TEST=amd:pu
+  - export PYOPENCL_TEST="intel(r):pu"
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - pypy
+  - intel-cl-cpu
   except:
   - tags
   - master
