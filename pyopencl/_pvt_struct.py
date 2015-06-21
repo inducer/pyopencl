@@ -1,4 +1,5 @@
 from __future__ import division
+from __future__ import absolute_import
 
 __copyright__ = """
 Copyright (C) 2013 Marko Bencun

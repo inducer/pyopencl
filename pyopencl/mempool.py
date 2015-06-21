@@ -1,4 +1,6 @@
 from __future__ import division
+from __future__ import absolute_import
+import six
 
 __copyright__ = """
 Copyright (C) 2014 Andreas Kloeckner
@@ -39,7 +41,7 @@ class AllocatorBase(object):
         while try_count < 2:
             try:
                 return self.allocate(nbytes)
-            except cl.Error, e:
+            except cl.Error as e:
                 if not e.is_out_of_memory():
                     raise
                 try_count += 1
@@ -158,7 +160,7 @@ class MemoryPool(object):
         self.free_held()
 
     def free_held(self):
-        for bin_nr, bin_list in self.bin_nr_to_bin.iteritems():
+        for bin_nr, bin_list in six.iteritems(self.bin_nr_to_bin):
             while bin_list:
                 self.allocator.free(bin_list.pop())
 
@@ -166,7 +168,7 @@ class MemoryPool(object):
     def held_blocks(self):
         return sum(
                 len(bin_list)
-                for bin_list in self.bin_nr_to_bin.itervalues())
+                for bin_list in six.itervalues(self.bin_nr_to_bin))
 
     def allocate(self, size):
         bin_nr = self.bin_number(size)
@@ -238,7 +240,7 @@ class MemoryPool(object):
             self.allocator.free(buf)
 
     def _try_to_free_memory(self):
-        for bin_nr, bin_list in self.bin_nr_to_bin.iteritems():
+        for bin_nr, bin_list in six.iteritems(self.bin_nr_to_bin):
             while bin_list:
                 self.allocator.free(bin_list.pop())
                 self.held_blocks -= 1

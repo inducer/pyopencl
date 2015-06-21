@@ -1,4 +1,8 @@
 from __future__ import division
+from __future__ import absolute_import
+from six.moves import map
+from six.moves import range
+from six.moves import zip
 
 __copyright__ = """
 Copyright (C) 2013 Marko Bencun
@@ -80,7 +84,7 @@ class _CArray(object):
         return self.ptr[0].__getitem__(key)
 
     def __iter__(self):
-        for i in xrange(self.size[0]):
+        for i in range(self.size[0]):
             yield self[i]
 
 # }}}
@@ -105,7 +109,7 @@ def _generic_info_to_python(info):
             }[info.opaque_class]
 
         if type_.endswith(']'):
-            ret = map(klass._create, value)
+            ret = list(map(klass._create, value))
             _lib.free_pointer(info.value)
             return ret
         else:
@@ -113,7 +117,7 @@ def _generic_info_to_python(info):
     if type_ == 'char*':
         ret = _ffi_pystr(value)
     elif type_.startswith('char*['):
-        ret = map(_ffi_pystr, value)
+        ret = list(map(_ffi_pystr, value))
         _lib.free_pointer_array(info.value, len(value))
     elif type_.endswith(']'):
         if type_.startswith('char['):
@@ -493,7 +497,7 @@ class Platform(_Common):
         _handle_error(_lib.platform__get_devices(
             self.ptr, devices.ptr, devices.size, device_type))
         return [Device._create(devices.ptr[0][i])
-                for i in xrange(devices.size[0])]
+                for i in range(devices.size[0])]
 
 
 def unload_platform_compiler(plat):
@@ -504,7 +508,7 @@ def get_platforms():
     platforms = _CArray(_ffi.new('clobj_t**'))
     _handle_error(_lib.get_platforms(platforms.ptr, platforms.size))
     return [Platform._create(platforms.ptr[0][i])
-            for i in xrange(platforms.size[0])]
+            for i in range(platforms.size[0])]
 
 # }}}
 
@@ -520,7 +524,7 @@ class Device(_Common):
         _handle_error(_lib.device__create_sub_devices(
             self.ptr, devices.ptr, devices.size, props))
         return [Device._create(devices.ptr[0][i])
-                for i in xrange(devices.size[0])]
+                for i in range(devices.size[0])]
 
     def create_sub_devices_ext(self, props):
         props = (tuple(props) +
@@ -529,7 +533,7 @@ class Device(_Common):
         _handle_error(_lib.device__create_sub_devices_ext(
             self.ptr, devices.ptr, devices.size, props))
         return [Device._create(devices.ptr[0][i])
-                for i in xrange(devices.size[0])]
+                for i in range(devices.size[0])]
 
 # }}}
 
@@ -919,8 +923,8 @@ class _Program(_Common):
 
     def compile(self, options="", devices=None, headers=[]):
         _devs, num_devs = _clobj_list(devices)
-        _prgs, names = zip(*((prg.ptr, _to_cstring(name))
-                             for (name, prg) in headers))
+        _prgs, names = list(zip(*((prg.ptr, _to_cstring(name))
+                             for (name, prg) in headers)))
         _handle_error(_lib.program__compile(
             self.ptr, _to_cstring(options), _devs, num_devs,
             _prgs, names, len(names)))
@@ -947,7 +951,7 @@ class _Program(_Common):
         knls = _CArray(_ffi.new('clobj_t**'))
         _handle_error(_lib.platform__get_devices(
             self.ptr, knls.ptr, knls.size))
-        return [Kernel._create(knls.ptr[0][i]) for i in xrange(knls.size[0])]
+        return [Kernel._create(knls.ptr[0][i]) for i in range(knls.size[0])]
 
 # }}}
 
@@ -1078,7 +1082,7 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size,
         if g_times_l:
             if not global_size_copied:
                 global_work_size = list(global_work_size)
-            for i in xrange(work_dim):
+            for i in range(work_dim):
                 global_work_size[i] *= local_work_size[i]
 
     if global_work_offset is not None:
