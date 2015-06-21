@@ -1,6 +1,9 @@
 """Various helpful bits and pieces without much of a common theme."""
 
 from __future__ import division
+from __future__ import absolute_import
+import six
+from six.moves import zip
 
 __copyright__ = "Copyright (C) 2010 Andreas Kloeckner"
 
@@ -119,8 +122,8 @@ def first_arg_dependent_memoize_nested(nested_func):
 
     from functools import wraps
     cache_dict_name = intern("_memoize_inner_dic_%s_%s_%d"
-            % (nested_func.__name__, nested_func.func_code.co_filename,
-                nested_func.func_code.co_firstlineno))
+            % (nested_func.__name__, nested_func.__code__.co_filename,
+                nested_func.__code__.co_firstlineno))
 
     from inspect import currentframe
     # prevent ref cycle
@@ -271,7 +274,7 @@ def pytest_generate_tests_for_pyopencl(metafunc):
 
                 metafunc.addcall(funcargs=arg_dict.copy(),
                         id=", ".join("%s=%s" % (arg, value)
-                                for arg, value in arg_dict.iteritems()))
+                                for arg, value in six.iteritems(arg_dict)))
 
     elif "platform" in metafunc.funcargnames:
         for platform, plat_devs in test_plat_and_dev:
@@ -459,7 +462,7 @@ class _CDeclList:
         if dtype in vec.type_to_scalar_and_count:
             return
 
-        for name, field_data in dtype.fields.iteritems():
+        for name, field_data in six.iteritems(dtype.fields):
             field_dtype, offset = field_data[:2]
             self.add_dtype(field_dtype)
 
@@ -537,8 +540,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     function, not the original one.
     """
 
-    fields = sorted(dtype.fields.iteritems(),
-            key=lambda (name, (dtype, offset)): offset)
+    fields = sorted(six.iteritems(dtype.fields),
+            key=lambda name_dtype_offset: name_dtype_offset[1][1])
 
     c_fields = []
     for field_name, (field_dtype, offset) in fields:
@@ -656,7 +659,7 @@ def dtype_to_c_struct(device, dtype):
     def dtypes_match():
         result = len(dtype.fields) == len(matched_dtype.fields)
 
-        for name, val in dtype.fields.iteritems():
+        for name, val in six.iteritems(dtype.fields):
             result = result and matched_dtype.fields[name] == val
 
         return result
@@ -833,12 +836,12 @@ class _TemplateRenderer(object):
         if arguments is not None:
             cdl.visit_arguments(arguments)
 
-        for tv in self.type_aliases.itervalues():
+        for tv in six.itervalues(self.type_aliases):
             cdl.add_dtype(tv)
 
         type_alias_decls = [
                 "typedef %s %s;" % (dtype_to_ctype(val), name)
-                for name, val in self.type_aliases.iteritems()
+                for name, val in six.iteritems(self.type_aliases)
                 ]
 
         return cdl.get_declarations() + "\n" + "\n".join(type_alias_decls)
@@ -884,7 +887,7 @@ class KernelTemplateBase(object):
     def build(self, context, *args, **kwargs):
         """Provide caching for an :meth:`build_inner`."""
 
-        cache_key = (context, args, tuple(sorted(kwargs.iteritems())))
+        cache_key = (context, args, tuple(sorted(six.iteritems(kwargs))))
         try:
             return self.build_cache[cache_key]
         except KeyError:

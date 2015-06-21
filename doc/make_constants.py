@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -331,42 +333,42 @@ cls_ext_lookup = {
 
 
 def doc_class(cls):
-    print ".. class :: %s" % cls.__name__
-    print
+    print(".. class :: %s" % cls.__name__)
+    print()
     if cls.__name__.startswith("gl_"):
-        print "    Only available when PyOpenCL is compiled with GL support."
-        print "    See :func:`have_gl`."
-        print
+        print("    Only available when PyOpenCL is compiled with GL support.")
+        print("    See :func:`have_gl`.")
+        print()
 
     if cls in cls_ext_lookup:
         for l in get_extra_lines(cls_ext_lookup[cls]):
-            print l
+            print(l)
 
     cls_const_ext = const_ext_lookup.get(cls, {})
     for name in sorted(dir(cls)):
         if not name.startswith("_") and not name in ["to_string", "names", "values"]:
-            print "    .. attribute :: %s" % name
+            print("    .. attribute :: %s" % name)
 
             if name in cls_const_ext:
                 for l in get_extra_lines(cls_const_ext[name]):
-                    print "    "+l
+                    print("    "+l)
 
-    print "    .. method :: to_string(value)"
-    print
-    print "        Returns a :class:`str` representing *value*."
-    print
-    print "        .. versionadded:: 0.91"
-    print
+    print("    .. method :: to_string(value)")
+    print()
+    print("        Returns a :class:`str` representing *value*.")
+    print()
+    print("        .. versionadded:: 0.91")
+    print()
 
 
 if not cl.have_gl():
-    print ".. warning::"
-    print
-    print "    This set of PyOpenCL documentation is incomplete because it"
-    print "    was generated on a PyOpenCL build that did not support OpenGL."
-    print
+    print(".. warning::")
+    print()
+    print("    This set of PyOpenCL documentation is incomplete because it")
+    print("    was generated on a PyOpenCL build that did not support OpenGL.")
+    print()
 
-print ".. This is an automatically generated file. DO NOT EDIT"
-print
+print(".. This is an automatically generated file. DO NOT EDIT")
+print()
 for cls in cl.CONSTANT_CLASSES:
     doc_class(cls)

@@ -1,6 +1,9 @@
 """Scan primitive."""
 
 from __future__ import division
+from __future__ import absolute_import
+from six.moves import range
+from six.moves import zip
 
 __copyright__ = """Copyright 2011-2012 Andreas Kloeckner"""
 

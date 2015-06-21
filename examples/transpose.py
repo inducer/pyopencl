@@ -2,9 +2,12 @@
 # originally for PyCUDA by Hendrik Riedmann <riedmann@dam.brown.edu>
 
 from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
 import pyopencl as cl
 import numpy
 import numpy.linalg as la
+from six.moves import range
 
 
 

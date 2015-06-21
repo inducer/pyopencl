@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
+import six
+from six.moves import zip
+from six.moves import input
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -119,7 +124,7 @@ class Program(object):
             context, source = arg1, arg2
 
             import sys
-            if isinstance(source, unicode) and sys.version_info < (3,):
+            if isinstance(source, six.text_type) and sys.version_info < (3,):
                 from warnings import warn
                 warn("Received OpenCL source code in Unicode, "
                      "should be ASCII string. Attempting conversion.",
@@ -183,7 +188,7 @@ class Program(object):
     def build(self, options=[], devices=None, cache_dir=None):
         if isinstance(options, str):
             options = [options]
-        elif isinstance(options, unicode):
+        elif isinstance(options, six.text_type):
             options = [options.encode("utf8")]
 
         options = (options
@@ -319,8 +324,8 @@ def _add_functionality():
 
         return property(result)
 
-    for cls, (info_method, info_class) in cls_to_info_cls.iteritems():
-        for info_name, info_value in info_class.__dict__.iteritems():
+    for cls, (info_method, info_class) in six.iteritems(cls_to_info_cls):
+        for info_name, info_value in six.iteritems(info_class.__dict__):
             if info_name == "to_string" or info_name.startswith("_"):
                 continue
 
@@ -499,7 +504,7 @@ def _add_functionality():
         if kwargs:
             raise TypeError(
                     "Kernel.__call__ recived unexpected keyword arguments: %s"
-                    % ", ".join(kwargs.keys()))
+                    % ", ".join(list(kwargs.keys())))
 
         self.set_args(*args)
 
@@ -799,7 +804,7 @@ def create_some_context(interactive=None, answers=None):
         elif not interactive:
             return ''
         else:
-            user_input = raw_input(prompt)
+            user_input = input(prompt)
             user_inputs.append(user_input)
             return user_input
 

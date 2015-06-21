@@ -1,6 +1,8 @@
+from __future__ import absolute_import
 import pyopencl as cl
 import numpy
 import numpy.linalg as la
+from six.moves import range
 
 local_size = 256
 thread_strides = 32

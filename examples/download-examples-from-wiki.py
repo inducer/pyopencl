@@ -1,7 +1,9 @@
+from __future__ import absolute_import
+from __future__ import print_function
 #! /usr/bin/env python
 
-import xmlrpclib
-destwiki = xmlrpclib.ServerProxy("http://wiki.tiker.net?action=xmlrpc2")
+import six.moves.xmlrpc_client
+destwiki = six.moves.xmlrpc_client.ServerProxy("http://wiki.tiker.net?action=xmlrpc2")
 
 import os
 try:
@@ -9,8 +11,8 @@ try:
 except OSError:
     pass
 
-print "downloading  wiki examples to wiki-examples/..."
-print "fetching page list..."
+print("downloading  wiki examples to wiki-examples/...")
+print("fetching page list...")
 all_pages = destwiki.getAllPages()
 
 
@@ -20,7 +22,7 @@ for page in all_pages:
     if not page.startswith("PyOpenCL/Examples/"):
         continue
 
-    print page
+    print(page)
     try:
         content = destwiki.getPage(page)
 
@@ -33,7 +35,7 @@ for page in all_pages:
 
         outfname = os.path.join("wiki-examples", fname+".py")
         if exists(outfname):
-            print "%s exists, refusing to overwrite." % outfname
+            print("%s exists, refusing to overwrite." % outfname)
         else:
             outf = open(outfname, "w")
             outf.write(code)
@@ -44,13 +46,13 @@ for page in all_pages:
 
             outfname = os.path.join("wiki-examples", att_name)
             if exists(outfname):
-                print "%s exists, refusing to overwrite." % outfname
+                print("%s exists, refusing to overwrite." % outfname)
             else:
                 outf = open(outfname, "w")
                 outf.write(str(content))
                 outf.close()
 
-    except Exception, e:
-        print "Error when processing %s: %s" % (page, e)
+    except Exception as e:
+        print("Error when processing %s: %s" % (page, e))
         from traceback import print_exc
         print_exc()

@@ -1,13 +1,15 @@
 from __future__ import division
+from __future__ import absolute_import
 
 from IPython.core.magic import (magics_class, Magics, cell_magic, line_magic)
 
 import pyopencl as cl
 import sys
+import six
 
 
 def _try_to_utf8(text):
-    if isinstance(text, unicode):
+    if isinstance(text, six.text_type):
         return text.encode("utf8")
     return text
 

@@ -1,4 +1,6 @@
 from __future__ import with_statement, division
+from __future__ import absolute_import
+from six.moves import zip
 
 __copyright__ = "Copyright (C) 2013 Andreas Kloeckner"
 

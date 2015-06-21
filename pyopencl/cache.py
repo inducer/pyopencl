@@ -1,6 +1,9 @@
 """PyOpenCL compiler cache."""
 
 from __future__ import division
+from __future__ import absolute_import
+import six
+from six.moves import zip
 
 __copyright__ = "Copyright (C) 2011 Andreas Kloeckner"
 
@@ -49,7 +52,7 @@ def _erase_dir(dir):
 
 
 def update_checksum(checksum, obj):
-    if isinstance(obj, unicode):
+    if isinstance(obj, six.text_type):
         checksum.update(obj.encode("utf8"))
     else:
         checksum.update(obj)
@@ -193,7 +196,7 @@ def get_dependencies(src, include_path):
 
     _inner(src)
 
-    result = list((name,) + vals for name, vals in result.iteritems())
+    result = list((name,) + vals for name, vals in six.iteritems(result))
     result.sort()
 
     return result
@@ -266,7 +269,7 @@ def retrieve_from_cache(cache_dir, cache_key):
             # {{{ load info file
 
             try:
-                from cPickle import load
+                from six.moves.cPickle import load
 
                 try:
                     info_file = open(info_path, "rb")
@@ -347,7 +350,7 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
 
     try:
         os.makedirs(cache_dir)
-    except OSError, e:
+    except OSError as e:
         from errno import EEXIST
         if e.errno != EEXIST:
             raise
@@ -449,7 +452,7 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
                     outf.write(binary)
                     outf.close()
 
-                    from cPickle import dump
+                    from six.moves.cPickle import dump
                     info_file = open(info_path, "wb")
                     dump(_SourceInfo(
                         dependencies=get_dependencies(src, include_path),
@@ -477,7 +480,7 @@ def create_built_program_from_source_cached(ctx, src, options=[], devices=None,
             prg = _cl._Program(ctx, src)
             already_built = False
 
-    except Exception, e:
+    except Exception as e:
         raise
         from pyopencl import Error
         if (isinstance(e, Error)

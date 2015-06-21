@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import pyopencl as cl
 import pyopencl.array as cl_array
 import numpy

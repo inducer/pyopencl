@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import pyopencl as cl
 import numpy
 import numpy.linalg as la

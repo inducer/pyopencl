@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
