@@ -1,8 +1,8 @@
-Python 2.7 AMD CPU:
+"Python 2.7 AMD CPU (+special func)":
   script:
   - export PY_EXE=python2.7
   - export PYOPENCL_TEST=amd:pu
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="numpy mako scipy pyfmmlib"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
