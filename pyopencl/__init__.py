@@ -51,7 +51,7 @@ import inspect as _inspect
 CONSTANT_CLASSES = [
         getattr(_cl, name) for name in dir(_cl)
         if _inspect.isclass(getattr(_cl, name))
-        and name[0].islower()]
+        and name[0].islower() and name not in ["zip", "map", "range"]]
 
 
 class CompilerWarning(UserWarning):
