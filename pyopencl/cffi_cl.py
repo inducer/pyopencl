@@ -42,6 +42,7 @@ from .compyte.array import f_contiguous_strides, c_contiguous_strides
 
 # are we running on pypy?
 _PYPY = '__pypy__' in sys.builtin_module_names
+_CPY2 = not _PYPY and sys.version_info < (3,)
 
 try:
     _unicode = eval('unicode')
@@ -958,7 +959,7 @@ class Kernel(_Common):
         elif isinstance(arg, LocalMemory):
             _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
                                                    _ffi.NULL, arg.size))
-        elif isinstance(arg, np.generic):
+        elif _CPY2 and isinstance(arg, np.generic):
             c_buf, size, _ = _c_buffer_from_obj(np.getbuffer(arg))
             _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
                                                    c_buf, size))
