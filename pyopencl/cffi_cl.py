@@ -775,18 +775,12 @@ if _PYPY:
             if writable or retain:
                 raise TypeError('expected an object with a writable '
                                 'buffer interface.')
-            # numpy scalar
-            #
-            # * obj.__array_interface__ exists in CPython although requires
-            #   holding a reference to the dynamically created
-            #   __array_interface__ object
-            #
-            # * does not exist (yet?) in numpypy.
-            s_array = obj[()]
-            return (_ffi.cast('void*', s_array.__array_interface__['data'][0]),
-                    s_array.nbytes, s_array)
-        raise LogicError("PyOpencl on PyPy only accepts numpy arrays "
-                         "and scalars arguments", status_code.INVALID_VALUE)
+
+            return (_ffi.cast('void*', memoryview(obj)._pypy_raw_address()),
+                    obj.itemsize, obj)
+        else:
+            raise LogicError("PyOpencl on PyPy only accepts numpy arrays "
+                             "and scalars arguments", status_code.INVALID_VALUE)
         # }}}
 else:
     import ctypes
@@ -964,6 +958,10 @@ class Kernel(_Common):
         elif isinstance(arg, LocalMemory):
             _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
                                                    _ffi.NULL, arg.size))
+        elif isinstance(arg, np.generic):
+            c_buf, size, _ = _c_buffer_from_obj(np.getbuffer(arg))
+            _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
+                                                   c_buf, size))
         else:
             c_buf, size, _ = _c_buffer_from_obj(arg)
             _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
