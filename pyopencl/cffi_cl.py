@@ -799,28 +799,14 @@ else:
     def _c_buffer_from_obj(obj, writable=False, retain=False):
         # {{{ fall back to the old CPython buffer protocol API
 
-        addr = ctypes.c_void_p()
-        length = _ssize_t()
+        from pyopencl._buffers import Py_buffer, PyBUF_ANY_CONTIGUOUS, PyBUF_WRITABLE
 
-        try:
-            if writable:
-                ctypes.pythonapi.PyObject_AsWriteBuffer(
-                    ctypes.py_object(obj), ctypes.byref(addr),
-                    ctypes.byref(length))
-            else:
-                ctypes.pythonapi.PyObject_AsReadBuffer(
-                    ctypes.py_object(obj), ctypes.byref(addr),
-                    ctypes.byref(length))
+        flags = PyBUF_ANY_CONTIGUOUS
+        if writable:
+            flags |= PyBUF_WRITABLE
 
-                # ctypes check exit status of these, so no need to check
-                # for errors.
-        except TypeError:
-            raise LogicError(routine=None, code=status_code.INVALID_VALUE,
-                             msg=("un-sized (pure-Python) types not "
-                                  "acceptable as arguments"))
-        # }}}
-
-        return _ffi.cast('void*', addr.value), length.value, obj
+        with Py_buffer.from_object(obj, flags) as buf:
+            return _ffi.cast('void*', buf.buf), buf.len, obj
 
 # }}}
 

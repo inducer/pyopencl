@@ -549,7 +549,7 @@ def _add_functionality():
                         self.set_arg(i, pack(arg_type_char, arg))
                     else:
                         self.set_arg(i, arg)
-        except LogicError as e:
+        except TypeError as e:
             if i is not None:
                 advice = ""
                 from pyopencl.array import Array
