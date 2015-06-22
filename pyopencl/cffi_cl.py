@@ -206,63 +206,63 @@ class _NoInit(object):
 
 # {{{ constant classes
 
-class program_kind(_NoInit):
+class program_kind(_NoInit):  # noqa
     pass
 
 
-class status_code(_NoInit):
+class status_code(_NoInit):  # noqa
     pass
 
 
-class platform_info(_NoInit):
+class platform_info(_NoInit):  # noqa
     pass
 
 
-class device_type(_NoInit):
+class device_type(_NoInit):  # noqa
     pass
 
 
-class device_info(_NoInit):
+class device_info(_NoInit):  # noqa
     pass
 
 
-class device_fp_config(_NoInit):
+class device_fp_config(_NoInit):  # noqa
     pass
 
 
-class device_mem_cache_type(_NoInit):
+class device_mem_cache_type(_NoInit):  # noqa
     pass
 
 
-class device_local_mem_type(_NoInit):
+class device_local_mem_type(_NoInit):  # noqa
     pass
 
 
-class device_exec_capabilities(_NoInit):
+class device_exec_capabilities(_NoInit):  # noqa
     pass
 
 
-class command_queue_properties(_NoInit):
+class command_queue_properties(_NoInit):  # noqa
     pass
 
 
-class context_info(_NoInit):
+class context_info(_NoInit):  # noqa
     pass
 
 
-class gl_context_info(_NoInit):
+class gl_context_info(_NoInit):  # noqa
     pass
 
 
-class context_properties(_NoInit):
+class context_properties(_NoInit):  # noqa
     pass
 
 
-class command_queue_info(_NoInit):
+class command_queue_info(_NoInit):  # noqa
     pass
 
 
-class mem_flags(_NoInit):
+class mem_flags(_NoInit):  # noqa
     @classmethod
     def _writable(cls, flags):
         return flags & (cls.READ_WRITE | cls.WRITE_ONLY)
@@ -280,123 +280,123 @@ class mem_flags(_NoInit):
         return cls._writable(flags) and cls._hold_host(flags)
 
 
-class channel_order(_NoInit):
+class channel_order(_NoInit):  # noqa
     pass
 
 
-class channel_type(_NoInit):
+class channel_type(_NoInit):  # noqa
     pass
 
 
-class mem_object_type(_NoInit):
+class mem_object_type(_NoInit):  # noqa
     pass
 
 
-class mem_info(_NoInit):
+class mem_info(_NoInit):  # noqa
     pass
 
 
-class image_info(_NoInit):
+class image_info(_NoInit):  # noqa
     pass
 
 
-class addressing_mode(_NoInit):
+class addressing_mode(_NoInit):  # noqa
     pass
 
 
-class filter_mode(_NoInit):
+class filter_mode(_NoInit):  # noqa
     pass
 
 
-class sampler_info(_NoInit):
+class sampler_info(_NoInit):  # noqa
     pass
 
 
-class map_flags(_NoInit):
+class map_flags(_NoInit):  # noqa
     pass
 
 
-class program_info(_NoInit):
+class program_info(_NoInit):  # noqa
     pass
 
 
-class program_build_info(_NoInit):
+class program_build_info(_NoInit):  # noqa
     pass
 
 
-class program_binary_type(_NoInit):
+class program_binary_type(_NoInit):  # noqa
     pass
 
 
-class kernel_info(_NoInit):
+class kernel_info(_NoInit):  # noqa
     pass
 
 
-class kernel_arg_info(_NoInit):
+class kernel_arg_info(_NoInit):  # noqa
     pass
 
 
-class kernel_arg_address_qualifier(_NoInit):
+class kernel_arg_address_qualifier(_NoInit):  # noqa
     pass
 
 
-class kernel_arg_access_qualifier(_NoInit):
+class kernel_arg_access_qualifier(_NoInit):  # noqa
     pass
 
 
-class kernel_work_group_info(_NoInit):
+class kernel_work_group_info(_NoInit):  # noqa
     pass
 
 
-class event_info(_NoInit):
+class event_info(_NoInit):  # noqa
     pass
 
 
-class command_type(_NoInit):
+class command_type(_NoInit):  # noqa
     pass
 
 
-class command_execution_status(_NoInit):
+class command_execution_status(_NoInit):  # noqa
     pass
 
 
-class profiling_info(_NoInit):
+class profiling_info(_NoInit):  # noqa
     pass
 
 
-class mem_migration_flags(_NoInit):
+class mem_migration_flags(_NoInit):  # noqa
     pass
 
 
-class mem_migration_flags_ext(_NoInit):
+class mem_migration_flags_ext(_NoInit):  # noqa
     pass
 
 
-class device_partition_property_ext(_NoInit):
+class device_partition_property_ext(_NoInit):  # noqa
     pass
 
 
-class affinity_domain_ext(_NoInit):
+class affinity_domain_ext(_NoInit):  # noqa
     pass
 
 
-class device_partition_property(_NoInit):
+class device_partition_property(_NoInit):  # noqa
     pass
 
 
-class device_affinity_domain(_NoInit):
+class device_affinity_domain(_NoInit):  # noqa
     pass
 
 
-class gl_object_type(_NoInit):
+class gl_object_type(_NoInit):  # noqa
     pass
 
 
-class gl_texture_info(_NoInit):
+class gl_texture_info(_NoInit):  # noqa
     pass
 
 
-class migrate_mem_object_flags_ext(_NoInit):
+class migrate_mem_object_flags_ext(_NoInit):  # noqa
     pass
 
 
@@ -656,7 +656,7 @@ def _norm_shape_dtype(shape, dtype, order="C", strides=None, name=""):
     return dtype, shape, strides
 
 
-class cffi_array(np.ndarray):
+class cffi_array(np.ndarray):  # noqa
     __array_priority__ = -100.0
 
     def __new__(cls, buf, shape, dtype, strides, base=None):
