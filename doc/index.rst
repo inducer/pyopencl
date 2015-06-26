@@ -64,6 +64,10 @@ Tutorials
 Software that works with or enhances PyOpenCL
 =============================================
 
+* Two wrappers for `clBLAS <https://github.com/clMathLibraries/clBLAS>`_ have emerged,
+  one by `Eric Hunsberger <https://github.com/hunse/pyopencl_blas>`_ and one
+  by `Lars Ericson <http://lists.tiker.net/pipermail/pyopencl/2015-June/001890.html>`_.
+
 * Bogdan Opanchuk's `reikna <http://pypi.python.org/pypi/reikna>`_ offers a
   variety of GPU-based algorithms (FFT, random number generation, matrix
   multiplication) designed to work with :class:`pyopencl.array.Array` objects.
