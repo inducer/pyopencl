@@ -215,12 +215,15 @@ import gc
 _py_gc = _ffi.callback('int(void)')(gc.collect)
 
 _pyrefs = {}
+
+
 @_ffi.callback('void(void*)')
 def _py_deref(handle):
     try:
         del _pyrefs[handle]
     except:
         pass
+
 
 # return a new reference of the object pointed to by the handle.
 # The return value might be different with the input (on PyPy).
@@ -231,6 +234,7 @@ def _py_ref(handle):
     handle = _ffi.new_handle(obj)
     _pyrefs[handle] = handle
     return handle
+
 
 @_ffi.callback('void(void*, cl_int)')
 def _py_call(handle, status):
