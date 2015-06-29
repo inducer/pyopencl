@@ -47,7 +47,6 @@ Python 2.6 AMD CPU:
   - amd-cl-cpu
   except:
   - tags
-  - cffi  # triggers a bug that I'm not feeling like debugging
 Python 2.7 K20:
   script:
   - export PY_EXE=python2.7
