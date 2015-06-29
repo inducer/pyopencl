@@ -156,7 +156,9 @@ def main():
     with open("cffi_build.py.in", "rt") as f:
         build_script_template = f.read()
 
-    format_args = dict((k, repr(v)) for k, v in conf.items())
+    format_args = {}
+    for k, v in conf.items():
+        format_args[k] = repr(v)
 
     build_script = build_script_template.format(**format_args)
 
