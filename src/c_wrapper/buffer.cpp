@@ -3,8 +3,6 @@
 #include "command_queue.h"
 #include "event.h"
 
-namespace pyopencl {
-
 template void print_clobj<buffer>(std::ostream&, const buffer*);
 
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE buffer*
@@ -54,11 +52,7 @@ buffer::getitem(ssize_t start, ssize_t end) const
 }
 #endif
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Buffer
 error*

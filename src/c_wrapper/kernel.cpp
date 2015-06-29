@@ -8,8 +8,6 @@
 #include "event.h"
 #include "clhelper.h"
 
-namespace pyopencl {
-
 template class clobj<cl_kernel>;
 template void print_arg<cl_kernel>(std::ostream&, const cl_kernel&, bool);
 template void print_clobj<kernel>(std::ostream&, const kernel*);
@@ -87,11 +85,7 @@ kernel::get_arg_info(cl_uint idx, cl_kernel_arg_info param) const
 }
 #endif
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Kernel
 error*

@@ -1,9 +1,3 @@
-from __future__ import absolute_import
-from cffi import FFI
-
-_ffi = FFI()
-_cl_header = """
-
 /* gl.h */
 typedef unsigned int    GLenum;
 typedef int             GLint;          /* 4-byte signed */
@@ -110,6 +104,8 @@ typedef struct _cl_buffer_region {
 } cl_buffer_region;
 
 /* cl_ext.h */
+
+/*
 typedef cl_ulong  cl_device_partition_property_ext;
 typedef cl_uint   cl_image_pitch_info_qcom;
 typedef struct _cl_mem_ext_host_ptr {
@@ -123,121 +119,4 @@ typedef struct _cl_mem_ion_host_ptr {
 } cl_mem_ion_host_ptr;
 
 typedef cl_bitfield         cl_mem_migration_flags_ext;
-
-/* cl_gl.h */
-typedef cl_uint     cl_gl_object_type;
-typedef cl_uint     cl_gl_texture_info;
-typedef cl_uint     cl_gl_platform_info;
-typedef struct __GLsync *cl_GLsync;
-typedef cl_uint     cl_gl_context_info;
-
-/* cl_egl.h */
-typedef void* CLeglImageKHR;
-typedef void* CLeglDisplayKHR;
-typedef void* CLeglSyncKHR;
-typedef intptr_t cl_egl_image_properties_khr;
-
-/* c++ class pointer */
-typedef struct clbase *clobj_t;
-"""
-
-
-def _get_wrap_header(filename):
-    from pkg_resources import Requirement, resource_filename
-    header_name = resource_filename(
-            Requirement.parse("pyopencl"), "pyopencl/c_wrapper/"+filename)
-
-    with open(header_name, "rt") as f:
-        return f.read()
-
-_ffi.cdef(_cl_header)
-_ffi.cdef(_get_wrap_header("wrap_cl_core.h"))
-
-
-# Copied from pypy distutils/commands/build_ext.py
-def _get_c_extension_suffix():
-    import imp
-    for ext, mod, typ in imp.get_suffixes():
-        if typ == imp.C_EXTENSION:
-            return ext
-
-
-def _get_wrapcl_so_names():
-    import os.path
-    current_directory = os.path.dirname(__file__)
-
-    # TODO: windows debug_mode?
-
-    # Copied from pypy's distutils that "should work for CPython too".
-    ext_suffix = _get_c_extension_suffix()
-    if ext_suffix is not None:
-        yield os.path.join(current_directory, "_wrapcl" + ext_suffix)
-
-        # Oh god. Chop hyphen-separated bits off the end, in the hope that
-        # something matches...
-
-        root, ext = os.path.splitext(ext_suffix)
-        while True:
-            last_hyphen = root.rfind("-")
-            if last_hyphen == -1:
-                break
-            root = root[:last_hyphen]
-            yield os.path.join(current_directory, "_wrapcl" + root + ext)
-
-        yield os.path.join(current_directory, "_wrapcl" + ext)
-
-    from distutils.sysconfig import get_config_var
-    # "SO" is apparently deprecated, but changing this to "EXT_SUFFIX"
-    # as recommended breaks Py2 and PyPy3, as reported by @yuyichao
-    # on 2014-07-20.
-    #
-    # You've been warned. Change "SO" with care.
-    yield os.path.join(current_directory, "_wrapcl" + get_config_var("SO"))
-
-
-def _import_library():
-    names = list(_get_wrapcl_so_names())
-    for name in names:
-        try:
-            return _ffi.dlopen(name)
-        except OSError:
-            pass
-
-    raise RuntimeError("could not find PyOpenCL wrapper library. (tried: %s)"
-        % ", ".join(names))
-
-_lib = _import_library()
-
-if _lib.have_gl():
-    _ffi.cdef(_get_wrap_header("wrap_cl_gl_core.h"))
-
-import gc
-_py_gc = _ffi.callback('int(void)')(gc.collect)
-
-_pyrefs = {}
-
-
-@_ffi.callback('void(void*)')
-def _py_deref(handle):
-    try:
-        del _pyrefs[handle]
-    except:
-        pass
-
-
-# return a new reference of the object pointed to by the handle.
-# The return value might be different with the input (on PyPy).
-# _py_deref should be called (once) when the object is not needed anymore.
-@_ffi.callback('void*(void*)')
-def _py_ref(handle):
-    obj = _ffi.from_handle(handle)
-    handle = _ffi.new_handle(obj)
-    _pyrefs[handle] = handle
-    return handle
-
-
-@_ffi.callback('void(void*, cl_int)')
-def _py_call(handle, status):
-    _ffi.from_handle(handle)(status)
-
-_lib.set_py_funcs(_py_gc, _py_ref, _py_deref, _py_call)
+*/

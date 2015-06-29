@@ -4,8 +4,6 @@
 #include "command_queue.h"
 #include "clhelper.h"
 
-namespace pyopencl {
-
 template class clobj<cl_mem>;
 template void print_arg<cl_mem>(std::ostream&, const cl_mem&, bool);
 template void print_buf<cl_mem>(std::ostream&, const cl_mem*,
@@ -64,11 +62,7 @@ memory_object::~memory_object()
     pyopencl_call_guarded_cleanup(clReleaseMemObject, this);
 }
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Memory Object
 error*

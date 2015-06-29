@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #include <regex>
 
-namespace pyopencl {
-
 template class clobj<cl_platform_id>;
 template void print_arg<cl_platform_id>(std::ostream&,
                                         const cl_platform_id&, bool);
@@ -58,11 +56,7 @@ platform::get_version(cl_platform_id plat, int *major, int *minor)
     *minor = atoi(name + ver_match.position(2));
 }
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 error*
 get_platforms(clobj_t **_platforms, uint32_t *num_platforms)

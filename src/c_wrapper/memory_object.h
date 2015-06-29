@@ -4,8 +4,6 @@
 #ifndef __PYOPENCL_MEMORY_OBJECT_H
 #define __PYOPENCL_MEMORY_OBJECT_H
 
-namespace pyopencl {
-
 // {{{ memory_object
 
 extern template class clobj<cl_mem>;
@@ -54,7 +52,5 @@ public:
 };
 
 // }}}
-
-}
 
 #endif

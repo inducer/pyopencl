@@ -1,8 +1,6 @@
 #include "device.h"
 #include "platform.h"
 
-namespace pyopencl {
-
 template class clobj<cl_device_id>;
 template void print_arg<cl_device_id>(std::ostream&,
                                       const cl_device_id&, bool);
@@ -295,11 +293,7 @@ device::create_sub_devices_ext(const cl_device_partition_property_ext *props)
 }
 #endif
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 #if PYOPENCL_CL_VERSION >= 0x1020
 error*

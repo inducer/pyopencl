@@ -28,8 +28,6 @@ tostring(const T& v)
     return ostr.str();
 }
 
-namespace pyopencl {
-
 template<typename T, class = void>
 struct CLGenericArgPrinter {
     static PYOPENCL_INLINE void
@@ -550,8 +548,6 @@ PYOPENCL_USE_RESULT static PYOPENCL_INLINE char*
 _copy_str(const std::string& str)
 {
     return strdup(str.c_str());
-}
-
 }
 
 #endif

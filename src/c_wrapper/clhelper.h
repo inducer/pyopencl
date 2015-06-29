@@ -4,8 +4,6 @@
 #ifndef __PYOPENCL_CLHELPER_H
 #define __PYOPENCL_CLHELPER_H
 
-namespace pyopencl {
-
 template<typename CLObj, typename... T>
 class _CLObjOutArg : public OutArg {
     typedef typename CLObj::cl_type CLType;
@@ -70,7 +68,7 @@ make_cloutarg(clobj_t *ret, cl_int (*release)(typename CLObj::cl_type),
     return _CLObjOutArg<CLObj, T...>(ret, release, name, t1...);
 }
 #define pyopencl_outarg(type, ret, func, args...)               \
-    pyopencl::make_cloutarg<type>(ret, func, #func, ##args)
+    make_cloutarg<type>(ret, func, #func, ##args)
 
 // {{{ GetInfo helpers
 
@@ -86,7 +84,7 @@ get_vec_info(cl_int (*func)(ArgTypes...), const char *name,
     return buf;
 }
 #define pyopencl_get_vec_info(type, what, args...)                      \
-    pyopencl::get_vec_info<type>(clGet##what##Info, "clGet" #what "Info", args)
+    get_vec_info<type>(clGet##what##Info, "clGet" #what "Info", args)
 
 template<typename T>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
@@ -110,7 +108,7 @@ convert_array_info(const char *tname, pyopencl_buf<T> &&_buf)
 }
 
 #define pyopencl_convert_array_info(type, buf)          \
-    pyopencl::convert_array_info<type>(#type, buf)
+    convert_array_info<type>(#type, buf)
 #define pyopencl_get_array_info(type, what, args...)                    \
     pyopencl_convert_array_info(type, pyopencl_get_vec_info(type, what, args))
 
@@ -126,7 +124,7 @@ convert_opaque_array_info(T &&buf)
     return info;
 }
 #define pyopencl_get_opaque_array_info(cls, what, args...)  \
-    pyopencl::convert_opaque_array_info<cls>(               \
+    convert_opaque_array_info<cls>(               \
         pyopencl_get_vec_info(cls::cl_type, what, args))
 
 template<typename CLObj, typename... ArgTypes, typename... ArgTypes2>
@@ -148,7 +146,7 @@ get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
     return info;
 }
 #define pyopencl_get_opaque_info(clobj, what, args...)              \
-    pyopencl::get_opaque_info<clobj>(clGet##what##Info,             \
+    get_opaque_info<clobj>(clGet##what##Info,             \
                                      "clGet" #what "Info", args)
 
 template<typename... ArgTypes, typename... ArgTypes2>
@@ -168,7 +166,7 @@ get_str_info(cl_int (*func)(ArgTypes...), const char *name,
     return info;
 }
 #define pyopencl_get_str_info(what, args...)                            \
-    pyopencl::get_str_info(clGet##what##Info, "clGet" #what "Info", args)
+    get_str_info(clGet##what##Info, "clGet" #what "Info", args)
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
@@ -185,7 +183,7 @@ get_int_info(cl_int (*func)(ArgTypes...), const char *name,
     return info;
 }
 #define pyopencl_get_int_info(type, what, args...)                      \
-    pyopencl::get_int_info<type>(clGet##what##Info, "clGet" #what "Info", \
+    get_int_info<type>(clGet##what##Info, "clGet" #what "Info", \
                                  #type "*", args)
 
 // }}}
@@ -203,7 +201,7 @@ convert_obj(cl_int (*clRelease)(CLType), const char *name, CLType cl_obj,
     }
 }
 #define pyopencl_convert_obj(type, func, args...)       \
-    pyopencl::convert_obj<type>(func, #func, args)
+    convert_obj<type>(func, #func, args)
 
 // {{{ extension function pointers
 
@@ -214,12 +212,12 @@ get_ext_fun(cl_platform_id plat, const char *name, const char *err)
 {
     T func = (T)clGetExtensionFunctionAddressForPlatform(plat, name);
     if (!func) {
-        throw pyopencl::clerror(name, CL_INVALID_VALUE, err);
+        throw clerror(name, CL_INVALID_VALUE, err);
     }
     return func;
 }
 #define pyopencl_get_ext_fun(plat, name)                                \
-    pyopencl::get_ext_fun<name##_fn>(plat, #name, #name " not available")
+    get_ext_fun<name##_fn>(plat, #name, #name " not available")
 #else
 template<typename T>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
@@ -227,17 +225,15 @@ get_ext_fun(const char *name, const char *err)
 {
     T func = (T)clGetExtensionFunctionAddress(name);
     if (!func) {
-        throw pyopencl::clerror(name, CL_INVALID_VALUE, err);
+        throw clerror(name, CL_INVALID_VALUE, err);
     }
     return func;
 }
 #define pyopencl_get_ext_fun(plat, name)                                \
-    pyopencl::get_ext_fun<name##_fn>(#name, #name " not available")
+    get_ext_fun<name##_fn>(#name, #name " not available")
 #endif
 
 // }}}
-
-}
 
 static PYOPENCL_INLINE std::ostream&
 operator<<(std::ostream &stm, const cl_image_format &fmt)

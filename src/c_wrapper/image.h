@@ -4,8 +4,6 @@
 #ifndef __PYOPENCL_IMAGE_H
 #define __PYOPENCL_IMAGE_H
 
-namespace pyopencl {
-
 // {{{ image
 
 class image : public memory_object {
@@ -48,7 +46,5 @@ public:
 extern template void print_clobj<image>(std::ostream&, const image*);
 
 // }}}
-
-}
 
 #endif

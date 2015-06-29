@@ -4,8 +4,6 @@
 #ifndef __PYOPENCL_BUFFER_H
 #define __PYOPENCL_BUFFER_H
 
-namespace pyopencl {
-
 // {{{ buffer
 
 class buffer : public memory_object {
@@ -26,7 +24,5 @@ public:
 extern template void print_clobj<buffer>(std::ostream&, const buffer*);
 
 // }}}
-
-}
 
 #endif

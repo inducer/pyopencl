@@ -3,8 +3,6 @@
 #ifndef __PYOPENCL_SAMPLER_H
 #define __PYOPENCL_SAMPLER_H
 
-namespace pyopencl {
-
 // {{{ sampler
 
 extern template class clobj<cl_sampler>;
@@ -31,7 +29,5 @@ public:
 extern template void print_clobj<sampler>(std::ostream&, const sampler*);
 
 // }}}
-
-}
 
 #endif

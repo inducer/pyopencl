@@ -35,7 +35,7 @@ import numpy as np
 from decorator import decorator
 import pyopencl as cl
 from pytools import memoize, memoize_method
-from pyopencl._cffi import _lib
+from pyopencl.cffi_cl import _lib
 
 import re
 

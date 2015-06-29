@@ -3,8 +3,6 @@
 #ifndef __PYOPENCL_CONTEXT_H
 #define __PYOPENCL_CONTEXT_H
 
-namespace pyopencl {
-
 // {{{ context
 
 extern template class clobj<cl_context>;
@@ -32,7 +30,5 @@ public:
 extern template void print_clobj<context>(std::ostream&, const context*);
 
 // }}}
-
-}
 
 #endif

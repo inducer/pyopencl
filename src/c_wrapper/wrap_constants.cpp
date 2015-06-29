@@ -2,9 +2,8 @@
 #include <iostream>
 
 extern "C"
-namespace pyopencl {
-  void populate_constants(void(*add)(const char*, const char*, long value)) {
-
+void populate_constants(void(*add)(const char*, const char*, long value))
+{
 #define _ADD_ATTR(TYPE, PREFIX, NAME, SUFFIX, ...)      \
       add(TYPE, #NAME, CL_##PREFIX##NAME##SUFFIX)
 #define ADD_ATTR(TYPE, PREFIX, NAME, EXTRA...)  \
@@ -703,6 +702,4 @@ namespace pyopencl {
 #ifdef cl_ext_migrate_memobject
     ADD_ATTR("migrate_mem_object_flags_ext", MIGRATE_MEM_OBJECT_, HOST, _EXT);
 #endif
-  }
-
-};
+}

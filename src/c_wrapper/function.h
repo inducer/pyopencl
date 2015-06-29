@@ -10,8 +10,6 @@
 #define PYOPENCL_INLINE inline
 #endif
 
-namespace pyopencl {
-
 template<typename T>
 using rm_ref_t = typename std::remove_reference<T>::type;
 template<typename T>
@@ -116,8 +114,6 @@ static PYOPENCL_INLINE ArgPack<Convert, rm_ref_t<Types>...>
 make_argpack(Types&&... args)
 {
     return ArgPack<Convert, rm_ref_t<Types>...>(std::forward<Types>(args)...);
-}
-
 }
 
 #endif

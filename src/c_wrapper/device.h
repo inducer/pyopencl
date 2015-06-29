@@ -3,8 +3,6 @@
 #ifndef __PYOPENCL_DEVICE_H
 #define __PYOPENCL_DEVICE_H
 
-namespace pyopencl {
-
 // {{{ device
 
 extern template class clobj<cl_device_id>;
@@ -77,7 +75,5 @@ public:
 extern template void print_clobj<device>(std::ostream&, const device*);
 
 // }}}
-
-}
 
 #endif

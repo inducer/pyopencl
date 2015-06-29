@@ -1,5 +1,8 @@
 // Interface between C and Python
 
+struct clbase;
+typedef struct clbase *clobj_t;
+
 // Types
 typedef enum {
     TYPE_FLOAT,
@@ -66,9 +69,11 @@ error *platform__unload_compiler(clobj_t plat);
 error *device__create_sub_devices(clobj_t _dev, clobj_t **_devs,
                                   uint32_t *num_devices,
                                   const cl_device_partition_property *props);
+/* FIXME reenable
 error *device__create_sub_devices_ext(clobj_t _dev, clobj_t **_devs,
                                       uint32_t *num_devices,
                                       const cl_device_partition_property_ext*);
+*/
 // Context
 error *create_context(clobj_t *ctx, const cl_context_properties *props,
                       cl_uint num_devices, const clobj_t *ptr_devices);
@@ -181,6 +186,7 @@ error *enqueue_wait_for_events(clobj_t _queue, const clobj_t *_wait_for,
                                uint32_t num_wait_for);
 error *enqueue_marker(clobj_t *event, clobj_t queue);
 error *enqueue_barrier(clobj_t queue);
+/* FIXME reenable
 error *enqueue_migrate_mem_objects(clobj_t *evt, clobj_t _queue,
                                    const clobj_t *_mem_obj, uint32_t,
                                    cl_mem_migration_flags flags,
@@ -189,6 +195,7 @@ error *enqueue_migrate_mem_object_ext(clobj_t *evt, clobj_t _queue,
                                       const clobj_t *_mem_obj, uint32_t,
                                       cl_mem_migration_flags_ext flags,
                                       const clobj_t *_wait_for, uint32_t);
+*/
 // enqueue_*_buffer*
 error *enqueue_read_buffer(clobj_t *event, clobj_t queue, clobj_t mem,
                            void *buffer, size_t size, size_t device_offset,

@@ -5,8 +5,6 @@
 
 #include <atomic>
 
-namespace pyopencl {
-
 template class clobj<cl_event>;
 template void print_arg<cl_event>(std::ostream&, const cl_event&, bool);
 template void print_clobj<event>(std::ostream&, const event*);
@@ -202,11 +200,7 @@ public:
 };
 #endif
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Event
 error*

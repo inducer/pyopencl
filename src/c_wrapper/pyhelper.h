@@ -4,8 +4,6 @@
 #include "wrap_cl.h"
 #include "function.h"
 
-namespace pyopencl {
-
 template<typename _Signature>
 class WrapFunc;
 
@@ -40,8 +38,6 @@ extern WrapFunc<int()> gc;
 extern WrapFunc<void*(void*)> ref;
 extern WrapFunc<void(void*)> deref;
 extern WrapFunc<void(void*, cl_int)> call;
-}
-
 }
 
 #endif

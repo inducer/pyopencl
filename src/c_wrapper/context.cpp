@@ -3,8 +3,6 @@
 #include "platform.h"
 #include "clhelper.h"
 
-namespace pyopencl {
-
 template class clobj<cl_context>;
 template void print_arg<cl_context>(std::ostream&, const cl_context&, bool);
 template void print_clobj<context>(std::ostream&, const context*);
@@ -106,11 +104,7 @@ context::get_info(cl_uint param_name) const
     }
 }
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Context
 error*

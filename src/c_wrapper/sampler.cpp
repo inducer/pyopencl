@@ -2,8 +2,6 @@
 #include "context.h"
 #include "clhelper.h"
 
-namespace pyopencl {
-
 template class clobj<cl_sampler>;
 template void print_arg<cl_sampler>(std::ostream&, const cl_sampler&, bool);
 template void print_clobj<sampler>(std::ostream&, const sampler*);
@@ -36,11 +34,7 @@ sampler::get_info(cl_uint param_name) const
     }
 }
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Sampler
 error*

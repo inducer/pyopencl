@@ -91,10 +91,8 @@ typedef cl_bitfield cl_mem_migration_flags_ext;
 typedef cl_ulong cl_device_partition_property_ext;
 #endif
 
-namespace pyopencl {
 struct clbase;
-}
-typedef pyopencl::clbase *clobj_t;
+typedef clbase *clobj_t;
 
 #ifdef __cplusplus
 extern "C" {

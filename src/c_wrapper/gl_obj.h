@@ -3,8 +3,6 @@
 #ifndef __PYOPENCL_GL_OBJ_H
 #define __PYOPENCL_GL_OBJ_H
 
-namespace pyopencl {
-
 #ifdef HAVE_GL
 
 // {{{ gl interop
@@ -44,7 +42,5 @@ class gl_texture : public image {
 // }}}
 
 #endif
-
-}
 
 #endif

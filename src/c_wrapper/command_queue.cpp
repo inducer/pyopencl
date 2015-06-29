@@ -4,8 +4,6 @@
 #include "event.h"
 #include "clhelper.h"
 
-namespace pyopencl {
-
 template class clobj<cl_command_queue>;
 template void print_arg<cl_command_queue>(std::ostream&,
                                           const cl_command_queue&, bool);
@@ -38,11 +36,7 @@ command_queue::get_info(cl_uint param_name) const
     }
 }
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Command Queue
 error*

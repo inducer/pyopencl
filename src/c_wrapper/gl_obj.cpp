@@ -6,8 +6,6 @@
 
 #ifdef HAVE_GL
 
-namespace pyopencl {
-
 template void print_clobj<gl_buffer>(std::ostream&, const gl_buffer*);
 template void print_clobj<gl_renderbuffer>(std::ostream&,
                                            const gl_renderbuffer*);
@@ -66,11 +64,7 @@ enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
     enqueue_gl_objects(clEnqueue##what##GLObjects,              \
                        "clEnqueue" #what "GLObjects", args)
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 error*
 create_from_gl_buffer(clobj_t *ptr, clobj_t _ctx,

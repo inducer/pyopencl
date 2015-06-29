@@ -4,8 +4,6 @@
 #include "clhelper.h"
 #include "kernel.h"
 
-namespace pyopencl {
-
 template class clobj<cl_program>;
 template void print_arg<cl_program>(std::ostream&, const cl_program&, bool);
 template void print_clobj<program>(std::ostream&, const program*);
@@ -121,11 +119,7 @@ program::all_kernels()
     return buf_to_base<kernel>(knls, true);
 }
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Program
 error*

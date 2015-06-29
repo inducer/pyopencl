@@ -3,8 +3,6 @@
 #ifndef __PYOPENCL_KERNEL_H
 #define __PYOPENCL_KERNEL_H
 
-namespace pyopencl {
-
 class device;
 
 // {{{ kernel
@@ -42,7 +40,5 @@ public:
 extern template void print_clobj<kernel>(std::ostream&, const kernel*);
 
 // }}}
-
-}
 
 #endif

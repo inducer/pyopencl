@@ -3,8 +3,6 @@
 #ifndef __PYOPENCL_COMMAND_QUEUE_H
 #define __PYOPENCL_COMMAND_QUEUE_H
 
-namespace pyopencl {
-
 // {{{ command_queue
 
 extern template class clobj<cl_command_queue>;
@@ -62,7 +60,5 @@ extern template void print_clobj<command_queue>(std::ostream&,
                                                 const command_queue*);
 
 // }}}
-
-}
 
 #endif

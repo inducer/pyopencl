@@ -4,8 +4,6 @@
 #include "event.h"
 #include "clhelper.h"
 
-namespace pyopencl {
-
 template class clobj<void*>;
 template void print_arg<void*>(std::ostream&, void *const&, bool);
 template void print_buf<void*>(std::ostream&, void *const*,
@@ -59,11 +57,7 @@ convert_memory_map(clobj_t evt, command_queue *queue,
     }
 }
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Memory Map
 error*

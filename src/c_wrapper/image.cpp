@@ -4,8 +4,6 @@
 #include "event.h"
 #include "buffer.h"
 
-namespace pyopencl {
-
 template void print_clobj<image>(std::ostream&, const image*);
 
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE image*
@@ -53,11 +51,7 @@ image::get_image_info(cl_image_info param) const
     }
 }
 
-}
-
 // c wrapper
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Image
 error*

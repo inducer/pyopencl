@@ -6,8 +6,6 @@
 #ifndef __PYOPENCL_DEBUG_H
 #define __PYOPENCL_DEBUG_H
 
-namespace pyopencl {
-
 extern bool debug_enabled;
 #ifdef PYOPENCL_TRACE
 #define DEFAULT_DEBUG true
@@ -26,7 +24,5 @@ dbg_print_str(std::ostream &stm, const char *str)
     return dbg_print_str(stm, str, strlen(str));
 }
 void dbg_print_bytes(std::ostream &stm, const unsigned char *bytes, size_t len);
-
-}
 
 #endif

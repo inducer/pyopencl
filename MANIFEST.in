@@ -4,6 +4,7 @@ include pyopencl/cl/*.cl
 include src/c_wrapper/*.hpp
 include src/c_wrapper/*.h
 include src/c_wrapper/*.cpp
+include *.h
 include test/*.py
 include test/*.h
 include examples/*.py
@@ -16,6 +17,7 @@ include doc/source/conf.py
 include doc/source/_static/*.css
 include doc/source/_templates/*.html
 
+include *.py.in
 include configure.py
 include Makefile.in
 include aksetup_helper.py

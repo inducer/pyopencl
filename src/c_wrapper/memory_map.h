@@ -5,8 +5,6 @@
 #ifndef __PYOPENCL_MEMORY_MAP_H
 #define __PYOPENCL_MEMORY_MAP_H
 
-namespace pyopencl {
-
 class event;
 
 // {{{ memory_map
@@ -35,7 +33,5 @@ public:
 };
 
 // }}}
-
-}
 
 #endif

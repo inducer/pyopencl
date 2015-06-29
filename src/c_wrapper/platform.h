@@ -3,8 +3,6 @@
 #ifndef __PYOPENCL_PLATFORM_H
 #define __PYOPENCL_PLATFORM_H
 
-namespace pyopencl {
-
 // {{{ platform
 
 extern template class clobj<cl_platform_id>;
@@ -25,7 +23,5 @@ public:
 extern template void print_clobj<platform>(std::ostream&, const platform*);
 
 // }}}
-
-}
 
 #endif

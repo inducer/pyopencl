@@ -7,8 +7,6 @@
     constexpr static class_t class_id = CLASS_##name;   \
     constexpr static const char *class_name = #name;
 
-namespace pyopencl {
-
 struct clbase {
 private:
     // non-copyable
@@ -146,8 +144,6 @@ buf_to_base(T2 &&buf2, ArgTypes&&... args)
 {
     return buf_to_base<T>(buf2.get(), buf2.len(),
                            std::forward<ArgTypes>(args)...);
-}
-
 }
 
 #endif

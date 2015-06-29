@@ -4,8 +4,6 @@
 #ifndef __PYOPENCL_EVENT_H
 #define __PYOPENCL_EVENT_H
 
-namespace pyopencl {
-
 // {{{ event
 
 extern template class clobj<cl_event>;
@@ -78,7 +76,5 @@ nanny_event_out(clobj_t *ret, void *ward)
 }
 
 // }}}
-
-}
 
 #endif

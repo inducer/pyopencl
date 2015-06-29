@@ -1,8 +1,4 @@
-from __future__ import division
-from __future__ import absolute_import
-from six.moves import map
-from six.moves import range
-from six.moves import zip
+from __future__ import division, absolute_import
 
 __copyright__ = """
 Copyright (C) 2013 Marko Bencun
@@ -30,13 +26,53 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from six.moves import map, range, zip
 
 import warnings
 import numpy as np
 import sys
 
-from pyopencl._cffi import _ffi, _lib
+from pyopencl._cffi import ffi as _ffi
 from .compyte.array import f_contiguous_strides, c_contiguous_strides
+
+_lib = _ffi.dlopen(None)
+
+# {{{ hook up connections between the wrapper and the interperter
+
+import gc
+_py_gc = _ffi.callback('int(void)')(gc.collect)
+
+_pyrefs = {}
+
+
+@_ffi.callback('void(void*)')
+def _py_deref(handle):
+    try:
+        del _pyrefs[handle]
+    except:
+        pass
+
+
+# return a new reference of the object pointed to by the handle.
+# The return value might be different with the input (on PyPy).
+# _py_deref should be called (once) when the object is not needed anymore.
+@_ffi.callback('void*(void*)')
+def _py_ref(handle):
+    obj = _ffi.from_handle(handle)
+    handle = _ffi.new_handle(obj)
+    _pyrefs[handle] = handle
+    return handle
+
+
+@_ffi.callback('void(void*, cl_int)')
+def _py_call(handle, status):
+    _ffi.from_handle(handle)(status)
+
+
+_lib.set_py_funcs(_py_gc, _py_ref, _py_deref, _py_call)
+
+# }}}
+
 
 # {{{ compatibility shims
 
@@ -406,7 +442,7 @@ class migrate_mem_object_flags_ext(_NoInit):  # noqa
 _locals = locals()
 
 
-@_ffi.callback('void(const char*, const char* name, long value)')
+@_ffi.callback('void (*)(const char*, const char* name, long value)')
 def _constant_callback(type_, name, value):
     setattr(_locals[_ffi_pystr(type_)], _ffi_pystr(name), value)  # noqa
 

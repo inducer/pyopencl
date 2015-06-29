@@ -12,8 +12,6 @@
 #ifndef __PYOPENCL_ERROR_H
 #define __PYOPENCL_ERROR_H
 
-namespace pyopencl {
-
 // {{{ error
 
 class clerror : public std::runtime_error {
@@ -239,7 +237,7 @@ call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
     return res;
 }
 #define pyopencl_call_guarded(func, args...)    \
-    pyopencl::call_guarded(func, #func, args)
+    call_guarded(func, #func, args)
 
 static PYOPENCL_INLINE void
 cleanup_print_error(cl_int status_code, const char *name) noexcept
@@ -263,7 +261,7 @@ call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
     }
 }
 #define pyopencl_call_guarded_cleanup(func, args...)    \
-    pyopencl::call_guarded_cleanup(func, #func, args)
+    call_guarded_cleanup(func, #func, args)
 
 template<typename Func>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE error*
@@ -310,7 +308,5 @@ c_handle_retry_mem_error(Func &&func) noexcept
 }
 
 // }}}
-
-}
 
 #endif

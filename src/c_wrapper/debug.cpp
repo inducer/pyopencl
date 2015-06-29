@@ -4,8 +4,6 @@
 #include <iomanip>
 #include <stdlib.h>
 
-namespace pyopencl {
-
 std::mutex dbg_lock;
 
 void
@@ -73,16 +71,14 @@ _get_debug_env()
 
 bool debug_enabled = _get_debug_env();
 
-}
-
 int
 get_debug()
 {
-    return (int)pyopencl::debug_enabled;
+    return (int) debug_enabled;
 }
 
 void
 set_debug(int debug)
 {
-    pyopencl::debug_enabled = (bool)debug;
+    debug_enabled = (bool)debug;
 }

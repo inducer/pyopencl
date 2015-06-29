@@ -1,10 +1,11 @@
-from __future__ import absolute_import
-from __future__ import print_function
 #!/usr/bin/env python
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
+
+from __future__ import absolute_import, print_function
 
 __copyright__ = """
-Copyright (C) 2009-14 Andreas Kloeckner
+Copyright (C) 2009-15 Andreas Kloeckner
+Copyright (C) 2013 Marko Bencun
 Copyright (C) 2013 Marko Bencun
 """
 
@@ -84,36 +85,39 @@ def get_config_schema():
 
 
 def main():
+    from setuptools import find_packages
     from aksetup_helper import (hack_distutils, get_config, setup,
             check_git_submodules)
-    from setuptools import Extension
     check_git_submodules()
 
     hack_distutils()
     conf = get_config(get_config_schema(),
             warn_about_no_config=False)
-    EXTRA_DEFINES = {}
 
-    EXTRA_DEFINES["PYGPU_PACKAGE"] = "pyopencl"
-    EXTRA_DEFINES["PYGPU_PYOPENCL"] = "1"
+    extra_defines = {}
+
+    extra_defines["PYGPU_PACKAGE"] = "pyopencl"
+    extra_defines["PYGPU_PYOPENCL"] = "1"
 
     if conf["CL_TRACE"]:
-        EXTRA_DEFINES["PYOPENCL_TRACE"] = 1
+        extra_defines["PYOPENCL_TRACE"] = 1
 
     if conf["CL_ENABLE_GL"]:
-        EXTRA_DEFINES["HAVE_GL"] = 1
+        extra_defines["HAVE_GL"] = 1
 
     if conf["CL_ENABLE_DEVICE_FISSION"]:
-        EXTRA_DEFINES["PYOPENCL_USE_DEVICE_FISSION"] = 1
+        extra_defines["PYOPENCL_USE_DEVICE_FISSION"] = 1
     if conf["CL_PRETEND_VERSION"]:
         try:
             major, minor = [int(x) for x in conf["CL_PRETEND_VERSION"].split(".")]
-            EXTRA_DEFINES["PYOPENCL_PRETEND_CL_VERSION"] = \
+            extra_defines["PYOPENCL_PRETEND_CL_VERSION"] = \
                     0x1000*major + 0x10 * minor
         except:
             print("CL_PRETEND_VERSION must be of the form M.N, "
                     "with two integers M and N")
             raise
+
+    conf["EXTRA_DEFINES"] = extra_defines
 
     ver_dic = {}
     version_file = open("pyopencl/version.py")
@@ -124,14 +128,14 @@ def main():
 
     exec(compile(version_file_contents, "pyopencl/version.py", 'exec'), ver_dic)
 
-    SEPARATOR = "-"*75
+    separator = "-"*75
 
     try:
         import mako  # noqa
     except ImportError:
-        print(SEPARATOR)
+        print(separator)
         print("Mako is not installed.")
-        print(SEPARATOR)
+        print(separator)
         print("That is not a problem, as most of PyOpenCL will be just fine ")
         print("without it.Some higher-level parts of pyopencl (such as ")
         print("pyopencl.reduction) will not function without the templating engine ")
@@ -140,46 +144,26 @@ def main():
         print("installing PyOpenCL.")
         print("")
         print("[1] http://www.makotemplates.org/")
-        print(SEPARATOR)
+        print(separator)
         print("Hit Ctrl-C now if you'd like to think about the situation.")
-        print(SEPARATOR)
+        print(separator)
 
         from aksetup_helper import count_down_delay
         count_down_delay(delay=5)
 
-    might_be_cuda = False
-    for inc_dir in conf["CL_INC_DIR"]:
-        inc_dir = inc_dir.lower()
-        if "nv" in inc_dir or "cuda" in inc_dir:
-            might_be_cuda = True
+    # {{{ write cffi build script
 
-    if might_be_cuda and conf["CL_ENABLE_DEVICE_FISSION"]:
-        print(SEPARATOR)
-        print("You might be compiling against Nvidia CUDA with device "
-                "fission enabled.")
-        print(SEPARATOR)
-        print("That is not a problem on CUDA 4.0 and newer. If you are "
-                "using CUDA 3.2,")
-        print("your build will break, because Nvidia shipped a broken CL header in")
-        print("in your version. The fix is to set CL_ENABLE_DEVICE_FISSION to False")
-        print("in your PyOpenCL configuration.")
-        print(SEPARATOR)
-        print("Hit Ctrl-C now if you'd like to think about the situation.")
-        print(SEPARATOR)
+    with open("cffi_build.py.in", "rt") as f:
+        build_script_template = f.read()
 
-        from aksetup_helper import count_down_delay
-        count_down_delay(delay=5)
+    format_args = dict((k, repr(v)) for k, v in conf.items())
 
-    # from pyopencl._cffi import _get_verifier
+    build_script = build_script_template.format(**format_args)
 
-    # for development: clean cache such that the extension is rebuilt
-    if 0:
-        import os.path
-        current_directory = os.path.dirname(__file__)
+    with open("cffi_build.py", "wt") as f:
+        f.write(build_script)
 
-        import shutil
-        shutil.rmtree(os.path.join(current_directory,
-            'pyopencl', '__pycache__/'), ignore_errors=True)
+    # }}}
 
     setup(name="pyopencl",
             # metadata
@@ -212,10 +196,11 @@ def main():
                 ],
 
             # build info
-            packages=["pyopencl", "pyopencl.characterize", "pyopencl.compyte"],
+            packages=find_packages(),
 
             setup_requires=[
                 "numpy",
+                "cffi>=1.1.0",
                 ],
 
             install_requires=[
@@ -223,53 +208,16 @@ def main():
                 "pytools>=2014.2",
                 "pytest>=2",
                 "decorator>=3.2.0",
-                "cffi>=0.7.2",
+                "cffi>=1.1.0",
                 "appdirs>=1.4.0",
                 # "Mako>=0.3.6",
                 ],
 
-            ext_package="pyopencl",
-            ext_modules=[
-                Extension("_wrapcl",
-                               ["src/c_wrapper/wrap_cl.cpp",
-                                "src/c_wrapper/wrap_constants.cpp",
-                                "src/c_wrapper/bitlog.cpp",
-                                "src/c_wrapper/pyhelper.cpp",
-                                "src/c_wrapper/platform.cpp",
-                                "src/c_wrapper/device.cpp",
-                                "src/c_wrapper/context.cpp",
-                                "src/c_wrapper/command_queue.cpp",
-                                "src/c_wrapper/event.cpp",
-                                "src/c_wrapper/memory_object.cpp",
-                                "src/c_wrapper/image.cpp",
-                                "src/c_wrapper/gl_obj.cpp",
-                                "src/c_wrapper/memory_map.cpp",
-                                "src/c_wrapper/buffer.cpp",
-                                "src/c_wrapper/sampler.cpp",
-                                "src/c_wrapper/program.cpp",
-                                "src/c_wrapper/kernel.cpp",
-                                "src/c_wrapper/debug.cpp",
-                                ],
-                               include_dirs=(
-                                   conf["CL_INC_DIR"]
-                                   + ["src/c_wrapper/",
-                                      "pyopencl/c_wrapper/"]),
-                               library_dirs=conf["CL_LIB_DIR"],
-                               libraries=conf["CL_LIBNAME"],
-                               define_macros=list(EXTRA_DEFINES.items()),
-                               extra_compile_args=(['-std=c++0x']
-                                                   + conf["CXXFLAGS"]),
-                               extra_link_args=conf["LDFLAGS"])
-            ],
+            cffi_modules=["cffi_build.py:ffi"],
 
             include_package_data=True,
             package_data={
-                    "pyopencl": [
-                        "cl/*.cl",
-                        "cl/*.h",
-                        "c_wrapper/wrap_cl_core.h",
-                        ] + (["c_wrapper/wrap_cl_gl_core.h"]
-                             if conf["CL_ENABLE_GL"] else [])
+                    "pyopencl": ["cl/*.cl", "cl/*.h"]
                     },
 
             zip_safe=False)

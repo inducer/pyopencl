@@ -3,8 +3,6 @@
 #ifndef __PYOPENCL_PROGRAM_H
 #define __PYOPENCL_PROGRAM_H
 
-namespace pyopencl {
-
 class device;
 
 // {{{ program
@@ -56,7 +54,5 @@ public:
 extern template void print_clobj<program>(std::ostream&, const program*);
 
 // }}}
-
-}
 
 #endif

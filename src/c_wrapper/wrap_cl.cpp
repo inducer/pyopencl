@@ -14,7 +14,6 @@
 #include "program.h"
 #include "kernel.h"
 
-namespace pyopencl {
 template void print_buf<char>(std::ostream&, const char*, size_t,
                               ArgType, bool, bool);
 template void print_buf<cl_int>(std::ostream&, const cl_int*, size_t,
@@ -28,12 +27,8 @@ template void print_buf<cl_ulong>(std::ostream&, const cl_ulong*, size_t,
 template void print_buf<cl_image_format>(std::ostream&,
                                          const cl_image_format*, size_t,
                                          ArgType, bool, bool);
-}
 
 // {{{ c wrapper
-
-// Import all the names in pyopencl namespace for c wrappers.
-using namespace pyopencl;
 
 // Generic functions
 int
