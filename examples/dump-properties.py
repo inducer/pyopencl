@@ -29,7 +29,7 @@ def print_info(obj, info_cls):
                 try:
                     print("%s: %s" % (info_name, info_value))
                 except:
-                    print("%s: <error>") % info_name
+                    print("%s: <error>" % info_name)
 
 for platform in cl.get_platforms():
     print(75*"=")
