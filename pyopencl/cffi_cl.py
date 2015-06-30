@@ -790,15 +790,16 @@ class MemoryMap(_Common):
         return Event._create(_event[0])
 
 
+# {{{ _c_buffer_from_obj
+
 if _PYPY:
     # Convert a Python object to a tuple (ptr, num_bytes, ref) to be able to
     # pass a data stream to a C function where @ptr can be passed to a pointer
     # argument and @num_bytes is the number of bytes. For certain types or
     # when @writable or @retain is True, @ref is the object which keep the
     # pointer converted from @ptr object valid.
-    def _c_buffer_from_obj(obj, writable=False, retain=False):
-        # {{{ special case: for numpy types and bytes
 
+    def _c_buffer_from_obj(obj, writable=False, retain=False):
         if isinstance(obj, bytes):
             if writable:
                 # bytes is not writable
@@ -822,8 +823,8 @@ if _PYPY:
         else:
             raise LogicError("PyOpencl on PyPy only accepts numpy arrays "
                              "and scalars arguments", status_code.INVALID_VALUE)
-        # }}}
-else:
+
+elif sys.version_info >= (2, 7):
     import ctypes
     try:
         # Python 2.6 doesn't have this.
@@ -844,6 +845,42 @@ else:
             return _ffi.cast('void*', buf.buf), buf.len, obj
 
         # }}}
+
+else:
+    # Py2.6 and below
+
+    import ctypes
+    try:
+        # Python 2.6 doesn't have this.
+        _ssize_t = ctypes.c_ssize_t
+    except AttributeError:
+        _ssize_t = ctypes.c_size_t
+
+    def _c_buffer_from_obj(obj, writable=False, retain=False):
+        # {{{ fall back to the old CPython buffer protocol API
+
+        addr = ctypes.c_void_p()
+        length = _ssize_t()
+
+        try:
+            if writable:
+                ctypes.pythonapi.PyObject_AsWriteBuffer(
+                    ctypes.py_object(obj), ctypes.byref(addr),
+                    ctypes.byref(length))
+            else:
+                ctypes.pythonapi.PyObject_AsReadBuffer(
+                    ctypes.py_object(obj), ctypes.byref(addr),
+                    ctypes.byref(length))
+
+                # ctypes check exit status of these, so no need to check
+                # for errors.
+        except TypeError:
+            raise LogicError(routine=None, code=status_code.INVALID_VALUE,
+                             msg=("un-sized (pure-Python) types not "
+                                  "acceptable as arguments"))
+        # }}}
+
+        return _ffi.cast('void*', addr.value), length.value, obj
 
 # }}}
 
@@ -885,6 +922,8 @@ class Buffer(MemoryObject):
             _ret, self.ptr, idx.start or 0, idx.stop or 0))
         ret = self._create(_ret[0])
         MemoryObject.__init__(ret, None)
+
+# }}}
 
 # }}}
 
