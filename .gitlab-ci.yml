@@ -1,13 +1,15 @@
-"Python 2.7 AMD CPU (+special func)":
+"Python 2.7 AMD CPU (+GL and special func)":
   script:
   - export PY_EXE=python2.7
   - export PYOPENCL_TEST=amd:pu
   - export EXTRA_INSTALL="numpy mako scipy pyfmmlib"
+  - echo "CL_ENABLE_GL = True" > siteconf.py
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python2.7
   - amd-cl-cpu
+  - opengl
   except:
   - tags
 Python 2.7 Intel CPU:
