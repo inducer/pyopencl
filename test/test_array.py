@@ -248,10 +248,10 @@ def test_pow_array(ctx_factory):
     a_gpu = cl_array.to_device(queue, a)
 
     result = pow(a_gpu, a_gpu).get()
-    assert (np.abs(a ** a - result) < 1e-3).all()
+    assert (np.abs(a ** a - result) < 3e-3).all()
 
     result = (a_gpu ** a_gpu).get()
-    assert (np.abs(pow(a, a) - result) < 1e-3).all()
+    assert (np.abs(pow(a, a) - result) < 3e-3).all()
 
 
 def test_pow_number(ctx_factory):
