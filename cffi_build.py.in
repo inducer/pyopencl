@@ -43,7 +43,7 @@ with open("src/c_wrapper/wrap_cl_core.h", "rt") as f:
     ffi.cdef(f.read())
 
 if {CL_ENABLE_GL}:
-    with open("wrap_cl_gl_core.h") as f:
+    with open("src/c_wrapper/wrap_cl_gl_core.h") as f:
         ffi.cdef(f.read())
 
 ffi.set_source("pyopencl._cffi",
