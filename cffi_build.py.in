@@ -50,6 +50,11 @@ ffi.set_source("pyopencl._cffi",
         """
         #include <CL/cl.h>
 
+        #ifdef HAVE_GL
+        #include <GL/gl.h>
+        #include <CL/cl_gl.h>
+        #endif
+
         extern "C" {{
             #include <wrap_cl_core.h>
             #ifdef HAVE_GL
