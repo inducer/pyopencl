@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #import pyopencl._cl as _cl
 import pyopencl.cffi_cl as _cl
+import sys
 from struct import pack as _pack
 
 _size_t_char = ({
@@ -42,10 +43,29 @@ _type_char_map = {
     'N': _size_t_char
 }
 del _size_t_char
-def pack(type_char, obj):
+
+
+def pack_normal(type_char, obj):
     if type_char == 'F':
         return _pack('f', obj.real) + _pack('f', obj.imag)
     elif type_char == "D":
         return _pack('d', obj.real) + _pack('d', obj.imag)
     else:
         return _pack(_type_char_map.get(type_char, type_char), obj)
+
+
+def pack_py26(type_char, obj):
+    if type_char == 'F':
+        return _pack('f', obj.real) + _pack('f', obj.imag)
+    elif type_char == "D":
+        return _pack('d', obj.real) + _pack('d', obj.imag)
+    elif type_char in "LD":
+        return _pack(type_char, long(obj))
+    else:
+        return _pack(_type_char_map.get(type_char, type_char), obj)
+
+
+if (2, 6) <= sys.version_info < (2, 7):
+    pack = pack_py26
+else:
+    pack = pack_normal
