@@ -204,6 +204,10 @@ def test_modf(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
+    if context.devices[0].platform.name == "Portable Computing Language":
+        # https://github.com/pocl/pocl/issues/198
+        pytest.skip("POCL doesn't seem to have modf")
+
     for s in sizes:
         a = cl_array.arange(queue, s, dtype=np.float32)/10
         fracpart, intpart = clmath.modf(a)
@@ -222,6 +226,10 @@ def test_modf(ctx_factory):
 def test_frexp(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+
+    if context.devices[0].platform.name == "Portable Computing Language":
+        # https://github.com/pocl/pocl/issues/198
+        pytest.skip("POCL doesn't seem to have frexp")
 
     for s in sizes:
         a = cl_array.arange(queue, s, dtype=np.float32)/10
@@ -251,6 +259,10 @@ def test_bessel(ctx_factory):
     if not has_double_support(ctx.devices[0]):
         from pytest import skip
         skip("no double precision support--cannot test bessel function")
+
+    if ctx.devices[0].platform.name == "Portable Computing Language":
+        # https://github.com/pocl/pocl/issues/198
+        pytest.skip("POCL doesn't seem to have frexp")
 
     nterms = 30
 
