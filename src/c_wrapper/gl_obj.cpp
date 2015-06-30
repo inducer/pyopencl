@@ -139,13 +139,16 @@ have_gl()
 #endif
 }
 
-#ifdef __APPLE__
 cl_context_properties
 get_apple_cgl_share_group()
 {
+#ifdef __APPLE__
     CGLContextObj kCGLContext = CGLGetCurrentContext();
     CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
 
     return (cl_context_properties)kCGLShareGroup;
-}
+#else
+    throw clerror("get_apple_cgl_share_group unavailable: non-Apple platform",
+        CL_INVALID_VALUE);
 #endif /* __APPLE__ */
+}
