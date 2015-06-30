@@ -59,7 +59,7 @@ def pack_py26(type_char, obj):
         return _pack('f', obj.real) + _pack('f', obj.imag)
     elif type_char == "D":
         return _pack('d', obj.real) + _pack('d', obj.imag)
-    elif type_char in "LD":
+    elif type_char in "IL":
         return _pack(type_char, long(obj))
     else:
         return _pack(_type_char_map.get(type_char, type_char), obj)
