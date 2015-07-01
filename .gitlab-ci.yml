@@ -72,4 +72,4 @@ PyPy Intel CPU:
   - intel-cl-cpu
   except:
   - tags
-  - master
+  - deprecated-boost-python
