@@ -418,6 +418,10 @@ def test_hankel_01_complex(ctx_factory, ref_src):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
+    if not has_double_support(ctx.devices[0]):
+        from pytest import skip
+        skip("no double precision support--cannot test complex bessel function")
+
     n = 10**6
     np.random.seed(11)
     z = (
