@@ -212,6 +212,7 @@ def main():
                 "decorator>=3.2.0",
                 "cffi>=1.1.0",
                 "appdirs>=1.4.0",
+                "six>=1.9.0",
                 # "Mako>=0.3.6",
                 ],
 
