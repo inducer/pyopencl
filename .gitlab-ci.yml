@@ -24,7 +24,7 @@ Python 2.7 Intel CPU:
   - intel-cl-cpu
   except:
   - tags
-  - cffi
+  - master
 Python 3.4 AMD CPU:
   script:
   - export PY_EXE=python3.4
