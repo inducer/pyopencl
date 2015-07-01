@@ -143,10 +143,16 @@ cl_context_properties
 get_apple_cgl_share_group()
 {
 #ifdef __APPLE__
-    CGLContextObj kCGLContext = CGLGetCurrentContext();
-    CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
+    #ifdef HAVE_GL
+        CGLContextObj kCGLContext = CGLGetCurrentContext();
+        CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);
 
-    return (cl_context_properties)kCGLShareGroup;
+        return (cl_context_properties)kCGLShareGroup;
+    #else
+        throw clerror("get_apple_cgl_share_group unavailable: "
+            "GL interop not compiled",
+            CL_INVALID_VALUE);
+    #endif
 #else
     throw clerror("get_apple_cgl_share_group unavailable: non-Apple platform",
         CL_INVALID_VALUE);
