@@ -91,21 +91,19 @@ def test_get_info(ctx_factory):
                 "OpenCL 1.2 pocl 0.10"),
                 pocl_quirks),
             (("Apple", "Apple",
-                "OpenCL 1.2 (Apr 25 2013 18:32:06)"),
+                "OpenCL 1.2"),
                 [
                     (cl.Program, cl.program_info.SOURCE),
                     ]),
             ]
     QUIRKS = []  # noqa
 
-    plat_quirk_key = (
-            platform.vendor,
-            platform.name,
-            platform.version)
-
     def find_quirk(quirk_list, cl_obj, info):
-        for entry_plat_key, quirks in quirk_list:
-            if entry_plat_key == plat_quirk_key:
+        for (vendor, name, version), quirks in quirk_list:
+            if (
+                    vendor == platform.vendor
+                    and name == platform.name
+                    and platform.version.startswith(version)):
                 for quirk_cls, quirk_info in quirks:
                     if (isinstance(cl_obj, quirk_cls)
                             and quirk_info == info):
