@@ -146,7 +146,7 @@ def frexp(arg, queue=None):
     `arg == significand * 2**exponent`.
     """
     sig = arg._new_like_me(queue=queue)
-    expt = arg._new_like_me(queue=queue)
+    expt = arg._new_like_me(queue=queue, dtype=np.int32)
     _frexp(sig, expt, arg, queue=queue)
     return sig, expt
 
