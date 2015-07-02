@@ -95,6 +95,11 @@ def test_mix_complex(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
+    dev = context.devices[0]
+    from pyopencl.characterize import has_struct_arg_count_bug
+    if has_struct_arg_count_bug(dev):
+        pytest.xfail("device has struct arg counting bug")
+
     size = 10
 
     dtypes = [
@@ -169,6 +174,9 @@ def test_pow_neg1_vs_inv(ctx_factory):
     if not has_double_support(device):
         from pytest import skip
         skip("double precision not supported on %s" % device)
+    from pyopencl.characterize import has_struct_arg_count_bug
+    if has_struct_arg_count_bug(device):
+        pytest.xfail("device has struct arg counting bug")
 
     a_dev = make_random_array(queue, np.complex128, 20000)
 

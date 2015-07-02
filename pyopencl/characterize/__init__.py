@@ -320,3 +320,15 @@ def get_simd_group_size(dev, type_size):
         return 1
 
     return None
+
+
+def has_struct_arg_count_bug(dev):
+    """Checks whether the device is expected to have the
+    `argument counting bug <https://github.com/pocl/pocl/issues/197>`_.
+    """
+
+    if dev.platform.name == "Apple" and dev.type & cl.device_type.CPU:
+        return True
+    if dev.platform.name == "Portable Computing Language":
+        return True
+    return False

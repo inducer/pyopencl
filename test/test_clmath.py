@@ -76,6 +76,11 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False
         gpu_func = getattr(clmath, name)
         cpu_func = getattr(np, numpy_func_names.get(name, name))
 
+        dev = context.devices[0]
+        from pyopencl.characterize import has_struct_arg_count_bug
+        if use_complex and has_struct_arg_count_bug(dev):
+            pytest.xfail("device has struct arg counting bug")
+
         if has_double_support(context.devices[0]):
             if use_complex:
                 dtypes = [np.float32, np.float64, np.complex64, np.complex128]

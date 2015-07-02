@@ -27,6 +27,7 @@ THE SOFTWARE.
 
 import numpy as np
 import numpy.linalg as la
+import pytest
 
 import pyopencl as cl
 import pyopencl.array as cl_array
@@ -675,6 +676,10 @@ def test_enqueue_task(ctx_factory):
 
 
 def test_platform_get_devices(platform):
+    if platform.name == "Apple":
+        pytest.xfail("Apple doesn't understand all the values we pass "
+                "for dev_type")
+
     dev_types = [cl.device_type.ACCELERATOR, cl.device_type.ALL,
                  cl.device_type.CPU, cl.device_type.DEFAULT, cl.device_type.GPU]
     if (platform._get_cl_version() >= (1, 2) and
