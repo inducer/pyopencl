@@ -700,6 +700,10 @@ def test_user_event(ctx_factory):
         from pytest import skip
         skip("UserEvent is only available in OpenCL 1.1")
 
+    if ctx.devices[0].platform.name == "Portable Computing Language":
+        # https://github.com/pocl/pocl/issues/201
+        pytest.xfail("POCL's user events don't work right")
+
     status = {}
 
     def event_waiter1(e, key):
