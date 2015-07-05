@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
-import six
-from six.moves import zip
-from six.moves import input
+from __future__ import division, absolute_import, print_function
 
-__copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
+__copyright__ = "Copyright (C) 2009-15 Andreas Kloeckner"
 
 __license__ = """
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,6 +24,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+import six
+import sys
+from six.moves import input, range
+
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 from pytools import Record as _Record
 
@@ -45,7 +44,121 @@ except ImportError:
 
 
 import numpy as np
-from pyopencl.cffi_cl import *  # noqa
+
+from pyopencl.cffi_cl import (  # noqa
+        get_cl_header_version,
+        program_kind,
+        status_code,
+        platform_info,
+        device_type,
+        device_info,
+        device_fp_config,
+        device_mem_cache_type,
+        device_local_mem_type,
+        device_exec_capabilities,
+        command_queue_properties,
+        context_info,
+        gl_context_info,
+        context_properties,
+        command_queue_info,
+        mem_flags,
+        channel_order,
+        channel_type,
+        mem_object_type,
+        mem_info,
+        image_info,
+        addressing_mode,
+        filter_mode,
+        sampler_info,
+        map_flags,
+        program_info,
+        program_build_info,
+        program_binary_type,
+        kernel_info,
+        kernel_arg_info,
+        kernel_arg_address_qualifier,
+        kernel_arg_access_qualifier,
+        kernel_work_group_info,
+        event_info,
+        command_type,
+        command_execution_status,
+        profiling_info,
+        mem_migration_flags,
+        mem_migration_flags_ext,
+        device_partition_property_ext,
+        affinity_domain_ext,
+        device_partition_property,
+        device_affinity_domain,
+        gl_object_type,
+        gl_texture_info,
+        migrate_mem_object_flags_ext,
+
+        Error, MemoryError, LogicError, RuntimeError,
+
+        Platform,
+        get_platforms,
+        unload_platform_compiler,
+
+        Device,
+        Context,
+        CommandQueue,
+        LocalMemory,
+        MemoryObjectHolder,
+        MemoryObject,
+        MemoryMap,
+        Buffer,
+        _Program,
+        Kernel,
+
+        Event,
+        wait_for_events,
+        NannyEvent,
+        UserEvent,
+
+        enqueue_nd_range_kernel,
+        enqueue_task,
+
+        _enqueue_marker_with_wait_list,
+        _enqueue_marker,
+        _enqueue_barrier_with_wait_list,
+
+        enqueue_migrate_mem_objects,
+        enqueue_migrate_mem_object_ext,
+
+        _enqueue_barrier_with_wait_list,
+        _enqueue_read_buffer,
+        _enqueue_write_buffer,
+        _enqueue_copy_buffer,
+        _enqueue_read_buffer_rect,
+        _enqueue_write_buffer_rect,
+        _enqueue_copy_buffer_rect,
+
+        enqueue_map_buffer,
+        _enqueue_fill_buffer,
+        _enqueue_read_image,
+        _enqueue_copy_image,
+        _enqueue_write_image,
+        enqueue_map_image,
+        enqueue_fill_image,
+        _enqueue_copy_image_to_buffer,
+        _enqueue_copy_buffer_to_image,
+
+        have_gl,
+        _GLObject,
+        GLBuffer,
+        GLRenderBuffer,
+        _create_gl_enqueue,
+
+        ImageFormat,
+        get_supported_image_formats,
+
+        ImageDescriptor,
+        Image,
+        Sampler,
+        GLTexture,
+        )
+
+
 import inspect as _inspect
 
 CONSTANT_CLASSES = [
