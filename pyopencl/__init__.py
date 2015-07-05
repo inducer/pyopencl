@@ -755,6 +755,9 @@ def _add_functionality():
         from pytools.py_codegen import PythonCodeGenerator
         gen = PythonCodeGenerator()
 
+        if num_args == 0:
+            gen("pass")
+
         for i in range(num_args):
             gen("# process argument {arg_idx}".format(arg_idx=i))
             gen("")
@@ -792,6 +795,9 @@ def _add_functionality():
 
         from pytools.py_codegen import PythonCodeGenerator
         gen = PythonCodeGenerator()
+
+        if not scalar_arg_dtypes:
+            gen("pass")
 
         for arg_idx, arg_dtype in enumerate(scalar_arg_dtypes):
             gen("# process argument {arg_idx}".format(arg_idx=arg_idx))
