@@ -789,6 +789,8 @@ def _add_functionality():
             else:
                 warn_about_arg_count_bug = True
 
+        fp_arg_count = 0
+
         # }}}
 
         cl_arg_idx = 0
@@ -832,7 +834,9 @@ def _add_functionality():
                 else:
                     raise TypeError("unexpected complex type: %s" % arg_dtype)
 
-                if work_around_arg_count_bug and arg_dtype == np.complex128:
+                if (work_around_arg_count_bug
+                        and arg_dtype == np.complex128
+                        and fp_arg_count + 2 <= 8):
                     gen(
                             "buf = pack('{arg_char}', {arg_var}.real)"
                             .format(arg_char=arg_char, arg_var=arg_var))
@@ -851,6 +855,8 @@ def _add_functionality():
                     self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf")
                     cl_arg_idx += 1
 
+                fp_arg_count += 2
+
             elif arg_dtype.char in "IL" and _CPY26:
                 # Prevent SystemError: ../Objects/longobject.c:336: bad
                 # argument to internal function
@@ -862,6 +868,9 @@ def _add_functionality():
                 cl_arg_idx += 1
 
             else:
+                if arg_dtype.kind == "f":
+                    fp_arg_count += 1
+
                 arg_char = arg_dtype.char
                 arg_char = _type_char_map.get(arg_char, arg_char)
                 gen(
