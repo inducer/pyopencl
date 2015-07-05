@@ -642,7 +642,7 @@ def _add_functionality():
                 PythonCodeGenerator,
                 Indentation)
 
-        arg_names = ["arg%d" % i for i in xrange(num_passed_args)]
+        arg_names = ["arg%d" % i for i in range(num_passed_args)]
 
         # {{{ wrap in error handler
 
