@@ -207,7 +207,7 @@ def main():
 
             install_requires=[
                 "numpy",
-                "pytools>=2015.1.1",
+                "pytools>=2015.1.2",
                 "pytest>=2",
                 "decorator>=3.2.0",
                 "cffi>=1.1.0",
