@@ -76,11 +76,6 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False
         gpu_func = getattr(clmath, name)
         cpu_func = getattr(np, numpy_func_names.get(name, name))
 
-        dev = context.devices[0]
-        from pyopencl.characterize import has_struct_arg_count_bug
-        if use_complex and has_struct_arg_count_bug(dev):
-            pytest.xfail("device has struct arg counting bug")
-
         if has_double_support(context.devices[0]):
             if use_complex:
                 dtypes = [np.float32, np.float64, np.complex64, np.complex128]
@@ -132,8 +127,8 @@ if have_cl():
             (-math.pi/2 + 0.1, math.pi/2 - 0.1), 4e-5, use_complex=True)
     test_atan = make_unary_function_test("atan", (-10, 10), 2e-7)
 
-    test_sinh = make_unary_function_test("sinh", (-3, 3), 2e-6, use_complex=2e-3)
-    test_cosh = make_unary_function_test("cosh", (-3, 3), 2e-6, use_complex=2e-3)
+    test_sinh = make_unary_function_test("sinh", (-3, 3), 3e-6, use_complex=2e-3)
+    test_cosh = make_unary_function_test("cosh", (-3, 3), 3e-6, use_complex=2e-3)
     test_tanh = make_unary_function_test("tanh", (-3, 3), 2e-6, use_complex=True)
 
 
@@ -227,10 +222,6 @@ def test_modf(ctx_factory):
 def test_frexp(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
-
-    if context.devices[0].platform.name == "Portable Computing Language":
-        # https://github.com/pocl/pocl/issues/202
-        pytest.xfail("POCL's frexp seems to have issues")
 
     for s in sizes:
         a = cl_array.arange(queue, s, dtype=np.float32)/10

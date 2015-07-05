@@ -37,6 +37,11 @@ from .compyte.array import f_contiguous_strides, c_contiguous_strides
 
 _lib = _ffi.dlopen(None)
 
+
+class _CLKernelArg(object):
+    pass
+
+
 # {{{ hook up connections between the wrapper and the interperter
 
 import gc
@@ -713,7 +718,7 @@ class cffi_array(np.ndarray):  # noqa
         return self.__base
 
 
-class LocalMemory(object):
+class LocalMemory(_CLKernelArg):
     __slots__ = ('_size',)
 
     def __init__(self, size):
@@ -724,7 +729,7 @@ class LocalMemory(object):
         return self._size
 
 
-class MemoryObjectHolder(_Common):
+class MemoryObjectHolder(_Common, _CLKernelArg):
     def get_host_array(self, shape, dtype, order="C"):
         dtype, shape, strides = _norm_shape_dtype(
             shape, dtype, order, None, 'MemoryObjectHolder.get_host_array')
@@ -1030,17 +1035,20 @@ class Kernel(_Common):
         self.ptr = ptr_kernel[0]
 
     def set_arg(self, arg_index, arg):
+        # If you change this, also change the kernel call generation logic.
         if arg is None:
             _handle_error(_lib.kernel__set_arg_null(self.ptr, arg_index))
-        elif isinstance(arg, MemoryObjectHolder):
-            _handle_error(_lib.kernel__set_arg_mem(self.ptr, arg_index, arg.ptr))
-        elif isinstance(arg, Sampler):
-            _handle_error(_lib.kernel__set_arg_sampler(self.ptr, arg_index,
-                                                       arg.ptr))
-        elif isinstance(arg, LocalMemory):
-            _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
-                                                   _ffi.NULL, arg.size))
+        elif isinstance(arg, _CLKernelArg):
+            if isinstance(arg, MemoryObjectHolder):
+                _handle_error(_lib.kernel__set_arg_mem(self.ptr, arg_index, arg.ptr))
+            elif isinstance(arg, Sampler):
+                _handle_error(_lib.kernel__set_arg_sampler(self.ptr, arg_index,
+                                                           arg.ptr))
+            elif isinstance(arg, LocalMemory):
+                _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
+                                                       _ffi.NULL, arg.size))
         elif _CPY2 and isinstance(arg, np.generic):
+            # https://github.com/numpy/numpy/issues/5381
             c_buf, size, _ = _c_buffer_from_obj(np.getbuffer(arg))
             _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
                                                    c_buf, size))
@@ -1869,7 +1877,7 @@ class Image(MemoryObject):
 
 # {{{ Sampler
 
-class Sampler(_Common):
+class Sampler(_Common, _CLKernelArg):
     _id = 'sampler'
 
     def __init__(self, context, normalized_coords, addressing_mode, filter_mode):

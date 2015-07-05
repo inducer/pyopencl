@@ -328,9 +328,6 @@ def test_dot(ctx_factory):
     queue = cl.CommandQueue(context)
 
     dev = context.devices[0]
-    from pyopencl.characterize import has_struct_arg_count_bug
-    if has_struct_arg_count_bug(dev):
-        pytest.xfail("device has struct arg counting bug")
 
     dtypes = [np.float32, np.complex64]
     if has_double_support(dev):
