@@ -850,7 +850,7 @@ def _add_functionality():
                 # argument to internal function
 
                 gen(
-                        "buf = pack('{arg_char}', long({arg_var})"
+                        "buf = pack('{arg_char}', long({arg_var}))"
                         .format(arg_char=arg_dtype.char, arg_var=arg_var))
                 self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf")
                 cl_arg_idx += 1
