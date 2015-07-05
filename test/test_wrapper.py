@@ -266,8 +266,6 @@ def test_invalid_kernel_names_cause_failures(ctx_factory):
         { a[get_global_id(0)] *= 2; }
         """).build()
 
-    # https://bugs.launchpad.net/pocl/+bug/1184464
-    _skip_if_pocl(device.platform, "pocl doesn't like invalid kernel names")
     try:
         prg.sam
         raise RuntimeError("invalid kernel name did not cause error")
@@ -598,8 +596,6 @@ def test_can_build_binary(ctx_factory):
     ctx = ctx_factory()
     device, = ctx.devices
     platform = device.platform
-
-    _skip_if_pocl(platform, "pocl doesn't like getting PROGRAM_BINARIES")
 
     program = cl.Program(ctx, """
     __kernel void simple(__global float *in, __global float *out)
