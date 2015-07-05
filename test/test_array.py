@@ -817,6 +817,19 @@ def test_reshape(ctx_factory):
         a_dev.reshape(-1, -1, 4)
 
 
+def test_skip_slicing(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a_host = np.arange(16).reshape((4, 4))
+    b_host = a_host[::3]
+
+    a = cl_array.to_device(queue, a_host)
+    b = a[::3]
+    assert b.shape == b_host.shape
+    assert np.array_equal(b[1].get(), b_host[1])
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
     # tests.
