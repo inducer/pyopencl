@@ -679,22 +679,75 @@ class Array(object):
         size (not necessarily shape) and dtype.
         """
 
+        if not self.size:
+            return ary or np.empty(self.shape, self.dtype)
+
+        index = 0
+        order = None
+        prev_stride = None
+        new_strides = []
+        for stride in self.strides:
+            if prev_stride:
+                if not order and stride > prev_stride:
+                    order = 'F'
+                elif not order and stride < prev_stride:
+                    order = 'C'
+                elif ((order == 'F' and stride < prev_stride) or
+                      (order == 'C' and stride > prev_stride)):
+                    raise TypeError(
+                        "Array must have row- or column-major layout")
+            new_strides = map(lambda x: x * self.shape[index], new_strides)
+            new_strides.append(1)
+            prev_stride = stride
+            index += 1
+        if not order: order = 'C'
+        new_strides = map(lambda x: x * self.dtype.itemsize, new_strides)
+        new_strides = list(new_strides)
+
+        element_strides = list(map(lambda x: int(x / self.dtype.itemsize),
+                                   self.strides))
+
+        if order == 'F':
+            new_strides.reverse()
+            element_strides.reverse()
+
         if ary is None:
             ary = np.empty(self.shape, self.dtype)
 
-            ary = _as_strided(ary, strides=self.strides)
+            if self.flags.forc:
+                ary = _as_strided(ary, strides=self.strides)
+                cl.enqueue_copy(queue or self.queue, ary, self.base_data,
+                                device_offset=self.offset,
+                                is_blocking=not async)
+                return ary
+
+            ary = _as_strided(ary, strides = new_strides)
+
         else:
             if ary.size != self.size:
                 raise TypeError("'ary' has non-matching size")
             if ary.dtype != self.dtype:
                 raise TypeError("'ary' has non-matching type")
 
-        assert self.flags.forc, "Array in get() must be contiguous"
+        region = list(self.shape)
+        region[0] *= self.dtype.itemsize
 
-        if self.size:
-            cl.enqueue_copy(queue or self.queue, ary, self.base_data,
-                    device_offset=self.offset,
-                    is_blocking=not async)
+        if len(self.shape) == 2:
+            row_pitch = element_strides[0] * element_strides[1] * self.dtype.itemsize
+            slice_pitch = 1
+        elif len(self.shape) == 3:
+            row_pitch = element_strides[-1] * element_strides[-2] * self.dtype.itemsize
+            slice_pitch = row_pitch * self.shape[0]
+        else:
+            raise TypeError(
+                "Only 2- or 3-D non-contiguous arrays are currently supported")
+
+        cl.enqueue_copy(queue or self.queue, ary, self.base_data,
+                        buffer_origin=(self.offset, 0, 0),
+                        host_origin=(0, 0, 0),
+                        region=tuple(region),
+                        buffer_pitches=(row_pitch, slice_pitch),
+                        host_pitches=(0,0))
 
         return ary
 
