@@ -1290,9 +1290,13 @@ class Array(object):
             raise ValueError("order must be either 'C' or 'F'")
 
         # TODO: add more error-checking, perhaps
-        if not self.flags.forc:
-            raise RuntimeError("only contiguous arrays may "
-                    "be used as arguments to this operation")
+
+        # FIXME: The following is overly conservative. As long as we don't change
+        # our memory footprint, we're good.
+
+        # if not self.flags.forc:
+        #     raise RuntimeError("only contiguous arrays may "
+        #             "be used as arguments to this operation")
 
         if isinstance(shape[0], tuple) or isinstance(shape[0], list):
             shape = tuple(shape[0])
