@@ -1,11 +1,6 @@
 """CL device arrays."""
 
-from __future__ import division
-from __future__ import absolute_import
-import six
-from six.moves import range
-from six.moves import zip
-from functools import reduce
+from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -32,6 +27,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
+import six
+from six.moves import range, zip, reduce
 
 import numpy as np
 import pyopencl.elementwise as elementwise
@@ -1461,8 +1458,8 @@ class Array(object):
         if len(axes) != len(self.shape):
             raise ValueError("axes don't match array")
 
-        new_shape = [self.shape[axes[i]] for i in xrange(len(axes))]
-        new_strides = [self.strides[axes[i]] for i in xrange(len(axes))]
+        new_shape = [self.shape[axes[i]] for i in range(len(axes))]
+        new_strides = [self.strides[axes[i]] for i in range(len(axes))]
 
         return self._new_with_changes(
                 self.base_data, self.offset,
