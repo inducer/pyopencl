@@ -830,6 +830,36 @@ def test_skip_slicing(ctx_factory):
     assert np.array_equal(b[1].get(), b_host[1])
 
 
+def test_transpose(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+
+    a_gpu = clrand(queue, (10, 20, 30), dtype=np.float32)
+    a = a_gpu.get()
+
+    # FIXME: not contiguous
+    #assert np.allclose(a_gpu.transpose((1,2,0)).get(), a.transpose((1,2,0)))
+    assert np.array_equal(a_gpu.T.get(), a.T)
+
+
+def test_newaxis(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.clrandom import rand as clrand
+
+    a_gpu = clrand(queue, (10, 20, 30), dtype=np.float32)
+    a = a_gpu.get()
+
+    b_gpu = a_gpu[:, np.newaxis]
+    b = a[:, np.newaxis]
+
+    assert b_gpu.shape == b.shape
+    assert b_gpu.strides == b.strides
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
     # tests.

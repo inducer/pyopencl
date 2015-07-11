@@ -144,6 +144,12 @@ Constructing :class:`Array` Instances
 .. autofunction:: take
 .. autofunction:: concatenate
 
+Manipulating :class:`Array` instances
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: transpose
+.. autofunction:: reshape
+
 Conditionals
 ^^^^^^^^^^^^
 

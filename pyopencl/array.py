@@ -338,6 +338,10 @@ class Array(object):
 
         The tuple of lengths of each dimension in the array.
 
+    .. attribute :: ndim
+
+        The number of dimensions in :attr:`shape`.
+
     .. attribute :: dtype
 
         The :class:`numpy.dtype` of the items in the GPU array.
@@ -370,6 +374,8 @@ class Array(object):
     .. automethod :: reshape
     .. automethod :: ravel
     .. automethod :: view
+    .. automethod :: transpose
+    .. attribute :: T
     .. automethod :: set
     .. automethod :: get
     .. automethod :: copy
@@ -558,6 +564,10 @@ class Array(object):
             self.base_data = data
 
         self.offset = offset
+
+    @property
+    def ndim(self):
+        return len(self.shape)
 
     @property
     def context(self):
@@ -1280,6 +1290,9 @@ class Array(object):
             raise ValueError("order must be either 'C' or 'F'")
 
         # TODO: add more error-checking, perhaps
+        if not self.flags.forc:
+            raise RuntimeError("only contiguous arrays may "
+                    "be used as arguments to this operation")
 
         if isinstance(shape[0], tuple) or isinstance(shape[0], list):
             shape = tuple(shape[0])
@@ -1426,6 +1439,39 @@ class Array(object):
                 shape=new_shape, dtype=dtype,
                 strides=new_strides)
 
+    def transpose(self, axes=None):
+        """Permute the dimensions of an array.
+
+        :arg axes: list of ints, optional.
+            By default, reverse the dimensions, otherwise permute the axes
+            according to the values given.
+
+        :returns: :class:`Array` A view of the array with its axes permuted.
+
+        .. versionadded:: 2015.2
+        """
+
+        if axes is None:
+            axes = range(self.ndim-1, -1, -1)
+
+        if len(axes) != len(self.shape):
+            raise ValueError("axes don't match array")
+
+        new_shape = [self.shape[axes[i]] for i in xrange(len(axes))]
+        new_strides = [self.strides[axes[i]] for i in xrange(len(axes))]
+
+        return self._new_with_changes(
+                self.base_data, self.offset,
+                shape=tuple(new_shape),
+                strides=tuple(new_strides))
+
+    @property
+    def T(self):  # noqa
+        """
+        .. versionadded:: 2015.2
+        """
+        return self.transpose()
+
     # }}}
 
     def map_to_host(self, queue=None, flags=None, is_blocking=True, wait_for=None):
@@ -1537,6 +1583,11 @@ class Array(object):
                     raise IndexError(
                             "more than one ellipsis not allowed in index")
                 seen_ellipsis = True
+
+            elif index_entry is np.newaxis:
+                new_shape.append(1)
+                new_strides.append(0)
+                index_axis += 1
 
             else:
                 raise IndexError("invalid subindex in axis %d" % index_axis)
@@ -2132,6 +2183,32 @@ def hstack(arrays, queue=None):
         index += ary.shape[-1]
 
     return result
+
+# }}}
+
+
+# {{{ shape manipulation
+
+def transpose(a, axes=None):
+    """Permute the dimensions of an array.
+
+    :arg a: :class:`Array`
+    :arg axes: list of ints, optional.
+        By default, reverse the dimensions, otherwise permute the axes
+        according to the values given.
+
+    :returns: :class:`Array` A view of the array with its axes permuted.
+    """
+    return a.transpose(axes)
+
+
+def reshape(a, shape):
+    """Gives a new shape to an array without changing its data.
+
+    .. versionadded:: 2015.2
+    """
+
+    return a.reshape(shape)
 
 # }}}
 
