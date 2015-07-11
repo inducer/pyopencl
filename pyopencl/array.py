@@ -286,16 +286,12 @@ class Array(object):
     as in :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
     broadcasting of scalars. (e.g. `array+5`)
 
-    *cqa* must be a :class:`pyopencl.CommandQueue` or a :class:`pyopencl.Context`.
+    *cq* must be a :class:`pyopencl.CommandQueue` or a :class:`pyopencl.Context`.
 
-    If it is a queue, *cqa* specifies the queue in which the array carries out
+    If it is a queue, *cq* specifies the queue in which the array carries out
     its computations by default. If a default queue (and thereby overloaded
     operators and many other niceties) are not desired, pass a
     :class:`Context`.
-
-    *cqa* will at some point be renamed *cq*, so it should be considered
-    'positional-only'. Arguments starting from 'order' should be considered
-    keyword-only.
 
     *allocator* may be `None` or a callable that, upon being called with an
     argument of the number of bytes to be allocated, returns an
@@ -306,6 +302,9 @@ class Array(object):
         Renamed *context* to *cqa*, made it general-purpose.
 
         All arguments beyond *order* should be considered keyword-only.
+
+    .. versionchanged:: 2015.2
+        Renamed *context* to *cq*, disallowed passing allocators through it.
 
     .. attribute :: data
 
@@ -449,57 +448,39 @@ class Array(object):
 
     __array_priority__ = 100
 
-    def __init__(self, cqa, shape, dtype, order="C", allocator=None,
-            data=None, offset=0, queue=None, strides=None, events=None):
+    def __init__(self, cq, shape, dtype, order="C", allocator=None,
+            data=None, offset=0, strides=None, events=None):
         # {{{ backward compatibility
 
-        from warnings import warn
-        if queue is not None:
-            warn("Passing the queue to the array through anything but the "
-                    "first argument of the Array constructor is deprecated. "
-                    "This will be continue to be accepted throughout the "
-                    "2013.[0-6] versions of PyOpenCL.",
-                    DeprecationWarning, 2)
+        if isinstance(cq, cl.CommandQueue):
+            queue = cq
+            context = queue.context
 
-        if isinstance(cqa, cl.CommandQueue):
-            if queue is not None:
-                raise TypeError("can't specify queue in 'cqa' and "
-                        "'queue' arguments")
-            queue = cqa
-
-        elif isinstance(cqa, cl.Context):
-            context = cqa
-
-            if queue is not None:
-                raise TypeError("may not pass a context and a queue "
-                        "(just pass the queue)")
-            if allocator is not None:
-                # "is" would be wrong because two Python objects are allowed
-                # to hold handles to the same context.
-
-                # FIXME It would be nice to check this. But it would require
-                # changing the allocator interface. Trust the user for now.
-
-                #assert allocator.context == context
-                pass
+        elif isinstance(cq, cl.Context):
+            context = cq
+            queue = None
 
         else:
-            # cqa is assumed to be an allocator
-            warn("Passing an allocator for the 'cqa' parameter is deprecated. "
-                    "This usage will be continue to be accepted throughout "
-                    "the 2013.[0-6] versions of PyOpenCL.",
-                    DeprecationWarning, stacklevel=2)
-            if allocator is not None:
-                raise TypeError("can't specify allocator in 'cqa' and "
-                        "'allocator' arguments")
+            raise TypeError("cq may be a queue or a context, not '%s'"
+                    % type(cq))
 
-            allocator = cqa
+        if allocator is not None:
+            # "is" would be wrong because two Python objects are allowed
+            # to hold handles to the same context.
+
+            # FIXME It would be nice to check this. But it would require
+            # changing the allocator interface. Trust the user for now.
+
+            #assert allocator.context == context
+            pass
 
         # Queue-less arrays do have a purpose in life.
         # They don't do very much, but at least they don't run kernels
         # in random queues.
         #
         # See also :meth:`with_queue`.
+
+        del cq
 
         # }}}
 
@@ -543,6 +524,9 @@ class Array(object):
         if _dtype_is_object(dtype):
             raise TypeError("object arrays on the compute device are not allowed")
 
+        assert isinstance(shape, tuple)
+        assert isinstance(strides, tuple)
+
         self.queue = queue
         self.shape = shape
         self.dtype = dtype
@@ -563,7 +547,6 @@ class Array(object):
                 alloc_nbytes = 1
 
             if allocator is None:
-                # FIXME remove me when queues become required
                 if queue is not None:
                     context = queue.context
 
