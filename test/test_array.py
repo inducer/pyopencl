@@ -831,6 +831,9 @@ def test_skip_slicing(ctx_factory):
 
 
 def test_transpose(ctx_factory):
+    if _PYPY:
+        pytest.xfail("numpypy: no array creation from __array_interface__")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
