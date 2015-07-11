@@ -860,7 +860,9 @@ def test_newaxis(ctx_factory):
     b = a[:, np.newaxis]
 
     assert b_gpu.shape == b.shape
-    assert b_gpu.strides == b.strides
+    for i in range(b.ndim):
+        if b.shape[i] > 1:
+            assert b_gpu.strides[i] == b.strides[i]
 
 
 if __name__ == "__main__":
