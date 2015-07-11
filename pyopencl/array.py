@@ -610,7 +610,7 @@ class Array(object):
                     strides=strides, data=data, offset=offset,
                     events=events)
         else:
-            return Array(self.context, shape, dtype, queue=queue,
+            return Array(self.context, shape, dtype,
                     strides=strides, data=data, offset=offset,
                     events=events, allocator=self.allocator)
 
@@ -688,7 +688,6 @@ class Array(object):
                 warn("get() between arrays of different shape is deprecated "
                         "and will be removed in PyCUDA 2017.x",
                         DeprecationWarning, stacklevel=2)
-
 
         assert self.flags.forc, "Array in get() must be contiguous"
 
