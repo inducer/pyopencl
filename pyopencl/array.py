@@ -665,8 +665,12 @@ class Array(object):
 
     def get(self, queue=None, ary=None, async=False):
         """Transfer the contents of *self* into *ary* or a newly allocated
-        :mod:`numpy.ndarray`. If *ary* is given, it must have the right
-        size (not necessarily shape) and dtype.
+        :mod:`numpy.ndarray`. If *ary* is given, it must have the same
+        shape and dtype.
+
+        .. versionchanged:: 2015.2
+
+            *ary* with different shape was deprecated.
         """
 
         if ary is None:
@@ -678,6 +682,13 @@ class Array(object):
                 raise TypeError("'ary' has non-matching size")
             if ary.dtype != self.dtype:
                 raise TypeError("'ary' has non-matching type")
+
+            if self.shape != ary.shape:
+                from warnings import warn
+                warn("get() between arrays of different shape is deprecated "
+                        "and will be removed in PyCUDA 2017.x",
+                        DeprecationWarning, stacklevel=2)
+
 
         assert self.flags.forc, "Array in get() must be contiguous"
 
