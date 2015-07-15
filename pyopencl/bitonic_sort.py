@@ -176,7 +176,31 @@ class BitonicSort(object):
         allowb8 = True
         allowb16 = True
 
-        wg = min(ds, self.context.devices[0].max_work_group_size)
+        dev = self.context.devices[0]
+
+        # {{{ find workgroup size
+
+        wg = min(ds, dev.max_work_group_size)
+
+        available_lmem = dev.local_mem_size
+        while True:
+            lmem_size = wg*4*key_dtype.itemsize
+            if argsort:
+                lmem_size += wg*4*idx_dtype.itemsize
+
+            if lmem_size + 512 > available_lmem:
+                wg //= 2
+
+                if not wg:
+                    raise RuntimeError(
+                        "too little local memory available on '%s'"
+                        % dev)
+
+            else:
+                break
+
+        # }}}
+
         length = wg >> 1
         prg = self.get_program(
                 'BLO', argsort, (1, 1, key_ctype, idx_ctype, ds, ns))
