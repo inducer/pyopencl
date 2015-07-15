@@ -838,26 +838,53 @@ def test_key_value_sorter(ctx_factory):
 
 # {{{ bitonic sort
 
-def test_bitonic_sort(ctx_factory):
+@pytest.mark.parametrize("size", [
+    512,
+    4,
+    16
+    ])
+@pytest.mark.parametrize("dtype", [
+    np.int32,
+    np.float32,
+    # np.float64
+    ])
+def test_bitonic_sort(ctx_factory, size, dtype):
     ctx = cl.create_some_context()
     queue = cl.CommandQueue(ctx)
 
     import pyopencl.clrandom as clrandom
     from pyopencl.bitonic_sort import BitonicSort
 
-    s = clrandom.rand(queue, (4, 512, 5,), np.float32, luxury=None, a=0, b=1.0)
+    s = clrandom.rand(queue, (2, size, 3,), dtype, luxury=None, a=0, b=1.0)
     sorter = BitonicSort(ctx, s.shape, s.dtype, axis=1)
-    sgs = sorter(s)
+    sgs, evt = sorter(s)
     assert np.array_equal(np.sort(s.get(), axis=1), sgs.get())
 
-    size = 2**18
+
+@pytest.mark.parametrize("size", [
+    0,
+    4,
+    2**14,
+    2**18,
+    ])
+@pytest.mark.parametrize("dtype", [
+    np.int32,
+    np.float32,
+    # np.float64
+    ])
+def test_bitonic_argsort(ctx_factory, size, dtype):
+    ctx = cl.create_some_context()
+    queue = cl.CommandQueue(ctx)
+
+    import pyopencl.clrandom as clrandom
+    from pyopencl.bitonic_sort import BitonicSort
 
     index = cl_array.arange(queue, 0, size, 1, dtype=np.int32)
     m = clrandom.rand(queue, (size,), np.float32, luxury=None, a=0, b=1.0)
 
     sorterm = BitonicSort(ctx, m.shape, m.dtype, idx_dtype=index.dtype, axis=0)
 
-    ms = sorterm(m, idx=index)
+    ms, evt = sorterm(m, idx=index)
 
     assert np.array_equal(np.sort(m.get()), ms.get())
 
