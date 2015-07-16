@@ -395,6 +395,7 @@ RADIX_SORT_OUTPUT_STMT_TPL = Template(r"""//CL//
 
 
 # {{{ driver
+
 # import hoisted here to be used as a default argument in the constructor
 from pyopencl.scan import GenericScanKernel
 
@@ -402,6 +403,8 @@ from pyopencl.scan import GenericScanKernel
 class RadixSort(object):
     """Provides a general `radix sort <https://en.wikipedia.org/wiki/Radix_sort>`_
     on the compute device.
+
+    .. seealso:: :class:`pyopencl.algorithm.BitonicSort`
 
     .. versionadded:: 2013.1
     """

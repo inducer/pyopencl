@@ -1,10 +1,6 @@
 #! /usr/bin/env python
 
-from __future__ import division, with_statement
-from __future__ import absolute_import
-from __future__ import print_function
-from six.moves import range
-from six.moves import zip
+from __future__ import division, with_statement, absolute_import, print_function
 
 __copyright__ = "Copyright (C) 2013 Andreas Kloeckner"
 
@@ -28,6 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from six.moves import range, zip
 import numpy as np
 import numpy.linalg as la
 import sys
@@ -835,6 +832,69 @@ def test_key_value_sorter(ctx_factory):
     for i in range(nkeys):
         start, end = starts[i:i+2]
         assert sorted(mydict[i]) == sorted(lists[start:end])
+
+# }}}
+
+
+# {{{ bitonic sort
+
+@pytest.mark.parametrize("size", [
+    512,
+    4,
+    16
+    ])
+@pytest.mark.parametrize("dtype", [
+    np.int32,
+    np.float32,
+    # np.float64
+    ])
+@pytest.mark.bitonic
+def test_bitonic_sort(ctx_factory, size, dtype):
+    ctx = cl.create_some_context()
+    queue = cl.CommandQueue(ctx)
+
+    import pyopencl.clrandom as clrandom
+    from pyopencl.bitonic_sort import BitonicSort
+
+    s = clrandom.rand(queue, (2, size, 3,), dtype, luxury=None, a=0, b=239482333)
+    sorter = BitonicSort(ctx)
+    sgs, evt = sorter(s.copy(), axis=1)
+    assert np.array_equal(np.sort(s.get(), axis=1), sgs.get())
+
+
+@pytest.mark.parametrize("size", [
+    0,
+    4,
+    2**14,
+    2**18,
+    ])
+@pytest.mark.parametrize("dtype", [
+    np.int32,
+    np.float32,
+    # np.float64
+    ])
+@pytest.mark.bitonic
+def test_bitonic_argsort(ctx_factory, size, dtype):
+    ctx = cl.create_some_context()
+    queue = cl.CommandQueue(ctx)
+
+    import pyopencl.clrandom as clrandom
+    from pyopencl.bitonic_sort import BitonicSort
+
+    index = cl_array.arange(queue, 0, size, 1, dtype=np.int32)
+    m = clrandom.rand(queue, (size,), dtype, luxury=None, a=0, b=239432234)
+
+    sorterm = BitonicSort(ctx)
+
+    ms, evt = sorterm(m.copy(), idx=index, axis=0)
+
+    assert np.array_equal(np.sort(m.get()), ms.get())
+
+    # may be False because of identical values in array
+    # assert np.array_equal(np.argsort(m.get()), index.get())
+
+    # Check values by indices
+    assert np.array_equal(m.get()[np.argsort(m.get())], m.get()[index.get()])
 
 # }}}
 

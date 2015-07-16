@@ -271,4 +271,9 @@ Building many variable-size lists
 
 .. autoclass:: ListOfListsBuilder
 
-    .. automethod:: __call__
+Bitonic Sort
+------------
+
+.. module:: pyopencl.bitonic_sort
+
+.. autoclass:: BitonicSort
