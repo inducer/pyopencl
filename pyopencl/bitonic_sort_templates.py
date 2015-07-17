@@ -39,7 +39,9 @@ LOCAL_MEM_FACTOR = 1
 defines = """//CL//
 
 % if dtype == "double":
+    #if __OPENCL_C_VERSION__ < 120
     #pragma OPENCL EXTENSION cl_khr_fp64: enable
+    #endif
 % endif
 
 typedef ${dtype} data_t;
