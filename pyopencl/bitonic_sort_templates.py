@@ -31,10 +31,17 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+LOCAL_MEM_FACTOR = 1
+
 
 # {{{ defines
 
 defines = """//CL//
+
+% if dtype == "double":
+    #pragma OPENCL EXTENSION cl_khr_fp64: enable
+% endif
+
 typedef ${dtype} data_t;
 typedef ${idxtype} idx_t;
 typedef ${idxtype}2 idx_t2;
@@ -317,6 +324,8 @@ __kernel void run(__global data_t * data\\
 
 
 # {{{ C4
+
+# IF YOU REENABLE THIS, YOU NEED TO ADJUST LOCAL_MEM_FACTOR TO 4
 
 ParallelBitonic_C4 = """//CL//
 //ParallelBitonic_C4

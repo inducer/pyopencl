@@ -846,12 +846,16 @@ def test_key_value_sorter(ctx_factory):
 @pytest.mark.parametrize("dtype", [
     np.int32,
     np.float32,
-    # np.float64
+    np.float64
     ])
 @pytest.mark.bitonic
 def test_bitonic_sort(ctx_factory, size, dtype):
     ctx = cl.create_some_context()
     queue = cl.CommandQueue(ctx)
+
+    if (ctx.devices[0].platform.name == "Portable Computing Language"
+            and dtype == np.float64):
+        pytest.xfail("Double precision bitonic sort doesn't work on POCL")
 
     import pyopencl.clrandom as clrandom
     from pyopencl.bitonic_sort import BitonicSort
@@ -871,12 +875,16 @@ def test_bitonic_sort(ctx_factory, size, dtype):
 @pytest.mark.parametrize("dtype", [
     np.int32,
     np.float32,
-    # np.float64
+    np.float64
     ])
 @pytest.mark.bitonic
 def test_bitonic_argsort(ctx_factory, size, dtype):
     ctx = cl.create_some_context()
     queue = cl.CommandQueue(ctx)
+
+    if (ctx.devices[0].platform.name == "Portable Computing Language"
+            and dtype == np.float64):
+        pytest.xfail("Double precision bitonic sort doesn't work on POCL")
 
     import pyopencl.clrandom as clrandom
     from pyopencl.bitonic_sort import BitonicSort
