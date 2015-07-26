@@ -595,7 +595,6 @@ def test_context_dep_memoize(ctx_factory):
 def test_can_build_binary(ctx_factory):
     ctx = ctx_factory()
     device, = ctx.devices
-    platform = device.platform
 
     program = cl.Program(ctx, """
     __kernel void simple(__global float *in, __global float *out)
