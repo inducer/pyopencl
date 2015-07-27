@@ -764,6 +764,23 @@ def test_buffer_get_host_array(ctx_factory):
         pass
 
 
+def test_program_valued_get_info(ctx_factory):
+    ctx = ctx_factory()
+
+    prg = cl.Program(ctx, """
+    __kernel void
+    reverse(__global float *out)
+    {
+        out[get_global_id(0)] *= 2;
+    }
+    """).build()
+
+    knl = prg.reverse
+
+    assert knl.program == prg
+    knl.program.binaries[0]
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa

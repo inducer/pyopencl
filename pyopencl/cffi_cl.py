@@ -150,12 +150,21 @@ def _generic_info_to_python(info):
             _lib.CLASS_COMMAND_QUEUE: CommandQueue
             }[info.opaque_class]
 
+        if klass is _Program:
+            def create_inst(val):
+                from pyopencl import Program
+                return Program(_Program._create(val))
+
+        else:
+            create_inst = klass._create
+
         if type_.endswith(']'):
-            ret = list(map(klass._create, value))
+            ret = list(map(create_inst, value))
             _lib.free_pointer(info.value)
             return ret
         else:
-            return klass._create(value)
+            return create_inst(value)
+
     if type_ == 'char*':
         ret = _ffi_pystr(value)
     elif type_.startswith('char*['):
