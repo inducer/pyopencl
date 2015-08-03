@@ -668,7 +668,10 @@ def test_enqueue_task(ctx_factory):
     assert la.norm(a[::-1] - b) == 0
 
 
-def test_platform_get_devices(platform):
+def test_platform_get_devices(ctx_factory):
+    ctx = ctx_factory()
+    platform = ctx.devices[0].platform
+
     if platform.name == "Apple":
         pytest.xfail("Apple doesn't understand all the values we pass "
                 "for dev_type")
@@ -676,9 +679,12 @@ def test_platform_get_devices(platform):
     dev_types = [cl.device_type.ACCELERATOR, cl.device_type.ALL,
                  cl.device_type.CPU, cl.device_type.DEFAULT, cl.device_type.GPU]
     if (platform._get_cl_version() >= (1, 2) and
-            cl.get_cl_header_version() >= (1, 2)):
+            cl.get_cl_header_version() >= (1, 2)
+            and not platform.name.lower().startswith("nvidia")):
         dev_types.append(cl.device_type.CUSTOM)
+
     for dev_type in dev_types:
+        print(dev_type)
         devs = platform.get_devices(dev_type)
         if dev_type in (cl.device_type.DEFAULT,
                         cl.device_type.ALL,
