@@ -18,7 +18,7 @@ new_program(cl_program prog, program_kind_type progkind=KND_UNKNOWN)
 
 program::~program()
 {
-    pyopencl_call_guarded_cleanup(clReleaseProgram, this);
+    pyopencl_call_guarded_cleanup(clReleaseProgram, data());
 }
 
 generic_info
@@ -26,25 +26,25 @@ program::get_info(cl_uint param) const
 {
     switch ((cl_program_info)param) {
     case CL_PROGRAM_CONTEXT:
-        return pyopencl_get_opaque_info(context, Program, this, param);
+        return pyopencl_get_opaque_info(context, Program, data(), param);
     case CL_PROGRAM_REFERENCE_COUNT:
     case CL_PROGRAM_NUM_DEVICES:
-        return pyopencl_get_int_info(cl_uint, Program, this, param);
+        return pyopencl_get_int_info(cl_uint, Program, data(), param);
     case CL_PROGRAM_DEVICES:
-        return pyopencl_get_opaque_array_info(device, Program, this, param);
+        return pyopencl_get_opaque_array_info(device, Program, data(), param);
     case CL_PROGRAM_SOURCE:
-        return pyopencl_get_str_info(Program, this, param);
+        return pyopencl_get_str_info(Program, data(), param);
     case CL_PROGRAM_BINARY_SIZES:
-        return pyopencl_get_array_info(size_t, Program, this, param);
+        return pyopencl_get_array_info(size_t, Program, data(), param);
     case CL_PROGRAM_BINARIES: {
-        auto sizes = pyopencl_get_vec_info(size_t, Program, this,
+        auto sizes = pyopencl_get_vec_info(size_t, Program, data(),
                                            CL_PROGRAM_BINARY_SIZES);
         pyopencl_buf<char*> result_ptrs(sizes.len());
         for (size_t i  = 0;i < sizes.len();i++) {
             result_ptrs[i] = (char*)malloc(sizes[i]);
         }
         try {
-            pyopencl_call_guarded(clGetProgramInfo, this, CL_PROGRAM_BINARIES,
+            pyopencl_call_guarded(clGetProgramInfo, data(), CL_PROGRAM_BINARIES,
                                   sizes.len() * sizeof(char*),
                                   result_ptrs.get(), nullptr);
         } catch (...) {
@@ -65,9 +65,9 @@ program::get_info(cl_uint param) const
 
 #if PYOPENCL_CL_VERSION >= 0x1020
     case CL_PROGRAM_NUM_KERNELS:
-        return pyopencl_get_int_info(size_t, Program, this, param);
+        return pyopencl_get_int_info(size_t, Program, data(), param);
     case CL_PROGRAM_KERNEL_NAMES:
-        return pyopencl_get_str_info(Program, this, param);
+        return pyopencl_get_str_info(Program, data(), param);
 #endif
     default:
         throw clerror("Program.get_info", CL_INVALID_VALUE);
@@ -80,14 +80,14 @@ program::get_build_info(const device *dev, cl_program_build_info param) const
     switch (param) {
     case CL_PROGRAM_BUILD_STATUS:
         return pyopencl_get_int_info(cl_build_status, ProgramBuild,
-                                     this, dev, param);
+                                     data(), dev, param);
     case CL_PROGRAM_BUILD_OPTIONS:
     case CL_PROGRAM_BUILD_LOG:
-        return pyopencl_get_str_info(ProgramBuild, this, dev, param);
+        return pyopencl_get_str_info(ProgramBuild, data(), dev, param);
 #if PYOPENCL_CL_VERSION >= 0x1020
     case CL_PROGRAM_BINARY_TYPE:
         return pyopencl_get_int_info(cl_program_binary_type, ProgramBuild,
-                                     this, dev, param);
+                                     data(), dev, param);
 #endif
     default:
         throw clerror("Program.get_build_info", CL_INVALID_VALUE);
@@ -102,7 +102,7 @@ program::compile(const char *opts, const clobj_t *_devs, size_t num_devs,
 {
     const auto devs = buf_from_class<device>(_devs, num_devs);
     const auto prgs = buf_from_class<program>(_prgs, num_hdrs);
-    pyopencl_call_guarded(clCompileProgram, this, devs, opts, prgs,
+    pyopencl_call_guarded(clCompileProgram, data(), devs, opts, prgs,
                           buf_arg(names, num_hdrs), nullptr, nullptr);
 }
 #endif
@@ -111,10 +111,10 @@ pyopencl_buf<clobj_t>
 program::all_kernels()
 {
     cl_uint num_knls;
-    pyopencl_call_guarded(clCreateKernelsInProgram, this, 0, nullptr,
+    pyopencl_call_guarded(clCreateKernelsInProgram, data(), 0, nullptr,
                           buf_arg(num_knls));
     pyopencl_buf<cl_kernel> knls(num_knls);
-    pyopencl_call_guarded(clCreateKernelsInProgram, this, knls,
+    pyopencl_call_guarded(clCreateKernelsInProgram, data(), knls,
                           buf_arg(num_knls));
     return buf_to_base<kernel>(knls, true);
 }

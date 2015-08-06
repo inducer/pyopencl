@@ -25,16 +25,16 @@ device::~device()
     else if (m_ref_type == REF_FISSION_EXT) {
 #if PYOPENCL_CL_VERSION >= 0x1020
         cl_platform_id plat;
-        pyopencl_call_guarded_cleanup(clGetDeviceInfo, this, CL_DEVICE_PLATFORM,
+        pyopencl_call_guarded_cleanup(clGetDeviceInfo, data(), CL_DEVICE_PLATFORM,
                                       size_arg(plat), nullptr);
 #endif
         pyopencl_call_guarded_cleanup(
-            pyopencl_get_ext_fun(plat, clReleaseDeviceEXT), this);
+            pyopencl_get_ext_fun(plat, clReleaseDeviceEXT), data());
     }
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
     else if (m_ref_type == REF_CL_1_2) {
-        pyopencl_call_guarded_cleanup(clReleaseDevice, this);
+        pyopencl_call_guarded_cleanup(clReleaseDevice, data());
     }
 #endif
 }
@@ -43,7 +43,7 @@ generic_info
 device::get_info(cl_uint param_name) const
 {
 #define DEV_GET_INT_INF(TYPE)                                   \
-    pyopencl_get_int_info(TYPE, Device, this, param_name)
+    pyopencl_get_int_info(TYPE, Device, data(), param_name)
 
     switch ((cl_device_info)param_name) {
     case CL_DEVICE_TYPE:
@@ -56,7 +56,7 @@ device::get_info(cl_uint param_name) const
         return DEV_GET_INT_INF(cl_uint);
 
     case CL_DEVICE_MAX_WORK_ITEM_SIZES:
-        return pyopencl_get_array_info(size_t, Device, this, param_name);
+        return pyopencl_get_array_info(size_t, Device, data(), param_name);
 
     case CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR:
     case CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT:
@@ -128,10 +128,10 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_PROFILE:
     case CL_DEVICE_VERSION:
     case CL_DEVICE_EXTENSIONS:
-        return pyopencl_get_str_info(Device, this, param_name);
+        return pyopencl_get_str_info(Device, data(), param_name);
 
     case CL_DEVICE_PLATFORM:
-        return pyopencl_get_opaque_info(platform, Device, this, param_name);
+        return pyopencl_get_opaque_info(platform, Device, data(), param_name);
 #if PYOPENCL_CL_VERSION >= 0x1010
     case CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF:
     case CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR:
@@ -146,7 +146,7 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_HOST_UNIFIED_MEMORY:
         return DEV_GET_INT_INF(cl_bool);
     case CL_DEVICE_OPENCL_C_VERSION:
-        return pyopencl_get_str_info(Device, this, param_name);
+        return pyopencl_get_str_info(Device, data(), param_name);
 #endif
 #ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
     case CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV:
@@ -161,12 +161,12 @@ device::get_info(cl_uint param_name) const
 #endif
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     case CL_DEVICE_PARENT_DEVICE_EXT:
-        return pyopencl_get_opaque_info(device, Device, this, param_name);
+        return pyopencl_get_opaque_info(device, Device, data(), param_name);
     case CL_DEVICE_PARTITION_TYPES_EXT:
     case CL_DEVICE_AFFINITY_DOMAINS_EXT:
     case CL_DEVICE_PARTITION_STYLE_EXT:
         return pyopencl_get_array_info(cl_device_partition_property_ext,
-                                       Device, this, param_name);
+                                       Device, data(), param_name);
     case CL_DEVICE_REFERENCE_COUNT_EXT:
         return DEV_GET_INT_INF(cl_uint);
 #endif
@@ -174,21 +174,21 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_LINKER_AVAILABLE:
         return DEV_GET_INT_INF(cl_bool);
     case CL_DEVICE_BUILT_IN_KERNELS:
-        return pyopencl_get_str_info(Device, this, param_name);
+        return pyopencl_get_str_info(Device, data(), param_name);
     case CL_DEVICE_IMAGE_MAX_BUFFER_SIZE:
     case CL_DEVICE_IMAGE_MAX_ARRAY_SIZE:
         return DEV_GET_INT_INF(size_t);
     case CL_DEVICE_PARENT_DEVICE:
-        return pyopencl_get_opaque_info(device, Device, this, param_name);
+        return pyopencl_get_opaque_info(device, Device, data(), param_name);
     case CL_DEVICE_PARTITION_MAX_SUB_DEVICES:
         return DEV_GET_INT_INF(cl_uint);
     case CL_DEVICE_PARTITION_TYPE:
     case CL_DEVICE_PARTITION_PROPERTIES:
         return pyopencl_get_array_info(cl_device_partition_property,
-                                       Device, this, param_name);
+                                       Device, data(), param_name);
     case CL_DEVICE_PARTITION_AFFINITY_DOMAIN:
         return pyopencl_get_array_info(cl_device_affinity_domain,
-                                       Device, this, param_name);
+                                       Device, data(), param_name);
     case CL_DEVICE_REFERENCE_COUNT:
         return DEV_GET_INT_INF(cl_uint);
     case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC:
@@ -210,12 +210,12 @@ device::get_info(cl_uint param_name) const
         */
 #ifdef CL_DEVICE_BOARD_NAME_AMD
     case CL_DEVICE_BOARD_NAME_AMD: ;
-        return pyopencl_get_str_info(Device, this, param_name);
+        return pyopencl_get_str_info(Device, data(), param_name);
 #endif
 #ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
     case CL_DEVICE_GLOBAL_FREE_MEMORY_AMD:
         return pyopencl_get_array_info(size_t, Device,
-                                       this, param_name);
+                                       data(), param_name);
 #endif
 #ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
     case CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD:
@@ -262,10 +262,10 @@ device::create_sub_devices(const cl_device_partition_property *props)
 {
     // TODO debug print props
     cl_uint num_devices;
-    pyopencl_call_guarded(clCreateSubDevices, this, props, 0, nullptr,
+    pyopencl_call_guarded(clCreateSubDevices, data(), props, 0, nullptr,
                           buf_arg(num_devices));
     pyopencl_buf<cl_device_id> devices(num_devices);
-    pyopencl_call_guarded(clCreateSubDevices, this, props, devices,
+    pyopencl_call_guarded(clCreateSubDevices, data(), props, devices,
                           buf_arg(num_devices));
     return buf_to_base<device>(devices, true, device::REF_CL_1_2);
 }
@@ -276,7 +276,7 @@ device::create_sub_devices_ext(const cl_device_partition_property_ext *props)
 {
 #if PYOPENCL_CL_VERSION >= 0x1020
     cl_platform_id plat;
-    pyopencl_call_guarded(clGetDeviceInfo, this, CL_DEVICE_PLATFORM,
+    pyopencl_call_guarded(clGetDeviceInfo, data(), CL_DEVICE_PLATFORM,
                           size_arg(plat), nullptr);
 #endif
     auto clCreateSubDevicesEXT =
@@ -284,10 +284,10 @@ device::create_sub_devices_ext(const cl_device_partition_property_ext *props)
 
     // TODO debug print props
     cl_uint num_devices;
-    pyopencl_call_guarded(clCreateSubDevicesEXT, this, props, 0, nullptr,
+    pyopencl_call_guarded(clCreateSubDevicesEXT, data(), props, 0, nullptr,
                           buf_arg(num_devices));
     pyopencl_buf<cl_device_id> devices(num_devices);
-    pyopencl_call_guarded(clCreateSubDevicesEXT, this, props, devices,
+    pyopencl_call_guarded(clCreateSubDevicesEXT, data(), props, devices,
                           buf_arg(num_devices));
     return buf_to_base<device>(devices, true, device::REF_FISSION_EXT);
 }

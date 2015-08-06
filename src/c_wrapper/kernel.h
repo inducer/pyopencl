@@ -21,7 +21,7 @@ public:
         : clobj(knl)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainKernel, this);
+            pyopencl_call_guarded(clRetainKernel, data());
         }
     }
     ~kernel();

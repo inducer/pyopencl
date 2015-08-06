@@ -18,7 +18,7 @@ buffer::get_sub_region(size_t orig, size_t size, cl_mem_flags flags) const
     cl_buffer_region reg = {orig, size};
 
     auto mem = retry_mem_error([&] {
-            return pyopencl_call_guarded(clCreateSubBuffer, this, flags,
+            return pyopencl_call_guarded(clCreateSubBuffer, data(), flags,
                                          CL_BUFFER_CREATE_TYPE_REGION, &reg);
         });
     return new_buffer(mem);
@@ -28,7 +28,7 @@ PYOPENCL_USE_RESULT buffer*
 buffer::getitem(ssize_t start, ssize_t end) const
 {
     ssize_t length;
-    pyopencl_call_guarded(clGetMemObjectInfo, this, CL_MEM_SIZE,
+    pyopencl_call_guarded(clGetMemObjectInfo, data(), CL_MEM_SIZE,
                           size_arg(length), nullptr);
     if (PYOPENCL_UNLIKELY(length <= 0))
         throw clerror("Buffer.__getitem__", CL_INVALID_VALUE,
@@ -45,7 +45,7 @@ buffer::getitem(ssize_t start, ssize_t end) const
         throw clerror("Buffer.__getitem__", CL_INVALID_VALUE,
                       "Buffer slice should have end > start >= 0");
     cl_mem_flags flags;
-    pyopencl_call_guarded(clGetMemObjectInfo, this, CL_MEM_FLAGS,
+    pyopencl_call_guarded(clGetMemObjectInfo, data(), CL_MEM_FLAGS,
                           size_arg(flags), nullptr);
     flags &= ~CL_MEM_COPY_HOST_PTR;
     return get_sub_region((size_t)start, (size_t)(end - start), flags);

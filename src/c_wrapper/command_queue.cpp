@@ -13,7 +13,7 @@ template void print_buf<cl_command_queue>(
 
 command_queue::~command_queue()
 {
-    pyopencl_call_guarded_cleanup(clReleaseCommandQueue, this);
+    pyopencl_call_guarded_cleanup(clReleaseCommandQueue, data());
 }
 
 generic_info
@@ -22,15 +22,15 @@ command_queue::get_info(cl_uint param_name) const
     switch ((cl_command_queue_info)param_name) {
     case CL_QUEUE_CONTEXT:
         return pyopencl_get_opaque_info(context, CommandQueue,
-                                        this, param_name);
+                                        data(), param_name);
     case CL_QUEUE_DEVICE:
-        return pyopencl_get_opaque_info(device, CommandQueue, this, param_name);
+        return pyopencl_get_opaque_info(device, CommandQueue, data(), param_name);
     case CL_QUEUE_REFERENCE_COUNT:
         return pyopencl_get_int_info(cl_uint, CommandQueue,
-                                     this, param_name);
+                                     data(), param_name);
     case CL_QUEUE_PROPERTIES:
         return pyopencl_get_int_info(cl_command_queue_properties,
-                                     CommandQueue, this, param_name);
+                                     CommandQueue, data(), param_name);
     default:
         throw clerror("CommandQueue.get_info", CL_INVALID_VALUE);
     }

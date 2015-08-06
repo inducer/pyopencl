@@ -15,12 +15,12 @@ memory_object::get_info(cl_uint param_name) const
     switch ((cl_mem_info)param_name) {
     case CL_MEM_TYPE:
         return pyopencl_get_int_info(cl_mem_object_type, MemObject,
-                                     this, param_name);
+                                     data(), param_name);
     case CL_MEM_FLAGS:
         return pyopencl_get_int_info(cl_mem_flags, MemObject,
-                                     this, param_name);
+                                     data(), param_name);
     case CL_MEM_SIZE:
-        return pyopencl_get_int_info(size_t, MemObject, this, param_name);
+        return pyopencl_get_int_info(size_t, MemObject, data(), param_name);
     case CL_MEM_HOST_PTR:
         throw clerror("MemoryObject.get_info", CL_INVALID_VALUE,
                       "Use MemoryObject.get_host_array to get "
@@ -28,9 +28,9 @@ memory_object::get_info(cl_uint param_name) const
     case CL_MEM_MAP_COUNT:
     case CL_MEM_REFERENCE_COUNT:
         return pyopencl_get_int_info(cl_uint, MemObject,
-                                     this, param_name);
+                                     data(), param_name);
     case CL_MEM_CONTEXT:
-        return pyopencl_get_opaque_info(context, MemObject, this, param_name);
+        return pyopencl_get_opaque_info(context, MemObject, data(), param_name);
 
 #if PYOPENCL_CL_VERSION >= 0x1010
         // TODO
@@ -47,7 +47,7 @@ memory_object::get_info(cl_uint param_name) const
         //        return create_mem_object_wrapper(param_value);
         //      }
     case CL_MEM_OFFSET:
-        return pyopencl_get_int_info(size_t, MemObject, this, param_name);
+        return pyopencl_get_int_info(size_t, MemObject, data(), param_name);
 #endif
 
     default:
@@ -59,7 +59,7 @@ memory_object::~memory_object()
 {
     if (!m_valid.exchange(false))
         return;
-    pyopencl_call_guarded_cleanup(clReleaseMemObject, this);
+    pyopencl_call_guarded_cleanup(clReleaseMemObject, data());
 }
 
 // c wrapper
