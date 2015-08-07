@@ -1,6 +1,8 @@
 .. |comparable| replace:: Instances of this class are hashable, and two
     instances of this class may be compared using *"=="* and *"!="*.
-    (Hashability was added in version 2011.2.)
+    (Hashability was added in version 2011.2.) Two objects are considered
+    the same if the underlying OpenCL object is the same, as established
+    by C pointer equality.
 
 .. |buf-iface| replace:: must implement the Python buffer interface.
     (e.g. by being an :class:`numpy.ndarray`)
