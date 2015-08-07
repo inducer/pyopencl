@@ -3,7 +3,6 @@
 #include "clhelper.h"
 
 #include <stdlib.h>
-#include <regex>
 
 template class clobj<cl_platform_id>;
 template void print_arg<cl_platform_id>(std::ostream&,
@@ -29,8 +28,6 @@ platform::get_info(cl_uint param_name) const
     }
 }
 
-static const std::regex ver_regex("^OpenCL ([0-9]+)\\.([0-9]+).*");
-
 void
 platform::get_version(cl_platform_id plat, int *major, int *minor)
 {
@@ -46,14 +43,14 @@ platform::get_version(cl_platform_id plat, int *major, int *minor)
     }
     pyopencl_call_guarded(clGetPlatformInfo, plat, CL_PLATFORM_VERSION,
                           size_arg(name, size), buf_arg(size));
-    std::cmatch ver_match;
-    if (!std::regex_match(name, ver_match, ver_regex)) {
+    *major = *minor = -1;
+    sscanf(name, "OpenCL %d.%d", major, minor);
+    // Well, hopefully there won't be a negative OpenCL version =)
+    if (*major < 0 || *minor < 0) {
         throw clerror("Platform.get_version", CL_INVALID_VALUE,
                       "platform returned non-conformant "
                       "platform version string");
     }
-    *major = atoi(name + ver_match.position(1));
-    *minor = atoi(name + ver_match.position(2));
 }
 
 // c wrapper
