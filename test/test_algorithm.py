@@ -326,8 +326,6 @@ def test_dot(ctx_factory):
 
     dev = context.devices[0]
 
-    import faulthandler
-    faulthandler.enable()
     dtypes = [np.float32, np.complex64]
     if has_double_support(dev):
         if has_struct_arg_count_bug(dev) == "apple":
