@@ -787,6 +787,52 @@ def test_program_valued_get_info(ctx_factory):
     knl.program.binaries[0]
 
 
+def test_event_set_callback(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    if ctx._get_cl_version() < (1, 1):
+        pytest.skip("OpenCL 1.1 or newer required fro set_callback")
+
+    a_np = np.random.rand(50000).astype(np.float32)
+    b_np = np.random.rand(50000).astype(np.float32)
+
+    got_called = []
+
+    def cb(status):
+        got_called.append(status)
+
+    mf = cl.mem_flags
+    a_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a_np)
+    b_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b_np)
+
+    prg = cl.Program(ctx, """
+    __kernel void sum(__global const float *a_g, __global const float *b_g,
+        __global float *res_g) {
+      int gid = get_global_id(0);
+      res_g[gid] = a_g[gid] + b_g[gid];
+    }
+    """).build()
+
+    res_g = cl.Buffer(ctx, mf.WRITE_ONLY, a_np.nbytes)
+
+    uevt = cl.UserEvent(ctx)
+
+    evt = prg.sum(queue, a_np.shape, None, a_g, b_g, res_g, wait_for=[uevt])
+
+    evt.set_callback(cl.command_execution_status.COMPLETE, cb)
+
+    uevt.set_status(cl.command_execution_status.COMPLETE)
+
+    queue.finish()
+
+    # yuck
+    from time import sleep
+    sleep(0.1)
+
+    assert got_called
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa

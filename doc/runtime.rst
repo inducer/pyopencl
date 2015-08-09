@@ -278,6 +278,14 @@ Command Queues and Events
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
 
+    .. method:: set_callback(type, cb)
+
+        Add the callback *cb* with signature ``cb(status)`` to the callback
+        queue for the event status *type* (one of the values of
+        :class:`command_execution_status`, except :attr:`command_execution_status.QUEUED`).
+
+        See the OpenCL specification for restrictions on what *cb* may and may not do.
+
     |comparable|
 
 .. function:: wait_for_events(events)

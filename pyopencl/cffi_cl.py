@@ -1096,9 +1096,9 @@ class Event(_Common):
     def wait(self):
         _handle_error(_lib.event__wait(self.ptr))
 
-    def set_callback(self, _type, cb, *args, **kwargs):
+    def set_callback(self, _type, cb):
         def _func(status):
-            cb(status, *args, **kwargs)
+            cb(status)
         _handle_error(_lib.event__set_callback(self.ptr, _type,
                                                _ffi.new_handle(_func)))
 

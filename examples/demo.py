@@ -1,8 +1,7 @@
-from __future__ import absolute_import
-from __future__ import print_function
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import absolute_import, print_function
 import numpy as np
 import pyopencl as cl
 
