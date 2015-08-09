@@ -286,6 +286,8 @@ Command Queues and Events
 
         See the OpenCL specification for restrictions on what *cb* may and may not do.
 
+        .. versionadded:: 2015.2
+
     |comparable|
 
 .. function:: wait_for_events(events)
