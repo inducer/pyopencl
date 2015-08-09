@@ -29,22 +29,13 @@ import numpy as np
 
 import pytest
 
-
-def have_cl():
-    try:
-        import pyopencl  # noqa
-        return True
-    except:
-        return False
-
-if have_cl():
-    import pyopencl.array as cl_array
-    import pyopencl as cl
-    import pyopencl.clmath as clmath
-    from pyopencl.tools import (  # noqa
-            pytest_generate_tests_for_pyopencl
-            as pytest_generate_tests)
-    from pyopencl.characterize import has_double_support
+import pyopencl.array as cl_array
+import pyopencl as cl
+import pyopencl.clmath as clmath
+from pyopencl.tools import (  # noqa
+        pytest_generate_tests_for_pyopencl
+        as pytest_generate_tests)
+from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 
 try:
     import faulthandler
@@ -76,8 +67,12 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False
         gpu_func = getattr(clmath, name)
         cpu_func = getattr(np, numpy_func_names.get(name, name))
 
-        if has_double_support(context.devices[0]):
-            if use_complex:
+        dev = context.devices[0]
+
+        if has_double_support(dev):
+            if use_complex and has_struct_arg_count_bug(dev) == "apple":
+                dtypes = [np.float32, np.float64, np.complex64]
+            elif use_complex:
                 dtypes = [np.float32, np.float64, np.complex64, np.complex128]
             else:
                 dtypes = [np.float32, np.float64]
@@ -110,26 +105,25 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False
     return test
 
 
-if have_cl():
-    test_ceil = make_unary_function_test("ceil", (-10, 10))
-    test_floor = make_unary_function_test("ceil", (-10, 10))
-    test_fabs = make_unary_function_test("fabs", (-10, 10))
-    test_exp = make_unary_function_test("exp", (-3, 3), 1e-5, use_complex=True)
-    test_log = make_unary_function_test("log", (1e-5, 1), 1e-6, use_complex=True)
-    test_log10 = make_unary_function_test("log10", (1e-5, 1), 5e-7)
-    test_sqrt = make_unary_function_test("sqrt", (1e-5, 1), 3e-7, use_complex=True)
+test_ceil = make_unary_function_test("ceil", (-10, 10))
+test_floor = make_unary_function_test("ceil", (-10, 10))
+test_fabs = make_unary_function_test("fabs", (-10, 10))
+test_exp = make_unary_function_test("exp", (-3, 3), 1e-5, use_complex=True)
+test_log = make_unary_function_test("log", (1e-5, 1), 1e-6, use_complex=True)
+test_log10 = make_unary_function_test("log10", (1e-5, 1), 5e-7)
+test_sqrt = make_unary_function_test("sqrt", (1e-5, 1), 3e-7, use_complex=True)
 
-    test_sin = make_unary_function_test("sin", (-10, 10), 2e-7, use_complex=2e-2)
-    test_cos = make_unary_function_test("cos", (-10, 10), 2e-7, use_complex=2e-2)
-    test_asin = make_unary_function_test("asin", (-0.9, 0.9), 5e-7)
-    test_acos = make_unary_function_test("acos", (-0.9, 0.9), 5e-7)
-    test_tan = make_unary_function_test("tan",
-            (-math.pi/2 + 0.1, math.pi/2 - 0.1), 4e-5, use_complex=True)
-    test_atan = make_unary_function_test("atan", (-10, 10), 2e-7)
+test_sin = make_unary_function_test("sin", (-10, 10), 2e-7, use_complex=2e-2)
+test_cos = make_unary_function_test("cos", (-10, 10), 2e-7, use_complex=2e-2)
+test_asin = make_unary_function_test("asin", (-0.9, 0.9), 5e-7)
+test_acos = make_unary_function_test("acos", (-0.9, 0.9), 5e-7)
+test_tan = make_unary_function_test("tan",
+        (-math.pi/2 + 0.1, math.pi/2 - 0.1), 4e-5, use_complex=True)
+test_atan = make_unary_function_test("atan", (-10, 10), 2e-7)
 
-    test_sinh = make_unary_function_test("sinh", (-3, 3), 3e-6, use_complex=2e-3)
-    test_cosh = make_unary_function_test("cosh", (-3, 3), 3e-6, use_complex=2e-3)
-    test_tanh = make_unary_function_test("tanh", (-3, 3), 2e-6, use_complex=True)
+test_sinh = make_unary_function_test("sinh", (-3, 3), 3e-6, use_complex=2e-3)
+test_cosh = make_unary_function_test("cosh", (-3, 3), 3e-6, use_complex=2e-3)
+test_tanh = make_unary_function_test("tanh", (-3, 3), 2e-6, use_complex=True)
 
 
 def test_atan2(ctx_factory):

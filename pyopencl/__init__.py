@@ -648,11 +648,7 @@ def _add_functionality():
 
         err_gen = PythonCodeGenerator()
 
-        err_gen("try:")
-        with Indentation(err_gen):
-            err_gen.extend(body)
-        err_gen("except TypeError as e:")
-        with Indentation(err_gen):
+        def gen_error_handler():
             err_gen("""
                 if current_arg is not None:
                     args = [{args}]
@@ -670,6 +666,16 @@ def _add_functionality():
                 """
                 .format(args=", ".join(arg_names)))
             err_gen("")
+
+        err_gen("try:")
+        with Indentation(err_gen):
+            err_gen.extend(body)
+        err_gen("except TypeError as e:")
+        with Indentation(err_gen):
+            gen_error_handler()
+        err_gen("except _cl.LogicError as e:")
+        with Indentation(err_gen):
+            gen_error_handler()
 
         # }}}
 
@@ -715,10 +721,10 @@ def _add_functionality():
 
         # }}}
 
-    def kernel__generate_buffer_arg_setter(self, gen, arg_idx, buf_var):
+    def kernel__generate_buffer_arg_setter(self, gen, arg_idx, buf_var, could_be_numpy_scalar):
         from pytools.py_codegen import Indentation
 
-        if _CPY2:
+        if _CPY2 and could_be_numpy_scalar:
             # https://github.com/numpy/numpy/issues/5381
             gen("if isinstance({buf_var}, np.generic):".format(buf_var=buf_var))
             with Indentation(gen):
@@ -747,7 +753,8 @@ def _add_functionality():
 
         gen("else:")
         with Indentation(gen):
-            self._generate_buffer_arg_setter(gen, arg_idx, arg_var)
+            self._generate_buffer_arg_setter(gen, arg_idx, arg_var,
+                    could_be_numpy_scalar=True)
 
     def kernel__generate_naive_call(self):
         num_args = self.num_args
@@ -783,9 +790,10 @@ def _add_functionality():
                 has_struct_arg_count_bug(dev)
                 for dev in self.context.devices]
 
+        from pytools import single_valued
         if any(count_bug_per_dev):
             if all(count_bug_per_dev):
-                work_around_arg_count_bug = True
+                work_around_arg_count_bug = single_valued(count_bug_per_dev)
             else:
                 warn_about_arg_count_bug = True
 
@@ -834,25 +842,38 @@ def _add_functionality():
                 else:
                     raise TypeError("unexpected complex type: %s" % arg_dtype)
 
-                if (work_around_arg_count_bug
+                if (work_around_arg_count_bug == "pocl"
                         and arg_dtype == np.complex128
                         and fp_arg_count + 2 <= 8):
                     gen(
                             "buf = pack('{arg_char}', {arg_var}.real)"
                             .format(arg_char=arg_char, arg_var=arg_var))
-                    self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf")
+                    self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf",
+                            could_be_numpy_scalar=False)
                     cl_arg_idx += 1
+                    gen("current_arg = current_arg + 1000")
                     gen(
                             "buf = pack('{arg_char}', {arg_var}.imag)"
                             .format(arg_char=arg_char, arg_var=arg_var))
-                    self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf")
+                    self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf",
+                            could_be_numpy_scalar=False)
                     cl_arg_idx += 1
+
+                elif (work_around_arg_count_bug == "apple"
+                        and arg_dtype == np.complex128
+                        and fp_arg_count + 2 <= 8):
+                    raise NotImplementedError("No work-around to "
+                            "Apple's broken structs-as-kernel arg "
+                            "handling has been found. "
+                            "Cannot pass complex numbers to kernels.")
+
                 else:
                     gen(
                             "buf = pack('{arg_char}{arg_char}', "
                             "{arg_var}.real, {arg_var}.imag)"
                             .format(arg_char=arg_char, arg_var=arg_var))
-                    self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf")
+                    self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf",
+                            could_be_numpy_scalar=False)
                     cl_arg_idx += 1
 
                 fp_arg_count += 2
@@ -864,7 +885,8 @@ def _add_functionality():
                 gen(
                         "buf = pack('{arg_char}', long({arg_var}))"
                         .format(arg_char=arg_dtype.char, arg_var=arg_var))
-                self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf")
+                self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf",
+                        could_be_numpy_scalar=False)
                 cl_arg_idx += 1
 
             else:
@@ -878,7 +900,8 @@ def _add_functionality():
                         .format(
                             arg_char=arg_char,
                             arg_var=arg_var))
-                self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf")
+                self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf",
+                        could_be_numpy_scalar=False)
                 cl_arg_idx += 1
 
             gen("")

@@ -328,7 +328,7 @@ def has_struct_arg_count_bug(dev):
     """
 
     if dev.platform.name == "Apple" and dev.type & cl.device_type.CPU:
-        return True
+        return "apple"
     if dev.platform.name == "Portable Computing Language":
-        return True
+        return "pocl"
     return False

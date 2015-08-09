@@ -35,7 +35,7 @@ import pyopencl.array as cl_array
 import pyopencl.tools as cl_tools
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
-from pyopencl.characterize import has_double_support
+from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 from pyopencl.cffi_cl import _PYPY
 
 
@@ -102,7 +102,12 @@ def test_mix_complex(ctx_factory):
             #(np.int32, np.complex64),
             ]
 
-    if has_double_support(context.devices[0]):
+    dev = context.devices[0]
+    if has_double_support(dev) and has_struct_arg_count_bug(dev) == "apple":
+        dtypes.extend([
+            (np.float32, np.float64),
+            ])
+    elif has_double_support(dev):
         dtypes.extend([
             (np.float32, np.float64),
             (np.float32, np.complex128),
@@ -169,6 +174,9 @@ def test_pow_neg1_vs_inv(ctx_factory):
     if not has_double_support(device):
         from pytest import skip
         skip("double precision not supported on %s" % device)
+    if has_struct_arg_count_bug(device) == "apple":
+        from pytest import xfail
+        xfail("apple struct arg counting broken")
 
     a_dev = make_random_array(queue, np.complex128, 20000)
 

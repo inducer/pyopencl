@@ -37,7 +37,7 @@ import pyopencl as cl
 import pyopencl.array as cl_array  # noqa
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
-from pyopencl.characterize import has_double_support
+from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
 
 
@@ -326,9 +326,14 @@ def test_dot(ctx_factory):
 
     dev = context.devices[0]
 
+    import faulthandler
+    faulthandler.enable()
     dtypes = [np.float32, np.complex64]
     if has_double_support(dev):
-        dtypes.extend([np.float64, np.complex128])
+        if has_struct_arg_count_bug(dev) == "apple":
+            dtypes.extend([np.float64])
+        else:
+            dtypes.extend([np.float64, np.complex128])
 
     for a_dtype in dtypes:
         for b_dtype in dtypes:
@@ -853,7 +858,11 @@ def test_bitonic_sort(ctx_factory, size, dtype):
     ctx = cl.create_some_context()
     queue = cl.CommandQueue(ctx)
 
-    if (ctx.devices[0].platform.name == "Portable Computing Language"
+    dev = ctx.devices[0]
+    if (dev.platform.name == "Apple" and dev.type & cl.device_type.CPU):
+        pytest.xfail("Bitonic sort won't work on Apple CPU: no workgroup "
+            "parallelism")
+    if (dev.platform.name == "Portable Computing Language"
             and dtype == np.float64):
         pytest.xfail("Double precision bitonic sort doesn't work on POCL")
 
@@ -882,7 +891,11 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
     ctx = cl.create_some_context()
     queue = cl.CommandQueue(ctx)
 
-    if (ctx.devices[0].platform.name == "Portable Computing Language"
+    dev = ctx.devices[0]
+    if (dev.platform.name == "Apple" and dev.type & cl.device_type.CPU):
+        pytest.xfail("Bitonic sort won't work on Apple CPU: no workgroup "
+            "parallelism")
+    if (dev.platform.name == "Portable Computing Language"
             and dtype == np.float64):
         pytest.xfail("Double precision bitonic sort doesn't work on POCL")
 
