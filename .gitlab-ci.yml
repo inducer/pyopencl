@@ -73,18 +73,18 @@ Python 2.7 POCL:
   - pocl
   except:
   - tags
-# Python 2.7 Apple:
-#   script:
-#   - export PY_EXE=python2.7
-#   - export PYOPENCL_TEST=app:cpu
-#   - export EXTRA_INSTALL="numpy mako"
-#   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-#   - ". ./build-and-test-py-project.sh"
-#   tags:
-#   - python2.7
-#   - apple
-#   except:
-#   - tags
+Python 2.7 Apple:
+  script:
+  - export PY_EXE=python2.7
+  - export PYOPENCL_TEST=app:cpu
+  - export EXTRA_INSTALL="numpy mako"
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python2.7
+  - apple
+  except:
+  - tags
 PyPy Intel CPU:
   script:
   - export PY_EXE=pypy
