@@ -721,7 +721,8 @@ def _add_functionality():
 
         # }}}
 
-    def kernel__generate_buffer_arg_setter(self, gen, arg_idx, buf_var, could_be_numpy_scalar):
+    def kernel__generate_buffer_arg_setter(self, gen, arg_idx, buf_var,
+            could_be_numpy_scalar):
         from pytools.py_codegen import Indentation
 
         if _CPY2 and could_be_numpy_scalar:
