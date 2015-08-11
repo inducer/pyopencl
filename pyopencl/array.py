@@ -859,12 +859,9 @@ class Array(object):
         if queue is not None:
             return self.__class__(queue, self.shape, dtype,
                     allocator=self.allocator, strides=strides)
-        elif self.allocator is not None:
-            return self.__class__(self.allocator, self.shape, dtype,
-                    strides=strides)
         else:
             return self.__class__(self.context, self.shape, dtype,
-                    strides=strides)
+                    strides=strides, allocator=self.allocator)
 
     # }}}
 
