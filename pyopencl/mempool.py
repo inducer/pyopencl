@@ -54,6 +54,9 @@ class AllocatorBase(object):
         import gc
         gc.collect()
 
+    def free(self, buf):
+        buf.release()
+
 
 class DeferredAllocator(AllocatorBase):
     is_deferred = True
@@ -121,6 +124,8 @@ class MemoryPool(object):
 
         self.active_blocks = 0
 
+        self.stop_holding_flag = False
+
     @classmethod
     def bin_number(cls, size):
         l = bitlog2(size)
@@ -156,7 +161,7 @@ class MemoryPool(object):
         return head | ones
 
     def stop_holding(self):
-        self.stop_holding = True
+        self.stop_holding_flag = True
         self.free_held()
 
     def free_held(self):
@@ -174,6 +179,8 @@ class MemoryPool(object):
         bin_nr = self.bin_number(size)
         bin_list = self.bin_nr_to_bin.setdefault(bin_nr, [])
 
+        alloc_sz = self.alloc_size(bin_nr)
+
         if bin_list:
             # if (m_trace)
             #   std::cout
@@ -182,9 +189,7 @@ class MemoryPool(object):
             #     << " which contained " << bin_list.size()
             #     << " entries" << std::endl;
             self.active_blocks += 1
-            return bin_list.pop()
-
-        alloc_sz = self.alloc_size(bin_nr)
+            return PooledBuffer(self, bin_list.pop(), alloc_sz)
 
         assert self.bin_number(alloc_sz) == bin_nr
 
@@ -195,7 +200,7 @@ class MemoryPool(object):
         try:
             result = self.allocator(alloc_sz)
             self.active_blocks += 1
-            return result
+            return PooledBuffer(self, result, alloc_sz)
         except cl.MemoryError:
             pass
 
@@ -214,7 +219,7 @@ class MemoryPool(object):
             try:
                 result = self.allocator(alloc_sz)
                 self.active_blocks += 1
-                return result
+                return PooledBuffer(self, result, alloc_sz)
             except cl.MemoryError:
                 pass
 
@@ -229,7 +234,7 @@ class MemoryPool(object):
         self.active_blocks -= 1
         bin_nr = self.bin_number(size)
 
-        if not self.stop_holding:
+        if not self.stop_holding_flag:
             self.bin_nr_to_bin.setdefault(bin_nr, []).append(buf)
 
             # if (m_trace)
@@ -250,14 +255,14 @@ class MemoryPool(object):
 class PooledBuffer(cl.MemoryObjectHolder):
     _id = 'buffer'
 
-    def __init__(self, pool, buf, size):
+    def __init__(self, pool, buf, alloc_sz):
         self.pool = pool
         self.buf = buf
         self.ptr = buf.ptr
-        self.size = size
+        self._alloc_sz = alloc_sz
 
     def release(self):
-        self.pool.free(self.buf, self.size)
+        self.pool.free(self.buf, self._alloc_sz)
         self.buf = None
         self.ptr = None
 
@@ -266,7 +271,6 @@ class PooledBuffer(cl.MemoryObjectHolder):
             self.release()
 
 # }}}
-
 
 
 # vim: foldmethod=marker
