@@ -721,11 +721,10 @@ def _add_functionality():
 
         # }}}
 
-    def kernel__generate_buffer_arg_setter(self, gen, arg_idx, buf_var,
-            could_be_numpy_scalar):
+    def kernel__generate_buffer_arg_setter(self, gen, arg_idx, buf_var):
         from pytools.py_codegen import Indentation
 
-        if _CPY2 and could_be_numpy_scalar:
+        if _CPY2:
             # https://github.com/numpy/numpy/issues/5381
             gen("if isinstance({buf_var}, np.generic):".format(buf_var=buf_var))
             with Indentation(gen):
@@ -734,6 +733,15 @@ def _add_functionality():
         gen("""
             c_buf, sz, _ = _cl._c_buffer_from_obj({buf_var})
             status = _lib.kernel__set_arg_buf(self.ptr, {arg_idx}, c_buf, sz)
+            if status != _ffi.NULL:
+                _handle_error(status)
+            """
+            .format(arg_idx=arg_idx, buf_var=buf_var))
+
+    def kernel__generate_bytes_arg_setter(self, gen, arg_idx, buf_var):
+        gen("""
+            status = _lib.kernel__set_arg_buf(self.ptr, {arg_idx},
+                {buf_var}, len({buf_var}))
             if status != _ffi.NULL:
                 _handle_error(status)
             """
@@ -754,8 +762,7 @@ def _add_functionality():
 
         gen("else:")
         with Indentation(gen):
-            self._generate_buffer_arg_setter(gen, arg_idx, arg_var,
-                    could_be_numpy_scalar=True)
+            self._generate_buffer_arg_setter(gen, arg_idx, arg_var)
 
     def kernel__generate_naive_call(self):
         num_args = self.num_args
@@ -849,15 +856,13 @@ def _add_functionality():
                     gen(
                             "buf = pack('{arg_char}', {arg_var}.real)"
                             .format(arg_char=arg_char, arg_var=arg_var))
-                    self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf",
-                            could_be_numpy_scalar=False)
+                    self._generate_bytes_arg_setter(gen, cl_arg_idx, "buf")
                     cl_arg_idx += 1
                     gen("current_arg = current_arg + 1000")
                     gen(
                             "buf = pack('{arg_char}', {arg_var}.imag)"
                             .format(arg_char=arg_char, arg_var=arg_var))
-                    self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf",
-                            could_be_numpy_scalar=False)
+                    self._generate_bytes_arg_setter(gen, cl_arg_idx, "buf")
                     cl_arg_idx += 1
 
                 elif (work_around_arg_count_bug == "apple"
@@ -873,8 +878,7 @@ def _add_functionality():
                             "buf = pack('{arg_char}{arg_char}', "
                             "{arg_var}.real, {arg_var}.imag)"
                             .format(arg_char=arg_char, arg_var=arg_var))
-                    self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf",
-                            could_be_numpy_scalar=False)
+                    self._generate_bytes_arg_setter(gen, cl_arg_idx, "buf")
                     cl_arg_idx += 1
 
                 fp_arg_count += 2
@@ -886,8 +890,7 @@ def _add_functionality():
                 gen(
                         "buf = pack('{arg_char}', long({arg_var}))"
                         .format(arg_char=arg_dtype.char, arg_var=arg_var))
-                self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf",
-                        could_be_numpy_scalar=False)
+                self._generate_bytes_arg_setter(gen, cl_arg_idx, "buf")
                 cl_arg_idx += 1
 
             else:
@@ -901,8 +904,7 @@ def _add_functionality():
                         .format(
                             arg_char=arg_char,
                             arg_var=arg_var))
-                self._generate_buffer_arg_setter(gen, cl_arg_idx, "buf",
-                        could_be_numpy_scalar=False)
+                self._generate_bytes_arg_setter(gen, cl_arg_idx, "buf")
                 cl_arg_idx += 1
 
             gen("")
@@ -935,6 +937,7 @@ def _add_functionality():
     Kernel.__init__ = kernel_init
     Kernel._set_set_args_body = kernel__set_set_args_body
     Kernel._generate_buffer_arg_setter = kernel__generate_buffer_arg_setter
+    Kernel._generate_bytes_arg_setter = kernel__generate_bytes_arg_setter
     Kernel._generate_generic_arg_handler = kernel__generate_generic_arg_handler
     Kernel._generate_naive_call = kernel__generate_naive_call
     Kernel.set_scalar_arg_dtypes = kernel_set_scalar_arg_dtypes
