@@ -78,7 +78,7 @@ ffi.set_source("pyopencl._cffi",
             {CL_INC_DIR} + ["src/c_wrapper/"]),
         library_dirs={CL_LIB_DIR},
         libraries={CL_LIBNAME},
-        extra_compile_args=( + {CXXFLAGS}),
+        extra_compile_args=({CXXFLAGS}),
         extra_link_args={LDFLAGS},
         source_extension=".cpp",
         sources=[
