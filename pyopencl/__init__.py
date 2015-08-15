@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 import six
 import sys
-from six.moves import input, range
+from six.moves import input, range, intern
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 from pytools import Record as _Record
@@ -426,16 +426,19 @@ def link_program(context, programs, options=[], devices=None):
 
 def _add_functionality():
     cls_to_info_cls = {
-            _cl.Platform: (_cl.Platform.get_info, _cl.platform_info),
-            _cl.Device: (_cl.Device.get_info, _cl.device_info),
-            _cl.Context: (_cl.Context.get_info, _cl.context_info),
-            _cl.CommandQueue: (_cl.CommandQueue.get_info, _cl.command_queue_info),
-            _cl.Event: (_cl.Event.get_info, _cl.event_info),
-            _cl.MemoryObjectHolder: (MemoryObjectHolder.get_info, _cl.mem_info),
-            Image: (_cl.Image.get_image_info, _cl.image_info),
-            Program: (Program.get_info, _cl.program_info),
-            Kernel: (Kernel.get_info, _cl.kernel_info),
-            _cl.Sampler: (Sampler.get_info, _cl.sampler_info),
+            _cl.Platform: (_cl.Platform.get_info, _cl.platform_info, []),
+            _cl.Device: (_cl.Device.get_info, _cl.device_info,
+                ["PLATFORM", "MAX_WORK_GROUP_SIZE", "MAX_COMPUTE_UNITS"]),
+            _cl.Context: (_cl.Context.get_info, _cl.context_info, []),
+            _cl.CommandQueue: (_cl.CommandQueue.get_info, _cl.command_queue_info,
+                ["CONTEXT", "DEVICE"]),
+            _cl.Event: (_cl.Event.get_info, _cl.event_info, []),
+            _cl.MemoryObjectHolder:
+            (MemoryObjectHolder.get_info, _cl.mem_info, []),
+            Image: (_cl.Image.get_image_info, _cl.image_info, []),
+            Program: (Program.get_info, _cl.program_info, []),
+            Kernel: (Kernel.get_info, _cl.kernel_info, []),
+            _cl.Sampler: (Sampler.get_info, _cl.sampler_info, []),
             }
 
     def to_string(cls, value, default_format=None):
@@ -454,19 +457,40 @@ def _add_functionality():
 
     # {{{ get_info attributes -------------------------------------------------
 
-    def make_getinfo(info_method, info_attr):
+    def make_getinfo(info_method, info_name, info_attr):
         def result(self):
             return info_method(self, info_attr)
 
         return property(result)
 
-    for cls, (info_method, info_class) in six.iteritems(cls_to_info_cls):
+    def make_cacheable_getinfo(info_method, info_name, cache_attr, info_attr):
+        def result(self):
+            try:
+                return getattr(self, cache_attr)
+            except AttributeError:
+                pass
+
+            result = info_method(self, info_attr)
+            setattr(self, cache_attr, result)
+            return result
+
+        return property(result)
+
+    for cls, (info_method, info_class, cacheable_attrs) \
+            in six.iteritems(cls_to_info_cls):
         for info_name, info_value in six.iteritems(info_class.__dict__):
             if info_name == "to_string" or info_name.startswith("_"):
                 continue
 
-            setattr(cls, info_name.lower(), make_getinfo(
-                    info_method, getattr(info_class, info_name)))
+            info_lower = info_name.lower()
+            info_constant = getattr(info_class, info_name)
+            if info_name in cacheable_attrs:
+                cache_attr = intern("_info_cache_"+info_lower)
+                setattr(cls, info_lower, make_cacheable_getinfo(
+                    info_method, info_lower, cache_attr, info_constant))
+            else:
+                setattr(cls, info_lower, make_getinfo(
+                        info_method, info_name, info_constant))
 
     # }}}
 
@@ -624,6 +648,7 @@ def _add_functionality():
     # {{{ Kernel
 
     kernel_old_init = Kernel.__init__
+    kernel_old_get_work_group_info = Kernel.get_work_group_info
 
     def kernel_init(self, prg, name):
         if not isinstance(prg, _cl._Program):
@@ -633,6 +658,17 @@ def _add_functionality():
         self._source = getattr(prg, "_source", None)
 
         self._generate_naive_call()
+        self._wg_info_cache = {}
+
+    def kernel_get_work_group_info(self, param, device):
+        try:
+            return self._wg_info_cache[param, device]
+        except KeyError:
+            pass
+
+        result = kernel_old_get_work_group_info(self, param, device)
+        self._wg_info_cache[param, device] = result
+        return result
 
     # {{{ code generation for __call__, set_args
 
@@ -935,6 +971,7 @@ def _add_functionality():
                 *args, **kwargs)
 
     Kernel.__init__ = kernel_init
+    Kernel.get_work_group_info = kernel_get_work_group_info
     Kernel._set_set_args_body = kernel__set_set_args_body
     Kernel._generate_buffer_arg_setter = kernel__generate_buffer_arg_setter
     Kernel._generate_bytes_arg_setter = kernel__generate_bytes_arg_setter
