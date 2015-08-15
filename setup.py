@@ -38,6 +38,8 @@ def get_config_schema():
             IncludeDir, LibraryDir, Libraries, \
             Switch, StringListOption
 
+    default_cxxflags = ['-std=c++0x']
+
     if 'darwin' in sys.platform:
         import platform
         osx_ver, _, _ = platform.mac_ver()
@@ -50,7 +52,10 @@ def get_config_schema():
                 ]
 
         default_libs = []
-        default_cxxflags = ['-arch', 'i386', '-arch', 'x86_64']
+        default_cxxflags = default_cxxflags + [
+                '-stdlib=libc++',
+                '-arch', 'i386', '-arch', 'x86_64'
+                ]
 
         from os.path import isdir
         for srp in sysroot_paths:
@@ -62,7 +67,6 @@ def get_config_schema():
 
     else:
         default_libs = ["OpenCL"]
-        default_cxxflags = []
         default_ldflags = []
 
     return ConfigSchema([
