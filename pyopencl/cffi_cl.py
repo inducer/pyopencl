@@ -849,6 +849,20 @@ elif sys.version_info >= (2, 7):
     def _c_buffer_from_obj(obj, writable=False, retain=False):
         # {{{ fall back to the old CPython buffer protocol API
 
+        # {{{ try the numpy array interface first
+
+        # avoid slow ctypes-based buffer interface wrapper
+
+        ary_intf = getattr(obj, "__array_interface__", None)
+        if ary_intf is not None:
+            buf_base, is_read_only = ary_intf["data"]
+            return (
+                    _ffi.cast('void*', buf_base + ary_intf.get("offset", 0)),
+                    obj.nbytes,
+                    obj)
+
+        # }}}
+
         from pyopencl._buffers import Py_buffer, PyBUF_ANY_CONTIGUOUS, PyBUF_WRITABLE
 
         flags = PyBUF_ANY_CONTIGUOUS
