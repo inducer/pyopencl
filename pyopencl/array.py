@@ -550,7 +550,7 @@ class Array(object):
                 alloc_nbytes = 1
 
             if allocator is None:
-                if queue is not None:
+                if context is None and queue is not None:
                     context = queue.context
 
                 self.base_data = cl.Buffer(
@@ -561,14 +561,11 @@ class Array(object):
             self.base_data = data
 
         self.offset = offset
+        self.context = context
 
     @property
     def ndim(self):
         return len(self.shape)
-
-    @property
-    def context(self):
-        return self.base_data.context
 
     @property
     def data(self):
