@@ -45,20 +45,13 @@ from pyopencl.compyte.dtypes import (  # noqa
 
 
 def _register_types():
-    from pyopencl.compyte.dtypes import _fill_dtype_registry
-    import struct
+    from pyopencl.compyte.dtypes import (
+            TYPE_REGISTRY, fill_registry_with_opencl_c_types)
 
-    _fill_dtype_registry(respect_windows=False, include_bool=False)
+    fill_registry_with_opencl_c_types(TYPE_REGISTRY)
 
     get_or_register_dtype("cfloat_t", np.complex64)
     get_or_register_dtype("cdouble_t", np.complex128)
-
-    is_64_bit = struct.calcsize('@P') * 8 == 64
-    if not is_64_bit:
-        get_or_register_dtype(
-                ["unsigned long", "unsigned long int"], np.uint64)
-        get_or_register_dtype(
-                ["signed long", "signed long int", "long int"], np.int64)
 
 _register_types()
 
