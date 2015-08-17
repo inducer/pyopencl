@@ -46,7 +46,6 @@ defines = """//CL//
 
 typedef ${dtype} data_t;
 typedef ${idxtype} idx_t;
-typedef ${idxtype}2 idx_t2;
 #if CONFIG_USE_VALUE
 #define getKey(a) ((a).x)
 #define getValue(a) ((a).y)
