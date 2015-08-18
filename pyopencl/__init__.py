@@ -819,6 +819,8 @@ def _add_functionality():
         self._set_set_args_body(gen, num_args)
 
     def kernel_set_scalar_arg_dtypes(self, scalar_arg_dtypes):
+        self._scalar_arg_dtypes = scalar_arg_dtypes
+
         # {{{ arg counting bug handling
 
         # For example:

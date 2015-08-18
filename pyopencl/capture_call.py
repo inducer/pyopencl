@@ -117,8 +117,22 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
 
         cg("prg = cl.Program(ctx, CODE).build()")
         cg("knl = prg.%s" % kernel.function_name)
-        if hasattr(kernel, "_arg_type_chars"):
-            cg("knl._arg_type_chars = %s" % repr(kernel._arg_type_chars))
+        if hasattr(kernel, "_scalar_arg_dtypes"):
+            def strify_dtype(d):
+                if d is None:
+                    return "None"
+
+                d = np.dtype(d)
+                s = repr(d)
+                if s.startswith("dtype"):
+                    s = "np."+s
+
+                return s
+
+            cg("knl.set_scalar_arg_dtypes((%s,))"
+                    % ", ".join(
+                        strify_dtype(dt) for dt in kernel._scalar_arg_dtypes))
+
         cg("knl(queue, %s, %s," % (repr(g_size), repr(l_size)))
         cg("    %s)" % ", ".join(kernel_args))
         cg("")
