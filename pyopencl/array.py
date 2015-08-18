@@ -371,6 +371,7 @@ class Array(object):
     .. automethod :: reshape
     .. automethod :: ravel
     .. automethod :: view
+    .. automethod :: squeeze
     .. automethod :: transpose
     .. attribute :: T
     .. automethod :: set
@@ -1443,6 +1444,20 @@ class Array(object):
                 self.base_data, self.offset,
                 shape=new_shape, dtype=dtype,
                 strides=new_strides)
+
+    def squeeze(self):
+        """Returns a view of the array with dimensions of
+        length 1 removed.
+
+        .. versionadded:: 2015.2
+        """
+        new_shape = tuple([dim for dim in self.shape if dim > 1])
+        new_strides = tuple([self.strides[i]
+            for i, dim in enumerate(self.shape) if dim > 1])
+
+        return self._new_with_changes(
+                self.base_data, self.offset,
+                shape=new_shape, strides=new_strides)
 
     def transpose(self, axes=None):
         """Permute the dimensions of an array.

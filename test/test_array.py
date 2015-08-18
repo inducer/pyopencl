@@ -873,6 +873,41 @@ def test_newaxis(ctx_factory):
             assert b_gpu.strides[i] == b.strides[i]
 
 
+def test_squeeze(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    shape = (40, 2, 5, 100)
+    a_cpu = np.random.random(size=shape)
+    a_gpu = cl_array.to_device(queue, a_cpu)
+
+    # Slice with length 1 on dimensions 0 and 1
+    a_gpu_slice = a_gpu[0:1, 1:2, :, :]
+    assert a_gpu_slice.shape == (1, 1, shape[2], shape[3])
+    assert a_gpu_slice.flags.c_contiguous is False
+
+    # Squeeze it and obtain contiguity
+    a_gpu_squeezed_slice = a_gpu[0:1, 1:2, :, :].squeeze()
+    assert a_gpu_squeezed_slice.shape == (shape[2], shape[3])
+    assert a_gpu_squeezed_slice.flags.c_contiguous is True
+
+    # Check that we get the original values out
+    #assert np.all(a_gpu_slice.get().ravel() == a_gpu_squeezed_slice.get().ravel())
+
+    # Slice with length 1 on dimensions 2
+    a_gpu_slice = a_gpu[:, :, 2:3, :]
+    assert a_gpu_slice.shape == (shape[0], shape[1], 1, shape[3])
+    assert a_gpu_slice.flags.c_contiguous is False
+
+    # Squeeze it, but no contiguity here
+    a_gpu_squeezed_slice = a_gpu[:, :, 2:3, :].squeeze()
+    assert a_gpu_squeezed_slice.shape == (shape[0], shape[1], shape[3])
+    assert a_gpu_squeezed_slice.flags.c_contiguous is False
+
+    # Check that we get the original values out
+    #assert np.all(a_gpu_slice.get().ravel() == a_gpu_squeezed_slice.get().ravel())
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
     # tests.
