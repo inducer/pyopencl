@@ -257,9 +257,8 @@ class RanluxGenerator(object):
               unsigned long idx = get_global_id(0)*4;
               while (idx + 4 < out_size)
               {
-                  vstore4(
-                      GET_RANDOM_NUM(RANLUX_FUNC(&ranluxclstate)),
-                      idx >> 2, output);
+                  *(global output_vec_t *) (output + idx) =
+                      GET_RANDOM_NUM(RANLUX_FUNC(&ranluxclstate));
                   idx += 4*NUM_WORKITEMS;
               }
 
@@ -282,7 +281,7 @@ class RanluxGenerator(object):
                 "output_t": c_type,
                 "num_work_items": self.num_work_items,
                 "rng_expr": rng_expr
-            }
+                }
 
         prg = cl.Program(self.context, src).build()
         knl = prg.generate
@@ -367,7 +366,7 @@ class RanluxGenerator(object):
             }
             """ % {
                 "defines": self.generate_settings_defines(),
-            }
+                }
         prg = cl.Program(self.context, src).build()
         return prg.sync
 
