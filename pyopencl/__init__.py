@@ -149,7 +149,6 @@ from pyopencl.cffi_cl import (  # noqa
         _GLObject,
         GLBuffer,
         GLRenderBuffer,
-        _create_gl_enqueue,
 
         ImageFormat,
         get_supported_image_formats,
@@ -159,6 +158,20 @@ from pyopencl.cffi_cl import (  # noqa
         Sampler,
         GLTexture,
         )
+
+if _cl.have_gl():
+    try:
+        from pyopencl.cffi_cl import get_apple_cgl_share_group  # noqa
+    except ImportError:
+        pass
+
+    try:
+        from pyopencl.cffi_cl import (  # noqa
+            enqueue_acquire_gl_objects,
+            enqueue_release_gl_objects,
+        )
+    except ImportError:
+        pass
 
 
 import inspect as _inspect

@@ -1598,11 +1598,10 @@ class GLBuffer(MemoryObject, _GLObject):
     _id = 'gl_buffer'
 
     def __init__(self, context, flags, bufobj):
-        MemoryObject.__init__(self, bufobj)
-        c_buf, bufsize, retained = self._handle_buf_flags(flags)
+        MemoryObject.__init__(self)
         ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.create_from_gl_buffer(
-            ptr, context.ptr, flags, c_buf))
+            ptr, context.ptr, flags, bufobj))
         self.ptr = ptr[0]
 
 
