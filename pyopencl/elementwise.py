@@ -245,6 +245,7 @@ class ElementwiseKernel:
 
         range_ = kwargs.pop("range", None)
         slice_ = kwargs.pop("slice", None)
+        capture_as = kwargs.pop("capture_as", None)
 
         use_range = range_ is not None or slice_ is not None
         kernel, arg_descrs = self.get_kernel(use_range)
@@ -309,6 +310,12 @@ class ElementwiseKernel:
         else:
             invocation_args.append(repr_vec.size)
             gs, ls = repr_vec.get_sizes(queue, max_wg_size)
+
+        if capture_as is not None:
+            kernel.set_args(*invocation_args)
+            kernel.capture_call(
+                    capture_as, queue,
+                    gs, ls, *invocation_args, wait_for=wait_for)
 
         kernel.set_args(*invocation_args)
         return cl.enqueue_nd_range_kernel(queue, kernel,
