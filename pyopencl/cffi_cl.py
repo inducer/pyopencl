@@ -479,7 +479,7 @@ class Error(Exception):
 
         def __init__(self, msg='', code=0, routine=''):
             self._routine = routine
-            assert isinstance(code, int)
+            assert isinstance(code, (int, long))
             self._code = code
             self._what = msg
 
