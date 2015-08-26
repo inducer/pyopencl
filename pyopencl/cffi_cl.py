@@ -26,6 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+import six
 from six.moves import map, range, zip
 
 import warnings
@@ -479,7 +480,7 @@ class Error(Exception):
 
         def __init__(self, msg='', code=0, routine=''):
             self._routine = routine
-            assert isinstance(code, (int, long))
+            assert isinstance(code, six.integer_types)
             self._code = code
             self._what = msg
 
