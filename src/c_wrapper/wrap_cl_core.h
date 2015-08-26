@@ -56,7 +56,7 @@ void set_py_funcs(int (*_gc)(), void *(*_ref)(void*), void (*_deref)(void*),
 int have_gl();
 
 unsigned bitlog2(unsigned long v);
-void populate_constants(void(*add)(const char*, const char*, long value));
+void populate_constants(void(*add)(const char*, const char*, unsigned long value));
 int get_debug();
 void set_debug(int debug);
 

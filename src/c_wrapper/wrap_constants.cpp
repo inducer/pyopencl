@@ -2,7 +2,7 @@
 #include <iostream>
 
 extern "C"
-void populate_constants(void(*add)(const char*, const char*, long value))
+void populate_constants(void(*add)(const char*, const char*, unsigned long value))
 {
 #define _ADD_ATTR(TYPE, PREFIX, NAME, SUFFIX, ...)      \
       add(TYPE, #NAME, CL_##PREFIX##NAME##SUFFIX)

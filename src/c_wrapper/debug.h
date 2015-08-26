@@ -1,7 +1,17 @@
 #include "wrap_cl.h"
 #include "function.h"
 #include <string.h>
+
+#ifdef __MINGW32__
+
+#include "mingw-std-threads/mingw.mutex.h"
+#include "mingw-std-threads/mingw.thread.h"
+
+#else
+
 #include <mutex>
+
+#endif
 
 #ifndef __PYOPENCL_DEBUG_H
 #define __PYOPENCL_DEBUG_H

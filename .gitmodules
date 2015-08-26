@@ -1,3 +1,6 @@
 [submodule "pyopencl/compyte"]
 	path = pyopencl/compyte
 	url = https://github.com/inducer/compyte
+[submodule "src/c_wrapper/mingw-std-threads"]
+	path = src/c_wrapper/mingw-std-threads
+	url = https://github.com/meganz/mingw-std-threads.git

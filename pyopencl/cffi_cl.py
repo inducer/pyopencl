@@ -35,7 +35,8 @@ import sys
 from pyopencl._cffi import ffi as _ffi
 from .compyte.array import f_contiguous_strides, c_contiguous_strides
 
-_lib = _ffi.dlopen(None)
+
+from pyopencl._cffi import lib as _lib
 
 
 class _CLKernelArg(object):
@@ -456,7 +457,8 @@ class migrate_mem_object_flags_ext(_NoInit):  # noqa
 _locals = locals()
 
 
-@_ffi.callback('void (*)(const char*, const char* name, long value)')
+# TODO: constant values are cl_ulong
+@_ffi.callback('void (*)(const char*, const char* name, unsigned long value)')
 def _constant_callback(type_, name, value):
     setattr(_locals[_ffi_pystr(type_)], _ffi_pystr(name), value)  # noqa
 
