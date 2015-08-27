@@ -459,7 +459,7 @@ _locals = locals()
 
 
 # TODO: constant values are cl_ulong
-@_ffi.callback('void (*)(const char*, const char* name, unsigned long value)')
+@_ffi.callback('void (*)(const char*, const char* name, int64_t value)')
 def _constant_callback(type_, name, value):
     setattr(_locals[_ffi_pystr(type_)], _ffi_pystr(name), value)  # noqa
 
