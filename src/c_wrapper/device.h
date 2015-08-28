@@ -36,17 +36,17 @@ public:
             else if (ref_type == REF_FISSION_EXT) {
 #if PYOPENCL_CL_VERSION >= 0x1020
                 cl_platform_id plat;
-                pyopencl_call_guarded(clGetDeviceInfo, this,
+                pyopencl_call_guarded(clGetDeviceInfo, data(),
                                       CL_DEVICE_PLATFORM, size_arg(plat),
                                       nullptr);
 #endif
                 pyopencl_call_guarded(
-                    pyopencl_get_ext_fun(plat, clRetainDeviceEXT), this);
+                    pyopencl_get_ext_fun(plat, clRetainDeviceEXT), data());
             }
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
             else if (ref_type == REF_CL_1_2) {
-                pyopencl_call_guarded(clRetainDevice, this);
+                pyopencl_call_guarded(clRetainDevice, data());
             }
 #endif
 

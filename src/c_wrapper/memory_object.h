@@ -21,7 +21,7 @@ public:
         : clobj(mem), m_valid(true)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainMemObject, this);
+            pyopencl_call_guarded(clRetainMemObject, data());
         }
     }
     PYOPENCL_INLINE
@@ -37,7 +37,7 @@ public:
             throw clerror("MemoryObject.release", CL_INVALID_VALUE,
                           "trying to double-unref mem object");
         }
-        pyopencl_call_guarded(clReleaseMemObject, this);
+        pyopencl_call_guarded(clReleaseMemObject, data());
     }
 #if 0
     PYOPENCL_USE_RESULT size_t

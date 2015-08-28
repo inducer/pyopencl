@@ -19,7 +19,7 @@ public:
         : clobj(samp)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainSampler, this);
+            pyopencl_call_guarded(clRetainSampler, data());
         }
     }
     ~sampler();

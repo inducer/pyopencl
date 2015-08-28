@@ -20,7 +20,7 @@ public:
         : clobj(ctx)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainContext, this);
+            pyopencl_call_guarded(clRetainContext, data());
         }
     }
     ~context();

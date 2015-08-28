@@ -19,7 +19,7 @@ public:
     format()
     {
         if (!m_format.image_channel_data_type) {
-            pyopencl_call_guarded(clGetImageInfo, this, CL_IMAGE_FORMAT,
+            pyopencl_call_guarded(clGetImageInfo, data(), CL_IMAGE_FORMAT,
                                   size_arg(m_format), nullptr);
         }
         return m_format;
