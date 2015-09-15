@@ -49,6 +49,10 @@ memory_object::get_info(cl_uint param_name) const
     case CL_MEM_OFFSET:
         return pyopencl_get_int_info(size_t, MemObject, this, param_name);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    case CL_MEM_USES_SVM_POINTER:
+        return pyopencl_get_int_info(cl_bool, MemObject, this, param_name);
+#endif
 
     default:
         throw clerror("MemoryObject.get_info", CL_INVALID_VALUE);

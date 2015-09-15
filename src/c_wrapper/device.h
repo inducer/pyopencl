@@ -16,7 +16,6 @@ public:
     PYOPENCL_DEF_CL_CLASS(DEVICE);
     enum reference_type_t {
         REF_NOT_OWNABLE,
-        REF_FISSION_EXT,
         REF_CL_1_2,
     };
 
@@ -32,18 +31,6 @@ public:
         if (retain && ref_type != REF_NOT_OWNABLE) {
             if (false) {
             }
-#if (defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION))
-            else if (ref_type == REF_FISSION_EXT) {
-#if PYOPENCL_CL_VERSION >= 0x1020
-                cl_platform_id plat;
-                pyopencl_call_guarded(clGetDeviceInfo, this,
-                                      CL_DEVICE_PLATFORM, size_arg(plat),
-                                      nullptr);
-#endif
-                pyopencl_call_guarded(
-                    pyopencl_get_ext_fun(plat, clRetainDeviceEXT), this);
-            }
-#endif
 #if PYOPENCL_CL_VERSION >= 0x1020
             else if (ref_type == REF_CL_1_2) {
                 pyopencl_call_guarded(clRetainDevice, this);
@@ -64,11 +51,6 @@ public:
 #if PYOPENCL_CL_VERSION >= 0x1020
     PYOPENCL_USE_RESULT pyopencl_buf<clobj_t>
     create_sub_devices(const cl_device_partition_property *props);
-#endif
-
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    PYOPENCL_USE_RESULT pyopencl_buf<clobj_t>
-    create_sub_devices_ext(const cl_device_partition_property_ext *props);
 #endif
 };
 

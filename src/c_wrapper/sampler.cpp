@@ -29,6 +29,10 @@ sampler::get_info(cl_uint param_name) const
     case CL_SAMPLER_NORMALIZED_COORDS:
         return pyopencl_get_int_info(cl_bool, Sampler, this, param_name);
 
+#if PYOPENCL_CL_VERSION >= 0x2000
+    // TODO: MIP_FILTER_MODE, LOD_MIN, LOD_MAX
+#endif
+
     default:
         throw clerror("Sampler.get_info", CL_INVALID_VALUE);
     }

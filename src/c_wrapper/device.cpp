@@ -21,17 +21,6 @@ device::~device()
 {
     if (false) {
     }
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    else if (m_ref_type == REF_FISSION_EXT) {
-#if PYOPENCL_CL_VERSION >= 0x1020
-        cl_platform_id plat;
-        pyopencl_call_guarded_cleanup(clGetDeviceInfo, this, CL_DEVICE_PLATFORM,
-                                      size_arg(plat), nullptr);
-#endif
-        pyopencl_call_guarded_cleanup(
-            pyopencl_get_ext_fun(plat, clReleaseDeviceEXT), this);
-    }
-#endif
 #if PYOPENCL_CL_VERSION >= 0x1020
     else if (m_ref_type == REF_CL_1_2) {
         pyopencl_call_guarded_cleanup(clReleaseDevice, this);
@@ -120,6 +109,7 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_EXECUTION_CAPABILITIES:
         return DEV_GET_INT_INF(cl_device_exec_capabilities);
     case CL_DEVICE_QUEUE_PROPERTIES:
+    // same as CL_DEVICE_QUEUE_ON_HOST_PROPERTIES in 2.0
         return DEV_GET_INT_INF(cl_command_queue_properties);
 
     case CL_DEVICE_NAME:
@@ -143,7 +133,7 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF:
         return DEV_GET_INT_INF(cl_uint);
 
-    case CL_DEVICE_HOST_UNIFIED_MEMORY:
+    case CL_DEVICE_HOST_UNIFIED_MEMORY: // deprecated in 2.0
         return DEV_GET_INT_INF(cl_bool);
     case CL_DEVICE_OPENCL_C_VERSION:
         return pyopencl_get_str_info(Device, this, param_name);
@@ -158,17 +148,6 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV:
     case CL_DEVICE_INTEGRATED_MEMORY_NV:
         return DEV_GET_INT_INF(cl_bool);
-#endif
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    case CL_DEVICE_PARENT_DEVICE_EXT:
-        return pyopencl_get_opaque_info(device, Device, this, param_name);
-    case CL_DEVICE_PARTITION_TYPES_EXT:
-    case CL_DEVICE_AFFINITY_DOMAINS_EXT:
-    case CL_DEVICE_PARTITION_STYLE_EXT:
-        return pyopencl_get_array_info(cl_device_partition_property_ext,
-                                       Device, this, param_name);
-    case CL_DEVICE_REFERENCE_COUNT_EXT:
-        return DEV_GET_INT_INF(cl_uint);
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
     case CL_DEVICE_LINKER_AVAILABLE:
@@ -195,6 +174,42 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_PRINTF_BUFFER_SIZE:
         return DEV_GET_INT_INF(cl_bool);
 #endif
+#ifdef cl_khr_image2d_from_buffer
+    case CL_DEVICE_IMAGE_PITCH_ALIGNMENT:
+        return DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT:
+        return DEV_GET_INT_INF(cl_uint);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    case CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS:
+        return DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE:
+        return DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES:
+        return DEV_GET_INT_INF(cl_command_queue_properties);
+    case CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE:
+        return DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_QUEUE_ON_DEVICE_MAX_SIZE:
+        return DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MAX_ON_DEVICE_QUEUES:
+        return DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_MAX_ON_DEVICE_EVENTS:
+        return DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_SVM_CAPABILITIES:
+        return DEV_GET_INT_INF(cl_device_svm_capabilities);
+    case CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE:
+        return DEV_GET_INT_INF(size_t);
+    case CL_DEVICE_MAX_PIPE_ARGS:
+    case CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS:
+    case CL_DEVICE_PIPE_MAX_PACKET_SIZE:
+        return DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT:
+    case CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT:
+    case CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT:
+        return DEV_GET_INT_INF(cl_uint);
+#endif
+
+
         // {{{ AMD dev attrs
         //
         // types of AMD dev attrs divined from
@@ -270,28 +285,6 @@ device::create_sub_devices(const cl_device_partition_property *props)
     return buf_to_base<device>(devices, true, device::REF_CL_1_2);
 }
 #endif
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-PYOPENCL_USE_RESULT pyopencl_buf<clobj_t>
-device::create_sub_devices_ext(const cl_device_partition_property_ext *props)
-{
-#if PYOPENCL_CL_VERSION >= 0x1020
-    cl_platform_id plat;
-    pyopencl_call_guarded(clGetDeviceInfo, this, CL_DEVICE_PLATFORM,
-                          size_arg(plat), nullptr);
-#endif
-    auto clCreateSubDevicesEXT =
-        pyopencl_get_ext_fun(plat, clCreateSubDevicesEXT);
-
-    // TODO debug print props
-    cl_uint num_devices;
-    pyopencl_call_guarded(clCreateSubDevicesEXT, this, props, 0, nullptr,
-                          buf_arg(num_devices));
-    pyopencl_buf<cl_device_id> devices(num_devices);
-    pyopencl_call_guarded(clCreateSubDevicesEXT, this, props, devices,
-                          buf_arg(num_devices));
-    return buf_to_base<device>(devices, true, device::REF_FISSION_EXT);
-}
-#endif
 
 // c wrapper
 
@@ -304,21 +297,6 @@ device__create_sub_devices(clobj_t _dev, clobj_t **_devs,
     auto dev = static_cast<device*>(_dev);
     return c_handle_error([&] {
             auto devs = dev->create_sub_devices(props);
-            *num_devices = (uint32_t)devs.len();
-            *_devs = devs.release();
-        });
-}
-#endif
-
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-error*
-device__create_sub_devices_ext(clobj_t _dev, clobj_t **_devs,
-                               uint32_t *num_devices,
-                               const cl_device_partition_property_ext *props)
-{
-    auto dev = static_cast<device*>(_dev);
-    return c_handle_error([&] {
-            auto devs = dev->create_sub_devices_ext(props);
             *num_devices = (uint32_t)devs.len();
             *_devs = devs.release();
         });

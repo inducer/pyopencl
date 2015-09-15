@@ -295,6 +295,10 @@ class device_exec_capabilities(_NoInit):  # noqa
     pass
 
 
+class device_svm_capabilities(_NoInit):  # noqa
+    pass
+
+
 class command_queue_properties(_NoInit):  # noqa
     pass
 
@@ -315,6 +319,10 @@ class command_queue_info(_NoInit):  # noqa
     pass
 
 
+class queue_properties(_NoInit):  # noqa
+    pass
+
+
 class mem_flags(_NoInit):  # noqa
     @classmethod
     def _writable(cls, flags):
@@ -331,6 +339,10 @@ class mem_flags(_NoInit):  # noqa
     @classmethod
     def _host_writable(cls, flags):
         return cls._writable(flags) and cls._hold_host(flags)
+
+
+class svm_mem_flags(_NoInit):  # noqa
+    pass
 
 
 class channel_order(_NoInit):  # noqa
@@ -394,6 +406,10 @@ class kernel_arg_address_qualifier(_NoInit):  # noqa
 
 
 class kernel_arg_access_qualifier(_NoInit):  # noqa
+    pass
+
+
+class kernel_arg_type_qualifier(_NoInit):  # noqa
     pass
 
 

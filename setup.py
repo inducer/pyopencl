@@ -72,8 +72,6 @@ def get_config_schema():
     return ConfigSchema([
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
-        Switch("CL_ENABLE_DEVICE_FISSION", True,
-            "Enable device fission extension, if present"),
         Option("CL_PRETEND_VERSION", None,
             "Dotted CL version (e.g. 1.2) which you'd like to use."),
 
@@ -109,8 +107,6 @@ def main():
     if conf["CL_ENABLE_GL"]:
         extra_defines["HAVE_GL"] = 1
 
-    if conf["CL_ENABLE_DEVICE_FISSION"]:
-        extra_defines["PYOPENCL_USE_DEVICE_FISSION"] = 1
     if conf["CL_PRETEND_VERSION"]:
         try:
             major, minor = [int(x) for x in conf["CL_PRETEND_VERSION"].split(".")]

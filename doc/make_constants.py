@@ -1,5 +1,5 @@
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import absolute_import, print_function
+
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -29,6 +29,8 @@ nv_devattr = ("cl_nv_device_attribute_query", "0.92")
 gl_sharing = ("cl_khr_gl_sharing", "0.92")
 cl_11 = ("CL_1.1", "0.92")
 cl_12 = ("CL_1.2", "2011.2")
+cl_12_2015 = ("CL_1.2", "2015.2")
+cl_20 = ("CL_2.0", "2015.2")
 amd_devattr = ("cl_amd_device_attribute_query", "2013.2")
 
 
@@ -71,6 +73,9 @@ const_ext_lookup = {
             "INVALID_COMPILER_OPTIONS": cl_12,
             "INVALID_LINKER_OPTIONS": cl_12,
             "INVALID_DEVICE_PARTITION_COUNT": cl_12,
+
+            "INVALID_PIPE_SIZE": cl_20,
+            "INVALID_DEVICE_QUEUE": cl_20,
 
             },
 
@@ -137,6 +142,24 @@ const_ext_lookup = {
             "REFERENCE_COUNT": cl_12,
             "PREFERRED_INTEROP_USER_SYNC": cl_12,
             "PRINTF_BUFFER_SIZE": cl_12,
+
+            "DEVICE_ON_HOST_PROPERTIES": cl_20,
+
+            "MAX_READ_WRITE_IMAGE_ARGS": cl_20,
+            "MAX_GLOBAL_VARIABLE_SIZE": cl_20,
+            "QUEUE_ON_DEVICE_PROPERTIES": cl_20,
+            "QUEUE_ON_DEVICE_PREFERRED_SIZE": cl_20,
+            "QUEUE_ON_DEVICE_MAX_SIZE": cl_20,
+            "MAX_ON_DEVICE_QUEUES": cl_20,
+            "MAX_ON_DEVICE_EVENTS": cl_20,
+            "SVM_CAPABILITIES": cl_20,
+            "GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE": cl_20,
+            "MAX_PIPE_ARGS": cl_20,
+            "PIPE_MAX_ACTIVE_RESERVATIONS": cl_20,
+            "PIPE_MAX_PACKET_SIZE": cl_20,
+            "PREFERRED_PLATFORM_ATOMIC_ALIGNMENT": cl_20,
+            "PREFERRED_GLOBAL_ATOMIC_ALIGNMENT": cl_20,
+            "PREFERRED_LOCAL_ATOMIC_ALIGNMENT": cl_20,
             },
 
         cl.mem_object_type: {
@@ -144,6 +167,8 @@ const_ext_lookup = {
             "IMAGE1D": cl_12,
             "IMAGE1D_ARRAY": cl_12,
             "IMAGE1D_BUFFER": cl_12,
+
+            "PIPE": cl_20,
             },
 
         cl.device_type: {
@@ -166,6 +191,11 @@ const_ext_lookup = {
             "CORRECTLY_ROUNDED_DIVIDE_SQRT": cl_12,
             },
 
+        cl.command_queue_properties: {
+            "ON_DEVICE": cl_20,
+            "ON_DEVICE_DEFAULT": cl_20,
+            },
+
         cl.context_info: {
             "NUM_DEVICES": cl_11,
             "INTEROP_USER_SYNC": cl_12,
@@ -175,6 +205,12 @@ const_ext_lookup = {
             "Rx": cl_11,
             "RGx": cl_11,
             "RGBx": cl_11,
+
+            "sRGB": cl_20,
+            "sRGBx": cl_20,
+            "sRGBA": cl_20,
+            "sBGRA": cl_20,
+            "ABGR": cl_20,
             },
 
         cl.kernel_work_group_info: {
@@ -187,6 +223,12 @@ const_ext_lookup = {
             "MIRRORED_REPEAT": cl_11,
             },
 
+        cl.sampler_info: {
+            "MIP_FILTER_MODE": cl_20,
+            "LOD_MIN": cl_20,
+            "LOD_MAX": cl_20,
+            },
+
         cl.event_info: {
             "CONTEXT": cl_11,
             },
@@ -194,6 +236,8 @@ const_ext_lookup = {
         cl.mem_info: {
             "ASSOCIATED_MEMOBJECT": cl_11,
             "OFFSET": cl_11,
+
+            "USES_SVM_POINTER": cl_20,
             },
 
         cl.image_info: {
@@ -214,6 +258,8 @@ const_ext_lookup = {
 
         cl.program_build_info: {
             "BINARY_TYPE": cl_12,
+
+            "GLOBAL_VARIABLE_TOTAL_SIZE": cl_20,
             },
 
         cl.program_binary_type: {
@@ -231,6 +277,7 @@ const_ext_lookup = {
             "ADDRESS_QUALIFIER": cl_12,
             "ACCESS_QUALIFIER": cl_12,
             "TYPE_NAME": cl_12,
+            "TYPE_QUALIFIER": cl_12_2015,
             "ARG_NAME": cl_12,
             },
 
@@ -248,6 +295,15 @@ const_ext_lookup = {
             "NONE": cl_12,
             },
 
+        cl.kernel_arg_type_qualifier: {
+            "NONE": cl_12_2015,
+            "CONST": cl_12_2015,
+            "RESTRICT": cl_12_2015,
+            "VOLATILE": cl_12_2015,
+
+            "PIPE": cl_20,
+            },
+
         cl.command_type: {
             "READ_BUFFER_RECT": cl_11,
             "WRITE_BUFFER_RECT": cl_11,
@@ -258,12 +314,43 @@ const_ext_lookup = {
             "MIGRATE_MEM_OBJECTS": cl_12,
             "FILL_BUFFER": cl_12,
             "FILL_IMAGE": cl_12,
+
+            "SVM_FREE": cl_20,
+            "SVM_MEMCPY": cl_20,
+            "SVM_MEMFILL": cl_20,
+            "SVM_MAP": cl_20,
+            "SVM_UNMAP": cl_20,
+            },
+
+        cl.command_queue_info: {
+            "SIZE": cl_20,
+            },
+
+        cl.queue_properties: {
+            "PROPERTIES": cl_20,
+            "SIZE": cl_20,
             },
 
         cl.mem_flags: {
             "USE_PERSISTENT_MEM_AMD":
             ("cl_amd_device_memory_flags", "2011.1"),
             "HOST_WRITE_ONLY": cl_12,
+            "KERNEL_READ_AND_WRITE": cl_20,
+            },
+
+        cl.svm_mem_flags: {
+            "READ_WRITE": cl_20,
+            "WRITE_ONLY": cl_20,
+            "READ_ONLY": cl_20,
+            "SVM_FINE_GRAIN_BUFFER": cl_20,
+            "SVM_ATOMICS": cl_20,
+            },
+
+        cl.device_svm_capabilities: {
+            "COARSE_GRAIN_BUFFER": cl_20,
+            "FINE_GRAIN_BUFFER": cl_20,
+            "FINE_GRAIN_SYSTEM": cl_20,
+            "ATOMICS": cl_20,
             },
 
         cl.device_partition_property: {
@@ -303,6 +390,10 @@ const_ext_lookup = {
             "L4_CACHE": fission,
             "NUMA": fission,
             "NEXT_FISSIONABLE": fission,
+            },
+
+        cl.profiling_info: {
+            "COMPLETE": cl_20,
             },
 
         cl.mem_migration_flags: {
@@ -346,7 +437,7 @@ def doc_class(cls):
 
     cls_const_ext = const_ext_lookup.get(cls, {})
     for name in sorted(dir(cls)):
-        if not name.startswith("_") and not name in ["to_string", "names", "values"]:
+        if not name.startswith("_") and name not in ["to_string", "names", "values"]:
             print("    .. attribute :: %s" % name)
 
             if name in cls_const_ext:

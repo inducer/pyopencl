@@ -91,12 +91,10 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("status_code", , INVALID_DEVICE_PARTITION_COUNT);
 #endif
 
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    ADD_ATTR("status_code", , DEVICE_PARTITION_FAILED_EXT);
-    ADD_ATTR("status_code", , INVALID_PARTITION_COUNT_EXT);
-    ADD_ATTR("status_code", , INVALID_PARTITION_NAME_EXT);
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("status_code", , INVALID_PIPE_SIZE);
+    ADD_ATTR("status_code", , INVALID_DEVICE_QUEUE);
 #endif
-
 
     // platform_info
     ADD_ATTR("platform_info", PLATFORM_, PROFILE);
@@ -169,6 +167,9 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("device_info", DEVICE_, COMPILER_AVAILABLE);
     ADD_ATTR("device_info", DEVICE_, EXECUTION_CAPABILITIES);
     ADD_ATTR("device_info", DEVICE_, QUEUE_PROPERTIES);
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("device_info", DEVICE_, QUEUE_ON_HOST_PROPERTIES);
+#endif
     ADD_ATTR("device_info", DEVICE_, NAME);
     ADD_ATTR("device_info", DEVICE_, VENDOR);
     ADD_ATTR("device_info", , DRIVER_VERSION);
@@ -178,7 +179,7 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("device_info", DEVICE_, PLATFORM);
 #if PYOPENCL_CL_VERSION >= 0x1010
     ADD_ATTR("device_info", DEVICE_, PREFERRED_VECTOR_WIDTH_HALF);
-    ADD_ATTR("device_info", DEVICE_, HOST_UNIFIED_MEMORY);
+    ADD_ATTR("device_info", DEVICE_, HOST_UNIFIED_MEMORY); // deprecated in 2.0
     ADD_ATTR("device_info", DEVICE_, NATIVE_VECTOR_WIDTH_CHAR);
     ADD_ATTR("device_info", DEVICE_, NATIVE_VECTOR_WIDTH_SHORT);
     ADD_ATTR("device_info", DEVICE_, NATIVE_VECTOR_WIDTH_INT);
@@ -240,13 +241,6 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
     ADD_ATTR("device_info", DEVICE_, MAX_ATOMIC_COUNTERS_EXT);
 #endif
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    ADD_ATTR("device_info", DEVICE_, PARENT_DEVICE_EXT);
-    ADD_ATTR("device_info", DEVICE_, PARTITION_TYPES_EXT);
-    ADD_ATTR("device_info", DEVICE_, AFFINITY_DOMAINS_EXT);
-    ADD_ATTR("device_info", DEVICE_, REFERENCE_COUNT_EXT);
-    ADD_ATTR("device_info", DEVICE_, PARTITION_STYLE_EXT);
-#endif
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("device_info", DEVICE_, LINKER_AVAILABLE);
     ADD_ATTR("device_info", DEVICE_, BUILT_IN_KERNELS);
@@ -264,6 +258,23 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
 #ifdef cl_khr_image2d_from_buffer
     ADD_ATTR("device_info", DEVICE_, IMAGE_PITCH_ALIGNMENT);
     ADD_ATTR("device_info", DEVICE_, IMAGE_BASE_ADDRESS_ALIGNMENT);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("device_info", DEVICE_, MAX_READ_WRITE_IMAGE_ARGS);
+    ADD_ATTR("device_info", DEVICE_, MAX_GLOBAL_VARIABLE_SIZE);
+    ADD_ATTR("device_info", DEVICE_, QUEUE_ON_DEVICE_PROPERTIES);
+    ADD_ATTR("device_info", DEVICE_, QUEUE_ON_DEVICE_PREFERRED_SIZE);
+    ADD_ATTR("device_info", DEVICE_, QUEUE_ON_DEVICE_MAX_SIZE);
+    ADD_ATTR("device_info", DEVICE_, MAX_ON_DEVICE_QUEUES);
+    ADD_ATTR("device_info", DEVICE_, MAX_ON_DEVICE_EVENTS);
+    ADD_ATTR("device_info", DEVICE_, SVM_CAPABILITIES);
+    ADD_ATTR("device_info", DEVICE_, GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE);
+    ADD_ATTR("device_info", DEVICE_, MAX_PIPE_ARGS);
+    ADD_ATTR("device_info", DEVICE_, PIPE_MAX_ACTIVE_RESERVATIONS);
+    ADD_ATTR("device_info", DEVICE_, PIPE_MAX_PACKET_SIZE);
+    ADD_ATTR("device_info", DEVICE_, PREFERRED_PLATFORM_ATOMIC_ALIGNMENT);
+    ADD_ATTR("device_info", DEVICE_, PREFERRED_GLOBAL_ATOMIC_ALIGNMENT);
+    ADD_ATTR("device_info", DEVICE_, PREFERRED_LOCAL_ATOMIC_ALIGNMENT);
 #endif
 
 
@@ -300,12 +311,24 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("device_exec_capabilities", EXEC_, IMMEDIATE_EXECUTION_INTEL);
 #endif
 
+#if PYOPENCL_CL_VERSION >= 0x2000
+    // device_svm_capabilities
+    ADD_ATTR("device_svm_capabilities", DEVICE_SVM_, COARSE_GRAIN_BUFFER);
+    ADD_ATTR("device_svm_capabilities", DEVICE_SVM_, FINE_GRAIN_BUFFER);
+    ADD_ATTR("device_svm_capabilities", DEVICE_SVM_, FINE_GRAIN_SYSTEM);
+    ADD_ATTR("device_svm_capabilities", DEVICE_SVM_, ATOMICS);
+#endif
+
 
     // command_queue_properties
     ADD_ATTR("command_queue_properties", QUEUE_, OUT_OF_ORDER_EXEC_MODE_ENABLE);
     ADD_ATTR("command_queue_properties", QUEUE_, PROFILING_ENABLE);
 #ifdef CL_QUEUE_IMMEDIATE_EXECUTION_ENABLE_INTEL
     ADD_ATTR("command_queue_properties", QUEUE_, IMMEDIATE_EXECUTION_ENABLE_INTEL);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("command_queue_properties", QUEUE_, ON_DEVICE);
+    ADD_ATTR("command_queue_properties", QUEUE_, ON_DEVICE_DEFAULT);
 #endif
 
 
@@ -352,6 +375,13 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("command_queue_info", QUEUE_, PROPERTIES);
 
 
+    // queue_properties
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("queue_properties", QUEUE_, PROPERTIES);
+    ADD_ATTR("queue_properties", QUEUE_, SIZE);
+#endif
+
+
     // mem_flags
     ADD_ATTR("mem_flags", MEM_, READ_WRITE);
     ADD_ATTR("mem_flags", MEM_, WRITE_ONLY);
@@ -366,6 +396,17 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("mem_flags", MEM_, HOST_WRITE_ONLY);
     ADD_ATTR("mem_flags", MEM_, HOST_READ_ONLY);
     ADD_ATTR("mem_flags", MEM_, HOST_NO_ACCESS);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("mem_flags", MEM_, KERNEL_READ_AND_WRITE);
+#endif
+
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("svm_mem_flags", MEM_, READ_WRITE);
+    ADD_ATTR("svm_mem_flags", MEM_, WRITE_ONLY);
+    ADD_ATTR("svm_mem_flags", MEM_, READ_ONLY);
+    ADD_ATTR("svm_mem_flags", MEM_, SVM_FINE_GRAIN_BUFFER);
+    ADD_ATTR("svm_mem_flags", MEM_, SVM_ATOMICS);
 #endif
 
 
@@ -383,6 +424,13 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("channel_order",  , Rx);
     ADD_ATTR("channel_order",  , RGx);
     ADD_ATTR("channel_order",  , RGBx);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("channel_order",  , sRGB);
+    ADD_ATTR("channel_order",  , sRGBx);
+    ADD_ATTR("channel_order",  , sRGBA);
+    ADD_ATTR("channel_order",  , sBGRA);
+    ADD_ATTR("channel_order",  , ABGR);
 #endif
 
 
@@ -414,6 +462,9 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE1D_ARRAY);
     ADD_ATTR("mem_object_type", MEM_OBJECT_, IMAGE1D_BUFFER);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("mem_object_type", MEM_OBJECT_, PIPE);
+#endif
 
 
     // mem_info
@@ -427,6 +478,9 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
 #if PYOPENCL_CL_VERSION >= 0x1010
     ADD_ATTR("mem_info", MEM_, ASSOCIATED_MEMOBJECT);
     ADD_ATTR("mem_info", MEM_, OFFSET);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("mem_info", MEM_, USES_SVM_POINTER);
 #endif
 
 
@@ -467,6 +521,11 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("sampler_info", SAMPLER_, NORMALIZED_COORDS);
     ADD_ATTR("sampler_info", SAMPLER_, ADDRESSING_MODE);
     ADD_ATTR("sampler_info", SAMPLER_, FILTER_MODE);
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("sampler_info", SAMPLER_, MIP_FILTER_MODE);
+    ADD_ATTR("sampler_info", SAMPLER_, LOD_MIN);
+    ADD_ATTR("sampler_info", SAMPLER_, LOD_MAX);
+#endif
 
 
     // map_flags
@@ -498,6 +557,9 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("program_build_info", PROGRAM_, BINARY_TYPE);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("program_build_info", PROGRAM_BUILD_, GLOBAL_VARIABLE_TOTAL_SIZE);
+#endif
 
 
     // program_binary_type
@@ -525,6 +587,7 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("kernel_arg_info", KERNEL_ARG_, ADDRESS_QUALIFIER);
     ADD_ATTR("kernel_arg_info", KERNEL_ARG_, ACCESS_QUALIFIER);
     ADD_ATTR("kernel_arg_info", KERNEL_ARG_, TYPE_NAME);
+    ADD_ATTR("kernel_arg_info", KERNEL_ARG_, TYPE_QUALIFIER);
     ADD_ATTR("kernel_arg_info", KERNEL_ARG_, NAME);
 #endif
 
@@ -544,6 +607,18 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("kernel_arg_access_qualifier", KERNEL_ARG_ACCESS_, WRITE_ONLY);
     ADD_ATTR("kernel_arg_access_qualifier", KERNEL_ARG_ACCESS_, READ_WRITE);
     ADD_ATTR("kernel_arg_access_qualifier", KERNEL_ARG_ACCESS_, NONE);
+#endif
+
+
+    // kernel_arg_type_qualifier
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR("kernel_arg_type_qualifier", KERNEL_ARG_TYPE_, NONE);
+    ADD_ATTR("kernel_arg_type_qualifier", KERNEL_ARG_TYPE_, CONST);
+    ADD_ATTR("kernel_arg_type_qualifier", KERNEL_ARG_TYPE_, RESTRICT);
+    ADD_ATTR("kernel_arg_type_qualifier", KERNEL_ARG_TYPE_, VOLATILE);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("kernel_arg_type_qualifier", KERNEL_ARG_TYPE_, PIPE);
 #endif
 
 
@@ -603,6 +678,13 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("command_type", COMMAND_, FILL_BUFFER);
     ADD_ATTR("command_type", COMMAND_, FILL_IMAGE);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("command_type", COMMAND_, SVM_FREE);
+    ADD_ATTR("command_type", COMMAND_, SVM_MEMCPY);
+    ADD_ATTR("command_type", COMMAND_, SVM_MEMFILL);
+    ADD_ATTR("command_type", COMMAND_, SVM_MAP);
+    ADD_ATTR("command_type", COMMAND_, SVM_UNMAP);
+#endif
 
 
     // command_execution_status
@@ -617,6 +699,9 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("profiling_info", PROFILING_COMMAND_, SUBMIT);
     ADD_ATTR("profiling_info", PROFILING_COMMAND_, START);
     ADD_ATTR("profiling_info", PROFILING_COMMAND_, END);
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("profiling_info", PROFILING_COMMAND_, COMPLETE);
+#endif
 
 
     // mem_migration_flags
@@ -631,35 +716,6 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("mem_migration_flags_ext", MIGRATE_MEM_OBJECT_, HOST, _EXT);
     ADD_ATTR("mem_migration_flags_ext", MIGRATE_MEM_OBJECT_,
              CONTENT_UNDEFINED, _EXT);
-#endif
-
-
-    // device_partition_property_ext
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    ADD_ATTR("device_partition_property_ext",
-             DEVICE_PARTITION_, EQUALLY, _EXT);
-    ADD_ATTR("device_partition_property_ext",
-             DEVICE_PARTITION_, BY_COUNTS, _EXT);
-    ADD_ATTR("device_partition_property_ext",
-             DEVICE_PARTITION_, BY_NAMES, _EXT);
-    ADD_ATTR("device_partition_property_ext",
-             DEVICE_PARTITION_, BY_AFFINITY_DOMAIN, _EXT);
-    ADD_ATTR("device_partition_property_ext", , PROPERTIES_LIST_END, _EXT);
-    ADD_ATTR("device_partition_property_ext", ,
-             PARTITION_BY_COUNTS_LIST_END, _EXT);
-    ADD_ATTR("device_partition_property_ext", ,
-             PARTITION_BY_NAMES_LIST_END, _EXT);
-#endif
-
-
-    // affinity_domain_ext
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, L1_CACHE, _EXT);
-    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, L2_CACHE, _EXT);
-    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, L3_CACHE, _EXT);
-    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, L4_CACHE, _EXT);
-    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, NUMA, _EXT);
-    ADD_ATTR("affinity_domain_ext", AFFINITY_DOMAIN_, NEXT_FISSIONABLE, _EXT);
 #endif
 
 

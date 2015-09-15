@@ -76,6 +76,9 @@ kernel::get_arg_info(cl_uint idx, cl_kernel_arg_info param) const
     case CL_KERNEL_ARG_ACCESS_QUALIFIER:
         return pyopencl_get_int_info(cl_kernel_arg_access_qualifier,
                                      KernelArg, this, idx, param);
+    case CL_KERNEL_ARG_TYPE_QUALIFIER:
+        return pyopencl_get_int_info(cl_kernel_arg_type_qualifier,
+                                     KernelArg, this, idx, param);
     case CL_KERNEL_ARG_TYPE_NAME:
     case CL_KERNEL_ARG_NAME:
         return pyopencl_get_str_info(KernelArg, this, idx, param);
