@@ -85,10 +85,10 @@ Python 2.7 Apple:
   - apple
   except:
   - tags
-PyPy Intel CPU:
+PyPy POCL:
   script:
   - export PY_EXE=pypy
-  - export PYOPENCL_TEST="intel(r):pu"
+  - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
