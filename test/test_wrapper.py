@@ -74,7 +74,7 @@ def test_get_info(ctx_factory):
             (("NVIDIA Corporation", "NVIDIA CUDA",
                 "OpenCL 1.2 CUDA 7.5.15"),
                 [
-                    (cl.Buffer, getattr(cl.mem_info, "USES_SVM_POINTER")),
+                    (cl.Buffer, getattr(cl.mem_info, "USES_SVM_POINTER", None)),
                     ]),
             (("The pocl project", "Portable Computing Language",
                 "OpenCL 1.2 pocl 0.8-pre"),
