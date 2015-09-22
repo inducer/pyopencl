@@ -1,7 +1,4 @@
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
-from six.moves import range
+from __future__ import division, absolute_import, print_function
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -24,6 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
+
+from six.moves import range
 
 import numpy as np
 import numpy.linalg as la
@@ -75,7 +74,7 @@ def test_get_info(ctx_factory):
             (("NVIDIA Corporation", "NVIDIA CUDA",
                 "OpenCL 1.2 CUDA 7.5.15"),
                 [
-                    (cl.Buffer, cl.mem_info.USES_SVM_POINTER),
+                    (cl.Buffer, getattr(cl.mem_info, "USES_SVM_POINTER")),
                     ]),
             (("The pocl project", "Portable Computing Language",
                 "OpenCL 1.2 pocl 0.8-pre"),
