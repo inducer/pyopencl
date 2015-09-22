@@ -72,6 +72,11 @@ def test_get_info(ctx_factory):
                 [
                     (cl.Event, cl.event_info.COMMAND_QUEUE),
                     ]),
+            (("NVIDIA Corporation", "NVIDIA CUDA",
+                "OpenCL 1.2 CUDA 7.5.15"),
+                [
+                    (cl.Buffer, cl.mem_info.USES_SVM_POINTER),
+                    ]),
             (("The pocl project", "Portable Computing Language",
                 "OpenCL 1.2 pocl 0.8-pre"),
                     pocl_quirks),
