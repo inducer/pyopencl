@@ -94,6 +94,6 @@ PyPy POCL:
   - ". ./build-and-test-py-project.sh"
   tags:
   - pypy
-  - intel-cl-cpu
+  - pocl
   except:
   - tags
