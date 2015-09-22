@@ -49,10 +49,10 @@ Python 2.6 AMD CPU:
   - amd-cl-cpu
   except:
   - tags
-Python 2.7 K20:
+Python 2.7 C2070:
   script:
   - export PY_EXE=python2.7
-  - export PYOPENCL_TEST=nvi:k20
+  - export PYOPENCL_TEST=nvi:c20
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
