@@ -259,6 +259,8 @@ class _NoInit(object):
 
 # {{{ constant classes
 
+# /!\ If you add anything here, add it to pyopencl/__init__.py as well.
+
 class program_kind(_NoInit):  # noqa
     pass
 
@@ -441,14 +443,6 @@ class mem_migration_flags_ext(_NoInit):  # noqa
     pass
 
 
-class device_partition_property_ext(_NoInit):  # noqa
-    pass
-
-
-class affinity_domain_ext(_NoInit):  # noqa
-    pass
-
-
 class device_partition_property(_NoInit):  # noqa
     pass
 
@@ -592,15 +586,6 @@ class Device(_Common):
         props = tuple(props) + (0,)
         devices = _CArray(_ffi.new('clobj_t**'))
         _handle_error(_lib.device__create_sub_devices(
-            self.ptr, devices.ptr, devices.size, props))
-        return [Device._create(devices.ptr[0][i])
-                for i in range(devices.size[0])]
-
-    def create_sub_devices_ext(self, props):
-        props = (tuple(props) +
-                 (device_partition_property_ext.PROPERTIES_LIST_END,))
-        devices = _CArray(_ffi.new('clobj_t**'))
-        _handle_error(_lib.device__create_sub_devices_ext(
             self.ptr, devices.ptr, devices.size, props))
         return [Device._create(devices.ptr[0][i])
                 for i in range(devices.size[0])]
