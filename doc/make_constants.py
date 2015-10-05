@@ -373,25 +373,6 @@ const_ext_lookup = {
             "NEXT_PARITIONNABLE": cl_12,
             },
 
-        cl.device_partition_property_ext: {
-            "EQUALLY": fission,
-            "BY_COUNTS": fission,
-            "BY_NAMES": fission,
-            "BY_AFFINITY_DOMAIN": fission,
-
-            "PROPERTIES_LIST_END": fission,
-            "PARTITION_BY_COUNTS_LIST_END": fission,
-            "PARTITION_BY_NAMES_LIST_END": fission,
-            },
-        cl.affinity_domain_ext: {
-            "L1_CACHE": fission,
-            "L2_CACHE": fission,
-            "L3_CACHE": fission,
-            "L4_CACHE": fission,
-            "NUMA": fission,
-            "NEXT_FISSIONABLE": fission,
-            },
-
         cl.profiling_info: {
             "COMPLETE": cl_20,
             },

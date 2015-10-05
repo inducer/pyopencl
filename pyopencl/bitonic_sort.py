@@ -60,7 +60,7 @@ class BitonicSort(object):
 
     .. seealso:: :class:`pyopencl.algorithm.RadixSort`
 
-    .. autofunction:: __call__
+    .. automethod:: __call__
     """
 
     kernels_srcs = {
