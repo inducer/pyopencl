@@ -72,7 +72,7 @@ def test_get_info(ctx_factory):
                     (cl.Event, cl.event_info.COMMAND_QUEUE),
                     ]),
             (("NVIDIA Corporation", "NVIDIA CUDA",
-                "OpenCL 1.2 CUDA 7.5.15"),
+                "OpenCL 1.2 CUDA 7.5"),
                 [
                     (cl.Buffer, getattr(cl.mem_info, "USES_SVM_POINTER", None)),
                     ]),
