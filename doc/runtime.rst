@@ -701,8 +701,25 @@ Programs and Kernels
 
     .. attribute:: kernel_name
 
-        :class:`Kernel` objects can be produced from a built
-        (see :meth:`build`) program simply by attribute lookup.
+        You may use ``program.kernel_name`` to obtain a :class:`Kernel`
+        objects from a program. Note that every lookup of this type
+        produces a new kernel object, so that this **won't** work::
+
+            prg.sum.set_args(a_g, b_g, res_g)
+            ev = cl.enqueue_nd_range_kernel(queue, prg.sum, a_np.shape, None)
+
+        Instead, either use the (recommended, stateless) calling interface::
+
+            prg.sum(queue, prg.sum, a_np.shape, None)
+
+        or keep the kernel in a temporary variable::
+
+            sum_knl = prg.sum
+            sum_knl.set_args(a_g, b_g, res_g)
+            ev = cl.enqueue_nd_range_kernel(queue, sum_knl, a_np.shape, None)
+
+        Note that the :class:`Program` has to be built (see :meth:`build`) in
+        order for this to work simply by attribute lookup.
 
         .. note::
 
