@@ -195,7 +195,7 @@ def test_vector_fill(ctx_factory):
     a_gpu = cl_array.Array(queue, 100, dtype=cl_array.vec.float4)
     a_gpu.fill(cl_array.vec.make_float4(0.0, 0.0, 1.0, 0.0))
     a = a_gpu.get()
-    assert a.dtype is cl_array.vec.float4
+    assert a.dtype == cl_array.vec.float4
 
     a_gpu = cl_array.zeros(queue, 100, dtype=cl_array.vec.float4)
 
