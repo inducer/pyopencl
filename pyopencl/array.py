@@ -1720,22 +1720,37 @@ def as_strided(ary, shape=None, strides=None):
 
 # {{{ creation helpers
 
-def to_device(queue, ary, allocator=None, async=False):
+class _same_as_transfer(object):
+    pass
+
+
+def to_device(queue, ary, allocator=None, async=False,
+        array_queue=_same_as_transfer):
     """Return a :class:`Array` that is an exact copy of the
     :class:`numpy.ndarray` instance *ary*.
 
+    :arg array_queue: The :class:`CommandQueue` which will
+        be stored in the resulting array. Useful
+        to make sure there is no implicit queue associated
+        with the array by passing *None*.
+
     See :class:`Array` for the meaning of *allocator*.
 
-    .. versionchanged:: 2011.1
-        *context* argument was deprecated.
+    .. versionchanged:: 2015.2
+        *array_queue* argument was added.
     """
 
     if _dtype_is_object(ary.dtype):
         raise RuntimeError("to_device does not work on object arrays.")
 
-    result = Array(queue, ary.shape, ary.dtype,
+    if array_queue is _same_as_transfer:
+        first_arg = queue
+    else:
+        first_arg = queue.context
+
+    result = Array(first_arg, ary.shape, ary.dtype,
                     allocator=allocator, strides=ary.strides)
-    result.set(ary, async=async)
+    result.set(ary, async=async, queue=queue)
     return result
 
 
