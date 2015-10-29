@@ -1045,7 +1045,11 @@ class _Program(_Common):
         knls = _CArray(_ffi.new('clobj_t**'))
         _handle_error(_lib.program__all_kernels(
             self.ptr, knls.ptr, knls.size))
-        return [Kernel._create(knls.ptr[0][i]) for i in range(knls.size[0])]
+        return [
+                Kernel
+                ._create(knls.ptr[0][i])
+                ._setup(self)
+                for i in range(knls.size[0])]
 
 # }}}
 

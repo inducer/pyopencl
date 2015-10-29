@@ -675,10 +675,15 @@ def _add_functionality():
             prg = prg._get_prg()
 
         kernel_old_init(self, prg, name)
+
+        self._setup(prg)
+
+    def kernel__setup(self, prg):
         self._source = getattr(prg, "_source", None)
 
         self._generate_naive_call()
         self._wg_info_cache = {}
+        return self
 
     def kernel_get_work_group_info(self, param, device):
         try:
@@ -993,6 +998,7 @@ def _add_functionality():
                 *args, **kwargs)
 
     Kernel.__init__ = kernel_init
+    Kernel._setup = kernel__setup
     Kernel.get_work_group_info = kernel_get_work_group_info
     Kernel._set_set_args_body = kernel__set_set_args_body
     Kernel._generate_buffer_arg_setter = kernel__generate_buffer_arg_setter
