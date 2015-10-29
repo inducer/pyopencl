@@ -1043,7 +1043,7 @@ class _Program(_Common):
 
     def all_kernels(self):
         knls = _CArray(_ffi.new('clobj_t**'))
-        _handle_error(_lib.platform__get_devices(
+        _handle_error(_lib.program__all_kernels(
             self.ptr, knls.ptr, knls.size))
         return [Kernel._create(knls.ptr[0][i]) for i in range(knls.size[0])]
 
