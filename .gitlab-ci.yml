@@ -49,16 +49,28 @@ Python 2.6 AMD CPU:
   - amd-cl-cpu
   except:
   - tags
-Python 2.7 C2070:
+Python 3.5 Titan Black:
   script:
-  - export PY_EXE=python2.7
-  - export PYOPENCL_TEST=nvi:c20
+  - export PY_EXE=python3.5
+  - export PYOPENCL_TEST=nvi:titan
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python2.7
-  - cuda
+  - python3.5
+  - nvidia-titan-black
+  except:
+  - tags
+Python 3.5 AMD Fiji:
+  script:
+  - export PY_EXE=python3.5
+  - export PYOPENCL_TEST=amd:fiji
+  - export EXTRA_INSTALL="numpy mako"
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python3.5
+  - amd-fiji
   except:
   - tags
 Python 2.7 POCL:
