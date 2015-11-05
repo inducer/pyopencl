@@ -1187,10 +1187,15 @@ def enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size,
                     global_work_size[i] * local_work_size[i]
                     for i in range(work_dim))
 
-    if global_work_offset is not None:
-        raise NotImplementedError("global_work_offset")
-
     c_global_work_offset = _ffi.NULL
+    if global_work_offset is not None:
+        if work_dim != len(global_work_offset):
+            raise RuntimeError("global work size and offset have differing "
+                               "dimensions", status_code.INVALID_VALUE,
+                               "enqueue_nd_range_kernel")
+
+        c_global_work_offset = global_work_offset
+
     if local_work_size is None:
         local_work_size = _ffi.NULL
 

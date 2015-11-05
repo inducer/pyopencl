@@ -837,6 +837,32 @@ def test_event_set_callback(ctx_factory):
     assert got_called
 
 
+def test_global_offset(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    prg = cl.Program(context, """
+        __kernel void mult(__global float *a)
+        { a[get_global_id(0)] *= 2; }
+        """).build()
+
+    n = 50
+    a = np.random.rand(n).astype(np.float32)
+
+    queue = cl.CommandQueue(context)
+    mf = cl.mem_flags
+    a_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=a)
+
+    step = 10
+    for ofs in range(0, n, step):
+        prg.mult(queue, (step,), None, a_buf, global_offset=(ofs,))
+
+    a_2 = np.empty_like(a)
+    cl.enqueue_copy(queue, a_2, a_buf)
+
+    assert (a_2 == 2*a).all()
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa
