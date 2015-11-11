@@ -104,6 +104,24 @@ Platforms, Devices and Contexts
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
 
+    .. method:: create_sub_devices(properties)
+
+        *properties* is an array of one (or more) of the forms::
+
+            [ dpp.EQUALLY, 8]
+            [ dpp.BY_COUNTS, 5, 7, 9, dpp.PARTITION_BY_COUNTS_LIST_END]
+            [ dpp.BY_NAMES, 5, 7, 9, dpp.PARTITION_BY_NAMES_LIST_END]
+            [ dpp.BY_AFFINITY_DOMAIN, dad.L1_CACHE]
+
+        where `dpp` represents :class:`device_partition_property`
+        and `dad` represent :class:`device_affinity_domain`.
+
+        `PROPERTIES_LIST_END_EXT` is added automatically.
+
+        Only available with CL 1.2.
+
+        .. versionadded:: 2011.2
+
     Two instances of this class may be compared using *=="* and *"!="*.
 
 .. class:: Context(devices=None, properties=None, dev_type=None)
@@ -148,42 +166,6 @@ Platforms, Devices and Contexts
     .. method:: get_info(param)
 
         See :class:`context_info` for values of *param*.
-
-    .. method:: create_sub_devices(properties)
-
-        *properties* is an array of one (or more) of the forms::
-
-            [ dpp.EQUALLY, 8]
-            [ dpp.BY_COUNTS, 5, 7, 9, dpp.PARTITION_BY_COUNTS_LIST_END]
-            [ dpp.BY_NAMES, 5, 7, 9, dpp.PARTITION_BY_NAMES_LIST_END]
-            [ dpp.BY_AFFINITY_DOMAIN, dad.L1_CACHE]
-
-        where `dpp` represents :class:`device_partition_property`
-        and `dad` represent :class:`device_affinity_domain`.
-
-        `PROPERTIES_LIST_END_EXT` is added automatically.
-
-        Only available with CL 1.2.
-
-        .. versionadded:: 2011.2
-
-    .. method:: create_sub_devices_ext(properties)
-
-        *properties* is an array of one (or more) of the forms::
-
-            [ dppe.EQUALLY, 8]
-            [ dppe.BY_COUNTS, 5, 7, 9, dppe.PARTITION_BY_COUNTS_LIST_END]
-            [ dppe.BY_NAMES, 5, 7, 9, dppe.PARTITION_BY_NAMES_LIST_END]
-            [ dppe.BY_AFFINITY_DOMAIN, ad.L1_CACHE]
-
-        where `dppe` represents :class:`device_partition_property_ext`
-        and `ad` represent :class:`affinity_domain_ext`.
-
-        `PROPERTIES_LIST_END_EXT` is added automatically.
-
-        Only available with the `cl_ext_device_fission` extension.
-
-        .. versionadded:: 2011.1
 
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
