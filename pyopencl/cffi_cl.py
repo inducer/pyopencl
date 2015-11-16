@@ -641,7 +641,7 @@ def _parse_context_properties(properties):
 class Context(_Common):
     _id = 'context'
 
-    def __init__(self, devices=None, properties=None, dev_type=None):
+    def __init__(self, devices=None, properties=None, dev_type=None, cache_dir=None):
         c_props = _parse_context_properties(properties)
         status_code = _ffi.new('cl_int*')
 
@@ -665,6 +665,7 @@ class Context(_Common):
                                                         dev_type))
 
         self.ptr = _ctx[0]
+        self.cache_dir = cache_dir
 
 # }}}
 
