@@ -347,9 +347,6 @@ class Program(object):
         elif isinstance(options, six.text_type):
             options = [options.encode("utf8")]
 
-        if cache_dir is None:
-            cache_dir = self._context.cache_dir
-
         options = (options
                 + _DEFAULT_BUILD_OPTIONS
                 + _DEFAULT_INCLUDE_OPTIONS
@@ -1211,7 +1208,7 @@ _add_functionality()
 
 # {{{ convenience
 
-def create_some_context(interactive=None, answers=None, cache_dir=None):
+def create_some_context(interactive=None, answers=None):
     import os
     if answers is None:
         if "PYOPENCL_CTX" in os.environ:
@@ -1222,7 +1219,7 @@ def create_some_context(interactive=None, answers=None, cache_dir=None):
             from pyopencl.tools import get_test_platforms_and_devices
             for plat, devs in get_test_platforms_and_devices():
                 for dev in devs:
-                    return Context([dev], cache_dir=cache_dir)
+                    return Context([dev])
 
     if answers is not None:
         pre_provided_answers = answers
@@ -1337,7 +1334,7 @@ def create_some_context(interactive=None, answers=None, cache_dir=None):
         raise RuntimeError("not all provided choices were used by "
                 "create_some_context. (left over: '%s')" % ":".join(answers))
 
-    return Context(devices, cache_dir=cache_dir)
+    return Context(devices)
 
 _csc = create_some_context
 
