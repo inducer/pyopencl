@@ -124,7 +124,7 @@ Platforms, Devices and Contexts
 
     Two instances of this class may be compared using *=="* and *"!="*.
 
-.. class:: Context(devices=None, properties=None, dev_type=None)
+.. class:: Context(devices=None, properties=None, dev_type=None, cache_dir=None)
 
     Create a new context. *properties* is a list of key-value
     tuples, where each key must be one of :class:`context_properties`.
@@ -133,6 +133,9 @@ Platforms, Devices and Contexts
     *dev_type* is one of the :class:`device_type` constants.
     If neither is specified, a context with a *dev_type* of
     :attr:`device_type.DEFAULT` is created.
+
+    If *cache_dir* is not `None` - it will be used as default *cache_dir*
+    for all its' :class:`Program` instances builds (see also :meth:`Program.build`).
 
     .. note::
 
@@ -172,7 +175,7 @@ Platforms, Devices and Contexts
 
     |comparable|
 
-.. function:: create_some_context(interactive=True)
+.. function:: create_some_context(interactive=True, answers=None, cache_dir=None)
 
     Create a :class:`Context` 'somehow'.
 
@@ -654,12 +657,17 @@ Programs and Kernels
 
         See :class:`program_build_info` for values of *param*.
 
-    .. method:: build(options=[], devices=None)
+    .. method:: build(options=[], devices=None, cache_dir=None)
 
         *options* is a string of compiler flags.
         Returns *self*.
 
-        By default, built binaries are cached in an on-disk cache called
+        If *cache_dir* is not None - built binaries are cached in an on-disk cache
+        with given path.
+        If passed *cache_dir* is None, but context of this program was created with
+        not-None cache_dir - it will be used as cache directory.
+        If passed *cache_dir* is None and context was created with None cache_dir:
+        built binaries will be cached in an on-disk cache called
         :file:`pyopencl-compiler-cache-vN-uidNAME-pyVERSION` in the directory
         returned by :func:`tempfile.gettempdir`.  By setting the environment
         variable :envvar:`PYOPENCL_NO_CACHE` to any non-empty value, this
