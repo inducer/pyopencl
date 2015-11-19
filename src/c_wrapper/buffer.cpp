@@ -23,6 +23,7 @@ buffer::get_sub_region(size_t orig, size_t size, cl_mem_flags flags) const
         });
     return new_buffer(mem);
 }
+
 #endif
 
 // c wrapper
@@ -213,15 +214,6 @@ buffer__get_sub_region(clobj_t *_sub_buf, clobj_t _buf, size_t orig,
     auto buf = static_cast<buffer*>(_buf);
     return c_handle_error([&] {
             *_sub_buf = buf->get_sub_region(orig, size, flags);
-        });
-}
-
-error*
-buffer__getitem(clobj_t *_ret, clobj_t _buf, ssize_t start, ssize_t end)
-{
-    auto buf = static_cast<buffer*>(_buf);
-    return c_handle_error([&] {
-            *_ret = buf->getitem(start, end);
         });
 }
 
