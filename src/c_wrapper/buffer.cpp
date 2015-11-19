@@ -23,33 +23,6 @@ buffer::get_sub_region(size_t orig, size_t size, cl_mem_flags flags) const
         });
     return new_buffer(mem);
 }
-
-PYOPENCL_USE_RESULT buffer*
-buffer::getitem(ssize_t start, ssize_t end) const
-{
-    ssize_t length;
-    pyopencl_call_guarded(clGetMemObjectInfo, this, CL_MEM_SIZE,
-                          size_arg(length), nullptr);
-    if (PYOPENCL_UNLIKELY(length <= 0))
-        throw clerror("Buffer.__getitem__", CL_INVALID_VALUE,
-                      "Cannot get the length of the buffer.");
-    if (end == 0 || end > length) {
-        end = length;
-    } else if (end < 0) {
-        end += length;
-    }
-    if (start < 0) {
-        start += length;
-    }
-    if (end <= start || start < 0)
-        throw clerror("Buffer.__getitem__", CL_INVALID_VALUE,
-                      "Buffer slice should have end > start >= 0");
-    cl_mem_flags flags;
-    pyopencl_call_guarded(clGetMemObjectInfo, this, CL_MEM_FLAGS,
-                          size_arg(flags), nullptr);
-    flags &= ~CL_MEM_COPY_HOST_PTR;
-    return get_sub_region((size_t)start, (size_t)(end - start), flags);
-}
 #endif
 
 // c wrapper

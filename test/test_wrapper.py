@@ -863,6 +863,34 @@ def test_global_offset(ctx_factory):
     assert (a_2 == 2*a).all()
 
 
+def test_sub_buffers(ctx_factory):
+    ctx = ctx_factory()
+    if (ctx._get_cl_version() < (1, 1) and
+            cl.get_cl_header_version() < (1, 1)):
+        from pytest import skip
+        skip("sub-buffers are only available in OpenCL 1.1")
+
+    alignment = ctx.devices[0].mem_base_addr_align
+
+    queue = cl.CommandQueue(ctx)
+
+    n = 30000
+    a = (np.random.rand(n) * 100).astype(np.uint8)
+
+    mf = cl.mem_flags
+    a_buf = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=a)
+
+    start = (5000 // alignment) * alignment
+    stop = start + 20 * alignment
+
+    a_sub_ref = a[start:stop]
+
+    a_sub = np.empty_like(a_sub_ref)
+    cl.enqueue_copy(queue, a_sub, a_buf[start:stop])
+
+    assert np.array_equal(a_sub, a_sub_ref)
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa
