@@ -346,7 +346,17 @@ def test_dot(ctx_factory):
 
             assert abs(dot_ab_gpu - dot_ab) / abs(dot_ab) < 1e-4
 
-            vdot_ab = np.vdot(a, b)
+            try:
+                vdot_ab = np.vdot(a, b)
+            except NotImplementedError:
+                import sys
+                is_pypy = '__pypy__' in sys.builtin_module_names
+                if is_pypy:
+                    print("PYPY: VDOT UNIMPLEMENTED")
+                    continue
+                else:
+                    raise
+
             vdot_ab_gpu = cl_array.vdot(a_gpu, b_gpu).get()
 
             assert abs(vdot_ab_gpu - vdot_ab) / abs(vdot_ab) < 1e-4
