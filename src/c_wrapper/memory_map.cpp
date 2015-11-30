@@ -14,7 +14,7 @@ memory_map::~memory_map()
     if (!m_valid.exchange(false))
         return;
     pyopencl_call_guarded_cleanup(clEnqueueUnmapMemObject, m_queue,
-                                  m_mem, this, 0, nullptr, nullptr);
+                                  m_mem, PYOPENCL_CL_CASTABLE_THIS, 0, nullptr, nullptr);
 }
 
 void
@@ -28,7 +28,7 @@ memory_map::release(clobj_t *evt, const command_queue *queue,
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     queue = queue ? queue : &m_queue;
     pyopencl_call_guarded(clEnqueueUnmapMemObject, queue,
-                          m_mem, this, wait_for, event_out(evt));
+                          m_mem, PYOPENCL_CL_CASTABLE_THIS, wait_for, event_out(evt));
 }
 
 generic_info

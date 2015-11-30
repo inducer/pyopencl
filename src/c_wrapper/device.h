@@ -33,7 +33,7 @@ public:
             }
 #if PYOPENCL_CL_VERSION >= 0x1020
             else if (ref_type == REF_CL_1_2) {
-                pyopencl_call_guarded(clRetainDevice, this);
+                pyopencl_call_guarded(clRetainDevice, PYOPENCL_CL_CASTABLE_THIS);
             }
 #endif
 

@@ -14,6 +14,14 @@
 
 // {{{ error
 
+// See https://github.com/pyopencl/pyopencl/pull/83
+#if GCC_VERSION > 50200
+#define PYOPENCL_CL_CASTABLE_THIS this
+#else
+#define PYOPENCL_CL_CASTABLE_THIS data()
+#endif
+
+
 class clerror : public std::runtime_error {
 private:
     const char *m_routine;

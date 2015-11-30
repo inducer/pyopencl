@@ -22,7 +22,7 @@ platform::get_info(cl_uint param_name) const
 #if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
     case CL_PLATFORM_EXTENSIONS:
 #endif
-        return pyopencl_get_str_info(Platform, this, param_name);
+        return pyopencl_get_str_info(Platform, PYOPENCL_CL_CASTABLE_THIS, param_name);
     default:
         throw clerror("Platform.get_info", CL_INVALID_VALUE);
     }

@@ -33,7 +33,7 @@ context::get_version(cl_context ctx, int *major, int *minor)
 
 context::~context()
 {
-    pyopencl_call_guarded_cleanup(clReleaseContext, this);
+    pyopencl_call_guarded_cleanup(clReleaseContext, PYOPENCL_CL_CASTABLE_THIS);
 }
 
 generic_info
@@ -42,13 +42,13 @@ context::get_info(cl_uint param_name) const
     switch ((cl_context_info)param_name) {
     case CL_CONTEXT_REFERENCE_COUNT:
         return pyopencl_get_int_info(cl_uint, Context,
-                                     this, param_name);
+                                     PYOPENCL_CL_CASTABLE_THIS, param_name);
     case CL_CONTEXT_DEVICES:
         return pyopencl_get_opaque_array_info(device, Context,
-                                              this, param_name);
+                                              PYOPENCL_CL_CASTABLE_THIS, param_name);
     case CL_CONTEXT_PROPERTIES: {
         auto result = pyopencl_get_vec_info(
-            cl_context_properties, Context, this, param_name);
+            cl_context_properties, Context, PYOPENCL_CL_CASTABLE_THIS, param_name);
         pyopencl_buf<generic_info> py_result(result.len() / 2);
         size_t i = 0;
         for (;i < py_result.len();i++) {
@@ -96,7 +96,7 @@ context::get_info(cl_uint param_name) const
 #if PYOPENCL_CL_VERSION >= 0x1010
     case CL_CONTEXT_NUM_DEVICES:
         return pyopencl_get_int_info(cl_uint, Context,
-                                     this, param_name);
+                                     PYOPENCL_CL_CASTABLE_THIS, param_name);
 #endif
 
     default:

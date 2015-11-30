@@ -40,7 +40,7 @@ event::event(cl_event event, bool retain, event_private *p)
 {
     if (retain) {
         try {
-            pyopencl_call_guarded(clRetainEvent, this);
+            pyopencl_call_guarded(clRetainEvent, PYOPENCL_CL_CASTABLE_THIS);
         } catch (...) {
             m_p->call_finish();
             delete m_p;
@@ -106,7 +106,7 @@ event::release_private() noexcept
 event::~event()
 {
     release_private();
-    pyopencl_call_guarded_cleanup(clReleaseEvent, this);
+    pyopencl_call_guarded_cleanup(clReleaseEvent, PYOPENCL_CL_CASTABLE_THIS);
 }
 
 generic_info
@@ -114,17 +114,17 @@ event::get_info(cl_uint param_name) const
 {
     switch ((cl_event_info)param_name) {
     case CL_EVENT_COMMAND_QUEUE:
-        return pyopencl_get_opaque_info(command_queue, Event, this, param_name);
+        return pyopencl_get_opaque_info(command_queue, Event, PYOPENCL_CL_CASTABLE_THIS, param_name);
     case CL_EVENT_COMMAND_TYPE:
         return pyopencl_get_int_info(cl_command_type, Event,
-                                     this, param_name);
+                                     PYOPENCL_CL_CASTABLE_THIS, param_name);
     case CL_EVENT_COMMAND_EXECUTION_STATUS:
-        return pyopencl_get_int_info(cl_int, Event, this, param_name);
+        return pyopencl_get_int_info(cl_int, Event, PYOPENCL_CL_CASTABLE_THIS, param_name);
     case CL_EVENT_REFERENCE_COUNT:
-        return pyopencl_get_int_info(cl_uint, Event, this, param_name);
+        return pyopencl_get_int_info(cl_uint, Event, PYOPENCL_CL_CASTABLE_THIS, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1010
     case CL_EVENT_CONTEXT:
-        return pyopencl_get_opaque_info(context, Event, this, param_name);
+        return pyopencl_get_opaque_info(context, Event, PYOPENCL_CL_CASTABLE_THIS, param_name);
 #endif
 
     default:
@@ -140,7 +140,7 @@ event::get_profiling_info(cl_profiling_info param) const
     case CL_PROFILING_COMMAND_SUBMIT:
     case CL_PROFILING_COMMAND_START:
     case CL_PROFILING_COMMAND_END:
-        return pyopencl_get_int_info(cl_ulong, EventProfiling, this, param);
+        return pyopencl_get_int_info(cl_ulong, EventProfiling, PYOPENCL_CL_CASTABLE_THIS, param);
     default:
         throw clerror("Event.get_profiling_info", CL_INVALID_VALUE);
     }
@@ -195,7 +195,7 @@ public:
     PYOPENCL_INLINE void
     set_status(cl_int status)
     {
-        pyopencl_call_guarded(clSetUserEventStatus, this, status);
+        pyopencl_call_guarded(clSetUserEventStatus, PYOPENCL_CL_CASTABLE_THIS, status);
     }
 };
 #endif

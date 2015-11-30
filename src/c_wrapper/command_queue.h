@@ -19,7 +19,7 @@ public:
         : clobj(q)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainCommandQueue, this);
+            pyopencl_call_guarded(clRetainCommandQueue, PYOPENCL_CL_CASTABLE_THIS);
         }
     }
     PYOPENCL_INLINE

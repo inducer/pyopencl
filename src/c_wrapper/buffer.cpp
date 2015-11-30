@@ -18,7 +18,7 @@ buffer::get_sub_region(size_t orig, size_t size, cl_mem_flags flags) const
     cl_buffer_region reg = {orig, size};
 
     auto mem = retry_mem_error([&] {
-            return pyopencl_call_guarded(clCreateSubBuffer, this, flags,
+            return pyopencl_call_guarded(clCreateSubBuffer, PYOPENCL_CL_CASTABLE_THIS, flags,
                                          CL_BUFFER_CREATE_TYPE_REGION, &reg);
         });
     return new_buffer(mem);

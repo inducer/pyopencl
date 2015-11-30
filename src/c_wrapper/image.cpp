@@ -17,7 +17,7 @@ image::get_image_info(cl_image_info param) const
 {
     switch (param) {
     case CL_IMAGE_FORMAT:
-        return pyopencl_get_int_info(cl_image_format, Image, this, param);
+        return pyopencl_get_int_info(cl_image_format, Image, PYOPENCL_CL_CASTABLE_THIS, param);
     case CL_IMAGE_ELEMENT_SIZE:
     case CL_IMAGE_ROW_PITCH:
     case CL_IMAGE_SLICE_PITCH:
@@ -27,7 +27,7 @@ image::get_image_info(cl_image_info param) const
 #if PYOPENCL_CL_VERSION >= 0x1020
     case CL_IMAGE_ARRAY_SIZE:
 #endif
-        return pyopencl_get_int_info(size_t, Image, this, param);
+        return pyopencl_get_int_info(size_t, Image, PYOPENCL_CL_CASTABLE_THIS, param);
 
 #if PYOPENCL_CL_VERSION >= 0x1020
         // TODO:
@@ -44,7 +44,7 @@ image::get_image_info(cl_image_info param) const
         //      }
     case CL_IMAGE_NUM_MIP_LEVELS:
     case CL_IMAGE_NUM_SAMPLES:
-        return pyopencl_get_int_info(cl_uint, Image, this, param);
+        return pyopencl_get_int_info(cl_uint, Image, PYOPENCL_CL_CASTABLE_THIS, param);
 #endif
     default:
         throw clerror("Image.get_image_info", CL_INVALID_VALUE);

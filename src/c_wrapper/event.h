@@ -39,7 +39,7 @@ public:
         auto func = new rm_ref_t<Func>(std::forward<Func>(_func));
         try {
             pyopencl_call_guarded(
-                clSetEventCallback, this, type,
+                clSetEventCallback, PYOPENCL_CL_CASTABLE_THIS, type,
                 [] (cl_event, cl_int status, void *data) {
                     rm_ref_t<Func> *func = static_cast<rm_ref_t<Func>*>(data);
                     std::thread t([func, status] () {

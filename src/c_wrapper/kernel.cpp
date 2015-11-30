@@ -16,7 +16,7 @@ template void print_buf<cl_kernel>(std::ostream&, const cl_kernel*,
 
 kernel::~kernel()
 {
-    pyopencl_call_guarded_cleanup(clReleaseKernel, this);
+    pyopencl_call_guarded_cleanup(clReleaseKernel, PYOPENCL_CL_CASTABLE_THIS);
 }
 
 generic_info
@@ -24,17 +24,17 @@ kernel::get_info(cl_uint param) const
 {
     switch ((cl_kernel_info)param) {
     case CL_KERNEL_FUNCTION_NAME:
-        return pyopencl_get_str_info(Kernel, this, param);
+        return pyopencl_get_str_info(Kernel, PYOPENCL_CL_CASTABLE_THIS, param);
     case CL_KERNEL_NUM_ARGS:
     case CL_KERNEL_REFERENCE_COUNT:
-        return pyopencl_get_int_info(cl_uint, Kernel, this, param);
+        return pyopencl_get_int_info(cl_uint, Kernel, PYOPENCL_CL_CASTABLE_THIS, param);
     case CL_KERNEL_CONTEXT:
-        return pyopencl_get_opaque_info(context, Kernel, this, param);
+        return pyopencl_get_opaque_info(context, Kernel, PYOPENCL_CL_CASTABLE_THIS, param);
     case CL_KERNEL_PROGRAM:
-        return pyopencl_get_opaque_info(program, Kernel, this, param);
+        return pyopencl_get_opaque_info(program, Kernel, PYOPENCL_CL_CASTABLE_THIS, param);
 #if PYOPENCL_CL_VERSION >= 0x1020
     case CL_KERNEL_ATTRIBUTES:
-        return pyopencl_get_str_info(Kernel, this, param);
+        return pyopencl_get_str_info(Kernel, PYOPENCL_CL_CASTABLE_THIS, param);
 #endif
     default:
         throw clerror("Kernel.get_info", CL_INVALID_VALUE);
@@ -50,16 +50,16 @@ kernel::get_work_group_info(cl_kernel_work_group_info param,
     case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
 #endif
     case CL_KERNEL_WORK_GROUP_SIZE:
-        return pyopencl_get_int_info(size_t, KernelWorkGroup, this, dev, param);
+        return pyopencl_get_int_info(size_t, KernelWorkGroup, PYOPENCL_CL_CASTABLE_THIS, dev, param);
     case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
         return pyopencl_get_array_info(size_t, KernelWorkGroup,
-                                       this, dev, param);
+                                       PYOPENCL_CL_CASTABLE_THIS, dev, param);
     case CL_KERNEL_LOCAL_MEM_SIZE:
 #if PYOPENCL_CL_VERSION >= 0x1010
     case CL_KERNEL_PRIVATE_MEM_SIZE:
 #endif
         return pyopencl_get_int_info(cl_ulong, KernelWorkGroup,
-                                     this, dev, param);
+                                     PYOPENCL_CL_CASTABLE_THIS, dev, param);
     default:
         throw clerror("Kernel.get_work_group_info", CL_INVALID_VALUE);
     }
@@ -72,16 +72,16 @@ kernel::get_arg_info(cl_uint idx, cl_kernel_arg_info param) const
     switch (param) {
     case CL_KERNEL_ARG_ADDRESS_QUALIFIER:
         return pyopencl_get_int_info(cl_kernel_arg_address_qualifier,
-                                     KernelArg, this, idx, param);
+                                     KernelArg, PYOPENCL_CL_CASTABLE_THIS, idx, param);
     case CL_KERNEL_ARG_ACCESS_QUALIFIER:
         return pyopencl_get_int_info(cl_kernel_arg_access_qualifier,
-                                     KernelArg, this, idx, param);
+                                     KernelArg, PYOPENCL_CL_CASTABLE_THIS, idx, param);
     case CL_KERNEL_ARG_TYPE_QUALIFIER:
         return pyopencl_get_int_info(cl_kernel_arg_type_qualifier,
                                      KernelArg, this, idx, param);
     case CL_KERNEL_ARG_TYPE_NAME:
     case CL_KERNEL_ARG_NAME:
-        return pyopencl_get_str_info(KernelArg, this, idx, param);
+        return pyopencl_get_str_info(KernelArg, PYOPENCL_CL_CASTABLE_THIS, idx, param);
     default:
         throw clerror("Kernel.get_arg_info", CL_INVALID_VALUE);
     }

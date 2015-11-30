@@ -10,7 +10,7 @@ template void print_buf<cl_sampler>(std::ostream&, const cl_sampler*,
 
 sampler::~sampler()
 {
-    pyopencl_call_guarded_cleanup(clReleaseSampler, this);
+    pyopencl_call_guarded_cleanup(clReleaseSampler, PYOPENCL_CL_CASTABLE_THIS);
 }
 
 generic_info
@@ -18,16 +18,16 @@ sampler::get_info(cl_uint param_name) const
 {
     switch ((cl_sampler_info)param_name) {
     case CL_SAMPLER_REFERENCE_COUNT:
-        return pyopencl_get_int_info(cl_uint, Sampler, this, param_name);
+        return pyopencl_get_int_info(cl_uint, Sampler, PYOPENCL_CL_CASTABLE_THIS, param_name);
     case CL_SAMPLER_CONTEXT:
-        return pyopencl_get_opaque_info(context, Sampler, this, param_name);
+        return pyopencl_get_opaque_info(context, Sampler, PYOPENCL_CL_CASTABLE_THIS, param_name);
     case CL_SAMPLER_ADDRESSING_MODE:
         return pyopencl_get_int_info(cl_addressing_mode, Sampler,
-                                     this, param_name);
+                                     PYOPENCL_CL_CASTABLE_THIS, param_name);
     case CL_SAMPLER_FILTER_MODE:
-        return pyopencl_get_int_info(cl_filter_mode, Sampler, this, param_name);
+        return pyopencl_get_int_info(cl_filter_mode, Sampler, PYOPENCL_CL_CASTABLE_THIS, param_name);
     case CL_SAMPLER_NORMALIZED_COORDS:
-        return pyopencl_get_int_info(cl_bool, Sampler, this, param_name);
+        return pyopencl_get_int_info(cl_bool, Sampler, PYOPENCL_CL_CASTABLE_THIS, param_name);
 
 #if PYOPENCL_CL_VERSION >= 0x2000
     // TODO: MIP_FILTER_MODE, LOD_MIN, LOD_MAX

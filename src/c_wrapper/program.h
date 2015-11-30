@@ -25,7 +25,7 @@ public:
         : clobj(prog), m_program_kind(progkind)
     {
         if (retain) {
-            pyopencl_call_guarded(clRetainProgram, this);
+            pyopencl_call_guarded(clRetainProgram, PYOPENCL_CL_CASTABLE_THIS);
         }
     }
     ~program();
@@ -37,7 +37,7 @@ public:
     PYOPENCL_USE_RESULT pyopencl_buf<cl_device_id>
     get_info__devices() const
     {
-        return pyopencl_get_vec_info(cl_device_id, Program, this,
+        return pyopencl_get_vec_info(cl_device_id, Program, PYOPENCL_CL_CASTABLE_THIS,
                                      CL_PROGRAM_DEVICES);
     }
     generic_info get_info(cl_uint param_name) const;
