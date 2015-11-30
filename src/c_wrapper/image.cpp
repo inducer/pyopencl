@@ -81,21 +81,23 @@ create_image_3d(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
         });
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1020
 
 error*
 create_image_from_desc(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
                        cl_image_format *fmt, cl_image_desc *desc, void *buf)
 {
+#if PYOPENCL_CL_VERSION >= 0x1020
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
             auto mem = pyopencl_call_guarded(clCreateImage, ctx, flags, fmt,
                                              desc, buf);
             *img = new_image(mem, fmt);
         });
+#else
+    PYOPENCL_UNSUPPORTED(clCreateImage, "CL 1.1 and below")
+#endif
 }
 
-#endif
 
 error*
 image__get_image_info(clobj_t _img, cl_image_info param, generic_info *out)
