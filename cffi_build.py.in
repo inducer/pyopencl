@@ -48,30 +48,7 @@ if {CL_ENABLE_GL}:
 
 ffi.set_source("pyopencl._cffi",
         """
-        #ifndef __APPLE__
-            #include <CL/cl.h>
-
-            #ifdef HAVE_GL
-            #include <GL/gl.h>
-            #include <CL/cl_gl.h>
-            #include <CL/cl_gl_ext.h>
-            #endif
-        #else
-            #include <OpenCL/opencl.h>
-
-            #ifdef HAVE_GL
-            #include <OpenGL/OpenGL.h>
-            #include <OpenCL/cl_gl.h>
-            #include <OpenCL/cl_gl_ext.h>
-            #endif
-        #endif
-
-        extern "C" {{
-            #include <wrap_cl_core.h>
-            #ifdef HAVE_GL
-            #include <wrap_cl_gl_core.h>
-            #endif
-        }}
+        #include "wrap_cl.h"
         """,
         define_macros=list({EXTRA_DEFINES}.items()),
         include_dirs=(

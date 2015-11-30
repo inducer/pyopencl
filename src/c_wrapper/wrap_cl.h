@@ -79,16 +79,25 @@ typedef cl_uint             cl_kernel_exec_info;
 #ifndef CL_VERSION_1_2
 typedef intptr_t cl_device_partition_property;
 typedef cl_uint cl_kernel_arg_info;
-typedef struct _cl_image_desc cl_image_desc;
+
+typedef struct _cl_image_desc {
+    cl_mem_object_type      image_type;
+    size_t                  image_width;
+    size_t                  image_height;
+    size_t                  image_depth;
+    size_t                  image_array_size;
+    size_t                  image_row_pitch;
+    size_t                  image_slice_pitch;
+    cl_uint                 num_mip_levels;
+    cl_uint                 num_samples;
+    cl_mem                  buffer;
+} cl_image_desc;
+
 typedef cl_bitfield cl_mem_migration_flags;
 #endif
 
 #ifndef cl_ext_migrate_memobject
 typedef cl_bitfield cl_mem_migration_flags_ext;
-#endif
-
-#ifndef cl_ext_device_fission
-typedef cl_ulong cl_device_partition_property_ext;
 #endif
 
 struct clbase;
