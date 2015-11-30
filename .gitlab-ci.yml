@@ -73,6 +73,19 @@ Python 3.5 AMD Fiji:
   - amd-fiji
   except:
   - tags
+Python 3.5 POCL CL 1.1:
+  script:
+  - export PY_EXE=python3.5
+  - export PYOPENCL_TEST=portable
+  - export EXTRA_INSTALL="numpy mako"
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ./configure.py --cl-pretend-version=1.1
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python3.5
+  - pocl
+  except:
+  - tags
 Python 2.7 POCL:
   script:
   - export PY_EXE=python2.7

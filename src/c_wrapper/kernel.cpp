@@ -155,17 +155,19 @@ kernel__get_work_group_info(clobj_t _knl, cl_kernel_work_group_info param,
         });
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1020
 error*
 kernel__get_arg_info(clobj_t _knl, cl_uint idx, cl_kernel_arg_info param,
                      generic_info *out)
 {
+#if PYOPENCL_CL_VERSION >= 0x1020
     auto knl = static_cast<kernel*>(_knl);
     return c_handle_error([&] {
             *out = knl->get_arg_info(idx, param);
         });
-}
+#else
+    PYOPENCL_UNSUPPORTED(clKernelGetArgInfo, "CL 1.1 and below")
 #endif
+}
 
 error*
 enqueue_nd_range_kernel(clobj_t *evt, clobj_t _queue, clobj_t _knl,

@@ -189,12 +189,12 @@ program__get_build_info(clobj_t _prog, clobj_t _dev,
         });
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1020
 error*
 program__create_with_builtin_kernels(clobj_t *_prg, clobj_t _ctx,
                                      const clobj_t *_devs, uint32_t num_devs,
                                      const char *names)
 {
+#if PYOPENCL_CL_VERSION >= 0x1020
     const auto devs = buf_from_class<device>(_devs, num_devs);
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
@@ -202,6 +202,9 @@ program__create_with_builtin_kernels(clobj_t *_prg, clobj_t _ctx,
                                              ctx, devs, names);
             *_prg = new_program(prg);
         });
+#else
+    PYOPENCL_UNSUPPORTED(clCreateProgramWithBuiltInKernels, "CL 1.1 and below")
+#endif
 }
 
 error*
@@ -209,10 +212,14 @@ program__compile(clobj_t _prg, const char *opts, const clobj_t *_devs,
                  size_t num_devs, const clobj_t *_prgs,
                  const char *const *names, size_t num_hdrs)
 {
+#if PYOPENCL_CL_VERSION >= 0x1020
     auto prg = static_cast<program*>(_prg);
     return c_handle_error([&] {
             prg->compile(opts, _devs, num_devs, _prgs, names, num_hdrs);
         });
+#else
+    PYOPENCL_UNSUPPORTED(clCompileProgram, "CL 1.1 and below")
+#endif
 }
 
 error*
@@ -220,6 +227,7 @@ program__link(clobj_t *_prg, clobj_t _ctx, const clobj_t *_prgs,
               size_t num_prgs, const char *opts, const clobj_t *_devs,
               size_t num_devs)
 {
+#if PYOPENCL_CL_VERSION >= 0x1020
     const auto devs = buf_from_class<device>(_devs, num_devs);
     const auto prgs = buf_from_class<program>(_prgs, num_prgs);
     auto ctx = static_cast<context*>(_ctx);
@@ -228,8 +236,10 @@ program__link(clobj_t *_prg, clobj_t _ctx, const clobj_t *_prgs,
                                              prgs, nullptr, nullptr);
             *_prg = new_program(prg);
         });
-}
+#else
+    PYOPENCL_UNSUPPORTED(clLinkProgram, "CL 1.1 and below")
 #endif
+}
 
 error*
 program__all_kernels(clobj_t _prg, clobj_t **_knl, uint32_t *size)

@@ -95,13 +95,15 @@ platform__get_devices(clobj_t _plat, clobj_t **_devices,
         });
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1020
 error*
 platform__unload_compiler(clobj_t plat)
 {
+#if PYOPENCL_CL_VERSION >= 0x1020
     return c_handle_error([&] {
             pyopencl_call_guarded(clUnloadPlatformCompiler,
                                   static_cast<platform*>(plat));
         });
-}
+#else
+    PYOPENCL_UNSUPPORTED(clUnloadPlatformCompiler, "CL 1.1 and below")
 #endif
+}

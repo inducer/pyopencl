@@ -103,13 +103,13 @@ enqueue_copy_buffer(clobj_t *evt, clobj_t _queue, clobj_t _src, clobj_t _dst,
         });
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1020
 
 error*
 enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
                     size_t psize, size_t offset, size_t size,
                     const clobj_t *_wait_for, uint32_t num_wait_for)
 {
+#if PYOPENCL_CL_VERSION >= 0x1020
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object*>(_mem);
@@ -119,11 +119,11 @@ enqueue_fill_buffer(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *pattern,
                                   psize, offset, size, wait_for,
                                   event_out(evt));
         });
+#else
+    PYOPENCL_UNSUPPORTED(clEnqueueFillBuffer, "CL 1.1 and below")
+#endif
 }
 
-#endif
-
-#if PYOPENCL_CL_VERSION >= 0x1010
 
 // {{{ rectangular transfers
 
@@ -137,6 +137,7 @@ enqueue_read_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *buf,
                          const clobj_t *_wait_for, uint32_t num_wait_for,
                          int block, void *pyobj)
 {
+#if PYOPENCL_CL_VERSION >= 0x1010
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object*>(_mem);
@@ -151,6 +152,9 @@ enqueue_read_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *buf,
                 host_orig, reg, buf_pitches[0], buf_pitches[1], host_pitches[0],
                 host_pitches[1], buf, wait_for, nanny_event_out(evt, pyobj));
         });
+#else
+    PYOPENCL_UNSUPPORTED(clEnqueueReadBufferRect, "CL 1.0")
+#endif
 }
 
 error*
@@ -163,6 +167,7 @@ enqueue_write_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *buf,
                           const clobj_t *_wait_for, uint32_t num_wait_for,
                           int block, void *pyobj)
 {
+#if PYOPENCL_CL_VERSION >= 0x1010
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto mem = static_cast<memory_object*>(_mem);
@@ -177,6 +182,9 @@ enqueue_write_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _mem, void *buf,
                 host_orig, reg, buf_pitches[0], buf_pitches[1], host_pitches[0],
                 host_pitches[1], buf, wait_for, nanny_event_out(evt, pyobj));
         });
+#else
+    PYOPENCL_UNSUPPORTED(clEnqueueWriteBufferRect, "CL 1.0")
+#endif
 }
 
 error*
@@ -188,6 +196,7 @@ enqueue_copy_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _src,
                          const size_t *_dst_pitches, size_t dst_pitches_l,
                          const clobj_t *_wait_for, uint32_t num_wait_for)
 {
+#if PYOPENCL_CL_VERSION >= 0x1010
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     auto src = static_cast<memory_object*>(_src);
@@ -203,6 +212,9 @@ enqueue_copy_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _src,
                 reg, src_pitches[0], src_pitches[1], dst_pitches[0],
                 dst_pitches[1], wait_for, event_out(evt));
         });
+#else
+    PYOPENCL_UNSUPPORTED(clEnqueueCopyBufferRect, "CL 1.0")
+#endif
 }
 
 // }}}
@@ -211,10 +223,12 @@ error*
 buffer__get_sub_region(clobj_t *_sub_buf, clobj_t _buf, size_t orig,
                        size_t size, cl_mem_flags flags)
 {
+#if PYOPENCL_CL_VERSION >= 0x1010
     auto buf = static_cast<buffer*>(_buf);
     return c_handle_error([&] {
             *_sub_buf = buf->get_sub_region(orig, size, flags);
         });
-}
-
+#else
+    PYOPENCL_UNSUPPORTED(clCreateSubBuffer, "CL 1.0")
 #endif
+}

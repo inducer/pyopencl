@@ -25,7 +25,7 @@
     auto err = (error*)malloc(sizeof(error)); \
     err->routine = strdup(#ROUTINE); \
     err->msg = strdup("unsupported in " VERSION); \
-    err->code = CL_INVALID_VALUE \
+    err->code = CL_INVALID_VALUE; \
     err->other = 0; \
     return err;
 

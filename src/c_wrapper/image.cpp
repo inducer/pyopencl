@@ -174,13 +174,13 @@ enqueue_write_image(clobj_t *evt, clobj_t _queue, clobj_t _mem,
         });
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1020
 error*
 enqueue_fill_image(clobj_t *evt, clobj_t _queue, clobj_t mem,
                    const void *color, const size_t *_orig, size_t orig_l,
                    const size_t *_reg, size_t reg_l,
                    const clobj_t *_wait_for, uint32_t num_wait_for)
 {
+#if PYOPENCL_CL_VERSION >= 0x1020
     // TODO debug color
     auto queue = static_cast<command_queue*>(_queue);
     auto img = static_cast<image*>(mem);
@@ -191,8 +191,10 @@ enqueue_fill_image(clobj_t *evt, clobj_t _queue, clobj_t mem,
             pyopencl_call_guarded(clEnqueueFillImage, queue, img, color, orig,
                                   reg, wait_for, event_out(evt));
         });
-}
+#else
+    PYOPENCL_UNSUPPORTED(clEnqueueFillImage, "CL 1.1 and below")
 #endif
+}
 
 // {{{ image transfers
 

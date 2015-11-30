@@ -81,31 +81,37 @@ command_queue__flush(clobj_t queue)
         });
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1020
 error*
 enqueue_marker_with_wait_list(clobj_t *evt, clobj_t _queue,
                               const clobj_t *_wait_for, uint32_t num_wait_for)
 {
+#if PYOPENCL_CL_VERSION >= 0x1020
     auto queue = static_cast<command_queue*>(_queue);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
             pyopencl_call_guarded(clEnqueueMarkerWithWaitList, queue,
                                   wait_for, event_out(evt));
         });
+#else
+    PYOPENCL_UNSUPPORTED(clEnqueueMarkerWithWaitList, "CL 1.1 and below")
+#endif
 }
 
 error*
 enqueue_barrier_with_wait_list(clobj_t *evt, clobj_t _queue,
                                const clobj_t *_wait_for, uint32_t num_wait_for)
 {
+#if PYOPENCL_CL_VERSION >= 0x1020
     auto queue = static_cast<command_queue*>(_queue);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {
             pyopencl_call_guarded(clEnqueueBarrierWithWaitList, queue,
                                   wait_for, event_out(evt));
         });
-}
+#else
+    PYOPENCL_UNSUPPORTED(clEnqueueBarrierWithWaitList, "CL 1.1 and below")
 #endif
+}
 
 error*
 enqueue_marker(clobj_t *evt, clobj_t _queue)
