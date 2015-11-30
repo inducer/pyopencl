@@ -79,7 +79,7 @@ Python 3.5 POCL CL 1.1:
   - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - ./configure.py --cl-pretend-version=1.1
+  - echo "CL_PRETEND_VERSION = '1.1'" > siteconf.py
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3.5
