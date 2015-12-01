@@ -78,7 +78,7 @@ kernel::get_arg_info(cl_uint idx, cl_kernel_arg_info param) const
                                      KernelArg, PYOPENCL_CL_CASTABLE_THIS, idx, param);
     case CL_KERNEL_ARG_TYPE_QUALIFIER:
         return pyopencl_get_int_info(cl_kernel_arg_type_qualifier,
-                                     KernelArg, this, idx, param);
+                                     KernelArg, PYOPENCL_CL_CASTABLE_THIS, idx, param);
     case CL_KERNEL_ARG_TYPE_NAME:
     case CL_KERNEL_ARG_NAME:
         return pyopencl_get_str_info(KernelArg, PYOPENCL_CL_CASTABLE_THIS, idx, param);
