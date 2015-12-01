@@ -118,12 +118,17 @@ Version 2016.1
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/pyopencl/pyopencl>`_
 
-Version 2015.2.1
+Version 2015.2.2
 ----------------
 
 * Fix compatibility with CL 1.1
 * Fix compatibility with Ubuntu 14.x.
 * Various bug fixes
+
+Version 2015.2.1
+----------------
+
+* Fix global_offset kernel launch parameter
 
 Version 2015.2
 --------------
