@@ -118,6 +118,11 @@ Version 2016.1
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/pyopencl/pyopencl>`_
 
+Version 2015.2.3
+----------------
+
+* Fix one more Ubuntu 14.x build issue.
+
 Version 2015.2.2
 ----------------
 
