@@ -843,7 +843,7 @@ if _PYPY:
             raise LogicError("PyOpencl on PyPy only accepts numpy arrays "
                              "and scalars arguments", status_code.INVALID_VALUE)
 
-elif sys.version_info >= (2, 7):
+elif sys.version_info >= (2, 7, 4):
     import ctypes
     try:
         # Python 2.6 doesn't have this.
