@@ -294,7 +294,7 @@ def test_bessel(ctx_factory):
             scipy_bessel = scipy_func(n, a)
 
             error_scipy = get_err(cl_bessel, scipy_bessel)
-            assert error_scipy < 5e-7, error_scipy
+            assert error_scipy < 2e-6, error_scipy
 
             if use_pyfmmlib and (
                     which_func == "j"
