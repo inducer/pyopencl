@@ -613,10 +613,7 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     // kernel_arg_type_qualifier
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR("kernel_arg_type_qualifier", KERNEL_ARG_TYPE_, NONE);
-#ifdef CL_KERNEL_ARG_TYPE_CONST
-    // Apparently, this symbol is missing in some Windows ICD loaders.
     ADD_ATTR("kernel_arg_type_qualifier", KERNEL_ARG_TYPE_, CONST);
-#endif
     ADD_ATTR("kernel_arg_type_qualifier", KERNEL_ARG_TYPE_, RESTRICT);
     ADD_ATTR("kernel_arg_type_qualifier", KERNEL_ARG_TYPE_, VOLATILE);
 #endif
