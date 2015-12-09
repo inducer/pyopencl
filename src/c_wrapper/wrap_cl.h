@@ -31,6 +31,7 @@
 #if defined(_WIN32)
 #define NOMINMAX
 #include <windows.h>
+#define strdup _strdup
 #else
 #include <unistd.h>
 #endif
