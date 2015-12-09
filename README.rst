@@ -30,8 +30,10 @@ spirit of its sister project `PyCUDA <http://mathema.tician.de/software/pycuda>`
 
 What you'll need:
 
-*   gcc/g++ at or newer than version 4.8.2 and binutils at or newer than 2.23.52.0.1-10.
-*   `numpy <http://numpy.org>`_,
+*   gcc/g++ at or newer than version 4.8.2 and binutils at or newer than 2.23.52.0.1-10
+    (CentOS version number).
+    On Windows, use the `mingwpy <https://anaconda.org/carlkl/mingwpy>`_ compilers.
+*   `numpy <http://numpy.org>`_, and
 *   an OpenCL implementation. (See this `howto <http://wiki.tiker.net/OpenCLHowTo>`_ for how to get one.)
 
 Places on the web related to PyOpenCL:
