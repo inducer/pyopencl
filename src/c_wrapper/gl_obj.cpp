@@ -45,7 +45,7 @@ create_from_gl_texture(const context *ctx, cl_mem_flags flags,
 }
 #endif
 
-typedef cl_int (*clEnqueueGLObjectFunc)(cl_command_queue, cl_uint,
+typedef cl_int (CL_API_CALL *clEnqueueGLObjectFunc)(cl_command_queue, cl_uint,
                                         const cl_mem*, cl_uint,
                                         const cl_event*, cl_event*);
 

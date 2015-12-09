@@ -9,7 +9,7 @@ class _CLObjOutArg : public OutArg {
     typedef typename CLObj::cl_type CLType;
     clobj_t *const m_ret;
     CLType m_clobj;
-    cl_int (*m_release)(CLType);
+    cl_int (CL_API_CALL *m_release)(CLType);
     const char *m_name;
     std::tuple<T...> m_t1;
     template<int... S>
@@ -20,7 +20,7 @@ class _CLObjOutArg : public OutArg {
     }
 public:
     PYOPENCL_INLINE
-    _CLObjOutArg(clobj_t *ret, cl_int (*release)(CLType),
+    _CLObjOutArg(clobj_t *ret, cl_int (CL_API_CALL *release)(CLType),
                  const char *name, T... t1) noexcept
         : m_ret(ret), m_clobj(nullptr), m_release(release),
           m_name(name), m_t1(t1...)
@@ -62,7 +62,7 @@ public:
 
 template<typename CLObj, typename... T>
 static PYOPENCL_INLINE _CLObjOutArg<CLObj, T...>
-make_cloutarg(clobj_t *ret, cl_int (*release)(typename CLObj::cl_type),
+make_cloutarg(clobj_t *ret, cl_int (CL_API_CALL *release)(typename CLObj::cl_type),
               const char *name, T... t1)
 {
     return _CLObjOutArg<CLObj, T...>(ret, release, name, t1...);
@@ -74,7 +74,7 @@ make_cloutarg(clobj_t *ret, cl_int (*release)(typename CLObj::cl_type),
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE pyopencl_buf<T>
-get_vec_info(cl_int (*func)(ArgTypes...), const char *name,
+get_vec_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
              ArgTypes2&&... args)
 {
     size_t size = 0;
@@ -129,7 +129,7 @@ convert_opaque_array_info(T &&buf)
 
 template<typename CLObj, typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
-get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
+get_opaque_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
                 ArgTypes2&&... args)
 {
     typename CLObj::cl_type param_value;
@@ -151,7 +151,7 @@ get_opaque_info(cl_int (*func)(ArgTypes...), const char *name,
 
 template<typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
-get_str_info(cl_int (*func)(ArgTypes...), const char *name,
+get_str_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
              ArgTypes2&&... args)
 {
     size_t size;
@@ -170,7 +170,7 @@ get_str_info(cl_int (*func)(ArgTypes...), const char *name,
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
-get_int_info(cl_int (*func)(ArgTypes...), const char *name,
+get_int_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
              const char *tpname, ArgTypes2&&... args)
 {
     T value;
@@ -190,7 +190,7 @@ get_int_info(cl_int (*func)(ArgTypes...), const char *name,
 
 template<typename T, typename CLType, typename... ArgTypes>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE T*
-convert_obj(cl_int (*clRelease)(CLType), const char *name, CLType cl_obj,
+convert_obj(cl_int (CL_API_CALL *clRelease)(CLType), const char *name, CLType cl_obj,
             ArgTypes&&... args)
 {
     try {
