@@ -4,7 +4,8 @@ include pyopencl/cl/*.cl
 include src/c_wrapper/*.hpp
 include src/c_wrapper/*.h
 include src/c_wrapper/*.cpp
-include src/c_wrapper/mingw-std-wrappers/mingw.*.h
+include src/c_wrapper/mingw-std-threads/mingw.*.h
+include src/c_wrapper/mingw-std-threads/README.md
 include *.h
 include test/*.py
 include test/*.h
