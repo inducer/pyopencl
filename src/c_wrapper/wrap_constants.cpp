@@ -1,6 +1,10 @@
 #include "wrap_cl.h"
 #include <iostream>
 
+#ifdef CONST
+#undef CONST
+#endif
+
 extern "C"
 void populate_constants(void(*add)(const char*, const char*, int64_t value))
 {
