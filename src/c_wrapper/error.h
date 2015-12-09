@@ -227,7 +227,7 @@ make_clargpack(Types&&... args)
 
 template<typename... ArgTypes2, typename... ArgTypes>
 static PYOPENCL_INLINE void
-call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
+call_guarded(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     auto argpack = make_clargpack(std::forward<ArgTypes2>(args)...);
     cl_int status_code = argpack.clcall(func, name);
@@ -239,7 +239,7 @@ call_guarded(cl_int (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE T
-call_guarded(T (*func)(ArgTypes...), const char *name, ArgTypes2&&... args)
+call_guarded(T (CL_API_CALL *func)(ArgTypes...), const char *name, ArgTypes2&&... args)
 {
     cl_int status_code = CL_SUCCESS;
     auto status_arg = buf_arg(status_code);
@@ -264,7 +264,7 @@ cleanup_print_error(cl_int status_code, const char *name) noexcept
 
 template<typename... ArgTypes, typename... ArgTypes2>
 static PYOPENCL_INLINE void
-call_guarded_cleanup(cl_int (*func)(ArgTypes...), const char *name,
+call_guarded_cleanup(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
                      ArgTypes2&&... args)
 {
     auto argpack = make_clargpack(std::forward<ArgTypes2>(args)...);
