@@ -792,6 +792,10 @@ def test_program_valued_get_info(ctx_factory):
 
 
 def test_event_set_callback(ctx_factory):
+    import sys
+    if sys.platform.startswith("win"):
+        pytest.xfail("Event.set_callback not present on Windows")
+
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 

@@ -221,11 +221,11 @@ event__wait(clobj_t evt)
         });
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1010 && defined(PYOPENCL_HAVE_EVENT_SET_CALLBACK)
 
 error*
 event__set_callback(clobj_t _evt, cl_int type, void *pyobj)
 {
+#if PYOPENCL_CL_VERSION >= 0x1010 && defined(PYOPENCL_HAVE_EVENT_SET_CALLBACK)
     auto evt = static_cast<event*>(_evt);
     return c_handle_error([&] {
             pyobj = py::ref(pyobj);
@@ -238,8 +238,10 @@ event__set_callback(clobj_t _evt, cl_int type, void *pyobj)
                 py::deref(pyobj);
             }
         });
-}
+#else
+    PYOPENCL_UNSUPPORTED(clSetEventCallback, "CL 1.0 and below and Windows")
 #endif
+}
 
 // Nanny Event
 void*
