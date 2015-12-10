@@ -7,6 +7,8 @@
 
 // {{{ includes
 
+#include <stdint.h>
+
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS
 
 #ifdef __APPLE__
