@@ -40,14 +40,21 @@ public:
         try {
             pyopencl_call_guarded(
                 clSetEventCallback, PYOPENCL_CL_CASTABLE_THIS, type,
-                [] (cl_event, cl_int status, void *data) {
-                    rm_ref_t<Func> *func = static_cast<rm_ref_t<Func>*>(data);
-                    std::thread t([func, status] () {
-                            (*func)(status);
-                            delete func;
-                        });
-                    t.detach();
-                }, (void*)func);
+                static_cast<void (CL_CALLBACK * /* pfn_notify */)(cl_event, cl_int, void *)>(
+                    [] (cl_event, cl_int status, void *data) {
+                        rm_ref_t<Func> *func = static_cast<rm_ref_t<Func>*>(data);
+
+                        // We won't necessarily be able to acquire the GIL inside this
+                        // handler without deadlocking. Create a thread that *can*
+                        // wait.
+
+                        std::thread t([func, status] () {
+                                (*func)(status);
+                                delete func;
+                            });
+                        t.detach();
+
+                    }), (void*)func);
         } catch (...) {
             delete func;
             throw;
