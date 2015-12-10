@@ -31,7 +31,7 @@ public:
     PYOPENCL_USE_RESULT generic_info
     get_profiling_info(cl_profiling_info param) const;
     void wait() const;
-#if PYOPENCL_CL_VERSION >= 0x1010
+#if PYOPENCL_CL_VERSION >= 0x1010 && defined(PYOPENCL_HAVE_EVENT_SET_CALLBACK)
     template<typename Func>
     PYOPENCL_INLINE void
     set_callback(cl_int type, Func &&_func)

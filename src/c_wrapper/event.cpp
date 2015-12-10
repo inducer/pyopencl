@@ -85,7 +85,7 @@ event::release_private() noexcept
         delete m_p;
         return;
     }
-#if PYOPENCL_CL_VERSION >= 0x1010
+#if PYOPENCL_CL_VERSION >= 0x1010 && defined(PYOPENCL_HAVE_EVENT_SET_CALLBACK)
     if (release_private_use_cb(this)) {
         try {
             event_private *p = m_p;
@@ -221,7 +221,7 @@ event__wait(clobj_t evt)
         });
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1010
+#if PYOPENCL_CL_VERSION >= 0x1010 && defined(PYOPENCL_HAVE_EVENT_SET_CALLBACK)
 
 error*
 event__set_callback(clobj_t _evt, cl_int type, void *pyobj)

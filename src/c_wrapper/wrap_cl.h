@@ -34,6 +34,7 @@
 #define strdup _strdup
 #else
 #include <unistd.h>
+#define PYOPENCL_HAVE_EVENT_SET_CALLBACK
 #endif
 
 #ifdef HAVE_GL
