@@ -10,8 +10,8 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
 {
 #define _ADD_ATTR(TYPE, PREFIX, NAME, SUFFIX, ...)      \
       add(TYPE, #NAME, CL_##PREFIX##NAME##SUFFIX)
-#define ADD_ATTR(TYPE, PREFIX, NAME, EXTRA...)  \
-      _ADD_ATTR(TYPE, PREFIX, NAME, EXTRA)
+#define ADD_ATTR(TYPE, PREFIX, NAME, ...)  \
+      _ADD_ATTR(TYPE, PREFIX, NAME, __VA_ARGS__)
 
     // program_kind
     add("program_kind", "UNKNOWN", KND_UNKNOWN);

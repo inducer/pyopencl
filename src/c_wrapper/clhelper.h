@@ -67,8 +67,8 @@ make_cloutarg(clobj_t *ret, cl_int (CL_API_CALL *release)(typename CLObj::cl_typ
 {
     return _CLObjOutArg<CLObj, T...>(ret, release, name, t1...);
 }
-#define pyopencl_outarg(type, ret, func, args...)               \
-    make_cloutarg<type>(ret, func, #func, ##args)
+#define pyopencl_outarg(type, ret, func, ...)               \
+    make_cloutarg<type>(ret, func, #func, ##__VA_ARGS__)
 
 // {{{ GetInfo helpers
 
@@ -83,8 +83,8 @@ get_vec_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
     call_guarded(func, name, args..., size_arg(buf), buf_arg(size));
     return buf;
 }
-#define pyopencl_get_vec_info(type, what, args...)                      \
-    get_vec_info<type>(clGet##what##Info, "clGet" #what "Info", args)
+#define pyopencl_get_vec_info(type, what, ...)                      \
+    get_vec_info<type>(clGet##what##Info, "clGet" #what "Info", __VA_ARGS__)
 
 template<typename T>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
@@ -109,8 +109,8 @@ convert_array_info(const char *tname, pyopencl_buf<T> &&_buf)
 
 #define pyopencl_convert_array_info(type, buf)          \
     convert_array_info<type>(#type, buf)
-#define pyopencl_get_array_info(type, what, args...)                    \
-    pyopencl_convert_array_info(type, pyopencl_get_vec_info(type, what, args))
+#define pyopencl_get_array_info(type, what, ...)                    \
+    pyopencl_convert_array_info(type, pyopencl_get_vec_info(type, what, __VA_ARGS__))
 
 template<typename CLObj, typename T>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
@@ -123,9 +123,9 @@ convert_opaque_array_info(T &&buf)
     info.value = buf_to_base<CLObj>(std::forward<T>(buf)).release();
     return info;
 }
-#define pyopencl_get_opaque_array_info(cls, what, args...)  \
+#define pyopencl_get_opaque_array_info(cls, what, ...)  \
     convert_opaque_array_info<cls>(               \
-        pyopencl_get_vec_info(cls::cl_type, what, args))
+        pyopencl_get_vec_info(cls::cl_type, what, __VA_ARGS__))
 
 template<typename CLObj, typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
@@ -145,9 +145,9 @@ get_opaque_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
     }
     return info;
 }
-#define pyopencl_get_opaque_info(clobj, what, args...)              \
+#define pyopencl_get_opaque_info(clobj, what, ...)              \
     get_opaque_info<clobj>(clGet##what##Info,             \
-                                     "clGet" #what "Info", args)
+                                     "clGet" #what "Info", __VA_ARGS__)
 
 template<typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
@@ -165,8 +165,8 @@ get_str_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
     info.value = (void*)param_value.release();
     return info;
 }
-#define pyopencl_get_str_info(what, args...)                            \
-    get_str_info(clGet##what##Info, "clGet" #what "Info", args)
+#define pyopencl_get_str_info(what, ...)                            \
+    get_str_info(clGet##what##Info, "clGet" #what "Info", __VA_ARGS__)
 
 template<typename T, typename... ArgTypes, typename... ArgTypes2>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
@@ -182,9 +182,9 @@ get_int_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
     info.value = cl_memdup(&value);
     return info;
 }
-#define pyopencl_get_int_info(type, what, args...)                      \
+#define pyopencl_get_int_info(type, what, ...)                      \
     get_int_info<type>(clGet##what##Info, "clGet" #what "Info", \
-                                 #type "*", args)
+                                 #type "*", __VA_ARGS__)
 
 // }}}
 
@@ -200,8 +200,8 @@ convert_obj(cl_int (CL_API_CALL *clRelease)(CLType), const char *name, CLType cl
         throw;
     }
 }
-#define pyopencl_convert_obj(type, func, args...)       \
-    convert_obj<type>(func, #func, args)
+#define pyopencl_convert_obj(type, func, ...)       \
+    convert_obj<type>(func, #func, __VA_ARGS__)
 
 // {{{ extension function pointers
 

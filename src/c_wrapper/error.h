@@ -251,8 +251,8 @@ call_guarded(T (CL_API_CALL *func)(ArgTypes...), const char *name, ArgTypes2&&..
     argpack.finish();
     return res;
 }
-#define pyopencl_call_guarded(func, args...)    \
-    call_guarded(func, #func, args)
+#define pyopencl_call_guarded(func, ...)    \
+    call_guarded(func, #func, __VA_ARGS__)
 
 static PYOPENCL_INLINE void
 cleanup_print_error(cl_int status_code, const char *name) noexcept
@@ -275,8 +275,8 @@ call_guarded_cleanup(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
         argpack.finish();
     }
 }
-#define pyopencl_call_guarded_cleanup(func, args...)    \
-    call_guarded_cleanup(func, #func, args)
+#define pyopencl_call_guarded_cleanup(func, ...)    \
+    call_guarded_cleanup(func, #func, __VA_ARGS__)
 
 template<typename Func>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE error*
