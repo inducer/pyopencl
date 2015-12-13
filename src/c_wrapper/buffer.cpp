@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "buffer.h"
 #include "context.h"
 #include "command_queue.h"

@@ -50,7 +50,7 @@ call_tuple(Function &&func, T &&args)
 }
 
 template<template<typename...> class Convert, typename... Types>
-using _ArgPackBase = std::tuple<Convert<rm_ref_t<Types> >...>;
+using _ArgPackBase = std::tuple<Convert<typename std::remove_reference<Types>::type>...>;
 
 template<template<typename...> class Convert, typename... Types>
 class ArgPack : public _ArgPackBase<Convert, Types...> {

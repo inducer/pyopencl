@@ -60,9 +60,9 @@ enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
         mem_objects, num_mem_objects);
     call_guarded(func, name, cq, _mem_objs, _wait_for, event_out(evt));
 }
-#define enqueue_gl_objects(what, args...)                       \
+#define enqueue_gl_objects(what, ...)                       \
     enqueue_gl_objects(clEnqueue##what##GLObjects,              \
-                       "clEnqueue" #what "GLObjects", args)
+                       "clEnqueue" #what "GLObjects", __VA_ARGS__)
 
 // c wrapper
 

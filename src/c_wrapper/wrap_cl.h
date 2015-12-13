@@ -34,6 +34,7 @@
 #define NOMINMAX
 #include <windows.h>
 #define strdup _strdup
+#define strcasecmp _stricmp
 #else
 #include <unistd.h>
 #define PYOPENCL_HAVE_EVENT_SET_CALLBACK
