@@ -92,7 +92,7 @@ program::get_build_info(const device *dev, cl_program_build_info param) const
 #if PYOPENCL_CL_VERSION >= 0x2000
     case CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SIZE:
         return pyopencl_get_int_info(size_t, ProgramBuild,
-                                     this, dev, param);
+                                     PYOPENCL_CL_CASTABLE_THIS, dev, param);
 #endif
     default:
         throw clerror("Program.get_build_info", CL_INVALID_VALUE);
