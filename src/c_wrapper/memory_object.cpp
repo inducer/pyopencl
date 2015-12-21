@@ -51,7 +51,7 @@ memory_object::get_info(cl_uint param_name) const
 #endif
 #if PYOPENCL_CL_VERSION >= 0x2000
     case CL_MEM_USES_SVM_POINTER:
-        return pyopencl_get_int_info(cl_bool, MemObject, this, param_name);
+        return pyopencl_get_int_info(cl_bool, MemObject, PYOPENCL_CL_CASTABLE_THIS, param_name);
 #endif
 
     default:

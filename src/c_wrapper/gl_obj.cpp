@@ -15,9 +15,9 @@ gl_texture::get_gl_texture_info(cl_gl_texture_info param_name) const
 {
     switch (param_name) {
     case CL_GL_TEXTURE_TARGET:
-        return pyopencl_get_int_info(GLenum, GLTexture, this, param_name);
+        return pyopencl_get_int_info(GLenum, GLTexture, PYOPENCL_CL_CASTABLE_THIS, param_name);
     case CL_GL_MIPMAP_LEVEL:
-        return pyopencl_get_int_info(GLint, GLTexture, this, param_name);
+        return pyopencl_get_int_info(GLint, GLTexture, PYOPENCL_CL_CASTABLE_THIS, param_name);
     default:
         throw clerror("MemoryObject.get_gl_texture_info", CL_INVALID_VALUE);
     }
