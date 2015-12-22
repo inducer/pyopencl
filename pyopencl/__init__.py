@@ -1446,6 +1446,22 @@ def enqueue_copy(queue, dest, src, **kwargs):
         two or shorter. (optional, "tightly-packed" if unspecified)
 
     .. ------------------------------------------------------------------------
+    .. rubric :: Rectangular :class:`Buffer` ↔  :class:`Buffer`
+        transfers (CL 1.1 and newer)
+    .. ------------------------------------------------------------------------
+
+    :arg src_origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg dst_origin: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg region: :class:`tuple` of :class:`int` of length
+        three or shorter. (mandatory)
+    :arg src_pitches: :class:`tuple` of :class:`int` of length
+        two or shorter. (optional, "tightly-packed" if unspecified)
+    :arg dst_pitches: :class:`tuple` of :class:`int` of length
+        two or shorter. (optional, "tightly-packed" if unspecified)
+
+    .. ------------------------------------------------------------------------
     .. rubric :: Transfer :class:`Image` ↔ host
     .. ------------------------------------------------------------------------
 
