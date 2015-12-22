@@ -1406,9 +1406,13 @@ def _enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region,
     if src_pitches is None:
         src_pitches = _ffi.NULL
         src_pitches_l = 0
+    else:
+        src_pitches_l = len(src_pitches)
     if dst_pitches is None:
         dst_pitches = _ffi.NULL
         dst_pitches_l = 0
+    else:
+        dst_pitches_l = len(dst_pitches)
     src_origin_l = len(src_origin)
     dst_origin_l = len(dst_origin)
     region_l = len(region)

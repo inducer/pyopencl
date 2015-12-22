@@ -386,10 +386,8 @@ public:
     {
         if (l < n) {
             memcpy(m_intern_buf, buf, type_size<T>::value * l);
-            if (content) {
-                for (size_t i = l;i < n;i++) {
-                    m_intern_buf[i] = content;
-                }
+            for (size_t i = l;i < n;i++) {
+                m_intern_buf[i] = content;
             }
             this->set(m_intern_buf);
         }
