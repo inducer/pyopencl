@@ -61,10 +61,10 @@ Python 3.5 Titan Black:
   - nvidia-titan-black
   except:
   - tags
-Python 3.5 AMD Fiji:
+Python 3.5 AMD GPU:
   script:
   - export PY_EXE=python3.5
-  - export PYOPENCL_TEST=amd:fiji
+  - export PYOPENCL_TEST=amd:hoat
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
