@@ -15,6 +15,9 @@
 
 // Mac ------------------------------------------------------------------------
 #include <OpenCL/opencl.h>
+
+#define PYOPENCL_HAVE_EVENT_SET_CALLBACK
+
 #ifdef HAVE_GL
 
 #define PYOPENCL_GL_SHARING_VERSION 1
