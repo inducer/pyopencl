@@ -581,7 +581,7 @@ class Array(object):
         return _ArrayFlags(self)
 
     def _new_with_changes(self, data, offset, shape=None, dtype=None,
-            strides=None, queue=_copy_queue):
+            strides=None, queue=_copy_queue, allocator=None):
         """
         :arg data: *None* means allocate a new array.
         """
@@ -593,6 +593,8 @@ class Array(object):
             strides = self.strides
         if queue is _copy_queue:
             queue = self.queue
+        if allocator is None:
+            allocator = self.allocator
 
         # If we're allocating new data, then there's not likely to be
         # a data dependency. Otherwise, the two arrays should probably
@@ -604,13 +606,13 @@ class Array(object):
             events = self.events
 
         if queue is not None:
-            return Array(queue, shape, dtype, allocator=self.allocator,
+            return Array(queue, shape, dtype, allocator=allocator,
                     strides=strides, data=data, offset=offset,
                     events=events)
         else:
             return Array(self.context, shape, dtype,
                     strides=strides, data=data, offset=offset,
-                    events=events, allocator=self.allocator)
+                    events=events, allocator=allocator)
 
     def with_queue(self, queue):
         """Return a copy of *self* with the default queue set to *queue*.
@@ -1772,12 +1774,13 @@ def zeros(queue, shape, dtype, order="C", allocator=None):
     return result
 
 
-def empty_like(ary):
+def empty_like(ary, queue=_copy_queue, allocator=None):
     """Make a new, uninitialized :class:`Array` having the same properties
     as *other_ary*.
     """
 
-    return ary._new_with_changes(data=None, offset=0)
+    return ary._new_with_changes(data=None, offset=0, queue=queue,
+            allocator=allocator)
 
 
 def zeros_like(ary):
