@@ -1568,7 +1568,7 @@ class Array(object):
 
                 array_stride = self.strides[array_axis]
 
-                new_shape.append((stop-start-1)//idx_stride+1)
+                new_shape.append((abs(stop-start)-1)//abs(idx_stride)+1)
                 new_strides.append(idx_stride*array_stride)
                 new_offset += array_stride*start
 
