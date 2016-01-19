@@ -143,6 +143,14 @@ Version 2015.2.1
 Version 2015.2
 --------------
 
+* **[INCOMPATIBLE]** Changed PyOpenCL's complex numbers from ``float2`` and
+  ``double2`` OpenCL vector types to custom ``struct``. This was changed
+  because it very easily introduced bugs where
+
+  * complex*complex
+  * real+complex
+
+  *look* like they may do the right thing, but sliently do the wrong thing.
 * Rewrite of the wrapper layer to be based on CFFI
 * Pypy compatibility
 * Faster kernel invocation through Python launcher code generation

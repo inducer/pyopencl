@@ -111,16 +111,22 @@ If you need double precision support, please::
 before including the header, as DP support apparently cannot be reliably
 autodetected.
 
-Under the hood, the complex types are simply `float2` and `double2`.
-
-.. warning::
-    Note that, at the OpenCL source code level, addition (real + complex) and
-    multiplication (complex*complex) are defined for e.g. `float2`, but yield
-    wrong results, so that you need to use the corresponding functions.
-    (The :mod:`Array` type implements complex arithmetic as you remember it,
-    without any idiotic quirks like this.)
+Under the hood, the complex types are struct types as defined in the header.
+Ideally, you should only access the structs through the provided functions,
+never directly.
 
 .. versionadded:: 2012.1
+
+.. versionchanged:: 2015.2
+
+    **[INCOMPATIBLE]** Changed PyOpenCL's complex numbers from ``float2`` and
+    ``double2`` OpenCL vector types to custom ``struct``. This was changed
+    because it very easily introduced bugs where
+
+    * complex*complex
+    * real+complex
+
+    *look* like they may do the right thing, but sliently do the wrong thing.
 
 The :class:`Array` Class
 ------------------------
