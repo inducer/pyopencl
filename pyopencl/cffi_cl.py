@@ -625,10 +625,9 @@ def _parse_context_properties(properties):
                 'CGL_SHAREGROUP_KHR',
                 )]:
 
-            import ctypes
-            if isinstance(value, ctypes._Pointer):
-                import struct
-                val, = struct.unpack("P", bytes(memoryview(value)))
+            from ctypes import _Pointer, addressof
+            if isinstance(value, _Pointer):
+                val = addressof(value)
             else:
                 val = int(value)
 
