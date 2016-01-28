@@ -625,7 +625,13 @@ def _parse_context_properties(properties):
                 'CGL_SHAREGROUP_KHR',
                 )]:
 
-            val = int(_ffi.cast('intptr_t', value))
+            import ctypes
+            if isinstance(value, ctypes._Pointer):
+                import struct
+                val, = struct.unpack("P", bytes(memoryview(value)))
+            else:
+                val = int(value)
+
             if not val:
                 raise LogicError("You most likely have not initialized "
                                  "OpenGL properly.",
