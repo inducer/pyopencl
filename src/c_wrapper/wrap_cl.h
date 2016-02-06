@@ -13,7 +13,7 @@
 
 #ifdef __APPLE__
 
-// Mac ------------------------------------------------------------------------
+// {{{ Mac
 #include <OpenCL/opencl.h>
 
 #define PYOPENCL_HAVE_EVENT_SET_CALLBACK
@@ -26,21 +26,39 @@
 #include <OpenCL/cl_gl.h>
 #include <OpenCL/cl_gl_ext.h>
 #endif
+// }}}
 
 #else
 
-// elsewhere ------------------------------------------------------------------
+// {{{ elsewhere
+
 #include <CL/cl.h>
 #include <CL/cl_ext.h>
 
 #if defined(_WIN32)
+
+// {{{ Windows
+
 #define NOMINMAX
 #include <windows.h>
 #define strdup _strdup
 #define strcasecmp _stricmp
+
+#if _MSC_VER >= 1900 /* VS 2015 and higher */
+#define PYOPENCL_HAVE_EVENT_SET_CALLBACK
+#endif
+
+// }}}
+
 #else
+
+// {{{ non-Windows
+
 #include <unistd.h>
 #define PYOPENCL_HAVE_EVENT_SET_CALLBACK
+
+// }}}
+
 #endif
 
 #ifdef HAVE_GL
@@ -52,8 +70,14 @@
 #define PYOPENCL_GL_SHARING_VERSION cl_khr_gl_sharing
 #endif
 
+// }}}
+
 #endif
 
+// }}}
+
+
+// {{{ version handling
 
 #ifdef PYOPENCL_PRETEND_CL_VERSION
 #define PYOPENCL_CL_VERSION PYOPENCL_PRETEND_CL_VERSION
@@ -70,6 +94,8 @@
 #endif
 
 #endif
+
+// }}}
 
 #ifndef CL_VERSION_2_0
 typedef void* CLeglImageKHR;
@@ -132,3 +158,5 @@ extern "C" {
 #endif
 
 #endif
+
+// vim: foldmethod=marker
