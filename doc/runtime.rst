@@ -147,6 +147,24 @@ Platforms, Devices and Contexts
 
     .. note::
 
+        Because of how OpenCL changed in order to support Installable Client
+        Drivers (ICDs) in OpenCL 1.1, the following will *look* reasonable
+        but often actually not work::
+
+            import pyopencl as cl
+            ctx = cl.Context(dev_type=cl.device_type.ALL)
+
+        Instead, make sure to choose a platform when choosing a device by type::
+
+            import pyopencl as cl
+
+            platforms = cl.get_platforms()
+            ctx = cl.Context(
+                    dev_type=cl.device_type.ALL,
+                    properties=[(cl.context_properties.PLATFORM, platforms[0])])
+
+    .. note::
+
         For
         :attr:`context_properties.CL_GL_CONTEXT_KHR`,
         :attr:`context_properties.CL_EGL_DISPLAY_KHR`,
