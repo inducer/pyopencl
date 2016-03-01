@@ -1590,7 +1590,7 @@ try:
 except:
     pass
 else:
-    DTYPE_TO_CHANNEL_TYPE[np.dtype(np.float16)] = channel_type.HALF_FLOAT,
+    DTYPE_TO_CHANNEL_TYPE[np.dtype(np.float16)] = channel_type.HALF_FLOAT
 
 DTYPE_TO_CHANNEL_TYPE_NORM = {
     np.dtype(np.int16): channel_type.SNORM_INT16,
