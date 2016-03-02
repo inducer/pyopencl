@@ -232,8 +232,13 @@ del _size_t_char
 # {{{ find pyopencl shipped source code
 
 def _find_pyopencl_include_path():
-    from pkg_resources import Requirement, resource_filename
-    return resource_filename(Requirement.parse("pyopencl"), "pyopencl/cl")
+    from os.path import join, abspath, dirname, exists
+    
+    include_path = join(abspath(dirname(__file__)), "cl")
+    if not exists(include_path):
+        raise RuntimeError("Could not located PyOpenCL include path")
+        
+    return include_path
 
 # }}}
 
