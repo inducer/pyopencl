@@ -94,9 +94,9 @@ public:
 
 template<typename CLObj>
 static PYOPENCL_INLINE CLObj*
-clobj_from_int_ptr(intptr_t ptr)
+clobj_from_int_ptr(intptr_t ptr, bool retain)
 {
-    return new CLObj(reinterpret_cast<typename CLObj::cl_type>(ptr), true);
+    return new CLObj(reinterpret_cast<typename CLObj::cl_type>(ptr), retain);
 }
 
 template<typename T, typename T2>

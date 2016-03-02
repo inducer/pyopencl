@@ -230,10 +230,18 @@ class _Common(object):
         return _lib.clobj__int_ptr(self.ptr)
 
     @classmethod
-    def from_int_ptr(cls, int_ptr_value):
+    def from_int_ptr(cls, int_ptr_value, retain=True):
+        """Constructs a :mod:`pyopencl` handle from a C-level pointer (given as
+        the integer *int_ptr_value*). If *retain* is *True* (the defauult)
+        :mod:`pyopencl` will call ``clRetainXXX`` on the provided object. If
+        the previous owner of the object will *not* release the reference,
+        *retain* should be set to *False*, to effectively transfer ownership to
+        :mod:`pyopencl`.
+        """
         ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.clobj__from_int_ptr(
-            ptr, int_ptr_value, getattr(_lib, 'CLASS_%s' % cls._id.upper())))
+            ptr, int_ptr_value, getattr(_lib, 'CLASS_%s' % cls._id.upper()),
+            retain))
         return cls._create(ptr[0])
 
 # }}}

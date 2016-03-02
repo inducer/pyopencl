@@ -290,4 +290,4 @@ error *enqueue_copy_buffer_to_image(clobj_t *evt, clobj_t _queue, clobj_t _src,
 intptr_t clobj__int_ptr(clobj_t obj);
 error *clobj__get_info(clobj_t obj, cl_uint param, generic_info *out);
 void clobj__delete(clobj_t obj);
-error *clobj__from_int_ptr(clobj_t *out, intptr_t ptr, class_t);
+error *clobj__from_int_ptr(clobj_t *out, intptr_t ptr, class_t, int);

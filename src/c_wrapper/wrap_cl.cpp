@@ -59,34 +59,34 @@ clobj__int_ptr(clobj_t obj)
 }
 
 static PYOPENCL_INLINE clobj_t
-_from_int_ptr(intptr_t ptr, class_t class_)
+_from_int_ptr(intptr_t ptr, class_t class_, bool retain)
 {
     switch(class_) {
     case CLASS_PLATFORM:
-        return clobj_from_int_ptr<platform>(ptr);
+        return clobj_from_int_ptr<platform>(ptr, retain);
     case CLASS_DEVICE:
-        return clobj_from_int_ptr<device>(ptr);
+        return clobj_from_int_ptr<device>(ptr, retain);
     case CLASS_KERNEL:
-        return clobj_from_int_ptr<kernel>(ptr);
+        return clobj_from_int_ptr<kernel>(ptr, retain);
     case CLASS_CONTEXT:
-        return clobj_from_int_ptr<context>(ptr);
+        return clobj_from_int_ptr<context>(ptr, retain);
     case CLASS_COMMAND_QUEUE:
-        return clobj_from_int_ptr<command_queue>(ptr);
+        return clobj_from_int_ptr<command_queue>(ptr, retain);
     case CLASS_BUFFER:
-        return clobj_from_int_ptr<buffer>(ptr);
+        return clobj_from_int_ptr<buffer>(ptr, retain);
     case CLASS_PROGRAM:
-        return clobj_from_int_ptr<program>(ptr);
+        return clobj_from_int_ptr<program>(ptr, retain);
     case CLASS_EVENT:
-        return clobj_from_int_ptr<event>(ptr);
+        return clobj_from_int_ptr<event>(ptr, retain);
     case CLASS_IMAGE:
-        return clobj_from_int_ptr<image>(ptr);
+        return clobj_from_int_ptr<image>(ptr, retain);
     case CLASS_SAMPLER:
-        return clobj_from_int_ptr<sampler>(ptr);
+        return clobj_from_int_ptr<sampler>(ptr, retain);
 #ifdef HAVE_GL
     case CLASS_GL_BUFFER:
-        return clobj_from_int_ptr<gl_buffer>(ptr);
+        return clobj_from_int_ptr<gl_buffer>(ptr, retain);
     case CLASS_GL_RENDERBUFFER:
-        return clobj_from_int_ptr<gl_renderbuffer>(ptr);
+        return clobj_from_int_ptr<gl_renderbuffer>(ptr, retain);
 #endif
     default:
         throw clerror("unknown class", CL_INVALID_VALUE);
@@ -94,10 +94,10 @@ _from_int_ptr(intptr_t ptr, class_t class_)
 }
 
 error*
-clobj__from_int_ptr(clobj_t *out, intptr_t ptr, class_t class_)
+clobj__from_int_ptr(clobj_t *out, intptr_t ptr, class_t class_, int retain)
 {
     return c_handle_error([&] {
-            *out = _from_int_ptr(ptr, class_);
+            *out = _from_int_ptr(ptr, class_, retain);
         });
 }
 
