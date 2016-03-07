@@ -237,6 +237,10 @@ class _Common(object):
         the previous owner of the object will *not* release the reference,
         *retain* should be set to *False*, to effectively transfer ownership to
         :mod:`pyopencl`.
+
+        .. versionchanged:: 2016.1
+
+            *retain* added
         """
         ptr = _ffi.new('clobj_t*')
         _handle_error(_lib.clobj__from_int_ptr(
