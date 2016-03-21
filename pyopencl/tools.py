@@ -1,9 +1,6 @@
 """Various helpful bits and pieces without much of a common theme."""
 
-from __future__ import division
-from __future__ import absolute_import
-import six
-from six.moves import zip
+from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2010 Andreas Kloeckner"
 
@@ -30,6 +27,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
+
+import six
+from six.moves import zip, intern
 
 import numpy as np
 from decorator import decorator
