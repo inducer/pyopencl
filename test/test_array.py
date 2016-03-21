@@ -442,7 +442,7 @@ def test_random(ctx_factory):
 
             ran = gen.normal(queue, (10007,), dtype, mu=4, sigma=3)
 
-    dtypes = [np.int32]
+    dtypes = [np.int32, np.int64]
     for dtype in dtypes:
         ran = gen.uniform(queue, (10000007,), dtype, a=200, b=300)
         assert (200 <= ran.get()).all()

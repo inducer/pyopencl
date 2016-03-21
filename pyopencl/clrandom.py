@@ -223,6 +223,17 @@ class RanluxGenerator(object):
             rng_expr = ("(shift "
                     "+ convert_int4((float) scale * gen) "
                     "+ convert_int4((float) (scale / (1<<24)) * gen))")
+
+        elif dtype == np.int64:
+            assert distribution == "uniform"
+            bits = 64
+            c_type = "long"
+            rng_expr = ("(shift "
+                    "+ convert_long4((float) scale * gen) "
+                    "+ convert_long4((float) (scale / (1<<24)) * gen)"
+                    "+ convert_long4((float) (scale / (1<<48)) * gen)"
+                    ")")
+
         else:
             raise TypeError("unsupported RNG data type '%s'" % dtype)
 
