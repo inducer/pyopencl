@@ -333,8 +333,8 @@ def parse_c_arg(c_arg, with_offset=False):
     c_arg = c_arg.replace("__global", "")
 
     if with_offset:
-        vec_arg_factory = lambda dtype, name: \
-                VectorArg(dtype, name, with_offset=True)
+        def vec_arg_factory(dtype, name):
+            return VectorArg(dtype, name, with_offset=True)
     else:
         vec_arg_factory = VectorArg
 
@@ -793,8 +793,8 @@ class _TemplateRenderer(object):
                 all_args.extend(arg_list)
 
         if with_offset:
-            vec_arg_factory = lambda typename, name: \
-                    _VectorArgPlaceholder(typename, name, with_offset=True)
+            def vec_arg_factory(typename, name):
+                    return _VectorArgPlaceholder(typename, name, with_offset=True)
         else:
             vec_arg_factory = _VectorArgPlaceholder
 
