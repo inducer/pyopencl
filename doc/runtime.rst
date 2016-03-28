@@ -978,8 +978,8 @@ with GL support. See :func:`have_gl`.
 
 .. class:: GLTexture(context, flags, texture_target, miplevel, texture, dims)
 
-    *dims* is either 2 or 3.
-    :class:`GLTexture` inherits from :class:`Image`.
+    :class:`GLTexture` inherits from :class:`Image`. Only available in OpenCL 1.2
+    and newer.
 
     .. attribute:: gl_object
 

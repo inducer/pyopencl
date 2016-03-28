@@ -1,5 +1,8 @@
 // Interface between C and Python for GL related functions
 
+error* create_from_gl_texture(clobj_t *ptr, cl_mem_flags flags,
+                       GLenum texture_target, GLint miplevel,
+                       GLuint texture);
 error *create_from_gl_buffer(clobj_t *ptr, clobj_t context,
                              cl_mem_flags flags, GLuint bufobj);
 error *create_from_gl_renderbuffer(clobj_t *ptr, clobj_t context,

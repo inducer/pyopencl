@@ -23,28 +23,6 @@ gl_texture::get_gl_texture_info(cl_gl_texture_info param_name) const
     }
 }
 
-#if 0
-PYOPENCL_USE_RESULT static gl_texture*
-create_from_gl_texture(const context *ctx, cl_mem_flags flags,
-                       GLenum texture_target, GLint miplevel,
-                       GLuint texture, unsigned dims)
-{
-    if (dims == 2) {
-        cl_mem mem = pyopencl_call_guarded(clCreateFromGLTexture2D,
-                                           ctx, flags, texture_target,
-                                           miplevel, texture);
-        return pyopencl_convert_obj(gl_texture, clReleaseMemObject, mem);
-    } else if (dims == 3) {
-        cl_mem mem = pyopencl_call_guarded(clCreateFromGLTexture3D,
-                                           ctx, flags, texture_target,
-                                           miplevel, texture);
-        return pyopencl_convert_obj(gl_texture, clReleaseMemObject, mem);
-    } else {
-        throw clerror("Image", CL_INVALID_VALUE, "invalid dimension");
-    }
-}
-#endif
-
 typedef cl_int (CL_API_CALL *clEnqueueGLObjectFunc)(cl_command_queue, cl_uint,
                                         const cl_mem*, cl_uint,
                                         const cl_event*, cl_event*);
@@ -65,6 +43,23 @@ enqueue_gl_objects(clEnqueueGLObjectFunc func, const char *name,
                        "clEnqueue" #what "GLObjects", __VA_ARGS__)
 
 // c wrapper
+
+error*
+create_from_gl_texture(clobj_t *ptr, clobj_t _ctx, cl_mem_flags flags,
+                       GLenum texture_target, GLint miplevel,
+                       GLuint texture)
+{
+#if PYOPENCL_CL_VERSION >= 0x1020
+    auto ctx = static_cast<context*>(_ctx);
+    return c_handle_error([&] {
+            cl_mem mem = pyopencl_call_guarded(clCreateFromGLTexture,
+                                               ctx, flags, texture_target, miplevel, texture);
+            *ptr = pyopencl_convert_obj(gl_texture, clReleaseMemObject, mem);
+        });
+#else
+    PYOPENCL_UNSUPPORTED(clCreateFromGLTexture, "CL 1.1")
+#endif
+}
 
 error*
 create_from_gl_buffer(clobj_t *ptr, clobj_t _ctx,

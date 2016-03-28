@@ -1956,12 +1956,10 @@ class Sampler(_Common, _CLKernelArg):
 class GLTexture(Image, _GLObject):
     _id = 'gl_texture'
 
-    def __init__(self, context, flags, texture_target, miplevel, texture, dims):
-        raise NotImplementedError("GLTexture")
-
+    def __init__(self, context, flags, texture_target, miplevel, texture, dims=None):
         ptr = _ffi.new('clobj_t*')
         _handle_error(_lib._create_from_gl_texture(
-            ptr, context.ptr, flags, texture_target, miplevel, texture, dims))
+            ptr, context.ptr, flags, texture_target, miplevel, texture))
         self.ptr = ptr[0]
 
 # }}}
