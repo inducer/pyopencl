@@ -24,6 +24,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+import re
 import six
 import sys
 from six.moves import input, range, intern
@@ -357,26 +358,80 @@ class Program(object):
 
     # {{{ build
 
-    def build(self, options=[], devices=None, cache_dir=None):
-        if isinstance(options, str):
-            options = [options]
-        elif isinstance(options, six.text_type):
-            options = [options.encode("utf8")]
+    _find_unsafe = re.compile(br'[^\w@%+=:,./-]', re.ASCII).search
 
-        if cache_dir is None:
-            cache_dir = getattr(self._context, 'cache_dir', None)
+    @classmethod
+    def _shlex_quote(cls, s):
+        """Return a shell-escaped version of the string *s*."""
+
+        # Stolen from https://hg.python.org/cpython/file/default/Lib/shlex.py#l276
+
+        if not s:
+            return "''"
+
+        if cls._find_unsafe(s) is None:
+            return s
+
+        # use single quotes, and put single quotes into double quotes
+        # the string $'b is then quoted as '$'"'"'b'
+        return b"'" + s.replace(b"'", b"'\"'\"'") + b"'"
+
+    @classmethod
+    def _process_build_options(cls, context, options):
+        if isinstance(options, six.string_types):
+            options = [options]
+
+        def encode_if_necessary(s):
+            if isinstance(s, six.text_type):
+                return s.encode("utf-8")
+            else:
+                return s
 
         options = (options
                 + _DEFAULT_BUILD_OPTIONS
                 + _DEFAULT_INCLUDE_OPTIONS
                 + _PLAT_BUILD_OPTIONS.get(
-                    self._context.devices[0].platform.name, []))
+                    context.devices[0].platform.name, []))
 
         import os
         forced_options = os.environ.get("PYOPENCL_BUILD_OPTIONS")
         if forced_options:
             options = options + forced_options.split()
 
+        # {{{ find include path
+
+        include_path = ["."]
+
+        option_idx = 0
+        while option_idx < len(options):
+            option = options[option_idx].strip()
+            if option.startswith("-I") or option.startswith("/I"):
+                if len(option) == 2:
+                    if option_idx+1 < len(options):
+                        include_path.append(options[option_idx+1])
+                    option_idx += 2
+                else:
+                    include_path.append(option[2:].lstrip())
+                    option_idx += 1
+            else:
+                option_idx += 1
+
+        # }}}
+
+        options = [encode_if_necessary(s) for s in options]
+
+        options = [cls._shlex_quote(s) for s in options]
+
+        return b" ".join(options), include_path
+
+    def build(self, options=[], devices=None, cache_dir=None):
+        options_bytes, include_path = self._process_build_options(
+                self._context, options)
+
+        if cache_dir is None:
+            cache_dir = getattr(self._context, 'cache_dir', None)
+
+        import os
         if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
             self._prg = _cl._Program(self._context, self._source)
 
@@ -384,8 +439,8 @@ class Program(object):
             # uncached
 
             self._build_and_catch_errors(
-                    lambda: self._prg.build(" ".join(options), devices),
-                    options=options)
+                    lambda: self._prg.build(options_bytes, devices),
+                    options=options_bytes)
 
         else:
             # cached
@@ -393,21 +448,21 @@ class Program(object):
             from pyopencl.cache import create_built_program_from_source_cached
             self._prg = self._build_and_catch_errors(
                     lambda: create_built_program_from_source_cached(
-                        self._context, self._source, options, devices,
-                        cache_dir=cache_dir),
+                        self._context, self._source, options_bytes, devices,
+                        cache_dir=cache_dir, include_path=include_path),
                     options=options, source=self._source)
 
             del self._context
 
         return self
 
-    def _build_and_catch_errors(self, build_func, options, source=None):
+    def _build_and_catch_errors(self, build_func, options_bytes, source=None):
         try:
             return build_func()
         except _cl.RuntimeError as e:
             what = e.what
-            if options:
-                what = what + "\n(options: %s)" % " ".join(options)
+            if options_bytes:
+                what = what + "\n(options: %s)" % options_bytes.decode("utf-8")
 
             if source is not None:
                 from tempfile import NamedTemporaryFile
@@ -435,8 +490,9 @@ class Program(object):
     # }}}
 
     def compile(self, options=[], devices=None, headers=[]):
-        options = " ".join(options)
-        return self._prg.compile(options, devices, headers)
+        options_bytes, _ = self._process_build_options(self._context, options)
+
+        return self._prg.compile(options_bytes, devices, headers)
 
     def __eq__(self, other):
         return self._get_prg() == other._get_prg()
@@ -457,8 +513,8 @@ def create_program_with_built_in_kernels(context, devices, kernel_names):
 
 
 def link_program(context, programs, options=[], devices=None):
-    options = " ".join(options)
-    return Program(_Program.link(context, programs, options, devices))
+    options_bytes, _ = Program._process_build_options(context, options)
+    return Program(_Program.link(context, programs, options_bytes, devices))
 
 # }}}
 
@@ -616,13 +672,10 @@ def _add_functionality():
 
         return build_logs
 
-    def program_build(self, options=[], devices=None):
-        if isinstance(options, list):
-            options = " ".join(options)
-
+    def program_build(self, options_bytes, devices=None):
         err = None
         try:
-            self._build(options=options, devices=devices)
+            self._build(options=options_bytes, devices=devices)
         except Error as e:
             what = e.what + "\n\n" + (75*"="+"\n").join(
                     "Build on %s:\n\n%s" % (dev, log)

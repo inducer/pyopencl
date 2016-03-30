@@ -1026,10 +1026,10 @@ class _Program(_Common):
 
     def _build(self, options=None, devices=None):
         if options is None:
-            options = ""
+            options = b""
         # TODO? reverse parameter order
         ptr_devices, num_devices = _clobj_list(devices)
-        _handle_error(_lib.program__build(self.ptr, _to_cstring(options),
+        _handle_error(_lib.program__build(self.ptr, options,
                                           num_devices, ptr_devices))
 
     def get_build_info(self, device, param):

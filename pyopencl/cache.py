@@ -238,10 +238,10 @@ def get_device_cache_id(device):
             device.vendor, device.name, device.version, device.driver_version)
 
 
-def get_cache_key(device, options, src):
+def get_cache_key(device, options_bytes, src):
     checksum = new_hash()
     update_checksum(checksum, src)
-    update_checksum(checksum, " ".join(options))
+    update_checksum(checksum, options_bytes)
     update_checksum(checksum, str(get_device_cache_id(device)))
     return checksum.hexdigest()
 
@@ -321,24 +321,9 @@ class _SourceInfo(Record):
     pass
 
 
-def _create_built_program_from_source_cached(ctx, src, options, devices, cache_dir):
+def _create_built_program_from_source_cached(ctx, src, options_bytes,
+        devices, cache_dir, include_path):
     from os.path import join
-
-    include_path = ["."]
-
-    option_idx = 0
-    while option_idx < len(options):
-        option = options[option_idx].strip()
-        if option.startswith("-I") or option.startswith("/I"):
-            if len(option) == 2:
-                if option_idx+1 < len(options):
-                    include_path.append(options[option_idx+1])
-                option_idx += 2
-            else:
-                include_path.append(option[2:].lstrip())
-                option_idx += 1
-        else:
-            option_idx += 1
 
     if cache_dir is None:
         import appdirs
@@ -360,7 +345,7 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
     if devices is None:
         devices = ctx.devices
 
-    cache_keys = [get_cache_key(device, options, src) for device in devices]
+    cache_keys = [get_cache_key(device, options_bytes, src) for device in devices]
 
     binaries = []
     to_be_built_indices = []
@@ -400,7 +385,7 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
                 uuid4().hex)
 
         prg = _cl._Program(ctx, src)
-        prg.build(options, [devices[i] for i in to_be_built_indices])
+        prg.build(options_bytes, [devices[i] for i in to_be_built_indices])
 
         prg_devs = prg.get_info(_cl.program_info.DEVICES)
         prg_bins = prg.get_info(_cl.program_info.BINARIES)
@@ -435,7 +420,6 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
 
                 for i in to_be_built_indices:
                     cache_key = cache_keys[i]
-                    device = devices[i]
                     binary = binaries[i]
 
                     mod_cache_dir_m = ModuleCacheDirManager(cleanup_m,
@@ -470,12 +454,13 @@ def _create_built_program_from_source_cached(ctx, src, options, devices, cache_d
     return result, already_built
 
 
-def create_built_program_from_source_cached(ctx, src, options=[], devices=None,
-        cache_dir=None):
+def create_built_program_from_source_cached(ctx, src, options_bytes, devices=None,
+        cache_dir=None, include_path=None):
     try:
         if cache_dir is not False:
             prg, already_built = _create_built_program_from_source_cached(
-                    ctx, src, options, devices, cache_dir)
+                    ctx, src, options_bytes, devices, cache_dir,
+                    include_path=include_path)
         else:
             prg = _cl._Program(ctx, src)
             already_built = False
@@ -498,7 +483,7 @@ def create_built_program_from_source_cached(ctx, src, options=[], devices=None,
         already_built = False
 
     if not already_built:
-        prg.build(options, devices)
+        prg.build(options_bytes, devices)
 
     return prg
 
