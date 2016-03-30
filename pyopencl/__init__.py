@@ -440,7 +440,7 @@ class Program(object):
 
             self._build_and_catch_errors(
                     lambda: self._prg.build(options_bytes, devices),
-                    options=options_bytes)
+                    options_bytes=options_bytes)
 
         else:
             # cached
@@ -450,7 +450,7 @@ class Program(object):
                     lambda: create_built_program_from_source_cached(
                         self._context, self._source, options_bytes, devices,
                         cache_dir=cache_dir, include_path=include_path),
-                    options=options, source=self._source)
+                    options_bytes=options_bytes, source=self._source)
 
             del self._context
 
