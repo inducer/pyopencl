@@ -358,7 +358,12 @@ class Program(object):
 
     # {{{ build
 
-    _find_unsafe = re.compile(br'[^\w@%+=:,./-]', re.ASCII).search
+    if six.PY3:
+        _find_unsafe_re_opts = re.ASCII
+    else:
+        _find_unsafe_re_opts = 0
+
+    _find_unsafe = re.compile(br'[^\w@%+=:,./-]', _find_unsafe_re_opts).search
 
     @classmethod
     def _shlex_quote(cls, s):
