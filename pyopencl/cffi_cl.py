@@ -1958,7 +1958,7 @@ class GLTexture(Image, _GLObject):
 
     def __init__(self, context, flags, texture_target, miplevel, texture, dims=None):
         ptr = _ffi.new('clobj_t*')
-        _handle_error(_lib._create_from_gl_texture(
+        _handle_error(_lib.create_from_gl_texture(
             ptr, context.ptr, flags, texture_target, miplevel, texture))
         self.ptr = ptr[0]
 
