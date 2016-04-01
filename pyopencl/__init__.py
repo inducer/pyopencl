@@ -379,7 +379,13 @@ class Program(object):
 
         # use single quotes, and put single quotes into double quotes
         # the string $'b is then quoted as '$'"'"'b'
-        return b"'" + s.replace(b"'", b"'\"'\"'") + b"'"
+        import sys
+        if sys.platform.startswith("win"):
+            # not sure how to escape that
+            assert '"' not in s
+            return b'"' + s + b'"'
+        else:
+            return b"'" + s.replace(b"'", b"'\"'\"'") + b"'"
 
     @classmethod
     def _process_build_options(cls, context, options):
