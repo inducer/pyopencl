@@ -382,7 +382,7 @@ class Program(object):
         import sys
         if sys.platform.startswith("win"):
             # not sure how to escape that
-            assert '"' not in s
+            assert b'"' not in s
             return b'"' + s + b'"'
         else:
             return b"'" + s.replace(b"'", b"'\"'\"'") + b"'"
