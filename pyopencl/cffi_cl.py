@@ -1532,7 +1532,7 @@ def _enqueue_write_image(queue, mem, origin, region, hostbuf, row_pitch=0,
     _event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     # TODO: check buffer size
-    _handle_error(_lib.enqueue_read_image(
+    _handle_error(_lib.enqueue_write_image(
         _event, queue.ptr, mem.ptr, origin, origin_l, region, region_l,
         c_buf, row_pitch, slice_pitch, c_wait_for, num_wait_for,
         bool(is_blocking), NannyEvent._handle(hostbuf, c_ref)))
