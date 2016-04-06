@@ -390,7 +390,17 @@ class Program(object):
     @classmethod
     def _process_build_options(cls, context, options):
         if isinstance(options, six.string_types):
-            options = [options]
+            import shlex
+            if six.PY2:
+                # shlex.split takes bytes (py2 str) on py2
+                if isinstance(options, six.text_type):
+                    options = options.encode("utf-8")
+            else:
+                # shlex.split takes unicode (py3 str) on py3
+                if isinstance(options, six.binary_type):
+                    options = options.decode("utf-8")
+
+            options = shlex.split(options)
 
         def encode_if_necessary(s):
             if isinstance(s, six.text_type):
