@@ -110,13 +110,22 @@ other software to be turned into the corresponding :mod:`pyopencl` objects.
 User-visible Changes
 ====================
 
-Version 2016.1
+Version 2016.2
 --------------
 
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/pyopencl/pyopencl>`_
+
+Version 2016.1
+--------------
+
+* The ``from_int_ptr`` methods now take a *retain* parameter for more convenient
+  ownership management.
+* Kernel build options (if passed as a list) are now properly quoted.
+  (This is a potentially compatibility-breaking change.)
+* Many bug fixes. (GL interop, Windows, event callbacks and more)
 
 Version 2015.2.4
 ----------------

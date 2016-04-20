@@ -12,12 +12,12 @@ include test/*.h
 include examples/*.py
 include examples/*.ipynb
 
-include doc/source/*.rst
+include doc/*.rst
 include doc/Makefile
 include doc/*.py
-include doc/source/conf.py
-include doc/source/_static/*.css
-include doc/source/_templates/*.html
+include doc/conf.py
+include doc/_static/*.css
+include doc/_templates/*.html
 
 include *.py.in
 include configure.py
