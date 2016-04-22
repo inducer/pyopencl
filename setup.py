@@ -96,6 +96,19 @@ def main():
     conf = get_config(get_config_schema(),
             warn_about_no_config=False)
 
+
+    custom_args = ['CL_ENABLE_GL', 'CL_TRACE', 'CL_PRETEND_VERSION']
+
+    new_argv = []
+    for word in sys.argv:
+        arg = word.split('=', 1)
+        k, v = (arg[0], True) if (len(arg) == 1) else arg
+        if k in custom_args:    # if it's one of our options
+            conf[k] = v         # update config
+        else:
+            new_argv.append(word)     # remove from argv so setuptools doesn't get mad
+    sys.argv = new_argv
+
     extra_defines = {}
 
     extra_defines["PYGPU_PACKAGE"] = "pyopencl"
