@@ -3,7 +3,8 @@
 struct clbase;
 typedef struct clbase *clobj_t;
 
-// Types
+// {{{ types
+
 typedef enum {
     TYPE_FLOAT,
     TYPE_INT,
@@ -46,8 +47,10 @@ typedef struct {
     int dontfree;
 } generic_info;
 
+// }}}
 
-// Generic functions
+// {{{ generic functions
+
 int get_cl_version();
 void free_pointer(void*);
 void free_pointer_array(void**, uint32_t size);
@@ -60,12 +63,18 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value));
 int get_debug();
 void set_debug(int debug);
 
-// Platform
+// }}}
+
+// {{{ platform
+
 error *get_platforms(clobj_t **ptr_platforms, uint32_t *num_platforms);
 error *platform__get_devices(clobj_t platform, clobj_t **ptr_devices,
                              uint32_t *num_devices, cl_device_type devtype);
 error *platform__unload_compiler(clobj_t plat);
-// Device
+
+// }}}
+
+// {{{ device
 error *device__create_sub_devices(clobj_t _dev, clobj_t **_devs,
                                   uint32_t *num_devices,
                                   const cl_device_partition_property *props);
@@ -83,25 +92,46 @@ error *create_context_from_type(clobj_t *_ctx,
 error *context__get_supported_image_formats(clobj_t context, cl_mem_flags flags,
                                             cl_mem_object_type image_type,
                                             generic_info *out);
-// Command Queue
+
+// }}}
+
+// {{{ command Queue
+
 error *create_command_queue(clobj_t *queue, clobj_t context, clobj_t device,
                             cl_command_queue_properties properties);
 error *command_queue__finish(clobj_t queue);
 error *command_queue__flush(clobj_t queue);
-// Buffer
+
+// }}}
+
+// {{{ buffer
 error *create_buffer(clobj_t *buffer, clobj_t context, cl_mem_flags flags,
                      size_t size, void *hostbuf);
 error *buffer__get_sub_region(clobj_t *_sub_buf, clobj_t _buf, size_t orig,
                               size_t size, cl_mem_flags flags);
-// Memory Object
+
+// }}}
+
+// {{{ memory object
+
 error *memory_object__release(clobj_t obj);
 error *memory_object__get_host_array(clobj_t, void **hostptr, size_t *size);
-// Memory Map
+
+// }}}
+
+// {{{ memory map
 error *memory_map__release(clobj_t _map, clobj_t _queue,
                            const clobj_t *_wait_for, uint32_t num_wait_for,
                            clobj_t *evt);
 void *memory_map__data(clobj_t _map);
-// Program
+
+// }}}
+
+// {{{ svm
+// }}}
+
+// {{{ program
+
 error *create_program_with_source(clobj_t *program, clobj_t context,
                                   const char *src);
 error *create_program_with_binary(clobj_t *program, clobj_t context,
@@ -124,10 +154,18 @@ error *program__link(clobj_t *_prg, clobj_t _ctx, const clobj_t *_prgs,
                      size_t num_prgs, const char *opts,
                      const clobj_t *_devs, size_t num_devs);
 error *program__all_kernels(clobj_t _prg, clobj_t **_knl, uint32_t *size);
-// Sampler
+
+// }}}
+
+// {{{ sampler
+
 error *create_sampler(clobj_t *sampler, clobj_t context, int norm_coords,
                       cl_addressing_mode am, cl_filter_mode fm);
-// Kernel
+
+// }}}
+
+// {{{ kernel
+
 error *create_kernel(clobj_t *kernel, clobj_t program, const char *name);
 error *kernel__set_arg_null(clobj_t kernel, cl_uint arg_index);
 error *kernel__set_arg_mem(clobj_t kernel, cl_uint arg_index, clobj_t mem);
@@ -140,7 +178,10 @@ error *kernel__get_work_group_info(clobj_t kernel,
                                    clobj_t device, generic_info *out);
 error *kernel__get_arg_info(clobj_t _knl, cl_uint idx,
                             cl_kernel_arg_info param, generic_info *out);
-// Image
+
+// }}}
+
+// {{{ image
 error *create_image_2d(clobj_t *image, clobj_t context, cl_mem_flags flags,
                        cl_image_format *fmt, size_t width, size_t height,
                        size_t pitch, void *buffer);
@@ -154,18 +195,32 @@ error *create_image_from_desc(clobj_t *img, clobj_t _ctx, cl_mem_flags flags,
 error *image__get_image_info(clobj_t img, cl_image_info param,
                              generic_info *out);
 type_t image__get_fill_type(clobj_t img);
-// Event
+// }}}
+
+// {{{ event
+
 error *event__get_profiling_info(clobj_t event, cl_profiling_info param,
                                  generic_info *out);
 error *event__wait(clobj_t event);
 error *event__set_callback(clobj_t _evt, cl_int type, void *pyobj);
 error *wait_for_events(const clobj_t *_wait_for, uint32_t num_wait_for);
-// Nanny Event
+
+// }}}
+
+// {{{ nanny event
+
 void *nanny_event__get_ward(clobj_t evt);
-// User Event
+
+// }}}
+
+// {{{ user event
+
 error *create_user_event(clobj_t *_evt, clobj_t _ctx);
 error *user_event__set_status(clobj_t _evt, cl_int status);
-// enqueue_*
+
+// }}}
+
+// {{{ enqueue_*
 error *enqueue_nd_range_kernel(clobj_t *event, clobj_t queue,
                                clobj_t kernel, cl_uint work_dim,
                                const size_t *global_work_offset,
@@ -245,7 +300,11 @@ error *enqueue_copy_buffer_rect(clobj_t *evt, clobj_t _queue, clobj_t _src,
                                 const size_t *_dst_pitches,
                                 size_t dst_pitches_l, const clobj_t *_wait_for,
                                 uint32_t num_wait_for);
-// enqueue_*_image*
+
+// }}}
+
+// {{{ enqueue_*_image*
+
 error *enqueue_read_image(clobj_t *event, clobj_t queue, clobj_t mem,
                           const size_t *origin, size_t origin_l,
                           const size_t *region, size_t region_l,
@@ -286,8 +345,16 @@ error *enqueue_copy_buffer_to_image(clobj_t *evt, clobj_t _queue, clobj_t _src,
                                     const size_t *_orig, size_t,
                                     const size_t *_reg, size_t,
                                     const clobj_t *_wait_for, uint32_t);
-// CL Object
+
+// }}}
+
+// {{{ cl object
+
 intptr_t clobj__int_ptr(clobj_t obj);
 error *clobj__get_info(clobj_t obj, cl_uint param, generic_info *out);
 void clobj__delete(clobj_t obj);
 error *clobj__from_int_ptr(clobj_t *out, intptr_t ptr, class_t, int);
+
+// }}}
+
+// vim: foldmethod=marker
