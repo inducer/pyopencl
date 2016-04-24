@@ -239,17 +239,15 @@ error *enqueue_wait_for_events(clobj_t _queue, const clobj_t *_wait_for,
                                uint32_t num_wait_for);
 error *enqueue_marker(clobj_t *event, clobj_t queue);
 error *enqueue_barrier(clobj_t queue);
-/* FIXME reenable
 error *enqueue_migrate_mem_objects(clobj_t *evt, clobj_t _queue,
                                    const clobj_t *_mem_obj, uint32_t,
                                    cl_mem_migration_flags flags,
-                                   const clobj_t *_wait_for, uint32_t);
-error *enqueue_migrate_mem_object_ext(clobj_t *evt, clobj_t _queue,
-                                      const clobj_t *_mem_obj, uint32_t,
-                                      cl_mem_migration_flags_ext flags,
-                                      const clobj_t *_wait_for, uint32_t);
-*/
-// enqueue_*_buffer*
+                                   const clobj_t *_wait_for, uint32_t num_wait_for);
+
+// }}}
+
+// {{{ enqueue_*_buffer*
+
 error *enqueue_read_buffer(clobj_t *event, clobj_t queue, clobj_t mem,
                            void *buffer, size_t size, size_t device_offset,
                            const clobj_t *wait_for, uint32_t num_wait_for,
