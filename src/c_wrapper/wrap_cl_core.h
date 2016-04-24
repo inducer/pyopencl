@@ -78,12 +78,11 @@ error *platform__unload_compiler(clobj_t plat);
 error *device__create_sub_devices(clobj_t _dev, clobj_t **_devs,
                                   uint32_t *num_devices,
                                   const cl_device_partition_property *props);
-/* FIXME reenable
-error *device__create_sub_devices_ext(clobj_t _dev, clobj_t **_devs,
-                                      uint32_t *num_devices,
-                                      const cl_device_partition_property_ext*);
-*/
-// Context
+
+// }}}
+
+// {{{ context
+
 error *create_context(clobj_t *ctx, const cl_context_properties *props,
                       cl_uint num_devices, const clobj_t *ptr_devices);
 error *create_context_from_type(clobj_t *_ctx,
