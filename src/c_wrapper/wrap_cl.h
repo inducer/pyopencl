@@ -151,7 +151,7 @@ extern "C" {
 }
 #endif
 
-#if defined __GUNC__ || defined __GNUG__
+#if defined __GNUC__ || defined __GNUG__
 #define PYOPENCL_USE_RESULT __attribute__((warn_unused_result))
 #else
 #define PYOPENCL_USE_RESULT
