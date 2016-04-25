@@ -21,10 +21,19 @@
 #define PYOPENCL_CL_CASTABLE_THIS data()
 #endif
 
+// discouraged, assumes 'version linearity', use PYOPENCL_UNSUPPORTED_BEFORE
 #define PYOPENCL_UNSUPPORTED(ROUTINE, VERSION) \
     auto err = (error*)malloc(sizeof(error)); \
     err->routine = strdup(#ROUTINE); \
     err->msg = strdup("unsupported in " VERSION); \
+    err->code = CL_INVALID_VALUE; \
+    err->other = 0; \
+    return err;
+
+#define PYOPENCL_UNSUPPORTED_BEFORE(ROUTINE, VERSION) \
+    auto err = (error*)malloc(sizeof(error)); \
+    err->routine = strdup(#ROUTINE); \
+    err->msg = strdup("unsupported before " VERSION); \
     err->code = CL_INVALID_VALUE; \
     err->other = 0; \
     return err;

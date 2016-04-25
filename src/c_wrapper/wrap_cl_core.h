@@ -119,6 +119,7 @@ error *memory_object__get_host_array(clobj_t, void **hostptr, size_t *size);
 // }}}
 
 // {{{ memory map
+
 error *memory_map__release(clobj_t _map, clobj_t _queue,
                            const clobj_t *_wait_for, uint32_t num_wait_for,
                            clobj_t *evt);
@@ -127,6 +128,43 @@ void *memory_map__data(clobj_t _map);
 // }}}
 
 // {{{ svm
+
+error* svm_alloc(
+    clobj_t _ctx, cl_mem_flags flags, size_t size, cl_uint alignment,
+    void **result);
+error* svm_free(clobj_t _ctx, void *svm_pointer);
+error* enqueue_svm_free(
+    clobj_t *evt, clobj_t _queue,
+    cl_uint num_svm_pointers,
+    void *svm_pointers[],
+    const clobj_t *_wait_for, uint32_t num_wait_for);
+error* enqueue_svm_memcpy(
+    clobj_t *evt, clobj_t _queue,
+    cl_bool is_blocking,
+    void *dst_ptr, const void *src_ptr, size_t size,
+    const clobj_t *_wait_for, uint32_t num_wait_for);
+error* enqueue_svm_memfill(
+    clobj_t *evt, clobj_t _queue,
+    void *svm_ptr,
+    const void *pattern, size_t pattern_size, size_t size,
+    const clobj_t *_wait_for, uint32_t num_wait_for);
+error* enqueue_svm_map(
+    clobj_t *evt, clobj_t _queue,
+    cl_bool blocking_map, cl_map_flags map_flags,
+    void *svm_ptr, size_t size,
+    const clobj_t *_wait_for, uint32_t num_wait_for);
+error* enqueue_svm_unmap(
+    clobj_t *evt, clobj_t _queue,
+    void *svm_ptr,
+    const clobj_t *_wait_for, uint32_t num_wait_for);
+error* enqueue_svm_migrate_mem(
+    clobj_t *evt, clobj_t _queue,
+    cl_uint num_svm_pointers,
+    const void **svm_pointers,
+    const size_t *sizes,
+    cl_mem_migration_flags flags,
+    const clobj_t *_wait_for, uint32_t num_wait_for);
+
 // }}}
 
 // {{{ program

@@ -93,7 +93,7 @@ enqueue_marker_with_wait_list(clobj_t *evt, clobj_t _queue,
                                   wait_for, event_out(evt));
         });
 #else
-    PYOPENCL_UNSUPPORTED(clEnqueueMarkerWithWaitList, "CL 1.1 and below")
+    PYOPENCL_UNSUPPORTED_BEFORE(clEnqueueMarkerWithWaitList, "CL 1.2")
 #endif
 }
 
@@ -109,7 +109,7 @@ enqueue_barrier_with_wait_list(clobj_t *evt, clobj_t _queue,
                                   wait_for, event_out(evt));
         });
 #else
-    PYOPENCL_UNSUPPORTED(clEnqueueBarrierWithWaitList, "CL 1.1 and below")
+    PYOPENCL_UNSUPPORTED_BEFORE(clEnqueueBarrierWithWaitList, "CL 1.2")
 #endif
 }
 

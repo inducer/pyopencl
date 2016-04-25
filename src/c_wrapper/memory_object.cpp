@@ -111,6 +111,6 @@ enqueue_migrate_mem_objects(clobj_t *evt, clobj_t _queue,
                                   mem_obj, flags, wait_for, event_out(evt));
         });
 #else
-    PYOPENCL_UNSUPPORTED(clEnqueueMigrateMemObjects, "CL 1.1 and below")
+    PYOPENCL_UNSUPPORTED_BEFORE(clEnqueueMigrateMemObjects, "CL 1.2")
 #endif
 }
