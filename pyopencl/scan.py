@@ -764,7 +764,7 @@ _PREFIX_WORDS = set("""
         group_base seg_end my_val DEBUG ARGS
         ints_to_store ints_per_wg scan_types_per_int linear_index
         linear_scan_data_idx dest src store_base wrapped_scan_type
-        dummy
+        dummy scan_tmp
 
         LID_2 LID_1 LID_0
         LDIM_0 LDIM_1 LDIM_2
@@ -1419,11 +1419,12 @@ DEBUG_SCAN_TEMPLATE = SHARED_PREAMBLE + r"""//CL//
 KERNEL
 REQD_WG_SIZE(1, 1, 1)
 void ${name_prefix}_debug_scan(
+    __global scan_type *scan_tmp,
     ${argument_signature},
     const index_type N)
 {
-    scan_type item = ${neutral};
-    scan_type last_item;
+    scan_type current = ${neutral};
+    scan_type prev;
 
     for (index_type i = 0; i < N; ++i)
     {
@@ -1439,18 +1440,31 @@ void ${name_prefix}_debug_scan(
 
         scan_type my_val = INPUT_EXPR(i);
 
-        last_item = item;
+        prev = current;
         %if is_segmented:
             bool is_seg_start = IS_SEG_START(i, my_val);
         %endif
 
-        item = SCAN_EXPR(last_item, my_val,
+        current = SCAN_EXPR(prev, my_val,
             %if is_segmented:
                 is_seg_start
             %else:
                 false
             %endif
             );
+        scan_tmp[i] = current;
+    }
+
+    scan_type last_item = scan_tmp[N-1];
+
+    for (index_type i = 0; i < N; ++i)
+    {
+        scan_type item = scan_tmp[i];
+        scan_type prev_item;
+        if (i)
+            prev_item = scan_tmp[i-1];
+        else
+            prev_item = ${neutral};
 
         {
             ${output_statement};
@@ -1477,7 +1491,8 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         self.kernel = getattr(
                 scan_prg, self.name_prefix+"_debug_scan")
         scalar_arg_dtypes = (
-                get_arg_list_scalar_arg_dtypes(self.parsed_args)
+                [None]
+                + get_arg_list_scalar_arg_dtypes(self.parsed_args)
                 + [self.index_dtype])
         self.kernel.set_scalar_arg_dtypes(scalar_arg_dtypes)
 
@@ -1500,7 +1515,11 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         if n is None:
             n, = first_array.shape
 
-        data_args = []
+        scan_tmp = cl.array.empty(queue,
+                n, dtype=self.dtype,
+                allocator=allocator)
+
+        data_args = [scan_tmp.data]
         from pyopencl.tools import VectorArg
         for arg_descr, arg_val in zip(self.parsed_args, args):
             if isinstance(arg_descr, VectorArg):

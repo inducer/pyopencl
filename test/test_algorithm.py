@@ -38,7 +38,8 @@ import pyopencl.array as cl_array  # noqa
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
-from pyopencl.scan import InclusiveScanKernel, ExclusiveScanKernel
+from pyopencl.scan import (InclusiveScanKernel, ExclusiveScanKernel,
+        GenericScanKernel, GenericDebugScanKernel)
 
 
 # {{{ elementwise
@@ -668,7 +669,6 @@ def test_segmented_scan(ctx_factory):
         else:
             output_statement = "out[i] = item"
 
-        from pyopencl.scan import GenericScanKernel
         knl = GenericScanKernel(context, dtype,
                 arguments="__global %s *ary, __global char *segflags, "
                     "__global %s *out" % (ctype, ctype),
@@ -748,7 +748,8 @@ def test_segmented_scan(ctx_factory):
             print("%d excl:%s done" % (n, is_exclusive))
 
 
-def test_sort(ctx_factory):
+@pytest.mark.parametrize("scan_kernel", [GenericScanKernel, GenericDebugScanKernel])
+def test_sort(ctx_factory, scan_kernel):
     from pytest import importorskip
     importorskip("mako")
 
@@ -759,7 +760,7 @@ def test_sort(ctx_factory):
 
     from pyopencl.algorithm import RadixSort
     sort = RadixSort(context, "int *ary", key_expr="ary[i]",
-            sort_arg_names=["ary"])
+            sort_arg_names=["ary"], scan_kernel=scan_kernel)
 
     from pyopencl.clrandom import RanluxGenerator
     rng = RanluxGenerator(queue, seed=15)
@@ -768,6 +769,9 @@ def test_sort(ctx_factory):
 
     # intermediate arrays for largest size cause out-of-memory on low-end GPUs
     for n in scan_test_counts[:-1]:
+        if n >= 2000 and isinstance(scan_kernel, GenericDebugScanKernel):
+            continue
+
         print(n)
 
         print("  rng")
@@ -785,7 +789,7 @@ def test_sort(ctx_factory):
 
         numpy_elapsed = numpy_end-dev_end
         dev_elapsed = dev_end-dev_start
-        print ("  dev: %.2f MKeys/s numpy: %.2f MKeys/s ratio: %.2fx" % (
+        print("  dev: %.2f MKeys/s numpy: %.2f MKeys/s ratio: %.2fx" % (
                 1e-6*n/dev_elapsed, 1e-6*n/numpy_elapsed, numpy_elapsed/dev_elapsed))
         assert (a_dev_sorted.get() == a_sorted).all()
 
