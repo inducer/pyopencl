@@ -118,6 +118,10 @@ Version 2016.2
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/pyopencl/pyopencl>`_
 
+* Deprecate RANLUXCL. It will be removed in the 2018.x series of PyOpenCL.
+* Introduce Random123 random number generators. See :mod:`pyopencl.clrandom`
+  for more information.
+
 Version 2016.1
 --------------
 

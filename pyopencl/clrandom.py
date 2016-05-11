@@ -1,8 +1,7 @@
 # encoding: utf8
-from __future__ import division
-from __future__ import absolute_import
+from __future__ import division, absolute_import
 
-__copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
+__copyright__ = "Copyright (C) 2009-16 Andreas Kloeckner"
 
 __license__ = """
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,27 +27,36 @@ THE SOFTWARE.
 # {{{ documentation
 
 __doc__ = u"""
-PyOpenCL now includes and uses the `RANLUXCL random number generator
-<https://bitbucket.org/ivarun/ranluxcl/>`_ by Ivar Ursin Nikolaisen.  In
-addition to being usable through the convenience functions above, it is
-available in any piece of code compiled through PyOpenCL by::
+PyOpenCL now includes and uses some of the `Random123 random number generators
+<https://www.deshawresearch.com/resources_random123.html>`_ by D.E. Shaw
+Research.  In addition to being usable through the convenience functions above,
+they are available in any piece of code compiled through PyOpenCL by::
 
-    #include <pyopencl-ranluxcl.cl>
+    #include <pyopencl-philox.cl>
+    #include <pyopencl-threefry.cl>
 
-See the `source
-<https://github.com/pyopencl/pyopencl/blob/master/src/cl/pyopencl-ranluxcl.cl>`_
-for some documentation if you're planning on using RANLUXCL directly.
+See the `Philox source
+<https://github.com/pyopencl/pyopencl/blob/master/src/cl/pyopencl-philox.cl>`_
+and the `Threefry source
+<https://github.com/pyopencl/pyopencl/blob/master/src/cl/pyopencl-threefish.cl>`_
+for some documentation if you're planning on using Random123 directly.
 
-The RANLUX generator is described in the following two articles. If you use the
-generator for scientific purposes, please consider citing them:
+.. note::
 
-* Martin Lüscher, A portable high-quality random number generator for lattice
-  field theory simulations, `Computer Physics Communications 79 (1994) 100-110
-  <http://dx.doi.org/10.1016/0010-4655(94)90232-1>`_
+    PyOpenCL previously had documented support for the `RANLUXCL random number
+    generator <https://bitbucket.org/ivarun/ranluxcl/>`_ by Ivar Ursin
+    Nikolaisen.  This support is now deprecated because of the general slowness
+    of these generators and will be removed from PyOpenCL in the 2018.x series.
+    All users are encouraged to switch to one of the Random123 genrators,
+    :class:`PhiloxGenerator` or :class:`ThreefryGenerator`.
 
-* F. James, RANLUX: A Fortran implementation of the high-quality pseudorandom
-  number generator of Lüscher, `Computer Physics Communications 79 (1994) 111-114
-  <http://dx.doi.org/10.1016/0010-4655(94)90233-X>`_
+.. autoclass:: PhiloxGenerator
+
+.. autoclass:: ThreefryGenerator
+
+.. autofunction:: rand
+.. autofunction:: fill_rand
+
 """
 
 # }}}
@@ -61,8 +69,14 @@ from pytools import memoize_method
 import numpy as np
 
 
+# {{{ RanluxGenerator (deprecated)
+
 class RanluxGenerator(object):
     """
+    .. warning::
+
+        This class is deprecated, to be removed in PyOpenCL 2018.x.
+
     .. versionadded:: 2011.2
 
     .. attribute:: state
@@ -390,20 +404,308 @@ class RanluxGenerator(object):
         self.get_sync_kernel()(queue, (self.num_work_items,),
                 self.wg_size, self.state.data)
 
+# }}}
+
+
+# {{{ Random123 generators
+
+class Random123GeneratorBase(object):
+    """
+    .. versionadded:: 2016.2
+
+    .. automethod:: fill_uniform
+    .. automethod:: uniform
+    .. automethod:: fill_normal
+    .. automethod:: normal
+    """
+
+    def __init__(self, context, key=None, counter=None):
+        int32_info = np.iinfo(np.int32)
+
+        if key is None:
+            from random import randrange
+            key = [randrange(int(int32_info.min), int(int32_info.max)+1)
+                    for i in range(self.key_length-1)]
+        if counter is None:
+            from random import randrange
+            counter = [randrange(int(int32_info.min), int(int32_info.max)+1)
+                    for i in range(4)]
+
+        self.context = context
+        self.key = key
+        self.counter = counter
+
+        self.counter_max = int32_info.max
+
+    @memoize_method
+    def get_gen_kernel(self, dtype, distribution):
+        size_multiplier = 1
+        arg_dtype = dtype
+
+        rng_key = (distribution, dtype)
+
+        if rng_key in [("uniform", np.float64), ("normal", np.float64)]:
+            c_type = "double"
+            scale1_const = "((double) %r)" % (1/2**32)
+            scale2_const = "((double) %r)" % (1/2**64)
+            if distribution == "normal":
+                transform = "box_muller"
+            else:
+                transform = ""
+
+            rng_expr = (
+                    "shift + scale * "
+                    "%s( %s * convert_double4(gen)"
+                    "+ %s * convert_double4(gen))"
+                    % (transform, scale1_const, scale2_const))
+
+            counter_multiplier = 2
+
+        elif rng_key in [(dist, cmp_dtype)
+                for dist in ["normal", "uniform"]
+                for cmp_dtype in [
+                    np.float32,
+                    cl.array.vec.float2,
+                    cl.array.vec.float3,
+                    cl.array.vec.float4,
+                    ]]:
+            c_type = "float"
+            scale_const = "((float) %r)" % (1/2**32)
+
+            if distribution == "normal":
+                transform = "box_muller"
+            else:
+                transform = ""
+
+            rng_expr = (
+                    "shift + scale * %s(%s * convert_float4(gen))"
+                    % (transform, scale_const))
+            counter_multiplier = 1
+            arg_dtype = np.float32
+            try:
+                _, size_multiplier = cl.array.vec.type_to_scalar_and_count[dtype]
+            except KeyError:
+                pass
+
+        elif rng_key == ("uniform", np.int32):
+            c_type = "int"
+            rng_expr = (
+                    "shift + convert_int4((convert_long4(gen) * scale) / %s)"
+                    % (str(2**32)+"l")
+                    )
+            counter_multiplier = 1
+
+        elif rng_key == ("uniform", np.int64):
+            c_type = "long"
+            rng_expr = (
+                    "shift"
+                    "+ convert_long4(gen) * (scale/two32) "
+                    "+ ((convert_long4(gen) * scale) / two32)"
+                    .replace("two32", (str(2**32)+"l")))
+            counter_multiplier = 2
+
+        else:
+            raise TypeError(
+                    "unsupported RNG distribution/data type combination '%s/%s'"
+                    % rng_key)
+
+        src = """//CL//
+            #include <%(header_name)s>
+
+            typedef %(output_t)s output_t;
+            typedef %(output_t)s4 output_vec_t;
+            typedef %(gen_name)s_ctr_t ctr_t;
+            typedef %(gen_name)s_key_t key_t;
+
+            uint4 gen_bits(key_t *key, ctr_t *ctr)
+            {
+                union {
+                    ctr_t ctr_el;
+                    uint4 vec_el;
+                } u;
+
+                u.ctr_el = %(gen_name)s(*ctr, *key);
+                if (++ctr->v[0] == 0)
+                    if (++ctr->v[1] == 0)
+                        ++ctr->v[2];
+
+                return u.vec_el;
+            }
+
+            #if %(include_box_muller)s
+            output_vec_t box_muller(output_vec_t x)
+            {
+                #define BOX_MULLER(I, COMPA, COMPB) \
+                    output_t r##I = sqrt(-2*log(x.COMPA)); \
+                    output_t c##I; \
+                    output_t s##I = sincos((output_t) (2*M_PI) * x.COMPB, &c##I);
+
+                BOX_MULLER(0, x, y);
+                BOX_MULLER(1, z, w);
+                return (output_vec_t) (r0*c0, r0*s0, r1*c1, r1*s1);
+            }
+            #endif
+
+            #define GET_RANDOM_NUM(gen) %(rng_expr)s
+
+            kernel void generate(
+                int k1,
+                #if %(key_length)s > 2
+                int k2, int k3,
+                #endif
+                int c0, int c1, int c2, int c3,
+                global output_t *output,
+                long out_size,
+                output_t scale,
+                output_t shift)
+            {
+                #if %(key_length)s == 2
+                key_t k = {{get_global_id(0), k1}};
+                #else
+                key_t k = {{get_global_id(0), k1, k2, k3}};
+                #endif
+
+                ctr_t c = {{c0, c1, c2, c3}};
+
+                // output bulk
+                unsigned long idx = get_global_id(0)*4;
+                while (idx + 4 < out_size)
+                {
+                    *(global output_vec_t *) (output + idx) =
+                        GET_RANDOM_NUM(gen_bits(&k, &c));
+                    idx += 4*get_global_size(0);
+                }
+
+                // output tail
+                output_vec_t tail_ran = GET_RANDOM_NUM(gen_bits(&k, &c));
+                if (idx < out_size)
+                  output[idx] = tail_ran.x;
+                if (idx+1 < out_size)
+                  output[idx+1] = tail_ran.y;
+                if (idx+2 < out_size)
+                  output[idx+2] = tail_ran.z;
+                if (idx+3 < out_size)
+                  output[idx+3] = tail_ran.w;
+            }
+            """ % {
+                "gen_name": self.generator_name,
+                "header_name": self.header_name,
+                "output_t": c_type,
+                "key_length": self.key_length,
+                "include_box_muller": int(distribution == "normal"),
+                "rng_expr": rng_expr
+                }
+
+        prg = cl.Program(self.context, src).build()
+        knl = prg.generate
+        knl.set_scalar_arg_dtypes(
+                [np.int32] * (self.key_length - 1 + 4)
+                + [None, np.int64, arg_dtype, arg_dtype])
+
+        return knl, counter_multiplier, size_multiplier
+
+    def _fill(self, distribution, ary, scale, shift, queue=None):
+        """Fill *ary* with uniformly distributed random numbers in the interval
+        *(a, b)*, endpoints excluded.
+
+        :return: a :class:`pyopencl.Event`
+        """
+
+        if queue is None:
+            queue = ary.queue
+
+        knl, counter_multiplier, size_multiplier = \
+                self.get_gen_kernel(ary.dtype, distribution)
+
+        args = self.key + self.counter + [
+                ary.data, ary.size*size_multiplier,
+                scale, shift]
+
+        n = ary.size
+        from pyopencl.array import splay
+        gsize, lsize = splay(queue, ary.size)
+
+        evt = knl(queue, gsize, lsize, *args)
+
+        self.counter[0] += n * counter_multiplier
+        c1_incr, self.counter[0] = divmod(self.counter[0], self.counter_max)
+        if c1_incr:
+            self.counter[1] += c1_incr
+            c2_incr, self.counter[1] = divmod(self.counter[1], self.counter_max)
+            self.counter[2] += c2_incr
+
+        return evt
+
+    def fill_uniform(self, ary, a=0, b=1, queue=None):
+        return self._fill("uniform", ary,
+                scale=(b-a), shift=a, queue=queue)
+
+    def uniform(self, *args, **kwargs):
+        """Make a new empty array, apply :meth:`fill_uniform` to it.
+        """
+        a = kwargs.pop("a", 0)
+        b = kwargs.pop("b", 1)
+
+        result = cl_array.empty(*args, **kwargs)
+
+        self.fill_uniform(result, queue=result.queue, a=a, b=b)
+        return result
+
+    def fill_normal(self, ary, mu=0, sigma=1, queue=None):
+        """Fill *ary* with normally distributed numbers with mean *mu* and
+        standard deviation *sigma*.
+        """
+
+        return self._fill("normal", ary, scale=sigma, shift=mu, queue=queue)
+
+    def normal(self, *args, **kwargs):
+        """Make a new empty array, apply :meth:`fill_normal` to it.
+        """
+        mu = kwargs.pop("mu", 0)
+        sigma = kwargs.pop("sigma", 1)
+
+        result = cl_array.empty(*args, **kwargs)
+
+        result.add_event(
+                self.fill_normal(result, queue=result.queue, mu=mu, sigma=sigma))
+        return result
+
+
+class PhiloxGenerator(Random123GeneratorBase):
+    header_name = "pyopencl-random123/philox.cl"
+    generator_name = "philox4x32"
+    key_length = 2
+
+
+class ThreefryGenerator(Random123GeneratorBase):
+    header_name = "pyopencl-random123/threefry.cl"
+    generator_name = "threefry4x32"
+    key_length = 4
+
+# }}}
+
 
 @first_arg_dependent_memoize
-def _get_generator(queue, luxury=None):
-    gen = RanluxGenerator(queue, luxury=luxury)
-    queue.finish()
+def _get_generator(context):
+    if context.devices[0].type & cl.device_type.CPU:
+        gen = PhiloxGenerator(context)
+    else:
+        gen = ThreefryGenerator(context)
+
     return gen
 
 
-def fill_rand(result, queue=None, luxury=4, a=0, b=1):
+def fill_rand(result, queue=None, luxury=None, a=0, b=1):
     """Fill *result* with random values of `dtype` in the range [0,1).
     """
+    if luxury is not None:
+        from warnings import warn
+        warn("Specifying the 'luxury' argument is deprecated and will stop being "
+                "supported in PyOpenCL 2018.x", stacklevel=2)
+
     if queue is None:
         queue = result.queue
-    gen = _get_generator(queue, luxury=luxury)
+    gen = _get_generator(queue.context)
     gen.fill_uniform(result, a=a, b=b)
 
 
@@ -412,8 +714,13 @@ def rand(queue, shape, dtype, luxury=None, a=0, b=1):
     in the range [a,b).
     """
 
+    if luxury is not None:
+        from warnings import warn
+        warn("Specifying the 'luxury' argument is deprecated and will stop being "
+                "supported in PyOpenCL 2018.x", stacklevel=2)
+
     from pyopencl.array import Array
-    gen = _get_generator(queue, luxury)
+    gen = _get_generator(queue.context)
     result = Array(queue, shape, dtype)
     result.add_event(
             gen.fill_uniform(result, a=a, b=b))

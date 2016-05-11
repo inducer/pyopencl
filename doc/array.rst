@@ -292,14 +292,3 @@ Generating Arrays of Random Numbers
 -----------------------------------
 
 .. automodule:: pyopencl.clrandom
-
-    .. autoclass:: RanluxGenerator
-
-        .. automethod:: fill_uniform
-        .. automethod:: uniform
-        .. automethod:: fill_normal
-        .. automethod:: normal
-        .. automethod:: synchronize
-
-    .. autofunction:: rand
-    .. autofunction:: fill_rand

@@ -38,6 +38,8 @@ from pyopencl.tools import (  # noqa
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 from pyopencl.cffi_cl import _PYPY
 
+from pyopencl.clrandom import RanluxGenerator, PhiloxGenerator, ThreefryGenerator
+
 
 # {{{ helpers
 
@@ -413,54 +415,79 @@ def test_divide_array(ctx_factory):
 
 # {{{ RNG
 
-def test_random_float_in_range(ctx_factory):
+@pytest.mark.parametrize("rng_class",
+        [RanluxGenerator, PhiloxGenerator, ThreefryGenerator])
+@pytest.mark.parametrize("ary_size", [300, 301, 302, 303, 10007])
+def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
-
-    from pyopencl.clrandom import RanluxGenerator
 
     if has_double_support(context.devices[0]):
         dtypes = [np.float32, np.float64]
     else:
         dtypes = [np.float32]
 
-    gen = RanluxGenerator(queue, 5120)
+    if rng_class is RanluxGenerator:
+        gen = rng_class(queue, 5120)
+    else:
+        gen = rng_class(context)
 
-    for ary_size in [300, 301, 302, 303, 10007]:
-        for dtype in dtypes:
-            ran = cl_array.zeros(queue, ary_size, dtype)
-            gen.fill_uniform(ran)
-            assert (0 < ran.get()).all()
-            assert (ran.get() < 1).all()
+    for dtype in dtypes:
+        print(dtype)
+        ran = cl_array.zeros(queue, ary_size, dtype)
+        gen.fill_uniform(ran)
 
+        if plot_hist:
+            import matplotlib.pyplot as pt
+            pt.hist(ran.get(), 30)
+            pt.show()
+
+        assert (0 < ran.get()).all()
+        assert (ran.get() < 1).all()
+
+        if rng_class is RanluxGenerator:
             gen.synchronize(queue)
 
-            ran = cl_array.zeros(queue, ary_size, dtype)
-            gen.fill_uniform(ran, a=4, b=7)
-            assert (4 < ran.get()).all()
-            assert (ran.get() < 7).all()
+        ran = cl_array.zeros(queue, ary_size, dtype)
+        gen.fill_uniform(ran, a=4, b=7)
+        assert (4 < ran.get()).all()
+        assert (ran.get() < 7).all()
 
-            ran = gen.normal(queue, (10007,), dtype, mu=4, sigma=3)
+        ran = gen.normal(queue, ary_size, dtype, mu=10, sigma=3)
+
+        if plot_hist:
+            import matplotlib.pyplot as pt
+            pt.hist(ran.get(), 30)
+            pt.show()
 
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-def test_random_int_in_range(ctx_factory, dtype):
+@pytest.mark.parametrize("rng_class",
+        [RanluxGenerator, PhiloxGenerator, ThreefryGenerator])
+def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    from pyopencl.clrandom import RanluxGenerator
-    gen = RanluxGenerator(queue, 5120)
+    if rng_class is RanluxGenerator:
+        gen = rng_class(queue, 5120)
+    else:
+        gen = rng_class(context)
 
-    if (dtype == np.int64
-            and context.devices[0].platform.vendor.startswith("Advanced Micro")):
-        pytest.xfail("AMD miscompiles 64-bit RNG math")
+    # if (dtype == np.int64
+    #         and context.devices[0].platform.vendor.startswith("Advanced Micro")):
+    #     pytest.xfail("AMD miscompiles 64-bit RNG math")
 
-    ran = gen.uniform(queue, (10000007,), dtype, a=200, b=300)
-    assert (200 <= ran.get()).all()
-    assert (ran.get() < 300).all()
-    #from matplotlib import pyplot as pt
-    #pt.hist(ran.get())
-    #pt.show()
+    ran = gen.uniform(queue, (10000007,), dtype, a=200, b=300).get()
+    assert (200 <= ran).all()
+    assert (ran < 300).all()
+
+    print(np.min(ran), np.max(ran))
+    assert np.max(ran) > 295
+
+    if plot_hist:
+        from matplotlib import pyplot as pt
+        pt.hist(ran)
+        pt.show()
 
 # }}}
 

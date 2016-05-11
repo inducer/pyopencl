@@ -1,3 +1,6 @@
+/* RanluxCL is deprecated in PyOpenCL and will be removed in the 2018.x
+ * versions of the package. */
+
 #ifndef RANLUXCL_CL
 #define RANLUXCL_CL
 
