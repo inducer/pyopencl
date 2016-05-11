@@ -32,13 +32,13 @@ PyOpenCL now includes and uses some of the `Random123 random number generators
 Research.  In addition to being usable through the convenience functions above,
 they are available in any piece of code compiled through PyOpenCL by::
 
-    #include <pyopencl-philox.cl>
-    #include <pyopencl-threefry.cl>
+    #include <pyopencl-random123/philox.cl>
+    #include <pyopencl-random123/threefry.cl>
 
 See the `Philox source
-<https://github.com/pyopencl/pyopencl/blob/master/src/cl/pyopencl-philox.cl>`_
+<https://github.com/pyopencl/pyopencl/blob/master/pyopencl/cl/pyopencl-random123/philox.cl>`_
 and the `Threefry source
-<https://github.com/pyopencl/pyopencl/blob/master/src/cl/pyopencl-threefish.cl>`_
+<https://github.com/pyopencl/pyopencl/blob/master/pyopencl/cl/pyopencl-random123/threefry.cl>`_
 for some documentation if you're planning on using Random123 directly.
 
 .. note::
@@ -672,12 +672,16 @@ class Random123GeneratorBase(object):
 
 
 class PhiloxGenerator(Random123GeneratorBase):
+    __doc__ = Random123GeneratorBase.__doc__
+
     header_name = "pyopencl-random123/philox.cl"
     generator_name = "philox4x32"
     key_length = 2
 
 
 class ThreefryGenerator(Random123GeneratorBase):
+    __doc__ = Random123GeneratorBase.__doc__
+
     header_name = "pyopencl-random123/threefry.cl"
     generator_name = "threefry4x32"
     key_length = 4
