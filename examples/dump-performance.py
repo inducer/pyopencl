@@ -1,11 +1,7 @@
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
+from __future__ import division, absolute_import, print_function
 import pyopencl as cl
 import pyopencl.characterize.performance as perf
 from six.moves import range
-
-
 
 
 def main():
@@ -15,7 +11,8 @@ def main():
     print("command latency: %g s" % latency)
     print("profiling overhead: %g s -> %.1f %%" % (
             prof_overhead, 100*prof_overhead/latency))
-    queue = cl.CommandQueue(ctx, properties=cl.command_queue_properties.PROFILING_ENABLE)
+    queue = cl.CommandQueue(
+            ctx, properties=cl.command_queue_properties.PROFILING_ENABLE)
 
     print("empty kernel: %g s" % perf.get_empty_kernel_time(queue))
     print("float32 add: %g GOps/s" % (perf.get_add_rate(queue)/1e9))
@@ -29,12 +26,10 @@ def main():
         print("----------------------------------------")
 
         print("latency: %g s" % perf.transfer_latency(queue, tx_type))
-        for i in range(6, 28, 2):
-            bs = 1<<i
+        for i in range(6, 31, 2):
+            bs = 1 << i
             print("bandwidth @ %d bytes: %g GB/s" % (
                     bs, perf.transfer_bandwidth(queue, tx_type, bs)/1e9))
-
-
 
 
 if __name__ == "__main__":

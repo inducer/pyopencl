@@ -1,7 +1,4 @@
-from __future__ import division
-from __future__ import absolute_import
-from __future__ import print_function
-from six.moves import range
+from __future__ import division, absolute_import, print_function
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -25,10 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from six.moves import range
 import pyopencl as cl
 import numpy as np
-
-
 
 
 # {{{ timing helpers
@@ -50,8 +46,6 @@ class Timer:
         pass
 
 
-
-
 class WallTimer(Timer):
     def start(self):
         from time import time
@@ -65,8 +59,6 @@ class WallTimer(Timer):
 
     def get_elapsed(self):
         return self.end-self.start
-
-
 
 
 def _get_time(queue, f, timer_factory=None, desired_duration=0.1,
@@ -106,8 +98,6 @@ def _get_time(queue, f, timer_factory=None, desired_duration=0.1,
 # }}}
 
 
-
-
 # {{{ transfer measurements
 
 class HostDeviceTransferBase(object):
@@ -116,31 +106,32 @@ class HostDeviceTransferBase(object):
         self.host_buf = np.empty(block_size, dtype=np.uint8)
         self.dev_buf = cl.Buffer(queue.context, cl.mem_flags.READ_WRITE, block_size)
 
+
 class HostToDeviceTransfer(HostDeviceTransferBase):
     def do(self):
         return cl.enqueue_copy(self. queue, self.dev_buf, self.host_buf)
+
 
 class DeviceToHostTransfer(HostDeviceTransferBase):
     def do(self):
         return cl.enqueue_copy(self. queue, self.host_buf, self.dev_buf)
 
+
 class DeviceToDeviceTransfer(object):
     def __init__(self, queue, block_size):
         self.queue = queue
-        self.dev_buf_1 = cl.Buffer(queue.context, cl.mem_flags.READ_WRITE, block_size)
-        self.dev_buf_2 = cl.Buffer(queue.context, cl.mem_flags.READ_WRITE, block_size)
+        mf = cl.mem_flags
+        self.dev_buf_1 = cl.Buffer(queue.context, mf.READ_WRITE, block_size)
+        self.dev_buf_2 = cl.Buffer(queue.context, mf.READ_WRITE, block_size)
 
     def do(self):
         return cl.enqueue_copy(self. queue, self.dev_buf_2, self.dev_buf_1)
-
-class HostToDeviceTransfer(HostDeviceTransferBase):
-    def do(self):
-        return cl.enqueue_copy(self. queue, self.dev_buf, self.host_buf)
 
 
 def transfer_latency(queue, transfer_type, timer_factory=None):
     transfer = transfer_type(queue, 1)
     return _get_time(queue, transfer.do, timer_factory=timer_factory)
+
 
 def transfer_bandwidth(queue, transfer_type, block_size, timer_factory=None):
     """Measures one-sided bandwidth."""
@@ -149,8 +140,6 @@ def transfer_bandwidth(queue, transfer_type, block_size, timer_factory=None):
     return block_size/_get_time(queue, transfer.do, timer_factory=timer_factory)
 
 # }}}
-
-
 
 
 def get_profiling_overhead(ctx, timer_factory=None):
@@ -165,6 +154,7 @@ def get_profiling_overhead(ctx, timer_factory=None):
 
     return prof_time - no_prof_time, prof_time
 
+
 def get_empty_kernel_time(queue, timer_factory=None):
     prg = cl.Program(queue.context, """
         __kernel void empty()
@@ -178,13 +168,16 @@ def get_empty_kernel_time(queue, timer_factory=None):
 
     return _get_time(queue, f, timer_factory=timer_factory)
 
-def _get_full_machine_kernel_rate(queue, src, args, name="benchmark", timer_factory=None):
+
+def _get_full_machine_kernel_rate(queue, src, args, name="benchmark",
+        timer_factory=None):
     prg = cl.Program(queue.context, src).build()
 
     knl = getattr(prg, name)
 
     dev = queue.device
     global_size = 4 * dev.max_compute_units
+
     def f():
         knl(queue, (global_size,), None, *args)
 
@@ -198,21 +191,21 @@ def _get_full_machine_kernel_rate(queue, src, args, name="benchmark", timer_fact
 
         keep_trying = not rates
 
-        if rates and rate > 1.05*max(rates): # big improvement
+        if rates and rate > 1.05*max(rates):  # big improvement
             keep_trying = True
             num_dips = 0
 
-        if rates and rate < 0.9*max(rates) and num_dips < 3: # big dip
+        if rates and rate < 0.9*max(rates) and num_dips < 3:  # big dip
             keep_trying = True
             num_dips += 1
 
         if keep_trying:
             global_size *= 2
-            last_rate = rate
             rates.append(rate)
         else:
             rates.append(rate)
             return max(rates)
+
 
 def get_add_rate(queue, type="float", timer_factory=None):
     return 50*10*_get_full_machine_kernel_rate(queue, """
@@ -242,8 +235,6 @@ def get_add_rate(queue, type="float", timer_factory=None):
             tgt[get_local_id(0)] = val;
         }
         """ % dict(op_t=type), ())
-
-
 
 
 # vim: foldmethod=marker:filetype=pyopencl
