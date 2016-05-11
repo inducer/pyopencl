@@ -224,7 +224,12 @@ def main():
 
             include_package_data=True,
             package_data={
-                    "pyopencl": ["cl/*.cl", "cl/*.h"]
+                    "pyopencl": [
+                        "cl/*.cl",
+                        "cl/*.h",
+                        "cl/pyopencl-random123/*.cl",
+                        "cl/pyopencl-random123/*.h",
+                        ]
                     },
 
             zip_safe=False)

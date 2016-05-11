@@ -1,5 +1,4 @@
-include pyopencl/cl/*.h
-include pyopencl/cl/*.cl
+recursive-include pyopencl/cl *.h *.cl
 
 include src/c_wrapper/*.hpp
 include src/c_wrapper/*.h
