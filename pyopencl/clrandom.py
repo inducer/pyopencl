@@ -244,8 +244,8 @@ class RanluxGenerator(object):
             c_type = "long"
             rng_expr = ("(shift "
                     "+ convert_long4((float) scale * gen) "
-                    "+ convert_long4(((float) scale / (1<<24)) * gen)"
-                    "+ convert_long4(((float) scale / (1<<48)) * gen)"
+                    "+ convert_long4(((float) scale / (1l<<24)) * gen)"
+                    "+ convert_long4(((float) scale / (1l<<48)) * gen)"
                     ")")
 
         else:
