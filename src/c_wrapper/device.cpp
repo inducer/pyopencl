@@ -301,6 +301,6 @@ device__create_sub_devices(clobj_t _dev, clobj_t **_devs,
             *_devs = devs.release();
         });
 #else
-    PYOPENCL_UNSUPPORTED(clCreateImage, "CL 1.1 and below")
+    PYOPENCL_UNSUPPORTED_BEFORE(clCreateSubDevices, "CL 1.2")
 #endif
 }
