@@ -231,7 +231,8 @@ def get_reduction_kernel(stage,
     inf.kernel.set_scalar_arg_dtypes(
             [None, np.int64]
             + get_arg_list_scalar_arg_dtypes(inf.arg_types)
-            + [np.int64]*5)
+            + [np.int64]*3 + [np.uint32, np.int64]
+            )
 
     return inf
 

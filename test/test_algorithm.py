@@ -271,7 +271,7 @@ def test_sum_without_data(ctx_factory):
             reduce_expr="a+b", map_expr="i",
             arguments=[])
 
-    result_dev = red(range=range(n), queue=queue).get()
+    result_dev = red(range=slice(n), queue=queue).get()
     result_ref = n*(n-1)//2
 
     assert result_dev == result_ref
