@@ -121,6 +121,8 @@ Version 2016.2
 * Deprecate RANLUXCL. It will be removed in the 2018.x series of PyOpenCL.
 * Introduce Random123 random number generators. See :mod:`pyopencl.clrandom`
   for more information.
+* Add support for **range** and **slice** kwargs and data-less reductions
+  to :class:`pyopencl.reduction.ReductionKernel`.
 
 Version 2016.1
 --------------

@@ -244,11 +244,37 @@ def test_sum(ctx_factory):
                 slice(1000, 3000),
                 slice(1000, -3000),
                 slice(1000, None),
+                slice(1000, None, 3),
                 ]:
             sum_a = np.sum(a[slc])
-            sum_a_gpu = cl_array.sum(a_gpu[slc]).get()
 
-            assert abs(sum_a_gpu - sum_a) / abs(sum_a) < 1e-4
+            if slc.step is None:
+                sum_a_gpu = cl_array.sum(a_gpu[slc]).get()
+                assert abs(sum_a_gpu - sum_a) / abs(sum_a) < 1e-4
+
+            sum_a_gpu_2 = cl_array.sum(a_gpu, slice=slc).get()
+            assert abs(sum_a_gpu_2 - sum_a) / abs(sum_a) < 1e-4
+
+
+def test_sum_without_data(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    n = 2000
+
+    from pyopencl.reduction import ReductionKernel
+    red = ReductionKernel(context, np.int32,
+            neutral="0",
+            reduce_expr="a+b", map_expr="i",
+            arguments=[])
+
+    result_dev = red(range=range(n), queue=queue).get()
+    result_ref = n*(n-1)//2
+
+    assert result_dev == result_ref
 
 
 def test_minmax(ctx_factory):

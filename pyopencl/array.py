@@ -2299,25 +2299,25 @@ _builtin_min = min
 _builtin_max = max
 
 
-def sum(a, dtype=None, queue=None):
+def sum(a, dtype=None, queue=None, slice=None):
     """
     .. versionadded:: 2011.1
     """
     from pyopencl.reduction import get_sum_kernel
     krnl = get_sum_kernel(a.context, dtype, a.dtype)
-    return krnl(a, queue=queue)
+    return krnl(a, queue=queue, slice=slice)
 
 
-def dot(a, b, dtype=None, queue=None):
+def dot(a, b, dtype=None, queue=None, slice=None):
     """
     .. versionadded:: 2011.1
     """
     from pyopencl.reduction import get_dot_kernel
     krnl = get_dot_kernel(a.context, dtype, a.dtype, b.dtype)
-    return krnl(a, b, queue=queue)
+    return krnl(a, b, queue=queue, slice=slice)
 
 
-def vdot(a, b, dtype=None, queue=None):
+def vdot(a, b, dtype=None, queue=None, slice=None):
     """Like :func:`numpy.vdot`.
 
     .. versionadded:: 2013.1
@@ -2325,17 +2325,17 @@ def vdot(a, b, dtype=None, queue=None):
     from pyopencl.reduction import get_dot_kernel
     krnl = get_dot_kernel(a.context, dtype, a.dtype, b.dtype,
             conjugate_first=True)
-    return krnl(a, b, queue=queue)
+    return krnl(a, b, queue=queue, slice=slice)
 
 
-def subset_dot(subset, a, b, dtype=None, queue=None):
+def subset_dot(subset, a, b, dtype=None, queue=None, slice=None):
     """
     .. versionadded:: 2011.1
     """
     from pyopencl.reduction import get_subset_dot_kernel
     krnl = get_subset_dot_kernel(
             a.context, dtype, subset.dtype, a.dtype, b.dtype)
-    return krnl(subset, a, b, queue=queue)
+    return krnl(subset, a, b, queue=queue, slice=slice)
 
 
 def _make_minmax_kernel(what):
@@ -2358,10 +2358,10 @@ max.__doc__ = """
 
 
 def _make_subset_minmax_kernel(what):
-    def f(subset, a, queue=None):
+    def f(subset, a, queue=None, slice=None):
         from pyopencl.reduction import get_subset_minmax_kernel
         krnl = get_subset_minmax_kernel(a.context, what, a.dtype, subset.dtype)
-        return krnl(subset, a,  queue=queue)
+        return krnl(subset, a,  queue=queue, slice=slice)
 
     return f
 

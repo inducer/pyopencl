@@ -44,9 +44,9 @@ import numpy as np
 # {{{ kernel source
 
 KERNEL = r"""//CL//
-    #define GROUP_SIZE ${group_size}
-    #define READ_AND_MAP(i) (${map_expr})
-    #define REDUCE(a, b) (${reduce_expr})
+    #define PCL_GROUP_SIZE ${group_size}
+    #define PCL_READ_AND_MAP(i) (${map_expr})
+    #define PCL_REDUCE(a, b) (${reduce_expr})
 
     % if double_support:
         #if __OPENCL_C_VERSION__ < 120
@@ -59,33 +59,37 @@ KERNEL = r"""//CL//
 
     ${preamble}
 
-    typedef ${out_type} out_type;
+    typedef ${out_type} pcl_out_type;
 
     __kernel void ${name}(
-      __global out_type *out__base, long out__offset, ${arguments},
-      unsigned int seq_count, unsigned int n)
+      __global pcl_out_type *pcl_out__base, long pcl_out__offset,
+      ${arguments}
+      long pcl_start, long pcl_step, long pcl_stop,
+      unsigned int pcl_seq_count, long n)
     {
-        __global out_type *out = (__global out_type *) (
-            (__global char *) out__base + out__offset);
+        __global pcl_out_type *pcl_out = (__global pcl_out_type *) (
+            (__global char *) pcl_out__base + pcl_out__offset);
         ${arg_prep}
 
-        __local out_type ldata[GROUP_SIZE];
+        __local pcl_out_type pcl_ldata[PCL_GROUP_SIZE];
 
-        unsigned int lid = get_local_id(0);
+        unsigned int pcl_lid = get_local_id(0);
 
-        unsigned int i = get_group_id(0)*GROUP_SIZE*seq_count + lid;
+        const long pcl_base_idx =
+            get_group_id(0)*PCL_GROUP_SIZE*pcl_seq_count + pcl_lid;
+        long i = pcl_start + pcl_base_idx * pcl_step;
 
-        out_type acc = ${neutral};
-        for (unsigned s = 0; s < seq_count; ++s)
+        pcl_out_type pcl_acc = ${neutral};
+        for (unsigned pcl_s = 0; pcl_s < pcl_seq_count; ++pcl_s)
         {
-          if (i >= n)
+          if (i >= pcl_stop)
             break;
-          acc = REDUCE(acc, READ_AND_MAP(i));
+          pcl_acc = PCL_REDUCE(pcl_acc, PCL_READ_AND_MAP(i));
 
-          i += GROUP_SIZE;
+          i += PCL_GROUP_SIZE*pcl_step;
         }
 
-        ldata[lid] = acc;
+        pcl_ldata[pcl_lid] = pcl_acc;
 
         <%
           cur_size = group_size
@@ -99,18 +103,18 @@ KERNEL = r"""//CL//
             assert new_size * 2 == cur_size
             %>
 
-            if (lid < ${new_size})
+            if (pcl_lid < ${new_size})
             {
-                ldata[lid] = REDUCE(
-                  ldata[lid],
-                  ldata[lid + ${new_size}]);
+                pcl_ldata[pcl_lid] = PCL_REDUCE(
+                  pcl_ldata[pcl_lid],
+                  pcl_ldata[pcl_lid + ${new_size}]);
             }
 
             <% cur_size = new_size %>
 
         % endwhile
 
-        if (lid == 0) out[get_group_id(0)] = ldata[0];
+        if (pcl_lid == 0) pcl_out[get_group_id(0)] = pcl_ldata[0];
     }
     """
 
@@ -157,10 +161,15 @@ def _get_reduction_source(
     from mako.template import Template
     from pytools import all
     from pyopencl.characterize import has_double_support
+
+    arguments = ", ".join(arg.declarator() for arg in parsed_args)
+    if parsed_args:
+        arguments += ", "
+
     src = str(Template(KERNEL).render(
         out_type=out_type,
-        arguments=", ".join(arg.declarator() for arg in parsed_args),
         group_size=group_size,
+        arguments=arguments,
         neutral=neutral,
         reduce_expr=_process_code_for_macro(reduce_expr),
         map_expr=_process_code_for_macro(map_expr),
@@ -222,7 +231,7 @@ def get_reduction_kernel(stage,
     inf.kernel.set_scalar_arg_dtypes(
             [None, np.int64]
             + get_arg_list_scalar_arg_dtypes(inf.arg_types)
-            + [np.uint32]*2)
+            + [np.int64]*5)
 
     return inf
 
@@ -266,15 +275,21 @@ class ReductionKernel:
                 name=name+"_stage2", options=options, preamble=preamble,
                 max_group_size=max_group_size)
 
-        from pytools import any
-        from pyopencl.tools import VectorArg
-        assert any(
-                isinstance(arg_tp, VectorArg)
-                for arg_tp in self.stage_1_inf.arg_types), \
-                "ReductionKernel can only be used with functions " \
-                "that have at least one vector argument"
-
     def __call__(self, *args, **kwargs):
+        """
+        :arg range: A :class:`slice` object. Specifies the range of indices on which
+            the kernel will be executed. May not be given at the same time
+            as *slice*.
+        :arg slice: A :class:`slice` object.
+            Specifies the range of indices on which the kernel will be
+            executed, relative to the first vector-like argument.
+            May not be given at the same time as *range*.
+        :arg allocator:
+
+        .. versionchanged:: 2016.2
+
+            *range_* and *slice_* added.
+        """
         MAX_GROUP_COUNT = 1024  # noqa
         SMALL_SEQ_COUNT = 4  # noqa
 
@@ -283,9 +298,13 @@ class ReductionKernel:
         stage_inf = self.stage_1_inf
 
         queue = kwargs.pop("queue", None)
+        allocator = kwargs.pop("allocator", None)
         wait_for = kwargs.pop("wait_for", None)
         return_event = kwargs.pop("return_event", False)
         out = kwargs.pop("out", None)
+
+        range_ = kwargs.pop("range", None)
+        slice_ = kwargs.pop("slice", None)
 
         if kwargs:
             raise TypeError("invalid keyword argument to reduction kernel")
@@ -310,13 +329,57 @@ class ReductionKernel:
                 else:
                     invocation_args.append(arg)
 
-            repr_vec = vectors[0]
-            sz = repr_vec.size
+            if vectors:
+                repr_vec = vectors[0]
+            else:
+                repr_vec = None
+
+            # {{{ range/slice processing
+
+            if range_ is not None:
+                if slice_ is not None:
+                    raise TypeError("may not specify both range and slice "
+                            "keyword arguments")
+
+            else:
+                if slice_ is None:
+                    slice_ = slice(None)
+
+                if repr_vec is None:
+                    raise TypeError(
+                            "must have vector argument when range is not specified")
+
+                range_ = slice(*slice_.indices(repr_vec.size))
+
+            assert range_ is not None
+
+            start = range_.start
+            if start is None:
+                start = 0
+            if range_.step is None:
+                step = 1
+            else:
+                step = range_.step
+            sz = abs(range_.stop - start)//step
+
+            # }}}
 
             if queue is not None:
                 use_queue = queue
             else:
+                if repr_vec is None:
+                    raise TypeError(
+                            "must specify queue argument when no vector argument "
+                            "present")
+
                 use_queue = repr_vec.queue
+
+            if allocator is None:
+                if repr_vec is None:
+                    from pyopencl.tools import DeferredAllocator
+                    allocator = DeferredAllocator(queue.context)
+                else:
+                    allocator = repr_vec.allocator
 
             if sz <= stage_inf.group_size*SMALL_SEQ_COUNT*MAX_GROUP_COUNT:
                 total_group_size = SMALL_SEQ_COUNT*stage_inf.group_size
@@ -327,23 +390,25 @@ class ReductionKernel:
                 macrogroup_size = group_count*stage_inf.group_size
                 seq_count = (sz + macrogroup_size - 1) // macrogroup_size
 
+            size_args = [start, step, range_.stop, seq_count, sz]
+
             if group_count == 1 and out is not None:
                 result = out
             elif group_count == 1:
                 result = empty(use_queue,
                         (), self.dtype_out,
-                        allocator=repr_vec.allocator)
+                        allocator=allocator)
             else:
                 result = empty(use_queue,
                         (group_count,), self.dtype_out,
-                        allocator=repr_vec.allocator)
+                        allocator=allocator)
 
             last_evt = stage_inf.kernel(
                     use_queue,
                     (group_count*stage_inf.group_size,),
                     (stage_inf.group_size,),
                     *([result.base_data, result.offset]
-                        + invocation_args + [seq_count, sz]),
+                        + invocation_args + size_args),
                     **dict(wait_for=wait_for))
             wait_for = [last_evt]
 
@@ -355,6 +420,8 @@ class ReductionKernel:
             else:
                 stage_inf = self.stage_2_inf
                 args = (result,) + stage1_args
+
+                range_ = slice_ = None
 
 # }}}
 
