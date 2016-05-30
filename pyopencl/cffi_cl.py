@@ -1358,9 +1358,16 @@ def _enqueue_read_buffer_rect(queue, mem, hostbuf, buffer_origin,
     if buffer_pitches is None:
         buffer_pitches = _ffi.NULL
         buffer_pitches_l = 0
+    else:
+        buffer_pitches = tuple(buffer_pitches)
+        buffer_pitches_l = len(buffer_pitches)
     if host_pitches is None:
         host_pitches = _ffi.NULL
         host_pitches_l = 0
+    else:
+        host_pitches = tuple(host_pitches)
+        host_pitches_l = len(host_pitches)
+
     buffer_origin_l = len(buffer_origin)
     host_origin_l = len(host_origin)
     region_l = len(region)
@@ -1391,9 +1398,16 @@ def _enqueue_write_buffer_rect(queue, mem, hostbuf, buffer_origin,
     if buffer_pitches is None:
         buffer_pitches = _ffi.NULL
         buffer_pitches_l = 0
+    else:
+        buffer_pitches = tuple(buffer_pitches)
+        buffer_pitches_l = len(buffer_pitches)
     if host_pitches is None:
         host_pitches = _ffi.NULL
         host_pitches_l = 0
+    else:
+        host_pitches = tuple(host_pitches)
+        host_pitches_l = len(host_pitches)
+
     buffer_origin_l = len(buffer_origin)
     host_origin_l = len(host_origin)
     region_l = len(region)
@@ -1424,11 +1438,13 @@ def _enqueue_copy_buffer_rect(queue, src, dst, src_origin, dst_origin, region,
         src_pitches = _ffi.NULL
         src_pitches_l = 0
     else:
+        src_pitches = tuple(src_pitches)
         src_pitches_l = len(src_pitches)
     if dst_pitches is None:
         dst_pitches = _ffi.NULL
         dst_pitches_l = 0
     else:
+        dst_pitches = tuple(dst_pitches)
         dst_pitches_l = len(dst_pitches)
     src_origin_l = len(src_origin)
     dst_origin_l = len(dst_origin)
