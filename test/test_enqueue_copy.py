@@ -43,6 +43,7 @@ def test_enqueue_copy_rect_2d(ctx_factory, honor_skip=True):
     queue = cl.CommandQueue(ctx)
 
     if honor_skip and ctx.devices[0].platform.name == "Portable Computing Language":
+        # https://github.com/pocl/pocl/issues/353
         pytest.skip("POCL's rectangular copies crash")
 
     ary_in_shp = 256, 128  # Entire array shape from which sub-array copied to device
@@ -127,6 +128,7 @@ def test_enqueue_copy_rect_3d(ctx_factory, honor_skip=False):
     queue = cl.CommandQueue(ctx)
 
     if honor_skip and ctx.devices[0].platform.name == "Portable Computing Language":
+        # https://github.com/pocl/pocl/issues/353
         pytest.skip("POCL's rectangular copies crash")
 
     ary_in_shp = 256, 128, 31  # array shape from which sub-array copied to device
