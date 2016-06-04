@@ -143,6 +143,9 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV:
     case CL_DEVICE_REGISTERS_PER_BLOCK_NV:
     case CL_DEVICE_WARP_SIZE_NV:
+    case CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV:
+    case CL_DEVICE_PCI_BUS_ID_NV:
+    case CL_DEVICE_PCI_SLOT_ID_NV:
         return DEV_GET_INT_INF(cl_uint);
     case CL_DEVICE_GPU_OVERLAP_NV:
     case CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV:

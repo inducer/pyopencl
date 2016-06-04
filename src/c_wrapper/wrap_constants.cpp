@@ -201,6 +201,9 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("device_info", DEVICE_, GPU_OVERLAP_NV);
     ADD_ATTR("device_info", DEVICE_, KERNEL_EXEC_TIMEOUT_NV);
     ADD_ATTR("device_info", DEVICE_, INTEGRATED_MEMORY_NV);
+    ADD_ATTR("device_info", DEVICE_, ATTRIBUTE_ASYNC_ENGINE_COUNT_NV);
+    ADD_ATTR("device_info", DEVICE_, PCI_BUS_ID_NV);
+    ADD_ATTR("device_info", DEVICE_, PCI_SLOT_ID_NV);
 #endif
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
     ADD_ATTR("device_info", DEVICE_, PROFILING_TIMER_OFFSET_AMD);

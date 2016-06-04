@@ -97,6 +97,9 @@ const_ext_lookup = {
             "GPU_OVERLAP_NV": nv_devattr,
             "KERNEL_EXEC_TIMEOUT_NV": nv_devattr,
             "INTEGRATED_MEMORY_NV": nv_devattr,
+            "ATTRIBUTE_ASYNC_ENGINE_COUNT_NV": nv_devattr,
+            "PCI_BUS_ID_NV": nv_devattr,
+            "PCI_SLOT_ID_NV": nv_devattr,
 
             "DOUBLE_FP_CONFIG":
             ("cl_khr_fp64", "2011.1"),
