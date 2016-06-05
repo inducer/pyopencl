@@ -25,15 +25,15 @@ Python 2.7 Intel CPU:
   except:
   - tags
   - master
-Python 3.4 AMD CPU:
+Python 3.5 AMD CPU:
   script:
-  - export PY_EXE=python3.4
+  - export PY_EXE=python3.5
   - export PYOPENCL_TEST=amd:pu
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.4
+  - python3.5
   - amd-cl-cpu
   except:
   - tags
