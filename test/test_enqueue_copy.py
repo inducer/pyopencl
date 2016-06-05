@@ -120,7 +120,7 @@ def test_enqueue_copy_rect_2d(ctx_factory, honor_skip=True):
     assert np.all(h_ary_in[ary_in_slice] == h_ary_out[ary_out_slice])
 
 
-def test_enqueue_copy_rect_3d(ctx_factory, honor_skip=False):
+def test_enqueue_copy_rect_3d(ctx_factory, honor_skip=True):
     """
     Test 3D sub-array (slice) copy.
     """
