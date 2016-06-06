@@ -1711,8 +1711,10 @@ def as_strided(ary, shape=None, strides=None):
 
     # undocumented for the moment
 
-    shape = shape or ary.shape
-    strides = strides or ary.strides
+    if shape is None:
+        shape = ary.shape
+    if strides is None:
+        strides = ary.strides
 
     return Array(ary.queue, shape, ary.dtype, allocator=ary.allocator,
             data=ary.data, strides=strides)
