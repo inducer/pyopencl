@@ -157,6 +157,20 @@ extern "C" {
 #define PYOPENCL_USE_RESULT
 #endif
 
+#ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
+
+#ifndef CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV
+#define CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV   0x4007
+#endif
+#ifndef CL_DEVICE_PCI_BUS_ID_NV
+#define CL_DEVICE_PCI_BUS_ID_NV                     0x4008
+#endif
+#ifndef CL_DEVICE_PCI_SLOT_ID_NV
+#define CL_DEVICE_PCI_SLOT_ID_NV                    0x4009
+#endif
+
+#endif // CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
+
 #endif
 
 // vim: foldmethod=marker
