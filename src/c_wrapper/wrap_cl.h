@@ -9,12 +9,13 @@
 
 #include <stdint.h>
 
+#include "pyopencl_ext.h"
+
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS
 
 #ifdef __APPLE__
 
 // {{{ Mac
-#include <OpenCL/opencl.h>
 
 #define PYOPENCL_HAVE_EVENT_SET_CALLBACK
 
@@ -31,9 +32,6 @@
 #else
 
 // {{{ elsewhere
-
-#include <CL/cl.h>
-#include <CL/cl_ext.h>
 
 #if defined(_WIN32)
 
