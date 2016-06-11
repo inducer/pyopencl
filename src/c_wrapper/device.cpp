@@ -143,6 +143,15 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV:
     case CL_DEVICE_REGISTERS_PER_BLOCK_NV:
     case CL_DEVICE_WARP_SIZE_NV:
+#ifdef CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV
+    case CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV:
+#endif
+#ifdef CL_DEVICE_PCI_BUS_ID_NV
+    case CL_DEVICE_PCI_BUS_ID_NV:
+#endif
+#ifdef CL_DEVICE_PCI_SLOT_ID_NV
+    case CL_DEVICE_PCI_SLOT_ID_NV:
+#endif
         return DEV_GET_INT_INF(cl_uint);
     case CL_DEVICE_GPU_OVERLAP_NV:
     case CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV:
@@ -223,6 +232,10 @@ device::get_info(cl_uint param_name) const
            case CL_DEVICE_TOPOLOGY_AMD:
            #endif
         */
+#ifdef CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD
+    case CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD:
+        return DEV_GET_INT_INF(cl_bool);
+#endif
 #ifdef CL_DEVICE_BOARD_NAME_AMD
     case CL_DEVICE_BOARD_NAME_AMD: ;
         return pyopencl_get_str_info(Device, PYOPENCL_CL_CASTABLE_THIS, param_name);
@@ -259,12 +272,45 @@ device::get_info(cl_uint param_name) const
 #ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
     case CL_DEVICE_LOCAL_MEM_BANKS_AMD:
 #endif
-
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
     case CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT:
 #endif
+#ifdef CL_DEVICE_GFXIP_MAJOR_AMD
+    case CL_DEVICE_GFXIP_MAJOR_AMD:
+#endif
+#ifdef CL_DEVICE_GFXIP_MINOR_AMD
+    case CL_DEVICE_GFXIP_MINOR_AMD:
+#endif
+#ifdef CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD
+    case CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD:
+#endif
         return DEV_GET_INT_INF(cl_uint);
         // }}}
+#ifdef CL_DEVICE_ME_VERSION_INTEL
+    case CL_DEVICE_ME_VERSION_INTEL:
+#endif
+#ifdef CL_DEVICE_EXT_MEM_PADDING_IN_BYTES_QCOM
+    case CL_DEVICE_EXT_MEM_PADDING_IN_BYTES_QCOM:
+#endif
+#ifdef CL_DEVICE_PAGE_SIZE_QCOM
+    case CL_DEVICE_PAGE_SIZE_QCOM:
+#endif
+#ifdef CL_DEVICE_NUM_SIMULTANEOUS_INTEROPS_INTEL
+    case CL_DEVICE_NUM_SIMULTANEOUS_INTEROPS_INTEL:
+#endif
+        return DEV_GET_INT_INF(cl_uint);
+#ifdef CL_DEVICE_SIMULTANEOUS_INTEROPS_INTEL
+    case CL_DEVICE_SIMULTANEOUS_INTEROPS_INTEL:
+        return pyopencl_get_array_info(cl_uint, Device, PYOPENCL_CL_CASTABLE_THIS, param_name);
+#endif
+#ifdef CL_DEVICE_SPIR_VERSIONS
+    case CL_DEVICE_SPIR_VERSIONS:
+        return pyopencl_get_str_info(Device, PYOPENCL_CL_CASTABLE_THIS, param_name);
+#endif
+#ifdef CL_DEVICE_CORE_TEMPERATURE_ALTERA
+    case CL_DEVICE_CORE_TEMPERATURE_ALTERA:
+        return DEV_GET_INT_INF(cl_int);
+#endif
 
     default:
         throw clerror("Device.get_info", CL_INVALID_VALUE);
