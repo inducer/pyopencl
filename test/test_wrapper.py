@@ -294,7 +294,7 @@ def test_image_format_constructor():
     assert not iform.__dict__
 
 def test_device_topology_amd_constructor():
-    # doesn't need image support to succeed
+    # doesn't need cl_amd_device_attribute_query support to succeed
     topol = cl.DeviceTopologyAmd(3,4,5)
 
     assert topol.bus == 3
