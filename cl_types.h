@@ -105,6 +105,12 @@ typedef struct _cl_buffer_region {
 
 /* cl_ext.h */
 
+typedef union
+{
+    struct { cl_uint type; cl_uint data[5]; } raw;
+    struct { cl_uint type; cl_char unused[17]; cl_char bus; cl_char device; cl_char function; } pcie;
+} cl_device_topology_amd;
+
 /*
 typedef cl_ulong  cl_device_partition_property_ext;
 typedef cl_uint   cl_image_pitch_info_qcom;

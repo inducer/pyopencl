@@ -165,6 +165,7 @@ from pyopencl.cffi_cl import (  # noqa
         Image,
         Sampler,
         GLTexture,
+        DeviceTopologyAmd,
         )
 
 if _cl.have_gl():

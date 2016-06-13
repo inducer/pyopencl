@@ -28,6 +28,27 @@ device::~device()
 #endif
 }
 
+#ifdef CL_DEVICE_TOPOLOGY_AMD
+template<typename... ArgTypes>
+PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
+get_device_topology_amd(ArgTypes&&... args)
+{
+    const char * tpname = "cl_device_topology_amd*";
+    cl_device_topology_amd value;
+    const char * fname = "clGetDeviceInfo";
+    call_guarded(clGetDeviceInfo, fname, args..., size_arg(value), nullptr);
+    generic_info info;
+    info.dontfree = 0;
+    info.opaque_class = CLASS_NONE;
+    info.type = tpname;
+    info.value = cl_memdup(&value);
+    return info;
+}
+
+#define pyopencl_get_device_topology_amd(...) get_device_topology_amd(__VA_ARGS__)
+
+#endif
+
 generic_info
 device::get_info(cl_uint param_name) const
 {
@@ -227,11 +248,10 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD:
         return DEV_GET_INT_INF(cl_ulong);
 #endif
-        /* FIXME
-           #ifdef CL_DEVICE_TOPOLOGY_AMD
-           case CL_DEVICE_TOPOLOGY_AMD:
-           #endif
-        */
+#ifdef CL_DEVICE_TOPOLOGY_AMD
+        case CL_DEVICE_TOPOLOGY_AMD:
+            return pyopencl_get_device_topology_amd(PYOPENCL_CL_CASTABLE_THIS, param_name);
+#endif
 #ifdef CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD
     case CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD:
         return DEV_GET_INT_INF(cl_bool);
