@@ -135,7 +135,7 @@ const_ext_lookup = {
             "NUM_SIMULTANEOUS_INTEROPS_INTEL": intel_ss_devattr,
             
             "EXT_MEM_PADDING_IN_BYTES_QCOM": qcom_hp_devattr,
-            "PAGE_SIZE_QCOM": qcom_devattr,
+            "PAGE_SIZE_QCOM": qcom_hp_devattr,
             
             "CORE_TEMPERATURE_ALTERA": altera_temp_devattr,
 
