@@ -27,11 +27,16 @@ import pyopencl as cl
 fission = ("cl_ext_device_fission", "2011.1")
 nv_devattr = ("cl_nv_device_attribute_query", "0.92")
 gl_sharing = ("cl_khr_gl_sharing", "0.92")
+cl_spir_devattr = ("cl_khr_spir", "2016.2")
 cl_11 = ("CL_1.1", "0.92")
 cl_12 = ("CL_1.2", "2011.2")
 cl_12_2015 = ("CL_1.2", "2015.2")
 cl_20 = ("CL_2.0", "2015.2")
 amd_devattr = ("cl_amd_device_attribute_query", "2013.2")
+qcom_hp_devattr = ("cl_qcom_ext_host_ptr", "2016.2")
+intel_me_devattr = ("cl_intel_advanced_motion_estimation", "2016.2")
+intel_ss_devattr = ("cl_intel_simultaneous_sharing", "2016.2")
+altera_temp_devattr = ("cl_altera_device_temperature", "2016.2")
 
 
 def get_extra_lines(tup):
@@ -90,6 +95,7 @@ const_ext_lookup = {
             "NATIVE_VECTOR_WIDTH_DOUBLE": cl_11,
             "NATIVE_VECTOR_WIDTH_HALF": cl_11,
             "OPENCL_C_VERSION": cl_11,
+            "SPIR_VERSIONS": cl_spir_devattr,
             "COMPUTE_CAPABILITY_MAJOR_NV": nv_devattr,
             "COMPUTE_CAPABILITY_MINOR_NV": nv_devattr,
             "REGISTERS_PER_BLOCK_NV": nv_devattr,
@@ -97,6 +103,9 @@ const_ext_lookup = {
             "GPU_OVERLAP_NV": nv_devattr,
             "KERNEL_EXEC_TIMEOUT_NV": nv_devattr,
             "INTEGRATED_MEMORY_NV": nv_devattr,
+            "ATTRIBUTE_ASYNC_ENGINE_COUNT_NV": nv_devattr,
+            "PCI_BUS_ID_NV": nv_devattr,
+            "PCI_BUS_SLOT_NV": nv_devattr,
 
             "DOUBLE_FP_CONFIG":
             ("cl_khr_fp64", "2011.1"),
@@ -116,6 +125,19 @@ const_ext_lookup = {
             "GLOBAL_MEM_CHANNEL_BANK_WIDTH_AMD": amd_devattr,
             "LOCAL_MEM_SIZE_PER_COMPUTE_UNIT_AMD": amd_devattr,
             "LOCAL_MEM_BANKS_AMD": amd_devattr,
+            "THREAD_TRACE_SUPPORTED_AMD": amd_devattr,
+            "GFXIP_MAJOR_AMD": amd_devattr,
+            "GFXIP_MINOR_AMD": amd_devattr,
+            "AVAILABLE_ASYNC_QUEUES_AMD": amd_devattr,
+            
+            "ME_VERSION_INTEL": intel_me_devattr,
+            "SIMULTANEOUS_INTEROPS_INTEL": intel_ss_devattr,
+            "NUM_SIMULTANEOUS_INTEROPS_INTEL": intel_ss_devattr,
+            
+            "EXT_MEM_PADDING_IN_BYTES_QCOM": qcom_hp_devattr,
+            "PAGE_SIZE_QCOM": qcom_hp_devattr,
+            
+            "CORE_TEMPERATURE_ALTERA": altera_temp_devattr,
 
             "MAX_ATOMIC_COUNTERS_EXT":
             ("cl_ext_atomic_counters_64", "2013.2"),

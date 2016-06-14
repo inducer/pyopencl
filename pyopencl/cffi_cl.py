@@ -169,6 +169,8 @@ def _generic_info_to_python(info):
 
     if type_ == 'char*':
         ret = _ffi_pystr(value)
+    elif type_ == 'cl_device_topology_amd*':
+        ret = DeviceTopologyAmd(value.pcie.bus, value.pcie.device, value.pcie.function)
     elif type_.startswith('char*['):
         ret = list(map(_ffi_pystr, value))
         _lib.free_pointer_array(info.value, len(value))
@@ -1979,5 +1981,49 @@ class GLTexture(Image, _GLObject):
         self.ptr = ptr[0]
 
 # }}}
+
+class DeviceTopologyAmd(object):
+    # Hack around fmt.__dict__ check in test_wrapper.py
+    __dict__ = {}
+    __slots__ = ('ptr',)
+
+    def __init__(self, bus=0, device=0, function=0):
+        self.ptr = _ffi.new("cl_device_topology_amd*")
+        self.bus = bus
+        self.device = device
+        self.function = function
+
+    def _check_range(self, value, prop=None):
+        if (value < -127) or (value > 127):
+            raise ValueError("Value %s not in range [-127, 127].")
+
+    @_cffi_property('pcie')
+    def _pcie(self):
+        return self.ptr
+
+    @property
+    def bus(self):
+        return self._pcie.bus
+
+    @bus.setter
+    def bus(self, value):
+        self._check_range(value)
+        self._pcie.bus = value
+
+    @property
+    def device(self):
+        return self._pcie.device
+
+    @device.setter
+    def device(self, value):
+        self._pcie.device = value
+
+    @property
+    def function(self):
+        return self._pcie.function
+
+    @function.setter
+    def function(self, value):
+        self._pcie.function = value
 
 # vim: foldmethod=marker

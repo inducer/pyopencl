@@ -201,6 +201,16 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("device_info", DEVICE_, GPU_OVERLAP_NV);
     ADD_ATTR("device_info", DEVICE_, KERNEL_EXEC_TIMEOUT_NV);
     ADD_ATTR("device_info", DEVICE_, INTEGRATED_MEMORY_NV);
+    // Nvidia specific device attributes, not defined in Khronos CL/cl_ext.h
+#ifdef CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV
+    ADD_ATTR("device_info", DEVICE_, ATTRIBUTE_ASYNC_ENGINE_COUNT_NV);
+#endif
+#ifdef CL_DEVICE_PCI_BUS_ID_NV
+    ADD_ATTR("device_info", DEVICE_, PCI_BUS_ID_NV);
+#endif
+#ifdef CL_DEVICE_PCI_SLOT_ID_NV
+    ADD_ATTR("device_info", DEVICE_, PCI_SLOT_ID_NV);
+#endif
 #endif
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
     ADD_ATTR("device_info", DEVICE_, PROFILING_TIMER_OFFSET_AMD);
@@ -242,6 +252,19 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("device_info", DEVICE_, LOCAL_MEM_BANKS_AMD);
 #endif
 
+#ifdef CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD
+    ADD_ATTR("device_info", DEVICE_, THREAD_TRACE_SUPPORTED_AMD);
+#endif
+#ifdef CL_DEVICE_GFXIP_MAJOR_AMD
+    ADD_ATTR("device_info", DEVICE_, GFXIP_MAJOR_AMD);
+#endif
+#ifdef CL_DEVICE_GFXIP_MINOR_AMD
+    ADD_ATTR("device_info", DEVICE_, GFXIP_MINOR_AMD);
+#endif
+#ifdef CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD
+    ADD_ATTR("device_info", DEVICE_, AVAILABLE_ASYNC_QUEUES_AMD);
+#endif
+
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
     ADD_ATTR("device_info", DEVICE_, MAX_ATOMIC_COUNTERS_EXT);
 #endif
@@ -280,7 +303,36 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("device_info", DEVICE_, PREFERRED_GLOBAL_ATOMIC_ALIGNMENT);
     ADD_ATTR("device_info", DEVICE_, PREFERRED_LOCAL_ATOMIC_ALIGNMENT);
 #endif
+    /* cl_intel_advanced_motion_estimation */
+#ifdef CL_DEVICE_ME_VERSION_INTEL
+    ADD_ATTR("device_info", DEVICE_, ME_VERSION_INTEL);
+#endif
 
+    /* cl_qcom_ext_host_ptr */
+#ifdef CL_DEVICE_EXT_MEM_PADDING_IN_BYTES_QCOM
+    ADD_ATTR("device_info", DEVICE_, EXT_MEM_PADDING_IN_BYTES_QCOM);
+#endif
+#ifdef CL_DEVICE_PAGE_SIZE_QCOM
+    ADD_ATTR("device_info", DEVICE_, PAGE_SIZE_QCOM);
+#endif
+
+    /* cl_khr_spir */
+#ifdef CL_DEVICE_SPIR_VERSIONS
+    ADD_ATTR("device_info", DEVICE_, SPIR_VERSIONS);
+#endif
+
+    /* cl_altera_device_temperature */
+#ifdef CL_DEVICE_CORE_TEMPERATURE_ALTERA
+    ADD_ATTR("device_info", DEVICE_, CORE_TEMPERATURE_ALTERA);
+#endif
+
+    /* cl_intel_simultaneous_sharing */
+#ifdef CL_DEVICE_SIMULTANEOUS_INTEROPS_INTEL
+    ADD_ATTR("device_info", DEVICE_, SIMULTANEOUS_INTEROPS_INTEL);
+#endif
+#ifdef CL_DEVICE_NUM_SIMULTANEOUS_INTEROPS_INTEL
+    ADD_ATTR("device_info", DEVICE_, NUM_SIMULTANEOUS_INTEROPS_INTEL);
+#endif
 
     // device_fp_config
     ADD_ATTR("device_fp_config", FP_, DENORM);

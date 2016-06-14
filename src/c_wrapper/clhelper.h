@@ -243,4 +243,15 @@ operator<<(std::ostream &stm, const cl_image_format &fmt)
     return stm;
 }
 
+#ifdef CL_DEVICE_TOPOLOGY_AMD
+static PYOPENCL_INLINE std::ostream&
+operator<<(std::ostream &stm, const cl_device_topology_amd &topol)
+{
+    stm << "pcie.bus: " << topol.pcie.bus
+        << ",\npcie.device: " << topol.pcie.device
+        << ",\npcie.function: " << topol.pcie.function
+        << ",\npcie.type: " << topol.pcie.type;
+    return stm;
+}
+#endif
 #endif
