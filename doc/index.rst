@@ -64,16 +64,26 @@ Tutorials
 Software that works with or enhances PyOpenCL
 =============================================
 
-* Two wrappers for `clBLAS <https://github.com/clMathLibraries/clBLAS>`_ have emerged,
+* Jon Roose's `pyclblas <https://pyclblas.readthedocs.io/en/latest/index.html>`_
+  (`code <https://github.com/jroose/pyclblas>`_)
+  makes BLAS in the form of `clBLAS <https://github.com/clMathLibraries/clBLAS>`_
+  available from within :mod:`pyopencl` code.
+
+  Two earlier wrappers continue to be available:
   one by `Eric Hunsberger <https://github.com/hunse/pyopencl_blas>`_ and one
   by `Lars Ericson <http://lists.tiker.net/pipermail/pyopencl/2015-June/001890.html>`_.
+
+* Gregor Thalhammer's `gpyfft <https://github.com/geggo/gpyfft>`_ provides a
+  Python wrapper for the OpenCL FFT library clFFT from AMD.
 
 * Bogdan Opanchuk's `reikna <http://pypi.python.org/pypi/reikna>`_ offers a
   variety of GPU-based algorithms (FFT, random number generation, matrix
   multiplication) designed to work with :class:`pyopencl.array.Array` objects.
 
-* Gregor Thalhammer's `gpyfft <https://github.com/geggo/gpyfft>`_ provides a
-  Python wrapper for the OpenCL FFT library clFFT from AMD.
+* Troels Henriksen, Ken Friis Larsen, and Cosmin Oancea's `Futhark
+  <http://futhark-lang.org/>`_ programming language offers a nice way to code
+  nested-parallel programs with reductions and scans on data in
+  :class:`pyopencl.array.Array` instances.
 
 If you know of a piece of software you feel that should be on this list, please
 let me know, or, even better, send a patch!
