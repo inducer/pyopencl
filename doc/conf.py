@@ -1,6 +1,7 @@
-from __future__ import absolute_import
 # -*- coding: utf-8 -*-
-#
+
+from __future__ import absolute_import
+
 # PyOpenCL documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun 13 00:51:19 2008.
 #
@@ -50,7 +51,9 @@ copyright = '2009, Andreas Kloeckner'
 #
 # The short X.Y version.
 ver_dic = {}
-exec(compile(open("../pyopencl/version.py").read(), "../pyopencl/version.py", 'exec'), ver_dic)
+with open("../pyopencl/version.py") as ver_file:
+    ver_src = ver_file.read()
+exec(compile(ver_src, "../pyopencl/version.py", 'exec'), ver_dic)
 version = ".".join(str(x) for x in ver_dic["VERSION"])
 # The full version, including alpha/beta/rc tags.
 release = ver_dic["VERSION_TEXT"]
