@@ -1,6 +1,6 @@
-from __future__ import absolute_import
-from __future__ import print_function
 #! /usr/bin/env python
+
+from __future__ import absolute_import, print_function
 
 import six.moves.xmlrpc_client
 destwiki = six.moves.xmlrpc_client.ServerProxy("http://wiki.tiker.net?action=xmlrpc2")
