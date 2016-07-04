@@ -35,7 +35,7 @@ help:
 .PHONY: help clean html web pickle htmlhelp latex changes linkcheck
 
 constants:
-	python make_constants.py > constants.inc
+	python3 make_constants.py > constants.inc
 
 clean:
 	-rm -rf build/*
