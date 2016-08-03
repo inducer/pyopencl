@@ -170,7 +170,8 @@ def _generic_info_to_python(info):
     if type_ == 'char*':
         ret = _ffi_pystr(value)
     elif type_ == 'cl_device_topology_amd*':
-        ret = DeviceTopologyAmd(value.pcie.bus, value.pcie.device, value.pcie.function)
+        ret = DeviceTopologyAmd(
+                value.pcie.bus, value.pcie.device, value.pcie.function)
     elif type_.startswith('char*['):
         ret = list(map(_ffi_pystr, value))
         _lib.free_pointer_array(info.value, len(value))
@@ -1842,6 +1843,7 @@ class ImageDescriptor(object):
 
 # }}}
 
+
 # {{{ Image
 
 _int_dtype = ({
@@ -1982,6 +1984,9 @@ class GLTexture(Image, _GLObject):
 
 # }}}
 
+
+# {{{ DeviceTopologyAmd
+
 class DeviceTopologyAmd(object):
     # Hack around fmt.__dict__ check in test_wrapper.py
     __dict__ = {}
@@ -2025,5 +2030,7 @@ class DeviceTopologyAmd(object):
     @function.setter
     def function(self, value):
         self._pcie.function = value
+
+# }}}
 
 # vim: foldmethod=marker
