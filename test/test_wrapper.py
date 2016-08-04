@@ -911,10 +911,10 @@ def test_spirv(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
-    # if (ctx._get_cl_version() < (2, 1) and
-    #         cl.get_cl_header_version() < (2, 1)):
-    #     from pytest import skip
-    #     skip("SPIR-V program creation only available in OpenCL 2.1")
+    if (ctx._get_cl_version() < (2, 1) and
+            cl.get_cl_header_version() < (2, 1)):
+        from pytest import skip
+        skip("SPIR-V program creation only available in OpenCL 2.1")
 
     n = 50000
 
