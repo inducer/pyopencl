@@ -293,15 +293,17 @@ def test_image_format_constructor():
     assert iform.channel_data_type == cl.channel_type.FLOAT
     assert not iform.__dict__
 
+
 def test_device_topology_amd_constructor():
     # doesn't need cl_amd_device_attribute_query support to succeed
-    topol = cl.DeviceTopologyAmd(3,4,5)
+    topol = cl.DeviceTopologyAmd(3, 4, 5)
 
     assert topol.bus == 3
     assert topol.device == 4
     assert topol.function == 5
-    
+
     assert not topol.__dict__
+
 
 def test_nonempty_supported_image_formats(ctx_factory):
     context = ctx_factory()
