@@ -95,6 +95,12 @@ Contents
     :maxdepth: 2
 
     runtime
+    runtime_const
+    runtime_platform
+    runtime_queue
+    runtime_memory
+    runtime_program
+    runtime_gl
     array
     algorithm
     howto

@@ -124,6 +124,8 @@ Version 2016.2
 * Add support for **range** and **slice** kwargs and data-less reductions
   to :class:`pyopencl.reduction.ReductionKernel`.
 * Add support for SPIR-V. (See :class:`pyopencl.Program`.)
+* Add support for :ref:`svm`.
+* :class:`pyopencl.MemoryMap` is usable as a context manager.
 
 Version 2016.1
 --------------
