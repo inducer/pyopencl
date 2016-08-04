@@ -993,7 +993,12 @@ class _Program(_Common):
 
     def __init__(self, *args):
         if len(args) == 2:
-            self._init_source(*args)
+            ctx, source = args
+            from pyopencl.tools import is_spirv
+            if is_spirv(source):
+                self._init_il(ctx, source)
+            else:
+                self._init_source(ctx, source)
         else:
             self._init_binary(*args)
 
@@ -1001,6 +1006,12 @@ class _Program(_Common):
         ptr_program = _ffi.new('clobj_t*')
         _handle_error(_lib.create_program_with_source(
             ptr_program, context.ptr, _to_cstring(src)))
+        self.ptr = ptr_program[0]
+
+    def _init_il(self, context, il):
+        ptr_program = _ffi.new('clobj_t*')
+        _handle_error(_lib.create_program_with_il(
+            ptr_program, context.ptr, il, len(il)))
         self.ptr = ptr_program[0]
 
     def _init_binary(self, context, devices, binaries):

@@ -141,6 +141,21 @@ create_program_with_source(clobj_t *prog, clobj_t _ctx, const char *_src)
 }
 
 error*
+create_program_with_il(clobj_t *prog, clobj_t _ctx, void *il, size_t length)
+{
+#if PYOPENCL_CL_VERSION >= 0x2010
+    auto ctx = static_cast<context*>(_ctx);
+    return c_handle_error([&] {
+            cl_program result = pyopencl_call_guarded(
+                clCreateProgramWithIL, ctx, il, length);
+            *prog = new_program(result, KND_SOURCE);
+        });
+#else
+    PYOPENCL_UNSUPPORTED_BEFORE(clCreateProgramWithIL, "CL 2.1")
+#endif
+}
+
+error*
 create_program_with_binary(clobj_t *prog, clobj_t _ctx,
                            cl_uint num_devices, const clobj_t *devices,
                            const unsigned char **binaries, size_t *binary_sizes)

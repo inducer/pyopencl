@@ -123,6 +123,7 @@ Version 2016.2
   for more information.
 * Add support for **range** and **slice** kwargs and data-less reductions
   to :class:`pyopencl.reduction.ReductionKernel`.
+* Add support for SPIR-V. (See :class:`pyopencl.Program`.)
 
 Version 2016.1
 --------------

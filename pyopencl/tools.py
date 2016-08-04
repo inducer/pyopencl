@@ -931,4 +931,13 @@ def array_module(a):
 
 # }}}
 
+
+def is_spirv(s):
+    spirv_magic = b"\x07\x23\x02\x03"
+    return (
+            isinstance(s, six.binary_type)
+            and (
+                s[:4] == spirv_magic
+                or s[:4] == spirv_magic[::-1]))
+
 # vim: foldmethod=marker

@@ -171,6 +171,7 @@ error* enqueue_svm_migrate_mem(
 
 error *create_program_with_source(clobj_t *program, clobj_t context,
                                   const char *src);
+error* create_program_with_il(clobj_t *prog, clobj_t _ctx, void *il, size_t length);
 error *create_program_with_binary(clobj_t *program, clobj_t context,
                                   cl_uint num_devices, const clobj_t *devices,
                                   const unsigned char **binaries,

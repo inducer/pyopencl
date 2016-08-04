@@ -297,6 +297,13 @@ class Program(object):
             # 2-argument form: context, source
             context, source = arg1, arg2
 
+            from pyopencl.tools import is_spirv
+            if is_spirv(source):
+                # no caching in SPIR-V case
+                self._context = context
+                self._prg = _cl._Program(context, source)
+                return
+
             import sys
             if isinstance(source, six.text_type) and sys.version_info < (3,):
                 from warnings import warn

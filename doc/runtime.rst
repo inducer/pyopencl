@@ -660,6 +660,14 @@ Programs and Kernels
            Program(context, devices, binaries)
 
     *binaries* must contain one binary for each entry in *devices*.
+    If *src* is a :class:`bytes` object starting with a valid `SPIR-V
+    <https://www.khronos.org/spir>`_ magic number, it will be handed
+    off to the OpenCL implementation as such, rather than as OpenCL C source
+    code. (SPIR-V support requires OpenCL 2.1.)
+
+    .. versionchanged:: 2016.2
+
+        Add support for SPIR-V.
 
     .. attribute:: info
 

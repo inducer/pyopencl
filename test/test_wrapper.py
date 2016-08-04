@@ -30,6 +30,7 @@ import pytest
 
 import pyopencl as cl
 import pyopencl.array as cl_array
+import pyopencl.clrandom
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 
@@ -904,6 +905,31 @@ def test_sub_buffers(ctx_factory):
     cl.enqueue_copy(queue, a_sub, a_buf[start:stop])
 
     assert np.array_equal(a_sub, a_sub_ref)
+
+
+def test_spirv(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    # if (ctx._get_cl_version() < (2, 1) and
+    #         cl.get_cl_header_version() < (2, 1)):
+    #     from pytest import skip
+    #     skip("SPIR-V program creation only available in OpenCL 2.1")
+
+    n = 50000
+
+    a_dev = cl.clrandom.rand(queue, n, np.float32)
+    b_dev = cl.clrandom.rand(queue, n, np.float32)
+    dest_dev = cl_array.empty_like(a_dev)
+
+    with open("add-vectors.spv", "rb") as spv_file:
+        spv = spv_file.read()
+
+    prg = cl.Program(ctx, spv)
+
+    prg.sum(queue, a_dev.shape, None, a_dev.data, b_dev.data, dest_dev.data)
+
+    assert la.norm((dest_dev - (a_dev+b_dev)).get()) < 1e-7
 
 
 if __name__ == "__main__":
