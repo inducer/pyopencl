@@ -2603,7 +2603,7 @@ class _ImageInfoGetter:
         else:
             return self.event.get_image_info(inf_attr)
 
-Image.info = property(_ImageInfoGetter)
+Image.image = property(_ImageInfoGetter)
 
 # }}}
 
