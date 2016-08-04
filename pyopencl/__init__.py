@@ -1264,9 +1264,7 @@ def _add_functionality():
                         val.code(), "<unknown error %d>")
             routine = val.routine()
             if routine:
-                result = "%s failed: %s" % (
-                    routine.lower().replace("_", " "),
-                    result)
+                result = "%s failed: %s" % (routine, result)
             what = val.what()
             if what:
                 if result:
