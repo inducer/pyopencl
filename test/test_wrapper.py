@@ -881,7 +881,7 @@ def test_global_offset(ctx_factory):
 
 def test_sub_buffers(ctx_factory):
     ctx = ctx_factory()
-    if (ctx._get_cl_version() < (1, 1) and
+    if (ctx._get_cl_version() < (1, 1) or
             cl.get_cl_header_version() < (1, 1)):
         from pytest import skip
         skip("sub-buffers are only available in OpenCL 1.1")
@@ -911,7 +911,7 @@ def test_spirv(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
-    if (ctx._get_cl_version() < (2, 1) and
+    if (ctx._get_cl_version() < (2, 1) or
             cl.get_cl_header_version() < (2, 1)):
         from pytest import skip
         skip("SPIR-V program creation only available in OpenCL 2.1")
