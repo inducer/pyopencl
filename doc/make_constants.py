@@ -129,14 +129,14 @@ const_ext_lookup = {
             "GFXIP_MAJOR_AMD": amd_devattr,
             "GFXIP_MINOR_AMD": amd_devattr,
             "AVAILABLE_ASYNC_QUEUES_AMD": amd_devattr,
-            
+
             "ME_VERSION_INTEL": intel_me_devattr,
             "SIMULTANEOUS_INTEROPS_INTEL": intel_ss_devattr,
             "NUM_SIMULTANEOUS_INTEROPS_INTEL": intel_ss_devattr,
-            
+
             "EXT_MEM_PADDING_IN_BYTES_QCOM": qcom_hp_devattr,
             "PAGE_SIZE_QCOM": qcom_hp_devattr,
-            
+
             "CORE_TEMPERATURE_ALTERA": altera_temp_devattr,
 
             "MAX_ATOMIC_COUNTERS_EXT":
@@ -462,7 +462,14 @@ if not cl.have_gl():
     print("    was generated on a PyOpenCL build that did not support OpenGL.")
     print()
 
+import inspect
+
+CONSTANT_CLASSES = [
+        getattr(cl, name) for name in dir(cl)
+        if inspect.isclass(getattr(cl, name))
+        and name[0].islower() and name not in ["zip", "map", "range"]]
+
 print(".. This is an automatically generated file. DO NOT EDIT")
 print()
-for cls in cl.CONSTANT_CLASSES:
+for cls in CONSTANT_CLASSES:
     doc_class(cls)
