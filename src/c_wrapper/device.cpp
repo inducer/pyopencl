@@ -238,6 +238,14 @@ device::get_info(cl_uint param_name) const
     case CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT:
         return DEV_GET_INT_INF(cl_uint);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    case CL_DEVICE_IL_VERSION:
+        return pyopencl_get_str_info(Device, PYOPENCL_CL_CASTABLE_THIS, param_name);
+    case CL_DEVICE_MAX_NUM_SUB_GROUPS:
+        return DEV_GET_INT_INF(cl_uint);
+    case CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS:
+        return DEV_GET_INT_INF(cl_bool);
+#endif
 
 
         // {{{ AMD dev attrs

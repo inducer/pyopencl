@@ -32,6 +32,7 @@ cl_11 = ("CL_1.1", "0.92")
 cl_12 = ("CL_1.2", "2011.2")
 cl_12_2015 = ("CL_1.2", "2015.2")
 cl_20 = ("CL_2.0", "2015.2")
+cl_21 = ("CL_2.1", "2016.2")
 amd_devattr = ("cl_amd_device_attribute_query", "2013.2")
 qcom_hp_devattr = ("cl_qcom_ext_host_ptr", "2016.2")
 intel_me_devattr = ("cl_intel_advanced_motion_estimation", "2016.2")
@@ -182,6 +183,9 @@ const_ext_lookup = {
             "PREFERRED_PLATFORM_ATOMIC_ALIGNMENT": cl_20,
             "PREFERRED_GLOBAL_ATOMIC_ALIGNMENT": cl_20,
             "PREFERRED_LOCAL_ATOMIC_ALIGNMENT": cl_20,
+            "IL_VERSION": cl_21,
+            "MAX_NUM_SUB_GROUPS": cl_21,
+            "SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS": cl_21,
             },
 
         cl.mem_object_type: {

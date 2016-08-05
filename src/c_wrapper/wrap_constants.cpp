@@ -303,6 +303,11 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("device_info", DEVICE_, PREFERRED_GLOBAL_ATOMIC_ALIGNMENT);
     ADD_ATTR("device_info", DEVICE_, PREFERRED_LOCAL_ATOMIC_ALIGNMENT);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR("device_info", DEVICE_, IL_VERSION);
+    ADD_ATTR("device_info", DEVICE_, MAX_NUM_SUB_GROUPS);
+    ADD_ATTR("device_info", DEVICE_, SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS);
+#endif
     /* cl_intel_advanced_motion_estimation */
 #ifdef CL_DEVICE_ME_VERSION_INTEL
     ADD_ATTR("device_info", DEVICE_, ME_VERSION_INTEL);
