@@ -1068,7 +1068,7 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
         alignment = itemsize
 
     svm_alloc = SVMAllocation(ctx, nbytes, alignment, flags, _interface=interface)
-    return SVM(np.asarray(svm_alloc))
+    return np.asarray(svm_alloc)
 
 
 def svm_empty_like(ctx, flags, ary, alignment=None):

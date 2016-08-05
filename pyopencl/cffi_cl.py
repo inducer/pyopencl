@@ -1660,7 +1660,7 @@ class Kernel(_Common):
                 status = _lib.kernel__set_arg_null(self.ptr, {arg_idx})
                 if status != _ffi.NULL:
                     _handle_error(status)
-            else:
+            elif isinstance({arg_var}, _cl._CLKernelArg):
                 self._set_arg_clkernelarg({arg_idx}, {arg_var})
             """
             .format(arg_idx=arg_idx, arg_var=arg_var))
