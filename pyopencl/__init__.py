@@ -112,6 +112,10 @@ from pyopencl.cffi_cl import (  # noqa
         MemoryObject,
         MemoryMap,
         Buffer,
+        SVMAllocation,
+        SVM,
+        SVMMap,
+
         CompilerWarning,
         _Program,
         Kernel,
@@ -695,7 +699,8 @@ def enqueue_copy(queue, dest, src, **kwargs):
         Two types of 'buffer' occur in the arguments to this function,
         :class:`Buffer` and 'host-side buffers'. The latter are
         defined by Python and commonly called `buffer objects
-        <https://docs.python.org/3.4/c-api/buffer.html>`_.
+        <https://docs.python.org/3.4/c-api/buffer.html>`_. :mod:`numpy`
+        arrays are a very common example.
         Make sure to always be clear on whether a :class:`Buffer` or a
         Python buffer object is needed.
 
@@ -787,6 +792,15 @@ def enqueue_copy(queue, dest, src, **kwargs):
         three or shorter. (mandatory)
     :arg region: :class:`tuple` of :class:`int` of length
         three or shorter. (mandatory)
+
+    .. ------------------------------------------------------------------------
+    .. rubric :: Transfer :class:`SVM`/host ↔ :class:`SVM`/host
+    .. ------------------------------------------------------------------------
+
+    :arg byte_count: (optional) If not specified, defaults to the
+        size of the source in versions 2012.x and earlier,
+        and to the minimum of the size of the source and target
+        from 2013.1 on.
 
     |std-enqueue-blurb|
 
@@ -982,5 +996,154 @@ def enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
 
 # }}}
 
+
+# {{{ numpy-like svm allocation
+
+def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
+    """Allocate an empty :class:`numpy.ndarray` of the given *shape*, *dtype*
+    and *order*. (See :func:`numpy.empty` for the meaning of these arguments.)
+    The array will be allocated in shared virtual memory belonging
+    to *ctx*.
+
+    :arg ctx: a :class:`Context`
+    :arg flags: a combination of flags from :class:`svm_mem_flags`.
+    :arg alignment: the number of bytes to which the beginning of the memory
+        is aligned. Defaults to the :attr:`numpy.dtype.itemsize` of *dtype*.
+
+    :returns: a :class:`numpy.ndarray` whose :attr:`numpy.ndarray.base` attribute
+        is a :class:`SVMAllocation`.
+
+    To pass the resulting array to an OpenCL kernel or :func:`enqueue_copy`, you
+    will likely want to wrap the returned array in an :class:`SVM` tag.
+
+    .. versionadded:: 2016.2
+    """
+
+    dtype = np.dtype(dtype)
+
+    try:
+        s = 1
+        for dim in shape:
+            s *= dim
+    except TypeError:
+        import sys
+        if sys.version_info >= (3,):
+            admissible_types = (int, np.integer)
+        else:
+            admissible_types = (np.integer,) + six.integer_types
+
+        if not isinstance(shape, admissible_types):
+            raise TypeError("shape must either be iterable or "
+                    "castable to an integer")
+        s = shape
+        shape = (shape,)
+
+    itemsize = dtype.itemsize
+    nbytes = s * itemsize
+
+    from pyopencl.compyte.array import c_contiguous_strides, f_contiguous_strides
+
+    if order in "fF":
+        strides = f_contiguous_strides(itemsize, shape)
+    elif order in "cC":
+        strides = c_contiguous_strides(itemsize, shape)
+    else:
+        raise ValueError("order not recognized: %s" % order)
+
+    descr = dtype.descr
+    if len(descr) == 1:
+        typestr = descr[0][1]
+    else:
+        typestr = "V%d" % itemsize
+
+    interface = {
+        "version": 3,
+        "shape": shape,
+        "typestr": typestr,
+        "descr": descr,
+        "strides": strides,
+        }
+
+    if alignment is None:
+        alignment = itemsize
+
+    svm_alloc = SVMAllocation(ctx, nbytes, alignment, flags, _interface=interface)
+    return SVM(np.asarray(svm_alloc))
+
+
+def svm_empty_like(ctx, flags, ary, alignment=None):
+    """Allocate an empty :class:`numpy.ndarray` like the existing
+    :class:`numpy.ndarray` *ary*.  The array will be allocated in shared
+    virtual memory belonging to *ctx*.
+
+    :arg ctx: a :class:`Context`
+    :arg flags: a combination of flags from :class:`svm_mem_flags`.
+    :arg alignment: the number of bytes to which the beginning of the memory
+        is aligned. Defaults to the :attr:`numpy.dtype.itemsize` of *dtype*.
+
+    :returns: a :class:`numpy.ndarray` whose :attr:`numpy.ndarray.base` attribute
+        is a :class:`SVMAllocation`.
+
+    To pass the resulting array to an OpenCL kernel or :func:`enqueue_copy`, you
+    will likely want to wrap the returned array in an :class:`SVM` tag.
+
+    .. versionadded:: 2016.2
+    """
+    if ary.flags.c_contiguous:
+        order = "C"
+    elif ary.flags.f_contiguous:
+        order = "F"
+    else:
+        raise ValueError("array is neither C- nor Fortran-contiguous")
+
+    return svm_empty(ctx, ary.shape, ary.dtype, order,
+            flags=flags, alignment=alignment)
+
+
+def csvm_empty(ctx, shape, dtype, order="C", alignment=None):
+    """
+    Like :func:`svm_empty`, but with *flags* set for a coarse-grain read-write
+    buffer.
+
+    .. versionadded:: 2016.2
+    """
+    return svm_empty(ctx, svm_mem_flags.READ_WRITE, shape, dtype, order, alignment)
+
+
+def csvm_empty_like(ctx, ary, alignment=None):
+    """
+    Like :func:`svm_empty_like`, but with *flags* set for a coarse-grain
+    read-write buffer.
+
+    .. versionadded:: 2016.2
+    """
+    return svm_empty_like(ctx, svm_mem_flags.READ_WRITE, ary)
+
+
+def fsvm_empty(ctx, shape, dtype, order="C", alignment=None):
+    """
+    Like :func:`svm_empty`, but with *flags* set for a fine-grain read-write
+    buffer.
+
+    .. versionadded:: 2016.2
+    """
+    return svm_empty(ctx,
+            svm_mem_flags.READ_WRITE | svm_mem_flags.SVM_FINE_GRAIN_BUFFER,
+            shape, dtype, order, alignment)
+
+
+def fsvm_empty_like(ctx, ary, alignment=None):
+    """
+    Like :func:`svm_empty_like`, but with *flags* set for a fine-grain
+    read-write buffer.
+
+    .. versionadded:: 2016.2
+    """
+    return svm_empty_like(
+            ctx,
+            svm_mem_flags.READ_WRITE | svm_mem_flags.SVM_FINE_GRAIN_BUFFER,
+            ary)
+
+# }}}
 
 # vim: foldmethod=marker

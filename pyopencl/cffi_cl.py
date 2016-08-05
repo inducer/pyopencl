@@ -804,7 +804,7 @@ class CommandQueue(_Common):
 # }}}
 
 
-# {{{ memory objects
+# {{{ _norm_shape_dtype and cffi_array
 
 def _norm_shape_dtype(shape, dtype, order="C", strides=None, name=""):
     dtype = np.dtype(dtype)
@@ -839,17 +839,10 @@ class cffi_array(np.ndarray):  # noqa
     def base(self):
         return self.__base
 
+# }}}
 
-class LocalMemory(_CLKernelArg):
-    __slots__ = ('_size',)
 
-    def __init__(self, size):
-        self._size = size
-
-    @property
-    def size(self):
-        return self._size
-
+# {{{ MemoryObjectHolder base class
 
 class MemoryObjectHolder(_Common, _CLKernelArg):
     def get_host_array(self, shape, dtype, order="C"):
@@ -867,6 +860,10 @@ class MemoryObjectHolder(_Common, _CLKernelArg):
                              "MemoryObjectHolder.get_host_array")
         return ary
 
+# }}}
+
+
+# {{{ MemoryObject
 
 class MemoryObject(MemoryObjectHolder):
     def __init__(self, hostbuf=None):
@@ -894,8 +891,18 @@ class MemoryObject(MemoryObjectHolder):
     def release(self):
         _handle_error(_lib.memory_object__release(self.ptr))
 
+# }}}
+
+
+# {{{ MemoryMap
 
 class MemoryMap(_Common):
+    """"
+    .. automethod:: release
+
+    This class may also be used as a context manager in a ``with`` statement.
+    """
+
     @classmethod
     def _create(cls, ptr, shape, typestr, strides):
         self = _Common._create.__func__(cls, ptr)
@@ -908,6 +915,12 @@ class MemoryMap(_Common):
         }
         return self
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+
     def release(self, queue=None, wait_for=None):
         c_wait_for, num_wait_for = _clobj_list(wait_for)
         _event = _ffi.new('clobj_t*')
@@ -915,6 +928,8 @@ class MemoryMap(_Common):
             self.ptr, queue.ptr if queue is not None else _ffi.NULL,
             c_wait_for, num_wait_for, _event))
         return Event._create(_event[0])
+
+# }}}
 
 
 # {{{ _c_buffer_from_obj
@@ -960,8 +975,6 @@ elif sys.version_info >= (2, 7, 4):
         _ssize_t = ctypes.c_size_t
 
     def _c_buffer_from_obj(obj, writable=False, retain=False):
-        # {{{ fall back to the old CPython buffer protocol API
-
         # {{{ try the numpy array interface first
 
         # avoid slow ctypes-based buffer interface wrapper
@@ -975,6 +988,8 @@ elif sys.version_info >= (2, 7, 4):
                     obj)
 
         # }}}
+
+        # {{{ fall back to the old CPython buffer protocol API
 
         from pyopencl._buffers import Py_buffer, PyBUF_ANY_CONTIGUOUS, PyBUF_WRITABLE
 
@@ -1070,6 +1085,233 @@ class Buffer(MemoryObject):
         return self.get_sub_region(start, size)
 
 # }}}
+
+
+# {{{ SVMAllocation
+
+class SVMAllocation(object):
+    """An object whose lifetime is tied to an allocation of shared virtual memory.
+
+    .. note::
+
+        Most likely, you will not want to use this directly, but rather
+        :func:`svm_empty` and related functions which allow access to this
+        functionality using a friendlier, more Pythonic interface.
+
+    .. versionadded:: 2016.2
+
+    .. automethod:: __init__(self, ctx, size, alignment, flags=None)
+    .. automethod:: release
+    .. automethod:: enqueue_release
+    """
+    def __init__(self, ctx, size, alignment, flags, _interface=None):
+        """
+        :arg ctx: a :class:`Context`
+        :arg flags: some of :class:`svm_mem_flags`.
+        """
+
+        self.ptr = None
+
+        ptr = _ffi.new('void**')
+        _handle_error(_lib.svm_alloc(
+            ctx.ptr, flags, size, alignment,
+            ptr))
+
+        self.ctx = ctx
+        self.ptr = ptr[0]
+        self.is_fine_grain = flags & svm_mem_flags.SVM_FINE_GRAIN_BUFFER
+
+        if _interface is not None:
+            _interface["data"] = (
+                    int(_ffi.cast("intptr_t", self.ptr)),
+                    flags & mem_flags.WRITE_ONLY != 0
+                    or flags & mem_flags.READ_WRITE != 0)
+            self.__array_interface__ = _interface
+
+    def __del__(self):
+        if self.ptr is not None:
+            self.release()
+
+    def release(self):
+        _handle_error(_lib.svm_free(self.ctx.ptr, self.ptr))
+        self.ptr = None
+
+    def enqueue_release(self, queue, wait_for=None):
+        """
+        :arg flags: a combination of :class:`pyopencl.map_flags`
+        :returns: a :class:`pyopencl.Event`
+
+        |std-enqueue-blurb|
+        """
+        ptr_event = _ffi.new('clobj_t*')
+        c_wait_for, num_wait_for = _clobj_list(wait_for)
+        _handle_error(_lib.enqueue_svm_free(
+            ptr_event, queue.ptr, 1, self.ptr,
+            c_wait_for, num_wait_for))
+
+        self.ctx = None
+        self.ptr = None
+
+        return Event._create(ptr_event[0])
+
+# }}}
+
+
+# {{{ SVM
+
+#TODO:
+# doc example
+# finish copy
+#  test
+# fill
+#  test
+# migrate
+
+class SVM(_CLKernelArg):
+    """Tags an object exhibiting the Python buffer interface (such as a
+    :class:`numpy.ndarray`) as referring to shared virtual memory.
+
+    Depending on the features of the OpenCL implementation, the following
+    types of objects may be passed to/wrapped in this type:
+
+    *   coarse-grain shared memory as returned by (e.g.) :func:`csvm_empty`
+        for any implementation of OpenCL 2.0.
+
+    *   fine-grain shared memory as returned by (e.g.) :func:`fsvm_empty`,
+        if the implementation supports fine-grained shared virtual memory.
+
+    *   any :class:`numpy.ndarray` (or other Python object with a buffer
+        interface) if the implementation supports fine-grained *system* shared
+        virtual memory.
+
+    Objects of this type may be passed to kernel calls and :func:`enqueue_copy`.
+    Coarse-grain shared-memory *must* be mapped into host address space using
+    :meth:`map` before being accessed through the :mod:`numpy` interface.
+
+    .. note::
+
+        This object merely serves as a 'tag' that changes the meaning
+        of functions to which it is passed. It has no special management
+        relationship to the memory it tags. For example, it is permissible
+        to grab a :mod:`numpy.array` out of :attr:`SVM.memory` of one
+        :class:`SVM` instance and use the array to construct another.
+        Neither of the tags needs to be kept alive.
+
+    .. versionadded:: 2016.2
+
+    .. attribute:: mem
+
+        The wrapped object.
+
+    .. automethod:: __init__
+    .. automethod:: map
+    .. automethod:: as_buffer
+    """
+
+    def __init__(self, mem):
+        self.mem = mem
+
+    def map(self, queue, is_blocking=True, flags=None, wait_for=None):
+        """
+        :arg is_blocking: If *False*, subsequent code must wait on
+            :attr:`SVMMap.event` in the returned object before accessing the
+            mapped memory.
+        :arg flags: a combination of :class:`pyopencl.map_flags`, defaults to
+            read-write.
+        :returns: an :class:`SVMMap` instance
+
+        |std-enqueue-blurb|
+        """
+        if flags is None:
+            flags = map_flags.READ | map_flags.WRITE
+
+        c_buf, size, _ = _c_buffer_from_obj(self.mem, writable=bool(
+            flags & (map_flags.WRITE | map_flags.INVALIDATE_REGION)))
+
+        ptr_event = _ffi.new('clobj_t*')
+        c_wait_for, num_wait_for = _clobj_list(wait_for)
+        _handle_error(_lib.enqueue_svm_map(
+            ptr_event, queue.ptr, is_blocking, flags,
+            c_buf, size,
+            c_wait_for, num_wait_for))
+
+        evt = Event._create(ptr_event[0]), SVMMap(self.mem)
+        return SVMMap(self, queue, evt)
+
+    def _enqueue_unmap(self, queue, wait_for=None):
+        c_buf, _, _ = _c_buffer_from_obj(self.mem)
+
+        ptr_event = _ffi.new('clobj_t*')
+        c_wait_for, num_wait_for = _clobj_list(wait_for)
+        _handle_error(_lib.enqueue_svm_unmap(
+            ptr_event, queue.ptr,
+            c_buf,
+            c_wait_for, num_wait_for))
+
+        return Event._create(ptr_event[0]), SVMMap(self.mem)
+
+    def as_buffer(self, ctx, flags=None):
+        """
+        :arg ctx: a :class:`Context`
+        :arg flags: a combination of :class:`pyopencl.map_flags`, defaults to
+            read-write.
+        :returns: a :class:`Buffer` corresponding to *self*.
+
+        The memory referred to by this object must not be freed before
+        the returned :class:`Buffer` is released.
+        """
+
+        if flags is None:
+            flags = mem_flags.READ_WRITE
+
+        return Buffer(ctx, flags, size=self.mem.nbytes, hostbuf=self.mem)
+
+# }}}
+
+
+# {{{ SVMMap
+
+class SVMMap(_CLKernelArg):
+    """
+    .. attribute:: event
+
+    .. versionadded:: 2016.2
+
+    .. automethod:: release
+
+    This class may also be used as a context manager in a ``with`` statement.
+    :meth:`release` will be called upon exit from the ``with`` region.
+    The value returned to the ``as`` part of the context manager is the
+    mapped Python object (e.g. a :mod:`numpy` array).
+    """
+    def __init__(self, svm, queue, event):
+        self.svm = svm
+        self.queue = queue
+        self.event = event
+
+    def __del__(self):
+        if self.svm is not None:
+            self.release()
+
+    def __enter__(self):
+        return self.svm.mem
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+
+    def release(self, queue=None, wait_for=None):
+        """
+        :arg queue: a :class:`pyopencl.CommandQueue`. Defaults to the one
+            with which the map was created, if not specified.
+        :returns: a :class:`pyopencl.Event`
+
+        |std-enqueue-blurb|
+        """
+
+        evt = self.svm._enqueue_unmap(self.queue)
+        self.svm = None
+
+        return evt
 
 # }}}
 
@@ -1246,6 +1488,17 @@ class _Program(_Common):
 # }}}
 
 
+class LocalMemory(_CLKernelArg):
+    __slots__ = ('_size',)
+
+    def __init__(self, size):
+        self._size = size
+
+    @property
+    def size(self):
+        return self._size
+
+
 # {{{ Kernel
 
 # {{{ arg packing helpers
@@ -1407,8 +1660,8 @@ class Kernel(_Common):
                 status = _lib.kernel__set_arg_null(self.ptr, {arg_idx})
                 if status != _ffi.NULL:
                     _handle_error(status)
-            elif isinstance({arg_var}, _CLKernelArg):
-                self.set_arg({arg_idx}, {arg_var})
+            else:
+                self._set_arg_clkernelarg({arg_idx}, {arg_var})
             """
             .format(arg_idx=arg_idx, arg_var=arg_var))
 
@@ -1588,19 +1841,30 @@ class Kernel(_Common):
         capture_kernel_call(self, filename, queue, global_size, local_size,
                 *args, **kwargs)
 
+    def _set_arg_clkernelarg(self, arg_index, arg):
+        if isinstance(arg, MemoryObjectHolder):
+            _handle_error(_lib.kernel__set_arg_mem(self.ptr, arg_index, arg.ptr))
+        elif isinstance(arg, SVM):
+            c_buf, _, _ = _c_buffer_from_obj(arg.mem)
+            _handle_error(_lib.kernel__set_arg_svm_pointer(
+                self.ptr, arg_index, c_buf))
+        elif isinstance(arg, Sampler):
+            _handle_error(_lib.kernel__set_arg_sampler(self.ptr, arg_index,
+                                                       arg.ptr))
+        elif isinstance(arg, LocalMemory):
+            _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
+                                                   _ffi.NULL, arg.size))
+        else:
+            raise RuntimeError("unexpected _CLKernelArg subclass"
+                               "dimensions", status_code.INVALID_VALUE,
+                               "clSetKernelArg")
+
     def set_arg(self, arg_index, arg):
         # If you change this, also change the kernel call generation logic.
         if arg is None:
             _handle_error(_lib.kernel__set_arg_null(self.ptr, arg_index))
         elif isinstance(arg, _CLKernelArg):
-            if isinstance(arg, MemoryObjectHolder):
-                _handle_error(_lib.kernel__set_arg_mem(self.ptr, arg_index, arg.ptr))
-            elif isinstance(arg, Sampler):
-                _handle_error(_lib.kernel__set_arg_sampler(self.ptr, arg_index,
-                                                           arg.ptr))
-            elif isinstance(arg, LocalMemory):
-                _handle_error(_lib.kernel__set_arg_buf(self.ptr, arg_index,
-                                                       _ffi.NULL, arg.size))
+            self._set_arg_clkernelarg(self, arg_index, arg)
         elif _CPY2 and isinstance(arg, np.generic):
             # https://github.com/numpy/numpy/issues/5381
             c_buf, size, _ = _c_buffer_from_obj(np.getbuffer(arg))

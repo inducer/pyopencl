@@ -72,11 +72,11 @@ def get_config_schema():
     return ConfigSchema([
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
-        Switch("CL_USE_SHIPPED_EXT", True,
+        Switch(
+            "CL_USE_SHIPPED_EXT", True,
             "Use the pyopencl version of CL/cl_ext.h which includes" +
             " a broader range of vendor-specific OpenCL extension attributes" +
-            " than the standard Khronos (or vendor specific) CL/cl_ext.h."
-        ),
+            " than the standard Khronos (or vendor specific) CL/cl_ext.h."),
         Option("CL_PRETEND_VERSION", None,
             "Dotted CL version (e.g. 1.2) which you'd like to use."),
 

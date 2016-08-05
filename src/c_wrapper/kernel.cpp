@@ -145,6 +145,19 @@ kernel__set_arg_buf(clobj_t _knl, cl_uint arg_index,
 }
 
 error*
+kernel__set_arg_svm_pointer(clobj_t _knl, cl_uint arg_index, void *value)
+{
+#if PYOPENCL_CL_VERSION >= 0x2000
+    auto knl = static_cast<kernel*>(_knl);
+    return c_handle_error([&] {
+            pyopencl_call_guarded(clSetKernelArgSVMPointer, knl, arg_index, value);
+        });
+#else
+    PYOPENCL_UNSUPPORTED_BEFORE(clSetKernelArgSVMPointer, "CL 2.0")
+#endif
+}
+
+error*
 kernel__get_work_group_info(clobj_t _knl, cl_kernel_work_group_info param,
                             clobj_t _dev, generic_info *out)
 {

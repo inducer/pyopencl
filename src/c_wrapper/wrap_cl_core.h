@@ -211,6 +211,7 @@ error *kernel__set_arg_sampler(clobj_t kernel, cl_uint arg_index,
                                clobj_t sampler);
 error *kernel__set_arg_buf(clobj_t kernel, cl_uint arg_index,
                            const void *buffer, size_t size);
+error *kernel__set_arg_svm_pointer(clobj_t kernel, cl_uint arg_index, void *value);
 error *kernel__get_work_group_info(clobj_t kernel,
                                    cl_kernel_work_group_info param,
                                    clobj_t device, generic_info *out);

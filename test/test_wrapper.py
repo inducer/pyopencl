@@ -914,7 +914,7 @@ def test_spirv(ctx_factory):
     if (ctx._get_cl_version() < (2, 1) or
             cl.get_cl_header_version() < (2, 1)):
         from pytest import skip
-        skip("SPIR-V program creation only available in OpenCL 2.1")
+        skip("SPIR-V program creation only available in OpenCL 2.1 and higher")
 
     n = 50000
 
@@ -930,6 +930,32 @@ def test_spirv(ctx_factory):
     prg.sum(queue, a_dev.shape, None, a_dev.data, b_dev.data, dest_dev.data)
 
     assert la.norm((dest_dev - (a_dev+b_dev)).get()) < 1e-7
+
+
+def test_coarse_grain_svm(ctx_factory):
+    ctx = ctx_factory()
+    # queue = cl.CommandQueue(ctx)
+
+    if (ctx._get_cl_version() < (2, 0) or
+            cl.get_cl_header_version() < (2, 0)):
+        from pytest import skip
+        skip("SVM only available in OpenCL 2.0 and higher")
+
+    svm_ary = cl.csvm_empty(ctx, (100, 100), np.float32, alignment=64)
+    assert isinstance(svm_ary.base, cl.SVMAllocation)
+
+
+def test_fine_grain_svm(ctx_factory):
+    ctx = ctx_factory()
+    # queue = cl.CommandQueue(ctx)
+
+    if (ctx._get_cl_version() < (2, 0) or
+            cl.get_cl_header_version() < (2, 0)):
+        from pytest import skip
+        skip("SVM only available in OpenCL 2.0 and higher")
+
+    svm_ary = cl.fsvm_empty(ctx, (100, 100), np.float32, alignment=64)
+    assert isinstance(svm_ary.base, cl.SVMAllocation)
 
 
 if __name__ == "__main__":

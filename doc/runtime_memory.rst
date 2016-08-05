@@ -33,7 +33,7 @@ OpenCL Runtime: Memory
     |comparable|
 
 Memory Migration
-^^^^^^^^^^^^^^^^
+----------------
 
 .. function:: enqueue_migrate_mem_objects(queue, mem_objects, flags=0, wait_for=None)
 
@@ -52,8 +52,8 @@ Memory Migration
     Only available with the `cl_ext_migrate_memobject`
     extension.
 
-Buffers
-^^^^^^^
+Buffer
+------
 
 .. class:: Buffer(context, flags, size=0, hostbuf=None)
 
@@ -107,24 +107,39 @@ Buffers
 
 .. _svm:
 
-Shared Virtual Memory
-^^^^^^^^^^^^^^^^^^^^^
+Shared Virtual Memory (SVM)
+---------------------------
 
-Shared virtual memory requires OpenCL 2.0.
+Shared virtual memory allows the host and the compute device to share
+address space, so that pointers on the host and on the device may have
+the same meaning. In addition, it allows the same memory to be accessed
+by both the host and the device. *Coarse-grain* SVM requires that
+buffers be mapped before being accessed on the host, *fine-grain* SVM
+does away with that requirement.
 
-.. autoclass:: SVMAllocation
+SVM requires OpenCL 2.0.
 
 .. autoclass:: SVM
 
 .. autoclass:: SVMMap
 
+Allocating SVM
+^^^^^^^^^^^^^^
+
+.. autofunction:: svm_empty
+.. autofunction:: svm_empty_like
 .. autofunction:: csvm_empty
-.. autofunction:: fsvm_empty
 .. autofunction:: csvm_empty_like
+.. autofunction:: fsvm_empty
 .. autofunction:: fsvm_empty_like
 
-Image Formats
-^^^^^^^^^^^^^
+SVM Allocation Holder
+^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: SVMAllocation
+
+Image
+-----
 
 .. class:: ImageFormat([channel_order, channel_type])
 
@@ -169,8 +184,6 @@ Image Formats
     See :class:`mem_flags` for possible values of *flags*
     and :class:`mem_object_type` for possible values of *image_type*.
 
-Images
-^^^^^^
 .. class:: Image(context, flags, format, shape=None, pitches=None, hostbuf=None, is_array=False, buffer=None):
 
     See :class:`mem_flags` for values of *flags*.
@@ -255,12 +268,12 @@ Images
     .. versionadded:: 2011.2
 
 Transfers
-^^^^^^^^^
+---------
 
 .. autofunction:: enqueue_copy(queue, dest, src, **kwargs)
 
 Mapping Memory into Host Address Space
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------------------
 
 .. autoclass:: MemoryMap
 
@@ -309,7 +322,7 @@ Mapping Memory into Host Address Space
         Added *strides* argument.
 
 Samplers
-^^^^^^^^
+--------
 
 .. class:: Sampler(context, normalized_coords, addressing_mode, filter_mode)
 
