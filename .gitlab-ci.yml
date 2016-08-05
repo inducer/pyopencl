@@ -12,19 +12,18 @@
   - opengl
   except:
   - tags
-Python 2.7 Intel CPU:
+Python 3.5 Intel CPU:
   script:
-  - export PY_EXE=python2.7
+  - export PY_EXE=python3.5
   - export PYOPENCL_TEST="intel(r):pu"
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python2.7
+  - python3.5
   - intel-cl-cpu
   except:
   - tags
-  - master
 Python 3.5 AMD CPU:
   script:
   - export PY_EXE=python3.5
