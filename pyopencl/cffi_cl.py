@@ -1450,7 +1450,7 @@ class _Program(_Common):
         try:
             self._build(options=options_bytes, devices=devices)
         except Error as e:
-            what = e.what + "\n\n" + (75*"="+"\n").join(
+            msg = e.what + "\n\n" + (75*"="+"\n").join(
                     "Build on %s:\n\n%s" % (dev, log)
                     for dev, log in self._get_build_logs())
             code = e.code
@@ -1458,9 +1458,9 @@ class _Program(_Common):
 
             err = RuntimeError(
                     Error._ErrorRecord(
-                        what=lambda: what,
-                        code=lambda: code,
-                        routine=lambda: routine))
+                        msg=msg,
+                        code=code,
+                        routine=routine))
 
         if err is not None:
             # Python 3.2 outputs the whole list of currently active exceptions

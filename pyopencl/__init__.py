@@ -443,9 +443,9 @@ class Program(object):
         try:
             return build_func()
         except _cl.RuntimeError as e:
-            what = e.what
+            msg = e.what
             if options_bytes:
-                what = what + "\n(options: %s)" % options_bytes.decode("utf-8")
+                msg = msg + "\n(options: %s)" % options_bytes.decode("utf-8")
 
             if source is not None:
                 from tempfile import NamedTemporaryFile
@@ -455,16 +455,16 @@ class Program(object):
                 finally:
                     srcfile.close()
 
-                what = what + "\n(source saved as %s)" % srcfile.name
+                msg = msg + "\n(source saved as %s)" % srcfile.name
 
             code = e.code
             routine = e.routine
 
             err = _cl.RuntimeError(
                     _cl.Error._ErrorRecord(
-                        what=lambda: what,
-                        code=lambda: code,
-                        routine=lambda: routine))
+                        msg=msg,
+                        code=code,
+                        routine=routine))
 
         # Python 3.2 outputs the whole list of currently active exceptions
         # This serves to remove one (redundant) level from that nesting.
