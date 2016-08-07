@@ -1987,7 +1987,7 @@ class Kernel(_Common):
         if arg is None:
             _handle_error(_lib.kernel__set_arg_null(self.ptr, arg_index))
         elif isinstance(arg, _CLKernelArg):
-            self._set_arg_clkernelarg(self, arg_index, arg)
+            self._set_arg_clkernelarg(arg_index, arg)
         elif _CPY2 and isinstance(arg, np.generic):
             # https://github.com/numpy/numpy/issues/5381
             c_buf, size, _ = _c_buffer_from_obj(np.getbuffer(arg))
