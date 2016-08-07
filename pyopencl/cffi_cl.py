@@ -1122,10 +1122,11 @@ class SVMAllocation(object):
         self.is_fine_grain = flags & svm_mem_flags.SVM_FINE_GRAIN_BUFFER
 
         if _interface is not None:
-            _interface["data"] = (
-                    int(_ffi.cast("intptr_t", self.ptr)),
+            read_write = (
                     flags & mem_flags.WRITE_ONLY != 0
                     or flags & mem_flags.READ_WRITE != 0)
+            _interface["data"] = (
+                    int(_ffi.cast("intptr_t", self.ptr)), not read_write)
             self.__array_interface__ = _interface
 
     def __del__(self):
@@ -1159,13 +1160,7 @@ class SVMAllocation(object):
 
 # {{{ SVM
 
-#TODO:
-# doc example
-# finish copy
-#  test
-# fill
-#  test
-# migrate
+# TODO add clSetKernelExecInfo
 
 class SVM(_CLKernelArg):
     """Tags an object exhibiting the Python buffer interface (such as a
@@ -1177,12 +1172,41 @@ class SVM(_CLKernelArg):
     *   coarse-grain shared memory as returned by (e.g.) :func:`csvm_empty`
         for any implementation of OpenCL 2.0.
 
+        This is how coarse-grain SVM may be used from both host and device::
+
+            svm_ary = cl.SVM(cl.csvm_empty(ctx, 1000, np.float32, alignment=64))
+            assert isinstance(svm_ary.mem, np.ndarray)
+
+            with svm_ary.map_rw(queue) as ary:
+                ary.fill(17)  # use from host
+
+            prg.twice(queue, svm_ary.mem.shape, None, svm_ary)
+
     *   fine-grain shared memory as returned by (e.g.) :func:`fsvm_empty`,
         if the implementation supports fine-grained shared virtual memory.
+        This memory may directly be passed to a kernel::
+
+            ary = cl.fsvm_empty(ctx, 1000, np.float32)
+            assert isinstance(ary, np.ndarray)
+
+            prg.twice(queue, ary.shape, None, cl.SVM(ary))
+            queue.finish() # synchronize
+            print(ary) # access from host
+
+        Observe how mapping (as needed in coarse-grain SVM) is no longer
+        necessary.
 
     *   any :class:`numpy.ndarray` (or other Python object with a buffer
         interface) if the implementation supports fine-grained *system* shared
         virtual memory.
+
+        This is how plain :mod:`numpy` arrays may directly be passed to a
+        kernel::
+
+            ary = np.zeros(1000, np.float32)
+            prg.twice(queue, ary.shape, None, cl.SVM(ary))
+            queue.finish() # synchronize
+            print(ary) # access from host
 
     Objects of this type may be passed to kernel calls and :func:`enqueue_copy`.
     Coarse-grain shared-memory *must* be mapped into host address space using
@@ -1190,12 +1214,12 @@ class SVM(_CLKernelArg):
 
     .. note::
 
-        This object merely serves as a 'tag' that changes the meaning
+        This object merely serves as a 'tag' that changes the behavior
         of functions to which it is passed. It has no special management
         relationship to the memory it tags. For example, it is permissible
-        to grab a :mod:`numpy.array` out of :attr:`SVM.memory` of one
+        to grab a :mod:`numpy.array` out of :attr:`SVM.mem` of one
         :class:`SVM` instance and use the array to construct another.
-        Neither of the tags needs to be kept alive.
+        Neither of the tags need to be kept alive.
 
     .. versionadded:: 2016.2
 
@@ -1205,13 +1229,15 @@ class SVM(_CLKernelArg):
 
     .. automethod:: __init__
     .. automethod:: map
+    .. automethod:: map_ro
+    .. automethod:: map_rw
     .. automethod:: as_buffer
     """
 
     def __init__(self, mem):
         self.mem = mem
 
-    def map(self, queue, is_blocking=True, flags=None, wait_for=None):
+    def map(self, queue, flags, is_blocking=True, wait_for=None):
         """
         :arg is_blocking: If *False*, subsequent code must wait on
             :attr:`SVMMap.event` in the returned object before accessing the
@@ -1222,11 +1248,9 @@ class SVM(_CLKernelArg):
 
         |std-enqueue-blurb|
         """
-        if flags is None:
-            flags = map_flags.READ | map_flags.WRITE
-
-        c_buf, size, _ = _c_buffer_from_obj(self.mem, writable=bool(
-            flags & (map_flags.WRITE | map_flags.INVALIDATE_REGION)))
+        writable = bool(
+            flags & (map_flags.WRITE | map_flags.WRITE_INVALIDATE_REGION))
+        c_buf, size, _ = _c_buffer_from_obj(self.mem, writable=writable)
 
         ptr_event = _ffi.new('clobj_t*')
         c_wait_for, num_wait_for = _clobj_list(wait_for)
@@ -1235,8 +1259,20 @@ class SVM(_CLKernelArg):
             c_buf, size,
             c_wait_for, num_wait_for))
 
-        evt = Event._create(ptr_event[0]), SVMMap(self.mem)
+        evt = Event._create(ptr_event[0])
         return SVMMap(self, queue, evt)
+
+    def map_ro(self, queue, is_blocking=True, wait_for=None):
+        """Like :meth:`map`, but with *flags* set for a read-only map."""
+
+        return self.map(queue, map_flags.READ,
+                is_blocking=is_blocking, wait_for=wait_for)
+
+    def map_rw(self, queue, is_blocking=True, wait_for=None):
+        """Like :meth:`map`, but with *flags* set for a read-only map."""
+
+        return self.map(queue, map_flags.READ | map_flags.WRITE,
+                is_blocking=is_blocking, wait_for=wait_for)
 
     def _enqueue_unmap(self, queue, wait_for=None):
         c_buf, _, _ = _c_buffer_from_obj(self.mem)
@@ -1248,7 +1284,7 @@ class SVM(_CLKernelArg):
             c_buf,
             c_wait_for, num_wait_for))
 
-        return Event._create(ptr_event[0]), SVMMap(self.mem)
+        return Event._create(ptr_event[0])
 
     def as_buffer(self, ctx, flags=None):
         """
@@ -1265,6 +1301,93 @@ class SVM(_CLKernelArg):
             flags = mem_flags.READ_WRITE
 
         return Buffer(ctx, flags, size=self.mem.nbytes, hostbuf=self.mem)
+
+
+def _enqueue_svm_memcpy(queue, dst, src, size=None,
+        wait_for=None, is_blocking=True):
+    dst_buf, dst_size, _ = _c_buffer_from_obj(dst, writable=True)
+    src_buf, src_size, _ = _c_buffer_from_obj(src, writable=False)
+
+    if size is None:
+        size = min(dst_size, src_size)
+
+    ptr_event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_svm_memcpy(
+        ptr_event, queue.ptr,  bool(is_blocking),
+        dst_buf, src_buf, size,
+        c_wait_for, num_wait_for,
+        NannyEvent._handle((dst_buf, src_buf))))
+
+    return NannyEvent._create(ptr_event[0])
+
+
+def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
+    """Fill shared virtual memory with a pattern.
+
+    :arg dest: a Python buffer object, optionally wrapped in an :class:`SVM` object
+    :arg pattern: a Python buffer object (e.g. a :class:`numpy.ndarray` with the
+        fill pattern to be used.
+    :arg byte_count: The size of the memory to be fill. Defaults to the
+        entirety of *dest*.
+
+    |std-enqueue-blurb|
+
+    .. versionadded:: 2016.2
+    """
+
+    if isinstance(dest, SVM):
+        dest = dest.mem
+
+    dst_buf, dst_size, _ = _c_buffer_from_obj(dest, writable=True)
+    pattern_buf, pattern_size, _ = _c_buffer_from_obj(pattern, writable=False)
+
+    if byte_count is None:
+        byte_count = dst_size
+
+    # pattern is copied, no need to nanny.
+    ptr_event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_svm_memfill(
+        ptr_event, queue.ptr,
+        dst_buf, pattern_buf, pattern_size, byte_count,
+        c_wait_for, num_wait_for))
+
+    return Event._create(ptr_event[0])
+
+
+def enqueue_svm_migratemem(queue, svms, flags, wait_for=None):
+    """
+    :arg svms: a collection of Python buffer objects (e.g. :mod:`numpy`
+        arrrays), optionally wrapped in :class:`SVM` objects.
+    :arg flags: a combination of :class:`mem_migration_flags`
+
+    |std-enqueue-blurb|
+
+    .. versionadded:: 2016.2
+
+    This function requires OpenCL 2.1.
+    """
+
+    svm_pointers = _ffi.new('void *', len(svms))
+    sizes = _ffi.new('size_t', len(svms))
+
+    for i, svm in enumerate(svms):
+        if isinstance(svm, SVM):
+            svm = svm.mem
+
+        buf, size, _ = _c_buffer_from_obj(svm, writable=False)
+        svm_pointers[i] = buf
+        sizes[i] = size
+
+    ptr_event = _ffi.new('clobj_t*')
+    c_wait_for, num_wait_for = _clobj_list(wait_for)
+    _handle_error(_lib.enqueue_svm_memfill(
+        ptr_event, queue.ptr,
+        len(svms), svm_pointers, sizes, flags,
+        c_wait_for, num_wait_for))
+
+    return Event._create(ptr_event[0])
 
 # }}}
 

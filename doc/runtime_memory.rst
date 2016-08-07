@@ -104,7 +104,6 @@ Buffer
 
     .. versionadded:: 2011.2
 
-
 .. _svm:
 
 Shared Virtual Memory (SVM)
@@ -132,6 +131,14 @@ Allocating SVM
 .. autofunction:: csvm_empty_like
 .. autofunction:: fsvm_empty
 .. autofunction:: fsvm_empty_like
+
+Operations on SVM
+^^^^^^^^^^^^^^^^^
+
+(See also :ref:`mem-transfer`.)
+
+.. autofunction:: enqueue_svm_memfill
+.. autofunction:: enqueue_svm_migratemem
 
 SVM Allocation Holder
 ^^^^^^^^^^^^^^^^^^^^^
@@ -266,6 +273,8 @@ Image
     Only available with CL 1.2.
 
     .. versionadded:: 2011.2
+
+.. _mem-transfer:
 
 Transfers
 ---------

@@ -64,7 +64,7 @@ enqueue_svm_memcpy(
     clobj_t *evt, clobj_t _queue,
     cl_bool is_blocking,
     void *dst_ptr, const void *src_ptr, size_t size,
-    const clobj_t *_wait_for, uint32_t num_wait_for)
+    const clobj_t *_wait_for, uint32_t num_wait_for, void *pyobj)
 {
 #if PYOPENCL_CL_VERSION >= 0x2000
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
@@ -74,7 +74,7 @@ enqueue_svm_memcpy(
             clEnqueueSVMMemcpy, queue,
             is_blocking,
             dst_ptr, src_ptr, size,
-            wait_for, event_out(evt));
+            wait_for, nanny_event_out(evt, pyobj));
         });
 #else
     PYOPENCL_UNSUPPORTED_BEFORE(clEnqueueSVMMemcpy, "CL 2.0")

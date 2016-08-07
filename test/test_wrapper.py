@@ -934,28 +934,80 @@ def test_spirv(ctx_factory):
 
 def test_coarse_grain_svm(ctx_factory):
     ctx = ctx_factory()
-    # queue = cl.CommandQueue(ctx)
+    queue = cl.CommandQueue(ctx)
 
     if (ctx._get_cl_version() < (2, 0) or
             cl.get_cl_header_version() < (2, 0)):
         from pytest import skip
         skip("SVM only available in OpenCL 2.0 and higher")
 
-    svm_ary = cl.csvm_empty(ctx, (100, 100), np.float32, alignment=64)
-    assert isinstance(svm_ary.base, cl.SVMAllocation)
+    n = 3000
+    svm_ary = cl.SVM(cl.csvm_empty(ctx, (n,), np.float32, alignment=64))
+    assert isinstance(svm_ary.mem.base, cl.SVMAllocation)
+
+    if ctx.devices[0].platform.name != "Portable Computing Language":
+        # pocl 0.13 has a bug misinterpreting the size parameter
+        cl.enqueue_svm_memfill(queue, svm_ary, np.zeros((), svm_ary.mem.dtype))
+
+    with svm_ary.map_rw(queue) as ary:
+        ary.fill(17)
+        orig_ary = ary.copy()
+
+    prg = cl.Program(ctx, """
+        __kernel void twice(__global float *a_g)
+        {
+          a_g[get_global_id(0)] *= 2;
+        }
+        """).build()
+
+    prg.twice(queue, svm_ary.mem.shape, None, svm_ary)
+
+    with svm_ary.map_ro(queue) as ary:
+        print(ary)
+        assert np.array_equal(orig_ary*2, ary)
+
+    new_ary = np.empty_like(orig_ary)
+    new_ary.fill(-1)
+
+    if ctx.devices[0].platform.name != "Portable Computing Language":
+        # "Blocking memcpy is unimplemented (clEnqueueSVMMemcpy.c:61)"
+        # in pocl 0.13.
+
+        cl.enqueue_copy(queue, new_ary, svm_ary)
+        assert np.array_equal(orig_ary*2, new_ary)
 
 
 def test_fine_grain_svm(ctx_factory):
     ctx = ctx_factory()
-    # queue = cl.CommandQueue(ctx)
+    queue = cl.CommandQueue(ctx)
 
+    from pytest import skip
     if (ctx._get_cl_version() < (2, 0) or
             cl.get_cl_header_version() < (2, 0)):
-        from pytest import skip
         skip("SVM only available in OpenCL 2.0 and higher")
 
-    svm_ary = cl.fsvm_empty(ctx, (100, 100), np.float32, alignment=64)
-    assert isinstance(svm_ary.base, cl.SVMAllocation)
+    if not (ctx.devices[0].svm_capabilities
+            & cl.device_svm_capabilities.FINE_GRAIN_BUFFER):
+        skip("device does not support fine-grain SVM")
+
+    n = 3000
+    ary = cl.fsvm_empty(ctx, n, np.float32, alignment=64)
+    assert isinstance(ary.base, cl.SVMAllocation)
+
+    ary.fill(17)
+    orig_ary = ary.copy()
+
+    prg = cl.Program(ctx, """
+        __kernel void twice(__global float *a_g)
+        {
+          a_g[get_global_id(0)] *= 2;
+        }
+        """).build()
+
+    prg.twice(queue, ary.shape, None, cl.SVM(ary))
+
+    print(ary)
+    assert np.array_equal(orig_ary*2, ary)
 
 
 if __name__ == "__main__":

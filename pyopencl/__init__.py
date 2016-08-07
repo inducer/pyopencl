@@ -152,6 +152,8 @@ from pyopencl.cffi_cl import (  # noqa
         enqueue_fill_image,
         _enqueue_copy_image_to_buffer,
         _enqueue_copy_buffer_to_image,
+        enqueue_svm_memfill,
+        enqueue_svm_migratemem,
 
         have_gl,
         _GLObject,
@@ -854,6 +856,12 @@ def enqueue_copy(queue, dest, src, **kwargs):
         else:
             raise ValueError("invalid dest mem object type")
 
+    elif isinstance(dest, SVM):
+        # to SVM
+        if isinstance(src, SVM):
+            src = src.mem
+
+        return _cl._enqueue_svm_memcpy(queue, dest.mem, src, **kwargs)
     else:
         # assume to-host
 
@@ -877,6 +885,10 @@ def enqueue_copy(queue, dest, src, **kwargs):
                         queue, src, origin, region, dest, **kwargs)
             else:
                 raise ValueError("invalid src mem object type")
+        elif isinstance(src, SVM):
+            # from svm
+            # dest is not a SVM instance, otherwise we'd be in the branch above
+            return _cl._enqueue_svm_memcpy(queue, dest, src.mem, **kwargs)
         else:
             # assume from-host
             raise TypeError("enqueue_copy cannot perform host-to-host transfers")

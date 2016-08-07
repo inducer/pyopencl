@@ -142,7 +142,8 @@ error* enqueue_svm_memcpy(
     clobj_t *evt, clobj_t _queue,
     cl_bool is_blocking,
     void *dst_ptr, const void *src_ptr, size_t size,
-    const clobj_t *_wait_for, uint32_t num_wait_for);
+    const clobj_t *_wait_for, uint32_t num_wait_for,
+    void *pyobj);
 error* enqueue_svm_memfill(
     clobj_t *evt, clobj_t _queue,
     void *svm_ptr,
