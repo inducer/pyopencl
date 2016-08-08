@@ -1063,18 +1063,18 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
         raise ValueError("order not recognized: %s" % order)
 
     descr = dtype.descr
-    if len(descr) == 1:
-        typestr = descr[0][1]
-    else:
-        typestr = "V%d" % itemsize
 
     interface = {
         "version": 3,
         "shape": shape,
-        "typestr": typestr,
-        "descr": descr,
         "strides": strides,
         }
+
+    if len(descr) == 1:
+        interface["typestr"] = descr[0][1]
+    else:
+        interface["typestr"] = "V%d" % itemsize
+        interface["descr"] = descr
 
     if alignment is None:
         alignment = itemsize
