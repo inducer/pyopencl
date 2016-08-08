@@ -978,6 +978,9 @@ def test_coarse_grain_svm(ctx_factory):
 
 
 def test_fine_grain_svm(ctx_factory):
+    import sys
+    is_pypy = '__pypy__' in sys.builtin_module_names
+
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -992,7 +995,10 @@ def test_fine_grain_svm(ctx_factory):
 
     n = 3000
     ary = cl.fsvm_empty(ctx, n, np.float32, alignment=64)
-    assert isinstance(ary.base, cl.SVMAllocation)
+
+    if not is_pypy:
+        # https://bitbucket.org/pypy/numpy/issues/52
+        assert isinstance(ary.base, cl.SVMAllocation)
 
     ary.fill(17)
     orig_ary = ary.copy()
