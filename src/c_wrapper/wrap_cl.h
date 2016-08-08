@@ -132,6 +132,13 @@ typedef struct _cl_image_desc {
 typedef cl_bitfield cl_mem_migration_flags;
 #endif
 
+#ifndef CL_VERSION_1_1
+typedef struct _cl_buffer_region {
+    size_t                  origin;
+    size_t                  size;
+} cl_buffer_region;
+#endif
+
 #ifndef cl_ext_migrate_memobject
 typedef cl_bitfield cl_mem_migration_flags_ext;
 #endif
