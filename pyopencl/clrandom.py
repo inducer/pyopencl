@@ -419,16 +419,25 @@ class Random123GeneratorBase(object):
     .. automethod:: normal
     """
 
-    def __init__(self, context, key=None, counter=None):
+    def __init__(self, context, key=None, counter=None, seed=None):
         int32_info = np.iinfo(np.int32)
+        from random import Random
+
+        rng = Random(seed)
+
+        if key is not None and counter is not None and seed is not None:
+            raise TypeError("seed is unused and may not be specified "
+                    "if both counter and key are given")
 
         if key is None:
-            from random import randrange
-            key = [randrange(int(int32_info.min), int(int32_info.max)+1)
+            key = [
+                    rng.randrange(
+                        int(int32_info.min), int(int32_info.max)+1)
                     for i in range(self.key_length-1)]
         if counter is None:
-            from random import randrange
-            counter = [randrange(int(int32_info.min), int(int32_info.max)+1)
+            counter = [
+                    rng.randrange(
+                        int(int32_info.min), int(int32_info.max)+1)
                     for i in range(4)]
 
         self.context = context
