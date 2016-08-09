@@ -48,7 +48,7 @@ Python 2.6 AMD CPU:
   - amd-cl-cpu
   except:
   - tags
-Python 3.5 Titan Black:
+Python 3.5 Titan X:
   script:
   - export PY_EXE=python3.5
   - export PYOPENCL_TEST=nvi:titan
@@ -57,7 +57,7 @@ Python 3.5 Titan Black:
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3.5
-  - nvidia-titan-black
+  - nvidia-titan-x
   except:
   - tags
 Python 3.5 K40:
