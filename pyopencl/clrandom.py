@@ -342,7 +342,8 @@ class RanluxGenerator(object):
 
         result = cl_array.empty(*args, **kwargs)
 
-        self.fill_uniform(result, queue=result.queue, a=a, b=b)
+        result.add_event(
+                self.fill_uniform(result, queue=result.queue, a=a, b=b))
         return result
 
     def fill_normal(self, ary, mu=0, sigma=1, queue=None):
@@ -657,7 +658,8 @@ class Random123GeneratorBase(object):
 
         result = cl_array.empty(*args, **kwargs)
 
-        self.fill_uniform(result, queue=result.queue, a=a, b=b)
+        result.add_event(
+                self.fill_uniform(result, queue=result.queue, a=a, b=b))
         return result
 
     def fill_normal(self, ary, mu=0, sigma=1, queue=None):
