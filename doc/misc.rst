@@ -4,13 +4,6 @@ Installation
 Installation information is maintained collaboratively on the
 `PyOpenCL Wiki <http://wiki.tiker.net/PyOpenCL/Installation>`_.
 
-Acknowledgments
-===============
-
-Too many to list. Please see the
-`commit log <https://github.com/pyopencl/pyopencl/commits/master>`_
-for detailed acknowledgments.
-
 Tips
 ====
 
@@ -507,3 +500,24 @@ Here's a Bibtex entry for your convenience::
        doi = "10.1016/j.parco.2011.09.001",
     }
 
+Acknowledgments
+===============
+
+Contributors
+------------
+
+Too many to list. Please see the
+`commit log <https://github.com/pyopencl/pyopencl/commits/master>`_
+for detailed acknowledgments.
+
+Funding
+-------
+
+Andreas Klöckner's work on :mod:`pyopencl` was supported in part by
+
+* US Navy ONR grant number N00014-14-1-0117
+* the US National Science Foundation under grant numbers DMS-1418961 and CCF-1524433.
+
+AK also gratefully acknowledges a hardware gift from Nvidia Corporation.  The
+views and opinions expressed herein do not necessarily reflect those of the
+funding agencies.
