@@ -222,7 +222,10 @@ class _Common(object):
         _lib.clobj__delete(self.ptr)
 
     def __eq__(self, other):
-        return other == self.int_ptr
+        return other.int_ptr == self.int_ptr
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __hash__(self):
         return _lib.clobj__int_ptr(self.ptr)
