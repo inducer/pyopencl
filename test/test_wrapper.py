@@ -1016,6 +1016,7 @@ def test_fine_grain_svm(ctx_factory):
         """).build()
 
     prg.twice(queue, ary.shape, None, cl.SVM(ary))
+    queue.finish()
 
     print(ary)
     assert np.array_equal(orig_ary*2, ary)
