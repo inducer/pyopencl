@@ -1065,6 +1065,10 @@ class GenericScanKernel(_GenericScanKernelBase):
                 dev.local_mem_size
                 for dev in self.devices)
 
+        if "CUDA" in self.devices[0].platform.name:
+            # not sure where these go, but roughly this much seems unavailable.
+            avail_local_mem -= 0x400
+
         is_cpu = self.devices[0].type & cl.device_type.CPU
         is_gpu = self.devices[0].type & cl.device_type.GPU
 
@@ -1091,7 +1095,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                 k_group_size = 2**k_exp
                 lmem_use = self.get_local_mem_use(wg_size, k_group_size,
                         use_bank_conflict_avoidance)
-                if lmem_use + 256 <= avail_local_mem:
+                if lmem_use <= avail_local_mem:
                     solutions.append((wg_size*k_group_size, k_group_size, wg_size))
 
         if is_gpu:
