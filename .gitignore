@@ -62,3 +62,5 @@ setuptools*tar.gz
 build-and-test-py-project.sh
 
 cffi_build.py
+
+.cache
