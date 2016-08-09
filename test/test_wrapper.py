@@ -940,12 +940,17 @@ def test_coarse_grain_svm(ctx_factory):
             cl.get_cl_header_version() < (2, 0)):
         from pytest import skip
         skip("SVM only available in OpenCL 2.0 and higher")
+    dev = ctx.devices[0]
+    if ("AMD" in dev.platform.name
+            and dev.type & cl.device_type.CPU):
+        pytest.xfail("AMD CPU doesn't do coarse-grain SVM")
+
 
     n = 3000
     svm_ary = cl.SVM(cl.csvm_empty(ctx, (n,), np.float32, alignment=64))
     assert isinstance(svm_ary.mem.base, cl.SVMAllocation)
 
-    if ctx.devices[0].platform.name != "Portable Computing Language":
+    if dev.platform.name != "Portable Computing Language":
         # pocl 0.13 has a bug misinterpreting the size parameter
         cl.enqueue_svm_memfill(queue, svm_ary, np.zeros((), svm_ary.mem.dtype))
 
