@@ -933,6 +933,9 @@ def test_spirv(ctx_factory):
 
 
 def test_coarse_grain_svm(ctx_factory):
+    import sys
+    is_pypy = '__pypy__' in sys.builtin_module_names
+
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -945,10 +948,11 @@ def test_coarse_grain_svm(ctx_factory):
             and dev.type & cl.device_type.CPU):
         pytest.xfail("AMD CPU doesn't do coarse-grain SVM")
 
-
     n = 3000
     svm_ary = cl.SVM(cl.csvm_empty(ctx, (n,), np.float32, alignment=64))
-    assert isinstance(svm_ary.mem.base, cl.SVMAllocation)
+    if not is_pypy:
+        # https://bitbucket.org/pypy/numpy/issues/52
+        assert isinstance(svm_ary.mem.base, cl.SVMAllocation)
 
     if dev.platform.name != "Portable Computing Language":
         # pocl 0.13 has a bug misinterpreting the size parameter
