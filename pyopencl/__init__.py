@@ -219,6 +219,7 @@ _DEFAULT_INCLUDE_OPTIONS = ["-I", _find_pyopencl_include_path()]
 
 # map of platform.name to build options list
 _PLAT_BUILD_OPTIONS = {}
+_PLAT_BUILD_OPTION_GENERATORS = {}
 
 
 def enable_debugging(platform_or_context):
@@ -237,6 +238,23 @@ def enable_debugging(platform_or_context):
                 ["-g", "-O0"])
         import os
         os.environ["CPU_MAX_COMPUTE_UNITS"] = "1"
+    elif "Intel" in platform.name:
+        def intel_option_generator(source):
+            from tempfile import NamedTemporaryFile
+            tempf = NamedTemporaryFile(suffix=".cl", delete=False)
+
+            if isinstance(source, six.text_type):
+                source = source.encode()
+
+            tempf.write(source)
+            n = tempf.name
+            tempf.close()
+
+            return ["-g", "-s", n]
+
+        _PLAT_BUILD_OPTION_GENERATORS.setdefault(platform.name, []).append(
+                intel_option_generator)
+
     else:
         from warnings import warn
         warn("do not know how to enable debugging on '%s'"
@@ -351,8 +369,7 @@ class Program(object):
         else:
             return b"'" + s.replace(b"'", b"'\"'\"'") + b"'"
 
-    @classmethod
-    def _process_build_options(cls, context, options):
+    def _process_build_options(self, context, options):
         if isinstance(options, six.string_types):
             import shlex
             if six.PY2:
@@ -372,11 +389,25 @@ class Program(object):
             else:
                 return s
 
+        plat_build_option_key = context.devices[0].platform.name
+        plat_build_options = (
+                _PLAT_BUILD_OPTIONS.get(
+                    plat_build_option_key, []))
+
+        try:
+            plat_option_gens = _PLAT_BUILD_OPTION_GENERATORS[
+                    plat_build_option_key]
+        except KeyError:
+            pass
+        else:
+            for plat_option_gen in plat_option_gens:
+                plat_build_options.extend(
+                        plat_option_gen(self._source))
+
         options = (options
                 + _DEFAULT_BUILD_OPTIONS
                 + _DEFAULT_INCLUDE_OPTIONS
-                + _PLAT_BUILD_OPTIONS.get(
-                    context.devices[0].platform.name, []))
+                + plat_build_options)
 
         import os
         forced_options = os.environ.get("PYOPENCL_BUILD_OPTIONS")
@@ -405,7 +436,7 @@ class Program(object):
 
         options = [encode_if_necessary(s) for s in options]
 
-        options = [cls._shlex_quote(s) for s in options]
+        options = [self._shlex_quote(s) for s in options]
 
         return b" ".join(options), include_path
 
