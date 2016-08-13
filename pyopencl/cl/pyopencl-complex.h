@@ -35,6 +35,7 @@
   REAL_TP TPROOT##_real(TP a) { return a.real; } \
   REAL_TP TPROOT##_imag(TP a) { return a.imag; } \
   REAL_TP TPROOT##_abs(TP a) { return hypot(a.real, a.imag); } \
+  REAL_TP TPROOT##_abs_squared(TP a) { return a.real * a.real + a.imag * a.imag; } \
   \
   TP TPROOT##_new(REAL_TP real, REAL_TP imag) \
   { \
