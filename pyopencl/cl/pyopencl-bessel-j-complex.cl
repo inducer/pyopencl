@@ -159,8 +159,7 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
       return;
     }
 
-    dd = pow((cdouble_real(j_n)), 2)+pow(cdouble_imag(j_n),2);
-    if (dd > upbound)
+    if (cdouble_abs_squared(j_n) > upbound)
       break;
   }
 
@@ -191,7 +190,6 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
     ztmp = cdouble_sub(
         cdouble_mul(cdouble_rmul(2*n, zinv), unscaled_j_n),
         unscaled_j_np1);
-    dd = pow(cdouble_real(ztmp), 2) + pow(cdouble_imag(ztmp), 2);
 
     unscaled_j_nm1 = ztmp;
 
@@ -203,7 +201,7 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
     unscaled_j_np1 = unscaled_j_n;
     unscaled_j_n = unscaled_j_nm1;
 
-    if (dd > upbound)
+    if (cdouble_abs_squared(ztmp) > upbound)
     {
       unscaled_j_np1 = cdouble_rmul(upbound_inv, unscaled_j_np1);
       unscaled_j_n = cdouble_rmul(upbound_inv, unscaled_j_n);
@@ -228,8 +226,8 @@ void bessel_j_complex(int v, cdouble_t z, cdouble_t *j_v, cdouble_t *j_vp1)
   {
     scaling = cdouble_divide( cdouble_exp( cdouble_mul(neg_ima,z) ), psi);
   }
-  vscaling = pow(upbound_inv, vscale);
-  vp1scaling = pow(upbound_inv, vp1scale);
+  vscaling = pow(upbound_inv, (double) vscale);
+  vp1scaling = pow(upbound_inv, (double) vp1scale);
 
   *j_v = cdouble_mul(unscaled_j_v, cdouble_mulr(scaling, vscaling));
   *j_vp1 = cdouble_mul(unscaled_j_vp1, cdouble_mulr(scaling,vp1scaling));
