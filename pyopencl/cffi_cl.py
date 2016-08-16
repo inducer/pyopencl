@@ -584,6 +584,9 @@ class LogicError(Error):
     pass
 
 
+_py_RuntimeError = RuntimeError
+
+
 class RuntimeError(Error):
     pass
 
@@ -593,8 +596,7 @@ def _handle_error(error):
         return
     if error.other == 1:
         # non-pyopencl exceptions are handled here
-        import exceptions
-        e = exceptions.RuntimeError(_ffi_pystr(error.msg))
+        e = _py_RuntimeError(_ffi_pystr(error.msg))
         _lib.free_pointer(error.msg)
         _lib.free_pointer(error)
         raise e
