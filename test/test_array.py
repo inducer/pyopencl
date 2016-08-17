@@ -231,6 +231,35 @@ def test_absrealimag(ctx_factory):
                 print(dev_res-host_res)
             assert correct
 
+
+def test_custom_type_zeros(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    if not (
+            queue._get_cl_version() >= (1, 2)
+            and cl.get_cl_header_version() >= (1, 2)):
+        pytest.skip("CL1.2 not available")
+
+    dtype = np.dtype([
+        ("cur_min", np.int32),
+        ("cur_max", np.int32),
+        ("pad", np.int32),
+        ])
+
+    from pyopencl.tools import get_or_register_dtype, match_dtype_to_c_struct
+
+    name = "mmc_type"
+    dtype, c_decl = match_dtype_to_c_struct(queue.device, name, dtype)
+    dtype = get_or_register_dtype(name, dtype)
+
+    n = 1000
+    z_dev = cl.array.zeros(queue, n, dtype=dtype)
+
+    z = z_dev.get()
+
+    assert np.array_equal(np.zeros(n, dtype), z)
+
 # }}}
 
 

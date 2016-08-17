@@ -1042,13 +1042,29 @@ class Array(object):
 
     __rtruediv__ = __rdiv__
 
+    def _zero_fill(self, queue=None, wait_for=None):
+        queue = queue or self.queue
+
+        if (
+                queue._get_cl_version() >= (1, 2)
+                and cl.get_cl_header_version() >= (1, 2)):
+
+            self.add_event(
+                    cl.enqueue_fill_buffer(queue, self.base_data, np.int8(0),
+                        self.offset, self.nbytes, wait_for=wait_for))
+        else:
+            zero = np.zeros((), self.dtype)
+            self.fill(zero, queue=queue)
+
     def fill(self, value, queue=None, wait_for=None):
         """Fill the array with *scalar*.
 
         :returns: *self*.
         """
+
         self.add_event(
-                self._fill(self, value, queue=queue, wait_for=wait_for))
+                cl.enqueue_fill_buffer(queue, self.base_data, np.int8(0),
+                    self.offset, self.nbytes, wait_for=wait_for))
 
         return self
 
@@ -1771,8 +1787,7 @@ def zeros(queue, shape, dtype, order="C", allocator=None):
 
     result = Array(queue, shape, dtype,
             order=order, allocator=allocator)
-    zero = np.zeros((), dtype)
-    result.fill(zero)
+    result._zero_fill()
     return result
 
 
@@ -1791,8 +1806,7 @@ def zeros_like(ary):
     """
 
     result = empty_like(ary)
-    zero = np.zeros((), ary.dtype)
-    result.fill(zero)
+    result._zero_fill()
     return result
 
 
