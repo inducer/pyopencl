@@ -260,6 +260,35 @@ def test_custom_type_zeros(ctx_factory):
 
     assert np.array_equal(np.zeros(n, dtype), z)
 
+
+def test_custom_type_fill(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.characterize import has_struct_arg_count_bug
+    if has_struct_arg_count_bug(queue.device):
+        pytest.skip("device has LLVM arg counting bug")
+
+    dtype = np.dtype([
+        ("cur_min", np.int32),
+        ("cur_max", np.int32),
+        ("pad", np.int32),
+        ])
+
+    from pyopencl.tools import get_or_register_dtype, match_dtype_to_c_struct
+
+    name = "mmc_type"
+    dtype, c_decl = match_dtype_to_c_struct(queue.device, name, dtype)
+    dtype = get_or_register_dtype(name, dtype)
+
+    n = 1000
+    z_dev = cl.array.empty(queue, n, dtype=dtype)
+    z_dev.fill(np.zeros((), dtype))
+
+    z = z_dev.get()
+
+    assert np.array_equal(np.zeros(n, dtype), z)
+
 # }}}
 
 

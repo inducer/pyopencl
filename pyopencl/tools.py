@@ -646,6 +646,9 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
 @memoize
 def dtype_to_c_struct(device, dtype):
+    if dtype.fields is None:
+        return ""
+
     matched_dtype, c_decl = match_dtype_to_c_struct(
             device, dtype_to_ctype(dtype), dtype)
 

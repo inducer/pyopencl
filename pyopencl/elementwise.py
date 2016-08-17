@@ -36,7 +36,7 @@ import numpy as np
 import pyopencl as cl
 from pytools import memoize_method
 from pyopencl.tools import (dtype_to_ctype, VectorArg, ScalarArg,
-        KernelTemplateBase)
+        KernelTemplateBase, dtype_to_c_struct)
 
 
 # {{{ elementwise kernel code generator
@@ -740,6 +740,7 @@ def get_fill_kernel(context, dtype):
                 "tp": dtype_to_ctype(dtype),
                 },
             "z[i] = a",
+            preamble=dtype_to_c_struct(context.devices[0], dtype),
             name="fill")
 
 
