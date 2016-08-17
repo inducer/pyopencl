@@ -537,7 +537,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
             key=lambda name_dtype_offset: name_dtype_offset[1][1])
 
     c_fields = []
-    for field_name, (field_dtype, offset) in fields:
+    for field_name, dtype_and_offset in fields:
+        field_dtype, offset = dtype_and_offset[:2]
         c_fields.append("  %s %s;" % (dtype_to_ctype(field_dtype), field_name))
 
     c_decl = "typedef struct {\n%s\n} %s;\n\n" % (
@@ -545,14 +546,15 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
             name)
 
     cdl = _CDeclList(device)
-    for field_name, (field_dtype, offset) in fields:
+    for field_name, dtype_and_offset in fields:
+        field_dtype, offset = dtype_and_offset[:2]
         cdl.add_dtype(field_dtype)
 
     pre_decls = cdl.get_declarations()
 
     offset_code = "\n".join(
             "result[%d] = pycl_offsetof(%s, %s);" % (i+1, name, field_name)
-            for i, (field_name, (field_dtype, offset)) in enumerate(fields))
+            for i, (field_name, _) in enumerate(fields))
 
     src = r"""
         #define pycl_offsetof(st, m) \
@@ -598,8 +600,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
         if dtype.itemsize == size:
             # If sizes match, use numpy's idea of the offsets.
-            offsets = [offset
-                    for field_name, (field_dtype, offset) in fields]
+            offsets = [dtype_and_offset[1]
+                    for field_name, dtype_and_offset in fields]
         else:
             raise RuntimeError(
                     "cannot discover struct layout on '%s'" % device)
