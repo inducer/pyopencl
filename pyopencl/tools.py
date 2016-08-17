@@ -649,6 +649,11 @@ def dtype_to_c_struct(device, dtype):
     if dtype.fields is None:
         return ""
 
+    from pyopencl.array import vec
+    if dtype in vec.type_to_scalar_and_count:
+        # Vector types are built-in. Don't try to redeclare those.
+        return ""
+
     matched_dtype, c_decl = match_dtype_to_c_struct(
             device, dtype_to_ctype(dtype), dtype)
 
