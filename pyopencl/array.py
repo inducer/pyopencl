@@ -1063,8 +1063,7 @@ class Array(object):
         """
 
         self.add_event(
-                cl.enqueue_fill_buffer(queue, self.base_data, np.int8(0),
-                    self.offset, self.nbytes, wait_for=wait_for))
+                self._fill(self, value, queue=queue, wait_for=wait_for))
 
         return self
 
