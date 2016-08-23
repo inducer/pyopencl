@@ -1,9 +1,6 @@
 """PyOpenCL compiler cache."""
 
-from __future__ import division
-from __future__ import absolute_import
-import six
-from six.moves import zip
+from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2011 Andreas Kloeckner"
 
@@ -27,7 +24,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-#import pyopencl._cl as _cl
+import six
+from six.moves import zip
 import pyopencl.cffi_cl as _cl
 import re
 import sys
