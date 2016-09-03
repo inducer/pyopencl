@@ -604,7 +604,11 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
                     for field_name, dtype_and_offset in fields]
         else:
             raise RuntimeError(
-                    "cannot discover struct layout on '%s'" % device)
+                    "OpenCL compiler reported offsetof() past sizeof() "
+                    "for struct layout on '%s'. "
+                    "This makes no sense, and it's usually indicates a "
+                    "compiler bug. "
+                    "Refusing to discover struct layout." % device)
 
     result_buf.data.release()
     del knl
