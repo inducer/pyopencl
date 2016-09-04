@@ -4,3 +4,12 @@
 [submodule "src/c_wrapper/mingw-std-threads"]
 	path = src/c_wrapper/mingw-std-threads
 	url = https://github.com/meganz/mingw-std-threads.git
+[submodule "submodules/pocl"]
+	path = submodules/pocl
+	url = https://github.com/pocl/pocl.git
+[submodule "submodules/llvm"]
+	path = submodules/llvm
+	url = https://github.com/llvm-mirror/llvm.git
+[submodule "submodules/clang"]
+	path = submodules/clang
+	url = https://github.com/llvm-mirror/clang.git
