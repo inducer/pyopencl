@@ -11,6 +11,7 @@
   - amd-cl-cpu
   - opengl
   except:
+  - self-contained
   - tags
 Python 3.5 Intel CPU:
   script:
@@ -24,6 +25,7 @@ Python 3.5 Intel CPU:
   - intel-cl-cpu
   except:
   - tags
+  - self-contained
 Python 3.5 AMD CPU:
   script:
   - export PY_EXE=python3.5
@@ -36,6 +38,7 @@ Python 3.5 AMD CPU:
   - amd-cl-cpu
   except:
   - tags
+  - self-contained
 Python 2.6 AMD CPU:
   script:
   - export PY_EXE=python2.6
@@ -48,6 +51,7 @@ Python 2.6 AMD CPU:
   - amd-cl-cpu
   except:
   - tags
+  - self-contained
 Python 3.5 Titan X:
   script:
   - export PY_EXE=python3.5
@@ -60,6 +64,7 @@ Python 3.5 Titan X:
   - nvidia-titan-x
   except:
   - tags
+  - self-contained
 Python 3.5 K40:
   script:
   - export PY_EXE=python3.5
@@ -72,6 +77,7 @@ Python 3.5 K40:
   - nvidia-k40
   except:
   - tags
+  - self-contained
 Python 3.5 AMD GPU:
   script:
   - export PY_EXE=python3.5
@@ -84,6 +90,7 @@ Python 3.5 AMD GPU:
   - amd-fiji
   except:
   - tags
+  - self-contained
 Python 3.5 POCL CL 1.1:
   script:
   - export PY_EXE=python3.5
@@ -97,6 +104,7 @@ Python 3.5 POCL CL 1.1:
   - pocl
   except:
   - tags
+  - self-contained
 Python 2.7 POCL:
   script:
   - export PY_EXE=python2.7
@@ -109,6 +117,7 @@ Python 2.7 POCL:
   - pocl
   except:
   - tags
+  - self-contained
 Python 2.7 Apple:
   script:
   - export PY_EXE=python2.7
@@ -121,6 +130,7 @@ Python 2.7 Apple:
   - apple
   except:
   - tags
+  - self-contained
 PyPy POCL:
   script:
   - export PY_EXE=pypy
@@ -133,6 +143,7 @@ PyPy POCL:
   - pocl
   except:
   - tags
+  - self-contained
 Documentation:
   script:
   - EXTRA_INSTALL="numpy mako"
@@ -142,3 +153,4 @@ Documentation:
   - python3.5
   only:
   - master
+  - self-contained
