@@ -93,9 +93,14 @@ def get_config_schema():
 
 def main():
     from setuptools import find_packages
-    from aksetup_helper import (hack_distutils, get_config, setup,
+    from aksetup_helper import (hack_distutils, get_config,
             check_git_submodules)
+    from skbuild import setup, cmaker
     check_git_submodules()
+
+    maker = cmaker.CMaker()
+    maker.configure()
+    maker.make()
 
     hack_distutils()
     conf = get_config(get_config_schema(),
