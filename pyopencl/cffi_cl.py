@@ -99,7 +99,7 @@ except:
     _bytes = bytes
 
     def _ffi_pystr(s):
-        return _ffi.string(s).decode()
+        return _ffi.string(s).decode() if s else None
 else:
     try:
         _bytes = bytes
