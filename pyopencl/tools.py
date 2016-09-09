@@ -558,14 +558,14 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     src = r"""
         #define pycl_offsetof(st, m) \
-                 ((size_t) ((__local char *) &(dummy.m) \
+                 ((uint) ((__local char *) &(dummy.m) \
                  - (__local char *)&dummy ))
 
         %(pre_decls)s
 
         %(my_decl)s
 
-        __kernel void get_size_and_offsets(__global size_t *result)
+        __kernel void get_size_and_offsets(__global uint *result)
         {
             result[0] = sizeof(%(my_type)s);
             __local %(my_type)s dummy;
@@ -586,7 +586,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     knl = prg.build(devices=[device]).get_size_and_offsets
 
     import pyopencl.array  # noqa
-    result_buf = cl.array.empty(queue, 1+len(fields), np.uintp)
+    result_buf = cl.array.empty(queue, 1+len(fields), np.uint32)
     knl(queue, (1,), (1,), result_buf.data)
     queue.finish()
     size_and_offsets = result_buf.get()
