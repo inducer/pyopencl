@@ -38,6 +38,7 @@ from pyopencl.compyte.array import (
         as_strided as _as_strided,
         f_contiguous_strides as _f_contiguous_strides,
         c_contiguous_strides as _c_contiguous_strides,
+        equal_strides as _equal_strides,
         ArrayFlags as _ArrayFlags,
         get_common_dtype as _get_common_dtype_base)
 from pyopencl.characterize import has_double_support
@@ -649,9 +650,7 @@ class Array(object):
         if not ary.flags.forc:
             raise RuntimeError("cannot set from non-contiguous array")
 
-            ary = ary.copy()
-
-        if ary.strides != self.strides:
+        if not _equal_strides(ary.strides, self.strides, self.shape):
             from warnings import warn
             warn("Setting array from one with different "
                     "strides/storage order. This will cease to work "
