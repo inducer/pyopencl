@@ -67,7 +67,7 @@ for platform in cl.get_platforms():
                         
                         c_temp = a_temp+b_temp; // sum of my elements
                         c_temp = c_temp * c_temp; // product of sums
-                        c_temp = c_temp * (a_temp/2.0); // times 1/2 my a
+                        c_temp = c_temp * (a_temp/2.0f); // times 1/2 my a
 
                         c[gid] = c_temp; // store result in global memory
                 }
