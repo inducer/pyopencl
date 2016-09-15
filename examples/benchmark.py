@@ -54,6 +54,7 @@ for platform in cl.get_platforms():
         dest_buf = cl.Buffer(ctx, mf.WRITE_ONLY, b.nbytes)
 
         prg = cl.Program(ctx, """
+            #pragma OPENCL EXTENSION cl_khr_fp64 : enable
             __kernel void sum(__global const float *a,
             __global const float *b, __global float *c)
             {
