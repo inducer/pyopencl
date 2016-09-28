@@ -67,6 +67,7 @@ public:
     PYOPENCL_INLINE bool
     is_out_of_memory() const
     {
+        // matches Python implementation in pyopencl/cffi_cl.py
         return (code() == CL_MEM_OBJECT_ALLOCATION_FAILURE ||
                 code() == CL_OUT_OF_RESOURCES ||
                 code() == CL_OUT_OF_HOST_MEMORY);

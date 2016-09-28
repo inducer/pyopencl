@@ -575,6 +575,14 @@ class Error(Exception):
     def what(self):
         return self.args[0].what()
 
+    def is_out_of_memory(self):
+        # matches C implementation in src/c_wrapper/error.h
+        val = self.args[0]
+
+        return (val.code == status_code.MEM_OBJECT_ALLOCATION_FAILURE
+                or val.code == status_code.OUT_OF_RESOURCES
+                or val.code == status_code.OUT_OF_HOST_MEMORY)
+
 
 class MemoryError(Error):
     pass
