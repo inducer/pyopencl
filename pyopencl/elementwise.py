@@ -462,13 +462,17 @@ def get_copy_kernel(context, dtype_dest, dtype_src):
     if dtype_dest.kind == "c" and dtype_src != dtype_dest:
         src = "%s_cast(%s)" % (complex_dtype_to_name(dtype_dest), src),
 
+    if dtype_dest != dtype_src and (
+            dtype_dest.kind == "V" or dtype_src.kind == "V"):
+        raise TypeError("copying between non-identical struct types")
+
     return get_elwise_kernel(context,
             "%(tp_dest)s *dest, %(tp_src)s *src" % {
                 "tp_dest": dtype_to_ctype(dtype_dest),
                 "tp_src": dtype_to_ctype(dtype_src),
                 },
             "dest[i] = %s" % src,
-            preamble=dtype_to_c_struct(context.devices[0], dtype),
+            preamble=dtype_to_c_struct(context.devices[0], dtype_dest),
             name="copy")
 
 
