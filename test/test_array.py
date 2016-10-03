@@ -289,6 +289,35 @@ def test_custom_type_fill(ctx_factory):
 
     assert np.array_equal(np.zeros(n, dtype), z)
 
+
+def test_custom_type_take_put(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    dtype = np.dtype([
+        ("cur_min", np.int32),
+        ("cur_max", np.int32),
+        ])
+
+    from pyopencl.tools import get_or_register_dtype, match_dtype_to_c_struct
+
+    name = "tp_type"
+    dtype, c_decl = match_dtype_to_c_struct(queue.device, name, dtype)
+    dtype = get_or_register_dtype(name, dtype)
+
+    n = 100
+    z = np.empty(100, dtype)
+    z["cur_min"] = np.arange(n)
+    z["cur_max"] = np.arange(n)**2
+
+    z_dev = cl.array.to_device(queue, z)
+    ind = cl.array.arange(queue, n, step=3, dtype=np.int32)
+
+    z_ind_ref = z[ind.get()]
+    z_ind = z_dev[ind]
+
+    assert np.array_equal(z_ind.get(), z_ind_ref)
+
 # }}}
 
 

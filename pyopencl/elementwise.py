@@ -381,7 +381,9 @@ def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
                 "dest%d[i] = src%d[src_idx];" % (i, i)
                 for i in range(vec_count)))
 
-    return get_elwise_kernel(context, args, body, name="take")
+    return get_elwise_kernel(context, args, body,
+            preamble=dtype_to_c_struct(context.devices[0], dtype),
+            name="take")
 
 
 @context_dependent_memoize
@@ -419,7 +421,9 @@ def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
                 "%(idx_tp)s dest_idx = gmem_dest_idx[i];\n" % ctx)
             + "\n".join(get_copy_insn(i) for i in range(vec_count)))
 
-    return get_elwise_kernel(context, args, body, name="take_put")
+    return get_elwise_kernel(context, args, body,
+            preamble=dtype_to_c_struct(context.devices[0], dtype),
+            name="take_put")
 
 
 @context_dependent_memoize
@@ -444,7 +448,9 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
             + "\n".join("dest%d[dest_idx] = src%d[i];" % (i, i)
                 for i in range(vec_count)))
 
-    return get_elwise_kernel(context, args, body, name="put")
+    return get_elwise_kernel(context, args, body,
+            preamble=dtype_to_c_struct(context.devices[0], dtype),
+            name="put")
 
 
 @context_dependent_memoize
@@ -462,6 +468,7 @@ def get_copy_kernel(context, dtype_dest, dtype_src):
                 "tp_src": dtype_to_ctype(dtype_src),
                 },
             "dest[i] = %s" % src,
+            preamble=dtype_to_c_struct(context.devices[0], dtype),
             name="copy")
 
 
