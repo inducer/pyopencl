@@ -91,7 +91,7 @@ img_g =  cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=img)
 result_g = cl.Buffer(ctx, mf.WRITE_ONLY, img.nbytes)
 width_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np.int32(img.shape[1]))
 height_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np.int32(img.shape[0]))
-# Call Kernel. Automatically takes care of blob/grid distribution
+# Call Kernel. Automatically takes care of block/grid distribution
 prg.medianFilter(queue, img.shape, None , img_g, result_g, width_g, height_g)
 result = np.empty_like(img)
 cl.enqueue_copy(queue, result, result_g)
