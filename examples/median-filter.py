@@ -79,7 +79,7 @@ __kernel void medianFilter(__global float *img, __global float *result, __global
         //sort the diagonal
         sort( &(pixel00), &(pixel11), &(pixel22) );
         // median is the the middle value of the diagonal
-        result [i] = pixel11;
+        result[i] = pixel11;
     }
 }
 '''
