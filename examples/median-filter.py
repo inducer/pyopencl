@@ -12,13 +12,16 @@ try:
     GPU = plat[1].get_devices()
 except IndexError:
     GPU = "none"
+
 #Create context for GPU/CPU
 if GPU!= "none":
     ctx = cl.Context(GPU)
 else:
     ctx = cl.Context(CPU)
+
 # Create queue for each kernel execution
 queue = cl.CommandQueue(ctx)
+
 mf = cl.mem_flags
 
 # Kernel function
@@ -41,7 +44,7 @@ void sort(int *a, int *b, int *c) {
       *c = swap;
    }
 }
-__kernel void medianFilter(__global float *img, __global float *res, __global int *width, __global int *height)
+__kernel void medianFilter(__global float *img, __global float *result, __global int *width, __global int *height)
 {
     int w = *width;
     int h = *height;
@@ -51,7 +54,7 @@ __kernel void medianFilter(__global float *img, __global float *res, __global in
     // Keeping the edge pixels the same
     if( posx == 0 || posy == 0 || posx == w-1 || posy == h-1 )
     {
-        res[ i ] = img[ i ];
+        result[i] = img[i];
     }
     else
     {
@@ -76,7 +79,7 @@ __kernel void medianFilter(__global float *img, __global float *res, __global in
         //sort the diagonal
         sort( &(pixel00), &(pixel11), &(pixel22) );
         // median is the the middle value of the diagonal
-        res [ i ] = pixel11;
+        result [i] = pixel11;
     }
 }
 '''
@@ -85,13 +88,13 @@ __kernel void medianFilter(__global float *img, __global float *res, __global in
 prg = cl.Program(ctx, src).build()
 #Allocate memory for variables on the device
 img_g =  cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=img)
-res_g = cl.Buffer(ctx, mf.WRITE_ONLY, img.nbytes)
+result_g = cl.Buffer(ctx, mf.WRITE_ONLY, img.nbytes)
 width_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np.int32(img.shape[1]))
 height_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np.int32(img.shape[0]))
-# Call Kernel. Automatically takes care of block/grid distribution
-prg.medianFilter(queue, img.shape, None , img_g, res_g, width_g, height_g)
-res = np.empty_like(img)
-cl.enqueue_copy(queue, res, res_g)
+# Call Kernel. Automatically takes care of blob/grid distribution
+prg.medianFilter(queue, img.shape, None , img_g, result_g, width_g, height_g)
+result = np.empty_like(img)
+cl.enqueue_copy(queue, result, result_g)
 
 # Show the blurred image
-imsave('medianFilter-OpenCL.jpg',res)
+imsave('medianFilter-OpenCL.jpg',result)
