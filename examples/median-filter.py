@@ -12,17 +12,14 @@ try:
     GPU = plat[1].get_devices()
 except IndexError:
     GPU = "none"
-
 #Create context for GPU/CPU
 if GPU!= "none":
     ctx = cl.Context(GPU)
 else:
     ctx = cl.Context(CPU)
-
 # Create queue for each kernel execution
 queue = cl.CommandQueue(ctx)
 mf = cl.mem_flags
-
 
 # Kernel function
 src = '''
@@ -83,3 +80,18 @@ __kernel void medianFilter(__global float *img, __global float *res, __global in
     }
 }
 '''
+
+#Kernel function instantiation
+prg = cl.Program(ctx, src).build()
+#Allocate memory for variables on the device
+img_g =  cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=img)
+res_g = cl.Buffer(ctx, mf.WRITE_ONLY, img.nbytes)
+width_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np.int32(img.shape[1]))
+height_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np.int32(img.shape[0]))
+# Call Kernel. Automatically takes care of block/grid distribution
+prg.medianFilter(queue, img.shape, None , img_g, res_g, width_g, height_g)
+res = np.empty_like(img)
+cl.enqueue_copy(queue, res, res_g)
+
+# Show the blurred image
+imsave('medianFilter-OpenCL.jpg',res)
