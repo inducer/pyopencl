@@ -364,7 +364,7 @@ class Array(object):
         if queue is not None:
             warn("Passing the queue to the array through anything but the "
                     "first argument of the Array constructor is deprecated. "
-                    "This will be continue to be accepted throughout the "
+                    "This will continue to be accepted throughout the "
                     "2013.[0-6] versions of PyOpenCL.",
                     DeprecationWarning, 2)
 
@@ -1203,7 +1203,7 @@ class Array(object):
                         "multidimensional fancy indexing is not supported")
             if len(self.shape) != 1:
                 raise NotImplementedError(
-                        "fancy indexing into a multi-d array is supported")
+                        "fancy indexing into a multi-d array is not supported")
 
             multi_put([value], subscript, out=[self], queue=self.queue)
             return
