@@ -393,7 +393,15 @@ class Array(object):
     .. automethod :: __rdiv__
     .. automethod :: __pow__
 
+    .. automethod :: __and__
+    .. automethod :: __xor__
+    .. automethod :: __or__
+    .. automethod :: __iand__
+    .. automethod :: __ixor__
+    .. automethod :: __ior__
+
     .. automethod :: __abs__
+    .. automethod :: __invert__
 
     .. UNDOC reverse()
 
@@ -862,6 +870,29 @@ class Array(object):
             return self.__class__(self.context, self.shape, dtype,
                     strides=strides, allocator=self.allocator)
 
+    @staticmethod
+    @elwise_kernel_runner
+    def _scalar_binop(out, a, b, queue=None, op=None):
+        return elementwise.get_array_scalar_binop_kernel(
+                out.context, op, out.dtype, a.dtype,
+                np.array(b).dtype)
+
+    @staticmethod
+    @elwise_kernel_runner
+    def _array_binop(out, a, b, queue=None, op=None):
+        if a.shape != b.shape:
+            raise ValueError("shapes of binop arguments do not match")
+        return elementwise.get_array_binop_kernel(
+                out.context, op, out.dtype, a.dtype, b.dtype)
+
+    @staticmethod
+    @elwise_kernel_runner
+    def _unop(out, a, queue=None, op=None):
+        if out.shape != a.shape:
+            raise ValueError("shapes of arguments do not match")
+        return elementwise.get_unop_kernel(
+                out.context, op, a.dtype, out.dtype)
+
     # }}}
 
     # {{{ operators
@@ -1041,6 +1072,99 @@ class Array(object):
 
     __rtruediv__ = __rdiv__
 
+    def __and__(self, other):
+        common_dtype = _get_common_dtype(self, other, self.queue)
+
+        if not np.issubdtype(common_dtype, np.integer):
+            raise TypeError("Integral types only")
+
+        if isinstance(other, Array):
+            result = self._new_like_me(common_dtype)
+            result.add_event(self._array_binop(result, self, other, op="&"))
+        else:
+            # create a new array for the result
+            result = self._new_like_me(common_dtype)
+            result.add_event(
+                    self._scalar_binop(result, self, other, op="&"))
+
+        return result
+
+    __rand__ = __and__  # commutes
+
+    def __or__(self, other):
+        common_dtype = _get_common_dtype(self, other, self.queue)
+
+        if not np.issubdtype(common_dtype, np.integer):
+            raise TypeError("Integral types only")
+
+        if isinstance(other, Array):
+            result = self._new_like_me(common_dtype)
+            result.add_event(self._array_binop(result, self, other, op="|"))
+        else:
+            # create a new array for the result
+            result = self._new_like_me(common_dtype)
+            result.add_event(
+                    self._scalar_binop(result, self, other, op="|"))
+
+        return result
+
+    __ror__ = __or__  # commutes
+
+    def __xor__(self, other):
+        common_dtype = _get_common_dtype(self, other, self.queue)
+
+        if not np.issubdtype(common_dtype, np.integer):
+            raise TypeError("Integral types only")
+
+        if isinstance(other, Array):
+            result = self._new_like_me(common_dtype)
+            result.add_event(self._array_binop(result, self, other, op="^"))
+        else:
+            # create a new array for the result
+            result = self._new_like_me(common_dtype)
+            result.add_event(
+                    self._scalar_binop(result, self, other, op="^"))
+
+        return result
+
+    __rxor__ = __xor__  # commutes
+
+    def __iand__(self, other):
+        common_dtype = _get_common_dtype(self, other, self.queue)
+
+        if not np.issubdtype(common_dtype, np.integer):
+            raise TypeError("Integral types only")
+
+        if isinstance(other, Array):
+            self.add_event(self._array_binop(self, self, other, op="&"))
+        else:
+            self.add_event(
+                    self._scalar_binop(self, self, other, op="&"))
+
+    def __ior__(self, other):
+        common_dtype = _get_common_dtype(self, other, self.queue)
+
+        if not np.issubdtype(common_dtype, np.integer):
+            raise TypeError("Integral types only")
+
+        if isinstance(other, Array):
+            self.add_event(self._array_binop(self, self, other, op="|"))
+        else:
+            self.add_event(
+                    self._scalar_binop(self, self, other, op="|"))
+
+    def __ixor__(self, other):
+        common_dtype = _get_common_dtype(self, other, self.queue)
+
+        if not np.issubdtype(common_dtype, np.integer):
+            raise TypeError("Integral types only")
+
+        if isinstance(other, Array):
+            self.add_event(self._array_binop(self, self, other, op="^"))
+        else:
+            self.add_event(
+                    self._scalar_binop(self, self, other, op="^"))
+
     def _zero_fill(self, queue=None, wait_for=None):
         queue = queue or self.queue
 
@@ -1107,6 +1231,15 @@ class Array(object):
         result = self._new_like_me(common_dtype)
         result.add_event(
                 self._rpow_scalar(result, common_dtype.type(other), self))
+        return result
+
+    def __invert__(self):
+        if not np.issubdtype(self.dtype, np.integer):
+            raise TypeError("Integral types only")
+
+        result = self._new_like_me()
+        result.add_event(self._unop(result, self, op="~"))
+
         return result
 
     # }}}
