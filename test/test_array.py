@@ -468,6 +468,74 @@ def test_divide_array(ctx_factory):
     a_divide = (b_gpu / a_gpu).get()
     assert (np.abs(b / a - a_divide) < 1e-3).all()
 
+
+def test_bitwise(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from itertools import product
+
+    dtypes = [np.dtype(t) for t in (np.int64, np.int32, np.int16, np.int8)]
+
+    for a_dtype, b_dtype in product(dtypes, dtypes):
+        l = 16
+
+        np.random.seed(10)
+
+        a_dev = cl.array.to_device(
+            queue,
+            np.random.randint(
+                low=np.iinfo(a_dtype).min,
+                high=1+np.iinfo(a_dtype).max,
+                size=(l,),
+                dtype=a_dtype))
+        b_dev = cl.array.to_device(
+            queue,
+            np.random.randint(
+                low=np.iinfo(b_dtype).min,
+                high=1+np.iinfo(b_dtype).max,
+                size=(l,),
+                dtype=b_dtype))
+
+        a = a_dev.get()
+        b = b_dev.get()
+        s = np.random.randint(
+            low=np.iinfo(b_dtype).min,
+            high=1+np.iinfo(b_dtype).max)
+
+        import operator as o
+
+        for op in [o.and_, o.or_, o.xor]:
+            res_dev = op(a_dev, b_dev)
+            res = op(a, b)
+
+            assert (res_dev.get() == res).all()
+
+            res_dev = op(a_dev, s)
+            res = op(a, s)
+
+            assert (res_dev.get() == res).all()
+
+            res_dev = op(s, b_dev)
+            res = op(s, b)
+
+            assert (res_dev.get() == res).all()
+
+        for op in [o.iand, o.ior, o.ixor]:
+            res_dev = a_dev.copy()
+            op(res_dev, b_dev)
+            res = a.copy()
+            op(res, b)
+
+            assert (res_dev.get() == res).all()
+
+            res_dev = a_dev.copy()
+            op(res_dev, s)
+            res = a.copy()
+            op(res, s)
+
+            assert (res_dev.get() == res).all()
+
 # }}}
 
 
