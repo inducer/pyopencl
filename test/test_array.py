@@ -477,31 +477,25 @@ def test_bitwise(ctx_factory):
 
     dtypes = [np.dtype(t) for t in (np.int64, np.int32, np.int16, np.int8)]
 
+    from pyopencl.clrandom import rand as clrand
+
     for a_dtype, b_dtype in product(dtypes, dtypes):
         l = 16
 
         np.random.seed(10)
 
-        a_dev = cl.array.to_device(
-            queue,
-            np.random.randint(
-                low=np.iinfo(a_dtype).min,
-                high=1+np.iinfo(a_dtype).max,
-                size=(l,),
-                dtype=a_dtype))
-        b_dev = cl.array.to_device(
-            queue,
-            np.random.randint(
-                low=np.iinfo(b_dtype).min,
-                high=1+np.iinfo(b_dtype).max,
-                size=(l,),
-                dtype=b_dtype))
+        int32_min = np.iinfo(np.int32).min
+        int32_max = np.iinfo(np.int32).max
+
+        a_dev = clrand(
+            queue, (l,), a=int32_min, b=1+int32_max, dtype=np.int64).astype(a_dtype)
+        b_dev = clrand(
+            queue, (l,), a=int32_min, b=1+int32_max, dtype=np.int64).astype(b_dtype)
 
         a = a_dev.get()
         b = b_dev.get()
-        s = np.random.randint(
-            low=np.iinfo(b_dtype).min,
-            high=1+np.iinfo(b_dtype).max)
+        s = int((clrand(queue, (), a=int32_min, b=1+int32_max, dtype=np.int64)
+                 .astype(b_dtype).get()))
 
         import operator as o
 
@@ -535,6 +529,11 @@ def test_bitwise(ctx_factory):
             op(res, s)
 
             assert (res_dev.get() == res).all()
+
+        # Test unary ~
+        res_dev = ~a_dev
+        res = ~a
+        assert (res_dev.get() == res).all()
 
 # }}}
 

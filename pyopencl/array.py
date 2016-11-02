@@ -400,6 +400,7 @@ class Array(object):
     .. automethod :: __ior__
 
     .. automethod :: __abs__
+    .. automethod :: __invert__
 
     .. UNDOC reverse()
 
@@ -885,6 +886,14 @@ class Array(object):
         return elementwise.get_array_binop_kernel(
                 out.context, op, out.dtype, a.dtype, b.dtype)
 
+    @staticmethod
+    @elwise_kernel_runner
+    def _unop(out, a, queue=None, op=None):
+        if out.shape != a.shape:
+            raise ValueError("shapes of arguments do not match")
+        return elementwise.get_unop_kernel(
+                out.context, op, a.dtype, out.dtype)
+
     # }}}
 
     # {{{ operators
@@ -1223,6 +1232,15 @@ class Array(object):
         result = self._new_like_me(common_dtype)
         result.add_event(
                 self._rpow_scalar(result, common_dtype.type(other), self))
+        return result
+
+    def __invert__(self):
+        if not np.issubdtype(self.dtype, np.integer):
+            raise TypeError("Integral types only")
+
+        result = self._new_like_me()
+        result.add_event(self._unop(result, self, op="~"))
+
         return result
 
     # }}}
