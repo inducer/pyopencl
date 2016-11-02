@@ -1194,6 +1194,8 @@ class Array(object):
         .. versionadded:: 2013.1
         """
 
+        queue = queue or self.queue or value.queue
+
         if isinstance(subscript, Array):
             if subscript.dtype.kind != "i":
                 raise TypeError(
@@ -1205,10 +1207,8 @@ class Array(object):
                 raise NotImplementedError(
                         "fancy indexing into a multi-d array is not supported")
 
-            multi_put([value], subscript, out=[self], queue=self.queue)
+            multi_put([value], subscript, out=[self], queue=queue)
             return
-
-        queue = queue or self.queue or value.queue
 
         subarray = self[subscript]
 
