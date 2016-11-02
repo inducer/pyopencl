@@ -470,6 +470,9 @@ def test_divide_array(ctx_factory):
 
 
 def test_bitwise(ctx_factory):
+    if _PYPY:
+        pytest.xfail("numpypy: missing bitwise ops")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
