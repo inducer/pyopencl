@@ -1661,7 +1661,7 @@ class Array(object):
                         "multidimensional fancy indexing is not supported")
             if len(self.shape) != 1:
                 raise NotImplementedError(
-                        "fancy indexing into a multi-d array is supported")
+                        "fancy indexing into a multi-d array is not supported")
 
             multi_put([value], subscript, out=[self], queue=queue,
                     wait_for=wait_for)
