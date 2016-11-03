@@ -497,6 +497,76 @@ def test_divide_array(ctx_factory):
     a_divide = (b_gpu / a_gpu).get()
     assert (np.abs(b / a - a_divide) < 1e-3).all()
 
+
+def test_bitwise(ctx_factory):
+    if _PYPY:
+        pytest.xfail("numpypy: missing bitwise ops")
+
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from itertools import product
+
+    dtypes = [np.dtype(t) for t in (np.int64, np.int32, np.int16, np.int8)]
+
+    from pyopencl.clrandom import rand as clrand
+
+    for a_dtype, b_dtype in product(dtypes, dtypes):
+        l = 16
+
+        np.random.seed(10)
+
+        int32_min = np.iinfo(np.int32).min
+        int32_max = np.iinfo(np.int32).max
+
+        a_dev = clrand(
+            queue, (l,), a=int32_min, b=1+int32_max, dtype=np.int64).astype(a_dtype)
+        b_dev = clrand(
+            queue, (l,), a=int32_min, b=1+int32_max, dtype=np.int64).astype(b_dtype)
+
+        a = a_dev.get()
+        b = b_dev.get()
+        s = int((clrand(queue, (), a=int32_min, b=1+int32_max, dtype=np.int64)
+                 .astype(b_dtype).get()))
+
+        import operator as o
+
+        for op in [o.and_, o.or_, o.xor]:
+            res_dev = op(a_dev, b_dev)
+            res = op(a, b)
+
+            assert (res_dev.get() == res).all()
+
+            res_dev = op(a_dev, s)
+            res = op(a, s)
+
+            assert (res_dev.get() == res).all()
+
+            res_dev = op(s, b_dev)
+            res = op(s, b)
+
+            assert (res_dev.get() == res).all()
+
+        for op in [o.iand, o.ior, o.ixor]:
+            res_dev = a_dev.copy()
+            op(res_dev, b_dev)
+            res = a.copy()
+            op(res, b)
+
+            assert (res_dev.get() == res).all()
+
+            res_dev = a_dev.copy()
+            op(res_dev, s)
+            res = a.copy()
+            op(res, s)
+
+            assert (res_dev.get() == res).all()
+
+        # Test unary ~
+        res_dev = ~a_dev
+        res = ~a
+        assert (res_dev.get() == res).all()
+
 # }}}
 
 

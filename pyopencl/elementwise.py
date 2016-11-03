@@ -835,6 +835,38 @@ def get_pow_kernel(context, dtype_x, dtype_y, dtype_z,
 
 
 @context_dependent_memoize
+def get_unop_kernel(context, operator, res_dtype, in_dtype):
+    return get_elwise_kernel(context, [
+        VectorArg(res_dtype, "z", with_offset=True),
+        VectorArg(in_dtype, "y", with_offset=True),
+        ],
+        "z[i] = %s y[i]" % operator,
+        name="unary_op_kernel")
+
+
+@context_dependent_memoize
+def get_array_scalar_binop_kernel(context, operator, dtype_res, dtype_a, dtype_b):
+    return get_elwise_kernel(context, [
+        VectorArg(dtype_res, "out", with_offset=True),
+        VectorArg(dtype_a, "a", with_offset=True),
+        ScalarArg(dtype_b, "b"),
+        ],
+        "out[i] = a[i] %s b" % operator,
+        name="scalar_binop_kernel")
+
+
+@context_dependent_memoize
+def get_array_binop_kernel(context, operator, dtype_res, dtype_a, dtype_b):
+    return get_elwise_kernel(context, [
+        VectorArg(dtype_res, "out", with_offset=True),
+        VectorArg(dtype_a, "a", with_offset=True),
+        VectorArg(dtype_b, "b", with_offset=True),
+        ],
+        "out[i] = a[i] %s b[i]" % operator,
+        name="binop_kernel")
+
+
+@context_dependent_memoize
 def get_array_scalar_comparison_kernel(context, operator, dtype_a):
     return get_elwise_kernel(context, [
         VectorArg(np.int8, "out", with_offset=True),
