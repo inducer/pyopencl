@@ -2230,16 +2230,27 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
 
     chunk_size = _builtin_min(vec_count, 10)
 
+    # np array to hold fill vals for each array in `arrays` chunk.
+    fill_vals = np.ndarray((chunk_size,), dtype=a_dtype)
+    # device buffer
+    fill_vals_cla = zeros(queue, shape=fill_vals.shape, dtype=a_dtype)
+
     def make_func_for_chunk_size(chunk_size):
         knl = elementwise.get_put_kernel(
-                context,
-                a_dtype, dest_indices.dtype, vec_count=chunk_size)
+                context, a_dtype, dest_indices.dtype,
+                vec_count=chunk_size)
         return knl
 
     knl = make_func_for_chunk_size(chunk_size)
 
     for start_i in range(0, len(arrays), chunk_size):
         chunk_slice = slice(start_i, start_i+chunk_size)
+        # load the fill_vals np array with 0 if no fill and the fill value
+        # if the values array has only one item.
+        for fill_idx, ary in enumerate(arrays[chunk_slice]):
+            fill_vals[fill_idx] = ary.get()[0] if ary.size == 1 else 0
+        #copy the populated fill_vals array to the buffer on device
+        fill_vals_cla.set(fill_vals)
 
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
@@ -2259,6 +2270,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
                     + list(flatten(
                         (i.base_data, i.offset)
                         for i in arrays[chunk_slice]))
+                    + [fill_vals_cla.base_data, fill_vals_cla.offset]
                     + [dest_indices.size]),
                 **dict(wait_for=wait_for))
 

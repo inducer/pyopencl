@@ -441,11 +441,14 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
             ] + [
                 VectorArg(dtype, "src%d" % i, with_offset=True)
                 for i in range(vec_count)
+            ] + [
+                VectorArg(dtype, "fill_with_single", with_offset=True)
+                for i in range(vec_count)
             ]
 
     body = (
             "%(idx_tp)s dest_idx = gmem_dest_idx[i];\n" % ctx
-            + "\n".join("dest%d[dest_idx] = src%d[i];" % (i, i)
+            + "\n".join("dest%d[dest_idx] = fill_with_single[%d] or src%d[i];" % (i, i, i)
                 for i in range(vec_count)))
 
     return get_elwise_kernel(context, args, body,
