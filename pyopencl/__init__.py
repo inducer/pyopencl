@@ -194,7 +194,7 @@ def _find_pyopencl_include_path():
     try:
         # Try to find the resource with pkg_resources (the recommended
         # setuptools approach)
-        return resource_filename(Requirement.parse("pyopencl2"), "pyopencl/cl")
+        return resource_filename(Requirement.parse("pyopencl"), "pyopencl/cl")
     except DistributionNotFound:
         # If pkg_resources can't find it (e.g. if the module is part of a
         # frozen application), try to find the include path in the same
