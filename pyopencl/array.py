@@ -1873,7 +1873,7 @@ def as_strided(ary, shape=None, strides=None):
 
 # {{{ creation helpers
 
-class _same_as_transfer(object):
+class _same_as_transfer(object):  # noqa
     pass
 
 
