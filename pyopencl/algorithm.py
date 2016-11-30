@@ -300,6 +300,7 @@ def _make_sort_scan_type(device, bits, index_dtype):
     dtype = get_or_register_dtype(name, dtype)
     return name, dtype, c_decl
 
+
 # {{{ types, helpers preamble
 
 RADIX_SORT_PREAMBLE_TPL = Template(r"""//CL//

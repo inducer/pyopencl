@@ -742,6 +742,7 @@ def _round_down_to_power_of_2(val):
     assert result <= val
     return result
 
+
 _PREFIX_WORDS = set("""
         ldata partial_scan_buffer global scan_offset
         segment_start_in_k_group carry
@@ -849,6 +850,7 @@ def _make_template(s):
         warn("leftover words in identifier prefixing: " + " ".join(leftovers))
 
     return mako.template.Template(s, strict_undefined=True)
+
 
 from pytools import Record
 
@@ -1411,6 +1413,7 @@ class GenericScanKernel(_GenericScanKernelBase):
         # }}}
 
 # }}}
+
 
 # {{{ debug kernel
 

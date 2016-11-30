@@ -511,6 +511,7 @@ def summarize_error(obtained, desired, orig, thresh=1e-5):
 
     return " ".join(entries)
 
+
 scan_test_counts = [
     10,
     2 ** 8 - 1,

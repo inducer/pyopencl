@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 try:
-    import mako.template
+    import mako.template  # noqa
 except ImportError:
     raise ImportError(
             "Some of PyOpenCL's facilities require the Mako templating engine.\n"
@@ -12,4 +12,4 @@ except ImportError:
             "- aptitude install python-mako\n"
             "\nor whatever else is appropriate for your system.")
 
-from mako import *
+from mako import *  # noqa
