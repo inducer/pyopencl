@@ -93,7 +93,7 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
                     arg.dtype.type.__name__, repr(complex(arg))))
             else:
                 try:
-                    arg_buf = buffer(arg)
+                    arg_buf = memoryview(arg)
                 except:
                     raise RuntimeError("cannot capture: "
                             "unsupported arg nr %d (0-based)" % i)
@@ -150,7 +150,7 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
     for name, val in arg_data:
         cg("%s = (" % name)
         with Indentation(cg):
-            val = str(b64encode(compress(buffer(val))))
+            val = str(b64encode(compress(memoryview(val))))
             i = 0
             while i < len(val):
                 cg(repr(val[i:i+line_len]))

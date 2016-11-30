@@ -488,6 +488,7 @@ class Program(object):
     def __hash__(self):
         return hash(self._get_prg())
 
+
 _add_get_info_attrs(Program, Program.get_info, program_info)
 
 
@@ -635,6 +636,7 @@ def create_some_context(interactive=None, answers=None, cache_dir=None):
                 "create_some_context. (left over: '%s')" % ":".join(answers))
 
     return Context(devices, cache_dir=cache_dir)
+
 
 _csc = create_some_context
 

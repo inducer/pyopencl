@@ -108,7 +108,8 @@ try:
     CheckBuffer.restype = ctypes.c_int
 except AttributeError as err:
     # Python 2.6 doesn't appear to have CheckBuffer support...
-    CheckBuffer = lambda x: True
+    def CheckBuffer(x):  # noqa
+        return True
 
 IncRef = ctypes.pythonapi.Py_IncRef
 IncRef.argtypes = [ctypes.py_object]

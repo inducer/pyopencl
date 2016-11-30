@@ -498,6 +498,7 @@ class migrate_mem_object_flags_ext(_ConstantsNamespace):  # noqa
 
 # }}}
 
+
 _locals = locals()
 
 
@@ -2071,6 +2072,7 @@ class ProfilingInfoGetter:
         else:
             return self.event.get_profiling_info(inf_attr)
 
+
 Event.profile = property(ProfilingInfoGetter)
 
 
@@ -2609,6 +2611,7 @@ def _create_gl_enqueue(what):
         return Event._create(ptr_event[0])
     return enqueue_gl_objects
 
+
 if _lib.have_gl():
     enqueue_acquire_gl_objects = _create_gl_enqueue(
         _lib.enqueue_acquire_gl_objects)
@@ -3003,6 +3006,7 @@ class _ImageInfoGetter:
         else:
             return self.event.get_image_info(inf_attr)
 
+
 Image.image = property(_ImageInfoGetter)
 
 # }}}
@@ -3123,6 +3127,7 @@ def add_get_info_attrs(cls, info_method, info_class, cacheable_attrs=None):
         else:
             setattr(cls, info_lower, make_getinfo(
                     info_method, info_name, info_constant))
+
 
 add_get_info_attrs(Platform, Platform.get_info, platform_info),
 add_get_info_attrs(Device, Device.get_info, device_info,

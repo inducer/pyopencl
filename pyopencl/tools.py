@@ -53,6 +53,7 @@ def _register_types():
     get_or_register_dtype("cfloat_t", np.complex64)
     get_or_register_dtype("cdouble_t", np.complex128)
 
+
 _register_types()
 
 
@@ -96,6 +97,7 @@ def first_arg_dependent_memoize(func, cl_object, *args):
         result = func(cl_object, *args)
         arg_dict[args] = result
         return result
+
 
 context_dependent_memoize = first_arg_dependent_memoize
 
@@ -158,6 +160,7 @@ def clear_first_arg_caches():
     """
     for cache in _first_arg_dependent_caches:
         cache.clear()
+
 
 import atexit
 atexit.register(clear_first_arg_caches)

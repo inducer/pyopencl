@@ -46,6 +46,7 @@ def _make_unary_array_func(name):
 
     return f
 
+
 # See table 6.8 in the CL 1.1 spec
 acos = _make_unary_array_func("acos")
 acosh = _make_unary_array_func("acosh")
@@ -171,6 +172,7 @@ def ldexp(significand, exponent, queue=None):
     _ldexp(result, significand, exponent)
     return result
 
+
 lgamma = _make_unary_array_func("lgamma")
 # TODO: lgamma_r
 
@@ -199,6 +201,7 @@ def modf(arg, queue=None):
     fracpart = arg._new_like_me(queue=queue)
     _modf(intpart, fracpart, arg, queue=queue)
     return fracpart, intpart
+
 
 nan = _make_unary_array_func("nan")
 

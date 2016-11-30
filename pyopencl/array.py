@@ -48,6 +48,7 @@ def _get_common_dtype(obj1, obj2, queue):
     return _get_common_dtype_base(obj1, obj2,
             has_double_support(queue.device))
 
+
 # Work around PyPy not currently supporting the object dtype.
 # (Yes, it doesn't even support checking!)
 # (as of May 27, 2014 on PyPy 2.3)
@@ -149,6 +150,7 @@ def _create_vector_types():
 
             vec.types[np.dtype(base_type), count] = dtype
             vec.type_to_scalar_and_count[dtype] = np.dtype(base_type), count
+
 
 _create_vector_types()
 
@@ -1871,7 +1873,7 @@ def as_strided(ary, shape=None, strides=None):
 
 # {{{ creation helpers
 
-class _same_as_transfer(object):
+class _same_as_transfer(object):  # noqa
     pass
 
 
@@ -2493,6 +2495,7 @@ def _make_minmax_kernel(what):
 
     return f
 
+
 min = _make_minmax_kernel("min")
 min.__doc__ = """
     .. versionadded:: 2011.1
@@ -2511,6 +2514,7 @@ def _make_subset_minmax_kernel(what):
         return krnl(subset, a,  queue=queue, slice=slice)
 
     return f
+
 
 subset_min = _make_subset_minmax_kernel("min")
 subset_min.__doc__ = """.. versionadded:: 2011.1"""
