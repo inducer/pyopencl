@@ -1168,7 +1168,7 @@ def test_multi_put(ctx_factory):
 
     cl_array.multi_put(cl_arrays, idx, out=out_arrays)
 
-    assert np.all(np.all(out_compare[i] == cl_arrays[i].get()) for i in range(10))
+    assert np.all(np.all(out_compare[i] == out_arrays[i].get()) for i in range(9))
 
 
 if __name__ == "__main__":
