@@ -441,12 +441,20 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
             ] + [
                 VectorArg(dtype, "src%d" % i, with_offset=True)
                 for i in range(vec_count)
+            ] + [
+                VectorArg(np.uint8, "use_fill", with_offset=True)
+            ] + [
+                VectorArg(np.int64, "val_ary_lengths", with_offset=True)
             ]
 
     body = (
             "%(idx_tp)s dest_idx = gmem_dest_idx[i];\n" % ctx
-            + "\n".join("dest%d[dest_idx] = src%d[i];" % (i, i)
-                for i in range(vec_count)))
+            + "\n".join(
+                    "dest{i}[dest_idx] = (use_fill[{i}] ? src{i}[0] : "
+                    "src{i}[i % val_ary_lengths[{i}]]);".format(i=i)
+                    for i in range(vec_count)
+                    )
+            )
 
     return get_elwise_kernel(context, args, body,
             preamble=dtype_to_c_struct(context.devices[0], dtype),

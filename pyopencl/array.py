@@ -2230,16 +2230,29 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
 
     chunk_size = _builtin_min(vec_count, 10)
 
+    # array of bools to specify whether the array of same index in this chunk
+    # will be filled with a single value.
+    use_fill = np.ndarray((chunk_size,), dtype=np.uint8)
+    array_lengths = np.ndarray((chunk_size,), dtype=np.int64)
+
     def make_func_for_chunk_size(chunk_size):
         knl = elementwise.get_put_kernel(
-                context,
-                a_dtype, dest_indices.dtype, vec_count=chunk_size)
+                context, a_dtype, dest_indices.dtype,
+                vec_count=chunk_size)
         return knl
 
     knl = make_func_for_chunk_size(chunk_size)
 
     for start_i in range(0, len(arrays), chunk_size):
         chunk_slice = slice(start_i, start_i+chunk_size)
+        for fill_idx, ary in enumerate(arrays[chunk_slice]):
+            # If there is only one value in the values array for this src array
+            # in the chunk then fill every index in `dest_idx` array with it.
+            use_fill[fill_idx] = 1 if ary.size == 1 else 0
+            array_lengths[fill_idx] = len(ary)
+        # Copy the populated `use_fill` array to a buffer on the device.
+        use_fill_cla = to_device(queue, use_fill)
+        array_lengths_cla = to_device(queue, array_lengths)
 
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
@@ -2259,6 +2272,8 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
                     + list(flatten(
                         (i.base_data, i.offset)
                         for i in arrays[chunk_slice]))
+                    + [use_fill_cla.base_data, use_fill_cla.offset]
+                    + [array_lengths_cla.base_data, array_lengths_cla.offset]
                     + [dest_indices.size]),
                 **dict(wait_for=wait_for))
 
