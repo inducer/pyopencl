@@ -1104,6 +1104,8 @@ def test_squeeze(ctx_factory):
 
 
 def test_fancy_fill(ctx_factory):
+    if _PYPY:
+        pytest.xfail("numpypy: multi value setting is not supported")
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1121,6 +1123,8 @@ def test_fancy_fill(ctx_factory):
 
 
 def test_fancy_indexing(ctx_factory):
+    if _PYPY:
+        pytest.xfail("numpypy: multi value setting is not supported")
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1149,6 +1153,9 @@ def test_fancy_indexing(ctx_factory):
 
 
 def test_multi_put(ctx_factory):
+    if _PYPY:
+        pytest.xfail("numpypy: multi value setting is not supported")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 

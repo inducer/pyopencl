@@ -453,7 +453,7 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
                     "dest{i}[dest_idx] = (use_fill[{i}] ? src{i}[0] : "
                     "src{i}[i % val_ary_lengths[{i}]]);".format(i=i)
                     for i in range(vec_count)
-                )
+                    )
             )
 
     return get_elwise_kernel(context, args, body,
