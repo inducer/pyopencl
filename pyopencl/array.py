@@ -42,7 +42,7 @@ from pyopencl.compyte.array import (
         ArrayFlags as _ArrayFlags,
         get_common_dtype as _get_common_dtype_base)
 from pyopencl.characterize import has_double_support
-
+from pyopencl import dtypes
 
 def _get_common_dtype(obj1, obj2, queue):
     return _get_common_dtype_base(obj1, obj2,
@@ -78,18 +78,7 @@ def _create_vector_types():
 
     counts = [2, 3, 4, 8, 16]
 
-    for base_name, base_type in [
-            ('char', np.int8),
-            ('uchar', np.uint8),
-            ('short', np.int16),
-            ('ushort', np.uint16),
-            ('int', np.int32),
-            ('uint', np.uint32),
-            ('long', np.int64),
-            ('ulong', np.uint64),
-            ('float', np.float32),
-            ('double', np.float64),
-            ]:
+    for base_name, base_type in cl.dtypes.cl2np_mapping:
         for count in counts:
             name = "%s%d" % (base_name, count)
 
