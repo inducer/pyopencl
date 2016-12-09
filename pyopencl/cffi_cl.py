@@ -42,6 +42,9 @@ from .compyte.array import f_contiguous_strides, c_contiguous_strides
 
 from pyopencl._cffi import lib as _lib
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class _CLKernelArg(object):
     pass
@@ -1583,6 +1586,7 @@ class _Program(_Common):
         return build_logs
 
     def build(self, options_bytes, devices=None):
+        logger.debug("build program: start")
         err = None
         try:
             self._build(options=options_bytes, devices=devices)
@@ -1602,7 +1606,11 @@ class _Program(_Common):
         if err is not None:
             # Python 3.2 outputs the whole list of currently active exceptions
             # This serves to remove one (redundant) level from that nesting.
+
+            logger.debug("build program: completed, error")
             raise err
+
+        logger.debug("build program: completed, success")
 
         message = (75*"="+"\n").join(
                 "Build on %s succeeded, but said:\n\n%s" % (dev, log)

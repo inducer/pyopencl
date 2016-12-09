@@ -32,6 +32,10 @@ import sys
 import os
 from pytools import Record
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 try:
     import hashlib
     new_hash = hashlib.md5
@@ -352,10 +356,14 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
         cache_result = retrieve_from_cache(cache_dir, cache_key)
 
         if cache_result is None:
+            logger.info("build program: binary cache miss (key: %s)" % cache_key)
+
             to_be_built_indices.append(i)
             binaries.append(None)
             logs.append(None)
         else:
+            logger.debug("build program: binary cache hit (key: %s)" % cache_key)
+
             binary, log = cache_result
             binaries.append(binary)
             logs.append(log)
@@ -382,8 +390,13 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
         src = src + "\n\n__constant int pyopencl_defeat_cache_%s = 0;" % (
                 uuid4().hex)
 
+        logger.info("build program: start building program from source on %s"
+                % ", ".join(str(devices[i]) for i in to_be_built_indices))
+
         prg = _cl._Program(ctx, src)
         prg.build(options_bytes, [devices[i] for i in to_be_built_indices])
+
+        logger.info("build program: from-source build complete")
 
         prg_devs = prg.get_info(_cl.program_info.DEVICES)
         prg_bins = prg.get_info(_cl.program_info.BINARIES)
