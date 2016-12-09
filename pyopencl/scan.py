@@ -1,10 +1,6 @@
 """Scan primitive."""
 
-from __future__ import division
-from __future__ import absolute_import
-import six
-from six.moves import range
-from six.moves import zip
+from __future__ import division, absolute_import
 
 __copyright__ = """
 Copyright 2011-2012 Andreas Kloeckner
@@ -27,6 +23,9 @@ limitations under the License.
 Derived from code within the Thrust project, https://github.com/thrust/thrust/
 
 """
+
+import six
+from six.moves import range, zip
 
 import numpy as np
 
