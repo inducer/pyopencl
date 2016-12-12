@@ -179,6 +179,9 @@ def _generic_info_to_python(info):
     elif type_ == 'cl_device_topology_amd*':
         ret = DeviceTopologyAmd(
                 value.pcie.bus, value.pcie.device, value.pcie.function)
+    elif type_ == 'cl_image_format*':
+        ret = ImageFormat(value.image_channel_order,
+                               value.image_channel_data_type)
     elif type_.startswith('char*['):
         ret = list(map(_ffi_pystr, value))
         _lib.free_pointer_array(info.value, len(value))
