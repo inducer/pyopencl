@@ -1050,7 +1050,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                 output_statement="ary[i+1] = item;")
 
         a = cl.array.arange(queue, 10000, dtype=np.int32)
-        scan_kernel(a, queue=queue)
+        knl(a, queue=queue)
 
     """
 
