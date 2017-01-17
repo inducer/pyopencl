@@ -38,7 +38,7 @@ def get_config_schema():
             IncludeDir, LibraryDir, Libraries, \
             Switch, StringListOption
 
-    default_cxxflags = ['-std=c++0x']
+    default_cxxflags = ['-std=gnu++11']
 
     if 'darwin' in sys.platform:
         import platform
