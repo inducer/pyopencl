@@ -295,8 +295,11 @@ void ${kernel_name}(
 
             if (LID_0 == 0 && unit_base != interval_begin)
             {
+                scan_type tmp = ldata[K][WG_SIZE - 1].value;
+                scan_type tmp_aux = ldata[0][0].value;
+
                 ldata[0][0].value = SCAN_EXPR(
-                    ldata[K][WG_SIZE - 1].value, ldata[0][0].value,
+                    tmp, tmp_aux,
                     %if is_segmented:
                         (l_segment_start_flags[0][0])
                     %else:
@@ -760,7 +763,7 @@ _PREFIX_WORDS = set("""
         group_base seg_end my_val DEBUG ARGS
         ints_to_store ints_per_wg scan_types_per_int linear_index
         linear_scan_data_idx dest src store_base wrapped_scan_type
-        dummy scan_tmp
+        dummy scan_tmp tmp_aux
 
         LID_2 LID_1 LID_0
         LDIM_0 LDIM_1 LDIM_2
