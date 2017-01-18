@@ -25,6 +25,7 @@ Python 3.5 Intel CPU:
   - intel-cl-cpu
   except:
   - tags
+
 Python 3.5 AMD CPU:
   script:
   - export PY_EXE=python3.5
@@ -37,6 +38,7 @@ Python 3.5 AMD CPU:
   - amd-cl-cpu
   except:
   - tags
+
 Python 2.6 AMD CPU:
   script:
   - export PY_EXE=python2.6
@@ -134,6 +136,7 @@ PyPy POCL:
   - export PY_EXE=pypy
   - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="numpy mako"
+  - export NO_DOCTESTS=1
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
