@@ -33,6 +33,7 @@ import warnings
 from warnings import warn
 import numpy as np
 import sys
+import re
 
 from pytools import memoize_method
 
@@ -649,17 +650,6 @@ class Platform(_Common):
     def __repr__(self):
         return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
 
-    def _get_cl_version(self):
-        import re
-        version_string = self.version
-        match = re.match(r"^OpenCL ([0-9]+)\.([0-9]+) .*$", version_string)
-        if match is None:
-            raise RuntimeError("platform %s returned non-conformant "
-                               "platform version string '%s'" %
-                               (self, version_string))
-
-        return int(match.group(1)), int(match.group(2))
-
 
 def unload_platform_compiler(plat):
     _handle_error(_lib.platform__unload_compiler(plat.ptr))
@@ -694,6 +684,28 @@ class Device(_Common):
     @property
     def persistent_unique_id(self):
         return (self.vendor, self.vendor_id, self.name, self.version)
+
+# }}}
+
+
+# {{{ {Device,Platform}._get_cl_version
+
+_OPENCL_VERSION_STRING_RE = re.compile(r"^OpenCL ([0-9]+)\.([0-9]+) .*$")
+
+
+def _platdev_get_cl_version(self):
+    version_string = self.version
+    match = _OPENCL_VERSION_STRING_RE.match(version_string)
+    if match is None:
+        raise RuntimeError("platform %s returned non-conformant "
+                           "platform version string '%s'" %
+                           (self, version_string))
+
+    return int(match.group(1)), int(match.group(2))
+
+
+Platform._get_cl_version = _platdev_get_cl_version
+Device._get_cl_version = _platdev_get_cl_version
 
 # }}}
 
@@ -818,7 +830,7 @@ class CommandQueue(_Common):
         self.finish()
 
     def _get_cl_version(self):
-        return self.context._get_cl_version()
+        return self.device._get_cl_version()
 
 
 # }}}
