@@ -136,6 +136,7 @@ Python 2.7 Apple:
   - export PY_EXE=python2.7
   - export PYOPENCL_TEST=app:cpu
   - export EXTRA_INSTALL="numpy mako"
+  - export PKG_CONFIG_PATH=/usr/local/opt/libffi/lib/pkgconfig
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
