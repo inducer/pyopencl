@@ -4,7 +4,7 @@
 #ifndef _EXT_H
 #define _EXT_H
 
-#ifdef __APPLE__
+#if (defined(__APPLE__) && !defined(PYOPENCL_APPLE_USE_CL_H))
 #include <OpenCL/opencl.h>
 #else
 #include <CL/cl.h>

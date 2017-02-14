@@ -68,7 +68,7 @@ context::get_info(cl_uint param_name) const
                 break;
 
 #if defined(PYOPENCL_GL_SHARING_VERSION) && (PYOPENCL_GL_SHARING_VERSION >= 1)
-#if defined(__APPLE__) && defined(HAVE_GL)
+#if defined(__APPLE__) && defined(HAVE_GL) && !defined(PYOPENCL_APPLE_USE_CL_H)
             case CL_CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE:
 #else
             case CL_GL_CONTEXT_KHR:

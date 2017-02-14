@@ -13,7 +13,7 @@
 
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS
 
-#ifdef __APPLE__
+#if (defined(__APPLE__) && !defined(PYOPENCL_APPLE_USE_CL_H))
 
 // {{{ Mac
 

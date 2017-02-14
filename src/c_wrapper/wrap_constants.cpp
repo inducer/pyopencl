@@ -421,7 +421,7 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     ADD_ATTR("context_properties",  ,WGL_HDC_KHR);
     ADD_ATTR("context_properties",  ,CGL_SHAREGROUP_KHR);
 #endif
-#if defined(__APPLE__) && defined(HAVE_GL)
+#if defined(__APPLE__) && defined(HAVE_GL) && !defined(PYOPENCL_APPLE_USE_CL_H)
     ADD_ATTR("context_properties",  ,CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE);
 #endif /* __APPLE__ */
 #ifdef CL_CONTEXT_OFFLINE_DEVICES_AMD
