@@ -99,7 +99,7 @@ program::get_build_info(const device *dev, cl_program_build_info param) const
     }
 }
 
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if PYOPENCL_CL_VERSION >= 0x1020 && !defined(PYOPENCL_LINKED_TO_POCL)
 void
 program::compile(const char *opts, const clobj_t *_devs, size_t num_devs,
                  const clobj_t *_prgs, const char *const *names,
@@ -143,7 +143,7 @@ create_program_with_source(clobj_t *prog, clobj_t _ctx, const char *_src)
 error*
 create_program_with_il(clobj_t *prog, clobj_t _ctx, void *il, size_t length)
 {
-#if PYOPENCL_CL_VERSION >= 0x2010
+#if PYOPENCL_CL_VERSION >= 0x2010 && !defined(PYOPENCL_LINKED_TO_POCL)
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
             cl_program result = pyopencl_call_guarded(
@@ -209,7 +209,7 @@ program__create_with_builtin_kernels(clobj_t *_prg, clobj_t _ctx,
                                      const clobj_t *_devs, uint32_t num_devs,
                                      const char *names)
 {
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if PYOPENCL_CL_VERSION >= 0x1020 && !defined(PYOPENCL_LINKED_TO_POCL)
     const auto devs = buf_from_class<device>(_devs, num_devs);
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
@@ -227,7 +227,7 @@ program__compile(clobj_t _prg, const char *opts, const clobj_t *_devs,
                  size_t num_devs, const clobj_t *_prgs,
                  const char *const *names, size_t num_hdrs)
 {
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if PYOPENCL_CL_VERSION >= 0x1020 && !defined(PYOPENCL_LINKED_TO_POCL)
     auto prg = static_cast<program*>(_prg);
     return c_handle_error([&] {
             prg->compile(opts, _devs, num_devs, _prgs, names, num_hdrs);
@@ -242,7 +242,7 @@ program__link(clobj_t *_prg, clobj_t _ctx, const clobj_t *_prgs,
               size_t num_prgs, const char *opts, const clobj_t *_devs,
               size_t num_devs)
 {
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if PYOPENCL_CL_VERSION >= 0x1020 && !defined(PYOPENCL_LINKED_TO_POCL)
     const auto devs = buf_from_class<device>(_devs, num_devs);
     const auto prgs = buf_from_class<program>(_prgs, num_prgs);
     auto ctx = static_cast<context*>(_ctx);

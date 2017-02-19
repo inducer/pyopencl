@@ -13,6 +13,7 @@ template void print_clobj<gl_renderbuffer>(std::ostream&,
 generic_info
 gl_texture::get_gl_texture_info(cl_gl_texture_info param_name) const
 {
+#if !defined(PYOPENCL_LINKED_TO_POCL)
     switch (param_name) {
     case CL_GL_TEXTURE_TARGET:
         return pyopencl_get_int_info(GLenum, GLTexture, PYOPENCL_CL_CASTABLE_THIS, param_name);
@@ -21,6 +22,9 @@ gl_texture::get_gl_texture_info(cl_gl_texture_info param_name) const
     default:
         throw clerror("MemoryObject.get_gl_texture_info", CL_INVALID_VALUE);
     }
+#else
+    throw clerror("GLObject.get_gl_texture_info", CL_INVALID_VALUE, "not supported in pocl");
+#endif
 }
 
 typedef cl_int (CL_API_CALL *clEnqueueGLObjectFunc)(cl_command_queue, cl_uint,
@@ -49,7 +53,7 @@ create_from_gl_texture(clobj_t *ptr, clobj_t _ctx, cl_mem_flags flags,
                        GLenum texture_target, GLint miplevel,
                        GLuint texture)
 {
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if PYOPENCL_CL_VERSION >= 0x1020 && !defined(PYOPENCL_LINKED_TO_POCL)
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
             cl_mem mem = pyopencl_call_guarded(clCreateFromGLTexture,
@@ -65,18 +69,23 @@ error*
 create_from_gl_buffer(clobj_t *ptr, clobj_t _ctx,
                       cl_mem_flags flags, GLuint bufobj)
 {
+#if !defined(PYOPENCL_LINKED_TO_POCL)
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
             cl_mem mem = pyopencl_call_guarded(clCreateFromGLBuffer,
                                                ctx, flags, bufobj);
             *ptr = pyopencl_convert_obj(gl_buffer, clReleaseMemObject, mem);
         });
+#else
+    PYOPENCL_UNSUPPORTED(clCreateFromGLBuffer, "POCL")
+#endif
 }
 
 error*
 create_from_gl_renderbuffer(clobj_t *ptr, clobj_t _ctx,
                             cl_mem_flags flags, GLuint bufobj)
 {
+#if !defined(PYOPENCL_LINKED_TO_POCL)
     auto ctx = static_cast<context*>(_ctx);
     return c_handle_error([&] {
             cl_mem mem = pyopencl_call_guarded(clCreateFromGLRenderbuffer,
@@ -84,6 +93,9 @@ create_from_gl_renderbuffer(clobj_t *ptr, clobj_t _ctx,
             *ptr = pyopencl_convert_obj(gl_renderbuffer,
                                         clReleaseMemObject, mem);
         });
+#else
+    PYOPENCL_UNSUPPORTED(clCreateFromGLRenderbuffer, "POCL")
+#endif
 }
 
 error*
@@ -92,11 +104,15 @@ enqueue_acquire_gl_objects(clobj_t *evt, clobj_t queue,
                            uint32_t num_mem_objects,
                            const clobj_t *wait_for, uint32_t num_wait_for)
 {
+#if !defined(PYOPENCL_LINKED_TO_POCL)
     return c_handle_error([&] {
             enqueue_gl_objects(
                 Acquire, evt, static_cast<command_queue*>(queue),
                 mem_objects, num_mem_objects, wait_for, num_wait_for);
         });
+#else
+    PYOPENCL_UNSUPPORTED(clEnqueueAcquireGLObjects, "POCL")
+#endif
 }
 
 error*
@@ -105,21 +121,29 @@ enqueue_release_gl_objects(clobj_t *evt, clobj_t queue,
                            uint32_t num_mem_objects,
                            const clobj_t *wait_for, uint32_t num_wait_for)
 {
+#if !defined(PYOPENCL_LINKED_TO_POCL)
     return c_handle_error([&] {
             enqueue_gl_objects(
                 Release, evt, static_cast<command_queue*>(queue),
                 mem_objects, num_mem_objects, wait_for, num_wait_for);
         });
+#else
+    PYOPENCL_UNSUPPORTED(clEnqueueReleaseGLObjects, "POCL")
+#endif
 }
 
 error*
 get_gl_object_info(clobj_t mem, cl_gl_object_type *otype, GLuint *gl_name)
 {
+#if !defined(PYOPENCL_LINKED_TO_POCL)
     auto globj = static_cast<memory_object*>(mem);
     return c_handle_error([&] {
             pyopencl_call_guarded(clGetGLObjectInfo, globj, buf_arg(*otype),
                                   buf_arg(*gl_name));
         });
+#else
+    PYOPENCL_UNSUPPORTED(clEnqueueReleaseGLObjects, "POCL")
+#endif
 }
 
 #endif

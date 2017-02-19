@@ -98,7 +98,7 @@ platform__get_devices(clobj_t _plat, clobj_t **_devices,
 error*
 platform__unload_compiler(clobj_t plat)
 {
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if PYOPENCL_CL_VERSION >= 0x1020 && !defined(PYOPENCL_LINKED_TO_POCL)
     return c_handle_error([&] {
             pyopencl_call_guarded(clUnloadPlatformCompiler,
                                   static_cast<platform*>(plat));

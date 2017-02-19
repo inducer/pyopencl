@@ -158,7 +158,7 @@ enqueue_svm_migrate_mem(
     cl_mem_migration_flags flags,
     const clobj_t *_wait_for, uint32_t num_wait_for)
 {
-#if PYOPENCL_CL_VERSION >= 0x2010
+#if PYOPENCL_CL_VERSION >= 0x2010 && !defined(PYOPENCL_LINKED_TO_POCL)
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     auto queue = static_cast<command_queue*>(_queue);
     return c_handle_retry_mem_error([&] {

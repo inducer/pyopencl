@@ -101,7 +101,7 @@ error*
 enqueue_barrier_with_wait_list(clobj_t *evt, clobj_t _queue,
                                const clobj_t *_wait_for, uint32_t num_wait_for)
 {
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if PYOPENCL_CL_VERSION >= 0x1020 && !defined(PYOPENCL_LINKED_TO_POCL)
     auto queue = static_cast<command_queue*>(_queue);
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     return c_handle_error([&] {

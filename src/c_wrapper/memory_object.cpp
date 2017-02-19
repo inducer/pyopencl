@@ -102,7 +102,7 @@ enqueue_migrate_mem_objects(clobj_t *evt, clobj_t _queue,
                             cl_mem_migration_flags flags,
                             const clobj_t *_wait_for, uint32_t num_wait_for)
 {
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if PYOPENCL_CL_VERSION >= 0x1020 && !defined(PYOPENCL_LINKED_TO_POCL)
     const auto wait_for = buf_from_class<event>(_wait_for, num_wait_for);
     const auto mem_obj = buf_from_class<memory_object>(_mem_obj, num_mem_obj);
     auto queue = static_cast<command_queue*>(_queue);
