@@ -386,7 +386,8 @@ def test_dot(ctx_factory):
 
             vdot_ab_gpu = cl_array.vdot(a_gpu, b_gpu).get()
 
-            assert abs(vdot_ab_gpu - vdot_ab) / abs(vdot_ab) < 1e-4
+            rel_err = abs(vdot_ab_gpu - vdot_ab) / abs(vdot_ab)
+            assert rel_err < 1e-4, rel_err
 
 
 @memoize

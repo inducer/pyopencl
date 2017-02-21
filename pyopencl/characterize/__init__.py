@@ -320,6 +320,26 @@ def get_simd_group_size(dev, type_size):
     return None
 
 
+def get_pocl_version(platform, fallback_value=None):
+    if platform.name != "Portable Computing Language":
+        return None
+
+    import re
+    ver_match = re.match(
+            r"^OpenCL [0-9.]+ pocl ([0-9]+)\.([0-9]+)", platform.version)
+    if ver_match is None:
+        msg = ("pocl version number did not have expected format: '%s'"
+                    % platform.version)
+        if fallback_value is not None:
+            from warnings import warn
+            warn(msg)
+            return fallback_value
+        else:
+            raise ValueError(msg)
+    else:
+        return (int(ver_match.group(1)), int(ver_match.group(2)))
+
+
 _CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE = {}
 
 
@@ -360,17 +380,7 @@ def has_struct_arg_count_bug(dev, ctx=None):
     if dev.platform.name == "Apple" and dev.type & cl.device_type.CPU:
         return "apple"
     if dev.platform.name == "Portable Computing Language":
-        import re
-        ver_match = re.match(
-                r"^OpenCL [0-9.]+ pocl ([0-9]+)\.([0-9]+)", dev.platform.version)
-        if ver_match is None:
-            from warnings import warn
-            warn("pocl version number did not have expected format: '%s'"
-                    % dev.platform.version)
-            pocl_version = (0, 14)
-        else:
-            pocl_version = (int(ver_match.group(1)), int(ver_match.group(2)))
-
+        pocl_version = get_pocl_version(dev.platform, fallback_value=(0.14))
         if pocl_version <= (0, 13):
             return "pocl"
         elif pocl_version <= (0, 14) and _check_for_pocl_arg_count_bug(dev, ctx):
