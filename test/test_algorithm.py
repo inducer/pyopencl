@@ -940,6 +940,9 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
     queue = cl.CommandQueue(ctx)
 
     dev = ctx.devices[0]
+    if (dev.platform.name == "Portable Computing Language"
+            and sys.platform == "darwin"):
+        pytest.xfail("Bitonic sort crashes on Apple POCL")
     if (dev.platform.name == "Apple" and dev.type & cl.device_type.CPU):
         pytest.xfail("Bitonic sort won't work on Apple CPU: no workgroup "
             "parallelism")
