@@ -1862,7 +1862,7 @@ class Kernel(_Common):
         from pyopencl.characterize import has_struct_arg_count_bug
 
         count_bug_per_dev = [
-                has_struct_arg_count_bug(dev)
+                has_struct_arg_count_bug(dev, self.context)
                 for dev in self.context.devices]
 
         from pytools import single_valued

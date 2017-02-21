@@ -29,6 +29,7 @@ import pytest
 
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
+from pyopencl.characterize import get_pocl_version
 
 
 def generate_slice(start, shape):
@@ -42,7 +43,9 @@ def test_enqueue_copy_rect_2d(ctx_factory, honor_skip=True):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
-    if honor_skip and ctx.devices[0].platform.name == "Portable Computing Language":
+    if (honor_skip
+            and ctx.devices[0].platform.name == "Portable Computing Language"
+            and get_pocl_version(ctx.devices[0].platform) <= (0, 13)):
         # https://github.com/pocl/pocl/issues/353
         pytest.skip("POCL's rectangular copies crash")
 
@@ -127,7 +130,9 @@ def test_enqueue_copy_rect_3d(ctx_factory, honor_skip=True):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
-    if honor_skip and ctx.devices[0].platform.name == "Portable Computing Language":
+    if (honor_skip
+            and ctx.devices[0].platform.name == "Portable Computing Language"
+            and get_pocl_version(ctx.devices[0].platform) <= (0, 13)):
         # https://github.com/pocl/pocl/issues/353
         pytest.skip("POCL's rectangular copies crash")
 
