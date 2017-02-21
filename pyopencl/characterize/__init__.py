@@ -1,8 +1,4 @@
-from __future__ import division
-from __future__ import absolute_import
-import six
-from six.moves import range
-from six.moves import zip
+from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -28,6 +24,8 @@ THE SOFTWARE.
 
 import pyopencl as cl
 from pytools import memoize
+import six
+from six.moves import range, zip
 
 
 class CLCharacterizationWarning(UserWarning):
@@ -322,14 +320,70 @@ def get_simd_group_size(dev, type_size):
     return None
 
 
-def has_struct_arg_count_bug(dev):
+def get_pocl_version(platform, fallback_value=None):
+    if platform.name != "Portable Computing Language":
+        return None
+
+    import re
+    ver_match = re.match(
+            r"^OpenCL [0-9.]+ pocl ([0-9]+)\.([0-9]+)", platform.version)
+    if ver_match is None:
+        msg = ("pocl version number did not have expected format: '%s'"
+                    % platform.version)
+        if fallback_value is not None:
+            from warnings import warn
+            warn(msg)
+            return fallback_value
+        else:
+            raise ValueError(msg)
+    else:
+        return (int(ver_match.group(1)), int(ver_match.group(2)))
+
+
+_CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE = {}
+
+
+def _check_for_pocl_arg_count_bug(dev, ctx=None):
+    try:
+        return _CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE[dev]
+    except KeyError:
+        pass
+
+    if ctx is None:
+        build_ctx = cl.Context([dev])
+    else:
+        build_ctx = ctx
+
+    prg = cl.Program(build_ctx, """
+            struct two_things
+            {
+                long a;
+                long b;
+            };
+
+            __kernel void test_knl(struct two_things x)
+            {
+            }
+            """).build()
+
+    result = prg.test_knl.num_args == 2
+    _CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE[dev] = result
+
+    return result
+
+
+def has_struct_arg_count_bug(dev, ctx=None):
     """Checks whether the device is expected to have the
     `argument counting bug <https://github.com/pocl/pocl/issues/197>`_.
     """
 
     if dev.platform.name == "Apple" and dev.type & cl.device_type.CPU:
         return "apple"
-    if (dev.platform.name == "Portable Computing Language"
-            and dev.address_bits == 64):
-        return "pocl"
+    if dev.platform.name == "Portable Computing Language":
+        pocl_version = get_pocl_version(dev.platform, fallback_value=(0.14))
+        if pocl_version <= (0, 13):
+            return "pocl"
+        elif pocl_version <= (0, 14) and _check_for_pocl_arg_count_bug(dev, ctx):
+            return "pocl"
+
     return False
