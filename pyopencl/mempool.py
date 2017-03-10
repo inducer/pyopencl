@@ -248,7 +248,6 @@ class MemoryPool(object):
         for bin_nr, bin_list in six.iteritems(self.bin_nr_to_bin):
             while bin_list:
                 self.allocator.free(bin_list.pop())
-                self.held_blocks -= 1
                 yield
 
 
