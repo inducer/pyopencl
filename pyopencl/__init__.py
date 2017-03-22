@@ -218,7 +218,9 @@ _DEFAULT_BUILD_OPTIONS = []
 _DEFAULT_INCLUDE_OPTIONS = ["-I", _find_pyopencl_include_path()]
 
 # map of platform.name to build options list
-_PLAT_BUILD_OPTIONS = {}
+_PLAT_BUILD_OPTIONS = {
+        "Oclgrind": ["-D", "PYOPENCL_USING_OCLGRIND"],
+        }
 
 
 def enable_debugging(platform_or_context):
