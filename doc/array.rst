@@ -126,7 +126,7 @@ never directly.
     * complex*complex
     * real+complex
 
-    *look* like they may do the right thing, but sliently do the wrong thing.
+    *look* like they may do the right thing, but silently do the wrong thing.
 
 The :class:`Array` Class
 ------------------------
@@ -179,8 +179,8 @@ Reductions
 
 See also :ref:`custom-reductions`.
 
-Elementwise Functions on :class:`Arrray` Instances
---------------------------------------------------
+Elementwise Functions on :class:`Array` Instances
+-------------------------------------------------
 
 .. module:: pyopencl.clmath
 

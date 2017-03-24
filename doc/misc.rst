@@ -32,7 +32,7 @@ and then use the ``%%cl_kernel`` 'cell-magic' command. See `this notebook
 
 You can pass build options to be used for building the program executable by using the ``-o`` flag on the first line of the cell (next to the ``%%cl_kernel`` directive). For example: `%%cl_kernel -o "-cl-fast-relaxed-math"``.
 
-There are also line magics: ``cl_load_edit_kernel`` which will load a file into the next cell (adding ``cl_kernel`` to the first line) and ``cl_kernel_from_file`` which will compile kernels from a file (as if you copy-and-pasted the contents of the file to a cell with ``cl_kernel``). Boths of these magics take options ``-f`` to specify the file and optionally ``-o`` for build options.
+There are also line magics: ``cl_load_edit_kernel`` which will load a file into the next cell (adding ``cl_kernel`` to the first line) and ``cl_kernel_from_file`` which will compile kernels from a file (as if you copy-and-pasted the contents of the file to a cell with ``cl_kernel``). Both of these magics take options ``-f`` to specify the file and optionally ``-o`` for build options.
 
 .. versionadded:: 2014.1
 
@@ -164,7 +164,7 @@ Version 2015.2
   * complex*complex
   * real+complex
 
-  *look* like they may do the right thing, but sliently do the wrong thing.
+  *look* like they may do the right thing, but silently do the wrong thing.
 * Rewrite of the wrapper layer to be based on CFFI
 * Pypy compatibility
 * Faster kernel invocation through Python launcher code generation
@@ -331,7 +331,7 @@ Version 2011.1
 * Add :ref:`memory-pools`.
 * Add vector types, see :class:`pyopencl.array.vec`.
 * Add :attr:`pyopencl.array.Array.strides`, :attr:`pyopencl.array.Array.flags`.
-  Allow the creation of arrys in C and Fortran order.
+  Allow the creation of arrays in C and Fortran order.
 * Add :func:`pyopencl.enqueue_copy`. Deprecate all other transfer functions.
 * Add support for numerous extensions, among them device fission.
 * Add a compiler cache.
