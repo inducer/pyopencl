@@ -42,7 +42,7 @@ from pyopencl.compyte.array import (
         ArrayFlags as _ArrayFlags,
         get_common_dtype as _get_common_dtype_base)
 from pyopencl.characterize import has_double_support
-
+from pyopencl import cltypes
 
 def _get_common_dtype(obj1, obj2, queue):
     return _get_common_dtype_base(obj1, obj2,
@@ -61,101 +61,7 @@ except:
     def _dtype_is_object(t):
         return False
 
-
-# {{{ vector types
-
-class vec:  # noqa
-    pass
-
-
-def _create_vector_types():
-    field_names = ["x", "y", "z", "w"]
-
-    from pyopencl.tools import get_or_register_dtype
-
-    vec.types = {}
-    vec.type_to_scalar_and_count = {}
-
-    counts = [2, 3, 4, 8, 16]
-
-    for base_name, base_type in [
-            ('char', np.int8),
-            ('uchar', np.uint8),
-            ('short', np.int16),
-            ('ushort', np.uint16),
-            ('int', np.int32),
-            ('uint', np.uint32),
-            ('long', np.int64),
-            ('ulong', np.uint64),
-            ('float', np.float32),
-            ('double', np.float64),
-            ]:
-        for count in counts:
-            name = "%s%d" % (base_name, count)
-
-            titles = field_names[:count]
-
-            padded_count = count
-            if count == 3:
-                padded_count = 4
-
-            names = ["s%d" % i for i in range(count)]
-            while len(names) < padded_count:
-                names.append("padding%d" % (len(names)-count))
-
-            if len(titles) < len(names):
-                titles.extend((len(names)-len(titles))*[None])
-
-            try:
-                dtype = np.dtype(dict(
-                    names=names,
-                    formats=[base_type]*padded_count,
-                    titles=titles))
-            except NotImplementedError:
-                try:
-                    dtype = np.dtype([((n, title), base_type)
-                                      for (n, title) in zip(names, titles)])
-                except TypeError:
-                    dtype = np.dtype([(n, base_type) for (n, title)
-                                      in zip(names, titles)])
-
-            get_or_register_dtype(name, dtype)
-
-            setattr(vec, name, dtype)
-
-            def create_array(dtype, count, padded_count, *args, **kwargs):
-                if len(args) < count:
-                    from warnings import warn
-                    warn("default values for make_xxx are deprecated;"
-                            " instead specify all parameters or use"
-                            " array.vec.zeros_xxx", DeprecationWarning)
-                padded_args = tuple(list(args)+[0]*(padded_count-len(args)))
-                array = eval("array(padded_args, dtype=dtype)",
-                        dict(array=np.array, padded_args=padded_args,
-                        dtype=dtype))
-                for key, val in list(kwargs.items()):
-                    array[key] = val
-                return array
-
-            setattr(vec, "make_"+name, staticmethod(eval(
-                    "lambda *args, **kwargs: create_array(dtype, %i, %i, "
-                    "*args, **kwargs)" % (count, padded_count),
-                    dict(create_array=create_array, dtype=dtype))))
-            setattr(vec, "filled_"+name, staticmethod(eval(
-                    "lambda val: vec.make_%s(*[val]*%i)" % (name, count))))
-            setattr(vec, "zeros_"+name,
-                    staticmethod(eval("lambda: vec.filled_%s(0)" % (name))))
-            setattr(vec, "ones_"+name,
-                    staticmethod(eval("lambda: vec.filled_%s(1)" % (name))))
-
-            vec.types[np.dtype(base_type), count] = dtype
-            vec.type_to_scalar_and_count[dtype] = np.dtype(base_type), count
-
-
-_create_vector_types()
-
-# }}}
-
+vec = cltypes
 
 # {{{ helper functionality
 

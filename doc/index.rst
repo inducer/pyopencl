@@ -45,7 +45,7 @@ Tutorials
   and `Tom Deakin <http://www.tomdeakin.com/>`_'s course
   `Hands-on OpenCL <http://handsonopencl.github.io/>`_ contains
   both `lecture slides <https://github.com/HandsOnOpenCL/Lecture-Slides/releases>`_
-  and `excercises (with solutions) <https://github.com/HandsOnOpenCL/Exercises-Solutions>`_
+  and `exercises (with solutions) <https://github.com/HandsOnOpenCL/Exercises-Solutions>`_
   (The course covers PyOpenCL as well as OpenCL's C and C++ APIs.)
 * PyOpenCL course at `PASI <http://bu.edu/pasi>`_: Parts
   `1 <https://www.youtube.com/watch?v=X9mflbX1NL8>`_
