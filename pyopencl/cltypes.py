@@ -98,7 +98,7 @@ def _create_vector_types():
                     from warnings import warn
                     warn("default values for make_xxx are deprecated;"
                             " instead specify all parameters or use"
-                            " array.vec.zeros_xxx", DeprecationWarning)
+                            " cltypes.zeros_xxx", DeprecationWarning)
                 padded_args = tuple(list(args)+[0]*(padded_count-len(args)))
                 array = eval("array(padded_args, dtype=dtype)",
                         dict(array=np.array, padded_args=padded_args,
@@ -107,16 +107,14 @@ def _create_vector_types():
                     array[key] = val
                 return array
 
-            set_global("make_"+name, staticmethod(eval(
+            set_global("make_"+name, eval(
                     "lambda *args, **kwargs: create_array(dtype, %i, %i, "
                     "*args, **kwargs)" % (count, padded_count),
-                    dict(create_array=create_array, dtype=dtype))))
-            set_global("filled_"+name, staticmethod(eval(
-                    "lambda val: vec.make_%s(*[val]*%i)" % (name, count))))
-            set_global("zeros_"+name,
-                    staticmethod(eval("lambda: vec.filled_%s(0)" % (name))))
-            set_global("ones_"+name,
-                    staticmethod(eval("lambda: vec.filled_%s(1)" % (name))))
+                    dict(create_array=create_array, dtype=dtype)))
+            set_global("filled_"+name, eval(
+                    "lambda val: make_%s(*[val]*%i)" % (name, count)))
+            set_global("zeros_"+name, eval("lambda: filled_%s(0)" % (name)))
+            set_global("ones_"+name, eval("lambda: filled_%s(1)" % (name)))
 
             globals()['types'][np.dtype(base_type), count] = dtype
             globals()['type_to_scalar_and_count'][dtype] = np.dtype(base_type), count
