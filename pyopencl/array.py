@@ -61,7 +61,16 @@ except:
     def _dtype_is_object(t):
         return False
 
-vec = cltypes
+
+class VecLookupWarner(object):
+    def __getattr__(self, name):
+        from warnings import warn
+        warn("pyopencl.array.vec is deprecated. "
+             "Please use pyopencl.cltypes for OpenCL vector and scalar types",
+             DeprecationWarning, 2)
+        return getattr(cltypes, name)
+
+vec = VecLookupWarner()
 
 # {{{ helper functionality
 
