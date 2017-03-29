@@ -225,7 +225,7 @@ Simple / Legacy Interface
 
     .. method:: __call__(self, input_ary, output_ary=None, allocator=None, queue=None)
 
-.. class:: InclusiveScanKernel(dtype, scan_expr, neutral=None, name_prefix="scan", options=[], preamble="", devices=None)
+.. class:: InclusiveScanKernel(ctx, dtype, scan_expr, neutral=None, name_prefix="scan", options=[], preamble="", devices=None)
 
     Works like :class:`ExclusiveScanKernel`.
 

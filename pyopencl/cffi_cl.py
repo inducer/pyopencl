@@ -33,6 +33,7 @@ import warnings
 from warnings import warn
 import numpy as np
 import sys
+import re
 
 from pytools import memoize_method
 
@@ -41,6 +42,9 @@ from .compyte.array import f_contiguous_strides, c_contiguous_strides
 
 
 from pyopencl._cffi import lib as _lib
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class _CLKernelArg(object):
@@ -176,6 +180,9 @@ def _generic_info_to_python(info):
     elif type_ == 'cl_device_topology_amd*':
         ret = DeviceTopologyAmd(
                 value.pcie.bus, value.pcie.device, value.pcie.function)
+    elif type_ == 'cl_image_format*':
+        ret = ImageFormat(value.image_channel_order,
+                               value.image_channel_data_type)
     elif type_.startswith('char*['):
         ret = list(map(_ffi_pystr, value))
         _lib.free_pointer_array(info.value, len(value))
@@ -643,17 +650,6 @@ class Platform(_Common):
     def __repr__(self):
         return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
 
-    def _get_cl_version(self):
-        import re
-        version_string = self.version
-        match = re.match(r"^OpenCL ([0-9]+)\.([0-9]+) .*$", version_string)
-        if match is None:
-            raise RuntimeError("platform %s returned non-conformant "
-                               "platform version string '%s'" %
-                               (self, version_string))
-
-        return int(match.group(1)), int(match.group(2))
-
 
 def unload_platform_compiler(plat):
     _handle_error(_lib.platform__unload_compiler(plat.ptr))
@@ -688,6 +684,28 @@ class Device(_Common):
     @property
     def persistent_unique_id(self):
         return (self.vendor, self.vendor_id, self.name, self.version)
+
+# }}}
+
+
+# {{{ {Device,Platform}._get_cl_version
+
+_OPENCL_VERSION_STRING_RE = re.compile(r"^OpenCL ([0-9]+)\.([0-9]+) .*$")
+
+
+def _platdev_get_cl_version(self):
+    version_string = self.version
+    match = _OPENCL_VERSION_STRING_RE.match(version_string)
+    if match is None:
+        raise RuntimeError("platform %s returned non-conformant "
+                           "platform version string '%s'" %
+                           (self, version_string))
+
+    return int(match.group(1)), int(match.group(2))
+
+
+Platform._get_cl_version = _platdev_get_cl_version
+Device._get_cl_version = _platdev_get_cl_version
 
 # }}}
 
@@ -812,7 +830,7 @@ class CommandQueue(_Common):
         self.finish()
 
     def _get_cl_version(self):
-        return self.context._get_cl_version()
+        return self.device._get_cl_version()
 
 
 # }}}
@@ -1583,6 +1601,7 @@ class _Program(_Common):
         return build_logs
 
     def build(self, options_bytes, devices=None):
+        logger.debug("build program: start")
         err = None
         try:
             self._build(options=options_bytes, devices=devices)
@@ -1602,7 +1621,11 @@ class _Program(_Common):
         if err is not None:
             # Python 3.2 outputs the whole list of currently active exceptions
             # This serves to remove one (redundant) level from that nesting.
+
+            logger.debug("build program: completed, error")
             raise err
+
+        logger.debug("build program: completed, success")
 
         message = (75*"="+"\n").join(
                 "Build on %s succeeded, but said:\n\n%s" % (dev, log)
@@ -1839,7 +1862,7 @@ class Kernel(_Common):
         from pyopencl.characterize import has_struct_arg_count_bug
 
         count_bug_per_dev = [
-                has_struct_arg_count_bug(dev)
+                has_struct_arg_count_bug(dev, self.context)
                 for dev in self.context.devices]
 
         from pytools import single_valued

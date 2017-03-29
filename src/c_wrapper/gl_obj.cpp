@@ -137,7 +137,7 @@ have_gl()
 cl_context_properties
 get_apple_cgl_share_group()
 {
-#ifdef __APPLE__
+#if (defined(__APPLE__) && !defined(PYOPENCL_APPLE_USE_CL_H))
     #ifdef HAVE_GL
         CGLContextObj kCGLContext = CGLGetCurrentContext();
         CGLShareGroupObj kCGLShareGroup = CGLGetShareGroup(kCGLContext);

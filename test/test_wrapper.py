@@ -33,6 +33,7 @@ import pyopencl.array as cl_array
 import pyopencl.clrandom
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
+from pyopencl.characterize import get_pocl_version
 
 # Are CL implementations crashy? You be the judge. :)
 try:
@@ -43,10 +44,11 @@ else:
     faulthandler.enable()
 
 
-def _skip_if_pocl(plat, msg='unsupported by pocl'):
+def _skip_if_pocl(plat, up_to_version, msg='unsupported by pocl'):
     if plat.vendor == "The pocl project":
-        import pytest
-        pytest.skip(msg)
+        if up_to_version is None or get_pocl_version(plat) <= up_to_version:
+            import pytest
+            pytest.skip(msg)
 
 
 def test_get_info(ctx_factory):
@@ -363,7 +365,7 @@ def test_image_2d(ctx_factory):
     if "Intel" in device.vendor and "31360.31426" in device.version:
         from pytest import skip
         skip("images crashy on %s" % device)
-    _skip_if_pocl(device.platform, 'pocl does not support CL_ADDRESS_CLAMP')
+    _skip_if_pocl(device.platform, None, 'pocl does not support CL_ADDRESS_CLAMP')
 
     prg = cl.Program(context, """
         __kernel void copy_image(
@@ -435,7 +437,7 @@ def test_image_3d(ctx_factory):
     if device.platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("images crashy on %s" % device)
-    _skip_if_pocl(device.platform, 'pocl does not support CL_ADDRESS_CLAMP')
+    _skip_if_pocl(device.platform, None, 'pocl does not support CL_ADDRESS_CLAMP')
 
     prg = cl.Program(context, """
         __kernel void copy_image_plane(
@@ -626,7 +628,8 @@ def test_can_build_binary(ctx_factory):
 
 def test_enqueue_barrier_marker(ctx_factory):
     ctx = ctx_factory()
-    _skip_if_pocl(ctx.devices[0].platform, 'pocl crashes on enqueue_barrier')
+    # Still relevant on pocl 0.14.
+    _skip_if_pocl(ctx.devices[0].platform, None, 'pocl crashes on enqueue_barrier')
     queue = cl.CommandQueue(ctx)
     cl.enqueue_barrier(queue)
     evt1 = cl.enqueue_marker(queue)
@@ -647,7 +650,7 @@ def test_unload_compiler(platform):
             cl.get_cl_header_version() < (1, 2)):
         from pytest import skip
         skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
-    _skip_if_pocl(platform, 'pocl does not support unloading compiler')
+    _skip_if_pocl(platform, (0, 13), 'pocl does not support unloading compiler')
     if platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("Intel proprietary driver does not support unloading compiler")
@@ -954,7 +957,8 @@ def test_coarse_grain_svm(ctx_factory):
         # https://bitbucket.org/pypy/numpy/issues/52
         assert isinstance(svm_ary.mem.base, cl.SVMAllocation)
 
-    if dev.platform.name != "Portable Computing Language":
+    if (dev.platform.name != "Portable Computing Language"
+            or get_pocl_version(dev.platform) >= (0, 14)):
         # pocl 0.13 has a bug misinterpreting the size parameter
         cl.enqueue_svm_memfill(queue, svm_ary, np.zeros((), svm_ary.mem.dtype))
 
@@ -980,7 +984,7 @@ def test_coarse_grain_svm(ctx_factory):
 
     if ctx.devices[0].platform.name != "Portable Computing Language":
         # "Blocking memcpy is unimplemented (clEnqueueSVMMemcpy.c:61)"
-        # in pocl 0.13.
+        # in pocl 0.13 and 0.14-pre.
 
         cl.enqueue_copy(queue, new_ary, svm_ary)
         assert np.array_equal(orig_ary*2, new_ary)

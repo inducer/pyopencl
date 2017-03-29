@@ -458,7 +458,7 @@ class _CDeclList:
         if dtype in vec.type_to_scalar_and_count:
             return
 
-        for name, field_data in six.iteritems(dtype.fields):
+        for name, field_data in sorted(six.iteritems(dtype.fields)):
             field_dtype, offset = field_data[:2]
             self.add_dtype(field_dtype)
 
@@ -846,12 +846,12 @@ class _TemplateRenderer(object):
         if arguments is not None:
             cdl.visit_arguments(arguments)
 
-        for tv in six.itervalues(self.type_aliases):
+        for _, tv in sorted(six.iteritems(self.type_aliases)):
             cdl.add_dtype(tv)
 
         type_alias_decls = [
                 "typedef %s %s;" % (dtype_to_ctype(val), name)
-                for name, val in six.iteritems(self.type_aliases)
+                for name, val in sorted(six.iteritems(self.type_aliases))
                 ]
 
         return cdl.get_declarations() + "\n" + "\n".join(type_alias_decls)

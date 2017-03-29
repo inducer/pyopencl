@@ -25,6 +25,7 @@ Python 3.5 Intel CPU:
   - intel-cl-cpu
   except:
   - tags
+
 Python 3.5 AMD CPU:
   script:
   - export PY_EXE=python3.5
@@ -37,6 +38,7 @@ Python 3.5 AMD CPU:
   - amd-cl-cpu
   except:
   - tags
+
 Python 2.6 AMD CPU:
   script:
   - export PY_EXE=python2.6
@@ -89,6 +91,19 @@ Python 3.5 AMD GPU:
   except:
   - tags
 
+Python 3.6 POCL:
+  script:
+  - export PY_EXE=python3.6
+  - export PYOPENCL_TEST=portable
+  - export EXTRA_INSTALL="numpy mako"
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python3.6
+  - pocl
+  except:
+  - tags
+
 Python 3.5 POCL CL 1.1:
   script:
   - export PY_EXE=python3.5
@@ -121,6 +136,7 @@ Python 2.7 Apple:
   - export PY_EXE=python2.7
   - export PYOPENCL_TEST=app:cpu
   - export EXTRA_INSTALL="numpy mako"
+  - export PKG_CONFIG_PATH=/usr/local/opt/libffi/lib/pkgconfig
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
@@ -134,6 +150,7 @@ PyPy POCL:
   - export PY_EXE=pypy
   - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="numpy mako"
+  - export NO_DOCTESTS=1
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:

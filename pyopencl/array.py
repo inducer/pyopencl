@@ -1189,6 +1189,8 @@ class Array(object):
             raise ValueError("The truth value of an array with "
                     "more than one element is ambiguous. Use a.any() or a.all()")
 
+    __bool__ = __nonzero__
+
     def any(self, queue=None, wait_for=None):
         from pyopencl.reduction import get_any_kernel
         krnl = get_any_kernel(self.context, self.dtype)

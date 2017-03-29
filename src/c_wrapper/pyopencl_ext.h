@@ -7,7 +7,7 @@
 
 #else
 
-#ifdef __APPLE__
+#if (defined(__APPLE__) && !defined(PYOPENCL_APPLE_USE_CL_H))
 
 #include <OpenCL/opencl.h>
 
