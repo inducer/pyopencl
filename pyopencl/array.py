@@ -28,7 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 import six
-from six.moves import range, zip, reduce
+from six.moves import range, reduce
 
 import numpy as np
 import pyopencl.elementwise as elementwise
@@ -44,9 +44,10 @@ from pyopencl.compyte.array import (
 from pyopencl.characterize import has_double_support
 from pyopencl import cltypes
 
+
 def _get_common_dtype(obj1, obj2, queue):
     return _get_common_dtype_base(obj1, obj2,
-            has_double_support(queue.device))
+                                  has_double_support(queue.device))
 
 
 # Work around PyPy not currently supporting the object dtype.
@@ -70,9 +71,11 @@ class VecLookupWarner(object):
              DeprecationWarning, 2)
         return getattr(cltypes, name)
 
+
 vec = VecLookupWarner()
 
 # {{{ helper functionality
+
 
 def splay(queue, n, kernel_specific_max_wg_size=None):
     dev = queue.device
