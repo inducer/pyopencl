@@ -91,7 +91,7 @@ not complicated::
 
     .. method:: __call__(size)
 
-        Synoynm for :meth:`allocate` to match :class:`CLAllocator` interface.
+        Synonym for :meth:`allocate` to match :class:`CLAllocator` interface.
 
         .. versionadded: 2011.2
 

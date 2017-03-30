@@ -96,13 +96,26 @@ Buffer
 
 .. function:: enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None)
 
-    :arg pattern: a buffer object (likely a :class:`numpy.ndarray`)
+    :arg mem: the on device :class:`Buffer`
+    :arg pattern: a buffer object (likely a :class:`numpy.ndarray`, eg. `np.uint32(0)`)
+
+    Fills a buffer with the provided pattern
 
     |std-enqueue-blurb|
 
     Only available with CL 1.2.
 
     .. versionadded:: 2011.2
+
+.. function:: enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0, dst_offset=0, wait_for=None)
+
+    :arg src: the source :class:`Buffer`
+    :arg dst: the destination device :class:`Buffer`
+    :arg byte_count: the number of bytes to copy
+
+    Performs a device to device copy from `src` to `dst`.
+
+    |std-enqueue-blurb|
 
 .. _svm:
 
