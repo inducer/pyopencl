@@ -1039,7 +1039,7 @@ class ListOfListsBuilder:
         if self.debug:
             gsize = (1,)
             lsize = (1,)
-        elif self.complex_kernel and queue.device.type == cl.device_type.CPU:
+        elif self.do_not_vectorize():
             gsize = (4*queue.device.max_compute_units,)
             lsize = (1,)
         else:
