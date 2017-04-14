@@ -732,7 +732,7 @@ def _parse_context_properties(properties):
             props.append(value.int_ptr)
 
         elif prop == getattr(context_properties, "WGL_HDC_KHR", None):
-            props.append(value)
+            props.append(ctypes.c_ssize_t(value).value)
 
         elif prop in [getattr(context_properties, key, None) for key in (
                 'CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE',
