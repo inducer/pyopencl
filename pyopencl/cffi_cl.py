@@ -742,9 +742,9 @@ def _parse_context_properties(properties):
                 'CGL_SHAREGROUP_KHR',
                 )]:
 
-            from ctypes import _Pointer, addressof
+            from ctypes import _Pointer, cast
             if isinstance(value, _Pointer):
-                val = addressof(value)
+                val = cast(value, ctypes.c_void_p).value
             else:
                 val = int(value)
 
