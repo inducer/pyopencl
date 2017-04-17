@@ -215,7 +215,7 @@ def _find_pyopencl_include_path():
 # {{{ Program (wrapper around _Program, adds caching support)
 
 _DEFAULT_BUILD_OPTIONS = []
-_DEFAULT_INCLUDE_OPTIONS = ["-I", _find_pyopencl_include_path()]
+_DEFAULT_INCLUDE_OPTIONS = ["-I", "'" + _find_pyopencl_include_path() + "'"]
 
 # map of platform.name to build options list
 _PLAT_BUILD_OPTIONS = {
