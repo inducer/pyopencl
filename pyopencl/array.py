@@ -643,6 +643,9 @@ class Array(object):
     def __repr__(self):
         return repr(self.get())
 
+    def safely_stringify_for_pudb(self):
+        return "cl.Array %s %s" % (self.dtype, self.shape)
+
     def __hash__(self):
         raise TypeError("pyopencl arrays are not hashable.")
 
