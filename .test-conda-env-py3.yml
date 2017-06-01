@@ -8,3 +8,4 @@ dependencies:
 - conda-forge::numpy
 - pocl
 - osx-pocl-opencl
+- mako
