@@ -7,4 +7,4 @@ dependencies:
 - git
 - conda-forge::numpy
 - pocl
-- osx-pocl-icd
+- osx-pocl-opencl
