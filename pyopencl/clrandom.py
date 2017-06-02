@@ -63,6 +63,7 @@ for some documentation if you're planning on using Random123 directly.
 
 import pyopencl as cl
 import pyopencl.array as cl_array
+import pyopencl.cltypes as cltypes
 from pyopencl.tools import first_arg_dependent_memoize
 from pytools import memoize_method
 
@@ -218,13 +219,13 @@ class RanluxGenerator(object):
             bits = 32
             c_type = "float"
             rng_expr = "(shift + scale * gen)"
-        elif dtype == cl_array.vec.float2:
+        elif dtype == cltypes.float2:
             bits = 32
             c_type = "float"
             rng_expr = "(shift + scale * gen)"
             size_multiplier = 2
             arg_dtype = np.float32
-        elif dtype in [cl_array.vec.float3, cl_array.vec.float4]:
+        elif dtype in [cltypes.float3, cltypes.float4]:
             bits = 32
             c_type = "float"
             rng_expr = "(shift + scale * gen)"
@@ -475,9 +476,9 @@ class Random123GeneratorBase(object):
                 for dist in ["normal", "uniform"]
                 for cmp_dtype in [
                     np.float32,
-                    cl.array.vec.float2,
-                    cl.array.vec.float3,
-                    cl.array.vec.float4,
+                    cltypes.float2,
+                    cltypes.float3,
+                    cltypes.float4,
                     ]]:
             c_type = "float"
             scale_const = "((float) %r)" % (1/2**32)
@@ -493,7 +494,7 @@ class Random123GeneratorBase(object):
             counter_multiplier = 1
             arg_dtype = np.float32
             try:
-                _, size_multiplier = cl.array.vec.type_to_scalar_and_count[dtype]
+                _, size_multiplier = cltypes.vec_type_to_scalar_and_count[dtype]
             except KeyError:
                 pass
 

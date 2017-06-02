@@ -454,8 +454,8 @@ class _CDeclList:
         if dtype in self.declared_dtypes:
             return
 
-        from pyopencl.array import vec
-        if dtype in vec.type_to_scalar_and_count:
+        import pyopencl.cltypes
+        if dtype in pyopencl.cltypes.vec_type_to_scalar_and_count:
             return
 
         for name, field_data in sorted(six.iteritems(dtype.fields)):
@@ -658,8 +658,8 @@ def dtype_to_c_struct(device, dtype):
     if dtype.fields is None:
         return ""
 
-    from pyopencl.array import vec
-    if dtype in vec.type_to_scalar_and_count:
+    import pyopencl.cltypes
+    if dtype in pyopencl.cltypes.vec_type_to_scalar_and_count:
         # Vector types are built-in. Don't try to redeclare those.
         return ""
 

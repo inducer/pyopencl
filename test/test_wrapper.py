@@ -30,6 +30,7 @@ import pytest
 
 import pyopencl as cl
 import pyopencl.array as cl_array
+import pyopencl.cltypes as cltypes
 import pyopencl.clrandom
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
@@ -561,8 +562,8 @@ def test_vector_args(ctx_factory):
         { dest[get_global_id(0)] = x; }
         """).build()
 
-    x = cl_array.vec.make_float4(1, 2, 3, 4)
-    dest = np.empty(50000, cl_array.vec.float4)
+    x = cltypes.make_float4(1, 2, 3, 4)
+    dest = np.empty(50000, cltypes.float4)
     mf = cl.mem_flags
     dest_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=dest)
 

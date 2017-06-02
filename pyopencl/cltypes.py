@@ -46,7 +46,6 @@ double = np.float64
 
 # {{{ vector types
 
-
 def _create_vector_types():
     _mapping = [(k, globals()[k]) for k in
                 ['char', 'uchar', 'short', 'ushort', 'int',
@@ -55,10 +54,10 @@ def _create_vector_types():
     def set_global(key, val):
         globals()[key] = val
 
-    field_names = ["x", "y", "z", "w"]
+    vec_types = {}
+    vec_type_to_scalar_and_count = {}
 
-    set_global('types', {})
-    set_global('type_to_scalar_and_count', {})
+    field_names = ["x", "y", "z", "w"]
 
     counts = [2, 3, 4, 8, 16]
 
@@ -119,9 +118,14 @@ def _create_vector_types():
             set_global("zeros_" + name, eval("lambda: filled_%s(0)" % (name)))
             set_global("ones_" + name, eval("lambda: filled_%s(1)" % (name)))
 
-            globals()['types'][np.dtype(base_type), count] = dtype
-            globals()['type_to_scalar_and_count'][dtype] = np.dtype(base_type), count
+            vec_types[np.dtype(base_type), count] = dtype
+            vec_type_to_scalar_and_count[dtype] = np.dtype(base_type), count
+
+    return vec_types, vec_type_to_scalar_and_count
 
 
-_create_vector_types()
+vec_types, vec_type_to_scalar_and_count = _create_vector_types()
+
 # }}}
+
+# vim: foldmethod=marker
