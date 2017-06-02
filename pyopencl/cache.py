@@ -356,7 +356,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
         cache_result = retrieve_from_cache(cache_dir, cache_key)
 
         if cache_result is None:
-            logger.info("build program: binary cache miss (key: %s)" % cache_key)
+            logger.debug("build program: binary cache miss (key: %s)" % cache_key)
 
             to_be_built_indices.append(i)
             binaries.append(None)
@@ -383,6 +383,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
 
     result = None
     already_built = False
+    was_cached = not to_be_built_indices
 
     if to_be_built_indices:
         # defeat implementation caches:
@@ -390,13 +391,13 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
         src = src + "\n\n__constant int pyopencl_defeat_cache_%s = 0;" % (
                 uuid4().hex)
 
-        logger.info("build program: start building program from source on %s"
+        logger.debug("build program: start building program from source on %s"
                 % ", ".join(str(devices[i]) for i in to_be_built_indices))
 
         prg = _cl._Program(ctx, src)
         prg.build(options_bytes, [devices[i] for i in to_be_built_indices])
 
-        logger.info("build program: from-source build complete")
+        logger.debug("build program: from-source build complete")
 
         prg_devs = prg.get_info(_cl.program_info.DEVICES)
         prg_bins = prg.get_info(_cl.program_info.BINARIES)
@@ -462,18 +463,20 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
 
     # }}}
 
-    return result, already_built
+    return result, already_built, was_cached
 
 
 def create_built_program_from_source_cached(ctx, src, options_bytes, devices=None,
         cache_dir=None, include_path=None):
     try:
         if cache_dir is not False:
-            prg, already_built = _create_built_program_from_source_cached(
-                    ctx, src, options_bytes, devices, cache_dir,
-                    include_path=include_path)
+            prg, already_built, was_cached = \
+                    _create_built_program_from_source_cached(
+                            ctx, src, options_bytes, devices, cache_dir,
+                            include_path=include_path)
         else:
             prg = _cl._Program(ctx, src)
+            was_cached = False
             already_built = False
 
     except Exception as e:
@@ -491,12 +494,13 @@ def create_built_program_from_source_cached(ctx, src, options_bytes, devices=Non
                 % format_exc())
 
         prg = _cl._Program(ctx, src)
+        was_cached = False
         already_built = False
 
     if not already_built:
         prg.build(options_bytes, devices)
 
-    return prg
+    return prg, was_cached
 
 # }}}
 

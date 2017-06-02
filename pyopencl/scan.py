@@ -1258,7 +1258,7 @@ class GenericScanKernel(_GenericScanKernelBase):
         wg_size = _round_down_to_power_of_2(
                 min(max_wg_size, 256))
 
-        kernel_name = self.code_variables["name_prefix"]+"_scan_intervals"
+        kernel_name = self.code_variables["name_prefix"]
         if is_first_level:
             kernel_name += "_lev1"
         else:
