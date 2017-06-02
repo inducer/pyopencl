@@ -1687,7 +1687,7 @@ class Kernel(_Common):
         return self
 
     def set_scalar_arg_dtypes(self, scalar_arg_dtypes):
-        self._scalar_arg_dtypes = scalar_arg_dtypes
+        self._scalar_arg_dtypes = tuple(scalar_arg_dtypes)
 
         # {{{ arg counting bug handling
 
@@ -1717,7 +1717,7 @@ class Kernel(_Common):
         self._enqueue, self._set_args = generate_enqueue_and_set_args(
                 self.function_name,
                 len(scalar_arg_dtypes), self.num_args,
-                scalar_arg_dtypes,
+                self._scalar_arg_dtypes,
                 warn_about_arg_count_bug=warn_about_arg_count_bug,
                 work_around_arg_count_bug=work_around_arg_count_bug)
 

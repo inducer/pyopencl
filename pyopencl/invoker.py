@@ -29,6 +29,9 @@ import numpy as np
 
 from warnings import warn
 from pyopencl._cffi import ffi as _ffi
+from pytools.persistent_dict import (
+        PersistentDict,
+        KeyBuilder as KeyBuilderBase)
 
 _PYPY = '__pypy__' in sys.builtin_module_names
 _CPY2 = not _PYPY and sys.version_info < (3,)
@@ -285,24 +288,21 @@ def wrap_in_error_handler(body, arg_names):
 # }}}
 
 
-def add_module_preamble(gen):
-    gen.add_to_preamble(
-        "import numpy as np")
-    gen.add_to_preamble(
-        "import pyopencl.cffi_cl as _cl")
-    gen.add_to_preamble(
+def add_local_imports(gen):
+    gen("import numpy as np")
+    gen("import pyopencl.cffi_cl as _cl")
+    gen(
         "from pyopencl.cffi_cl import _lib, "
         "_ffi, _handle_error, _CLKernelArg")
-    gen.add_to_preamble("from pyopencl import status_code")
-    gen.add_to_preamble("from struct import pack")
-    gen.add_to_preamble("")
+    gen("")
 
 
-def generate_enqueue_and_set_args(function_name,
+def _generate_enqueue_and_set_args_module(function_name,
         num_passed_args, num_cl_args,
         scalar_arg_dtypes,
-        work_around_arg_count_bug, warn_about_arg_count_bug,):
-    from pytools.py_codegen import PythonFunctionGenerator
+        work_around_arg_count_bug, warn_about_arg_count_bug):
+
+    from pytools.py_codegen import PythonCodeGenerator, Indentation
 
     arg_names = ["arg%d" % i for i in range(num_passed_args)]
 
@@ -316,37 +316,89 @@ def generate_enqueue_and_set_args(function_name,
 
     err_handler = wrap_in_error_handler(body, arg_names)
 
+    gen = PythonCodeGenerator()
+
+    gen("from struct import pack")
+    gen("from pyopencl import status_code")
+    gen("")
+
     # {{{ generate _enqueue
 
-    gen = PythonFunctionGenerator("enqueue_knl_%s" % function_name,
-            ["self", "queue", "global_size", "local_size"]
-            + arg_names
-            + ["global_offset=None", "g_times_l=None", "wait_for=None"])
+    enqueue_name = "enqueue_knl_%s" % function_name
+    gen("def %s(%s):"
+            % (enqueue_name,
+                ", ".join(
+                    ["self", "queue", "global_size", "local_size"]
+                    + arg_names
+                    + ["global_offset=None", "g_times_l=None",
+                        "wait_for=None"])))
 
-    add_module_preamble(gen)
-    gen.extend(err_handler)
+    with Indentation(gen):
+        add_local_imports(gen)
+        gen.extend(err_handler)
 
-    gen("""
-        return _cl.enqueue_nd_range_kernel(queue, self, global_size, local_size,
-                global_offset, wait_for, g_times_l=g_times_l)
-        """)
-
-    enqueue = gen.get_function()
+        gen("""
+            return _cl.enqueue_nd_range_kernel(queue, self, global_size, local_size,
+                    global_offset, wait_for, g_times_l=g_times_l)
+            """)
 
     # }}}
 
     # {{{ generate set_args
 
-    gen = PythonFunctionGenerator("_set_args", ["self"] + arg_names)
+    gen("")
+    gen("def set_args(%s):"
+            % (", ".join(["self"] + arg_names)))
 
-    add_module_preamble(gen)
-    gen.extend(err_handler)
-
-    set_args = gen.get_function()
+    with Indentation(gen):
+        add_local_imports(gen)
+        gen.extend(err_handler)
 
     # }}}
 
-    return enqueue, set_args
+    return gen.get_picklable_module(), enqueue_name
+
+
+class NumpyTypesKeyBuilder(KeyBuilderBase):
+    def update_for_type(self, key_hash, key):
+        if issubclass(key, np.generic):
+            self.update_for_str(key_hash, key.__name__)
+            return
+
+        raise TypeError("unsupported type for persistent hash keying: %s"
+                % type(key))
+
+
+invoker_cache = PersistentDict("pyopencl-invoker-cache-v1",
+        key_builder=NumpyTypesKeyBuilder())
+
+
+def generate_enqueue_and_set_args(function_name,
+        num_passed_args, num_cl_args,
+        scalar_arg_dtypes,
+        work_around_arg_count_bug, warn_about_arg_count_bug):
+
+    cache_key = (function_name, num_passed_args, num_cl_args,
+            scalar_arg_dtypes,
+            work_around_arg_count_bug, warn_about_arg_count_bug)
+
+    from_cache = False
+
+    try:
+        result = invoker_cache[cache_key]
+        from_cache = True
+    except KeyError:
+        pass
+
+    if not from_cache:
+        result = _generate_enqueue_and_set_args_module(*cache_key)
+        invoker_cache[cache_key] = result
+
+    pmod, enqueue_name = result
+
+    return (
+            pmod.mod_globals[enqueue_name],
+            pmod.mod_globals["set_args"])
 
 # }}}
 
