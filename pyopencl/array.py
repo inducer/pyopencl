@@ -69,6 +69,12 @@ class VecLookupWarner(object):
         warn("pyopencl.array.vec is deprecated. "
              "Please use pyopencl.cltypes for OpenCL vector and scalar types",
              DeprecationWarning, 2)
+
+        if name == "types":
+            name = "vec_types"
+        elif name == "type_to_scalar_and_count":
+            name = "vec_type_to_scalar_and_count"
+
         return getattr(cltypes, name)
 
 
