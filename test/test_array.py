@@ -32,6 +32,7 @@ import pytest
 
 import pyopencl as cl
 import pyopencl.array as cl_array
+import pyopencl.cltypes as cltypes
 import pyopencl.tools as cl_tools
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
@@ -194,12 +195,12 @@ def test_vector_fill(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    a_gpu = cl_array.Array(queue, 100, dtype=cl_array.vec.float4)
-    a_gpu.fill(cl_array.vec.make_float4(0.0, 0.0, 1.0, 0.0))
+    a_gpu = cl_array.Array(queue, 100, dtype=cltypes.float4)
+    a_gpu.fill(cltypes.make_float4(0.0, 0.0, 1.0, 0.0))
     a = a_gpu.get()
-    assert a.dtype == cl_array.vec.float4
+    assert a.dtype == cltypes.float4
 
-    a_gpu = cl_array.zeros(queue, 100, dtype=cl_array.vec.float4)
+    a_gpu = cl_array.zeros(queue, 100, dtype=cltypes.float4)
 
 
 def test_absrealimag(ctx_factory):
