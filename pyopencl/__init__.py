@@ -30,6 +30,9 @@ from six.moves import input
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     import pyopencl.cffi_cl as _cl
 except ImportError:
@@ -279,6 +282,8 @@ class Program(object):
             self._context = context
             self._prg = _cl._Program(context, device, binaries)
 
+        self._build_duration_info = None
+
     def _get_prg(self):
         if self._prg is not None:
             return self._prg
@@ -317,6 +322,13 @@ class Program(object):
             # but this will give an error if the kernel is invalid.
             knl.num_args
             knl._source = getattr(self, "_source", None)
+
+            if self._build_duration_info is not None:
+                was_cached, what, duration = self._build_duration_info
+                if duration > 0.2:
+                    logger.info("build program: kernel '%s' was part of a "
+                            "lengthy %s (%.2f s)" % (attr, what, duration))
+
             return knl
         except LogicError:
             raise AttributeError("'%s' was not found as a program "
@@ -422,9 +434,14 @@ class Program(object):
         if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
             self._prg = _cl._Program(self._context, self._source)
 
+        from time import time
+        start_time = time()
+        was_cached = False
+
         if self._prg is not None:
             # uncached
 
+            what = "uncached source build"
             self._build_and_catch_errors(
                     lambda: self._prg.build(options_bytes, devices),
                     options_bytes=options_bytes)
@@ -433,13 +450,22 @@ class Program(object):
             # cached
 
             from pyopencl.cache import create_built_program_from_source_cached
-            self._prg = self._build_and_catch_errors(
+            self._prg, was_cached = self._build_and_catch_errors(
                     lambda: create_built_program_from_source_cached(
                         self._context, self._source, options_bytes, devices,
                         cache_dir=cache_dir, include_path=include_path),
                     options_bytes=options_bytes, source=self._source)
 
+            if was_cached:
+                what = "cache retrieval"
+            else:
+                what = "source build resulting from a binary cache miss"
+
             del self._context
+
+        end_time = time()
+
+        self._build_duration_info = (was_cached, what, end_time-start_time)
 
         return self
 
