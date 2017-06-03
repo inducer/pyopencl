@@ -439,7 +439,7 @@ class Program(object):
             build_descr = "uncached source build (cache disabled by user)"
             self._prg = _cl._Program(self._context, self._source)
 
-        if plat_has_cache:
+        elif plat_has_cache and self._prg is None:
             build_descr = "platform-cached source build"
             self._prg = _cl._Program(self._context, self._source)
 
