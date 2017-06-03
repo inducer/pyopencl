@@ -324,10 +324,10 @@ class Program(object):
             knl._source = getattr(self, "_source", None)
 
             if self._build_duration_info is not None:
-                was_cached, what, duration = self._build_duration_info
+                build_descr, was_cached, duration = self._build_duration_info
                 if duration > 0.2:
                     logger.info("build program: kernel '%s' was part of a "
-                            "lengthy %s (%.2f s)" % (attr, what, duration))
+                            "lengthy %s (%.2f s)" % (attr, build_descr, duration))
 
             return knl
         except LogicError:
@@ -431,7 +431,16 @@ class Program(object):
             cache_dir = getattr(self._context, 'cache_dir', None)
 
         import os
+        from pyopencl.characterize import has_platform_compiler_cache
+        plat_has_cache = has_platform_compiler_cache(self._context.devices[0])
+        build_descr = None
+
         if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
+            build_descr = "uncached source build (cache disabled by user)"
+            self._prg = _cl._Program(self._context, self._source)
+
+        if plat_has_cache:
+            build_descr = "platform-cached source build"
             self._prg = _cl._Program(self._context, self._source)
 
         from time import time
@@ -441,7 +450,9 @@ class Program(object):
         if self._prg is not None:
             # uncached
 
-            what = "uncached source build"
+            if build_descr is None:
+                build_descr = "uncached source build"
+
             self._build_and_catch_errors(
                     lambda: self._prg.build(options_bytes, devices),
                     options_bytes=options_bytes)
@@ -457,15 +468,15 @@ class Program(object):
                     options_bytes=options_bytes, source=self._source)
 
             if was_cached:
-                what = "cache retrieval"
+                build_descr = "cache retrieval"
             else:
-                what = "source build resulting from a binary cache miss"
+                build_descr = "source build resulting from a binary cache miss"
 
             del self._context
 
         end_time = time()
 
-        self._build_duration_info = (was_cached, what, end_time-start_time)
+        self._build_duration_info = (build_descr, was_cached, end_time-start_time)
 
         return self
 
