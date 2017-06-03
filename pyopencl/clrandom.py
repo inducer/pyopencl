@@ -520,6 +520,7 @@ class Random123GeneratorBase(object):
                     "unsupported RNG distribution/data type combination '%s/%s'"
                     % rng_key)
 
+        kernel_name = "rng_gen_%s_%s" % (self.generator_name, distribution)
         src = """//CL//
             #include <%(header_name)s>
 
@@ -559,7 +560,7 @@ class Random123GeneratorBase(object):
 
             #define GET_RANDOM_NUM(gen) %(rng_expr)s
 
-            kernel void generate(
+            kernel void %(kernel_name)s(
                 int k1,
                 #if %(key_length)s > 2
                 int k2, int k3,
@@ -599,6 +600,7 @@ class Random123GeneratorBase(object):
                   output[idx+3] = tail_ran.w;
             }
             """ % {
+                "kernel_name": kernel_name,
                 "gen_name": self.generator_name,
                 "header_name": self.header_name,
                 "output_t": c_type,
@@ -608,7 +610,7 @@ class Random123GeneratorBase(object):
                 }
 
         prg = cl.Program(self.context, src).build()
-        knl = prg.generate
+        knl = getattr(prg, kernel_name)
         knl.set_scalar_arg_dtypes(
                 [np.int32] * (self.key_length - 1 + 4)
                 + [None, np.int64, arg_dtype, arg_dtype])
