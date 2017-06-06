@@ -223,8 +223,22 @@ class _Common(object):
         return self
     ptr = _ffi.NULL
 
+    # {{{ cleanup
+
+    # The module-global _lib variable may get set to None during interpreter
+    # cleanup before we're done cleaning up CL objects. (Symbols starting with
+    # an underscore even get cleared first [1]--although it's unclear that that
+    # really matters.) To retain our ability to clean up objects, retain a
+    # reference to the _lib module.
+    #
+    # [1] https://www.python.org/doc/essays/cleanup/
+
+    _retained_lib = _lib
+
     def __del__(self):
-        _lib.clobj__delete(self.ptr)
+        self._retained_lib.clobj__delete(self.ptr)
+
+    # }}}
 
     def __eq__(self, other):
         return other.int_ptr == self.int_ptr
