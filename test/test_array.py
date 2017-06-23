@@ -775,17 +775,18 @@ def test_copy(ctx_factory):
 
     assert (arr == arr_copy).all().get()
     assert arr.data != arr_copy.data
+    assert arr_copy.queue is queue1
 
     # Test queue association
 
     arr_copy = arr.copy(queue=queue2)
-    assert arr_copy.queue == queue2
+    assert arr_copy.queue is queue2
 
     arr_copy = arr.copy(queue=None)
-    assert arr_copy.queue == None
+    assert arr_copy.queue is None
 
     arr_copy = arr.with_queue(None).copy(queue=queue1)
-    assert arr_copy.queue == queue1
+    assert arr_copy.queue is queue1
 
 
 # }}}
