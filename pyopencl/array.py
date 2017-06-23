@@ -631,14 +631,24 @@ class Array(object):
 
         return ary
 
-    def copy(self, queue=None):
-        """.. versionadded:: 2013.1"""
+    def copy(self, queue=_copy_queue):
+        """
+        :arg queue: The :class:`CommandQueue` for the returned array.
 
-        queue = queue or self.queue
-        result = self._new_like_me()
+        .. versionchanged:: 2017.1.2
+            Updates the queue of returned array.
+
+        .. versionadded:: 2013.1
+        """
+
+        if queue is _copy_queue:
+            queue = self.queue
+
+        result = self._new_like_me(queue=queue)
 
         if self.nbytes:
-            cl.enqueue_copy(queue, result.base_data, self.base_data,
+            cl.enqueue_copy(queue or self.queue,
+                    result.base_data, self.base_data,
                     src_offset=self.offset, byte_count=self.nbytes)
 
         return result
