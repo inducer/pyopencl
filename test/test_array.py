@@ -788,7 +788,6 @@ def test_copy(ctx_factory):
     arr_copy = arr.with_queue(None).copy(queue=queue1)
     assert arr_copy.queue is queue1
 
-
 # }}}
 
 
