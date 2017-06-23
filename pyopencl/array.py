@@ -646,6 +646,11 @@ class Array(object):
 
         result = self._new_like_me(queue=queue)
 
+        # result.queue won't be the same as queue if queue is None.
+        # We force them to be the same here.
+        if result.queue is not queue:
+            result = result.with_queue(queue)
+
         if self.nbytes:
             cl.enqueue_copy(queue or self.queue,
                     result.base_data, self.base_data,
