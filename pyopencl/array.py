@@ -636,7 +636,7 @@ class Array(object):
         :arg queue: The :class:`CommandQueue` for the returned array.
 
         .. versionchanged:: 2017.1.2
-            Updates the queue of returned array.
+            Updates the queue of the returned array.
 
         .. versionadded:: 2013.1
         """
