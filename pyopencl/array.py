@@ -1797,6 +1797,8 @@ class Array(object):
 # }}}
 
 
+# {{{ creation helpers
+
 def as_strided(ary, shape=None, strides=None):
     """Make an :class:`Array` from the given array with the given
     shape and strides.
@@ -1812,10 +1814,6 @@ def as_strided(ary, shape=None, strides=None):
     return Array(ary.queue, shape, ary.dtype, allocator=ary.allocator,
             data=ary.data, strides=strides)
 
-# }}}
-
-
-# {{{ creation helpers
 
 class _same_as_transfer(object):  # noqa
     pass
