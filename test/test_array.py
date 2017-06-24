@@ -794,6 +794,9 @@ def test_copy(ctx_factory):
 # {{{ slices, concatenation
 
 def test_slice(ctx_factory):
+    if _PYPY:
+        pytest.xfail("numpypy: spurious as_strided failure")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1157,12 +1160,12 @@ def test_fancy_indexing(ctx_factory):
 
     numpy_dest = np.zeros((4,), np.int32)
     numpy_idx = np.arange(3, 0, -1, dtype=np.int32)
-    numpy_src = np.arange(8, 10, dtype=np.int32)
+    numpy_src = np.arange(8, 11, dtype=np.int32)
     numpy_dest[numpy_idx] = numpy_src
 
     cl_dest = cl_array.zeros(queue, (4,), np.int32)
     cl_idx = cl_array.arange(queue, 3, 0, -1, dtype=np.int32)
-    cl_src = cl_array.arange(queue, 8, 10, dtype=np.int32)
+    cl_src = cl_array.arange(queue, 8, 11, dtype=np.int32)
     cl_dest[cl_idx] = cl_src
 
     assert np.all(numpy_dest == cl_dest.get())
@@ -1198,7 +1201,7 @@ def test_multi_put(ctx_factory):
 
     out_compare = [np.zeros((10,), np.float32) for i in range(9)]
     for i, ary in enumerate(out_compare):
-        ary[idx.get()] = np.arange(0, 3, dtype=np.float32)
+        ary[idx.get()] = np.arange(0, 6, dtype=np.float32)
 
     cl_array.multi_put(cl_arrays, idx, out=out_arrays)
 
