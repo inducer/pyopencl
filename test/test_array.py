@@ -768,6 +768,9 @@ def test_diff(ctx_factory):
 # {{{ slices, concatenation
 
 def test_slice(ctx_factory):
+    if _PYPY:
+        pytest.xfail("numpypy: spurious as_strided failure")
+
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
