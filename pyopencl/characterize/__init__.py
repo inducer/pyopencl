@@ -387,10 +387,3 @@ def has_struct_arg_count_bug(dev, ctx=None):
             return "pocl"
 
     return False
-
-
-def has_platform_compiler_cache(dev):
-    if dev.platform.name == "Portable Computing Language":
-        return True
-
-    return False

@@ -431,16 +431,10 @@ class Program(object):
             cache_dir = getattr(self._context, 'cache_dir', None)
 
         import os
-        from pyopencl.characterize import has_platform_compiler_cache
-        plat_has_cache = has_platform_compiler_cache(self._context.devices[0])
         build_descr = None
 
         if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
             build_descr = "uncached source build (cache disabled by user)"
-            self._prg = _cl._Program(self._context, self._source)
-
-        elif plat_has_cache and self._prg is None:
-            build_descr = "platform-cached source build"
             self._prg = _cl._Program(self._context, self._source)
 
         from time import time
