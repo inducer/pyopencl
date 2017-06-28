@@ -941,10 +941,12 @@ class MemoryObject(MemoryObjectHolder):
 # {{{ MemoryMap
 
 class MemoryMap(_Common):
-    """"
-    .. automethod:: release
-
+    """
     This class may also be used as a context manager in a ``with`` statement.
+    The memory corresponding to this object will be unmapped when
+    this object is deleted or :meth:`release` is called.
+
+    .. automethod:: release
     """
 
     @classmethod
