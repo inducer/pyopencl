@@ -358,7 +358,6 @@ def _generate_enqueue_and_set_args_module(function_name,
     return gen.get_picklable_module(), enqueue_name
 
 
-
 invoker_cache = PersistentDict("pyopencl-invoker-cache-v1",
         key_builder=_NumpyTypesKeyBuilder())
 

@@ -1098,7 +1098,6 @@ class _GenericScanKernelBase(object):
                 has_double_support(dev) for dev in devices),
             )
 
-
         index_typename = dtype_to_ctype(self.index_dtype)
         scan_typename = dtype_to_ctype(dtype)
 
