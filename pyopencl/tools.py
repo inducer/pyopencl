@@ -36,6 +36,7 @@ from decorator import decorator
 import pyopencl as cl
 from pytools import memoize, memoize_method
 from pyopencl.cffi_cl import _lib
+from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
 
 import re
 
@@ -956,5 +957,19 @@ def is_spirv(s):
             and (
                 s[:4] == spirv_magic
                 or s[:4] == spirv_magic[::-1]))
+
+
+# {{{ numpy key types builder
+
+class _NumpyTypesKeyBuilder(KeyBuilderBase):
+    def update_for_type(self, key_hash, key):
+        if issubclass(key, np.generic):
+            self.update_for_str(key_hash, key.__name__)
+            return
+
+        raise TypeError("unsupported type for persistent hash keying: %s"
+                % type(key))
+
+# }}}
 
 # vim: foldmethod=marker
