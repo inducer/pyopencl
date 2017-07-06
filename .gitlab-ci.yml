@@ -6,6 +6,7 @@
   - echo "CL_ENABLE_GL = True" > siteconf.py
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
+  allow_failure: true
   tags:
   - python2.7
   - amd-cl-cpu
@@ -33,6 +34,7 @@ Python 3.5 AMD CPU:
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
+  allow_failure: true
   tags:
   - python3.5
   - amd-cl-cpu
@@ -46,6 +48,7 @@ Python 2.6 AMD CPU:
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
+  allow_failure: true
   tags:
   - python2.6
   - amd-cl-cpu
@@ -85,6 +88,7 @@ Python 3.5 AMD GPU:
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
+  allow_failure: true
   tags:
   - python3.5
   - amd-fiji
