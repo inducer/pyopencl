@@ -43,8 +43,9 @@ typedef enum {
 typedef struct {
     class_t opaque_class;
     const char *type;
+    bool free_type;
     void *value;
-    int dontfree;
+    bool free_value;
 } generic_info;
 
 // }}}

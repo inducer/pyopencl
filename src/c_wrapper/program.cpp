@@ -54,11 +54,12 @@ program::get_info(cl_uint param) const
         }
         pyopencl_buf<generic_info> gis(sizes.len());
         for (size_t i  = 0;i < sizes.len();i++) {
-            gis[i].value = result_ptrs[i];
-            gis[i].dontfree = 0;
-            gis[i].opaque_class = CLASS_NONE;
-            gis[i].type =  _copy_str(std::string("char[") +
-                                     tostring(sizes[i]) + "]");
+            gis[i] = make_generic_info(
+                CLASS_NONE,
+                _copy_str(std::string("char[") + tostring(sizes[i]) + "]"),
+                true,
+                result_ptrs[i],
+                true);
         }
         return pyopencl_convert_array_info(generic_info, gis);
     }
