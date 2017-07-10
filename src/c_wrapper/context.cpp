@@ -56,15 +56,12 @@ context::get_info(cl_uint param_name) const
             if (key == 0)
                 break;
             cl_context_properties value = result[i * 2 + 1];
-            generic_info &info = py_result[i];
-            info.dontfree = 0;
-            info.opaque_class = CLASS_NONE;
             switch (key) {
             case CL_CONTEXT_PLATFORM:
-                info.opaque_class = CLASS_PLATFORM;
-                info.type = "void *";
-                info.value = new platform(
-                    reinterpret_cast<cl_platform_id>(value));
+              py_result[i] = make_generic_info(
+                  CLASS_PLATFORM,
+                  "void *", false,
+                  new platform(reinterpret_cast<cl_platform_id>(value)), true);
                 break;
 
 #if defined(PYOPENCL_GL_SHARING_VERSION) && (PYOPENCL_GL_SHARING_VERSION >= 1)
@@ -77,12 +74,13 @@ context::get_info(cl_uint param_name) const
             case CL_WGL_HDC_KHR:
             case CL_CGL_SHAREGROUP_KHR:
 #endif
-                info.type = "intptr_t *";
-                info.value = (void*)value;
-                // we do not own this object
-                info.dontfree = 1;
-                break;
-
+              py_result[i] = make_generic_info(
+                  CLASS_NONE,
+                  "intptr_t *", false,
+                  (void*)value,
+                  // we do not own this object
+                  false);
+              break;
 #endif
             default:
                 throw clerror("Context.get_info", CL_INVALID_VALUE,

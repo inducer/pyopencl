@@ -86,17 +86,27 @@ get_vec_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
 #define pyopencl_get_vec_info(type, what, ...)                      \
     get_vec_info<type>(clGet##what##Info, "clGet" #what "Info", __VA_ARGS__)
 
+inline generic_info make_generic_info(class_t opaque_class, const char *type, bool free_type, void *value, bool free_value)
+{
+  generic_info result;
+  result.opaque_class = opaque_class;
+  result.type = type;
+  result.free_type = free_type;
+  result.value = value;
+  result.free_value = free_value;
+  return result;
+}
+
 template<typename T>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 convert_array_info(const char *tname, pyopencl_buf<T> &buf)
 {
-    generic_info info;
-    info.dontfree = 0;
-    info.opaque_class = CLASS_NONE;
-    info.type = _copy_str(std::string(tname) + "[" +
-                          tostring(buf.len()) + "]");
-    info.value = buf.release();
-    return info;
+    return make_generic_info(
+        CLASS_NONE,
+        _copy_str(std::string(tname) + "[" + tostring(buf.len()) + "]"),
+        true,
+        buf.release(),
+        true);
 }
 
 template<typename T>
@@ -116,12 +126,12 @@ template<typename CLObj, typename T>
 PYOPENCL_USE_RESULT static PYOPENCL_INLINE generic_info
 convert_opaque_array_info(T &&buf)
 {
-    generic_info info;
-    info.dontfree = 0;
-    info.opaque_class = CLObj::class_id;
-    info.type = _copy_str(std::string("void*[") + tostring(buf.len()) + "]");
-    info.value = buf_to_base<CLObj>(std::forward<T>(buf)).release();
-    return info;
+    return make_generic_info(
+        CLObj::class_id,
+        _copy_str(std::string("void*[") + tostring(buf.len()) + "]"),
+        true,
+        buf_to_base<CLObj>(std::forward<T>(buf)).release(),
+        true);
 }
 #define pyopencl_get_opaque_array_info(cls, what, ...)  \
     convert_opaque_array_info<cls>(               \
@@ -134,16 +144,13 @@ get_opaque_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
 {
     typename CLObj::cl_type param_value;
     call_guarded(func, name, args..., size_arg(param_value), nullptr);
-    generic_info info;
-    info.dontfree = 0;
-    info.opaque_class = CLObj::class_id;
-    info.type = "void *";
+    void *value;
     if (param_value) {
-        info.value = (void*)(new CLObj(param_value, /*retain*/ true));
+        value = (void*)(new CLObj(param_value, /*retain*/ true));
     } else {
-        info.value = nullptr;
+        value = nullptr;
     }
-    return info;
+    return make_generic_info(CLObj::class_id, "void *", false, value, true);
 }
 #define pyopencl_get_opaque_info(clobj, what, ...)              \
     get_opaque_info<clobj>(clGet##what##Info,             \
@@ -158,12 +165,7 @@ get_str_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
     call_guarded(func, name, args..., 0, nullptr, buf_arg(size));
     pyopencl_buf<char> param_value(size);
     call_guarded(func, name, args..., param_value, buf_arg(size));
-    generic_info info;
-    info.dontfree = 0;
-    info.opaque_class = CLASS_NONE;
-    info.type = "char*";
-    info.value = (void*)param_value.release();
-    return info;
+    return make_generic_info(CLASS_NONE, "char*", false, (void*)param_value.release(), true);
 }
 #define pyopencl_get_str_info(what, ...)                            \
     get_str_info(clGet##what##Info, "clGet" #what "Info", __VA_ARGS__)
@@ -175,12 +177,7 @@ get_int_info(cl_int (CL_API_CALL *func)(ArgTypes...), const char *name,
 {
     T value;
     call_guarded(func, name, args..., size_arg(value), nullptr);
-    generic_info info;
-    info.dontfree = 0;
-    info.opaque_class = CLASS_NONE;
-    info.type = tpname;
-    info.value = cl_memdup(&value);
-    return info;
+    return make_generic_info(CLASS_NONE, tpname, false, cl_memdup(&value), true);
 }
 #define pyopencl_get_int_info(type, what, ...)                      \
     get_int_info<type>(clGet##what##Info, "clGet" #what "Info", \
