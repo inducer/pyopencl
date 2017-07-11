@@ -29,9 +29,8 @@ import numpy as np
 
 from warnings import warn
 from pyopencl._cffi import ffi as _ffi
-from pytools.persistent_dict import (
-        PersistentDict,
-        KeyBuilder as KeyBuilderBase)
+from pytools.persistent_dict import PersistentDict
+from pyopencl.tools import _NumpyTypesKeyBuilder
 
 _PYPY = '__pypy__' in sys.builtin_module_names
 _CPY2 = not _PYPY and sys.version_info < (3,)
@@ -359,18 +358,8 @@ def _generate_enqueue_and_set_args_module(function_name,
     return gen.get_picklable_module(), enqueue_name
 
 
-class NumpyTypesKeyBuilder(KeyBuilderBase):
-    def update_for_type(self, key_hash, key):
-        if issubclass(key, np.generic):
-            self.update_for_str(key_hash, key.__name__)
-            return
-
-        raise TypeError("unsupported type for persistent hash keying: %s"
-                % type(key))
-
-
 invoker_cache = PersistentDict("pyopencl-invoker-cache-v1",
-        key_builder=NumpyTypesKeyBuilder())
+        key_builder=_NumpyTypesKeyBuilder())
 
 
 def generate_enqueue_and_set_args(function_name,
