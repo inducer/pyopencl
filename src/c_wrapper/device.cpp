@@ -37,12 +37,7 @@ get_device_topology_amd(ArgTypes&&... args)
     cl_device_topology_amd value;
     const char * fname = "clGetDeviceInfo";
     call_guarded(clGetDeviceInfo, fname, args..., size_arg(value), nullptr);
-    generic_info info;
-    info.dontfree = 0;
-    info.opaque_class = CLASS_NONE;
-    info.type = tpname;
-    info.value = cl_memdup(&value);
-    return info;
+    return make_generic_info(CLASS_NONE, tpname, false, cl_memdup(&value), true);
 }
 
 #define pyopencl_get_device_topology_amd(...) get_device_topology_amd(__VA_ARGS__)

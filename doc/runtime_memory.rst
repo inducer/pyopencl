@@ -321,6 +321,15 @@ Mapping Memory into Host Address Space
     .. versionchanged:: 2013.2
         Added *strides* argument.
 
+    Sample usage::
+
+        mapped_buf = cl.enqueue_map_buffer(queue, buf, ...)
+        with mapped_buf.base:
+            # work with mapped_buf
+            ...
+
+        # memory will be unmapped here
+
 .. function:: enqueue_map_image(queue, buf, flags, origin, region, shape, dtype, order="C", strides=None, wait_for=None, is_blocking=True)
 
     |explain-waitfor|

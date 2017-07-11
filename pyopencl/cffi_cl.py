@@ -144,6 +144,10 @@ class _CArray(object):
 
 def _generic_info_to_python(info):
     type_ = _ffi_pystr(info.type)
+
+    if info.free_type:
+        _lib.free_pointer(info.type)
+
     value = _ffi.cast(type_, info.value)
 
     if info.opaque_class != _lib.CLASS_NONE:
@@ -200,7 +204,7 @@ def _generic_info_to_python(info):
             ret = list(value)
     else:
         ret = value[0]
-    if info.dontfree == 0:
+    if info.free_value:
         _lib.free_pointer(info.value)
     return ret
 
@@ -941,10 +945,12 @@ class MemoryObject(MemoryObjectHolder):
 # {{{ MemoryMap
 
 class MemoryMap(_Common):
-    """"
-    .. automethod:: release
-
+    """
     This class may also be used as a context manager in a ``with`` statement.
+    The memory corresponding to this object will be unmapped when
+    this object is deleted or :meth:`release` is called.
+
+    .. automethod:: release
     """
 
     @classmethod
