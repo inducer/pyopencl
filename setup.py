@@ -67,7 +67,13 @@ def get_config_schema():
 
     else:
         default_libs = ["OpenCL"]
-        default_ldflags = []
+        if "linux" in sys.platform:
+            # Requested in
+            # https://github.com/pyopencl/pyopencl/issues/132#issuecomment-314713573
+            # to make life with Altera FPGAs less painful by default.
+            default_ldflags = ["-Wl,--no-as-needed"]
+        else:
+            default_ldflags = []
 
     return ConfigSchema([
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
