@@ -241,7 +241,10 @@ class RanluxGenerator(object):
 
         elif dtype == np.int64:
             assert distribution == "uniform"
-            bits = 64
+            if self.support_double:
+                bits = 64
+            else:
+                bits = 32
             c_type = "long"
             rng_expr = ("(shift "
                     "+ convert_long4((float) scale * gen) "
@@ -523,6 +526,14 @@ class Random123GeneratorBase(object):
         kernel_name = "rng_gen_%s_%s" % (self.generator_name, distribution)
         src = """//CL//
             #include <%(header_name)s>
+
+            #ifndef M_PI
+            #ifdef M_PI_F
+            #define M_PI M_PI_F
+            #else
+            #define M_PI 3.14159265359f
+            #endif
+            #endif
 
             typedef %(output_t)s output_t;
             typedef %(output_t)s4 output_vec_t;
