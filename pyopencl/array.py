@@ -246,7 +246,7 @@ class Array(object):
         backs this :class:`Array`. Unlike :attr:`data`, the base address of
         *base_data* is allowed to be different from the beginning of the array.
         The actual beginning is the base address of *base_data* plus
-        :attr:`offset` in units of :attr:`dtype`.
+        :attr:`offset` bytes.
 
         Unlike :attr:`data`, retrieving :attr:`base_data` always succeeds.
 
