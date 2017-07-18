@@ -906,6 +906,10 @@ def test_bitonic_sort(ctx_factory, size, dtype):
             and dtype == np.float64):
         pytest.xfail("Double precision bitonic sort doesn't work on POCL")
 
+    if dtype == np.float64 and not has_double_support(dev):
+        from pytest import skip
+        skip("double precision not supported on %s" % dev)
+
     import pyopencl.clrandom as clrandom
     from pyopencl.bitonic_sort import BitonicSort
 
@@ -949,6 +953,10 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
     if (dev.platform.name == "Portable Computing Language"
             and dtype == np.float64):
         pytest.xfail("Double precision bitonic sort doesn't work on POCL")
+
+    if dtype == np.float64 and not has_double_support(dev):
+        from pytest import skip
+        skip("double precision not supported on %s" % dev)
 
     import pyopencl.clrandom as clrandom
     from pyopencl.bitonic_sort import BitonicSort
