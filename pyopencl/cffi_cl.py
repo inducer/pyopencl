@@ -1855,6 +1855,8 @@ Event.profile = property(ProfilingInfoGetter)
 
 
 def wait_for_events(wait_for):
+    if wait_for is None or len(wait_for) == 0:
+        return
     _handle_error(_lib.wait_for_events(*_clobj_list(wait_for)))
 
 
