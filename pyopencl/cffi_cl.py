@@ -265,7 +265,7 @@ class _Common(object):
     @classmethod
     def from_int_ptr(cls, int_ptr_value, retain=True):
         """Constructs a :mod:`pyopencl` handle from a C-level pointer (given as
-        the integer *int_ptr_value*). If *retain* is *True* (the defauult)
+        the integer *int_ptr_value*). If *retain* is *True* (the default)
         :mod:`pyopencl` will call ``clRetainXXX`` on the provided object. If
         the previous owner of the object will *not* release the reference,
         *retain* should be set to *False*, to effectively transfer ownership to
