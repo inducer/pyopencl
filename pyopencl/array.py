@@ -570,13 +570,37 @@ class Array(object):
         return splay(queue, self.size,
                 kernel_specific_max_wg_size=kernel_specific_max_wg_size)
 
-    def set(self, ary, queue=None, async=False):
+    def set(self, ary, queue=None, async_=None, **kwargs):
         """Transfer the contents the :class:`numpy.ndarray` object *ary*
         onto the device.
 
         *ary* must have the same dtype and size (not necessarily shape) as
         *self*.
+
+        .. versionchanged:: 2017.2.1
+
+            Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
+            we will continue to  accept *async* as a parameter, however this
+            should be considered deprecated. *async_* is the new, official
+            spelling.
         """
+
+        # {{{ handle 'async' deprecation
+
+        async_arg = kwargs.pop("async", None)
+        if async_arg is not None:
+            if async_ is not None:
+                raise TypeError("may not specify both 'async' and 'async_'")
+            async_ = async_arg
+
+        if async_ is None:
+            async_ = False
+
+        if kwargs:
+            raise TypeError("extra keyword arguments specified: %s"
+                    % ", ".join(kwargs))
+
+        # }}}
 
         assert ary.size == self.size
         assert ary.dtype == self.dtype
@@ -594,9 +618,9 @@ class Array(object):
         if self.size:
             cl.enqueue_copy(queue or self.queue, self.base_data, ary,
                     device_offset=self.offset,
-                    is_blocking=not async)
+                    is_blocking=not async_)
 
-    def get(self, queue=None, ary=None, async=False):
+    def get(self, queue=None, ary=None, async_=None, **kwargs):
         """Transfer the contents of *self* into *ary* or a newly allocated
         :mod:`numpy.ndarray`. If *ary* is given, it must have the same
         shape and dtype.
@@ -604,7 +628,31 @@ class Array(object):
         .. versionchanged:: 2015.2
 
             *ary* with different shape was deprecated.
+
+        .. versionchanged:: 2017.2.1
+
+            Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
+            we will continue to  accept *async* as a parameter, however this
+            should be considered deprecated. *async_* is the new, official
+            spelling.
         """
+
+        # {{{ handle 'async' deprecation
+
+        async_arg = kwargs.pop("async", None)
+        if async_arg is not None:
+            if async_ is not None:
+                raise TypeError("may not specify both 'async' and 'async_'")
+            async_ = async_arg
+
+        if async_ is None:
+            async_ = False
+
+        if kwargs:
+            raise TypeError("extra keyword arguments specified: %s"
+                    % ", ".join(kwargs))
+
+        # }}}
 
         if ary is None:
             ary = np.empty(self.shape, self.dtype)
@@ -627,7 +675,7 @@ class Array(object):
         if self.size:
             cl.enqueue_copy(queue or self.queue, ary, self.base_data,
                     device_offset=self.offset,
-                    is_blocking=not async)
+                    is_blocking=not async_)
 
         return ary
 
@@ -1819,8 +1867,8 @@ class _same_as_transfer(object):  # noqa
     pass
 
 
-def to_device(queue, ary, allocator=None, async=False,
-        array_queue=_same_as_transfer):
+def to_device(queue, ary, allocator=None, async_=None,
+        array_queue=_same_as_transfer, **kwargs):
     """Return a :class:`Array` that is an exact copy of the
     :class:`numpy.ndarray` instance *ary*.
 
@@ -1833,7 +1881,31 @@ def to_device(queue, ary, allocator=None, async=False,
 
     .. versionchanged:: 2015.2
         *array_queue* argument was added.
+
+    .. versionchanged:: 2017.2.1
+
+        Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
+        we will continue to  accept *async* as a parameter, however this
+        should be considered deprecated. *async_* is the new, official
+        spelling.
     """
+
+    # {{{ handle 'async' deprecation
+
+    async_arg = kwargs.pop("async", None)
+    if async_arg is not None:
+        if async_ is not None:
+            raise TypeError("may not specify both 'async' and 'async_'")
+        async_ = async_arg
+
+    if async_ is None:
+        async_ = False
+
+    if kwargs:
+        raise TypeError("extra keyword arguments specified: %s"
+                % ", ".join(kwargs))
+
+    # }}}
 
     if _dtype_is_object(ary.dtype):
         raise RuntimeError("to_device does not work on object arrays.")
@@ -1845,7 +1917,7 @@ def to_device(queue, ary, allocator=None, async=False,
 
     result = Array(first_arg, ary.shape, ary.dtype,
                     allocator=allocator, strides=ary.strides)
-    result.set(ary, async=async, queue=queue)
+    result.set(ary, async_=async_, queue=queue)
     return result
 
 
