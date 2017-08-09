@@ -818,6 +818,12 @@ def test_event_set_callback(ctx_factory):
     if ctx._get_cl_version() < (1, 1):
         pytest.skip("OpenCL 1.1 or newer required fro set_callback")
 
+    dev, = ctx.devices
+    if (dev.platform.name == "Portable Computing Language"
+            and "0.15-pre" in dev.platform.version):
+        pytest.xfail("user events/callback setting broken in pocl 0.15 pre: "
+                "https://github.com/pocl/pocl/issues/506")
+
     a_np = np.random.rand(50000).astype(np.float32)
     b_np = np.random.rand(50000).astype(np.float32)
 
