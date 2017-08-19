@@ -9,7 +9,7 @@ Copyright (C) 2015 Andreas Kloeckner
 Auto-translated from
 https://github.com/zgimbutas/fmmlib2d/blob/master/src/hank103.f
 using
-https://github.com/pyopencl/pyopencl/tree/master/contrib/fortran-to-opencl
+https://github.com/inducer/pyopencl/tree/master/contrib/fortran-to-opencl
 
 Originally licensed under GPL, permission to license under MIT granted via email
 by Vladimir Rokhlin on May 25, 2015 and by Zydrunas Gimbutas on May 17, 2015.

@@ -169,7 +169,7 @@ in PyOpenCL:
 * Segmented scans
 
 * Access to the previous item in *input_expr* (e.g. for comparisons)
-  See the `implementation <https://github.com/pyopencl/pyopencl/blob/master/pyopencl/scan.py#L1353>`_ of :func:`unique` for an example.
+  See the `implementation <https://github.com/inducer/pyopencl/blob/master/pyopencl/scan.py#L1353>`_ of :func:`unique` for an example.
 
 Making Custom Scan Kernels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

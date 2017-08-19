@@ -69,7 +69,7 @@ def get_config_schema():
         default_libs = ["OpenCL"]
         if "linux" in sys.platform:
             # Requested in
-            # https://github.com/pyopencl/pyopencl/issues/132#issuecomment-314713573
+            # https://github.com/inducer/pyopencl/issues/132#issuecomment-314713573
             # to make life with Altera FPGAs less painful by default.
             default_ldflags = ["-Wl,--no-as-needed"]
         else:

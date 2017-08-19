@@ -12,7 +12,7 @@ Syntax highlighting
 
 You can obtain Vim syntax highlighting for OpenCL C inlined in Python by
 checking `this file
-<https://github.com/pyopencl/pyopencl/blob/master/contrib/pyopencl.vim>`_.
+<https://github.com/inducer/pyopencl/blob/master/contrib/pyopencl.vim>`_.
 
 Note that the triple-quoted strings containing the source must start with
 `"""//CL// ..."""`.
@@ -27,7 +27,7 @@ IPython extension using::
     %load_ext pyopencl.ipython_ext
 
 and then use the ``%%cl_kernel`` 'cell-magic' command. See `this notebook
-<http://nbviewer.ipython.org/urls/raw.githubusercontent.com/pyopencl/pyopencl/master/examples/ipython-demo.ipynb>`_
+<http://nbviewer.ipython.org/urls/raw.githubusercontent.com/inducer/pyopencl/master/examples/ipython-demo.ipynb>`_
 (which ships with PyOpenCL) for a demonstration.
 
 You can pass build options to be used for building the program executable by using the ``-o`` flag on the first line of the cell (next to the ``%%cl_kernel`` directive). For example: `%%cl_kernel -o "-cl-fast-relaxed-math"``.
@@ -109,7 +109,7 @@ Version 2016.3
 .. note::
 
     This version is currently under development. You can get snapshots from
-    PyOpenCL's `git repository <https://github.com/pyopencl/pyopencl>`_
+    PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
 
 Version 2016.2
 --------------
@@ -200,7 +200,7 @@ Version 2013.1
 * Add :func:`pyopencl.tools.match_dtype_to_c_struct`,
   for better integration of the CL and :mod:`numpy` type systems.
 * More/improved Bessel functions.
-  See `the source <https://github.com/pyopencl/pyopencl/tree/master/src/cl>`_.
+  See `the source <https://github.com/inducer/pyopencl/tree/master/src/cl>`_.
 * Add :envvar:`PYOPENCL_NO_CACHE` environment variable to aid debugging.
   (e.g. with AMD's CPU implementation, see
   `their programming guide <http://developer.amd.com/sdks/AMDAPPSDK/assets/AMD_Accelerated_Parallel_Processing_OpenCL_Programming_Guide.pdf>`_)
@@ -510,7 +510,7 @@ Contributors
 ------------
 
 Too many to list. Please see the
-`commit log <https://github.com/pyopencl/pyopencl/commits/master>`_
+`commit log <https://github.com/inducer/pyopencl/commits/master>`_
 for detailed acknowledgments.
 
 Funding

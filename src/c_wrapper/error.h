@@ -14,7 +14,7 @@
 
 // {{{ error
 
-// See https://github.com/pyopencl/pyopencl/pull/83
+// See https://github.com/inducer/pyopencl/pull/83
 #if GCC_VERSION > 50200
 #define PYOPENCL_CL_CASTABLE_THIS this
 #else

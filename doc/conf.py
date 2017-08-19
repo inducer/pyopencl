@@ -93,7 +93,7 @@ html_theme = "alabaster"
 
 html_theme_options = {
         "extra_nav_links": {
-            "🚀 Github": "https://github.com/pyopencl/pyopencl",
+            "🚀 Github": "https://github.com/inducer/pyopencl",
             "💾 Download Releases": "https://pypi.python.org/pypi/pyopencl",
             }
         }
