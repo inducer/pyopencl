@@ -41,7 +41,7 @@ On Linux, type:
 #.  ``conda install pocl``
 
 to install a CPU-based OpenCL driver on Linux. On Windows, you may install e.g.
-the `OpenCL driver from Intel <https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime>`.
+the `OpenCL driver from Intel <https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime>`_.
 OS X has support for OpenCL built into the operating system and does not need
 additional software to run code based on PyOpenCL (but see below).
 
