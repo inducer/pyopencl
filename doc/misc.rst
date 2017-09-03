@@ -25,7 +25,7 @@ On Linux and OS X, the following set of instructions should work:
 The analogous steps for Windows should also work.
 
 Note that PyOpenCL is no fun (i.e. cannot run code) without an OpenCL device
-driver (a so-called "ICD", for installable client driver) that provides access
+driver (a so-called "ICD", for "installable client driver") that provides access
 to hardware through OpenCL.  If you get an error message like
 ``pyopencl.cffi_cl.LogicError: clGetPlatformIDs failed: <unknown error
 -1001>``, that means you have no OpenCL drivers installed.
