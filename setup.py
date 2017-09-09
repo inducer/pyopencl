@@ -6,7 +6,6 @@ from __future__ import absolute_import, print_function
 __copyright__ = """
 Copyright (C) 2009-15 Andreas Kloeckner
 Copyright (C) 2013 Marko Bencun
-Copyright (C) 2013 Marko Bencun
 """
 
 __license__ = """
@@ -31,6 +30,7 @@ THE SOFTWARE.
 
 
 import sys
+from os.path import exists
 
 
 def get_config_schema():
@@ -168,6 +168,18 @@ def main():
 
         from aksetup_helper import count_down_delay
         count_down_delay(delay=5)
+
+    if not exists("pyopencl/compyte/dtypes.py"):
+        print(75 * "-")
+        print("You are missing important files from the pyopencl distribution.")
+        print(75 * "-")
+        print("You may have downloaded a zip or tar file from Github.")
+        print("Those do not work, and I am unable to prevent Github from showing")
+        print("them. Delete that file, and get an actual release file from the")
+        print("Python package index:")
+        print()
+        print("https://pypi.python.org/pypi/pyopencl")
+        sys.exit(1)
 
     # {{{ write cffi build script
 
