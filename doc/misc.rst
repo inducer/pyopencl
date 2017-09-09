@@ -24,49 +24,72 @@ On Linux and OS X, the following set of instructions should work:
 
 The analogous steps for Windows should also work.
 
-Note that PyOpenCL is no fun (i.e. cannot run code).  without an OpenCL device
-driver (a so-called "ICD", for installable client driver) that provides access
+Note that PyOpenCL is no fun (i.e. cannot run code) without an OpenCL device
+driver (a so-called "ICD", for "installable client driver") that provides access
 to hardware through OpenCL.  If you get an error message like
 ``pyopencl.cffi_cl.LogicError: clGetPlatformIDs failed: <unknown error
 -1001>``, that means you have no OpenCL drivers installed.
 
 Note that drivers (ICDs) are separate pieces of software from PyOpenCL.  They
-might be provided by your hardware vendor (e.g.  for Nvidia or AMD GPUs). See
-below for instructions on how to make those work with PyOpenCL from Conda
-Forge.
+might be provided by your hardware vendor (e.g. for Nvidia or AMD GPUs). If
+you have such hardware, see below for instructions on how to make those work
+with PyOpenCL from Conda Forge.
 
-But OpenCL is not restricted to GPUs--it can easily work with CPUs, too.
+It is important to note that OpenCL is not restricted to GPUs. In fact, no special
+hardware is required to use OpenCL for computation--your existing CPU is enough.
 On Linux, type:
 
 #.  ``conda install pocl``
 
 to install a CPU-based OpenCL driver. On Windows, you may install e.g.
-the `OpenCL driver from Intel <https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime>`_.
+the `CPU OpenCL driver from Intel <https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime>`_.
 OS X has support for OpenCL built into the operating system and does not need
 additional software to run code based on PyOpenCL (but see below).
 
-Now you should be ready to run code based on PyOpenCL, such as the `code
+You are now ready to run code based on PyOpenCL, such as the `code
 examples <https://github.com/inducer/pyopencl/tree/master/examples>`_.
 
 Using vendor-supplied OpenCL drivers (Linux)
 --------------------------------------------
 
+The instructions above help you get a basic OpenCL environment going that
+will work independently of whether you have specialized hardware (such as GPUs
+or FPGAs) available. If you *do* have such hardware, read on for how to make
+it work.
+
 On Linux, PyOpenCL finds which drivers are installed by looking for files with
 the extension ``.icd`` in a directory. PyOpenCL as installed from Conda will
 look for these files in
 :file:`/WHERE/YOU/INSTALLED/MINICONDA/etc/OpenCL/vendors`.  They are just
-simple text files containing the file names (or fully qualified path names) to
-the shared libraries providing the OpenCL driver.
+simple text files containing either just  the file names or the fully
+qualified path names of the shared library providing the OpenCL driver.
+
+.. note::
+
+    If you ran the commands above in a
+    `Conda environment <https://conda.io/docs/user-guide/tasks/manage-environments.html>`_
+    (i.e. if the environment indicator on your command line prompt says anything other
+    than ``(root)``), then you may need to use a path like the following instead:
+
+    :file:`/WHERE/YOU/INSTALLED/MINICONDA/envs/ENVIRONMENTNAME/etc/OpenCL/vendors`
+
+    Note that you should replace ``ENVIRONMENTNAME`` with the name of your environment,
+    shown between parentheses on your command line prompt.
 
 If you have other OpenCL drivers installed (such as for your GPU), those will be
 in :file:`/etc/OpenCL/vendors`. You can make them work with PyOpenCL from Conda Forge
 by simply copying them to the above folder.
 
+If you are looking for more information, see `ocl-icd
+<https://github.com/OCL-dev/ocl-icd>`_ and its documentation. Ocl-icd is the
+"ICD loader" used by PyOpenCL when installed from Conda Forge. It represents the
+code behind :file:`libOpenCL.so`.
+
 Getting a better CPU-based OpenCL driver (OS X)
 -----------------------------------------------
 
 OS X has support for both CPU- and GPU-based OpenCL built in. Unfortunately,
-the built-in drivers can be tempermental, and they have not advanced as quickly
+the built-in drivers can be temperamental, and they have not advanced as quickly
 as one might like. To make PyOpenCL use a more up-to-date (and open-source)
 CPU-based OpenCL driver, type the following:
 
@@ -74,14 +97,16 @@ CPU-based OpenCL driver, type the following:
 
 Note that, by installing ``osx-pocl-opencl``, you will no longer be able to
 use PyOpenCL to talk to the system-wide Apple OpenCL drivers. To regain access
-to those drivers, simply uninstall ``osx-pocl-opencl``.
+to those drivers, simply uninstall ``osx-pocl-opencl`` and reinstall ``pyopencl``
+afterwards.
 
 Installing from source
 ----------------------
 
 Information on how to install PyOpenCL *from source* is maintained collaboratively on the
 `PyOpenCL Wiki <http://wiki.tiker.net/PyOpenCL/Installation>`_, but that should
-mostly not be necessary.
+mostly not be necessary unless you have very specific needs or would like to modify
+PyOpenCL yourself.
 
 Tips
 ====
@@ -100,7 +125,7 @@ IPython integration
 -------------------
 
 PyOpenCL comes with IPython integration, which lets you seamlessly integrate
-PyOpenCL kernels into your IPython notebooks. Simply load the PyOpenCL 
+PyOpenCL kernels into your IPython notebooks. Simply load the PyOpenCL
 IPython extension using::
 
     %load_ext pyopencl.ipython_ext
