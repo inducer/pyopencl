@@ -1031,6 +1031,26 @@ def test_fine_grain_svm(ctx_factory):
     assert np.array_equal(orig_ary*2, ary)
 
 
+@pytest.mark.parametrize("dtype", [
+    np.uint,
+    cl.cltypes.uint2,
+    ])
+def test_map_dtype(ctx_factory, dtype):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    dt = np.dtype(dtype)
+
+    b = pyopencl.Buffer(ctx,
+                        pyopencl.mem_flags.READ_ONLY,
+                        dt.itemsize)
+    array, ev = pyopencl.enqueue_map_buffer(queue, b, pyopencl.map_flags.WRITE, 0,
+                                            (1,), dt)
+    with array.base:
+        print(array.dtype)
+        assert array.dtype == dt
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa

@@ -2187,8 +2187,11 @@ def enqueue_map_buffer(queue, buf, flags, offset, shape, dtype,
     _handle_error(_lib.enqueue_map_buffer(_event, _map, queue.ptr, buf.ptr,
                                           flags, offset, byte_size, c_wait_for,
                                           num_wait_for, bool(is_blocking)))
-    return (np.asarray(MemoryMap._create(_map[0], shape, dtype.str, strides)),
-            Event._create(_event[0]))
+    mmap = MemoryMap._create(_map[0], shape, dtype.str, strides)
+    ary = np.asarray(mmap)
+    ary.dtype = dtype
+
+    return (ary, Event._create(_event[0]))
 
 
 def _enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
@@ -2283,8 +2286,10 @@ def enqueue_map_image(queue, img, flags, origin, region, shape, dtype,
                                          flags, origin, origin_l, region,
                                          region_l, _row_pitch, _slice_pitch,
                                          c_wait_for, num_wait_for, is_blocking))
-    return (np.asarray(MemoryMap._create(_map[0], shape, dtype.str, strides)),
-            Event._create(_event[0]), _row_pitch[0], _slice_pitch[0])
+    mmap = MemoryMap._create(_map[0], shape, dtype.str, strides)
+    ary = np.asarray(mmap)
+    ary.dtype = dtype
+    return (ary, Event._create(_event[0]), _row_pitch[0], _slice_pitch[0])
 
 
 def enqueue_fill_image(queue, img, color, origin, region, wait_for=None):
