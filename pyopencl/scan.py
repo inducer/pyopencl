@@ -40,7 +40,7 @@ from pyopencl.tools import (dtype_to_ctype, bitlog2,
 import pyopencl._mymako as mako
 from pyopencl._cluda import CLUDA_PREAMBLE
 
-from pytools.persistent_dict import WriteOncePersistentDict, ReadOnlyEntryError
+from pytools.persistent_dict import WriteOncePersistentDict
 
 
 import logging
@@ -1187,10 +1187,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                       self.second_level_scan_gen_info,
                       self.final_update_gen_info)
 
-            try:
-                generic_scan_kernel_cache[cache_key] = result
-            except ReadOnlyEntryError:
-                pass
+            generic_scan_kernel_cache.stored_if_not_present(cache_key, result)
 
         # Build the kernels.
         self.first_level_scan_info = self.first_level_scan_gen_info.build(

@@ -29,7 +29,7 @@ import numpy as np
 
 from warnings import warn
 from pyopencl._cffi import ffi as _ffi
-from pytools.persistent_dict import WriteOncePersistentDict, ReadOnlyEntryError
+from pytools.persistent_dict import WriteOncePersistentDict
 from pyopencl.tools import _NumpyTypesKeyBuilder
 
 _PYPY = '__pypy__' in sys.builtin_module_names
@@ -382,10 +382,7 @@ def generate_enqueue_and_set_args(function_name,
 
     if not from_cache:
         result = _generate_enqueue_and_set_args_module(*cache_key)
-        try:
-            invoker_cache[cache_key] = result
-        except ReadOnlyEntryError:
-            pass
+        invoker_cache.store_if_not_present(cache_key, result)
 
     pmod, enqueue_name = result
 
