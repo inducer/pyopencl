@@ -29,7 +29,7 @@ import numpy as np
 
 from warnings import warn
 from pyopencl._cffi import ffi as _ffi
-from pytools.persistent_dict import PersistentDict
+from pytools.persistent_dict import WriteOncePersistentDict
 from pyopencl.tools import _NumpyTypesKeyBuilder
 
 _PYPY = '__pypy__' in sys.builtin_module_names
@@ -358,7 +358,8 @@ def _generate_enqueue_and_set_args_module(function_name,
     return gen.get_picklable_module(), enqueue_name
 
 
-invoker_cache = PersistentDict("pyopencl-invoker-cache-v1",
+invoker_cache = WriteOncePersistentDict(
+        "pyopencl-invoker-cache-v1",
         key_builder=_NumpyTypesKeyBuilder())
 
 
@@ -381,7 +382,7 @@ def generate_enqueue_and_set_args(function_name,
 
     if not from_cache:
         result = _generate_enqueue_and_set_args_module(*cache_key)
-        invoker_cache[cache_key] = result
+        invoker_cache.store_if_not_present(cache_key, result)
 
     pmod, enqueue_name = result
 
