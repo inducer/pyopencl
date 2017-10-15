@@ -40,7 +40,7 @@ from pyopencl.tools import (dtype_to_ctype, bitlog2,
 import pyopencl._mymako as mako
 from pyopencl._cluda import CLUDA_PREAMBLE
 
-from pytools.persistent_dict import PersistentDict
+from pytools.persistent_dict import WriteOncePersistentDict
 
 
 import logging
@@ -1132,7 +1132,7 @@ class _GenericScanKernelBase(object):
     # }}}
 
 
-generic_scan_kernel_cache = PersistentDict(
+generic_scan_kernel_cache = WriteOncePersistentDict(
         "pyopencl-generated-scan-kernel-cache-v1",
         key_builder=_NumpyTypesKeyBuilder())
 
@@ -1187,7 +1187,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                       self.second_level_scan_gen_info,
                       self.final_update_gen_info)
 
-            generic_scan_kernel_cache[cache_key] = result
+            generic_scan_kernel_cache.store_if_not_present(cache_key, result)
 
         # Build the kernels.
         self.first_level_scan_info = self.first_level_scan_gen_info.build(
