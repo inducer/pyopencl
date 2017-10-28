@@ -481,9 +481,14 @@ class Array(object):
         self.allocator = allocator
 
         if data is None:
-            if not alloc_nbytes:
-                # Work around CL not allowing zero-sized buffers.
-                alloc_nbytes = 1
+            if alloc_nbytes <= 0:
+                if alloc_nbytes == 0:
+                    # Work around CL not allowing zero-sized buffers.
+                    alloc_nbytes = 1
+
+                else:
+                    raise ValueError("cannot allocate CL buffer with "
+                            "negative size")
 
             if allocator is None:
                 if context is None and queue is not None:
