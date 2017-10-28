@@ -94,7 +94,7 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
             else:
                 try:
                     arg_buf = memoryview(arg)
-                except:
+                except Exception:
                     raise RuntimeError("cannot capture: "
                             "unsupported arg nr %d (0-based)" % i)
 

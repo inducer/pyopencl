@@ -1001,8 +1001,8 @@ class ListOfListsBuilder:
         if kwargs:
             raise TypeError("invalid keyword arguments: '%s'" % ", ".join(kwargs))
 
-        for l in omit_lists:
-            if not any(l == name for name, _ in self.list_names_and_dtypes):
+        for oml in omit_lists:
+            if not any(oml == name for name, _ in self.list_names_and_dtypes):
                 raise ValueError("invalid list name '%s' in omit_lists")
 
         result = {}

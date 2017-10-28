@@ -158,9 +158,9 @@ def test_if_positive(ctx_factory):
 
     from pyopencl.clrandom import rand as clrand
 
-    l = 20000
-    a_gpu = clrand(queue, (l,), np.float32)
-    b_gpu = clrand(queue, (l,), np.float32)
+    ary_len = 20000
+    a_gpu = clrand(queue, (ary_len,), np.float32)
+    b_gpu = clrand(queue, (ary_len,), np.float32)
     a = a_gpu.get()
     b = b_gpu.get()
 

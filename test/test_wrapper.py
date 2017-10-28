@@ -136,7 +136,7 @@ def test_get_info(ctx_factory):
 
                 try:
                     func(info)
-                except:
+                except Exception:
                     msg = "failed get_info", type(cl_obj), info_name
 
                     if find_quirk(QUIRKS, cl_obj, info):
@@ -147,7 +147,7 @@ def test_get_info(ctx_factory):
                 if try_attr_form:
                     try:
                         getattr(cl_obj, info_name.lower())
-                    except:
+                    except Exception:
                         print("failed attr-based get_info", type(cl_obj), info_name)
 
                         if find_quirk(QUIRKS, cl_obj, info):

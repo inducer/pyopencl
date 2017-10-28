@@ -52,7 +52,7 @@ def has_amd_double_support(dev):
 def reasonable_work_group_size_multiple(dev, ctx=None):
     try:
         return dev.warp_size_nv
-    except:
+    except Exception:
         pass
 
     if ctx is None:
@@ -77,7 +77,7 @@ def nv_compute_capability(dev):
     try:
         return (dev.compute_capability_major_nv,
                 dev.compute_capability_minor_nv)
-    except:
+    except Exception:
         return None
 
 
@@ -281,7 +281,7 @@ def get_simd_group_size(dev, type_size):
     """
     try:
         return dev.warp_size_nv
-    except:
+    except Exception:
         pass
 
     lc_vendor = dev.platform.vendor.lower()

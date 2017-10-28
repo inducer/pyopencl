@@ -569,7 +569,7 @@ def create_some_context(interactive=None, answers=None, cache_dir=None):
             import sys
             if not sys.stdin.isatty():
                 interactive = False
-        except:
+        except Exception:
             interactive = False
 
     def cc_print(s):
@@ -944,7 +944,7 @@ DTYPE_TO_CHANNEL_TYPE = {
     }
 try:
     np.float16
-except:
+except Exception:
     pass
 else:
     DTYPE_TO_CHANNEL_TYPE[np.dtype(np.float16)] = channel_type.HALF_FLOAT

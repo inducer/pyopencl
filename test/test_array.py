@@ -513,7 +513,7 @@ def test_bitwise(ctx_factory):
     from pyopencl.clrandom import rand as clrand
 
     for a_dtype, b_dtype in product(dtypes, dtypes):
-        l = 16
+        ary_len = 16
 
         np.random.seed(10)
 
@@ -521,9 +521,11 @@ def test_bitwise(ctx_factory):
         int32_max = np.iinfo(np.int32).max
 
         a_dev = clrand(
-            queue, (l,), a=int32_min, b=1+int32_max, dtype=np.int64).astype(a_dtype)
+            queue, (ary_len,), a=int32_min, b=1+int32_max, dtype=np.int64
+            ).astype(a_dtype)
         b_dev = clrand(
-            queue, (l,), a=int32_min, b=1+int32_max, dtype=np.int64).astype(b_dtype)
+            queue, (ary_len,), a=int32_min, b=1+int32_max, dtype=np.int64
+            ).astype(b_dtype)
 
         a = a_dev.get()
         b = b_dev.get()
@@ -655,7 +657,7 @@ def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
 def test_numpy_integer_shape(ctx_factory):
     try:
         list(np.int32(17))
-    except:
+    except Exception:
         pass
     else:
         from pytest import skip
@@ -754,8 +756,8 @@ def test_diff(ctx_factory):
 
     from pyopencl.clrandom import rand as clrand
 
-    l = 20000
-    a_dev = clrand(queue, (l,), dtype=np.float32)
+    ary_len = 20000
+    a_dev = clrand(queue, (ary_len,), dtype=np.float32)
     a = a_dev.get()
 
     err = la.norm(
@@ -804,16 +806,16 @@ def test_slice(ctx_factory):
 
     tp = np.float32
 
-    l = 20000
-    a_gpu = clrand(queue, (l,), dtype=tp)
-    b_gpu = clrand(queue, (l,), dtype=tp)
+    ary_len = 20000
+    a_gpu = clrand(queue, (ary_len,), dtype=tp)
+    b_gpu = clrand(queue, (ary_len,), dtype=tp)
     a = a_gpu.get()
     b = b_gpu.get()
 
     from random import randrange
     for i in range(20):
-        start = randrange(l)
-        end = randrange(start, l)
+        start = randrange(ary_len)
+        end = randrange(start, ary_len)
 
         a_gpu_slice = tp(2)*a_gpu[start:end]
         a_slice = tp(2)*a[start:end]
@@ -821,8 +823,8 @@ def test_slice(ctx_factory):
         assert la.norm(a_gpu_slice.get() - a_slice) == 0
 
     for i in range(20):
-        start = randrange(l)
-        end = randrange(start, l)
+        start = randrange(ary_len)
+        end = randrange(start, ary_len)
 
         a_gpu[start:end] = tp(2)*b[start:end]
         a[start:end] = tp(2)*b[start:end]
@@ -830,8 +832,8 @@ def test_slice(ctx_factory):
         assert la.norm(a_gpu.get() - a) == 0
 
     for i in range(20):
-        start = randrange(l)
-        end = randrange(start, l)
+        start = randrange(ary_len)
+        end = randrange(start, ary_len)
 
         a_gpu[start:end] = tp(2)*b_gpu[start:end]
         a[start:end] = tp(2)*b[start:end]
@@ -868,9 +870,9 @@ def test_comparisons(ctx_factory):
 
     from pyopencl.clrandom import rand as clrand
 
-    l = 20000
-    a_dev = clrand(queue, (l,), dtype=np.float32)
-    b_dev = clrand(queue, (l,), dtype=np.float32)
+    ary_len = 20000
+    a_dev = clrand(queue, (ary_len,), dtype=np.float32)
+    b_dev = clrand(queue, (ary_len,), dtype=np.float32)
 
     a = a_dev.get()
     b = b_dev.get()
@@ -897,8 +899,8 @@ def test_any_all(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    l = 20000
-    a_dev = cl_array.zeros(queue, (l,), dtype=np.int8)
+    ary_len = 20000
+    a_dev = cl_array.zeros(queue, (ary_len,), dtype=np.int8)
 
     assert not a_dev.all().get()
     assert not a_dev.any().get()

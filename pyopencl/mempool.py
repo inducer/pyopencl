@@ -128,19 +128,19 @@ class MemoryPool(object):
 
     @classmethod
     def bin_number(cls, size):
-        l = bitlog2(size)
+        bl2 = bitlog2(size)
 
         mantissa_bits = cls.mantissa_bits
-        if l >= mantissa_bits:
-            shifted = size >> (l - mantissa_bits)
+        if bl2 >= mantissa_bits:
+            shifted = size >> (bl2 - mantissa_bits)
         else:
-            shifted = size << (mantissa_bits - l)
+            shifted = size << (mantissa_bits - bl2)
 
         assert not (size and (shifted & (1 << mantissa_bits)) == 0)
 
         chopped = shifted & cls.mantissa_mask
 
-        return l << mantissa_bits | chopped
+        return bl2 << mantissa_bits | chopped
 
     @classmethod
     def alloc_size(cls, bin_nr):

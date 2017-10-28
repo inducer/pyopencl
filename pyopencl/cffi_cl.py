@@ -62,7 +62,7 @@ _pyrefs = {}
 def _py_deref(handle):
     try:
         del _pyrefs[handle]
-    except:
+    except Exception:
         pass
 
 
@@ -96,7 +96,7 @@ _CPY2 = not _PYPY and sys.version_info < (3,)
 try:
     _unicode = eval('unicode')
     _ffi_pystr = _ffi.string
-except:
+except Exception:
     _unicode = str
     _bytes = bytes
 
@@ -105,7 +105,7 @@ except:
 else:
     try:
         _bytes = bytes
-    except:
+    except Exception:
         _bytes = str
 
 
@@ -859,7 +859,7 @@ def _norm_shape_dtype(shape, dtype, order="C", strides=None, name=""):
     if not isinstance(shape, tuple):
         try:
             shape = tuple(shape)
-        except:
+        except Exception:
             shape = (shape,)
     if strides is None:
         if order in "cC":
@@ -1611,7 +1611,7 @@ class _Program(_Common):
         for dev in self.get_info(program_info.DEVICES):
             try:
                 log = self.get_build_info(dev, program_build_info.LOG)
-            except:
+            except Exception:
                 log = "<error retrieving log>"
 
             build_logs.append((dev, log))
@@ -2545,25 +2545,25 @@ class ImageDescriptor(object):
 
     @_write_only_property
     def shape(self, shape):
-        l = len(shape)
-        if l > 3:
+        sdims = len(shape)
+        if sdims > 3:
             raise LogicError("shape has too many components",
                              status_code.INVALID_VALUE, "transfer")
         desc = self.ptr
-        desc.image_width = shape[0] if l > 0 else 1
-        desc.image_height = shape[1] if l > 1 else 1
-        desc.image_depth = shape[2] if l > 2 else 1
+        desc.image_width = shape[0] if sdims > 0 else 1
+        desc.image_height = shape[1] if sdims > 1 else 1
+        desc.image_depth = shape[2] if sdims > 2 else 1
         desc.image_array_size = desc.image_depth
 
     @_write_only_property
     def pitches(self, pitches):
-        l = len(pitches)
-        if l > 2:
+        pdims = len(pitches)
+        if pdims > 2:
             raise LogicError("pitches has too many components",
                              status_code.INVALID_VALUE, "transfer")
         desc = self.ptr
-        desc.image_row_pitch = pitches[0] if l > 0 else 1
-        desc.image_slice_pitch = pitches[1] if l > 1 else 1
+        desc.image_row_pitch = pitches[0] if pdims > 0 else 1
+        desc.image_slice_pitch = pitches[1] if pdims > 1 else 1
 
     @_write_only_property
     def buffer(self, buff):

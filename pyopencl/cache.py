@@ -310,7 +310,7 @@ def retrieve_from_cache(cache_dir, cache_key):
             else:
                 mod_cache_dir_m.reset()
 
-        except:
+        except Exception:
             cleanup_m.error_clean_up()
             raise
     finally:
@@ -455,7 +455,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
                         log=logs[i]), info_file)
                     info_file.close()
 
-            except:
+            except Exception:
                 cleanup_m.error_clean_up()
                 raise
         finally:

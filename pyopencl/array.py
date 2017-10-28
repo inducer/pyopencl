@@ -58,7 +58,7 @@ try:
 
     def _dtype_is_object(t):
         return t == object
-except:
+except Exception:
     def _dtype_is_object(t):
         return False
 
