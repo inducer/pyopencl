@@ -52,11 +52,8 @@ def get_config_schema():
                 ]
 
         default_libs = []
-        from pkg_resources import parse_version
-        if parse_version(osx_ver) < parse_version('10.12'):  # before Sierra
-            default_cxxflags = default_cxxflags + ['-stdlib=libc++']
         default_cxxflags = default_cxxflags + [
-                '-mmacosx-version-min=10.7',
+                '-stdlib=libc++', '-mmacosx-version-min=10.7',
                 '-arch', 'i386', '-arch', 'x86_64'
                 ]
 
