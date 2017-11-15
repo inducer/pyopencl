@@ -736,7 +736,8 @@ class ListOfListsBuilder:
     def __init__(self, context, list_names_and_dtypes, generate_template,
             arg_decls, count_sharing=None, devices=None,
             name_prefix="plb_build_list", options=[], preamble="",
-            debug=False, complex_kernel=False):
+            debug=False, complex_kernel=False,
+            eliminate_empty_output_lists=False):
         """
         :arg context: A :class:`pyopencl.Context`.
         :arg list_names_and_dtypes: a list of `(name, dtype)` tuples
@@ -810,6 +811,7 @@ class ListOfListsBuilder:
         self.debug = debug
 
         self.complex_kernel = complex_kernel
+        self.eliminate_empty_output_lists = eliminate_empty_output_lists
 
     # {{{ kernel generators
 

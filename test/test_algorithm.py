@@ -847,6 +847,36 @@ def test_list_builder(ctx_factory):
     assert inf.count == 3000
     assert (inf.lists.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
 
+    builder = ListOfListsBuilder(
+        context,
+        [("mylist1", np.int32), ("mylist2", np.int32)],
+        """//CL//
+            void generate(LIST_ARG_DECL USER_ARG_DECL index_type i)
+            {
+                if (i % 5 == 0)
+                {
+                    for (int j = 0; j < 10; ++j)
+                    {
+                        APPEND_mylist1(j);
+                        APPEND_mylist2(1);
+                    }
+                }
+            }
+        """,
+        arg_decls=[],
+        eliminate_empty_output_lists=True)
+
+    result, evt = builder(queue, 1000)
+
+    mylist1 = result["mylist1"]
+    assert mylist1.count == 2000
+    assert (mylist1.starts.get()[:5] == [0, 10, 20, 30, 40]).all()
+    assert (mylist1.indices.get()[:5] == [0, 5, 10, 15, 20]).all()
+    assert (mylist1.lists.get()[:5] == [0, 1, 2, 3, 4]).all()
+    mylist2 = result["mylist2"]
+    assert mylist2.count == 2000
+    assert (mylist2.lists.get()[:5] == [1, 1, 1, 1, 1]).all()
+
 
 def test_key_value_sorter(ctx_factory):
     from pytest import importorskip
