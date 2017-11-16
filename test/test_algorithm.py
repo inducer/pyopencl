@@ -855,10 +855,10 @@ def test_list_builder(ctx_factory):
             {
                 if (i % 5 == 0)
                 {
-                    for (int j = 0; j < 10; ++j)
+                    for (int j = 0; j < i / 5; ++j)
                     {
                         APPEND_mylist1(j);
-                        APPEND_mylist2(1);
+                        APPEND_mylist2(j + 1);
                     }
                 }
             }
@@ -869,13 +869,13 @@ def test_list_builder(ctx_factory):
     result, evt = builder(queue, 1000)
 
     mylist1 = result["mylist1"]
-    assert mylist1.count == 2000
-    assert (mylist1.starts.get()[:5] == [0, 10, 20, 30, 40]).all()
-    assert (mylist1.indices.get()[:5] == [0, 5, 10, 15, 20]).all()
-    assert (mylist1.lists.get()[:5] == [0, 1, 2, 3, 4]).all()
+    assert mylist1.count == 19900
+    assert (mylist1.starts.get()[:5] == [0, 1, 3, 6, 10]).all()
+    assert (mylist1.indices.get()[:5] == [5, 10, 15, 20, 25]).all()
+    assert (mylist1.lists.get()[:6] == [0, 0, 1, 0, 1, 2]).all()
     mylist2 = result["mylist2"]
-    assert mylist2.count == 2000
-    assert (mylist2.lists.get()[:5] == [1, 1, 1, 1, 1]).all()
+    assert mylist2.count == 19900
+    assert (mylist2.lists.get()[:6] == [1, 1, 2, 1, 2, 3]).all()
 
 
 def test_key_value_sorter(ctx_factory):
