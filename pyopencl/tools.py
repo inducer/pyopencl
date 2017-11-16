@@ -242,7 +242,10 @@ def pytest_generate_tests_for_pyopencl(metafunc):
             return cl.Context([self.device])
 
         def __str__(self):
-            return "<context factory for %s>" % self.device
+            # Don't show address, so that parallel test collection works
+            return ("<context factory for <pyopencl.Device '%s' on '%s'>" %
+                    (self.device.name.strip(),
+                     self.device.platform.name.strip()))
 
     test_plat_and_dev = get_test_platforms_and_devices()
 
