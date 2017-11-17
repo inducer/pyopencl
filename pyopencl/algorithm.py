@@ -648,7 +648,12 @@ void ${kernel_name}(${kernel_list_arg_decl} USER_ARG_DECL index_type n)
                 %if name not in count_sharing:
                     index_type plb_${name}_index;
                     if (plb_${name}_start_index)
-                        plb_${name}_index = plb_${name}_start_index[i];
+                        %if eliminate_empty_output_lists:
+                            plb_${name}_index =
+                            plb_${name}_start_index[plb_${name}_mask_scan[i]];
+                        %else:
+                            plb_${name}_index = plb_${name}_start_index[i];
+                        %endif
                     else
                         plb_${name}_index = 0;
                 %endif
@@ -826,6 +831,29 @@ class ListOfListsBuilder:
                 output_statement="ary[i+1] = item;",
                 devices=self.devices)
 
+    @memoize_method
+    def get_compress_kernel(self, index_dtype):
+        from pyopencl.scan import GenericScanKernel
+        return GenericScanKernel(
+                self.context, index_dtype,
+                arguments=Template("""
+                    __global ${index_t} *count,
+                    __global ${index_t} *indices,
+                    __global ${index_t} *mask_scan,
+                    __global ${index_t} *num_non_empty_list
+                    """).render(index_t=dtype_to_ctype(index_dtype)),
+                input_expr="count[i] == 0 ? 0 : 1",
+                scan_expr="a+b", neutral="0",
+                output_statement="""
+                    mask_scan[i + 1] = item;
+                    if (prev_item != item) {
+                        indices[item - 1] = i;
+                        count[item - 1] = count[i];
+                    }
+                    if (i + 1 == N) *num_non_empty_list = item;
+                    """,
+                devices=self.devices)
+
     def do_not_vectorize(self):
         from pytools import any
         return (self.complex_kernel
@@ -860,6 +888,7 @@ class ListOfListsBuilder:
                     self.context.devices),
                 debug=self.debug,
                 do_not_vectorize=self.do_not_vectorize(),
+                eliminate_empty_output_lists=self.eliminate_empty_output_lists,
 
                 kernel_list_arg_decl=_get_arg_decl(kernel_list_args),
                 kernel_list_arg_values=_get_arg_list(user_list_args, prefix="&"),
@@ -910,6 +939,10 @@ class ListOfListsBuilder:
             kernel_list_args.append(
                     VectorArg(index_dtype, "plb_%s_start_index" % name))
 
+            if self.eliminate_empty_output_lists:
+                kernel_list_args.append(
+                    VectorArg(index_dtype, "plb_%s_mask_scan" % name))
+
             index_name = "plb_%s_index" % name
             user_list_args.append(OtherArg("%s *%s" % (
                 index_ctype, index_name), index_name))
@@ -926,6 +959,7 @@ class ListOfListsBuilder:
                     self.context.devices),
                 debug=self.debug,
                 do_not_vectorize=self.do_not_vectorize(),
+                eliminate_empty_output_lists=self.eliminate_empty_output_lists,
 
                 kernel_list_arg_decl=_get_arg_decl(kernel_list_args),
                 kernel_list_arg_values=kernel_list_arg_values,
@@ -1016,6 +1050,8 @@ class ListOfListsBuilder:
         count_kernel = self.get_count_kernel(index_dtype)
         write_kernel = self.get_write_kernel(index_dtype)
         scan_kernel = self.get_scan_kernel(index_dtype)
+        if self.eliminate_empty_output_lists:
+            compress_kernel = self.get_compress_kernel(index_dtype)
 
         # {{{ allocate memory for counts
 
@@ -1052,6 +1088,26 @@ class ListOfListsBuilder:
                 *(tuple(count_list_args) + args + (n_objects,)),
                 **dict(wait_for=wait_for))
 
+        if self.eliminate_empty_output_lists:
+            for name, dtype in self.list_names_and_dtypes:
+                if name in omit_lists:
+                    continue
+
+                info_record = result[name]
+                info_record.indices = cl.array.empty(
+                    queue, (n_objects + 1,), index_dtype, allocator=allocator)
+                info_record.num_nonempty_lists = cl.array.empty(
+                    queue, (1,), index_dtype, allocator=allocator)
+                info_record.mask_scan = cl.array.empty(
+                    queue, (n_objects + 1,), index_dtype, allocator=allocator)
+                info_record.mask_scan[0] = 0
+                info_record.compress_events = compress_kernel(
+                    info_record.starts,
+                    info_record.indices,
+                    info_record.mask_scan,
+                    info_record.num_nonempty_lists,
+                    wait_for=[count_event] + info_record.mask_scan.events)
+
         # {{{ run scans
 
         scan_events = []
@@ -1063,9 +1119,23 @@ class ListOfListsBuilder:
                 continue
 
             info_record = result[name]
+            if self.eliminate_empty_output_lists:
+                info_record.compress_events.wait()
+                num_nonempty_lists = info_record.num_nonempty_lists.get()[0]
+                info_record.num_nonempty_lists = num_nonempty_lists
+                info_record.starts = info_record.starts[:num_nonempty_lists + 1]
+                info_record.indices = info_record.indices[:num_nonempty_lists]
+                info_record.starts[-1] = 0
+
             starts_ary = info_record.starts
-            evt = scan_kernel(starts_ary, wait_for=[count_event],
-                    size=n_objects)
+            if self.eliminate_empty_output_lists:
+                evt = scan_kernel(
+                        starts_ary,
+                        size=info_record.num_nonempty_lists,
+                        wait_for=starts_ary.events)
+            else:
+                evt = scan_kernel(starts_ary, wait_for=[count_event],
+                        size=n_objects)
 
             starts_ary.setitem(0, 0, queue=queue, wait_for=[evt])
             scan_events.extend(starts_ary.events)
@@ -1102,6 +1172,9 @@ class ListOfListsBuilder:
 
             if name not in self.count_sharing:
                 write_list_args.append(info_record.starts.data)
+
+            if self.eliminate_empty_output_lists:
+                write_list_args.append(info_record.mask_scan.data)
 
         # }}}
 
