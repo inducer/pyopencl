@@ -833,15 +833,22 @@ class ListOfListsBuilder:
 
     @memoize_method
     def get_compress_kernel(self, index_dtype):
+        arguments = """
+            __global ${index_t} *count,
+            __global ${index_t} *indices,
+            __global ${index_t} *mask_scan,
+            __global ${index_t} *num_non_empty_list
+        """
+        from sys import version_info
+        if (version_info > (3, 0)):
+            arguments = Template(arguments)
+        else:
+            arguments = Template(arguments, disable_unicode=True)
+
         from pyopencl.scan import GenericScanKernel
         return GenericScanKernel(
                 self.context, index_dtype,
-                arguments=Template("""
-                    __global ${index_t} *count,
-                    __global ${index_t} *indices,
-                    __global ${index_t} *mask_scan,
-                    __global ${index_t} *num_non_empty_list
-                    """).render(index_t=dtype_to_ctype(index_dtype)),
+                arguments=arguments.render(index_t=dtype_to_ctype(index_dtype)),
                 input_expr="count[i] == 0 ? 0 : 1",
                 scan_expr="a+b", neutral="0",
                 output_statement="""
