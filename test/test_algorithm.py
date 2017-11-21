@@ -871,7 +871,7 @@ def test_list_builder(ctx_factory):
     mylist1 = result["mylist1"]
     assert mylist1.count == 19900
     assert (mylist1.starts.get()[:5] == [0, 1, 3, 6, 10]).all()
-    assert (mylist1.indices.get()[:5] == [5, 10, 15, 20, 25]).all()
+    assert (mylist1.nonempty_indices.get()[:5] == [5, 10, 15, 20, 25]).all()
     assert (mylist1.lists.get()[:6] == [0, 0, 1, 0, 1, 2]).all()
     mylist2 = result["mylist2"]
     assert mylist2.count == 19900
