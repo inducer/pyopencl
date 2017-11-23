@@ -651,7 +651,9 @@ void ${kernel_name}(${kernel_list_arg_decl} USER_ARG_DECL index_type n)
                     if (plb_${name}_start_index)
                         %if eliminate_empty_output_lists:
                             plb_${name}_index =
-                            plb_${name}_start_index[${name}_compressed_indices[i]];
+                                plb_${name}_start_index[
+                                    ${name}_compressed_indices[i]
+                                ];
                         %else:
                             plb_${name}_index = plb_${name}_start_index[i];
                         %endif
