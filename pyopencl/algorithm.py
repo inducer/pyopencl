@@ -5,7 +5,8 @@ from __future__ import absolute_import
 from six.moves import range
 from six.moves import zip
 
-__copyright__ = """Copyright 2011-2012 Andreas Kloeckner"""
+__copyright__ = """Copyright 2011-2012 Andreas Kloeckner \
+                   Copyright 2017 Hao Gao"""
 
 __license__ = """
 Permission is hereby granted, free of charge, to any person
@@ -1087,7 +1088,12 @@ class ListOfListsBuilder:
 
             # The scan will turn the "counts" array into the "starts" array
             # in-place.
-            result[name] = BuiltList(starts=counts)
+            if self.eliminate_empty_output_lists:
+                result[name] = BuiltList(count=None, starts=counts, lists=None,
+                                         num_nonempty_lists=None,
+                                         nonempty_indices=None)
+            else:
+                result[name] = BuiltList(count=None, starts=counts, lists=None)
             count_list_args.append(counts.data)
 
         # }}}
