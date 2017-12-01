@@ -524,7 +524,7 @@ class RadixSort(object):
         if allocator is None:
             allocator = args[self.first_array_arg_idx].allocator
 
-        queue = kwargs.pop("allocator", None)
+        queue = kwargs.pop("queue", None)
         if queue is None:
             queue = args[self.first_array_arg_idx].queue
 
