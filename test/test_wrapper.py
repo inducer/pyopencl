@@ -946,11 +946,13 @@ def test_coarse_grain_svm(ctx_factory):
 
     dev = ctx.devices[0]
 
-    has_svm = (ctx._get_cl_version() < (2, 0) or
-                cl.get_cl_header_version() < (2, 0))
+    has_svm = (ctx._get_cl_version() >= (2, 0) and
+                cl.get_cl_header_version() >= (2, 0))
 
     if dev.platform.name == "Portable Computing Language":
-        has_svm = get_pocl_version(dev.platform) >= (1, 0)
+        has_svm = (
+                get_pocl_version(dev.platform) >= (1, 0)
+                and cl.get_cl_header_version() >= (2, 0))
 
     if not has_svm:
         from pytest import skip
