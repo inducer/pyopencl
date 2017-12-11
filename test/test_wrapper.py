@@ -630,7 +630,8 @@ def test_can_build_binary(ctx_factory):
 def test_enqueue_barrier_marker(ctx_factory):
     ctx = ctx_factory()
     # Still relevant on pocl 0.14.
-    _skip_if_pocl(ctx.devices[0].platform, None, 'pocl crashes on enqueue_barrier')
+    _skip_if_pocl(
+            ctx.devices[0].platform, (0, 14), 'pocl crashes on enqueue_barrier')
     queue = cl.CommandQueue(ctx)
     cl.enqueue_barrier(queue)
     evt1 = cl.enqueue_marker(queue)
@@ -721,9 +722,9 @@ def test_user_event(ctx_factory):
         from pytest import skip
         skip("UserEvent is only available in OpenCL 1.1")
 
-    if ctx.devices[0].platform.name == "Portable Computing Language":
-        # https://github.com/pocl/pocl/issues/201
-        pytest.xfail("POCL's user events don't work right")
+    # https://github.com/pocl/pocl/issues/201
+    _skip_if_pocl(ctx.devices[0].platform, (0, 13),
+            "pocl's user events don't work right")
 
     status = {}
 
@@ -943,11 +944,20 @@ def test_coarse_grain_svm(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
-    if (ctx._get_cl_version() < (2, 0) or
-            cl.get_cl_header_version() < (2, 0)):
+    dev = ctx.devices[0]
+
+    has_svm = (ctx._get_cl_version() >= (2, 0) and
+                cl.get_cl_header_version() >= (2, 0))
+
+    if dev.platform.name == "Portable Computing Language":
+        has_svm = (
+                get_pocl_version(dev.platform) >= (1, 0)
+                and cl.get_cl_header_version() >= (2, 0))
+
+    if not has_svm:
         from pytest import skip
         skip("SVM only available in OpenCL 2.0 and higher")
-    dev = ctx.devices[0]
+
     if ("AMD" in dev.platform.name
             and dev.type & cl.device_type.CPU):
         pytest.xfail("AMD CPU doesn't do coarse-grain SVM")
@@ -958,10 +968,7 @@ def test_coarse_grain_svm(ctx_factory):
         # https://bitbucket.org/pypy/numpy/issues/52
         assert isinstance(svm_ary.mem.base, cl.SVMAllocation)
 
-    if (dev.platform.name != "Portable Computing Language"
-            or get_pocl_version(dev.platform) >= (0, 14)):
-        # pocl 0.13 has a bug misinterpreting the size parameter
-        cl.enqueue_svm_memfill(queue, svm_ary, np.zeros((), svm_ary.mem.dtype))
+    cl.enqueue_svm_memfill(queue, svm_ary, np.zeros((), svm_ary.mem.dtype))
 
     with svm_ary.map_rw(queue) as ary:
         ary.fill(17)
@@ -985,7 +992,7 @@ def test_coarse_grain_svm(ctx_factory):
 
     if ctx.devices[0].platform.name != "Portable Computing Language":
         # "Blocking memcpy is unimplemented (clEnqueueSVMMemcpy.c:61)"
-        # in pocl 0.13 and 0.14-pre.
+        # in pocl up to and including 1.0rc1.
 
         cl.enqueue_copy(queue, new_ary, svm_ary)
         assert np.array_equal(orig_ary*2, new_ary)
