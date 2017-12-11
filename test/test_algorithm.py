@@ -40,6 +40,7 @@ from pyopencl.tools import (  # noqa
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 from pyopencl.scan import (InclusiveScanKernel, ExclusiveScanKernel,
         GenericScanKernel, GenericDebugScanKernel)
+from pyopencl.characterize import get_pocl_version
 
 
 # {{{ elementwise
@@ -933,8 +934,9 @@ def test_bitonic_sort(ctx_factory, size, dtype):
         pytest.xfail("Bitonic sort won't work on Apple CPU: no workgroup "
             "parallelism")
     if (dev.platform.name == "Portable Computing Language"
-            and dtype == np.float64):
-        pytest.xfail("Double precision bitonic sort doesn't work on POCL")
+            and dtype == np.float64
+            and get_pocl_version(dev.platform) < (1, 0)):
+        pytest.xfail("Double precision bitonic sort doesn't work on POCL < 1.0")
 
     if dtype == np.float64 and not has_double_support(dev):
         from pytest import skip
@@ -981,8 +983,9 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
         pytest.xfail("Bitonic sort won't work on Apple CPU: no workgroup "
             "parallelism")
     if (dev.platform.name == "Portable Computing Language"
-            and dtype == np.float64):
-        pytest.xfail("Double precision bitonic sort doesn't work on POCL")
+            and dtype == np.float64
+            and get_pocl_version(dev.platform) < (1, 0)):
+        pytest.xfail("Double precision bitonic sort doesn't work on POCL < 1.0")
 
     if dtype == np.float64 and not has_double_support(dev):
         from pytest import skip
