@@ -1138,6 +1138,8 @@ class Array(object):
             self.add_event(
                     self._scalar_binop(self, self, other, op="&"))
 
+        return self
+
     def __ior__(self, other):
         common_dtype = _get_common_dtype(self, other, self.queue)
 
@@ -1150,6 +1152,8 @@ class Array(object):
             self.add_event(
                     self._scalar_binop(self, self, other, op="|"))
 
+        return self
+
     def __ixor__(self, other):
         common_dtype = _get_common_dtype(self, other, self.queue)
 
@@ -1161,6 +1165,8 @@ class Array(object):
         else:
             self.add_event(
                     self._scalar_binop(self, self, other, op="^"))
+
+        return self
 
     def _zero_fill(self, queue=None, wait_for=None):
         queue = queue or self.queue

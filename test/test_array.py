@@ -552,14 +552,17 @@ def test_bitwise(ctx_factory):
 
         for op in [o.iand, o.ior, o.ixor]:
             res_dev = a_dev.copy()
-            op(res_dev, b_dev)
+            op_res = op(res_dev, b_dev)
+            assert op_res is res_dev
+
             res = a.copy()
             op(res, b)
 
             assert (res_dev.get() == res).all()
 
             res_dev = a_dev.copy()
-            op(res_dev, s)
+            op_res = op(res_dev, s)
+            assert op_res is res_dev
             res = a.copy()
             op(res, s)
 
