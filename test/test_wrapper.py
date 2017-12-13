@@ -629,9 +629,9 @@ def test_can_build_binary(ctx_factory):
 
 def test_enqueue_barrier_marker(ctx_factory):
     ctx = ctx_factory()
-    # Still relevant on pocl 0.14.
+    # Still relevant on pocl 1.0RC1.
     _skip_if_pocl(
-            ctx.devices[0].platform, (0, 14), 'pocl crashes on enqueue_barrier')
+            ctx.devices[0].platform, (1, 0), 'pocl crashes on enqueue_barrier')
     queue = cl.CommandQueue(ctx)
     cl.enqueue_barrier(queue)
     evt1 = cl.enqueue_marker(queue)
