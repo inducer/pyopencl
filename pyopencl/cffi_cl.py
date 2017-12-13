@@ -331,7 +331,21 @@ class platform_info(_ConstantsNamespace):  # noqa
 
 
 class device_type(_ConstantsNamespace):  # noqa
-    pass
+    @classmethod
+    def to_string(cls, value, default_format=None):
+        for name in dir(cls):
+            if name in ("DEFAULT", "ALL"):
+                continue
+            if not name.startswith("_"):
+                bitfield = getattr(cls, name)
+                if isinstance(bitfield, int) and ((bitfield & value) == bitfield):
+                    return name
+
+        if default_format is None:
+            raise ValueError("a name for value %d was not found in %s"
+                             % (value, cls.__name__))
+        else:
+            return default_format % value
 
 
 class device_info(_ConstantsNamespace):  # noqa
@@ -1364,7 +1378,7 @@ def _enqueue_svm_memcpy(queue, dst, src, size=None,
     ptr_event = _ffi.new('clobj_t*')
     c_wait_for, num_wait_for = _clobj_list(wait_for)
     _handle_error(_lib.enqueue_svm_memcpy(
-        ptr_event, queue.ptr,  bool(is_blocking),
+        ptr_event, queue.ptr, bool(is_blocking),
         dst_buf, src_buf, size,
         c_wait_for, num_wait_for,
         NannyEvent._handle((dst_buf, src_buf))))
@@ -1624,7 +1638,7 @@ class _Program(_Common):
         try:
             self._build(options=options_bytes, devices=devices)
         except Error as e:
-            msg = e.what + "\n\n" + (75*"="+"\n").join(
+            msg = e.what + "\n\n" + (75 * "=" + "\n").join(
                     "Build on %s:\n\n%s" % (dev, log)
                     for dev, log in self._get_build_logs())
             code = e.code
@@ -1645,7 +1659,7 @@ class _Program(_Common):
 
         logger.debug("build program: completed, success")
 
-        message = (75*"="+"\n").join(
+        message = (75 * "=" + "\n").join(
                 "Build on %s succeeded, but said:\n\n%s" % (dev, log)
                 for dev, log in self._get_build_logs()
                 if log is not None and log.strip())
@@ -2906,7 +2920,7 @@ def add_get_info_attrs(cls, info_method, info_class, cacheable_attrs=None):
         info_lower = info_name.lower()
         info_constant = getattr(info_class, info_name)
         if info_name in cacheable_attrs:
-            cache_attr = intern("_info_cache_"+info_lower)
+            cache_attr = intern("_info_cache_" + info_lower)
             setattr(cls, info_lower, make_cacheable_getinfo(
                 info_method, info_lower, cache_attr, info_constant))
         else:
