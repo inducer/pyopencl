@@ -8,6 +8,7 @@ include src/c_wrapper/mingw-std-threads/README.md
 include *.h
 include test/*.py
 include test/*.h
+include test/*.spv
 include examples/*.py
 include examples/*.ipynb
 
