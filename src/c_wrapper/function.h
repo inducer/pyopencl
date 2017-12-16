@@ -75,9 +75,11 @@ private:
     template<template<typename...> class Getter, int... S>
     PYOPENCL_INLINE auto
     __get(seq<S...>)
+#ifndef _MSC_VER
     -> decltype(std::tuple_cat(
                     ensure_tuple(Getter<ArgConvert<Types> >::get(
                                      std::get<S>(*(tuple_base*)this)))...))
+#endif
     {
         return std::tuple_cat(
             ensure_tuple(Getter<ArgConvert<Types> >::get(
