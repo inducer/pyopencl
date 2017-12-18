@@ -848,6 +848,16 @@ def test_list_builder(ctx_factory):
     assert inf.count == 3000
     assert (inf.lists.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
 
+
+def test_list_builder_with_empty_elim(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.algorithm import ListOfListsBuilder
+
     builder = ListOfListsBuilder(
         context,
         [("mylist1", np.int32), ("mylist2", np.int32)],
