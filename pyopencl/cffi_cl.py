@@ -338,7 +338,8 @@ class device_type(_ConstantsNamespace):  # noqa
                 continue
             if not name.startswith("_"):
                 bitfield = getattr(cls, name)
-                if isinstance(bitfield, six.integer_types) and ((bitfield & value) == bitfield):
+                if (isinstance(bitfield, six.integer_types)
+                        and ((bitfield & value) == bitfield)):
                     return name
 
         if default_format is None:
