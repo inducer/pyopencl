@@ -84,7 +84,7 @@ We can then operate on the array with our own kernels:
     ...     """).build()
 
     >>> evt = prg.set_to_1(queue, ary.shape, None, ary.data)
-    >>> print(ary)
+    >>> print(ary) #doctest: +NORMALIZE_WHITESPACE
     [(1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.)
      (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.)
      (1,  1000.) (1,    12.) (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.)
