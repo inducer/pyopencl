@@ -249,38 +249,38 @@ def pytest_generate_tests_for_pyopencl(metafunc):
 
     test_plat_and_dev = get_test_platforms_and_devices()
 
-    if ("device" in metafunc.funcargnames
-            or "ctx_factory" in metafunc.funcargnames
-            or "ctx_getter" in metafunc.funcargnames):
-        arg_dict = {}
+    arg_names = []
 
-        for platform, plat_devs in test_plat_and_dev:
-            if "platform" in metafunc.funcargnames:
-                arg_dict["platform"] = platform
+    for arg in ("platform", "device", "ctx_factory", "ctx_getter"):
+        if arg not in metafunc.funcargnames:
+            continue
 
-            for device in plat_devs:
-                if "device" in metafunc.funcargnames:
-                    arg_dict["device"] = device
+        if arg == "ctx_getter":
+            from warnings import warn
+            warn("The 'ctx_getter' arg is deprecated in "
+                    "favor of 'ctx_factory'.",
+                    DeprecationWarning)
 
-                if "ctx_factory" in metafunc.funcargnames:
-                    arg_dict["ctx_factory"] = ContextFactory(device)
+        arg_names.append(arg)
 
-                if "ctx_getter" in metafunc.funcargnames:
-                    from warnings import warn
-                    warn("The 'ctx_getter' arg is deprecated in "
-                            "favor of 'ctx_factory'.",
-                            DeprecationWarning)
-                    arg_dict["ctx_getter"] = ContextFactory(device)
+    arg_values = []
 
-                metafunc.addcall(funcargs=arg_dict.copy(),
-                        id=", ".join("%s=%s" % (arg, value)
-                                for arg, value in six.iteritems(arg_dict)))
+    for platform, plat_devs in test_plat_and_dev:
+        if arg_names == ["platform"]:
+            arg_values.append((platform,))
+            continue
 
-    elif "platform" in metafunc.funcargnames:
-        for platform, plat_devs in test_plat_and_dev:
-            metafunc.addcall(
-                    funcargs=dict(platform=platform),
-                    id=str(platform))
+        arg_dict = {"platform": platform}
+
+        for device in plat_devs:
+            arg_dict["device"] = device
+            arg_dict["ctx_factory"] = ContextFactory(device)
+            arg_dict["ctx_getter"] = ContextFactory(device)
+
+            arg_values.append(tuple(arg_dict[name] for name in arg_names))
+
+    if arg_names:
+        metafunc.parametrize(arg_names, arg_values, ids=str)
 
 
 # {{{ C argument lists
