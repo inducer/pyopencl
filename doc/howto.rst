@@ -64,7 +64,7 @@ the device:
     >>> ary_host["field1"].fill(217)
     >>> ary_host["field2"].fill(1000)
     >>> ary_host[13]["field2"] = 12
-    >>> print(ary_host)
+    >>> print(ary_host) #doctest: +NORMALIZE_WHITESPACE
     [(217,  1000.) (217,  1000.) (217,  1000.) (217,  1000.) (217,  1000.)
      (217,  1000.) (217,  1000.) (217,  1000.) (217,  1000.) (217,  1000.)
      (217,  1000.) (217,  1000.) (217,  1000.) (217,    12.) (217,  1000.)
@@ -84,7 +84,7 @@ We can then operate on the array with our own kernels:
     ...     """).build()
 
     >>> evt = prg.set_to_1(queue, ary.shape, None, ary.data)
-    >>> print(ary)
+    >>> print(ary) #doctest: +NORMALIZE_WHITESPACE
     [(1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.)
      (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.)
      (1,  1000.) (1,    12.) (1,  1000.) (1,  1000.) (1,  1000.) (1,  1000.)
@@ -98,7 +98,7 @@ as well as with PyOpenCL's built-in operations:
     >>> elwise = ElementwiseKernel(ctx, "my_struct *a", "a[i].field1 = 2;",
     ...    preamble=my_struct_c_decl)
     >>> evt = elwise(ary)
-    >>> print(ary)
+    >>> print(ary) #doctest: +NORMALIZE_WHITESPACE
     [(2,  1000.) (2,  1000.) (2,  1000.) (2,  1000.) (2,  1000.) (2,  1000.)
      (2,  1000.) (2,  1000.) (2,  1000.) (2,  1000.) (2,  1000.) (2,  1000.)
      (2,  1000.) (2,    12.) (2,  1000.) (2,  1000.) (2,  1000.) (2,  1000.)
