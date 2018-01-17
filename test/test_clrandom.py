@@ -73,7 +73,7 @@ def test_clrandom_dtypes(ctx_factory, rng_class, dtype):
 
     with cl.CommandQueue(cl_ctx) as queue:
         rng.uniform(queue, size, dtype)
-        
+
         if dtype not in (np.int32, np.int64):
             rng.normal(queue, size, dtype)
 
