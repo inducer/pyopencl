@@ -838,6 +838,7 @@ class ListOfListsBuilder:
     def get_compress_kernel(self, index_dtype):
         arguments = """
             __global ${index_t} *count,
+            __global ${index_t} *compressed_counts,
             __global ${index_t} *nonempty_indices,
             __global ${index_t} *compressed_indices,
             __global ${index_t} *num_non_empty_list
@@ -858,7 +859,7 @@ class ListOfListsBuilder:
                     compressed_indices[i + 1] = item;
                     if (prev_item != item) {
                         nonempty_indices[item - 1] = i;
-                        count[item - 1] = count[i];
+                        compressed_counts[item - 1] = count[i];
                     }
                     if (i + 1 == N) *num_non_empty_list = item;
                     """,
@@ -1122,6 +1123,8 @@ class ListOfListsBuilder:
                 if name in self.count_sharing:
                     continue
 
+                compressed_counts = cl.array.empty(
+                    queue, (n_objects + 1,), index_dtype, allocator=allocator)
                 info_record = result[name]
                 info_record.nonempty_indices = cl.array.empty(
                     queue, (n_objects + 1,), index_dtype, allocator=allocator)
@@ -1132,10 +1135,13 @@ class ListOfListsBuilder:
                 info_record.compressed_indices[0] = 0
                 compress_events[name] = compress_kernel(
                     info_record.starts,
+                    compressed_counts,
                     info_record.nonempty_indices,
                     info_record.compressed_indices,
                     info_record.num_nonempty_lists,
                     wait_for=[count_event] + info_record.compressed_indices.events)
+
+                info_record.starts = compressed_counts
 
         # {{{ run scans
 
