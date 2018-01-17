@@ -286,8 +286,11 @@ class RanluxGenerator(object):
               unsigned long idx = get_global_id(0)*4;
               while (idx + 4 < out_size)
               {
-                  *(global output_vec_t *) (output + idx) =
-                      GET_RANDOM_NUM(RANLUX_FUNC(&ranluxclstate));
+                  output_vec_t ran = GET_RANDOM_NUM(RANLUX_FUNC(&ranluxclstate));
+                  output[idx] = ran.x;
+                  output[idx + 1] = ran.y;
+                  output[idx + 2] = ran.z;
+                  output[idx + 3] = ran.w;
                   idx += 4*NUM_WORKITEMS;
               }
 
@@ -594,8 +597,11 @@ class Random123GeneratorBase(object):
                 unsigned long idx = get_global_id(0)*4;
                 while (idx + 4 < out_size)
                 {
-                    *(global output_vec_t *) (output + idx) =
-                        GET_RANDOM_NUM(gen_bits(&k, &c));
+                    output_vec_t ran = GET_RANDOM_NUM(gen_bits(&k, &c));
+                    output[idx] = ran.x;
+                    output[idx + 1] = ran.y;
+                    output[idx + 2] = ran.z;
+                    output[idx + 3] = ran.w;
                     idx += 4*get_global_size(0);
                 }
 
