@@ -40,21 +40,13 @@ else:
     faulthandler.enable()
 
 
-class RanluxGeneratorShim(object):
-
-    def __init__(self, cl_ctx):
-        self.queue = cl.CommandQueue(cl_ctx)
-        self.gen = clrandom.RanluxGenerator(self.queue)
-
-    def uniform(self, *args, **kwargs):
-        return self.gen.uniform(*args, **kwargs)
-
-    def normal(self, *args, **kwargs):
-        return self.gen.normal(*args, **kwargs)
+def make_ranlux_generator(cl_ctx):
+    queue = cl.CommandQueue(cl_ctx)
+    return clrandom.RanluxGenerator(queue)
 
 
 @pytest.mark.parametrize("rng_class", [
-    RanluxGeneratorShim,
+    make_ranlux_generator,
     clrandom.PhiloxGenerator,
     clrandom.ThreefryGenerator])
 @pytest.mark.parametrize("dtype", [
