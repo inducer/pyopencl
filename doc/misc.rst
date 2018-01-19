@@ -207,13 +207,29 @@ other software to be turned into the corresponding :mod:`pyopencl` objects.
 User-visible Changes
 ====================
 
-Version 2016.3
+Version 2017.2
 --------------
 
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
+
+Version 2018.1
+--------------
+
+* Introduce *eliminate_empty_output_lists* argument of :class:`pyopencl.algorithm.ListOfListsBuilder`.
+* Many bug fixes.
+
+Version 2017.2
+--------------
+
+* Many bug fixes.
+
+Version 2017.1
+--------------
+
+* Introduce :mod:`pyopencl.cltypes`
 
 Version 2016.2
 --------------
