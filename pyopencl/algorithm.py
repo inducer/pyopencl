@@ -795,6 +795,11 @@ class ListOfListsBuilder:
         and a second time, for a 'generation' stage where the lists are
         actually filled. A `generate` function that has side effects beyond
         calling `append` is therefore ill-formed.
+
+        .. versionchanged:: 2018.1
+
+            Change *eliminate_empty_output_lists* argument type from `bool` to
+            `list`.
         """
 
         if devices is None:
