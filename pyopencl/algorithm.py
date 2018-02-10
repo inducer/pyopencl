@@ -822,6 +822,13 @@ class ListOfListsBuilder:
 
         self.complex_kernel = complex_kernel
 
+        if eliminate_empty_output_lists is True:
+            eliminate_empty_output_lists = \
+                    [name for name, _ in self.list_names_and_dtypes]
+
+        if eliminate_empty_output_lists is False:
+            eliminate_empty_output_lists = []
+
         self.eliminate_empty_output_lists = eliminate_empty_output_lists
         for list_name in self.eliminate_empty_output_lists:
             if not any(list_name == name for name, _ in self.list_names_and_dtypes):
