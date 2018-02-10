@@ -860,7 +860,7 @@ def test_list_builder_with_empty_elim(ctx_factory):
 
     builder = ListOfListsBuilder(
         context,
-        [("mylist1", np.int32), ("mylist2", np.int32)],
+        [("mylist1", np.int32), ("mylist2", np.int32), ("mylist3", np.int32)],
         """//CL//
             void generate(LIST_ARG_DECL USER_ARG_DECL index_type i)
             {
@@ -870,12 +870,13 @@ def test_list_builder_with_empty_elim(ctx_factory):
                     {
                         APPEND_mylist1(j);
                         APPEND_mylist2(j + 1);
+                        APPEND_mylist3(j);
                     }
                 }
             }
         """,
         arg_decls=[],
-        eliminate_empty_output_lists=True)
+        eliminate_empty_output_lists=["mylist1", "mylist2"])
 
     result, evt = builder(queue, 1000)
 
@@ -887,6 +888,10 @@ def test_list_builder_with_empty_elim(ctx_factory):
     mylist2 = result["mylist2"]
     assert mylist2.count == 19900
     assert (mylist2.lists.get()[:6] == [1, 1, 2, 1, 2, 3]).all()
+    mylist3 = result["mylist3"]
+    assert mylist3.count == 19900
+    assert (mylist3.starts.get()[:10] == [0, 0, 0, 0, 0, 0, 1, 1, 1, 1]).all()
+    assert (mylist3.lists.get()[:6] == [0, 0, 1, 0, 1, 2]).all()
 
 
 def test_key_value_sorter(ctx_factory):
