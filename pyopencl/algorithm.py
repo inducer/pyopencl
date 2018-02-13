@@ -1210,6 +1210,8 @@ class ListOfListsBuilder:
                 write_list_args.append(None)
                 if name not in self.count_sharing:
                     write_list_args.append(None)
+                if name in self.eliminate_empty_output_lists:
+                    write_list_args.append(None)
                 continue
 
             if name in self.count_sharing:
