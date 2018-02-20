@@ -864,7 +864,7 @@ class ListOfListsBuilder:
             __global ${index_t} *num_non_empty_list
         """
         from sys import version_info
-        if (version_info > (3, 0)):
+        if version_info > (3, 0):
             arguments = Template(arguments)
         else:
             arguments = Template(arguments, disable_unicode=True)
@@ -876,7 +876,7 @@ class ListOfListsBuilder:
                 input_expr="count[i] == 0 ? 0 : 1",
                 scan_expr="a+b", neutral="0",
                 output_statement="""
-                    compressed_indices[i + 1] = item;
+                    if (i + 1 < N) compressed_indices[i + 1] = item;
                     if (prev_item != item) {
                         nonempty_indices[item - 1] = i;
                         compressed_counts[item - 1] = count[i];
