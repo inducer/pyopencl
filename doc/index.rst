@@ -73,6 +73,8 @@ Software that works with or enhances PyOpenCL
   one by `Eric Hunsberger <https://github.com/hunse/pyopencl_blas>`_ and one
   by `Lars Ericson <http://lists.tiker.net/pipermail/pyopencl/2015-June/001890.html>`_.
 
+* Cedric Nugteren provides a wrapper for the `CLBlast <https://github.com/CNugteren/CLBlast>`_ OpenCL BLAS library: `PyCLBlast <https://github.com/CNugteren/CLBlast/tree/master/src/pyclblast>`_.
+
 * Gregor Thalhammer's `gpyfft <https://github.com/geggo/gpyfft>`_ provides a
   Python wrapper for the OpenCL FFT library clFFT from AMD.
 
