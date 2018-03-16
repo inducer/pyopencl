@@ -3,6 +3,8 @@ PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
 
 .. image:: https://gitlab.tiker.net/inducer/pyopencl/badges/master/pipeline.svg
    :target: https://gitlab.tiker.net/inducer/pyopencl/commits/master
+.. image:: https://badge.fury.io/py/pyopencl.png
+  :target: http://pypi.python.org/pypi/pyopencl
 
 PyOpenCL lets you access GPUs and other massively parallel compute
 devices from Python. It tries to offer computing goodness in the
@@ -46,8 +48,6 @@ Places on the web related to PyOpenCL:
 
 * `Python package index <http://pypi.python.org/pypi/pyopencl>`_ (download releases)
 
-  .. image:: https://badge.fury.io/py/pyopencl.png
-      :target: http://pypi.python.org/pypi/pyopencl
 * `C. Gohlke's Windows binaries <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`_ (download Windows binaries)
 * `Github <http://github.com/inducer/pyopencl>`_ (get latest source code, file bugs)
 * `Documentation <http://documen.tician.de/pyopencl>`_ (read how things work)
