@@ -632,7 +632,13 @@ def test_enqueue_barrier_marker(ctx_factory):
     # Still relevant on pocl 1.0RC1.
     _skip_if_pocl(
             ctx.devices[0].platform, (1, 0), 'pocl crashes on enqueue_barrier')
+
     queue = cl.CommandQueue(ctx)
+
+    if queue._get_cl_version() >= (1, 2) and cl.get_cl_header_version() <= (1, 1):
+        pytest.skip("CL impl version >= 1.2, header version <= 1.1--cannot be sure "
+                "that clEnqueueWaitForEvents is implemented")
+
     cl.enqueue_barrier(queue)
     evt1 = cl.enqueue_marker(queue)
     evt2 = cl.enqueue_marker(queue, wait_for=[evt1])
