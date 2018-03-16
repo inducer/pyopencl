@@ -1,3 +1,9 @@
+PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
+---------------------------------------------------------------
+
+.. image:: https://gitlab.tiker.net/inducer/pyopencl/badges/master/pipeline.svg
+   :target: https://gitlab.tiker.net/inducer/pyopencl/commits/master
+
 PyOpenCL lets you access GPUs and other massively parallel compute
 devices from Python. It tries to offer computing goodness in the
 spirit of its sister project `PyCUDA <http://mathema.tician.de/software/pycuda>`_:
