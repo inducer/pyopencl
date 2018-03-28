@@ -87,7 +87,7 @@ Software that works with or enhances PyOpenCL
   nested-parallel programs with reductions and scans on data in
   :class:`pyopencl.array.Array` instances.
 
-* Robbert Harms and Alard Roebroecks' `MOT
+* Robbert Harms and Alard Roebroeck's `MOT
   <https://github.com/cbclab/MOT>`_ offers a variety of GPU-enabled non-linear optimization algorithms 
   and MCMC sampling routines for parallel optimization and sampling of multiple problems.
 
