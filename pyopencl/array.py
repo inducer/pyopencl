@@ -677,8 +677,15 @@ class Array(object):
 
         assert self.flags.forc, "Array in get() must be contiguous"
 
+        queue = queue or self.queue
+        if queue is None:
+            raise ValueError("Cannot copy array to host. "
+                    "Array has no queue. Use "
+                    "'new_array = array.with_queue(queue)' "
+                    "to associate one.")
+
         if self.size:
-            cl.enqueue_copy(queue or self.queue, ary, self.base_data,
+            cl.enqueue_copy(queue, ary, self.base_data,
                     device_offset=self.offset,
                     is_blocking=not async_)
 
