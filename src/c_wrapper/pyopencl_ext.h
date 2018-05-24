@@ -16,6 +16,8 @@
 #include <CL/cl.h>
 #include <CL/cl_ext.h>
 
+#endif
+
 #ifndef CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD
 #define CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD        1
 
@@ -48,8 +50,6 @@ typedef union
 #endif
 
 /* }}} */
-
-#endif
 
 #endif
 
