@@ -79,7 +79,7 @@ def get_config_schema():
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
         Switch(
-            "CL_USE_SHIPPED_EXT", True,
+            "CL_USE_SHIPPED_EXT", False,
             "Use the pyopencl version of CL/cl_ext.h which includes" +
             " a broader range of vendor-specific OpenCL extension attributes" +
             " than the standard Khronos (or vendor specific) CL/cl_ext.h."),
@@ -126,7 +126,7 @@ def main():
             major, minor = [int(x) for x in conf["CL_PRETEND_VERSION"].split(".")]
             extra_defines["PYOPENCL_PRETEND_CL_VERSION"] = \
                     0x1000*major + 0x10 * minor
-        except:
+        except Exception:
             print("CL_PRETEND_VERSION must be of the form M.N, "
                     "with two integers M and N")
             raise

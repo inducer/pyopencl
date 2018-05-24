@@ -20,42 +20,6 @@
 #define CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT          0x104B
 #endif
 
-/* 2.0 headers are not very common for the time being, so
- * let's copy the defines for the new CL_DEVICE_* properties
- * here.
- */
-#ifndef CL_VERSION_2_0
-#define CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS             0x104C
-#define CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE              0x104D
-#define CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES            0x104E
-#define CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE        0x104F
-#define CL_DEVICE_QUEUE_ON_DEVICE_MAX_SIZE              0x1050
-#define CL_DEVICE_MAX_ON_DEVICE_QUEUES                  0x1051
-#define CL_DEVICE_MAX_ON_DEVICE_EVENTS                  0x1052
-#define CL_DEVICE_SVM_CAPABILITIES                      0x1053
-#define CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE  0x1054
-#define CL_DEVICE_MAX_PIPE_ARGS                         0x1055
-#define CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS          0x1056
-#define CL_DEVICE_PIPE_MAX_PACKET_SIZE                  0x1057
-#define CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT   0x1058
-#define CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT     0x1059
-#define CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT      0x105A
-
-#define CL_DEVICE_SVM_COARSE_GRAIN_BUFFER           (1 << 0)
-#define CL_DEVICE_SVM_FINE_GRAIN_BUFFER             (1 << 1)
-#define CL_DEVICE_SVM_FINE_GRAIN_SYSTEM             (1 << 2)
-#define CL_DEVICE_SVM_ATOMICS                       (1 << 3)
-
-typedef cl_bitfield         cl_device_svm_capabilities;
-#endif
-
-#ifndef CL_VERSION_2_1
-#define CL_PLATFORM_HOST_TIMER_RESOLUTION		0x0905
-#define CL_DEVICE_IL_VERSION				0x105B
-#define CL_DEVICE_MAX_NUM_SUB_GROUPS			0x105C
-#define CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS 0x105D
-#endif
-
 /*
  * Extensions
  */

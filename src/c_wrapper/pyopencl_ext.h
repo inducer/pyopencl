@@ -16,6 +16,8 @@
 #include <CL/cl.h>
 #include <CL/cl_ext.h>
 
+#endif
+
 #ifndef CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD
 #define CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD        1
 
@@ -26,9 +28,31 @@ typedef union
 } cl_device_topology_amd;
 #endif
 
+/* {{{ these NV defines are often missing from the system headers */
+
+#ifndef CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV
+#define CL_DEVICE_KERNEL_EXEC_TIMEOUT_NV                0x4005
 #endif
+#ifndef CL_DEVICE_INTEGRATED_MEMORY_NV
+#define CL_DEVICE_INTEGRATED_MEMORY_NV                  0x4006
+#endif
+
+#ifndef CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV
+#define CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV       0x4007
+#endif
+
+#ifndef CL_DEVICE_PCI_BUS_ID_NV
+#define CL_DEVICE_PCI_BUS_ID_NV                         0x4008
+#endif
+
+#ifndef CL_DEVICE_PCI_SLOT_ID_NV
+#define CL_DEVICE_PCI_SLOT_ID_NV                        0x4009
+#endif
+
+/* }}} */
 
 #endif
 
 #endif
 
+/* vim: foldmethod=marker */
