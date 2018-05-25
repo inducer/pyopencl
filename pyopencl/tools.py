@@ -413,7 +413,7 @@ def get_gl_sharing_context_properties():
     if sys.platform in ["linux", "linux2"]:
         from OpenGL import GLX
         props.append(
-            (ctx_props.GL_CONTEXT_KHR, gl_platform.GetCurrentContext()))
+            (ctx_props.GL_CONTEXT_KHR, GLX.glXGetCurrentContext()))
         props.append(
                 (ctx_props.GLX_DISPLAY_KHR,
                     GLX.glXGetCurrentDisplay()))
