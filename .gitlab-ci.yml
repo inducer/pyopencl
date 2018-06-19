@@ -14,15 +14,16 @@
   except:
   - tags
 
-Python 3.5 Intel CPU:
+Python 3.6 Intel CPU:
   script:
-  - export PY_EXE=python3.5
+  - export PY_EXE=python3.6
   - export PYOPENCL_TEST="intel(r):pu"
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
+  allow_failure: true
   tags:
-  - python3.5
+  - python3.6
   - intel-cl-cpu
   except:
   - tags
