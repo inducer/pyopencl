@@ -1,11 +1,10 @@
 name: test-conda-env-py3
 channels:
-- inducer
 - conda-forge
 - defaults
 dependencies:
 - git
-- numpy
+- conda-forge::numpy
 - pocl
 - osx-pocl-opencl
 - mako
