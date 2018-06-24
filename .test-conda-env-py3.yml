@@ -5,7 +5,7 @@ channels:
 - defaults
 dependencies:
 - git
-- conda-forge::numpy
+- numpy
 - pocl
 - osx-pocl-opencl
 - mako
