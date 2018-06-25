@@ -1,7 +1,7 @@
 name: test-conda-env-py3
 channels:
 - conda-forge
-- defaults
+- https://repo.continuum.io/pkgs/main
 dependencies:
 - git
 - conda-forge::numpy
