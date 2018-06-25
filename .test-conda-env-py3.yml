@@ -1,12 +1,7 @@
 name: test-conda-env-py3
 channels:
 - conda-forge
-
-# FIXME: revert to 'defaults' (without quotes) after
-# https://github.com/ContinuumIO/anaconda-issues/issues/9663
-# is addressed. Context: 
-# https://gitlab.tiker.net/inducer/pyopencl/merge_requests/37
-- https://repo.continuum.io/pkgs/main
+- defaults
 
 dependencies:
 - git
