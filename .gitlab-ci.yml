@@ -28,7 +28,7 @@ Python 3.6 Intel CPU:
   except:
   - tags
 
-Python 3.5 AMD CPU:
+Python 3.6 AMD CPU:
   script:
   - export PY_EXE=python3.5
   - export PYOPENCL_TEST=amd:pu
@@ -37,7 +37,7 @@ Python 3.5 AMD CPU:
   - ". ./build-and-test-py-project.sh"
   allow_failure: true
   tags:
-  - python3.5
+  - python3.6
   - amd-cl-cpu
   except:
   - tags
@@ -56,7 +56,7 @@ Python 2.6 AMD CPU:
   except:
   - tags
 
-Python 3.5 Titan X:
+Python 3.6 Titan X:
   script:
   - export PY_EXE=python3.5
   - export PYOPENCL_TEST=nvi:titan
@@ -64,34 +64,34 @@ Python 3.5 Titan X:
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.5
+  - python3.6
   - nvidia-titan-x
   except:
   - tags
 
-Python 3.5 K40:
+Python 3.6 K40:
   script:
-  - export PY_EXE=python3.5
+  - export PY_EXE=python3.6
   - export PYOPENCL_TEST=nvi:k40
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.5
+  - python3.6
   - nvidia-k40
   except:
   - tags
 
-Python 3.5 AMD GPU:
+Python 3.6 AMD GPU:
   script:
-  - export PY_EXE=python3.5
+  - export PY_EXE=python3.6
   - export PYOPENCL_TEST=amd:fiji
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   allow_failure: true
   tags:
-  - python3.5
+  - python3.6
   - amd-fiji
   except:
   - tags
@@ -109,7 +109,7 @@ Python 3.6 POCL:
   except:
   - tags
 
-Python 3.5 POCL CL 1.1:
+Python 3.6 POCL CL 1.1:
   script:
   - export PY_EXE=python3.5
   - export PYOPENCL_TEST=portable
@@ -118,7 +118,7 @@ Python 3.5 POCL CL 1.1:
   - echo "CL_PRETEND_VERSION = '1.1'" > siteconf.py
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.5
+  - python3.6
   - pocl
   except:
   - tags
@@ -150,7 +150,7 @@ Python 2.7 Apple:
   except:
   - tags
 
-Python 3.5 Conda Apple:
+Python 3 Conda Apple:
   script:
   - CONDA_ENVIRONMENT=.test-conda-env-py3.yml
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
