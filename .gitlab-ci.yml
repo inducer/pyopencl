@@ -109,6 +109,19 @@ Python 3.6 POCL:
   except:
   - tags
 
+Python 3.7 POCL:
+  script:
+  - export PY_EXE=python3.7
+  - export PYOPENCL_TEST=portable
+  - export EXTRA_INSTALL="numpy mako"
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python3.7
+  - pocl
+  except:
+  - tags
+
 Python 3.6 POCL CL 1.1:
   script:
   - export PY_EXE=python3.5
