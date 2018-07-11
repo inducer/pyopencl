@@ -1,8 +1,8 @@
 name: test-conda-env-py3
 channels:
-- inducer
 - conda-forge
 - defaults
+
 dependencies:
 - git
 - conda-forge::numpy
