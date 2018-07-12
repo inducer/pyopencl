@@ -30,7 +30,7 @@ Python 3.6 Intel CPU:
 
 Python 3.6 AMD CPU:
   script:
-  - export PY_EXE=python3.5
+  - export PY_EXE=python3.6
   - export PYOPENCL_TEST=amd:pu
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
@@ -38,20 +38,6 @@ Python 3.6 AMD CPU:
   allow_failure: true
   tags:
   - python3.6
-  - amd-cl-cpu
-  except:
-  - tags
-
-Python 2.6 AMD CPU:
-  script:
-  - export PY_EXE=python2.6
-  - export PYOPENCL_TEST=amd:pu
-  - export EXTRA_INSTALL="numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
-  allow_failure: true
-  tags:
-  - python2.6
   - amd-cl-cpu
   except:
   - tags
@@ -96,15 +82,29 @@ Python 3.6 AMD GPU:
   except:
   - tags
 
-Python 3.6 POCL:
+Python 2.6 POCL CPU:
   script:
-  - export PY_EXE=python3.6
+  - export PY_EXE=python2.6
+  - export PYOPENCL_TEST=portable
+  - export EXTRA_INSTALL="numpy mako"
+  - export NO_DOCTESTS=1
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python2.6
+  - amd-cl-cpu
+  except:
+  - tags
+
+Python 2.7 POCL:
+  script:
+  - export PY_EXE=python2.7
   - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.6
+  - python2.7
   - pocl
   except:
   - tags
@@ -136,15 +136,15 @@ Python 3.6 POCL CL 1.1:
   except:
   - tags
 
-Python 2.7 POCL:
+Python 3.6 POCL:
   script:
-  - export PY_EXE=python2.7
+  - export PY_EXE=python3.6
   - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python2.7
+  - python3.6
   - pocl
   except:
   - tags

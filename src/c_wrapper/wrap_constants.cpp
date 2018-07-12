@@ -775,8 +775,13 @@ void populate_constants(void(*add)(const char*, const char*, int64_t value))
     // mem_migration_flags_ext
 #ifdef cl_ext_migrate_memobject
     ADD_ATTR("mem_migration_flags_ext", MIGRATE_MEM_OBJECT_, HOST, _EXT);
+
+    // As of 2018-07-11, the official headers seem to have dropped this:
+#ifdef CL_MIGRATE_MEM_OBJECT_CONTENT_UNDEFINED_EXT
     ADD_ATTR("mem_migration_flags_ext", MIGRATE_MEM_OBJECT_,
              CONTENT_UNDEFINED, _EXT);
+#endif
+
 #endif
 
 
