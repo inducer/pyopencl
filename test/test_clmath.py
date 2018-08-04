@@ -446,6 +446,20 @@ def test_hankel_01_complex(ctx_factory, ref_src):
         pt.loglog(np.abs(z), rel_err_h1)
         pt.show()
 
+def test_outoforderqueue_clmath(ctx_factory):
+    context = ctx_factory()
+    try:
+        queue = cl.CommandQueue(context, properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        pytest.skip("out-of-order queue not available")
+    a = np.random.rand(10**6).astype(np.dtype('float32'))
+    a_gpu = cl_array.to_device(queue, a)
+    b_gpu = clmath.fabs(clmath.sin(a_gpu * 5)) # testing that clmath functions wait for and create events
+    queue.finish()
+    b1 = b_gpu.get()
+    b = np.abs(np.sin(a * 5))
+    assert np.abs(b1 - b).mean() < 1e-5
+
 
 if __name__ == "__main__":
     import sys
