@@ -1212,6 +1212,34 @@ def test_multi_put(ctx_factory):
 
     assert np.all(np.all(out_compare[i] == out_arrays[i].get()) for i in range(9))
 
+def test_outoforderqueue_get(ctx_factory):
+    context = ctx_factory()
+    try:
+        queue = cl.CommandQueue(context, properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        pytest.skip("out-of-order queue not available")
+    a = np.random.rand(10**6).astype(np.dtype('float32'))
+    a_gpu = cl_array.to_device(queue, a)
+    b_gpu = a_gpu + a_gpu**5 + 1
+    b1 = b_gpu.get() # testing that this waits for events
+    b = a + a**5 + 1
+    assert np.abs(b1 - b).mean() < 1e-5
+
+def test_outoforderqueue_copy(ctx_factory):
+    context = ctx_factory()
+    try:
+        queue = cl.CommandQueue(context, properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        pytest.skip("out-of-order queue not available")
+    a = np.random.rand(10**6).astype(np.dtype('float32'))
+    a_gpu = cl_array.to_device(queue, a)
+    c_gpu = a_gpu**2 - 7
+    b_gpu = c_gpu.copy() # testing that this waits for and creates events
+    b_gpu *= 10
+    queue.finish()
+    b1 = b_gpu.get()
+    b = 10 * (a**2 - 7)
+    assert np.abs(b1 - b).mean() < 1e-5
 
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the

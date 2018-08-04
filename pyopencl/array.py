@@ -621,9 +621,11 @@ class Array(object):
                     stacklevel=2)
 
         if self.size:
-            cl.enqueue_copy(queue or self.queue, self.base_data, ary,
+            event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
                     device_offset=self.offset,
                     is_blocking=not async_)
+            if not async_: # not already waited for
+                self.add_event(event1)
 
     def get(self, queue=None, ary=None, async_=None, **kwargs):
         """Transfer the contents of *self* into *ary* or a newly allocated
@@ -687,7 +689,7 @@ class Array(object):
         if self.size:
             cl.enqueue_copy(queue, ary, self.base_data,
                     device_offset=self.offset,
-                    is_blocking=not async_)
+                    wait_for=self.events, is_blocking=not async_)
 
         return ary
 
@@ -712,9 +714,11 @@ class Array(object):
             result = result.with_queue(queue)
 
         if self.nbytes:
-            cl.enqueue_copy(queue or self.queue,
+            event1 = cl.enqueue_copy(queue or self.queue,
                     result.base_data, self.base_data,
-                    src_offset=self.offset, byte_count=self.nbytes)
+                    src_offset=self.offset, byte_count=self.nbytes,
+                    wait_for=self.events)
+            result.add_event(event1)
 
         return result
 
