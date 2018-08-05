@@ -1227,8 +1227,12 @@ class GenericScanKernel(_GenericScanKernelBase):
             max_scan_wg_size = min(dev.max_work_group_size for dev in self.devices)
             wg_size_multiples = 64
 
+        # Intel beignet asserts or gives wrong results with packed structs
+        # https://bugs.freedesktop.org/show_bug.cgi?id=98717
+        # TODO: is this all Intel ICDs or only beignet?
         use_bank_conflict_avoidance = (
-                self.dtype.itemsize > 4 and self.dtype.itemsize % 8 == 0 and is_gpu)
+                self.dtype.itemsize > 4 and self.dtype.itemsize % 8 == 0
+                and is_gpu and "Intel" not in self.devices[0].platform.name)
 
         # k_group_size should be a power of two because of in-kernel
         # division by that number.
