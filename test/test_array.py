@@ -1241,6 +1241,41 @@ def test_outoforderqueue_copy(ctx_factory):
     b = 10 * (a**2 - 7)
     assert np.abs(b1 - b).mean() < 1e-5
 
+def test_outoforderqueue_indexing(ctx_factory):
+    context = ctx_factory()
+    try:
+        queue = cl.CommandQueue(context, properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        pytest.skip("out-of-order queue not available")
+    a = np.random.rand(10**6).astype(np.dtype('float32'))
+    i = (8e5 + 1e5 * np.random.rand(10**5)).astype(np.dtype('int32'))
+    a_gpu = cl_array.to_device(queue, a)
+    i_gpu = cl_array.to_device(queue, i)
+    c_gpu = (a_gpu**2)[i_gpu - 10000]
+    b_gpu = 10 - a_gpu
+    b_gpu[:] = 8 * a_gpu
+    b_gpu[i_gpu + 10000] = c_gpu - 10
+    queue.finish()
+    b1 = b_gpu.get()
+    c = (a**2)[i - 10000]
+    b = 8 * a
+    b[i + 10000] = c - 10
+    assert np.abs(b1 - b).mean() < 1e-5
+
+def test_outoforderqueue_reductions(ctx_factory):
+    context = ctx_factory()
+    try:
+        queue = cl.CommandQueue(context, properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
+    except Exception:
+        pytest.skip("out-of-order queue not available")
+    a = (np.random.rand(10**6) > 0.5).astype(np.dtype('float32')) # 0/1 values to avoid accumulated rounding error
+    a[800000] = 10 # all<5 looks true until near the end
+    a_gpu = cl_array.to_device(queue, a)
+    b1 = cl_array.sum(a_gpu).get()
+    b2 = cl_array.dot(a_gpu, 3 - a_gpu).get()
+    b3 = (a_gpu < 5).all().get()
+    assert b1 == a.sum() and b2 == a.dot(3 - a) and b3 == 0
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the
     # tests.
