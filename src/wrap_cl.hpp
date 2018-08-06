@@ -49,9 +49,6 @@
 #include <vector>
 #include <utility>
 #include <numeric>
-#include <boost/python/slice.hpp>
-#include <boost/foreach.hpp>
-#include <boost/scoped_array.hpp>
 #include "wrap_helpers.hpp"
 #include "numpy_init.hpp"
 #include "tools.hpp"
@@ -509,7 +506,7 @@ namespace pyopencl
         (num_platforms, platforms.empty( ) ? NULL : &platforms.front(), &num_platforms));
 
     py::list result;
-    BOOST_FOREACH(cl_platform_id pid, platforms)
+    for (cl_platform_id pid: platforms)
       result.append(handle_from_new_ptr(
             new platform(pid)));
 
@@ -834,7 +831,7 @@ namespace pyopencl
             (m_device, props_ptr, num_entries, &result.front(), NULL));
 
         py::list py_result;
-        BOOST_FOREACH(cl_device_id did, result)
+        for (cl_device_id did: result)
           py_result.append(handle_from_new_ptr(
                 new pyopencl::device(did, /*retain*/true,
                   device::REF_CL_1_2)));
@@ -872,7 +869,7 @@ namespace pyopencl
             (m_device, props_ptr, num_entries, &result.front(), NULL));
 
         py::list py_result;
-        BOOST_FOREACH(cl_device_id did, result)
+        for (cl_device_id did: result)
           py_result.append(handle_from_new_ptr(
                 new pyopencl::device(did, /*retain*/true,
                   device::REF_FISSION_EXT)));
@@ -907,7 +904,7 @@ namespace pyopencl
          num_devices, devices.empty( ) ? NULL : &devices.front(), &num_devices));
 
     py::list result;
-    BOOST_FOREACH(cl_device_id did, devices)
+    for (cl_device_id did: devices)
       result.append(handle_from_new_ptr(
             new device(did)));
 
@@ -958,7 +955,7 @@ namespace pyopencl
               PYOPENCL_GET_VEC_INFO(Context, m_context, param_name, result);
 
               py::list py_result;
-              BOOST_FOREACH(cl_device_id did, result)
+              for (cl_device_id did: result)
                 py_result.append(handle_from_new_ptr(
                       new pyopencl::device(did)));
               return py_result;
@@ -1245,12 +1242,12 @@ namespace pyopencl
         }
       }
 
-      std::auto_ptr<context> get_context() const
+      std::unique_ptr<context> get_context() const
       {
         cl_context param_value;
         PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo,
             (m_queue, CL_QUEUE_CONTEXT, sizeof(param_value), &param_value, 0));
-        return std::auto_ptr<context>(
+        return std::unique_ptr<context>(
             new context(param_value, /*retain*/ true));
       }
 
@@ -1358,11 +1355,11 @@ namespace pyopencl
     // to a Python object and waits for its own completion upon destruction.
 
     protected:
-      std::auto_ptr<py_buffer_wrapper> m_ward;
+      std::unique_ptr<py_buffer_wrapper> m_ward;
 
     public:
 
-      nanny_event(cl_event evt, bool retain, std::auto_ptr<py_buffer_wrapper> &ward)
+      nanny_event(cl_event evt, bool retain, std::unique_ptr<py_buffer_wrapper> &ward)
         : event(evt, retain), m_ward(ward)
       { }
 
@@ -1575,7 +1572,7 @@ namespace pyopencl
   {
     public:
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-      typedef std::auto_ptr<py_buffer_wrapper> hostbuf_t;
+      typedef std::unique_ptr<py_buffer_wrapper> hostbuf_t;
 #else
       typedef py::object hostbuf_t;
 #endif
@@ -1857,10 +1854,10 @@ namespace pyopencl
     void *buf = 0;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> retained_buf_obj;
+    std::unique_ptr<py_buffer_wrapper> retained_buf_obj;
     if (py_hostbuf.ptr() != Py_None)
     {
-      retained_buf_obj = std::auto_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
+      retained_buf_obj = std::unique_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
 
       int py_buf_flags = PyBUF_ANY_CONTIGUOUS;
       if ((flags & CL_MEM_USE_HOST_PTR)
@@ -1947,7 +1944,7 @@ namespace pyopencl
     PYOPENCL_BUFFER_SIZE_T len;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
+    std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
 
@@ -1990,7 +1987,7 @@ namespace pyopencl
     PYOPENCL_BUFFER_SIZE_T len;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
+    std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
 
@@ -2084,7 +2081,7 @@ namespace pyopencl
     void *buf;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
+    std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
 
@@ -2140,7 +2137,7 @@ namespace pyopencl
     const void *buf;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
+    std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
 
@@ -2229,7 +2226,7 @@ namespace pyopencl
     PYOPENCL_BUFFER_SIZE_T pattern_len;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
+    std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(pattern.ptr(), PyBUF_ANY_CONTIGUOUS);
 
@@ -2316,7 +2313,7 @@ namespace pyopencl
   inline
   cl_image_format *make_image_format(cl_channel_order ord, cl_channel_type tp)
   {
-    std::auto_ptr<cl_image_format> result(new cl_image_format);
+    std::unique_ptr<cl_image_format> result(new cl_image_format);
     result->image_channel_order = ord;
     result->image_channel_data_type = tp;
     return result.release();
@@ -2417,10 +2414,10 @@ namespace pyopencl
     PYOPENCL_BUFFER_SIZE_T len;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> retained_buf_obj;
+    std::unique_ptr<py_buffer_wrapper> retained_buf_obj;
     if (buffer.ptr() != Py_None)
     {
-      retained_buf_obj = std::auto_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
+      retained_buf_obj = std::unique_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
 
       int py_buf_flags = PyBUF_ANY_CONTIGUOUS;
       if ((flags & CL_MEM_USE_HOST_PTR)
@@ -2563,10 +2560,10 @@ namespace pyopencl
     void *buf = 0;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> retained_buf_obj;
+    std::unique_ptr<py_buffer_wrapper> retained_buf_obj;
     if (buffer.ptr() != Py_None)
     {
-      retained_buf_obj = std::auto_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
+      retained_buf_obj = std::unique_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
 
       int py_buf_flags = PyBUF_ANY_CONTIGUOUS;
       if ((flags & CL_MEM_USE_HOST_PTR)
@@ -2647,7 +2644,7 @@ namespace pyopencl
     void *buf;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
+    std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
 
@@ -2693,7 +2690,7 @@ namespace pyopencl
     const void *buf;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
+    std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
 
@@ -2826,7 +2823,7 @@ namespace pyopencl
     const void *color_buf;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-    std::auto_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
+    std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(color.ptr(), PyBUF_ANY_CONTIGUOUS);
 
@@ -2911,7 +2908,7 @@ namespace pyopencl
     PYOPENCL_PARSE_NUMPY_ARRAY_SPEC;
 
     npy_uintp size_in_bytes = tp_descr->elsize;
-    BOOST_FOREACH(npy_intp sdim, shape)
+    for (npy_intp sdim: shape)
       size_in_bytes *= sdim;
 
     py::handle<> result;
@@ -2937,7 +2934,7 @@ namespace pyopencl
 
     event evt_handle(evt, false);
 
-    std::auto_ptr<memory_map> map;
+    std::unique_ptr<memory_map> map;
     try
     {
       result = py::handle<>(PyArray_NewFromDescr(
@@ -2951,7 +2948,7 @@ namespace pyopencl
         throw pyopencl::error("enqueue_map_buffer", CL_INVALID_VALUE,
             "miscalculated numpy array size (not contiguous?)");
 
-       map = std::auto_ptr<memory_map>(new memory_map(cq, buf, mapped));
+       map = std::unique_ptr<memory_map>(new memory_map(cq, buf, mapped));
     }
     catch (...)
     {
@@ -3011,10 +3008,10 @@ namespace pyopencl
 
     event evt_handle(evt, false);
 
-    std::auto_ptr<memory_map> map;
+    std::unique_ptr<memory_map> map;
     try
     {
-       map = std::auto_ptr<memory_map>(new memory_map(cq, img, mapped));
+       map = std::unique_ptr<memory_map>(new memory_map(cq, img, mapped));
     }
     catch (...)
     {
@@ -3165,7 +3162,7 @@ namespace pyopencl
               PYOPENCL_GET_VEC_INFO(Program, m_program, param_name, result);
 
               py::list py_result;
-              BOOST_FOREACH(cl_device_id did, result)
+              for (cl_device_id did: result)
                 py_result.append(handle_from_new_ptr(
                       new pyopencl::device(did)));
               return py_result;
@@ -3294,7 +3291,7 @@ namespace pyopencl
         }
 
         std::vector<const char *> header_name_ptrs;
-        BOOST_FOREACH(std::string const &name, header_names)
+        for (std::string const &name: header_names)
           header_name_ptrs.push_back(name.c_str());
 
         // }}}
@@ -3757,7 +3754,7 @@ namespace pyopencl
           kernels.empty( ) ? NULL : &kernels.front(), &num_kernels));
 
     py::list result;
-    BOOST_FOREACH(cl_kernel knl, kernels)
+    for (cl_kernel knl: kernels)
       result.append(handle_from_new_ptr(new kernel(knl, true)));
 
     return result;
@@ -4122,7 +4119,7 @@ namespace pyopencl
                devices.empty( ) ? NULL : &devices.front(), &size));
 
           py::list result;
-          BOOST_FOREACH(cl_device_id did, devices)
+          for (cl_device_id did: devices)
             result.append(handle_from_new_ptr(
                   new device(did)));
 

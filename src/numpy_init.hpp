@@ -2,12 +2,8 @@
 #define _FAYHVVAAA_PYOPENCL_HEADER_SEEN_NUMPY_INIT_HPP
 
 
-
-
 #include <numpy/arrayobject.h>
 #include <stdexcept>
-
-
 
 
 namespace

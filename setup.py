@@ -38,7 +38,7 @@ def get_config_schema():
             IncludeDir, LibraryDir, Libraries, \
             Switch, StringListOption
 
-    default_cxxflags = ['-std=gnu++11']
+    default_cxxflags = []
 
     if 'darwin' in sys.platform:
         import platform
@@ -219,12 +219,12 @@ def main():
             ext_modules=[
                 NumpyExtension("_cl",
                     [
-                        "src/wrapper/wrap_cl.cpp",
-                        "src/wrapper/wrap_cl_part_1.cpp",
-                        "src/wrapper/wrap_cl_part_2.cpp",
-                        "src/wrapper/wrap_constants.cpp",
-                        "src/wrapper/wrap_mempool.cpp",
-                        "src/wrapper/bitlog.cpp",
+                        #"src/wrap_cl.cpp",
+                        #"src/wrap_cl_part_1.cpp",
+                        #"src/wrap_cl_part_2.cpp",
+                        #"src/wrap_constants.cpp",
+                        "src/wrap_mempool.cpp",
+                        #"src/bitlog.cpp",
                         ],
                     include_dirs=INCLUDE_DIRS,
                     library_dirs=conf["CL_LIB_DIR"],

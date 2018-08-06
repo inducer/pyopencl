@@ -2,17 +2,12 @@
 // first to prevent OS X from overriding a bunch of macros. (e.g. isspace)
 #include <Python.h>
 
+#include <memory>
 #include <vector>
 #include "wrap_helpers.hpp"
-#include "wrap_cl.hpp"
+// #include "wrap_cl.hpp"
 #include "mempool.hpp"
 #include "tools.hpp"
-#include <boost/python/stl_iterator.hpp>
-
-
-
-
-namespace py = boost::python;
 
 
 
@@ -22,11 +17,11 @@ namespace
   class cl_allocator_base
   {
     protected:
-      boost::shared_ptr<pyopencl::context> m_context;
+      std::shared_ptr<pyopencl::context> m_context;
       cl_mem_flags m_flags;
 
     public:
-      cl_allocator_base(boost::shared_ptr<pyopencl::context> const &ctx,
+      cl_allocator_base(std::shared_ptr<pyopencl::context> const &ctx,
           cl_mem_flags flags=CL_MEM_READ_WRITE)
         : m_context(ctx), m_flags(flags)
       {
@@ -66,7 +61,7 @@ namespace
       typedef cl_allocator_base super;
 
     public:
-      cl_deferred_allocator(boost::shared_ptr<pyopencl::context> const &ctx,
+      cl_deferred_allocator(std::shared_ptr<pyopencl::context> const &ctx,
           cl_mem_flags flags=CL_MEM_READ_WRITE)
         : super(ctx, flags)
       { }
@@ -96,7 +91,7 @@ namespace
     public:
       cl_immediate_allocator(pyopencl::command_queue &queue,
           cl_mem_flags flags=CL_MEM_READ_WRITE)
-        : super(boost::shared_ptr<pyopencl::context>(queue.get_context()), flags),
+        : super(std::shared_ptr<pyopencl::context>(queue.get_context()), flags),
         m_queue(queue.data(), /*retain*/ true)
       { }
 
@@ -190,7 +185,7 @@ namespace
 
     public:
       pooled_buffer(
-          boost::shared_ptr<super::pool_type> p, super::size_type s)
+          std::shared_ptr<super::pool_type> p, super::size_type s)
         : super(p, s)
       { }
 
@@ -202,7 +197,7 @@ namespace
 
 
   pooled_buffer *device_pool_allocate(
-      boost::shared_ptr<pyopencl::memory_pool<cl_allocator_base> > pool,
+      std::shared_ptr<pyopencl::memory_pool<cl_allocator_base> > pool,
       pyopencl::memory_pool<cl_allocator_base>::size_type sz)
   {
     return new pooled_buffer(pool, sz);
@@ -249,7 +244,7 @@ void pyopencl_expose_mempool()
     typedef cl_deferred_allocator cls;
     py::class_<cls, py::bases<cl_allocator_base> > wrapper("_tools_DeferredAllocator",
         py::init<
-          boost::shared_ptr<pyopencl::context> const &,
+          std::shared_ptr<pyopencl::context> const &,
           py::optional<cl_mem_flags> >());
   }
 
@@ -264,7 +259,7 @@ void pyopencl_expose_mempool()
 
     py::class_<
       cls, boost::noncopyable,
-      boost::shared_ptr<cls> > wrapper("MemoryPool",
+      std::shared_ptr<cls> > wrapper("MemoryPool",
           py::init<cl_allocator_base const &>()
           );
     wrapper

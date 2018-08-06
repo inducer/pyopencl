@@ -58,7 +58,7 @@ void pyopencl_expose_part_1()
   {
     typedef context cls;
     py::class_<cls, boost::noncopyable,
-      boost::shared_ptr<cls> >("Context", py::no_init)
+      std::shared_ptr<cls> >("Context", py::no_init)
       .def("__init__", make_constructor(create_context,
             py::default_call_policies(),
             (py::arg("devices")=py::object(),

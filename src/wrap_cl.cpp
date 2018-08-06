@@ -13,7 +13,7 @@ extern void pyopencl_expose_part_1();
 extern void pyopencl_expose_part_2();
 extern void pyopencl_expose_mempool();
 
-BOOST_PYTHON_MODULE(_cl)
+PYBIND11_MODULE(_cl)
 {
   pyopencl_expose_constants();
   pyopencl_expose_part_1();

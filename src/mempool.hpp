@@ -1,20 +1,17 @@
 // Abstract memory pool implementation
 
-
-
-
 #ifndef _AFJDFJSDFSD_PYGPU_HEADER_SEEN_MEMPOOL_HPP
 #define _AFJDFJSDFSD_PYGPU_HEADER_SEEN_MEMPOOL_HPP
 
 
-
-
-#include <boost/ptr_container/ptr_map.hpp>
-#include <boost/foreach.hpp>
-#include <boost/format.hpp>
+#include <cassert>
+#include <vector>
+#include <map>
+#include <memory>
+#include <ostream>
+#include <iostream>
+#include "wrap_cl.hpp"
 #include "bitlog.hpp"
-
-
 
 
 namespace PYGPU_PACKAGE
@@ -51,14 +48,14 @@ namespace PYGPU_PACKAGE
       typedef typename Allocator::size_type size_type;
 
     private:
-      typedef boost::uint32_t bin_nr_t;
+      typedef uint32_t bin_nr_t;
       typedef std::vector<pointer_type> bin_t;
 
-      typedef boost::ptr_map<bin_nr_t, bin_t > container_t;
+      typedef std::map<bin_nr_t, bin_t> container_t;
       container_t m_container;
       typedef typename container_t::value_type bin_pair_t;
 
-      std::auto_ptr<Allocator> m_allocator;
+      std::unique_ptr<Allocator> m_allocator;
 
       // A held block is one that's been released by the application, but that
       // we are keeping around to dish out again.
@@ -242,7 +239,7 @@ namespace PYGPU_PACKAGE
 
       void free_held()
       {
-        BOOST_FOREACH(bin_pair_t bin_pair, m_container)
+        for (bin_pair_t bin_pair: m_container)
         {
           bin_t &bin = *bin_pair.second;
 
@@ -272,9 +269,8 @@ namespace PYGPU_PACKAGE
 
       bool try_to_free_memory()
       {
-        BOOST_FOREACH(bin_pair_t bin_pair,
-            // free largest stuff first
-            std::make_pair(m_container.rbegin(), m_container.rend()))
+        // free largest stuff first
+        for (bin_pair_t bin_pair: reverse(m_container))
         {
           bin_t &bin = *bin_pair.second;
 
@@ -314,11 +310,8 @@ namespace PYGPU_PACKAGE
   };
 
 
-
-
-
   template <class Pool>
-  class pooled_allocation : public boost::noncopyable
+  class pooled_allocation : public noncopyable
   {
     public:
       typedef Pool pool_type;
@@ -326,14 +319,14 @@ namespace PYGPU_PACKAGE
       typedef typename Pool::size_type size_type;
 
     private:
-      boost::shared_ptr<pool_type> m_pool;
+      std::shared_ptr<pool_type> m_pool;
 
       pointer_type m_ptr;
       size_type m_size;
       bool m_valid;
 
     public:
-      pooled_allocation(boost::shared_ptr<pool_type> p, size_type size)
+      pooled_allocation(std::shared_ptr<pool_type> p, size_type size)
         : m_pool(p), m_ptr(p->allocate(size)), m_size(size), m_valid(true)
       { }
 
