@@ -2254,7 +2254,7 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
                         (i.base_data, i.offset)
                         for i in arrays[chunk_slice]))
                     + src_offsets_list[chunk_slice]
-                    + [src_indices.size]))
+                    + [src_indices.size]), wait_for=wait_for_this)
         for o in out[chunk_slice]:
             o.add_event(evt)
 
