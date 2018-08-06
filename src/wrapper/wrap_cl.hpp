@@ -1685,7 +1685,7 @@ namespace pyopencl
     PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo, (cq.data(), CL_QUEUE_DEVICE,
           sizeof(dev), &dev, NULL));
     cl_platform_id plat;
-    PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (cq.data(), CL_DEVICE_PLATFORM,
+    PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (dev, CL_DEVICE_PLATFORM,
           sizeof(plat), &plat, NULL));
     // }}}
 #endif
