@@ -100,7 +100,7 @@ def get_config_schema():
 def main():
     from setuptools import find_packages
     from aksetup_helper import (hack_distutils, get_config, setup,
-            check_git_submodules)
+            check_git_submodules, NumpyExtension)
     check_git_submodules()
 
     hack_distutils()
@@ -132,6 +132,8 @@ def main():
             raise
 
     conf["EXTRA_DEFINES"] = extra_defines
+
+    INCLUDE_DIRS = conf["CL_INC_DIR"] + ["pybind11/include"]  # noqa: N806
 
     ver_dic = {}
     version_file = open("pyopencl/version.py")
@@ -181,22 +183,6 @@ def main():
         print("https://pypi.python.org/pypi/pyopencl")
         sys.exit(1)
 
-    # {{{ write cffi build script
-
-    with open("cffi_build.py.in", "rt") as f:
-        build_script_template = f.read()
-
-    format_args = {}
-    for k, v in conf.items():
-        format_args[k] = repr(v)
-
-    build_script = build_script_template.format(**format_args)
-
-    with open("cffi_build.py", "wt") as f:
-        f.write(build_script)
-
-    # }}}
-
     setup(name="pyopencl",
             # metadata
             version=ver_dic["VERSION_TEXT"],
@@ -230,9 +216,27 @@ def main():
             # build info
             packages=find_packages(),
 
+            ext_modules=[
+                NumpyExtension("_cl",
+                    [
+                        "src/wrapper/wrap_cl.cpp",
+                        "src/wrapper/wrap_cl_part_1.cpp",
+                        "src/wrapper/wrap_cl_part_2.cpp",
+                        "src/wrapper/wrap_constants.cpp",
+                        "src/wrapper/wrap_mempool.cpp",
+                        "src/wrapper/bitlog.cpp",
+                        ],
+                    include_dirs=INCLUDE_DIRS,
+                    library_dirs=conf["CL_LIB_DIR"],
+                    libraries=conf["CL_LIBNAME"],
+                    define_macros=list(conf["EXTRA_DEFINES"].items()),
+                    extra_compile_args=conf["CXXFLAGS"],
+                    extra_link_args=conf["LDFLAGS"],
+                    ),
+                ],
+
             setup_requires=[
                 "numpy",
-                "cffi>=1.1.0",
                 ],
 
             install_requires=[
@@ -240,13 +244,10 @@ def main():
                 "pytools>=2017.6",
                 "pytest>=2",
                 "decorator>=3.2.0",
-                "cffi>=1.1.0",
                 "appdirs>=1.4.0",
                 "six>=1.9.0",
                 # "Mako>=0.3.6",
                 ],
-
-            cffi_modules=["cffi_build.py:ffi"],
 
             include_package_data=True,
             package_data={
