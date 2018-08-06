@@ -624,7 +624,7 @@ class Array(object):
             event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
                     device_offset=self.offset,
                     is_blocking=not async_)
-            if not async_: # not already waited for
+            if not async_:  # not already waited for
                 self.add_event(event1)
 
     def get(self, queue=None, ary=None, async_=None, **kwargs):
@@ -1293,7 +1293,8 @@ class Array(object):
         krnl = get_any_kernel(self.context, self.dtype)
         if wait_for is None:
             wait_for = []
-        result, event1 = krnl(self, queue=queue, wait_for=wait_for + self.events, return_event=True)
+        result, event1 = krnl(self, queue=queue,
+               wait_for=wait_for + self.events, return_event=True)
         result.add_event(event1)
         return result
 
@@ -1302,7 +1303,8 @@ class Array(object):
         krnl = get_all_kernel(self.context, self.dtype)
         if wait_for is None:
             wait_for = []
-        result, event1 = krnl(self, queue=queue, wait_for=wait_for + self.events, return_event=True)
+        result, event1 = krnl(self, queue=queue,
+               wait_for=wait_for + self.events, return_event=True)
         result.add_event(event1)
         return result
 
@@ -1686,7 +1688,7 @@ class Array(object):
         if flags is None:
             flags = cl.map_flags.READ | cl.map_flags.WRITE
         if wait_for is None:
-            wait_for=[]
+            wait_for = []
 
         ary, evt = cl.enqueue_map_buffer(
                 queue or self.queue, self.base_data, flags, self.offset,
@@ -2274,7 +2276,6 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
     if wait_for is None:
         wait_for = []
     wait_for = wait_for + dest_indices.events
-    
 
     vec_count = len(arrays)
 
@@ -2535,7 +2536,8 @@ def sum(a, dtype=None, queue=None, slice=None):
     """
     from pyopencl.reduction import get_sum_kernel
     krnl = get_sum_kernel(a.context, dtype, a.dtype)
-    result, event1 = krnl(a, queue=queue, slice=slice, wait_for=a.events, return_event=True)
+    result, event1 = krnl(a, queue=queue, slice=slice, wait_for=a.events,
+            return_event=True)
     result.add_event(event1)
     return result
 
@@ -2546,7 +2548,8 @@ def dot(a, b, dtype=None, queue=None, slice=None):
     """
     from pyopencl.reduction import get_dot_kernel
     krnl = get_dot_kernel(a.context, dtype, a.dtype, b.dtype)
-    result, event1 = krnl(a, b, queue=queue, slice=slice, wait_for=a.events + b.events, return_event=True)
+    result, event1 = krnl(a, b, queue=queue, slice=slice,
+            wait_for=a.events + b.events, return_event=True)
     result.add_event(event1)
     return result
 
@@ -2559,7 +2562,8 @@ def vdot(a, b, dtype=None, queue=None, slice=None):
     from pyopencl.reduction import get_dot_kernel
     krnl = get_dot_kernel(a.context, dtype, a.dtype, b.dtype,
             conjugate_first=True)
-    result, event1 = krnl(a, b, queue=queue, slice=slice, wait_for=a.events + b.events, return_event=True)
+    result, event1 = krnl(a, b, queue=queue, slice=slice,
+            wait_for=a.events + b.events, return_event=True)
     result.add_event(event1)
     return result
 
@@ -2572,7 +2576,7 @@ def subset_dot(subset, a, b, dtype=None, queue=None, slice=None):
     krnl = get_subset_dot_kernel(
             a.context, dtype, subset.dtype, a.dtype, b.dtype)
     result, event1 = krnl(subset, a, b, queue=queue, slice=slice,
-        wait_for=subset.events + a.events + b.events, return_event=True)
+            wait_for=subset.events + a.events + b.events, return_event=True)
     result.add_event(event1)
     return result
 
@@ -2581,7 +2585,8 @@ def _make_minmax_kernel(what):
     def f(a, queue=None):
         from pyopencl.reduction import get_minmax_kernel
         krnl = get_minmax_kernel(a.context, what, a.dtype)
-        result, event1 = krnl(a,  queue=queue, wait_for=a.events, return_event=True)
+        result, event1 = krnl(a, queue=queue, wait_for=a.events,
+                return_event=True)
         result.add_event(event1)
         return result
 
@@ -2604,7 +2609,7 @@ def _make_subset_minmax_kernel(what):
         from pyopencl.reduction import get_subset_minmax_kernel
         krnl = get_subset_minmax_kernel(a.context, what, a.dtype, subset.dtype)
         result, event1 = krnl(subset, a,  queue=queue, slice=slice,
-            wait_for=a.events + subset.events, return_event=True)
+                wait_for=a.events + subset.events, return_event=True)
         result.add_event(event1)
         return result
     return f
