@@ -135,7 +135,7 @@ namespace PYGPU_PACKAGE
           return *new_bin;
         }
         else
-          return *it->second;
+          return it->second;
       }
 
       void inc_held_blocks()
@@ -241,7 +241,7 @@ namespace PYGPU_PACKAGE
       {
         for (bin_pair_t bin_pair: m_container)
         {
-          bin_t &bin = *bin_pair.second;
+          bin_t &bin = bin_pair.second;
 
           while (bin.size())
           {
@@ -272,7 +272,7 @@ namespace PYGPU_PACKAGE
         // free largest stuff first
         for (bin_pair_t bin_pair: reverse(m_container))
         {
-          bin_t &bin = *bin_pair.second;
+          bin_t &bin = bin_pair.second;
 
           if (bin.size())
           {

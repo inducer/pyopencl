@@ -5,10 +5,9 @@
 #include <memory>
 #include <vector>
 #include "wrap_helpers.hpp"
-// #include "wrap_cl.hpp"
+#include "wrap_cl.hpp"
 #include "mempool.hpp"
 #include "tools.hpp"
-
 
 
 
@@ -209,16 +208,14 @@ namespace
   template<class Wrapper>
   void expose_memory_pool(Wrapper &wrapper)
   {
-    typedef typename Wrapper::wrapped_type cls;
+    typedef typename Wrapper::type cls;
     wrapper
-      .add_property("held_blocks", &cls::held_blocks)
-      .add_property("active_blocks", &cls::active_blocks)
-      .DEF_SIMPLE_METHOD(bin_number)
-      .DEF_SIMPLE_METHOD(alloc_size)
+      .def_property("held_blocks", &cls::held_blocks)
+      .def_property("active_blocks", &cls::active_blocks)
+      .DEF_SIMPLE_STATIC_METHOD(bin_number)
+      .DEF_SIMPLE_STATIC_METHOD(alloc_size)
       .DEF_SIMPLE_METHOD(free_held)
       .DEF_SIMPLE_METHOD(stop_holding)
-      .staticmethod("bin_number")
-      .staticmethod("alloc_size")
       ;
   }
 }
@@ -226,47 +223,53 @@ namespace
 
 
 
-void pyopencl_expose_mempool()
+void pyopencl_expose_mempool(py::module &m)
 {
-  py::def("bitlog2", pyopencl::bitlog2);
+  m.def("bitlog2", pyopencl::bitlog2);
 
   {
     typedef cl_allocator_base cls;
-    py::class_<cls, boost::noncopyable> wrapper("_tools_AllocatorBase", py::no_init);
+    py::class_<cls /*, boost::noncopyable */> wrapper(
+        m, "_tools_AllocatorBase"/*, py::no_init */);
     wrapper
-      .def("__call__", allocator_call,
-          py::return_value_policy<py::manage_new_object>())
+      .def("__call__", allocator_call)
       ;
 
   }
 
   {
     typedef cl_deferred_allocator cls;
-    py::class_<cls, py::bases<cl_allocator_base> > wrapper("_tools_DeferredAllocator",
-        py::init<
+    py::class_<cls, py::base<cl_allocator_base>> wrapper(
+        m, "_tools_DeferredAllocator");
+    wrapper
+      .def(py::init<
+          std::shared_ptr<pyopencl::context> const &>())
+      .def(py::init<
           std::shared_ptr<pyopencl::context> const &,
-          py::optional<cl_mem_flags> >());
+          cl_mem_flags>())
+      ;
   }
 
   {
     typedef cl_immediate_allocator cls;
-    py::class_<cls, py::bases<cl_allocator_base> > wrapper("_tools_ImmediateAllocator",
-        py::init<pyopencl::command_queue &, py::optional<cl_mem_flags> >());
+    py::class_<cls, py::base<cl_allocator_base>> wrapper(
+        m, "_tools_ImmediateAllocator");
+    wrapper
+      .def(py::init<pyopencl::command_queue &>())
+      .def(py::init<pyopencl::command_queue &, cl_mem_flags>())
+      ;
   }
 
   {
     typedef pyopencl::memory_pool<cl_allocator_base> cls;
 
     py::class_<
-      cls, boost::noncopyable,
-      std::shared_ptr<cls> > wrapper("MemoryPool",
-          py::init<cl_allocator_base const &>()
-          );
+      cls, /* boost::noncopyable, */
+      std::shared_ptr<cls>> wrapper( m, "MemoryPool");
     wrapper
-      .def("allocate", device_pool_allocate,
-          py::return_value_policy<py::manage_new_object>())
-      .def("__call__", device_pool_allocate,
-          py::return_value_policy<py::manage_new_object>())
+      .def(py::init<cl_allocator_base const &>())
+      .def("allocate", device_pool_allocate)
+      .def("__call__", device_pool_allocate)
       // undoc for now
       .DEF_SIMPLE_METHOD(set_trace)
       ;
@@ -276,9 +279,9 @@ void pyopencl_expose_mempool()
 
   {
     typedef pooled_buffer cls;
-    py::class_<cls, boost::noncopyable, 
-      py::bases<pyopencl::memory_object_holder> >(
-        "PooledBuffer", py::no_init)
+    py::class_<cls, /* boost::noncopyable, */
+      py::base<pyopencl::memory_object_holder> >(
+          m, "PooledBuffer"/* , py::no_init */)
       .def("release", &cls::free)
       ;
   }

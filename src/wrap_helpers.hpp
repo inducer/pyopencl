@@ -20,14 +20,17 @@ namespace py = pybind11;
 #define DEF_SIMPLE_METHOD(NAME) \
   def(#NAME, &cls::NAME)
 
+#define DEF_SIMPLE_STATIC_METHOD(NAME) \
+  def_static(#NAME, &cls::NAME)
+
 #define DEF_SIMPLE_METHOD_WITH_ARGS(NAME, ARGS) \
   def(#NAME, &cls::NAME, boost::python::args ARGS)
 
 #define DEF_SIMPLE_FUNCTION(NAME) \
-  boost::python::def(#NAME, &NAME)
+  m.def(#NAME, &NAME)
 
 #define DEF_SIMPLE_FUNCTION_WITH_ARGS(NAME, ARGS) \
-  boost::python::def(#NAME, &NAME, boost::python::args ARGS)
+  m.def(#NAME, &NAME, py::args ARGS)
 
 #define DEF_SIMPLE_RO_MEMBER(NAME) \
   def_readonly(#NAME, &cls::m_##NAME)
@@ -36,43 +39,46 @@ namespace py = pybind11;
   def_readwrite(#NAME, &cls::m_##NAME)
 
 #define PYTHON_FOREACH(NAME, ITERABLE) \
-  for (py::object NAME: ITERABLE)
+  for (py::handle NAME: ITERABLE)
 
 #define COPY_PY_LIST(TYPE, NAME) \
-  std::copy( \
-      boost::python::stl_input_iterator<TYPE>(py_##NAME), \
-      boost::python::stl_input_iterator<TYPE>(), \
-      std::back_inserter(NAME));
+  { \
+    for (auto it: py_##NAME) \
+      NAME.push_back(it.cast<TYPE>()); \
+  }
 
 #define COPY_PY_COORD_TRIPLE(NAME) \
   size_t NAME[3] = {0, 0, 0}; \
   { \
-    size_t my_len = len(py_##NAME); \
+    py::tuple py_tup_##NAME = py_##NAME; \
+    size_t my_len = len(py_tup_##NAME); \
     if (my_len > 3) \
       throw error("transfer", CL_INVALID_VALUE, #NAME "has too many components"); \
     for (size_t i = 0; i < my_len; ++i) \
-      NAME[i] = py::extract<size_t>(py_##NAME[i])(); \
+      NAME[i] = py_tup_##NAME[i].cast<size_t>(); \
   }
 
 #define COPY_PY_PITCH_TUPLE(NAME) \
   size_t NAME[2] = {0, 0}; \
   if (py_##NAME.ptr() != Py_None) \
   { \
-    size_t my_len = len(py_##NAME); \
+    py::tuple py_tup_##NAME = py_##NAME; \
+    size_t my_len = len(py_tup_##NAME); \
     if (my_len > 2) \
       throw error("transfer", CL_INVALID_VALUE, #NAME "has too many components"); \
     for (size_t i = 0; i < my_len; ++i) \
-      NAME[i] = py::extract<size_t>(py_##NAME[i])(); \
+      NAME[i] = py_tup_##NAME[i].cast<size_t>(); \
   }
 
 #define COPY_PY_REGION_TRIPLE(NAME) \
   size_t NAME[3] = {1, 1, 1}; \
   { \
-    size_t my_len = len(py_##NAME); \
+    py::tuple py_tup_##NAME = py_##NAME; \
+    size_t my_len = len(py_tup_##NAME); \
     if (my_len > 3) \
       throw error("transfer", CL_INVALID_VALUE, #NAME "has too many components"); \
     for (size_t i = 0; i < my_len; ++i) \
-      NAME[i] = py::extract<size_t>(py_##NAME[i])(); \
+      NAME[i] = py_tup_##NAME[i].cast<size_t>(); \
   }
 
 #define PYOPENCL_PARSE_NUMPY_ARRAY_SPEC \
@@ -80,13 +86,15 @@ namespace py = pybind11;
     if (PyArray_DescrConverter(dtype.ptr(), &tp_descr) != NPY_SUCCEED) \
       throw py::error_already_set(); \
     \
-    py::extract<npy_intp> shape_as_int(py_shape); \
     std::vector<npy_intp> shape; \
-    \
-    if (shape_as_int.check()) \
-      shape.push_back(shape_as_int()); \
-    else \
+    try \
+    { \
+      shape.push_back(py_shape.cast<npy_intp>()); \
+    } \
+    catch (py::cast_error &) \
+    { \
       COPY_PY_LIST(npy_intp, shape); \
+    } \
     \
     NPY_ORDER order = PyArray_CORDER; \
     PyArray_OrderConverter(py_order.ptr(), &order); \
@@ -108,7 +116,7 @@ namespace py = pybind11;
 #define PYOPENCL_RETURN_VECTOR(ITEMTYPE, NAME) \
   { \
     py::list pyopencl_result; \
-    BOOST_FOREACH(ITEMTYPE item, NAME) \
+    for (ITEMTYPE item: NAME) \
       pyopencl_result.append(item); \
     return pyopencl_result; \
   }
@@ -116,10 +124,9 @@ namespace py = pybind11;
 namespace
 {
   template <typename T>
-  inline boost::python::handle<> handle_from_new_ptr(T *ptr)
+  inline py::object handle_from_new_ptr(T *ptr)
   {
-    return boost::python::handle<>(
-        typename boost::python::manage_new_object::apply<T *>::type()(ptr));
+    return py::cast(ptr);
   }
 
   template <typename T, typename ClType>

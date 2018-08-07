@@ -2,6 +2,7 @@
 #define _FAYHVVAAA_PYOPENCL_HEADER_SEEN_NUMPY_INIT_HPP
 
 
+// #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 #include <stdexcept>
 

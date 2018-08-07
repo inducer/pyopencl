@@ -38,7 +38,11 @@ def get_config_schema():
             IncludeDir, LibraryDir, Libraries, \
             Switch, StringListOption
 
-    default_cxxflags = []
+    default_cxxflags = [
+            # Required for pybind11:
+            # https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes
+            "-fvisibility=hidden"
+            ]
 
     if 'darwin' in sys.platform:
         import platform
@@ -219,12 +223,12 @@ def main():
             ext_modules=[
                 NumpyExtension("_cl",
                     [
-                        #"src/wrap_cl.cpp",
+                        "src/wrap_cl.cpp",
                         #"src/wrap_cl_part_1.cpp",
                         #"src/wrap_cl_part_2.cpp",
                         #"src/wrap_constants.cpp",
                         "src/wrap_mempool.cpp",
-                        #"src/bitlog.cpp",
+                        "src/bitlog.cpp",
                         ],
                     include_dirs=INCLUDE_DIRS,
                     library_dirs=conf["CL_LIB_DIR"],

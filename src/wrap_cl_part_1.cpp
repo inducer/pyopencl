@@ -8,12 +8,12 @@ using namespace pyopencl;
 
 
 
-void pyopencl_expose_part_1()
+void pyopencl_expose_part_1(py::module &m)
 {
   py::docstring_options doc_op;
   doc_op.disable_cpp_signatures();
 
-  py::def("get_cl_header_version", get_cl_header_version);
+  m.def("get_cl_header_version", get_cl_header_version);
 
   // {{{ platform
   DEF_SIMPLE_FUNCTION(get_platforms);
@@ -125,22 +125,22 @@ void pyopencl_expose_part_1()
   DEF_SIMPLE_FUNCTION(wait_for_events);
 
 #if PYOPENCL_CL_VERSION >= 0x1020
-  py::def("_enqueue_marker_with_wait_list", enqueue_marker_with_wait_list,
+  m.def("_enqueue_marker_with_wait_list", enqueue_marker_with_wait_list,
       (py::arg("queue"), py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
 #endif
-  py::def("_enqueue_marker", enqueue_marker,
+  m.def("_enqueue_marker", enqueue_marker,
       (py::arg("queue")),
       py::return_value_policy<py::manage_new_object>());
-  py::def("_enqueue_wait_for_events", enqueue_wait_for_events,
+  m.def("_enqueue_wait_for_events", enqueue_wait_for_events,
       (py::arg("queue"), py::arg("wait_for")=py::object()));
 
 #if PYOPENCL_CL_VERSION >= 0x1020
-  py::def("_enqueue_barrier_with_wait_list", enqueue_barrier_with_wait_list,
+  m.def("_enqueue_barrier_with_wait_list", enqueue_barrier_with_wait_list,
       (py::arg("queue"), py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());
 #endif
-  py::def("_enqueue_barrier", enqueue_barrier, py::arg("queue"));
+  m.def("_enqueue_barrier", enqueue_barrier, py::arg("queue"));
 
 #if PYOPENCL_CL_VERSION >= 0x1010
   {
@@ -168,7 +168,7 @@ void pyopencl_expose_part_1()
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
 
-      .add_property("int_ptr", to_int_ptr<cls>,
+      .def_property("int_ptr", to_int_ptr<cls>,
           "Return an integer corresponding to the pointer value "
           "of the underlying :c:type:`cl_mem`. "
           "Use :meth:`from_int_ptr` to turn back into a Python object."
@@ -180,7 +180,7 @@ void pyopencl_expose_part_1()
     py::class_<cls, boost::noncopyable, py::bases<memory_object_holder> >(
         "MemoryObject", py::no_init)
       .DEF_SIMPLE_METHOD(release)
-      .add_property("hostbuf", &cls::hostbuf)
+      .def_property("hostbuf", &cls::hostbuf)
 
       .def("from_int_ptr", memory_object_from_int,
         "(static method) Return a new Python object referencing the C-level " \
@@ -197,7 +197,7 @@ void pyopencl_expose_part_1()
   }
 
 #if PYOPENCL_CL_VERSION >= 0x1020
-  py::def("enqueue_migrate_mem_objects", enqueue_migrate_mem_objects,
+  m.def("enqueue_migrate_mem_objects", enqueue_migrate_mem_objects,
       (py::args("queue", "mem_objects"),
        py::arg("flags")=0,
        py::arg("wait_for")=py::object()
@@ -206,7 +206,7 @@ void pyopencl_expose_part_1()
 #endif
 
 #ifdef cl_ext_migrate_memobject
-  py::def("enqueue_migrate_mem_object_ext", enqueue_migrate_mem_object_ext,
+  m.def("enqueue_migrate_mem_object_ext", enqueue_migrate_mem_object_ext,
       (py::args("queue", "mem_objects"),
        py::arg("flags")=0,
        py::arg("wait_for")=py::object()
@@ -241,21 +241,21 @@ void pyopencl_expose_part_1()
   // {{{ transfers
 
   // {{{ byte-for-byte
-  py::def("_enqueue_read_buffer", enqueue_read_buffer,
+  m.def("_enqueue_read_buffer", enqueue_read_buffer,
       (py::args("queue", "mem", "hostbuf"),
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
-  py::def("_enqueue_write_buffer", enqueue_write_buffer,
+  m.def("_enqueue_write_buffer", enqueue_write_buffer,
       (py::args("queue", "mem", "hostbuf"),
        py::arg("device_offset")=0,
        py::arg("wait_for")=py::object(),
        py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
-  py::def("_enqueue_copy_buffer", enqueue_copy_buffer,
+  m.def("_enqueue_copy_buffer", enqueue_copy_buffer,
       (py::args("queue", "src", "dst"),
        py::arg("byte_count")=-1,
        py::arg("src_offset")=0,
@@ -269,7 +269,7 @@ void pyopencl_expose_part_1()
   // {{{ rectangular
 
 #if PYOPENCL_CL_VERSION >= 0x1010
-  py::def("_enqueue_read_buffer_rect", enqueue_read_buffer_rect,
+  m.def("_enqueue_read_buffer_rect", enqueue_read_buffer_rect,
       (py::args("queue", "mem", "hostbuf",
                 "buffer_origin", "host_origin", "region"),
        py::arg("buffer_pitches")=py::object(),
@@ -278,7 +278,7 @@ void pyopencl_expose_part_1()
        py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
-  py::def("_enqueue_write_buffer_rect", enqueue_write_buffer_rect,
+  m.def("_enqueue_write_buffer_rect", enqueue_write_buffer_rect,
       (py::args("queue", "mem", "hostbuf",
                 "buffer_origin", "host_origin", "region"),
        py::arg("buffer_pitches")=py::object(),
@@ -287,7 +287,7 @@ void pyopencl_expose_part_1()
        py::arg("is_blocking")=true
        ),
       py::return_value_policy<py::manage_new_object>());
-  py::def("_enqueue_copy_buffer_rect", enqueue_copy_buffer_rect,
+  m.def("_enqueue_copy_buffer_rect", enqueue_copy_buffer_rect,
       (py::args("queue", "src", "dst",
                 "src_origin", "dst_origin", "region"),
        py::arg("src_pitches")=py::object(),
@@ -302,7 +302,7 @@ void pyopencl_expose_part_1()
   // }}}
 
 #if PYOPENCL_CL_VERSION >= 0x1020
-  py::def("_enqueue_fill_buffer", enqueue_fill_buffer,
+  m.def("_enqueue_fill_buffer", enqueue_fill_buffer,
       (py::args("queue", "mem", "pattern", "offset", "size"),
        py::arg("wait_for")=py::object()),
       py::return_value_policy<py::manage_new_object>());

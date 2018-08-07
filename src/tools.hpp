@@ -28,10 +28,7 @@ namespace pyopencl
   {
     namespace py = pybind11;
 
-    py::object gc_mod(
-        py::handle<>(
-          PyImport_ImportModule("gc")));
-    gc_mod.attr("collect")();
+    py::module::import("gc").attr("collect")();
   }
 
 
