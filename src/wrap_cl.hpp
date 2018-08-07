@@ -1594,7 +1594,7 @@ namespace pyopencl
       }
 
       memory_object(memory_object &src)
-        : m_valid(true), m_mem(src.m_mem), 
+        : m_valid(true), m_mem(src.m_mem),
         m_hostbuf(PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(src.m_hostbuf))
       {
         PYOPENCL_CALL_GUARDED(clRetainMemObject, (m_mem));
@@ -2065,8 +2065,8 @@ namespace pyopencl
       py::object py_buffer_origin,
       py::object py_host_origin,
       py::object py_region,
-      py::object py_buffer_pitches,
-      py::object py_host_pitches,
+      py::sequence py_buffer_pitches,
+      py::sequence py_host_pitches,
       py::object py_wait_for,
       bool is_blocking
       )
@@ -2121,8 +2121,8 @@ namespace pyopencl
       py::object py_buffer_origin,
       py::object py_host_origin,
       py::object py_region,
-      py::object py_buffer_pitches,
-      py::object py_host_pitches,
+      py::sequence py_buffer_pitches,
+      py::sequence py_host_pitches,
       py::object py_wait_for,
       bool is_blocking
       )
@@ -2176,8 +2176,8 @@ namespace pyopencl
       py::object py_src_origin,
       py::object py_dst_origin,
       py::object py_region,
-      py::object py_src_pitches,
-      py::object py_dst_pitches,
+      py::sequence py_src_pitches,
+      py::sequence py_dst_pitches,
       py::object py_wait_for)
   {
     PYOPENCL_PARSE_WAIT_FOR;
@@ -2403,8 +2403,8 @@ namespace pyopencl
       context const &ctx,
       cl_mem_flags flags,
       cl_image_format const &fmt,
-      py::tuple shape,
-      py::tuple pitches,
+      py::sequence shape,
+      py::sequence pitches,
       py::object buffer)
   {
     if (shape.ptr() == Py_None)
