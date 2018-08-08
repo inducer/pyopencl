@@ -51,15 +51,22 @@ void pyopencl_expose_part_1(py::module &m)
   {
     typedef context cls;
     py::class_<cls, std::shared_ptr<cls>>(m, "Context")
-#if 0
       .def(
-          py::init(create_context)/*,
+          py::init(
+            [](py::object py_devices, py::object py_properties,
+              py::object py_dev_type)
+            {
+              PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
+                  return create_context_inner(
+                    py_devices,
+                    py_properties,
+                    py_dev_type);
+              )
+            }),
           py::arg("devices")=py::object(),
           py::arg("properties")=py::object(),
           py::arg("dev_type")=py::object()
-          */
           )
-#endif
       .DEF_SIMPLE_METHOD(get_info)
       .def(py::self == py::self)
       .def(py::self != py::self)
