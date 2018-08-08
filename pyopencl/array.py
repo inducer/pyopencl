@@ -624,8 +624,7 @@ class Array(object):
             event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
                     device_offset=self.offset,
                     is_blocking=not async_)
-            if not async_:  # not already waited for
-                self.add_event(event1)
+            self.add_event(event1)
 
     def get(self, queue=None, ary=None, async_=None, **kwargs):
         """Transfer the contents of *self* into *ary* or a newly allocated
