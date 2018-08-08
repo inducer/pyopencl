@@ -224,7 +224,7 @@ def main():
                 NumpyExtension("_cl",
                     [
                         "src/wrap_cl.cpp",
-                        #"src/wrap_cl_part_1.cpp",
+                        "src/wrap_cl_part_1.cpp",
                         #"src/wrap_cl_part_2.cpp",
                         #"src/wrap_constants.cpp",
                         "src/wrap_mempool.cpp",

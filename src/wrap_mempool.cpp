@@ -210,8 +210,8 @@ namespace
   {
     typedef typename Wrapper::type cls;
     wrapper
-      .def_property("held_blocks", &cls::held_blocks)
-      .def_property("active_blocks", &cls::active_blocks)
+      .def_property_readonly("held_blocks", &cls::held_blocks)
+      .def_property_readonly("active_blocks", &cls::active_blocks)
       .DEF_SIMPLE_STATIC_METHOD(bin_number)
       .DEF_SIMPLE_STATIC_METHOD(alloc_size)
       .DEF_SIMPLE_METHOD(free_held)
@@ -239,7 +239,7 @@ void pyopencl_expose_mempool(py::module &m)
 
   {
     typedef cl_deferred_allocator cls;
-    py::class_<cls, py::base<cl_allocator_base>> wrapper(
+    py::class_<cls, cl_allocator_base> wrapper(
         m, "_tools_DeferredAllocator");
     wrapper
       .def(py::init<
@@ -252,7 +252,7 @@ void pyopencl_expose_mempool(py::module &m)
 
   {
     typedef cl_immediate_allocator cls;
-    py::class_<cls, py::base<cl_allocator_base>> wrapper(
+    py::class_<cls, cl_allocator_base> wrapper(
         m, "_tools_ImmediateAllocator");
     wrapper
       .def(py::init<pyopencl::command_queue &>())
@@ -280,7 +280,7 @@ void pyopencl_expose_mempool(py::module &m)
   {
     typedef pooled_buffer cls;
     py::class_<cls, /* boost::noncopyable, */
-      py::base<pyopencl::memory_object_holder> >(
+      pyopencl::memory_object_holder>(
           m, "PooledBuffer"/* , py::no_init */)
       .def("release", &cls::free)
       ;

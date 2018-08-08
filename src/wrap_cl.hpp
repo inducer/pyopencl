@@ -3875,7 +3875,6 @@ namespace pyopencl
   // }}}
 
 
-#if 0
   // {{{ gl interop
   inline
   bool have_gl()
@@ -3910,7 +3909,7 @@ namespace pyopencl
   {
     public:
       gl_buffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : memory_object(mem, retain, hostbuf)
+        : memory_object(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
       { }
   };
 
@@ -3921,7 +3920,7 @@ namespace pyopencl
   {
     public:
       gl_renderbuffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : memory_object(mem, retain, hostbuf)
+        : memory_object(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
       { }
   };
 
@@ -3932,7 +3931,7 @@ namespace pyopencl
   {
     public:
       gl_texture(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : image(mem, retain, hostbuf)
+        : image(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
       { }
 
       py::object get_gl_texture_info(cl_gl_texture_info param_name)
@@ -4036,7 +4035,7 @@ namespace pyopencl
     \
     std::vector<cl_mem> mem_objects; \
     PYTHON_FOREACH(mo, py_mem_objects) \
-      mem_objects.push_back((mo).cast<memory_object_holder &>()().data()); \
+      mem_objects.push_back((mo).cast<memory_object_holder &>().data()); \
     \
     cl_event evt; \
     PYOPENCL_CALL_GUARDED(clEnqueue##What##GLObjects, ( \
@@ -4144,7 +4143,6 @@ namespace pyopencl
 #endif
 
   // }}}
-#endif
 
 
   // {{{ deferred implementation bits

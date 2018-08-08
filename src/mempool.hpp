@@ -130,9 +130,9 @@ namespace PYGPU_PACKAGE
         typename container_t::iterator it = m_container.find(bin_nr);
         if (it == m_container.end())
         {
-          bin_t *new_bin = new bin_t;
-          m_container.insert(bin_nr, new_bin);
-          return *new_bin;
+          auto it_and_inserted = m_container.insert(std::make_pair(bin_nr, bin_t()));
+          assert(it_and_inserted.second);
+          return it_and_inserted.first->second;
         }
         else
           return it->second;
