@@ -41,7 +41,8 @@ def _make_unary_array_func(name):
 
     def f(array, queue=None):
         result = array._new_like_me(queue=queue)
-        knl_runner(result, array, queue=queue)
+        event1 = knl_runner(result, array, queue=queue)
+        result.add_event(event1)
         return result
 
     return f
@@ -78,7 +79,7 @@ def atan2(y, x, queue=None):
     """
     queue = queue or y.queue
     result = y._new_like_me(_get_common_dtype(y, x, queue))
-    _atan2(result, y, x, queue=queue)
+    result.add_event(_atan2(result, y, x, queue=queue))
     return result
 
 
@@ -92,7 +93,7 @@ def atan2pi(y, x, queue=None):
     """
     queue = queue or y.queue
     result = y._new_like_me(_get_common_dtype(y, x, queue))
-    _atan2pi(result, y, x, queue=queue)
+    result.add_event(_atan2pi(result, y, x, queue=queue))
     return result
 
 
@@ -130,7 +131,7 @@ def fmod(arg, mod, queue=None):
     for each element in `arg` and `mod`."""
     queue = (queue or arg.queue) or mod.queue
     result = arg._new_like_me(_get_common_dtype(arg, mod, queue))
-    _fmod(result, arg, mod, queue=queue)
+    result.add_event(_fmod(result, arg, mod, queue=queue))
     return result
 
 # TODO: fract
@@ -148,7 +149,9 @@ def frexp(arg, queue=None):
     """
     sig = arg._new_like_me(queue=queue)
     expt = arg._new_like_me(queue=queue, dtype=np.int32)
-    _frexp(sig, expt, arg, queue=queue)
+    event1 = _frexp(sig, expt, arg, queue=queue)
+    sig.add_event(event1)
+    expt.add_event(event1)
     return sig, expt
 
 # TODO: hypot
@@ -169,7 +172,7 @@ def ldexp(significand, exponent, queue=None):
     `result = significand * 2**exponent`.
     """
     result = significand._new_like_me(queue=queue)
-    _ldexp(result, significand, exponent)
+    result.add_event(_ldexp(result, significand, exponent))
     return result
 
 
@@ -199,7 +202,9 @@ def modf(arg, queue=None):
     """
     intpart = arg._new_like_me(queue=queue)
     fracpart = arg._new_like_me(queue=queue)
-    _modf(intpart, fracpart, arg, queue=queue)
+    event1 = _modf(intpart, fracpart, arg, queue=queue)
+    fracpart.add_event(event1)
+    intpart.add_event(event1)
     return fracpart, intpart
 
 
@@ -254,18 +259,20 @@ def _hankel_01(h0, h1, x):
 
 def bessel_jn(n, x, queue=None):
     result = x._new_like_me(queue=queue)
-    _bessel_jn(result, n, x, queue=queue)
+    result.add_event(_bessel_jn(result, n, x, queue=queue))
     return result
 
 
 def bessel_yn(n, x, queue=None):
     result = x._new_like_me(queue=queue)
-    _bessel_yn(result, n, x, queue=queue)
+    result.add_event(_bessel_yn(result, n, x, queue=queue))
     return result
 
 
 def hankel_01(x, queue=None):
     h0 = x._new_like_me(queue=queue)
     h1 = x._new_like_me(queue=queue)
-    _hankel_01(h0, h1, x, queue=queue)
+    event1 = _hankel_01(h0, h1, x, queue=queue)
+    h0.add_event(event1)
+    h1.add_event(event1)
     return h0, h1
