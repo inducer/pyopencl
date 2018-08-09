@@ -146,10 +146,12 @@ void pyopencl_expose_part_1(py::module &m)
   {
     typedef user_event cls;
     py::class_<cls, event>(m, "UserEvent")
-#if 0
-      .def("__init__", make_constructor(
-            create_user_event, py::default_call_policies(), py::args("context")))
-#endif
+      .def(py::init(
+            [](context &ctx)
+            {
+              return create_user_event(ctx);
+            }),
+          py::arg("context"))
       .DEF_SIMPLE_METHOD(set_status)
       ;
   }
@@ -167,10 +169,8 @@ void pyopencl_expose_part_1(py::module &m)
           py::arg("shape"),
           py::arg("dtype"),
           py::arg("order")="C")
-#if 0
-      .def(py::self == py::self)
-      .def(py::self != py::self)
-#endif
+      .def("__eq__", [](const cls &self, const cls &other){ return self == other; })
+      .def("__ne__", [](const cls &self, const cls &other){ return self != other; })
       .def("__hash__", &cls::hash)
 
       .def_property_readonly("int_ptr", to_int_ptr<cls>,
@@ -218,14 +218,16 @@ void pyopencl_expose_part_1(py::module &m)
   {
     typedef buffer cls;
     py::class_<cls, memory_object>(m, "Buffer")
-#if 0
-      .def("__init__", make_constructor(create_buffer_py,
-            py::default_call_policies(),
-            (py::args("context", "flags"),
-             py::arg("size")=0,
-             py::arg("hostbuf")=py::object()
-            )))
-#endif
+      .def(
+          py::init(
+            [](context &ctx, cl_mem_flags flags, size_t size, py::object py_hostbuf)
+            { return create_buffer_py(ctx, flags, size, py_hostbuf); }
+            ),
+          py::arg("context"),
+          py::arg("flags"),
+          py::arg("size")=0,
+          py::arg("hostbuf")=py::object()
+          )
 #if PYOPENCL_CL_VERSION >= 0x1010
       .def("get_sub_region", &cls::get_sub_region,
           py::arg("origin"),

@@ -67,25 +67,43 @@ void pyopencl_expose_part_2(py::module &m)
   {
     typedef image cls;
     py::class_<cls, memory_object>(m, "Image"/* , py::no_init */)
-#if 0
-      .def("__init__", make_constructor(create_image,
-            py::default_call_policies(),
-            py::arg("context"),
-            py::arg("flags"),
-            py::arg("format"),
-            py::arg("shape")=py::object(),
-            py::arg("pitches")=py::object(),
-            py::arg("hostbuf")=py::object()
-            )))
+      .def(
+          py::init(
+            [](
+              context const &ctx,
+              cl_mem_flags flags,
+              cl_image_format const &fmt,
+              py::sequence shape,
+              py::sequence pitches,
+              py::object buffer)
+            {
+              return create_image(ctx, flags, fmt, shape, pitches, buffer);
+            }),
+          py::arg("context"),
+          py::arg("flags"),
+          py::arg("format"),
+          py::arg("shape")=py::object(),
+          py::arg("pitches")=py::object(),
+          py::arg("hostbuf")=py::object()
+          )
 #if PYOPENCL_CL_VERSION >= 0x1020
-      .def("__init__", make_constructor(create_image_from_desc,
-            py::default_call_policies(),
-            py::arg("context"),
-            py::arg("flags"),
-            py::arg("format"),
-            py::arg("desc"),
-            py::arg("hostbuf")=py::object()))
-#endif
+      .def(
+          py::init(
+            [](
+              context const &ctx,
+              cl_mem_flags flags,
+              cl_image_format const &fmt,
+              cl_image_desc &desc,
+              py::object buffer)
+            {
+              return create_image_from_desc(ctx, flags, fmt, desc, buffer);
+            }),
+          py::arg("context"),
+          py::arg("flags"),
+          py::arg("format"),
+          py::arg("desc"),
+          py::arg("hostbuf")=py::object()
+          )
 #endif
       .DEF_SIMPLE_METHOD(get_image_info)
       ;
@@ -94,9 +112,12 @@ void pyopencl_expose_part_2(py::module &m)
   {
     typedef cl_image_format cls;
     py::class_<cls>(m, "ImageFormat")
-#if 0
-      .def("__init__", py::make_constructor(make_image_format))
-#endif
+      .def(
+          py::init(
+            [](cl_channel_order ord, cl_channel_type tp)
+            {
+              return make_image_format(ord, tp);
+            }))
       .def_readwrite("channel_order", &cls::image_channel_order)
       .def_readwrite("channel_data_type", &cls::image_channel_data_type)
       .def_property_readonly("channel_count", &get_image_format_channel_count)
@@ -171,14 +192,14 @@ void pyopencl_expose_part_2(py::module &m)
 
   // }}}
 
-#if 0
   // {{{ memory_map
   {
     typedef memory_map cls;
-    py::class_<cls, boost::noncopyable>("MemoryMap", py::no_init)
+    py::class_<cls>(m, "MemoryMap")
       .def("release", &cls::release,
-          (py::arg("queue")=0, py::arg("wait_for")=py::object()),
-          py::return_value_policy<py::manage_new_object>())
+          py::arg("queue")=0,
+          py::arg("wait_for")=py::object()
+          )
       ;
   }
 
@@ -192,7 +213,7 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("order")="C",
       py::arg("strides")=py::object(),
       py::arg("wait_for")=py::object(),
-      py::arg("is_blocking")=true));
+      py::arg("is_blocking")=true);
   m.def("enqueue_map_image", enqueue_map_image,
       py::arg("queue"),
       py::arg("img"),
@@ -211,8 +232,8 @@ void pyopencl_expose_part_2(py::module &m)
   // {{{ sampler
   {
     typedef sampler cls;
-    py::class_<cls, boost::noncopyable>("Sampler",
-        py::init<context const &, bool, cl_addressing_mode, cl_filter_mode>())
+    py::class_<cls>(m, "Sampler")
+      .def(py::init<context const &, bool, cl_addressing_mode, cl_filter_mode>())
       .DEF_SIMPLE_METHOD(get_info)
       .def(py::self == py::self)
       .def(py::self != py::self)
@@ -226,50 +247,56 @@ void pyopencl_expose_part_2(py::module &m)
   // {{{ program
   {
     typedef program cls;
-    py::enum_<cls::program_kind_type>("program_kind")
+    py::enum_<cls::program_kind_type>(m, "program_kind")
       .value("UNKNOWN", cls::KND_UNKNOWN)
       .value("SOURCE", cls::KND_SOURCE)
       .value("BINARY", cls::KND_BINARY)
       ;
 
-    py::class_<cls, boost::noncopyable>("_Program", py::no_init)
-      .def("__init__", make_constructor(
-            create_program_with_source,
-            py::default_call_policies(),
-            py::arg("context"),
-            py::arg("src")))
-      .def("__init__", make_constructor(
-            create_program_with_binary,
-            py::default_call_policies(),
-            py::arg("context"),
-            py::arg("devices"),
-            py::arg("binaries"))))
+    py::class_<cls>(m, "_Program")
+      .def(
+          py::init(
+            [](context &ctx, std::string const &src)
+            {
+              return create_program_with_source(ctx, src);
+            }),
+          py::arg("context"),
+          py::arg("src"))
+      .def(
+          py::init(
+            [](context &ctx, py::sequence devices, py::sequence binaries)
+            {
+              return create_program_with_binary(ctx, devices, binaries);
+            }),
+          py::arg("context"),
+          py::arg("devices"),
+          py::arg("binaries"))
 #if (PYOPENCL_CL_VERSION >= 0x1020) && \
       ((PYOPENCL_CL_VERSION >= 0x1030) && defined(__APPLE__))
-      .def("create_with_built_in_kernels",
+      .def_static("create_with_built_in_kernels",
           create_program_with_built_in_kernels,
           py::arg("context"),
           py::arg("devices"),
           py::arg("kernel_names"),
           py::return_value_policy<py::manage_new_object>())
-      .staticmethod("create_with_built_in_kernels")
 #endif
       .DEF_SIMPLE_METHOD(kind)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_build_info)
       .def("_build", &cls::build,
-          (py::arg("options")="", py::arg("devices")=py::object()))
+          py::arg("options")="",
+          py::arg("devices")=py::object())
 #if PYOPENCL_CL_VERSION >= 0x1020
       .def("compile", &cls::compile,
-          (py::arg("options")="", py::arg("devices")=py::object(),
-           py::arg("headers")=py::list()))
-      .def("link", &link_program,
-          (py::arg("context"),
-           py::arg("programs"),
-           py::arg("options")="",
-           py::arg("devices")=py::object()),
-          py::return_value_policy<py::manage_new_object>())
-      .staticmethod("link")
+          py::arg("options")="",
+          py::arg("devices")=py::object(),
+          py::arg("headers")=py::list())
+      .def_static("link", &link_program,
+          py::arg("context"),
+          py::arg("programs"),
+          py::arg("options")="",
+          py::arg("devices")=py::object()
+          )
 #endif
       .def(py::self == py::self)
       .def(py::self != py::self)
@@ -289,8 +316,8 @@ void pyopencl_expose_part_2(py::module &m)
 
   {
     typedef kernel cls;
-    py::class_<cls, boost::noncopyable>("Kernel",
-        py::init<const program &, std::string const &>())
+    py::class_<cls>(m, "Kernel")
+      .def(py::init<const program &, std::string const &>())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
       .DEF_SIMPLE_METHOD(set_arg)
@@ -306,9 +333,11 @@ void pyopencl_expose_part_2(py::module &m)
 
   {
     typedef local_memory cls;
-    py::class_<cls, boost::noncopyable>("LocalMemory",
-        py::init<size_t>(py::arg("size")))
-      .def_property("size", &cls::size)
+    py::class_<cls>(m, "LocalMemory")
+      .def(
+          py::init<size_t>(),
+          py::arg("size"))
+      .def_property_readonly("size", &cls::size)
       ;
   }
 
@@ -321,14 +350,12 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("global_work_offset")=py::object(),
       py::arg("wait_for")=py::object(),
       py::arg("g_times_l")=false
-      ),
-      py::return_value_policy<py::manage_new_object>());
+      );
   m.def("enqueue_task", enqueue_task,
       py::arg("queue"),
       py::arg("kernel"),
       py::arg("wait_for")=py::object()
-      ),
-      py::return_value_policy<py::manage_new_object>());
+      );
 
   // TODO: clEnqueueNativeKernel
   // }}}
@@ -344,42 +371,52 @@ void pyopencl_expose_part_2(py::module &m)
 
   {
     typedef gl_buffer cls;
-    py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
-        "GLBuffer", py::no_init)
-      .def("__init__", make_constructor(create_from_gl_buffer,
-            py::default_call_policies(),
-            py::arg("context"),
-            py::arg("flags"),
-            py::arg("bufobj")))
+    py::class_<cls, memory_object>(m, "GLBuffer")
+      .def(
+          py::init(
+            [](context &ctx, cl_mem_flags flags, GLuint bufobj)
+            {
+              return create_from_gl_buffer(ctx, flags, bufobj);
+            }),
+          py::arg("context"),
+          py::arg("flags"),
+          py::arg("bufobj"))
       .def("get_gl_object_info", get_gl_object_info)
       ;
   }
 
   {
     typedef gl_renderbuffer cls;
-    py::class_<cls, py::bases<memory_object>, boost::noncopyable>(
-        "GLRenderBuffer", py::no_init)
-      .def("__init__", make_constructor(create_from_gl_renderbuffer,
-            py::default_call_policies(),
-            py::arg("context"),
-            py::arg("flags"),
-            py::arg("bufobj")))
+    py::class_<cls, memory_object>(m, "GLRenderBuffer")
+      .def(
+          py::init(
+            [](context &ctx, cl_mem_flags flags, GLuint bufobj)
+            {
+              return create_from_gl_renderbuffer(ctx, flags, bufobj);
+            }),
+          py::arg("context"),
+          py::arg("flags"),
+          py::arg("bufobj"))
       .def("get_gl_object_info", get_gl_object_info)
       ;
   }
 
   {
     typedef gl_texture cls;
-    py::class_<cls, py::bases<image>, boost::noncopyable>(
-        "GLTexture", py::no_init)
-      .def("__init__", make_constructor(create_from_gl_texture,
-            py::default_call_policies(),
-            py::arg("context"),
-            py::arg("flags"),
-            py::arg("texture_target"),
-            py::arg("miplevel"),
-            py::arg("texture"),
-            py::arg("dims")))
+    py::class_<cls, image>(m, "GLTexture")
+      .def(
+          py::init(
+            [](context &ctx, cl_mem_flags flags, GLenum texture_target,
+              GLint miplevel, GLuint texture, unsigned dims)
+            {
+              return create_from_gl_texture(ctx, flags, texture_target, miplevel, texture, dims);
+            }),
+          py::arg("context"),
+          py::arg("flags"),
+          py::arg("texture_target"),
+          py::arg("miplevel"),
+          py::arg("texture"),
+          py::arg("dims"))
       .def("get_gl_object_info", get_gl_object_info)
       .DEF_SIMPLE_METHOD(get_gl_texture_info)
       ;
@@ -389,28 +426,24 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("queue"),
       py::arg("mem_objects"),
       py::arg("wait_for")=py::object()
-      ),
-      py::return_value_policy<py::manage_new_object>());
+      );
   m.def("enqueue_release_gl_objects", enqueue_release_gl_objects,
       py::arg("queue"),
       py::arg("mem_objects"),
       py::arg("wait_for")=py::object()
-      ),
-      py::return_value_policy<py::manage_new_object>());
+      );
 
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
   m.def("get_gl_context_info_khr", get_gl_context_info_khr,
       py::arg("properties"),
       py::arg("param_name"),
-      py::arg("platform")=py::object()));
+      py::arg("platform")=py::object()
+      );
 #endif
 
 #endif
   // }}}
-#endif
 }
-
-
 
 
 // vim: foldmethod=marker

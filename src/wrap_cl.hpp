@@ -25,6 +25,8 @@
 #else
 
 // elsewhere ------------------------------------------------------------------
+#define CL_TARGET_OPENCL_VERSION 220
+
 #include <CL/cl.h>
 #include <CL/cl_ext.h>
 
@@ -1519,7 +1521,7 @@ namespace pyopencl
 
 
   inline
-  event *create_user_event(context &ctx)
+  user_event *create_user_event(context &ctx)
   {
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clCreateUserEvent");
