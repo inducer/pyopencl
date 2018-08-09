@@ -6,30 +6,6 @@ using namespace pyopencl;
 
 namespace
 {
-#if 0
-  py::handle
-    CLError,
-    CLMemoryError,
-    CLLogicError,
-    CLRuntimeError;
-
-
-
-
-  void translate_cl_error(const error &err)
-  {
-    if (err.code() == CL_MEM_OBJECT_ALLOCATION_FAILURE)
-      PyErr_SetObject(CLMemoryError.get(), py::object(err).ptr());
-    else if (err.code() <= CL_INVALID_VALUE)
-      PyErr_SetObject(CLLogicError.get(), py::object(err).ptr());
-    else if (err.code() > CL_INVALID_VALUE && err.code() < CL_SUCCESS)
-      PyErr_SetObject(CLRuntimeError.get(), py::object(err).ptr());
-    else
-      PyErr_SetObject(CLError.get(), py::object(err).ptr());
-  }
-#endif
-
-
   // {{{ 'fake' constant scopes
   class status_code { };
   class platform_info { };
@@ -86,22 +62,38 @@ namespace
 
 void pyopencl_expose_constants(py::module &m)
 {
-#if 0
   // {{{ exceptions
-#define DECLARE_EXC(NAME, BASE) \
-  CL##NAME = py::handle<>(PyErr_NewException("pyopencl." #NAME, BASE, NULL)); \
-  py::scope().attr(#NAME) = CL##NAME;
-
   {
-    DECLARE_EXC(Error, NULL);
-    DECLARE_EXC(MemoryError, CLError.get());
-    DECLARE_EXC(LogicError, CLError.get());
-    DECLARE_EXC(RuntimeError, CLError.get());
+#define DECLARE_EXC(NAME, BASE) \
+  static py::exception<pyopencl::error> CL##NAME(m, #NAME, BASE);
 
-    py::register_exception_translator<error>(translate_cl_error);
+    DECLARE_EXC(Error, NULL);
+    DECLARE_EXC(MemoryError, CLError.ptr());
+    DECLARE_EXC(LogicError, CLError.ptr());
+    DECLARE_EXC(RuntimeError, CLError.ptr());
+
+    py::register_exception_translator(
+        [](std::exception_ptr p)
+        {
+          try
+          {
+            if (p) std::rethrow_exception(p);
+          }
+          catch (pyopencl::error &err)
+          {
+            py::object err_obj = py::cast(err);
+            if (err.code() == CL_MEM_OBJECT_ALLOCATION_FAILURE)
+              PyErr_SetObject(CLMemoryError.ptr(), err_obj.ptr());
+            else if (err.code() <= CL_INVALID_VALUE)
+              PyErr_SetObject(CLLogicError.ptr(), err_obj.ptr());
+            else if (err.code() > CL_INVALID_VALUE && err.code() < CL_SUCCESS)
+              PyErr_SetObject(CLRuntimeError.ptr(), err_obj.ptr());
+            else
+              PyErr_SetObject(CLError.ptr(), err_obj.ptr());
+          }
+        });
   }
   // }}}
-#endif
 
   // {{{ constants
 #define ADD_ATTR(PREFIX, NAME) \
