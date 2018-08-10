@@ -374,7 +374,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
             if log is not None and log.strip())
 
     if message:
-        from pyopencl.cffi_cl import compiler_output
+        from pyopencl import compiler_output
         compiler_output(
                 "Built kernel retrieved from cache. Original from-source "
                 "build had warnings:\n"+message)
