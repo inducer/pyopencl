@@ -1033,6 +1033,19 @@ def _add_functionality():
 
     # }}}
 
+    # {{{ MemoryMap
+
+    def memory_map_enter(self):
+        return self
+
+    def memory_map_exit(self, exc_type, exc_val, exc_tb):
+        self.release()
+
+    MemoryMap.__enter__ = memory_map_enter
+    MemoryMap.__exit__ = memory_map_exit
+
+    # }}}
+
     # ORDER DEPENDENCY: Some of the above may override get_info, the effect needs
     # to be visible through the attributes. So get_info attr creation needs to happen
     # after the overriding is complete.
