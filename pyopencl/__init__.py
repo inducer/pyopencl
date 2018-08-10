@@ -188,9 +188,6 @@ from pyopencl._cl import (  # noqa
         GLTexture,
         # FIXME
         # DeviceTopologyAmd,
-
-        # FIXME?
-        # add_get_info_attrs as _add_get_info_attrs,
         )
 
 import inspect as _inspect
