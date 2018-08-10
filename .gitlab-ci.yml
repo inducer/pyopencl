@@ -166,6 +166,7 @@ Python 2.7 Apple:
 Python 3 Conda Apple:
   script:
   - CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+  - export CC=gcc
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
   - ". ./build-and-test-py-project-within-miniconda.sh"
   tags:

@@ -961,8 +961,14 @@ def test_bitonic_sort(ctx_factory, size, dtype):
     from pyopencl.bitonic_sort import BitonicSort
 
     s = clrandom.rand(queue, (2, size, 3,), dtype, luxury=None, a=0, b=239482333)
+    sgs = s.copy()
+    # enqueue_marker crashes under CL 1.1 pocl if there is anything to wait for
+    # (no clEnqueueWaitForEvents) https://github.com/inducer/pyopencl/pull/237
+    if (dev.platform.name == "Portable Computing Language"
+            and cl.get_cl_header_version() < (1, 2)):
+        sgs.finish()
     sorter = BitonicSort(ctx)
-    sgs, evt = sorter(s.copy(), axis=1)
+    sgs, evt = sorter(sgs, axis=1)
     assert np.array_equal(np.sort(s.get(), axis=1), sgs.get())
 
 
@@ -1014,7 +1020,14 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
 
     sorterm = BitonicSort(ctx)
 
-    ms, evt = sorterm(m.copy(), idx=index, axis=0)
+    ms = m.copy()
+    # enqueue_marker crashes under CL 1.1 pocl if there is anything to wait for
+    # (no clEnqueueWaitForEvents) https://github.com/inducer/pyopencl/pull/237
+    if (dev.platform.name == "Portable Computing Language"
+            and cl.get_cl_header_version() < (1, 2)):
+        ms.finish()
+        index.finish()
+    ms, evt = sorterm(ms, idx=index, axis=0)
 
     assert np.array_equal(np.sort(m.get()), ms.get())
 
