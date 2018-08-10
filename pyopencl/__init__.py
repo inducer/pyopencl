@@ -226,6 +226,7 @@ if _cl.have_gl():
 class _ErrorRecord(Record):
     pass
 
+
 class CompilerWarning(UserWarning):
     pass
 
@@ -1120,6 +1121,7 @@ def _add_functionality():
 
         GLBuffer.gl_object = property(gl_object_get_gl_object)
         GLTexture.gl_object = property(gl_object_get_gl_object)
+
 
 _add_functionality()
 
