@@ -320,6 +320,8 @@ void pyopencl_expose_part_2(py::module &m)
       .def(py::init<const program &, std::string const &>())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
+      .def("_set_arg_null", &cls::set_arg_null)
+      .def("_set_arg_buf", &cls::set_arg_buf)
       .DEF_SIMPLE_METHOD(set_arg)
 #if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(get_arg_info)

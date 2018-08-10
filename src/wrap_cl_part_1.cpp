@@ -7,6 +7,7 @@ using namespace pyopencl;
 void pyopencl_expose_part_1(py::module &m)
 {
   m.def("get_cl_header_version", get_cl_header_version);
+  m.def("_sizeof_size_t", [](){ return sizeof(size_t); });
 
   // {{{ platform
   DEF_SIMPLE_FUNCTION(get_platforms);
