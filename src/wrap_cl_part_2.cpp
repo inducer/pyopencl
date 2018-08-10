@@ -53,6 +53,7 @@ void pyopencl_expose_part_2(py::module &m)
   {
     typedef cl_image_desc cls;
     py::class_<cls>(m, "ImageDescriptor")
+      .def(py::init<>())
       .def_readwrite("image_type", &cls::image_type)
       .def_property("shape", &image_desc_dummy_getter, image_desc_set_shape)
       .def_readwrite("array_size", &cls::image_array_size)
@@ -197,7 +198,7 @@ void pyopencl_expose_part_2(py::module &m)
     typedef memory_map cls;
     py::class_<cls>(m, "MemoryMap", py::dynamic_attr())
       .def("release", &cls::release,
-          py::arg("queue")=0,
+          py::arg("queue").none(true)=nullptr,
           py::arg("wait_for")=py::none()
           )
       ;

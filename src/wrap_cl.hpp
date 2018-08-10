@@ -2859,12 +2859,12 @@ namespace pyopencl
   {
     private:
       bool m_valid;
-      command_queue m_queue;
+      std::shared_ptr<command_queue> m_queue;
       memory_object m_mem;
       void *m_ptr;
 
     public:
-      memory_map(command_queue &cq, memory_object const &mem, void *ptr)
+      memory_map(std::shared_ptr<command_queue> cq, memory_object const &mem, void *ptr)
         : m_valid(true), m_queue(cq), m_mem(mem), m_ptr(ptr)
       {
       }
@@ -2880,7 +2880,7 @@ namespace pyopencl
         PYOPENCL_PARSE_WAIT_FOR;
 
         if (cq == 0)
-          cq = &m_queue;
+          cq = m_queue.get();
 
         cl_event evt;
         PYOPENCL_CALL_GUARDED(clEnqueueUnmapMemObject, (
@@ -2899,7 +2899,7 @@ namespace pyopencl
 
   inline
   py::object enqueue_map_buffer(
-      command_queue &cq,
+      std::shared_ptr<command_queue> cq,
       memory_object_holder &buf,
       cl_map_flags flags,
       size_t offset,
@@ -2959,7 +2959,7 @@ namespace pyopencl
     catch (...)
     {
       PYOPENCL_CALL_GUARDED_CLEANUP(clEnqueueUnmapMemObject, (
-            cq.data(), buf.data(), mapped, 0, 0, 0));
+            cq->data(), buf.data(), mapped, 0, 0, 0));
       throw;
     }
 
@@ -2977,7 +2977,7 @@ namespace pyopencl
 
   inline
   py::object enqueue_map_image(
-      command_queue &cq,
+      std::shared_ptr<command_queue> cq,
       memory_object_holder &img,
       cl_map_flags flags,
       py::object py_origin,
@@ -3023,7 +3023,7 @@ namespace pyopencl
     catch (...)
     {
       PYOPENCL_CALL_GUARDED_CLEANUP(clEnqueueUnmapMemObject, (
-            cq.data(), img.data(), mapped, 0, 0, 0));
+            cq->data(), img.data(), mapped, 0, 0, 0));
       throw;
     }
 

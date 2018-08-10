@@ -81,7 +81,7 @@ void pyopencl_expose_part_1(py::module &m)
   // {{{ command queue
   {
     typedef command_queue cls;
-    py::class_<cls>(m, "CommandQueue", py::dynamic_attr())
+    py::class_<cls, std::shared_ptr<cls>>(m, "CommandQueue", py::dynamic_attr())
       .def(
         py::init<const context &,
           const device *, cl_command_queue_properties>(),
