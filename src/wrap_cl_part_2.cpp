@@ -7,7 +7,7 @@ namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1020
   py::object image_desc_dummy_getter(cl_image_desc &desc)
   {
-    return py::object();
+    return py::none();
   }
 
   void image_desc_set_shape(cl_image_desc &desc, py::object py_shape)
@@ -66,7 +66,7 @@ void pyopencl_expose_part_2(py::module &m)
 
   {
     typedef image cls;
-    py::class_<cls, memory_object>(m, "Image"/* , py::no_init */)
+    py::class_<cls, memory_object>(m, "Image", py::dynamic_attr())
       .def(
           py::init(
             [](
@@ -82,9 +82,9 @@ void pyopencl_expose_part_2(py::module &m)
           py::arg("context"),
           py::arg("flags"),
           py::arg("format"),
-          py::arg("shape")=py::object(),
-          py::arg("pitches")=py::object(),
-          py::arg("hostbuf")=py::object()
+          py::arg("shape")=py::none(),
+          py::arg("pitches")=py::none(),
+          py::arg("hostbuf")=py::none()
           )
 #if PYOPENCL_CL_VERSION >= 0x1020
       .def(
@@ -102,7 +102,7 @@ void pyopencl_expose_part_2(py::module &m)
           py::arg("flags"),
           py::arg("format"),
           py::arg("desc"),
-          py::arg("hostbuf")=py::object()
+          py::arg("hostbuf")=py::none()
           )
 #endif
       .DEF_SIMPLE_METHOD(get_image_info)
@@ -136,7 +136,7 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("hostbuf"),
       py::arg("row_pitch")=0,
       py::arg("slice_pitch")=0,
-      py::arg("wait_for")=py::object(),
+      py::arg("wait_for")=py::none(),
       py::arg("is_blocking")=true
       );
   m.def("_enqueue_write_image", enqueue_write_image,
@@ -147,7 +147,7 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("hostbuf"),
       py::arg("row_pitch")=0,
       py::arg("slice_pitch")=0,
-      py::arg("wait_for")=py::object(),
+      py::arg("wait_for")=py::none(),
       py::arg("is_blocking")=true
       );
 
@@ -158,7 +158,7 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("src_origin"),
       py::arg("dest_origin"),
       py::arg("region"),
-      py::arg("wait_for")=py::object()
+      py::arg("wait_for")=py::none()
       );
   m.def("_enqueue_copy_image_to_buffer", enqueue_copy_image_to_buffer,
       py::arg("queue"),
@@ -167,7 +167,7 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("origin"),
       py::arg("region"),
       py::arg("offset"),
-      py::arg("wait_for")=py::object()
+      py::arg("wait_for")=py::none()
       );
   m.def("_enqueue_copy_buffer_to_image", enqueue_copy_buffer_to_image,
       py::arg("queue"),
@@ -176,7 +176,7 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("offset"),
       py::arg("origin"),
       py::arg("region"),
-      py::arg("wait_for")=py::object()
+      py::arg("wait_for")=py::none()
       );
 
 #if PYOPENCL_CL_VERSION >= 0x1020
@@ -186,7 +186,7 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("color"),
       py::arg("origin"),
       py::arg("region"),
-      py::arg("wait_for")=py::object()
+      py::arg("wait_for")=py::none()
       );
 #endif
 
@@ -195,10 +195,10 @@ void pyopencl_expose_part_2(py::module &m)
   // {{{ memory_map
   {
     typedef memory_map cls;
-    py::class_<cls>(m, "MemoryMap")
+    py::class_<cls>(m, "MemoryMap", py::dynamic_attr())
       .def("release", &cls::release,
           py::arg("queue")=0,
-          py::arg("wait_for")=py::object()
+          py::arg("wait_for")=py::none()
           )
       ;
   }
@@ -211,8 +211,8 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("shape"),
       py::arg("dtype"),
       py::arg("order")="C",
-      py::arg("strides")=py::object(),
-      py::arg("wait_for")=py::object(),
+      py::arg("strides")=py::none(),
+      py::arg("wait_for")=py::none(),
       py::arg("is_blocking")=true);
   m.def("enqueue_map_image", enqueue_map_image,
       py::arg("queue"),
@@ -223,8 +223,8 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("shape"),
       py::arg("dtype"),
       py::arg("order")="C",
-      py::arg("strides")=py::object(),
-      py::arg("wait_for")=py::object(),
+      py::arg("strides")=py::none(),
+      py::arg("wait_for")=py::none(),
       py::arg("is_blocking")=true);
 
   // }}}
@@ -232,7 +232,7 @@ void pyopencl_expose_part_2(py::module &m)
   // {{{ sampler
   {
     typedef sampler cls;
-    py::class_<cls>(m, "Sampler")
+    py::class_<cls>(m, "Sampler", py::dynamic_attr())
       .def(py::init<context const &, bool, cl_addressing_mode, cl_filter_mode>())
       .DEF_SIMPLE_METHOD(get_info)
       .def(py::self == py::self)
@@ -253,7 +253,7 @@ void pyopencl_expose_part_2(py::module &m)
       .value("BINARY", cls::KND_BINARY)
       ;
 
-    py::class_<cls>(m, "_Program")
+    py::class_<cls>(m, "_Program", py::dynamic_attr())
       .def(
           py::init(
             [](context &ctx, std::string const &src)
@@ -285,17 +285,17 @@ void pyopencl_expose_part_2(py::module &m)
       .DEF_SIMPLE_METHOD(get_build_info)
       .def("_build", &cls::build,
           py::arg("options")="",
-          py::arg("devices")=py::object())
+          py::arg("devices")=py::none())
 #if PYOPENCL_CL_VERSION >= 0x1020
       .def("compile", &cls::compile,
           py::arg("options")="",
-          py::arg("devices")=py::object(),
+          py::arg("devices")=py::none(),
           py::arg("headers")=py::list())
       .def_static("link", &link_program,
           py::arg("context"),
           py::arg("programs"),
           py::arg("options")="",
-          py::arg("devices")=py::object()
+          py::arg("devices")=py::none()
           )
 #endif
       .def(py::self == py::self)
@@ -316,7 +316,7 @@ void pyopencl_expose_part_2(py::module &m)
 
   {
     typedef kernel cls;
-    py::class_<cls>(m, "Kernel")
+    py::class_<cls>(m, "Kernel", py::dynamic_attr())
       .def(py::init<const program &, std::string const &>())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
@@ -333,7 +333,7 @@ void pyopencl_expose_part_2(py::module &m)
 
   {
     typedef local_memory cls;
-    py::class_<cls>(m, "LocalMemory")
+    py::class_<cls>(m, "LocalMemory", py::dynamic_attr())
       .def(
           py::init<size_t>(),
           py::arg("size"))
@@ -347,14 +347,14 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("kernel"),
       py::arg("global_work_size"),
       py::arg("local_work_size"),
-      py::arg("global_work_offset")=py::object(),
-      py::arg("wait_for")=py::object(),
+      py::arg("global_work_offset")=py::none(),
+      py::arg("wait_for")=py::none(),
       py::arg("g_times_l")=false
       );
   m.def("enqueue_task", enqueue_task,
       py::arg("queue"),
       py::arg("kernel"),
-      py::arg("wait_for")=py::object()
+      py::arg("wait_for")=py::none()
       );
 
   // TODO: clEnqueueNativeKernel
@@ -371,7 +371,7 @@ void pyopencl_expose_part_2(py::module &m)
 
   {
     typedef gl_buffer cls;
-    py::class_<cls, memory_object>(m, "GLBuffer")
+    py::class_<cls, memory_object>(m, "GLBuffer", py::dynamic_attr())
       .def(
           py::init(
             [](context &ctx, cl_mem_flags flags, GLuint bufobj)
@@ -387,7 +387,7 @@ void pyopencl_expose_part_2(py::module &m)
 
   {
     typedef gl_renderbuffer cls;
-    py::class_<cls, memory_object>(m, "GLRenderBuffer")
+    py::class_<cls, memory_object>(m, "GLRenderBuffer", py::dynamic_attr())
       .def(
           py::init(
             [](context &ctx, cl_mem_flags flags, GLuint bufobj)
@@ -403,7 +403,7 @@ void pyopencl_expose_part_2(py::module &m)
 
   {
     typedef gl_texture cls;
-    py::class_<cls, image>(m, "GLTexture")
+    py::class_<cls, image>(m, "GLTexture", py::dynamic_attr())
       .def(
           py::init(
             [](context &ctx, cl_mem_flags flags, GLenum texture_target,
@@ -425,19 +425,19 @@ void pyopencl_expose_part_2(py::module &m)
   m.def("enqueue_acquire_gl_objects", enqueue_acquire_gl_objects,
       py::arg("queue"),
       py::arg("mem_objects"),
-      py::arg("wait_for")=py::object()
+      py::arg("wait_for")=py::none()
       );
   m.def("enqueue_release_gl_objects", enqueue_release_gl_objects,
       py::arg("queue"),
       py::arg("mem_objects"),
-      py::arg("wait_for")=py::object()
+      py::arg("wait_for")=py::none()
       );
 
 #if defined(cl_khr_gl_sharing) && (cl_khr_gl_sharing >= 1)
   m.def("get_gl_context_info_khr", get_gl_context_info_khr,
       py::arg("properties"),
       py::arg("param_name"),
-      py::arg("platform")=py::object()
+      py::arg("platform")=py::none()
       );
 #endif
 

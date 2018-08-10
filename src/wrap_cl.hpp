@@ -940,7 +940,6 @@ namespace pyopencl
           PYOPENCL_CALL_GUARDED(clRetainContext, (ctx));
       }
 
-
       ~context()
       {
         PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseContext,

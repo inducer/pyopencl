@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 import six
 from six.moves import zip
-import pyopencl.cffi_cl as _cl
+import pyopencl._cl as _cl
 import re
 import sys
 import os
