@@ -351,7 +351,7 @@ def test_that_python_args_fail(ctx_factory):
     prg.mult(queue, a.shape, None, a_buf, np.float32(2), np.int32(3))
 
     a_result = np.empty_like(a)
-    cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
+    cl.enqueue_copy(queue, a_buf, a_result).wait()
 
 
 def test_image_2d(ctx_factory):
@@ -513,8 +513,8 @@ def test_copy_buffer(ctx_factory):
     buf1 = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
     buf2 = cl.Buffer(context, mf.WRITE_ONLY, b.nbytes)
 
-    cl.enqueue_copy_buffer(queue, buf1, buf2).wait()
-    cl.enqueue_read_buffer(queue, buf2, b).wait()
+    cl.enqueue_copy(queue, buf2, buf1).wait()
+    cl.enqueue_copy(queue, b, buf2).wait()
 
     assert la.norm(a - b) == 0
 
@@ -569,7 +569,7 @@ def test_vector_args(ctx_factory):
 
     prg.set_vec(queue, dest.shape, None, x, dest_buf)
 
-    cl.enqueue_read_buffer(queue, dest_buf, dest).wait()
+    cl.enqueue_copy(queue, dest, dest_buf).wait()
 
     assert (dest == x).all()
 

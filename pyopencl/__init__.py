@@ -1223,45 +1223,6 @@ _csc = create_some_context
 
 # {{{ enqueue_copy
 
-def _mark_copy_deprecated(func):
-    def new_func(*args, **kwargs):
-        from warnings import warn
-        warn("'%s' has been deprecated in version 2011.1. Please use "
-                "enqueue_copy() instead." % func.__name__[1:], DeprecationWarning,
-                stacklevel=2)
-        return func(*args, **kwargs)
-
-    try:
-        from functools import update_wrapper
-    except ImportError:
-        pass
-    else:
-        try:
-            update_wrapper(new_func, func)
-        except AttributeError:
-            pass
-
-    return new_func
-
-
-enqueue_read_image = _mark_copy_deprecated(_cl._enqueue_read_image)
-enqueue_write_image = _mark_copy_deprecated(_cl._enqueue_write_image)
-enqueue_copy_image = _mark_copy_deprecated(_cl._enqueue_copy_image)
-enqueue_copy_image_to_buffer = _mark_copy_deprecated(
-        _cl._enqueue_copy_image_to_buffer)
-enqueue_copy_buffer_to_image = _mark_copy_deprecated(
-        _cl._enqueue_copy_buffer_to_image)
-enqueue_read_buffer = _mark_copy_deprecated(_cl._enqueue_read_buffer)
-enqueue_write_buffer = _mark_copy_deprecated(_cl._enqueue_write_buffer)
-enqueue_copy_buffer = _mark_copy_deprecated(_cl._enqueue_copy_buffer)
-
-
-if _cl.get_cl_header_version() >= (1, 1):
-    enqueue_read_buffer_rect = _mark_copy_deprecated(_cl._enqueue_read_buffer_rect)
-    enqueue_write_buffer_rect = _mark_copy_deprecated(_cl._enqueue_write_buffer_rect)
-    enqueue_copy_buffer_rect = _mark_copy_deprecated(_cl._enqueue_copy_buffer_rect)
-
-
 def enqueue_copy(queue, dest, src, **kwargs):
     """Copy from :class:`Image`, :class:`Buffer` or the host to
     :class:`Image`, :class:`Buffer` or the host. (Note: host-to-host
