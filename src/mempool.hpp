@@ -41,7 +41,7 @@ namespace PYGPU_PACKAGE
 
 
   template<class Allocator>
-  class memory_pool
+  class memory_pool : noncopyable
   {
     public:
       typedef typename Allocator::pointer_type pointer_type;
@@ -239,7 +239,7 @@ namespace PYGPU_PACKAGE
 
       void free_held()
       {
-        for (bin_pair_t bin_pair: m_container)
+        for (bin_pair_t &bin_pair: m_container)
         {
           bin_t &bin = bin_pair.second;
 
@@ -270,7 +270,7 @@ namespace PYGPU_PACKAGE
       bool try_to_free_memory()
       {
         // free largest stuff first
-        for (bin_pair_t bin_pair: reverse(m_container))
+        for (bin_pair_t &bin_pair: reverse(m_container))
         {
           bin_t &bin = bin_pair.second;
 
