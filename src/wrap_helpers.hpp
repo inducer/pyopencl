@@ -127,7 +127,7 @@ namespace
   template <typename T>
   inline py::object handle_from_new_ptr(T *ptr)
   {
-    return py::cast(ptr);
+    return py::cast(ptr, py::return_value_policy::take_ownership);
   }
 
   template <typename T, typename ClType>
