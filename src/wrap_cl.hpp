@@ -282,7 +282,7 @@
       return py::object(handle_from_new_ptr( \
             new TYPE(param_value, /*retain*/ true))); \
     else \
-      return py::object(); \
+      return py::none(); \
   }
 
 #define PYOPENCL_GET_VEC_INFO(WHAT, FIRST_ARG, SECOND_ARG, RES_VEC) \
@@ -1376,7 +1376,7 @@ namespace pyopencl
           return py::reinterpret_borrow<py::object>(m_ward->m_buf.obj);
         }
         else
-          return py::object();
+          return py::none();
       }
 
       virtual void wait()
@@ -1413,7 +1413,7 @@ namespace pyopencl
       virtual void wait()
       {
         event::wait();
-        m_ward = py::object();
+        m_ward = py::none();
       }
   };
 #endif
@@ -1628,7 +1628,7 @@ namespace pyopencl
         if (m_hostbuf.get())
           return py::reinterpret_borrow<py::object>(m_hostbuf->m_buf.obj);
         else
-          return py::object();
+          return py::none();
 #else
         return m_hostbuf;
 #endif
@@ -2290,7 +2290,7 @@ namespace pyopencl
               if (param_value == 0)
               {
                 // no associated memory object? no problem.
-                return py::object();
+                return py::none();
               }
 
               return create_mem_object_wrapper(param_value);
@@ -2870,7 +2870,7 @@ namespace pyopencl
       ~memory_map()
       {
         if (m_valid)
-          delete release(0, py::object());
+          delete release(0, py::none());
       }
 
       event *release(command_queue *cq, py::object py_wait_for)
@@ -4218,7 +4218,7 @@ namespace pyopencl
           if (param_value == 0)
           {
             // no associated memory object? no problem.
-            return py::object();
+            return py::none();
           }
 
           return create_mem_object_wrapper(param_value);
