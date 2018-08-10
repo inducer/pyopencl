@@ -107,7 +107,7 @@ def main():
             check_git_submodules, NumpyExtension)
     check_git_submodules()
 
-    hack_distutils(debug=True)
+    hack_distutils()
     conf = get_config(get_config_schema(),
             warn_about_no_config=False)
 
