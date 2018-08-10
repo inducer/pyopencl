@@ -632,6 +632,19 @@ def _add_functionality():
 
     # {{{ Context
 
+    context_old_init = Context.__init__
+
+    def context_init(self, devices, properties, dev_type, cache_dir=None):
+        if cache_dir is not None:
+            from warnings import warn
+            warn("The 'cache_dir' argument to the Context constructor "
+                "is deprecated and no longer has an effect. "
+                "It was removed because it only applied to the wrapper "
+                "object and not the context itself, leading to inconsistencies.",
+                DeprecationWarning, stacklevel=2)
+
+        context_old_init(self, devices, properties, dev_type)
+
     def context_repr(self):
         return "<pyopencl.Context at 0x%x on %s>" % (self.int_ptr,
                 ", ".join(repr(dev) for dev in self.devices))

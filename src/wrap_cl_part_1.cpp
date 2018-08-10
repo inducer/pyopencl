@@ -55,17 +55,8 @@ void pyopencl_expose_part_1(py::module &m)
       .def(
           py::init(
             [](py::object py_devices, py::object py_properties,
-              py::object py_dev_type, py::object cache_dir)
+              py::object py_dev_type)
             {
-              if (cache_dir.ptr() != Py_None)
-              {
-                py::object w = py::module::import("warnings");
-                w.attr("warn")("The 'cache_dir' argument to the Context constructor "
-                    "is deprecated and no longer has an effect. "
-                    "It was removed because it only applied to the wrapper "
-                    "object and not the context itself, leading to inconsistencies.");
-              }
-
               PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
                   return create_context_inner(
                     py_devices,
@@ -75,8 +66,7 @@ void pyopencl_expose_part_1(py::module &m)
             }),
           py::arg("devices")=py::none(),
           py::arg("properties")=py::none(),
-          py::arg("dev_type")=py::none(),
-          py::arg("cache_dir")=py::none()
+          py::arg("dev_type")=py::none()
           )
       .DEF_SIMPLE_METHOD(get_info)
       .def(py::self == py::self)
