@@ -221,8 +221,26 @@ if _cl.have_gl():
         pass
 
 
+# {{{ diagnostics
+
 class _ErrorRecord(Record):
     pass
+
+class CompilerWarning(UserWarning):
+    pass
+
+
+def compiler_output(text):
+    import os
+    from warnings import warn
+    if int(os.environ.get("PYOPENCL_COMPILER_OUTPUT", "0")):
+        warn(text, CompilerWarning)
+    else:
+        warn("Non-empty compiler output encountered. Set the "
+                "environment variable PYOPENCL_COMPILER_OUTPUT=1 "
+                "to see more.", CompilerWarning)
+
+# }}}
 
 
 # {{{ find pyopencl shipped source code
