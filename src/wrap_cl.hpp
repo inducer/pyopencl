@@ -534,7 +534,6 @@ namespace pyopencl
     public:
       enum reference_type_t {
         REF_NOT_OWNABLE,
-        REF_FISSION_EXT,
 #if PYOPENCL_CL_VERSION >= 0x1020
         REF_CL_1_2,
 #endif
@@ -555,21 +554,6 @@ namespace pyopencl
         {
           if (false)
           { }
-#if (defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION))
-          else if (ref_type == REF_FISSION_EXT)
-          {
-#if PYOPENCL_CL_VERSION >= 0x1020
-            cl_platform_id plat;
-            PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (m_device, CL_DEVICE_PLATFORM,
-                  sizeof(plat), &plat, NULL));
-#endif
-
-            PYOPENCL_GET_EXT_FUN(plat,
-                clRetainDeviceEXT, retain_func);
-
-            PYOPENCL_CALL_GUARDED(retain_func, (did));
-          }
-#endif
 
 #if PYOPENCL_CL_VERSION >= 0x1020
           else if (ref_type == REF_CL_1_2)
@@ -586,26 +570,8 @@ namespace pyopencl
 
       ~device()
       {
-        if (false)
-        { }
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-        else if (m_ref_type == REF_FISSION_EXT)
-        {
 #if PYOPENCL_CL_VERSION >= 0x1020
-          cl_platform_id plat;
-          PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (m_device, CL_DEVICE_PLATFORM,
-                sizeof(plat), &plat, NULL));
-#endif
-
-          PYOPENCL_GET_EXT_FUN(plat,
-              clReleaseDeviceEXT, release_func);
-
-          PYOPENCL_CALL_GUARDED_CLEANUP(release_func, (m_device));
-        }
-#endif
-
-#if PYOPENCL_CL_VERSION >= 0x1020
-        else if (m_ref_type == REF_CL_1_2)
+        if (m_ref_type == REF_CL_1_2)
           PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseDevice, (m_device));
 #endif
       }
@@ -721,19 +687,6 @@ namespace pyopencl
           case CL_DEVICE_INTEGRATED_MEMORY_NV:
             DEV_GET_INT_INF(cl_bool);
 #endif
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-          case CL_DEVICE_PARENT_DEVICE_EXT:
-            PYOPENCL_GET_OPAQUE_INFO(Device, m_device, param_name, cl_device_id, device);
-          case CL_DEVICE_PARTITION_TYPES_EXT:
-          case CL_DEVICE_AFFINITY_DOMAINS_EXT:
-          case CL_DEVICE_PARTITION_STYLE_EXT:
-            {
-              std::vector<cl_device_partition_property_ext> result;
-              PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
-              PYOPENCL_RETURN_VECTOR(cl_device_partition_property_ext, result);
-            }
-          case CL_DEVICE_REFERENCE_COUNT_EXT: DEV_GET_INT_INF(cl_uint);
-#endif
 #if PYOPENCL_CL_VERSION >= 0x1020
           case CL_DEVICE_LINKER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
           case CL_DEVICE_BUILT_IN_KERNELS:
@@ -848,44 +801,6 @@ namespace pyopencl
           py_result.append(handle_from_new_ptr(
                 new pyopencl::device(did, /*retain*/true,
                   device::REF_CL_1_2)));
-        return py_result;
-      }
-#endif
-
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-      py::list create_sub_devices_ext(py::object py_properties)
-      {
-        std::vector<cl_device_partition_property_ext> properties;
-
-#if PYOPENCL_CL_VERSION >= 0x1020
-        cl_platform_id plat;
-        PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (m_device, CL_DEVICE_PLATFORM,
-              sizeof(plat), &plat, NULL));
-#endif
-
-        PYOPENCL_GET_EXT_FUN(plat, clCreateSubDevicesEXT, create_sub_dev);
-
-        COPY_PY_LIST(cl_device_partition_property_ext, properties);
-        properties.push_back(CL_PROPERTIES_LIST_END_EXT);
-
-        cl_device_partition_property_ext *props_ptr
-          = properties.empty( ) ? NULL : &properties.front();
-
-        cl_uint num_entries;
-        PYOPENCL_CALL_GUARDED(create_sub_dev,
-            (m_device, props_ptr, 0, NULL, &num_entries));
-
-        std::vector<cl_device_id> result;
-        result.resize(num_entries);
-
-        PYOPENCL_CALL_GUARDED(create_sub_dev,
-            (m_device, props_ptr, num_entries, &result.front(), NULL));
-
-        py::list py_result;
-        for (cl_device_id did: result)
-          py_result.append(handle_from_new_ptr(
-                new pyopencl::device(did, /*retain*/true,
-                  device::REF_FISSION_EXT)));
         return py_result;
       }
 #endif

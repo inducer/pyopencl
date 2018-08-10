@@ -49,9 +49,6 @@ namespace
   class device_partition_property { };
   class device_affinity_domain { };
 
-  class device_partition_property_ext { };
-  class affinity_domain_ext { };
-
   class gl_object_type { };
   class gl_texture_info { };
 
@@ -343,13 +340,6 @@ void pyopencl_expose_constants(py::module &m)
 // }}}
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
     ADD_ATTR(DEVICE_, MAX_ATOMIC_COUNTERS_EXT);
-#endif
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    ADD_ATTR(DEVICE_, PARENT_DEVICE_EXT);
-    ADD_ATTR(DEVICE_, PARTITION_TYPES_EXT);
-    ADD_ATTR(DEVICE_, AFFINITY_DOMAINS_EXT);
-    ADD_ATTR(DEVICE_, REFERENCE_COUNT_EXT);
-    ADD_ATTR(DEVICE_, PARTITION_STYLE_EXT);
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR(DEVICE_, LINKER_AVAILABLE);
@@ -772,32 +762,6 @@ void pyopencl_expose_constants(py::module &m)
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR(MIGRATE_MEM_OBJECT_, HOST);
     ADD_ATTR(MIGRATE_MEM_OBJECT_, CONTENT_UNDEFINED);
-#endif
-  }
-
-  {
-    py::class_<device_partition_property_ext> cls(
-        m, "device_partition_property_ext");
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, EQUALLY, _EXT);
-    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, BY_COUNTS, _EXT);
-    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, BY_NAMES, _EXT);
-    ADD_ATTR_SUFFIX(DEVICE_PARTITION_, BY_AFFINITY_DOMAIN, _EXT);
-    ADD_ATTR_SUFFIX(, PROPERTIES_LIST_END, _EXT);
-    ADD_ATTR_SUFFIX(, PARTITION_BY_COUNTS_LIST_END, _EXT);
-    ADD_ATTR_SUFFIX(, PARTITION_BY_NAMES_LIST_END, _EXT);
-#endif
-  }
-
-  {
-    py::class_<affinity_domain_ext> cls(m, "affinity_domain_ext");
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L1_CACHE, _EXT);
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L2_CACHE, _EXT);
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L3_CACHE, _EXT);
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, L4_CACHE, _EXT);
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, NUMA, _EXT);
-    ADD_ATTR_SUFFIX(AFFINITY_DOMAIN_, NEXT_FISSIONABLE, _EXT);
 #endif
   }
 

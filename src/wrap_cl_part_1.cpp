@@ -35,9 +35,6 @@ void pyopencl_expose_part_1(py::module &m)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
-#if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
-      .DEF_SIMPLE_METHOD(create_sub_devices_ext)
-#endif
 #if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(create_sub_devices)
 #endif
