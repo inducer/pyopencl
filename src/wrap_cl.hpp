@@ -3853,30 +3853,6 @@ namespace pyopencl
         } );
   }
 
-
-
-
-
-
-  inline
-  event *enqueue_task(
-      command_queue &cq,
-      kernel &knl,
-      py::object py_wait_for)
-  {
-    PYOPENCL_PARSE_WAIT_FOR;
-
-    PYOPENCL_RETRY_RETURN_IF_MEM_ERROR( {
-      cl_event evt;
-      PYOPENCL_CALL_GUARDED(clEnqueueTask, (
-            cq.data(),
-            knl.data(),
-            PYOPENCL_WAITLIST_ARGS, &evt
-            ));
-      PYOPENCL_RETURN_NEW_EVENT(evt);
-    } );
-  }
-
   // }}}
 
 

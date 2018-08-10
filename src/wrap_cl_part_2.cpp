@@ -354,11 +354,6 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("wait_for")=py::none(),
       py::arg("g_times_l")=false
       );
-  m.def("enqueue_task", enqueue_task,
-      py::arg("queue"),
-      py::arg("kernel"),
-      py::arg("wait_for")=py::none()
-      );
 
   // TODO: clEnqueueNativeKernel
   // }}}

@@ -143,7 +143,6 @@ from pyopencl._cl import (  # noqa
         UserEvent,
 
         enqueue_nd_range_kernel,
-        enqueue_task,
 
         _enqueue_marker_with_wait_list,
         _enqueue_marker,
