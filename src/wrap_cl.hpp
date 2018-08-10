@@ -222,9 +222,10 @@
   { \
     PYOPENCL_PRINT_CALL_TRACE_INFO(#NAME, TRACE_INFO); \
     cl_int status_code; \
-    Py_BEGIN_ALLOW_THREADS \
+    { \
+      py::gil_scoped_release release; \
       status_code = NAME ARGLIST; \
-    Py_END_ALLOW_THREADS \
+    } \
     if (status_code != CL_SUCCESS) \
       throw pyopencl::error(#NAME, status_code);\
   }
@@ -242,9 +243,10 @@
   { \
     PYOPENCL_PRINT_CALL_TRACE(#NAME); \
     cl_int status_code; \
-    Py_BEGIN_ALLOW_THREADS \
+    { \
+      py::gil_scoped_release release; \
       status_code = NAME ARGLIST; \
-    Py_END_ALLOW_THREADS \
+    } \
     if (status_code != CL_SUCCESS) \
       throw pyopencl::error(#NAME, status_code);\
   }
@@ -2923,14 +2925,15 @@ namespace pyopencl
 
     PYOPENCL_RETRY_IF_MEM_ERROR(
         {
-          Py_BEGIN_ALLOW_THREADS
-          mapped = clEnqueueMapBuffer(
-                cq.data(), buf.data(),
-                PYOPENCL_CAST_BOOL(is_blocking), flags,
-                offset, size_in_bytes,
-                PYOPENCL_WAITLIST_ARGS, &evt,
-                &status_code);
-          Py_END_ALLOW_THREADS
+          {
+            py::gil_scoped_release release;
+            mapped = clEnqueueMapBuffer(
+                  cq->data(), buf.data(),
+                  PYOPENCL_CAST_BOOL(is_blocking), flags,
+                  offset, size_in_bytes,
+                  PYOPENCL_WAITLIST_ARGS, &evt,
+                  &status_code);
+          }
           if (status_code != CL_SUCCESS)
             throw pyopencl::error("clEnqueueMapBuffer", status_code);
         } );
@@ -2997,14 +3000,15 @@ namespace pyopencl
     void *mapped;
     PYOPENCL_RETRY_IF_MEM_ERROR(
       {
-        Py_BEGIN_ALLOW_THREADS
-        mapped = clEnqueueMapImage(
-              cq.data(), img.data(),
-              PYOPENCL_CAST_BOOL(is_blocking), flags,
-              origin, region, &row_pitch, &slice_pitch,
-              PYOPENCL_WAITLIST_ARGS, &evt,
-              &status_code);
-        Py_END_ALLOW_THREADS
+        {
+          py::gil_scoped_release release;
+          mapped = clEnqueueMapImage(
+                cq->data(), img.data(),
+                PYOPENCL_CAST_BOOL(is_blocking), flags,
+                origin, region, &row_pitch, &slice_pitch,
+                PYOPENCL_WAITLIST_ARGS, &evt,
+                &status_code);
+        }
         if (status_code != CL_SUCCESS)
           throw pyopencl::error("clEnqueueMapImage", status_code);
       } );
