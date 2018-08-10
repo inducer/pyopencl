@@ -101,12 +101,10 @@ from pyopencl._cl import (  # noqa
         command_execution_status,
         profiling_info,
         mem_migration_flags,
-        mem_migration_flags_ext,
         device_partition_property,
         device_affinity_domain,
         gl_object_type,
         gl_texture_info,
-        migrate_mem_object_flags_ext,
 
         Error, MemoryError, LogicError, RuntimeError,
 

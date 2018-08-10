@@ -21,7 +21,9 @@ namespace
   class gl_context_info { };
   class context_properties { };
   class command_queue_info { };
+  class queue_properties { };
   class mem_flags { };
+  class svm_mem_flags { };
   class channel_order { };
   class channel_type { };
   class mem_object_type { };
@@ -557,9 +559,8 @@ void pyopencl_expose_constants(py::module &m)
   }
 
   {
-    // queue_properties
-#if PYOPENCL_CL_VERSION >= 0x2000
     py::class_<queue_properties> cls(m, "queue_properties");
+#if PYOPENCL_CL_VERSION >= 0x2000
     ADD_ATTR(QUEUE_, PROPERTIES);
     ADD_ATTR(QUEUE_, SIZE);
 #endif
@@ -587,8 +588,8 @@ void pyopencl_expose_constants(py::module &m)
   }
 
   {
-#if PYOPENCL_CL_VERSION >= 0x2000
     py::class_<svm_mem_flags> cls(m, "svm_mem_flags");
+#if PYOPENCL_CL_VERSION >= 0x2000
     ADD_ATTR(MEM_, READ_WRITE);
     ADD_ATTR(MEM_, WRITE_ONLY);
     ADD_ATTR(MEM_, READ_ONLY);
@@ -911,7 +912,7 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(PROFILING_COMMAND_, START);
     ADD_ATTR(PROFILING_COMMAND_, END);
 #if PYOPENCL_CL_VERSION >= 0x2000
-    ADD_ATTR("profiling_info", PROFILING_COMMAND_, COMPLETE);
+    ADD_ATTR(PROFILING_COMMAND_, COMPLETE);
 #endif
   }
 

@@ -223,10 +223,10 @@ def main():
             ext_modules=[
                 NumpyExtension("pyopencl._cl",
                     [
+                        "src/wrap_constants.cpp",
                         "src/wrap_cl.cpp",
                         "src/wrap_cl_part_1.cpp",
                         "src/wrap_cl_part_2.cpp",
-                        "src/wrap_constants.cpp",
                         "src/wrap_mempool.cpp",
                         "src/bitlog.cpp",
                         ],
