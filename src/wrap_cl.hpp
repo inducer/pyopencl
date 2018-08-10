@@ -2330,7 +2330,7 @@ namespace pyopencl
           "'shape' must be given");
 
     void *buf = 0;
-    PYOPENCL_BUFFER_SIZE_T len;
+    PYOPENCL_BUFFER_SIZE_T len = 0;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> retained_buf_obj;
