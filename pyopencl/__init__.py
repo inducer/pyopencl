@@ -557,9 +557,6 @@ class Program(object):
         return hash(self._get_prg())
 
 
-# _add_get_info_attrs(Program, Program.get_info, program_info)
-
-
 def create_program_with_built_in_kernels(context, devices, kernel_names):
     if not isinstance(kernel_names, str):
         kernel_names = ":".join(kernel_names)
