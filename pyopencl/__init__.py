@@ -757,6 +757,7 @@ def _add_functionality():
     # {{{ Kernel
 
     kernel_old_init = Kernel.__init__
+    kernel_old_get_info = Kernel.get_info
     kernel_old_get_work_group_info = Kernel.get_work_group_info
 
     def kernel_init(self, prg, name):
@@ -840,6 +841,14 @@ def _add_functionality():
         capture_kernel_call(self, filename, queue, global_size, local_size,
                 *args, **kwargs)
 
+    def kernel_get_info(self, param_name):
+        val = kernel_old_get_info(self, param_name)
+
+        if isinstance(val, _Program):
+            return Program(val)
+        else:
+            return val
+
     Kernel.__init__ = kernel_init
     Kernel._setup = kernel__setup
     Kernel.get_work_group_info = kernel_get_work_group_info
@@ -847,6 +856,7 @@ def _add_functionality():
     Kernel.set_args = kernel_set_args
     Kernel.__call__ = kernel_call
     Kernel.capture_call = kernel_capture_call
+    Kernel.get_info = kernel_get_info
 
     # }}}
 
