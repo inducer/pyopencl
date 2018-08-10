@@ -665,36 +665,6 @@ def test_unload_compiler(platform):
     cl.unload_platform_compiler(platform)
 
 
-def test_enqueue_task(ctx_factory):
-    ctx = ctx_factory()
-    queue = cl.CommandQueue(ctx)
-    mf = cl.mem_flags
-
-    prg = cl.Program(ctx, """
-    __kernel void
-    reverse(__global const float *in, __global float *out, int n)
-    {
-        for (int i = 0;i < n;i++) {
-            out[i] = in[n - 1 - i];
-        }
-    }
-    """).build()
-    knl = prg.reverse
-
-    n = 100
-    a = np.random.rand(n).astype(np.float32)
-    b = np.empty_like(a)
-
-    buf1 = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
-    buf2 = cl.Buffer(ctx, mf.WRITE_ONLY, b.nbytes)
-
-    knl.set_args(buf1, buf2, np.int32(n))
-    cl.enqueue_task(queue, knl)
-
-    cl.enqueue_copy(queue, b, buf2).wait()
-    assert la.norm(a[::-1] - b) == 0
-
-
 def test_platform_get_devices(ctx_factory):
     ctx = ctx_factory()
     platform = ctx.devices[0].platform
