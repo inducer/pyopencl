@@ -37,9 +37,10 @@ import pyopencl.tools as cl_tools
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
-from pyopencl.cffi_cl import _PYPY
 
 from pyopencl.clrandom import RanluxGenerator, PhiloxGenerator, ThreefryGenerator
+
+_PYPY = cl._PYPY
 
 
 # {{{ helpers

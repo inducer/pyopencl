@@ -295,7 +295,7 @@ def test_image_format_constructor():
 
     assert iform.channel_order == cl.channel_order.RGBA
     assert iform.channel_data_type == cl.channel_type.FLOAT
-    assert not iform.__dict__
+    assert not hasattr(iform, "__dict__")
 
 
 def test_device_topology_amd_constructor():
