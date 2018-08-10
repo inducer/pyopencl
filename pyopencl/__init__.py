@@ -575,75 +575,6 @@ def link_program(context, programs, options=[], devices=None):
 # {{{ monkeypatch C++ wrappers to add functionality
 
 def _add_functionality():
-    cls_to_info_cls = {
-            _cl.Platform: (_cl.Platform.get_info, _cl.platform_info, []),
-            _cl.Device: (_cl.Device.get_info, _cl.device_info,
-                ["PLATFORM", "MAX_WORK_GROUP_SIZE", "MAX_COMPUTE_UNITS"]),
-            _cl.Context: (_cl.Context.get_info, _cl.context_info, []),
-            _cl.CommandQueue: (_cl.CommandQueue.get_info, _cl.command_queue_info,
-                ["CONTEXT", "DEVICE"]),
-            _cl.Event: (_cl.Event.get_info, _cl.event_info, []),
-            _cl.MemoryObjectHolder:
-            (MemoryObjectHolder.get_info, _cl.mem_info, []),
-            Image: (_cl.Image.get_image_info, _cl.image_info, []),
-            Program: (Program.get_info, _cl.program_info, []),
-            Kernel: (Kernel.get_info, _cl.kernel_info, []),
-            _cl.Sampler: (Sampler.get_info, _cl.sampler_info, []),
-            }
-
-    def to_string(cls, value, default_format=None):
-        for name in dir(cls):
-            if (not name.startswith("_") and getattr(cls, name) == value):
-                return name
-
-        if default_format is None:
-            raise ValueError("a name for value %d was not found in %s"
-                    % (value, cls.__name__))
-        else:
-            return default_format % value
-
-    for cls in CONSTANT_CLASSES:
-        cls.to_string = classmethod(to_string)
-
-    # {{{ get_info attributes -------------------------------------------------
-
-    def make_getinfo(info_method, info_name, info_attr):
-        def result(self):
-            return info_method(self, info_attr)
-
-        return property(result)
-
-    def make_cacheable_getinfo(info_method, info_name, cache_attr, info_attr):
-        def result(self):
-            try:
-                return getattr(self, cache_attr)
-            except AttributeError:
-                pass
-
-            result = info_method(self, info_attr)
-            setattr(self, cache_attr, result)
-            return result
-
-        return property(result)
-
-    for cls, (info_method, info_class, cacheable_attrs) \
-            in six.iteritems(cls_to_info_cls):
-        for info_name, info_value in six.iteritems(info_class.__dict__):
-            if info_name == "to_string" or info_name.startswith("_"):
-                continue
-
-            info_lower = info_name.lower()
-            info_constant = getattr(info_class, info_name)
-            if info_name in cacheable_attrs:
-                cache_attr = intern("_info_cache_"+info_lower)
-                setattr(cls, info_lower, make_cacheable_getinfo(
-                    info_method, info_lower, cache_attr, info_constant))
-            else:
-                setattr(cls, info_lower, make_getinfo(
-                        info_method, info_name, info_constant))
-
-    # }}}
-
     # {{{ Platform
 
     def platform_repr(self):
@@ -1067,6 +998,78 @@ def _add_functionality():
     Error.code = property(error_code)
     Error.routine = property(error_routine)
     Error.what = property(error_what)
+
+    # }}}
+
+    # ORDER DEPENDENCY: Some of the above may override get_info, the effect needs
+    # to be visible through the attributes. So get_info attr creation needs to happen
+    # after the overriding is complete.
+    cls_to_info_cls = {
+            _cl.Platform: (_cl.Platform.get_info, _cl.platform_info, []),
+            _cl.Device: (_cl.Device.get_info, _cl.device_info,
+                ["PLATFORM", "MAX_WORK_GROUP_SIZE", "MAX_COMPUTE_UNITS"]),
+            _cl.Context: (_cl.Context.get_info, _cl.context_info, []),
+            _cl.CommandQueue: (_cl.CommandQueue.get_info, _cl.command_queue_info,
+                ["CONTEXT", "DEVICE"]),
+            _cl.Event: (_cl.Event.get_info, _cl.event_info, []),
+            _cl.MemoryObjectHolder:
+            (MemoryObjectHolder.get_info, _cl.mem_info, []),
+            Image: (_cl.Image.get_image_info, _cl.image_info, []),
+            Program: (Program.get_info, _cl.program_info, []),
+            Kernel: (Kernel.get_info, _cl.kernel_info, []),
+            _cl.Sampler: (Sampler.get_info, _cl.sampler_info, []),
+            }
+
+    def to_string(cls, value, default_format=None):
+        for name in dir(cls):
+            if (not name.startswith("_") and getattr(cls, name) == value):
+                return name
+
+        if default_format is None:
+            raise ValueError("a name for value %d was not found in %s"
+                    % (value, cls.__name__))
+        else:
+            return default_format % value
+
+    for cls in CONSTANT_CLASSES:
+        cls.to_string = classmethod(to_string)
+
+    # {{{ get_info attributes -------------------------------------------------
+
+    def make_getinfo(info_method, info_name, info_attr):
+        def result(self):
+            return info_method(self, info_attr)
+
+        return property(result)
+
+    def make_cacheable_getinfo(info_method, info_name, cache_attr, info_attr):
+        def result(self):
+            try:
+                return getattr(self, cache_attr)
+            except AttributeError:
+                pass
+
+            result = info_method(self, info_attr)
+            setattr(self, cache_attr, result)
+            return result
+
+        return property(result)
+
+    for cls, (info_method, info_class, cacheable_attrs) \
+            in six.iteritems(cls_to_info_cls):
+        for info_name, info_value in six.iteritems(info_class.__dict__):
+            if info_name == "to_string" or info_name.startswith("_"):
+                continue
+
+            info_lower = info_name.lower()
+            info_constant = getattr(info_class, info_name)
+            if info_name in cacheable_attrs:
+                cache_attr = intern("_info_cache_"+info_lower)
+                setattr(cls, info_lower, make_cacheable_getinfo(
+                    info_method, info_lower, cache_attr, info_constant))
+            else:
+                setattr(cls, info_lower, make_getinfo(
+                        info_method, info_name, info_constant))
 
     # }}}
 
