@@ -64,20 +64,17 @@ from pyopencl._cl import (  # noqa
         device_mem_cache_type,
         device_local_mem_type,
         device_exec_capabilities,
-        # FIXME
-        # device_svm_capabilities,
+        device_svm_capabilities,
 
         command_queue_properties,
         context_info,
         gl_context_info,
         context_properties,
         command_queue_info,
-        # FIXME
-        # queue_properties,
+        queue_properties,
 
         mem_flags,
-        # FIXME
-        # svm_mem_flags,
+        svm_mem_flags,
 
         channel_order,
         channel_type,
@@ -94,10 +91,9 @@ from pyopencl._cl import (  # noqa
 
         kernel_info,
         kernel_arg_info,
-        # FIXME
-        # kernel_arg_address_qualifier,
-        # kernel_arg_access_qualifier,
-        # kernel_arg_type_qualifier,
+        kernel_arg_address_qualifier,
+        kernel_arg_access_qualifier,
+        kernel_arg_type_qualifier,
         kernel_work_group_info,
 
         event_info,
@@ -105,8 +101,7 @@ from pyopencl._cl import (  # noqa
         command_execution_status,
         profiling_info,
         mem_migration_flags,
-        # FIXME
-        # mem_migration_flags_ext,
+        mem_migration_flags_ext,
         device_partition_property,
         device_affinity_domain,
         gl_object_type,
@@ -132,8 +127,6 @@ from pyopencl._cl import (  # noqa
         # SVM,
         # SVMMap,
 
-        # FIXME
-        # CompilerWarning,
         _Program,
         Kernel,
 

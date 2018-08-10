@@ -648,7 +648,11 @@ namespace pyopencl
           case CL_DEVICE_AVAILABLE: DEV_GET_INT_INF(cl_bool);
           case CL_DEVICE_COMPILER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
           case CL_DEVICE_EXECUTION_CAPABILITIES: DEV_GET_INT_INF(cl_device_exec_capabilities);
+#if PYOPENCL_CL_VERSION >= 0x2000
+          case CL_DEVICE_QUEUE_ON_HOST_PROPERTIES: DEV_GET_INT_INF(cl_command_queue_properties);
+#else
           case CL_DEVICE_QUEUE_PROPERTIES: DEV_GET_INT_INF(cl_command_queue_properties);
+#endif
 
           case CL_DEVICE_NAME:
           case CL_DEVICE_VENDOR:
@@ -687,6 +691,30 @@ namespace pyopencl
           case CL_DEVICE_INTEGRATED_MEMORY_NV:
             DEV_GET_INT_INF(cl_bool);
 #endif
+#ifdef CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV
+          case CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV:
+            DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_PCI_BUS_ID_NV
+          case CL_DEVICE_PCI_BUS_ID_NV:
+            DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_PCI_SLOT_ID_NV
+          case CL_DEVICE_PCI_SLOT_ID_NV:
+            DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD
+          case CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD: DEV_GET_INT_INF(cl_bool);
+#endif
+#ifdef CL_DEVICE_GFXIP_MAJOR_AMD
+          case CL_DEVICE_GFXIP_MAJOR_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_GFXIP_MINOR_AMD
+          case CL_DEVICE_GFXIP_MINOR_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD
+          case CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD: DEV_GET_INT_INF(cl_uint);
+#endif
 #if PYOPENCL_CL_VERSION >= 0x1020
           case CL_DEVICE_LINKER_AVAILABLE: DEV_GET_INT_INF(cl_bool);
           case CL_DEVICE_BUILT_IN_KERNELS:
@@ -713,7 +741,7 @@ namespace pyopencl
           case CL_DEVICE_PREFERRED_INTEROP_USER_SYNC: DEV_GET_INT_INF(cl_bool);
           case CL_DEVICE_PRINTF_BUFFER_SIZE: DEV_GET_INT_INF(cl_bool);
 #endif
-// {{{ AMD dev attrs
+// {{{ AMD dev attrs cl_amd_device_attribute_query
 //
 // types of AMD dev attrs divined from
 // https://www.khronos.org/registry/cl/api/1.2/cl.hpp
@@ -740,15 +768,6 @@ namespace pyopencl
 #ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
           case CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
-#ifdef CL_DEVICE_SIMD_WIDTH_AMD
-          case CL_DEVICE_SIMD_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
-#endif
-#ifdef CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD
-          case CL_DEVICE_SIMD_INSTRUCTION_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
-#endif
-#ifdef CL_DEVICE_WAVEFRONT_WIDTH_AMD
-          case CL_DEVICE_WAVEFRONT_WIDTH_AMD: DEV_GET_INT_INF(cl_uint);
-#endif
 #ifdef CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD
           case CL_DEVICE_GLOBAL_MEM_CHANNELS_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
@@ -768,6 +787,56 @@ namespace pyopencl
 
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
           case CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT: DEV_GET_INT_INF(cl_uint);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+          case CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE: DEV_GET_INT_INF(size_t);
+          case CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES: DEV_GET_INT_INF(cl_command_queue_properties);
+          case CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_QUEUE_ON_DEVICE_MAX_SIZE: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_MAX_ON_DEVICE_QUEUES: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_MAX_ON_DEVICE_EVENTS: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_SVM_CAPABILITIES: DEV_GET_INT_INF(cl_device_svm_capabilities);
+          case CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE: DEV_GET_INT_INF(size_t);
+          case CL_DEVICE_MAX_PIPE_ARGS: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_PIPE_MAX_PACKET_SIZE: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT: DEV_GET_INT_INF(cl_uint);
+          case CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT: DEV_GET_INT_INF(cl_uint);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+          case CL_DEVICE_IL_VERSION: DEV_GET_INT_INF();
+          case CL_DEVICE_MAX_NUM_SUB_GROUPS: DEV_GET_INT_INF();
+          case CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS: DEV_GET_INT_INF();
+#endif
+#ifdef CL_DEVICE_ME_VERSION_INTEL
+          case CL_DEVICE_ME_VERSION_INTEL: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_EXT_MEM_PADDING_IN_BYTES_QCOM
+          case CL_DEVICE_EXT_MEM_PADDING_IN_BYTES_QCOM: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_PAGE_SIZE_QCOM
+          case CL_DEVICE_PAGE_SIZE_QCOM: DEV_GET_INT_INF(cl_uint);
+#endif
+#ifdef CL_DEVICE_SPIR_VERSIONS
+          case CL_DEVICE_SPIR_VERSIONS:
+            PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
+#endif
+#ifdef CL_DEVICE_CORE_TEMPERATURE_ALTERA
+          case CL_DEVICE_CORE_TEMPERATURE_ALTERA: DEV_GET_INT_INF(cl_int);
+#endif
+
+#ifdef CL_DEVICE_SIMULTANEOUS_INTEROPS_INTEL
+          case CL_DEVICE_SIMULTANEOUS_INTEROPS_INTEL:
+            {
+              std::vector<cl_uint> result;
+              PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_uint, result);
+            }
+#endif
+#ifdef CL_DEVICE_NUM_SIMULTANEOUS_INTEROPS_INTEL
+          case CL_DEVICE_NUM_SIMULTANEOUS_INTEROPS_INTEL: DEV_GET_INT_INF(cl_uint);
 #endif
 
           default:
@@ -1255,6 +1324,9 @@ namespace pyopencl
           case CL_PROFILING_COMMAND_SUBMIT:
           case CL_PROFILING_COMMAND_START:
           case CL_PROFILING_COMMAND_END:
+#if PYOPENCL_CL_VERSION >= 0x2000
+          case CL_PROFILING_COMMAND_COMPLETE:
+#endif
             PYOPENCL_GET_INTEGRAL_INFO(EventProfiling, m_event, param_name,
                 cl_ulong);
           default:
@@ -3176,6 +3248,12 @@ namespace pyopencl
             PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
                 PYOPENCL_FIRST_ARG, param_name,
                 cl_program_binary_type);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+          case CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SIZE:
+            PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
+                PYOPENCL_FIRST_ARG, param_name,
+                size_t);
 #endif
 #undef PYOPENCL_FIRST_ARG
 

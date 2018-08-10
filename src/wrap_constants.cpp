@@ -15,6 +15,7 @@ namespace
   class device_mem_cache_type { };
   class device_local_mem_type { };
   class device_exec_capabilities { };
+  class device_svm_capabilities { };
   class command_queue_properties { };
   class context_info { };
   class gl_context_info { };
@@ -38,6 +39,7 @@ namespace
   class kernel_arg_info { };
   class kernel_arg_address_qualifier { };
   class kernel_arg_access_qualifier { };
+  class kernel_arg_type_qualifier { };
   class kernel_work_group_info { };
   class event_info { };
   class command_type { };
@@ -186,6 +188,11 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(, INVALID_DEVICE_PARTITION_COUNT);
 #endif
 
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(, INVALID_PIPE_SIZE);
+    ADD_ATTR(, INVALID_DEVICE_QUEUE);
+#endif
+
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     ADD_ATTR(, DEVICE_PARTITION_FAILED_EXT);
     ADD_ATTR(, INVALID_PARTITION_COUNT_EXT);
@@ -267,6 +274,9 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_, COMPILER_AVAILABLE);
     ADD_ATTR(DEVICE_, EXECUTION_CAPABILITIES);
     ADD_ATTR(DEVICE_, QUEUE_PROPERTIES);
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(DEVICE_, QUEUE_ON_HOST_PROPERTIES);
+#endif
     ADD_ATTR(DEVICE_, NAME);
     ADD_ATTR(DEVICE_, VENDOR);
     ADD_ATTR(, DRIVER_VERSION);
@@ -296,6 +306,16 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_, GPU_OVERLAP_NV);
     ADD_ATTR(DEVICE_, KERNEL_EXEC_TIMEOUT_NV);
     ADD_ATTR(DEVICE_, INTEGRATED_MEMORY_NV);
+    // Nvidia specific device attributes, not defined in Khronos CL/cl_ext.h
+#ifdef CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV
+    ADD_ATTR(DEVICE_, ATTRIBUTE_ASYNC_ENGINE_COUNT_NV);
+#endif
+#ifdef CL_DEVICE_PCI_BUS_ID_NV
+    ADD_ATTR(DEVICE_, PCI_BUS_ID_NV);
+#endif
+#ifdef CL_DEVICE_PCI_SLOT_ID_NV
+    ADD_ATTR(DEVICE_, PCI_SLOT_ID_NV);
+#endif
 #endif
 // {{{ cl_amd_device_attribute_query
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
@@ -338,6 +358,19 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_, LOCAL_MEM_BANKS_AMD);
 #endif
 // }}}
+#ifdef CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD
+    ADD_ATTR(DEVICE_, THREAD_TRACE_SUPPORTED_AMD);
+#endif
+#ifdef CL_DEVICE_GFXIP_MAJOR_AMD
+    ADD_ATTR(DEVICE_, GFXIP_MAJOR_AMD);
+#endif
+#ifdef CL_DEVICE_GFXIP_MINOR_AMD
+    ADD_ATTR(DEVICE_, GFXIP_MINOR_AMD);
+#endif
+#ifdef CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD
+    ADD_ATTR(DEVICE_, AVAILABLE_ASYNC_QUEUES_AMD);
+#endif
+
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
     ADD_ATTR(DEVICE_, MAX_ATOMIC_COUNTERS_EXT);
 #endif
@@ -358,6 +391,58 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef cl_khr_image2d_from_buffer
     ADD_ATTR(DEVICE_, IMAGE_PITCH_ALIGNMENT);
     ADD_ATTR(DEVICE_, IMAGE_BASE_ADDRESS_ALIGNMENT);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(DEVICE_, MAX_READ_WRITE_IMAGE_ARGS);
+    ADD_ATTR(DEVICE_, MAX_GLOBAL_VARIABLE_SIZE);
+    ADD_ATTR(DEVICE_, QUEUE_ON_DEVICE_PROPERTIES);
+    ADD_ATTR(DEVICE_, QUEUE_ON_DEVICE_PREFERRED_SIZE);
+    ADD_ATTR(DEVICE_, QUEUE_ON_DEVICE_MAX_SIZE);
+    ADD_ATTR(DEVICE_, MAX_ON_DEVICE_QUEUES);
+    ADD_ATTR(DEVICE_, MAX_ON_DEVICE_EVENTS);
+    ADD_ATTR(DEVICE_, SVM_CAPABILITIES);
+    ADD_ATTR(DEVICE_, GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE);
+    ADD_ATTR(DEVICE_, MAX_PIPE_ARGS);
+    ADD_ATTR(DEVICE_, PIPE_MAX_ACTIVE_RESERVATIONS);
+    ADD_ATTR(DEVICE_, PIPE_MAX_PACKET_SIZE);
+    ADD_ATTR(DEVICE_, PREFERRED_PLATFORM_ATOMIC_ALIGNMENT);
+    ADD_ATTR(DEVICE_, PREFERRED_GLOBAL_ATOMIC_ALIGNMENT);
+    ADD_ATTR(DEVICE_, PREFERRED_LOCAL_ATOMIC_ALIGNMENT);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR(DEVICE_, IL_VERSION);
+    ADD_ATTR(DEVICE_, MAX_NUM_SUB_GROUPS);
+    ADD_ATTR(DEVICE_, SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS);
+#endif
+    /* cl_intel_advanced_motion_estimation */
+#ifdef CL_DEVICE_ME_VERSION_INTEL
+    ADD_ATTR(DEVICE_, ME_VERSION_INTEL);
+#endif
+
+    /* cl_qcom_ext_host_ptr */
+#ifdef CL_DEVICE_EXT_MEM_PADDING_IN_BYTES_QCOM
+    ADD_ATTR(DEVICE_, EXT_MEM_PADDING_IN_BYTES_QCOM);
+#endif
+#ifdef CL_DEVICE_PAGE_SIZE_QCOM
+    ADD_ATTR(DEVICE_, PAGE_SIZE_QCOM);
+#endif
+
+    /* cl_khr_spir */
+#ifdef CL_DEVICE_SPIR_VERSIONS
+    ADD_ATTR(DEVICE_, SPIR_VERSIONS);
+#endif
+
+    /* cl_altera_device_temperature */
+#ifdef CL_DEVICE_CORE_TEMPERATURE_ALTERA
+    ADD_ATTR(DEVICE_, CORE_TEMPERATURE_ALTERA);
+#endif
+
+    /* cl_intel_simultaneous_sharing */
+#ifdef CL_DEVICE_SIMULTANEOUS_INTEROPS_INTEL
+    ADD_ATTR(DEVICE_, SIMULTANEOUS_INTEROPS_INTEL);
+#endif
+#ifdef CL_DEVICE_NUM_SIMULTANEOUS_INTEROPS_INTEL
+    ADD_ATTR(DEVICE_, NUM_SIMULTANEOUS_INTEROPS_INTEL);
 #endif
   }
 
@@ -400,11 +485,26 @@ void pyopencl_expose_constants(py::module &m)
   }
 
   {
+    py::class_<device_svm_capabilities> cls(m, "device_svm_capabilities");
+#if PYOPENCL_CL_VERSION >= 0x2000
+    // device_svm_capabilities
+    ADD_ATTR(DEVICE_SVM_, COARSE_GRAIN_BUFFER);
+    ADD_ATTR(DEVICE_SVM_, FINE_GRAIN_BUFFER);
+    ADD_ATTR(DEVICE_SVM_, FINE_GRAIN_SYSTEM);
+    ADD_ATTR(DEVICE_SVM_, ATOMICS);
+#endif
+  }
+
+  {
     py::class_<command_queue_properties> cls(m, "command_queue_properties");
     ADD_ATTR(QUEUE_, OUT_OF_ORDER_EXEC_MODE_ENABLE);
     ADD_ATTR(QUEUE_, PROFILING_ENABLE);
 #ifdef CL_QUEUE_IMMEDIATE_EXECUTION_ENABLE_INTEL
     ADD_ATTR(QUEUE_, IMMEDIATE_EXECUTION_ENABLE_INTEL);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(QUEUE_, ON_DEVICE);
+    ADD_ATTR(QUEUE_, ON_DEVICE_DEFAULT);
 #endif
   }
 
@@ -457,6 +557,15 @@ void pyopencl_expose_constants(py::module &m)
   }
 
   {
+    // queue_properties
+#if PYOPENCL_CL_VERSION >= 0x2000
+    py::class_<queue_properties> cls(m, "queue_properties");
+    ADD_ATTR(QUEUE_, PROPERTIES);
+    ADD_ATTR(QUEUE_, SIZE);
+#endif
+  }
+
+  {
     py::class_<mem_flags> cls(m, "mem_flags");
     ADD_ATTR(MEM_, READ_WRITE);
     ADD_ATTR(MEM_, WRITE_ONLY);
@@ -471,6 +580,20 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(MEM_, HOST_WRITE_ONLY);
     ADD_ATTR(MEM_, HOST_READ_ONLY);
     ADD_ATTR(MEM_, HOST_NO_ACCESS);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(MEM_, KERNEL_READ_AND_WRITE);
+#endif
+  }
+
+  {
+#if PYOPENCL_CL_VERSION >= 0x2000
+    py::class_<svm_mem_flags> cls(m, "svm_mem_flags");
+    ADD_ATTR(MEM_, READ_WRITE);
+    ADD_ATTR(MEM_, WRITE_ONLY);
+    ADD_ATTR(MEM_, READ_ONLY);
+    ADD_ATTR(MEM_, SVM_FINE_GRAIN_BUFFER);
+    ADD_ATTR(MEM_, SVM_ATOMICS);
 #endif
   }
 
@@ -489,6 +612,13 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR( , Rx);
     ADD_ATTR( , RGx);
     ADD_ATTR( , RGBx);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(  , sRGB);
+    ADD_ATTR(  , sRGBx);
+    ADD_ATTR(  , sRGBA);
+    ADD_ATTR(  , sBGRA);
+    ADD_ATTR(  , ABGR);
 #endif
   }
 
@@ -522,6 +652,9 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(MEM_OBJECT_, IMAGE1D_ARRAY);
     ADD_ATTR(MEM_OBJECT_, IMAGE1D_BUFFER);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(MEM_OBJECT_, PIPE);
+#endif
   }
 
   {
@@ -536,6 +669,9 @@ void pyopencl_expose_constants(py::module &m)
 #if PYOPENCL_CL_VERSION >= 0x1010
     ADD_ATTR(MEM_, ASSOCIATED_MEMOBJECT);
     ADD_ATTR(MEM_, OFFSET);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(MEM_, USES_SVM_POINTER);
 #endif
   }
 
@@ -580,6 +716,11 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(SAMPLER_, NORMALIZED_COORDS);
     ADD_ATTR(SAMPLER_, ADDRESSING_MODE);
     ADD_ATTR(SAMPLER_, FILTER_MODE);
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(SAMPLER_, MIP_FILTER_MODE);
+    ADD_ATTR(SAMPLER_, LOD_MIN);
+    ADD_ATTR(SAMPLER_, LOD_MAX);
+#endif
   }
 
   {
@@ -613,6 +754,9 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(PROGRAM_BUILD_, LOG);
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR(PROGRAM_, BINARY_TYPE);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(PROGRAM_BUILD_, GLOBAL_VARIABLE_TOTAL_SIZE);
 #endif
   }
 
@@ -667,6 +811,20 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(KERNEL_ARG_ACCESS_, WRITE_ONLY);
     ADD_ATTR(KERNEL_ARG_ACCESS_, READ_WRITE);
     ADD_ATTR(KERNEL_ARG_ACCESS_, NONE);
+#endif
+  }
+
+  {
+    py::class_<kernel_arg_type_qualifier> cls(
+        m, "kernel_arg_type_qualifier");
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR(KERNEL_ARG_TYPE_, NONE);
+    ADD_ATTR(KERNEL_ARG_TYPE_, CONST);
+    ADD_ATTR(KERNEL_ARG_TYPE_, RESTRICT);
+    ADD_ATTR(KERNEL_ARG_TYPE_, VOLATILE);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(KERNEL_ARG_TYPE_, PIPE);
 #endif
   }
 
@@ -729,6 +887,13 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(COMMAND_, FILL_BUFFER);
     ADD_ATTR(COMMAND_, FILL_IMAGE);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(COMMAND_, SVM_FREE);
+    ADD_ATTR(COMMAND_, SVM_MEMCPY);
+    ADD_ATTR(COMMAND_, SVM_MEMFILL);
+    ADD_ATTR(COMMAND_, SVM_MAP);
+    ADD_ATTR(COMMAND_, SVM_UNMAP);
+#endif
   }
 
   {
@@ -745,6 +910,9 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(PROFILING_COMMAND_, SUBMIT);
     ADD_ATTR(PROFILING_COMMAND_, START);
     ADD_ATTR(PROFILING_COMMAND_, END);
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR("profiling_info", PROFILING_COMMAND_, COMPLETE);
+#endif
   }
 
 /* not needed--filled in automatically by implementation.
