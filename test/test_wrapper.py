@@ -306,7 +306,7 @@ def test_device_topology_amd_constructor():
     assert topol.device == 4
     assert topol.function == 5
 
-    assert not topol.__dict__
+    assert not hasattr(topol, "__dict__")
 
 
 def test_nonempty_supported_image_formats(ctx_factory):
@@ -922,17 +922,10 @@ def test_coarse_grain_svm(ctx_factory):
 
     dev = ctx.devices[0]
 
-    has_svm = (ctx._get_cl_version() >= (2, 0) and
-                cl.get_cl_header_version() >= (2, 0))
-
-    if dev.platform.name == "Portable Computing Language":
-        has_svm = (
-                get_pocl_version(dev.platform) >= (1, 0)
-                and cl.get_cl_header_version() >= (2, 0))
-
-    if not has_svm:
-        from pytest import skip
-        skip("SVM only available in OpenCL 2.0 and higher")
+    from pyopencl.characterize import has_coarse_grain_buffer_svm
+    from pytest import skip
+    if not has_coarse_grain_buffer_svm(queue.device):
+        skip("device does not support coarse-grain SVM")
 
     if ("AMD" in dev.platform.name
             and dev.type & cl.device_type.CPU):
@@ -981,13 +974,9 @@ def test_fine_grain_svm(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
+    from pyopencl.characterize import has_fine_grain_buffer_svm
     from pytest import skip
-    if (ctx._get_cl_version() < (2, 0) or
-            cl.get_cl_header_version() < (2, 0)):
-        skip("SVM only available in OpenCL 2.0 and higher")
-
-    if not (ctx.devices[0].svm_capabilities
-            & cl.device_svm_capabilities.FINE_GRAIN_BUFFER):
+    if not has_fine_grain_buffer_svm(queue.device):
         skip("device does not support fine-grain SVM")
 
     n = 3000
