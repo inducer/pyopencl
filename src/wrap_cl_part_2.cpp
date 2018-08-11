@@ -441,6 +441,42 @@ void pyopencl_expose_part_2(py::module &m)
 
 #endif
   // }}}
+
+  // {{{ CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD
+
+  {
+    typedef cl_device_topology_amd cls;
+    py::class_<cls>(m, "DeviceTopologyAmd")
+      .def(py::init(
+            [](cl_char bus, cl_char device, cl_char function)
+            {
+              cl_device_topology_amd result;
+              result.pcie.bus = bus;
+              result.pcie.device = device;
+              result.pcie.function = function;
+              return result;
+            }),
+          py::arg("bus")=0,
+          py::arg("device")=0,
+          py::arg("function")=0)
+
+      .def_property("type",
+          [](cls &t) { return t.pcie.type; },
+          [](cls &t, cl_uint val) { t.pcie.type = val; })
+
+      .def_property("bus",
+          [](cls &t) { return t.pcie.bus; },
+          [](cls &t, cl_char val) { t.pcie.bus = val; })
+      .def_property("device",
+          [](cls &t) { return t.pcie.device; },
+          [](cls &t, cl_char val) { t.pcie.device = val; })
+      .def_property("function",
+          [](cls &t) { return t.pcie.function; },
+          [](cls &t, cl_char val) { t.pcie.function = val; })
+      ;
+  }
+
+  // }}}
 }
 
 

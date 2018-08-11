@@ -176,8 +176,7 @@ from pyopencl._cl import (  # noqa
         Image,
         Sampler,
         GLTexture,
-        # FIXME
-        # DeviceTopologyAmd,
+        DeviceTopologyAmd,
         )
 
 import inspect as _inspect
