@@ -46,6 +46,10 @@
 
 #endif
 
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
 #include <stdexcept>
 #include <iostream>
 #include <vector>
@@ -1345,6 +1349,105 @@ namespace pyopencl
       {
         PYOPENCL_CALL_GUARDED_THREADED(clWaitForEvents, (1, &m_event));
       }
+
+#if PYOPENCL_CL_VERSION >= 0x1010
+    // {{{ set_callback, by way of a a thread-based construction
+
+    private:
+      struct event_callback_info_t
+      {
+        std::mutex m_mutex;
+        std::condition_variable m_condvar;
+
+        py::object m_py_event;
+        py::object m_py_callback;
+
+        bool m_set_callback_suceeded;
+
+        cl_event m_event;
+        cl_int m_command_exec_status;
+
+        event_callback_info_t(py::object py_event, py::object py_callback)
+        : m_set_callback_suceeded(true), m_py_event(py_event), m_py_callback(py_callback)
+        {}
+      };
+
+      static void evt_callback(cl_event evt, cl_int command_exec_status, void *user_data)
+      {
+        event_callback_info_t *cb_info = reinterpret_cast<event_callback_info_t *>(user_data);
+        {
+          std::lock_guard<std::mutex> lg(cb_info->m_mutex);
+          cb_info->m_event = evt;
+          cb_info->m_command_exec_status = command_exec_status;
+        }
+        cb_info->m_condvar.notify_one();
+      }
+
+    public:
+      void set_callback(cl_int command_exec_callback_type, py::object pfn_event_notify)
+      {
+        // The reason for doing this via a thread is that we're able to wait on
+        // acquiring the GIL. (which we can't in the callback)
+
+        std::unique_ptr<event_callback_info_t> cb_info_holder(
+            new event_callback_info_t(
+              handle_from_new_ptr(new event(*this)),
+              pfn_event_notify));
+        event_callback_info_t *cb_info = cb_info_holder.get();
+
+        std::thread notif_thread([cb_info]()
+            {
+              std::unique_lock<std::mutex> ulk(cb_info->m_mutex);
+              cb_info->m_condvar.wait(ulk);
+
+              {
+                py::gil_scoped_acquire acquire;
+
+                if (cb_info->m_set_callback_suceeded)
+                {
+                  try {
+                    cb_info->m_py_callback(
+                        // cb_info->m_py_event,
+                        cb_info->m_command_exec_status);
+                  }
+                  catch (std::exception &exc)
+                  {
+                    std::cerr
+                    << "[pyopencl] event callback handler threw an exception, ignoring: "
+                    << exc.what()
+                    << std::endl;
+                  }
+                }
+
+                // Need to hold GIL to delete py::object instances in
+                // event_callback_info_t
+                delete cb_info;
+              }
+            });
+        // Thread is away--it is now its responsibility to free cb_info.
+        cb_info_holder.release();
+
+        // notif_thread should no longer be coupled to the lifetime of the thread.
+        notif_thread.detach();
+
+        try
+        {
+          PYOPENCL_CALL_GUARDED(clSetEventCallback, (
+                data(), command_exec_callback_type, &event::evt_callback, cb_info));
+        }
+        catch (...) {
+          // Setting the callback did not succeed. The thread would never
+          // be woken up. Wake it up to let it know that it can stop.
+          {
+            std::lock_guard<std::mutex> lg(cb_info->m_mutex);
+            cb_info->m_set_callback_suceeded = false;
+          }
+          cb_info->m_condvar.notify_one();
+          throw;
+        }
+      }
+      // }}}
+#endif
   };
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE

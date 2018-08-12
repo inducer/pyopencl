@@ -793,7 +793,7 @@ def test_event_set_callback(ctx_factory):
     queue = cl.CommandQueue(ctx)
 
     if ctx._get_cl_version() < (1, 1):
-        pytest.skip("OpenCL 1.1 or newer required fro set_callback")
+        pytest.skip("OpenCL 1.1 or newer required for set_callback")
 
     a_np = np.random.rand(50000).astype(np.float32)
     b_np = np.random.rand(50000).astype(np.float32)
