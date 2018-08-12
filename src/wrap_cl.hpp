@@ -1368,7 +1368,7 @@ namespace pyopencl
         cl_int m_command_exec_status;
 
         event_callback_info_t(py::object py_event, py::object py_callback)
-        : m_set_callback_suceeded(true), m_py_event(py_event), m_py_callback(py_callback)
+        : m_py_event(py_event), m_py_callback(py_callback), m_set_callback_suceeded(true)
         {}
       };
 
@@ -3166,8 +3166,8 @@ namespace pyopencl
         m_ptr = ward->m_buf.buf;
         m_size = ward->m_buf.len;
 #else
-        py::object ward = buffer;
-        if (PyObject_AsWriteBuffer(buffer.ptr(), &m_ptr, &m_size))
+        py::object ward = holder;
+        if (PyObject_AsWriteBuffer(holder.ptr(), &m_ptr, &m_size))
           throw py::error_already_set();
 #endif
       }
@@ -3310,7 +3310,7 @@ namespace pyopencl
     pattern_len = pattern_ward->m_buf.len;
 #else
     py::object pattern_ward = py_pattern;
-    if (PyObject_AsReadBuffer(buffer.ptr(), &pattern_buf, &pattern_len))
+    if (PyObject_AsReadBuffer(py_pattern.ptr(), &pattern_ptr, &pattern_len))
       throw py::error_already_set();
 #endif
 
