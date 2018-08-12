@@ -1201,8 +1201,15 @@ namespace pyopencl
 
         cl_int status_code;
         PYOPENCL_PRINT_CALL_TRACE("clCreateCommandQueue");
+#if defined(__GNUG__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
         m_queue = clCreateCommandQueue(
             ctx.data(), dev, props, &status_code);
+#if defined(__GNUG__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
         if (status_code != CL_SUCCESS)
           throw pyopencl::error("CommandQueue", status_code);
@@ -3400,10 +3407,18 @@ namespace pyopencl
       {
         cl_int status_code;
         PYOPENCL_PRINT_CALL_TRACE("clCreateSampler");
+
+#if defined(__GNUG__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
         m_sampler = clCreateSampler(
             ctx.data(),
             normalized_coordinates,
             am, fm, &status_code);
+#if defined(__GNUG__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
         if (status_code != CL_SUCCESS)
           throw pyopencl::error("Sampler", status_code);
@@ -3706,7 +3721,6 @@ namespace pyopencl
     std::vector<cl_device_id> devices;
     std::vector<const unsigned char *> binaries;
     std::vector<size_t> sizes;
-    std::vector<cl_int> binary_statuses;
 
     size_t num_devices = len(py_devices);
     if (len(py_binaries) != num_devices)
@@ -3737,7 +3751,7 @@ namespace pyopencl
       sizes.push_back(len);
     }
 
-    binary_statuses.resize(num_devices);
+    cl_int binary_statuses[num_devices];
 
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBinary");
@@ -3746,7 +3760,7 @@ namespace pyopencl
         devices.empty( ) ? nullptr : &devices.front(),
         sizes.empty( ) ? nullptr : &sizes.front(),
         binaries.empty( ) ? nullptr : &binaries.front(),
-        binary_statuses.empty( ) ? nullptr : &binary_statuses.front(),
+        binary_statuses,
         &status_code);
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("clCreateProgramWithBinary", status_code);
