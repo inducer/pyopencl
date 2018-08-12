@@ -3298,7 +3298,7 @@ namespace pyopencl
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
-    void *pattern_ptr;
+    const void *pattern_ptr;
     PYOPENCL_BUFFER_SIZE_T pattern_len;
 
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
