@@ -13,6 +13,7 @@
 
 // Mac ------------------------------------------------------------------------
 #include <OpenCL/opencl.h>
+#include "pyopencl_ext.h"
 #ifdef HAVE_GL
 
 #define PYOPENCL_GL_SHARING_VERSION 1
