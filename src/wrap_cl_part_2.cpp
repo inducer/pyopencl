@@ -230,6 +230,71 @@ void pyopencl_expose_part_2(py::module &m)
 
   // }}}
 
+  // {{{ svm
+
+#if PYOPENCL_CL_VERSION >= 0x2000
+  {
+    typedef svm_arg_wrapper cls;
+    py::class_<cls>(m, "SVM", py::dynamic_attr())
+      .def(py::init<py::object>())
+      ;
+  }
+
+  {
+    typedef svm_allocation cls;
+    py::class_<cls>(m, "SVMAllocation", py::dynamic_attr())
+      .def(py::init<std::shared_ptr<context>, size_t, cl_uint, cl_svm_mem_flags>())
+      .DEF_SIMPLE_METHOD(release)
+      .DEF_SIMPLE_METHOD(enqueue_release)
+      .def("_ptr_as_int", &cls::ptr_as_int)
+      .def(py::self == py::self)
+      .def(py::self != py::self)
+      .def("__hash__", &cls::ptr_as_int)
+      ;
+  }
+
+  m.def("_enqueue_svm_memcpyw", enqueue_svm_memcpy,
+      py::arg("queue"),
+      py::arg("is_blocking"),
+      py::arg("dst"),
+      py::arg("src"),
+      py::arg("wait_for")=py::none()
+      );
+
+  m.def("_enqueue_svm_memfill", enqueue_svm_memfill,
+      py::arg("queue"),
+      py::arg("dst"),
+      py::arg("pattern"),
+      py::arg("byte_count")=py::none(),
+      py::arg("wait_for")=py::none()
+      );
+
+  m.def("_enqueue_svm_map", enqueue_svm_map,
+      py::arg("queue"),
+      py::arg("is_blocking"),
+      py::arg("flags"),
+      py::arg("svm"),
+      py::arg("wait_for")=py::none()
+      );
+
+  m.def("_enqueue_svm_unmap", enqueue_svm_unmap,
+      py::arg("queue"),
+      py::arg("svm"),
+      py::arg("wait_for")=py::none()
+      );
+#endif
+
+#if PYOPENCL_CL_VERSION >= 0x2010
+  m.def("_enqueue_svm_migrate_mem", enqueue_svm_migratemem,
+      py::arg("queue"),
+      py::arg("svms"),
+      py::arg("flags")=py::none(),
+      py::arg("wait_for")=py::none()
+      );
+#endif
+
+  // }}}
+
   // {{{ sampler
   {
     typedef sampler cls;
@@ -323,6 +388,9 @@ void pyopencl_expose_part_2(py::module &m)
       .DEF_SIMPLE_METHOD(get_work_group_info)
       .def("_set_arg_null", &cls::set_arg_null)
       .def("_set_arg_buf", &cls::set_arg_buf)
+#if PYOPENCL_CL_VERSION >= 0x1020
+      .def("_set_arg_svm", &cls::set_arg_svm)
+#endif
       .DEF_SIMPLE_METHOD(set_arg)
 #if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(get_arg_info)

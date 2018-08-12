@@ -110,7 +110,6 @@ from pyopencl._cl import (  # noqa
 
         Platform,
         get_platforms,
-        unload_platform_compiler,
 
         Device,
         Context,
@@ -120,10 +119,6 @@ from pyopencl._cl import (  # noqa
         MemoryObject,
         MemoryMap,
         Buffer,
-        # FIXME
-        # SVMAllocation,
-        # SVM,
-        # SVMMap,
 
         _Program,
         Kernel,
@@ -159,15 +154,8 @@ from pyopencl._cl import (  # noqa
         enqueue_fill_image,
         _enqueue_copy_image_to_buffer,
         _enqueue_copy_buffer_to_image,
-        # FIXME
-        # enqueue_svm_memfill,
-        # enqueue_svm_migratemem,
 
         have_gl,
-        # FIXME?
-        # _GLObject,
-        GLBuffer,
-        GLRenderBuffer,
 
         ImageFormat,
         get_supported_image_formats,
@@ -175,9 +163,42 @@ from pyopencl._cl import (  # noqa
         ImageDescriptor,
         Image,
         Sampler,
-        GLTexture,
         DeviceTopologyAmd,
         )
+
+if get_cl_header_version() >= (1, 2):
+    from pyopencl._cl import (  # noqa
+        unload_platform_compiler,
+        )
+
+if get_cl_header_version() >= (2, 0):
+    from pyopencl._cl import (  # noqa
+        SVMAllocation,
+        SVM,
+
+        # FIXME
+        #enqueue_svm_migratemem,
+        )
+
+if _cl.have_gl():
+    from pyopencl._cl import (  # noqa
+        GLBuffer,
+        GLRenderBuffer,
+        GLTexture,
+        )
+
+    try:
+        from pyopencl._cl import get_apple_cgl_share_group  # noqa
+    except ImportError:
+        pass
+
+    try:
+        from pyopencl._cl import (  # noqa
+            enqueue_acquire_gl_objects,
+            enqueue_release_gl_objects,
+        )
+    except ImportError:
+        pass
 
 import inspect as _inspect
 
@@ -185,29 +206,6 @@ CONSTANT_CLASSES = tuple(
         getattr(_cl, name) for name in dir(_cl)
         if _inspect.isclass(getattr(_cl, name))
         and name[0].islower() and name not in ["zip", "map", "range"])
-
-_KERNEL_ARG_CLASSES = (
-        MemoryObjectHolder,
-        Sampler,
-        LocalMemory,
-        # FIXME
-        # SVM,
-        )
-
-
-if _cl.have_gl():
-    try:
-        from pyopencl._cl import get_apple_cgl_share_group  # noqa
-    except ImportError:
-        pass
-
-    try:
-        from pyopencl.cffi_cl import (  # noqa
-            enqueue_acquire_gl_objects,
-            enqueue_release_gl_objects,
-        )
-    except ImportError:
-        pass
 
 
 # {{{ diagnostics
@@ -583,24 +581,24 @@ def link_program(context, programs, options=[], devices=None):
 # {{{ monkeypatch C++ wrappers to add functionality
 
 def _add_functionality():
+    def generic_get_cl_version(self):
+        import re
+        version_string = self.version
+        match = re.match(r"^OpenCL ([0-9]+)\.([0-9]+) .*$", version_string)
+        if match is None:
+            raise RuntimeError("%s %s returned non-conformant "
+                               "platform version string '%s'" %
+                               (type(self).__name__, self, version_string))
+
+        return int(match.group(1)), int(match.group(2))
+
     # {{{ Platform
 
     def platform_repr(self):
         return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
 
-    def platform_get_cl_version(self):
-        import re
-        version_string = self.version
-        match = re.match(r"^OpenCL ([0-9]+)\.([0-9]+) .*$", version_string)
-        if match is None:
-            raise RuntimeError("platform %s returned non-conformant "
-                               "platform version string '%s'" %
-                               (self, version_string))
-
-        return int(match.group(1)), int(match.group(2))
-
     Platform.__repr__ = platform_repr
-    Platform._get_cl_version = platform_get_cl_version
+    Platform._get_cl_version = generic_get_cl_version
 
     # }}}
 
@@ -616,6 +614,7 @@ def _add_functionality():
     Device.__repr__ = device_repr
 
     # undocumented for now:
+    Device._get_cl_version = generic_get_cl_version
     Device.persistent_unique_id = property(device_persistent_unique_id)
 
     # }}}
@@ -1045,6 +1044,187 @@ def _add_functionality():
 
     # }}}
 
+    # {{{ SVMAllocation
+
+    SVMAllocation.__doc__ = """An object whose lifetime is tied to an allocation of shared virtual memory.
+
+        .. note::
+
+            Most likely, you will not want to use this directly, but rather
+            :func:`svm_empty` and related functions which allow access to this
+            functionality using a friendlier, more Pythonic interface.
+
+        .. versionadded:: 2016.2
+
+        .. automethod:: __init__(self, ctx, size, alignment, flags=None)
+        .. automethod:: release
+        .. automethod:: enqueue_release
+        """
+
+    svmallocation_old_init = SVMAllocation.__init__
+
+    def svmallocation_init(self, ctx, size, alignment, flags, _interface=None):
+        """
+        :arg ctx: a :class:`Context`
+        :arg flags: some of :class:`svm_mem_flags`.
+        """
+        svmallocation_old_init(self, ctx, size, alignment, flags)
+
+        read_write = (
+                flags & mem_flags.WRITE_ONLY != 0
+                or flags & mem_flags.READ_WRITE != 0)
+
+        _interface["data"] = (
+                int(self._ptr_as_int()), not read_write)
+
+        self.__array_interface__ = _interface
+
+    SVMAllocation.__init__ = svmallocation_init
+    # FIXME
+    # SVMAllocation.enqueue_release.__doc__ = """
+    #     :returns: a :class:`pyopencl.Event`
+
+    #     |std-enqueue-blurb|
+    #     """
+
+    # }}}
+
+    # {{{ SVM
+
+    SVM.__doc__ = """Tags an object exhibiting the Python buffer interface (such as a
+        :class:`numpy.ndarray`) as referring to shared virtual memory.
+
+        Depending on the features of the OpenCL implementation, the following
+        types of objects may be passed to/wrapped in this type:
+
+        *   coarse-grain shared memory as returned by (e.g.) :func:`csvm_empty`
+            for any implementation of OpenCL 2.0.
+
+            This is how coarse-grain SVM may be used from both host and device::
+
+                svm_ary = cl.SVM(cl.csvm_empty(ctx, 1000, np.float32, alignment=64))
+                assert isinstance(svm_ary.mem, np.ndarray)
+
+                with svm_ary.map_rw(queue) as ary:
+                    ary.fill(17)  # use from host
+
+                prg.twice(queue, svm_ary.mem.shape, None, svm_ary)
+
+        *   fine-grain shared memory as returned by (e.g.) :func:`fsvm_empty`,
+            if the implementation supports fine-grained shared virtual memory.
+            This memory may directly be passed to a kernel::
+
+                ary = cl.fsvm_empty(ctx, 1000, np.float32)
+                assert isinstance(ary, np.ndarray)
+
+                prg.twice(queue, ary.shape, None, cl.SVM(ary))
+                queue.finish() # synchronize
+                print(ary) # access from host
+
+            Observe how mapping (as needed in coarse-grain SVM) is no longer
+            necessary.
+
+        *   any :class:`numpy.ndarray` (or other Python object with a buffer
+            interface) if the implementation supports fine-grained *system* shared
+            virtual memory.
+
+            This is how plain :mod:`numpy` arrays may directly be passed to a
+            kernel::
+
+                ary = np.zeros(1000, np.float32)
+                prg.twice(queue, ary.shape, None, cl.SVM(ary))
+                queue.finish() # synchronize
+                print(ary) # access from host
+
+        Objects of this type may be passed to kernel calls and :func:`enqueue_copy`.
+        Coarse-grain shared-memory *must* be mapped into host address space using
+        :meth:`map` before being accessed through the :mod:`numpy` interface.
+
+        .. note::
+
+            This object merely serves as a 'tag' that changes the behavior
+            of functions to which it is passed. It has no special management
+            relationship to the memory it tags. For example, it is permissible
+            to grab a :mod:`numpy.array` out of :attr:`SVM.mem` of one
+            :class:`SVM` instance and use the array to construct another.
+            Neither of the tags need to be kept alive.
+
+        .. versionadded:: 2016.2
+
+        .. attribute:: mem
+
+            The wrapped object.
+
+        .. automethod:: __init__
+        .. automethod:: map
+        .. automethod:: map_ro
+        .. automethod:: map_rw
+        .. automethod:: as_buffer
+        """
+
+    svm_old_init = SVM.__init__
+
+    def svm_init(self, mem):
+        svm_old_init(self, mem)
+
+        self.mem = mem
+
+    def svm_map(self, queue, flags, is_blocking=True, wait_for=None):
+        """
+        :arg is_blocking: If *False*, subsequent code must wait on
+            :attr:`SVMMap.event` in the returned object before accessing the
+            mapped memory.
+        :arg flags: a combination of :class:`pyopencl.map_flags`, defaults to
+            read-write.
+        :returns: an :class:`SVMMap` instance
+
+        |std-enqueue-blurb|
+        """
+        return SVMMap(
+                self,
+                queue,
+                _cl._enqueue_svm_map(queue, is_blocking, flags, self, wait_for))
+
+    def svm_map_ro(self, queue, is_blocking=True, wait_for=None):
+        """Like :meth:`map`, but with *flags* set for a read-only map."""
+
+        return self.map(queue, map_flags.READ,
+                is_blocking=is_blocking, wait_for=wait_for)
+
+    def svm_map_rw(self, queue, is_blocking=True, wait_for=None):
+        """Like :meth:`map`, but with *flags* set for a read-only map."""
+
+        return self.map(queue, map_flags.READ | map_flags.WRITE,
+                is_blocking=is_blocking, wait_for=wait_for)
+
+    def svm__enqueue_unmap(self, queue, wait_for=None):
+        return _cl._enqueue_svm_unmap(queue, self, wait_for)
+
+    def svm_as_buffer(self, ctx, flags=None):
+        """
+        :arg ctx: a :class:`Context`
+        :arg flags: a combination of :class:`pyopencl.map_flags`, defaults to
+            read-write.
+        :returns: a :class:`Buffer` corresponding to *self*.
+
+        The memory referred to by this object must not be freed before
+        the returned :class:`Buffer` is released.
+        """
+
+        if flags is None:
+            flags = mem_flags.READ_WRITE
+
+        return Buffer(ctx, flags, size=self.mem.nbytes, hostbuf=self.mem)
+
+    SVM.__init__ = svm_init
+    SVM.map = svm_map
+    SVM.map_ro = svm_map_ro
+    SVM.map_rw = svm_map_rw
+    SVM._enqueue_unmap = svm__enqueue_unmap
+    SVM.as_buffer = svm_as_buffer
+
+    # }}}
+
     # ORDER DEPENDENCY: Some of the above may override get_info, the effect needs
     # to be visible through the attributes. So get_info attr creation needs to happen
     # after the overriding is complete.
@@ -1266,6 +1446,53 @@ _csc = create_some_context
 # }}}
 
 
+# {{{ SVMMap
+
+class SVMMap(object):
+    """
+    .. attribute:: event
+
+    .. versionadded:: 2016.2
+
+    .. automethod:: release
+
+    This class may also be used as a context manager in a ``with`` statement.
+    :meth:`release` will be called upon exit from the ``with`` region.
+    The value returned to the ``as`` part of the context manager is the
+    mapped Python object (e.g. a :mod:`numpy` array).
+    """
+    def __init__(self, svm, queue, event):
+        self.svm = svm
+        self.queue = queue
+        self.event = event
+
+    def __del__(self):
+        if self.svm is not None:
+            self.release()
+
+    def __enter__(self):
+        return self.svm.mem
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+
+    def release(self, queue=None, wait_for=None):
+        """
+        :arg queue: a :class:`pyopencl.CommandQueue`. Defaults to the one
+            with which the map was created, if not specified.
+        :returns: a :class:`pyopencl.Event`
+
+        |std-enqueue-blurb|
+        """
+
+        evt = self.svm._enqueue_unmap(self.queue)
+        self.svm = None
+
+        return evt
+
+# }}}
+
+
 # {{{ enqueue_copy
 
 def enqueue_copy(queue, dest, src, **kwargs):
@@ -1442,14 +1669,13 @@ def enqueue_copy(queue, dest, src, **kwargs):
         else:
             raise ValueError("invalid dest mem object type")
 
-    # FIXME
-    # elif isinstance(dest, SVM):
-    elif 0:
+    elif isinstance(dest, SVM):
         # to SVM
         if isinstance(src, SVM):
             src = src.mem
 
         return _cl._enqueue_svm_memcpy(queue, dest.mem, src, **kwargs)
+
     else:
         # assume to-host
 
@@ -1599,6 +1825,48 @@ def enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
 
 # {{{ numpy-like svm allocation
 
+def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
+    """Fill shared virtual memory with a pattern.
+
+    :arg dest: a Python buffer object, optionally wrapped in an :class:`SVM` object
+    :arg pattern: a Python buffer object (e.g. a :class:`numpy.ndarray` with the
+        fill pattern to be used.
+    :arg byte_count: The size of the memory to be fill. Defaults to the
+        entirety of *dest*.
+
+    |std-enqueue-blurb|
+
+    .. versionadded:: 2016.2
+    """
+
+    if not isinstance(dest, SVM):
+        dest = SVM(dest)
+
+    return _cl._enqueue_svm_memfill(
+            queue, dest, pattern, byte_count=None, wait_for=None)
+
+
+def enqueue_svm_migratemem(queue, svms, flags, wait_for=None):
+    """
+    :arg svms: a collection of Python buffer objects (e.g. :mod:`numpy`
+        arrrays), optionally wrapped in :class:`SVM` objects.
+    :arg flags: a combination of :class:`mem_migration_flags`
+
+    |std-enqueue-blurb|
+
+    .. versionadded:: 2016.2
+
+    This function requires OpenCL 2.1.
+    """
+
+    return _cl._enqueue_svm_migratemem(
+            queue,
+            [svm.mem if isinstance(svm, SVM) else svm
+                for svm in svms],
+            flags,
+            wait_for)
+
+
 def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
     """Allocate an empty :class:`numpy.ndarray` of the given *shape*, *dtype*
     and *order*. (See :func:`numpy.empty` for the meaning of these arguments.)
@@ -1745,5 +2013,14 @@ def fsvm_empty_like(ctx, ary, alignment=None):
             ary)
 
 # }}}
+
+
+_KERNEL_ARG_CLASSES = (
+        MemoryObjectHolder,
+        Sampler,
+        LocalMemory,
+        SVM,
+        )
+
 
 # vim: foldmethod=marker

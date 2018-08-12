@@ -3041,6 +3041,289 @@ namespace pyopencl
   // }}}
 
 
+  // {{{ svm
+
+#if PYOPENCL_CL_VERSION >= 0x2000
+
+  class svm_arg_wrapper
+  {
+    private:
+      void *m_ptr;
+      PYOPENCL_BUFFER_SIZE_T m_size;
+#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
+        std::unique_ptr<py_buffer_wrapper> ward;
+#endif
+
+    public:
+      svm_arg_wrapper(py::object holder)
+      {
+#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
+        ward = std::unique_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
+        ward->get(holder.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
+        m_ptr = ward->m_buf.buf;
+        m_size = ward->m_buf.len;
+#else
+        py::object ward = buffer;
+        if (PyObject_AsWriteBuffer(buffer.ptr(), &m_ptr, &m_size))
+          throw py::error_already_set();
+#endif
+      }
+
+      void *ptr() const
+      {
+        return m_ptr;
+      }
+      size_t size() const
+      {
+        return m_size;
+      }
+  };
+
+
+  class svm_allocation : noncopyable
+  {
+    private:
+      std::shared_ptr<context> m_context;
+      void *m_allocation;
+
+    public:
+      svm_allocation(std::shared_ptr<context> const &ctx, size_t size, cl_uint alignment, cl_svm_mem_flags flags)
+        : m_context(ctx)
+      {
+        PYOPENCL_PRINT_CALL_TRACE("clSVMalloc");
+        m_allocation = clSVMAlloc(
+            ctx->data(),
+            flags, size, alignment);
+
+        if (!m_allocation)
+          throw pyopencl::error("clSVMAlloc", CL_OUT_OF_RESOURCES);
+      }
+
+      ~svm_allocation()
+      {
+        if (m_allocation)
+          release();
+      }
+
+      void release()
+      {
+        if (!m_allocation)
+          throw error("SVMAllocation.release", CL_INVALID_VALUE,
+              "trying to double-unref svm allocation");
+
+        clSVMFree(m_context->data(), m_allocation);
+        m_allocation = nullptr;
+      }
+
+      void enqueue_release(command_queue &queue, py::object py_wait_for)
+      {
+        PYOPENCL_PARSE_WAIT_FOR;
+
+        if (!m_allocation)
+          throw error("SVMAllocation.release", CL_INVALID_VALUE,
+              "trying to double-unref svm allocation");
+
+        cl_event evt;
+
+        PYOPENCL_CALL_GUARDED_CLEANUP(clEnqueueSVMFree, (
+              queue.data(), 1, &m_allocation,
+              nullptr, nullptr,
+              PYOPENCL_WAITLIST_ARGS, &evt));
+
+        m_allocation = nullptr;
+      }
+
+      void *ptr() const
+      {
+        return m_allocation;
+      }
+
+      intptr_t ptr_as_int() const
+      {
+        return (intptr_t) m_allocation;
+      }
+
+      bool operator==(svm_allocation const &other) const
+      {
+        return m_allocation == other.m_allocation;
+      }
+
+      bool operator!=(svm_allocation const &other) const
+      {
+        return m_allocation != other.m_allocation;
+      }
+  };
+
+
+  inline
+  event *enqueue_svm_memcpy(
+      command_queue &cq,
+      cl_bool is_blocking,
+      svm_arg_wrapper &dst, svm_arg_wrapper &src,
+      py::object py_wait_for
+      )
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    if (src.size() != dst.size())
+      throw error("_enqueue_svm_memcpy", CL_INVALID_VALUE,
+          "sizes of source and destination buffer do not match");
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(
+        clEnqueueSVMMemcpy,
+        (
+          cq.data(),
+          is_blocking,
+          dst.ptr(), src.ptr(),
+          dst.size(),
+          PYOPENCL_WAITLIST_ARGS,
+          &evt
+        ));
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+
+
+  inline
+  event *enqueue_svm_memfill(
+      command_queue &cq,
+      svm_arg_wrapper &dst, py::object py_pattern,
+      py::object byte_count,
+      py::object py_wait_for
+      )
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    void *pattern_ptr;
+    PYOPENCL_BUFFER_SIZE_T pattern_len;
+
+#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
+    std::unique_ptr<py_buffer_wrapper> pattern_ward(new py_buffer_wrapper);
+
+    pattern_ward->get(py_pattern.ptr(), PyBUF_ANY_CONTIGUOUS);
+
+    pattern_ptr = pattern_ward->m_buf.buf;
+    pattern_len = pattern_ward->m_buf.len;
+#else
+    py::object pattern_ward = py_pattern;
+    if (PyObject_AsReadBuffer(buffer.ptr(), &pattern_buf, &pattern_len))
+      throw py::error_already_set();
+#endif
+
+    size_t fill_size = dst.size();
+    if (!byte_count.is_none())
+      fill_size = py::cast<size_t>(byte_count);
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(
+        clEnqueueSVMMemFill,
+        (
+          cq.data(),
+          dst.ptr(), pattern_ptr,
+          pattern_len,
+          fill_size,
+          PYOPENCL_WAITLIST_ARGS,
+          &evt
+        ));
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+
+
+  inline
+  event *enqueue_svm_map(
+      command_queue &cq,
+      cl_bool is_blocking,
+      cl_map_flags flags,
+      svm_arg_wrapper &svm,
+      py::object py_wait_for
+      )
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(
+        clEnqueueSVMMap,
+        (
+          cq.data(),
+          is_blocking,
+          flags,
+          svm.ptr(), svm.size(),
+          PYOPENCL_WAITLIST_ARGS,
+          &evt
+        ));
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+
+
+  inline
+  event *enqueue_svm_unmap(
+      command_queue &cq,
+      svm_arg_wrapper &svm,
+      py::object py_wait_for
+      )
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(
+        clEnqueueSVMUnmap,
+        (
+          cq.data(),
+          svm.ptr(),
+          PYOPENCL_WAITLIST_ARGS,
+          &evt
+        ));
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+#endif
+
+
+#if PYOPENCL_CL_VERSION >= 0x2010
+  inline
+  event *enqueue_svm_migratemem(
+      command_queue &cq,
+      py::sequence svms,
+      cl_mem_migration_flags flags,
+      py::object py_wait_for
+      )
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    std::vector<const void *> svm_pointers;
+    std::vector<size_t> sizes;
+
+    for (py::handle py_svm: svms)
+    {
+      svm_arg_wrapper &svm(py::cast<svm_arg_wrapper &>(py_svm));
+
+      svm_pointers.push_back(svm.ptr());
+      sizes.push_back(svm.size());
+    }
+
+    cl_event evt;
+    PYOPENCL_CALL_GUARDED(
+        clEnqueueSVMMigrateMem,
+        (
+         cq.data(),
+         svm_pointers.size(),
+         svm_pointers.empty() ? nullptr : &svm_pointers.front(),
+         sizes.empty() ? nullptr : &sizes.front(),
+         flags,
+         PYOPENCL_WAITLIST_ARGS,
+         &evt
+        ));
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+#endif
+
+  // }}}
+
+
   // {{{ sampler
 
   class sampler : noncopyable
@@ -3626,6 +3909,14 @@ namespace pyopencl
             (m_kernel, arg_index, len, buf));
       }
 
+#if PYOPENCL_CL_VERSION >= 0x2000
+      void set_arg_svm(cl_uint arg_index, svm_arg_wrapper const &wrp)
+      {
+        PYOPENCL_CALL_GUARDED(clSetKernelArgSVMPointer,
+            (m_kernel, arg_index, wrp.ptr()));
+      }
+#endif
+
       void set_arg(cl_uint arg_index, py::object arg)
       {
         if (arg.ptr() == Py_None)
@@ -3640,6 +3931,15 @@ namespace pyopencl
           return;
         }
         catch (py::cast_error &) { }
+
+#if PYOPENCL_CL_VERSION >= 0x2000
+        try
+        {
+          set_arg_svm(arg_index, arg.cast<svm_arg_wrapper const &>());
+          return;
+        }
+        catch (py::cast_error &) { }
+#endif
 
         try
         {
@@ -4281,9 +4581,6 @@ namespace pyopencl
 
   // }}}
 }
-
-
-
 
 #endif
 
