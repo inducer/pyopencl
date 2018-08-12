@@ -827,9 +827,17 @@ def test_event_set_callback(ctx_factory):
 
     queue.finish()
 
+    counter = 0
+
     # yuck
-    from time import sleep
-    sleep(0.1)
+    while not got_called:
+        from time import sleep
+        sleep(0.01)
+
+        # wait up to a second
+        counter += 1
+        if counter >= 100:
+            break
 
     assert got_called
 
