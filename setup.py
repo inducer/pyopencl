@@ -325,7 +325,6 @@ def main():
             install_requires=[
                 "numpy",
                 "pytools>=2017.6",
-                "pytest>=2",
                 "decorator>=3.2.0",
                 "appdirs>=1.4.0",
                 "six>=1.9.0",
