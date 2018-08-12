@@ -1227,8 +1227,17 @@ class GenericScanKernel(_GenericScanKernelBase):
             max_scan_wg_size = min(dev.max_work_group_size for dev in self.devices)
             wg_size_multiples = 64
 
+        # Intel beignet fails "Out of shared local memory" in test_scan int64
+        # and asserts in test_sort with this enabled:
+        # https://github.com/inducer/pyopencl/pull/238
+        # A beignet bug report (outside of pyopencl) suggests packed structs
+        # (which this is) can even give wrong results:
+        # https://bugs.freedesktop.org/show_bug.cgi?id=98717
+        # TODO: does this also affect Intel Compute Runtime?
         use_bank_conflict_avoidance = (
-                self.dtype.itemsize > 4 and self.dtype.itemsize % 8 == 0 and is_gpu)
+                self.dtype.itemsize > 4 and self.dtype.itemsize % 8 == 0
+                and is_gpu
+                and "beignet" not in self.devices[0].platform.version.lower())
 
         # k_group_size should be a power of two because of in-kernel
         # division by that number.
