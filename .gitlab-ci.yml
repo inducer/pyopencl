@@ -2,7 +2,7 @@
   script:
   - export PY_EXE=python2.7
   - export PYOPENCL_TEST=amd:pu
-  - export EXTRA_INSTALL="numpy mako scipy pyfmmlib"
+  - export EXTRA_INSTALL="pybind11 numpy mako scipy pyfmmlib"
   - echo "CL_ENABLE_GL = True" > siteconf.py
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -18,7 +18,7 @@ Python 3.6 Intel CPU:
   script:
   - export PY_EXE=python3.6
   - export PYOPENCL_TEST="intel(r):pu"
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   allow_failure: true
@@ -32,7 +32,7 @@ Python 3.6 AMD CPU:
   script:
   - export PY_EXE=python3.6
   - export PYOPENCL_TEST=amd:pu
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   allow_failure: true
@@ -46,7 +46,7 @@ Python 3.6 Titan X:
   script:
   - export PY_EXE=python3.5
   - export PYOPENCL_TEST=nvi:titan
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
@@ -59,7 +59,7 @@ Python 3.6 K40:
   script:
   - export PY_EXE=python3.6
   - export PYOPENCL_TEST=nvi:k40
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
@@ -72,7 +72,7 @@ Python 3.6 AMD GPU:
   script:
   - export PY_EXE=python3.6
   - export PYOPENCL_TEST=amd:fiji
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   allow_failure: true
@@ -86,7 +86,7 @@ Python 2.6 POCL CPU:
   script:
   - export PY_EXE=python2.6
   - export PYOPENCL_TEST=portable
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - export NO_DOCTESTS=1
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -100,7 +100,7 @@ Python 2.7 POCL:
   script:
   - export PY_EXE=python2.7
   - export PYOPENCL_TEST=portable
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
@@ -113,7 +113,7 @@ Python 3.7 POCL:
   script:
   - export PY_EXE=python3.7
   - export PYOPENCL_TEST=portable
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
@@ -126,7 +126,7 @@ Python 3.6 POCL CL 1.1:
   script:
   - export PY_EXE=python3.5
   - export PYOPENCL_TEST=portable
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - echo "CL_PRETEND_VERSION = '1.1'" > siteconf.py
   - ". ./build-and-test-py-project.sh"
@@ -140,7 +140,7 @@ Python 3.6 POCL:
   script:
   - export PY_EXE=python3.6
   - export PYOPENCL_TEST=portable
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
@@ -153,7 +153,7 @@ Python 2.7 Apple:
   script:
   - export PY_EXE=python2.7
   - export PYOPENCL_TEST=app:cpu
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - export PKG_CONFIG_PATH=/usr/local/opt/libffi/lib/pkgconfig
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -178,7 +178,7 @@ PyPy POCL:
   script:
   - export PY_EXE=pypy
   - export PYOPENCL_TEST=portable
-  - export EXTRA_INSTALL="numpy mako"
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - export NO_DOCTESTS=1
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -190,7 +190,7 @@ PyPy POCL:
 
 Documentation:
   script:
-  - EXTRA_INSTALL="numpy mako"
+  - EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-docs.sh
   - ". ./build-docs.sh"
   tags:
