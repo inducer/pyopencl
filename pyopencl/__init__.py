@@ -103,8 +103,6 @@ from pyopencl._cl import (  # noqa
         mem_migration_flags,
         device_partition_property,
         device_affinity_domain,
-        gl_object_type,
-        gl_texture_info,
 
         Error, MemoryError, LogicError, RuntimeError,
 
@@ -182,6 +180,9 @@ if get_cl_header_version() >= (2, 0):
 
 if _cl.have_gl():
     from pyopencl._cl import (  # noqa
+        gl_object_type,
+        gl_texture_info,
+
         GLBuffer,
         GLRenderBuffer,
         GLTexture,
