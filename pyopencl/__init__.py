@@ -124,18 +124,13 @@ from pyopencl._cl import (  # noqa
         Event,
         wait_for_events,
         NannyEvent,
-        UserEvent,
 
         enqueue_nd_range_kernel,
 
-        _enqueue_marker_with_wait_list,
         _enqueue_marker,
-        _enqueue_barrier_with_wait_list,
 
-        enqueue_migrate_mem_objects,
         enqueue_migrate_mem_object_ext,
 
-        _enqueue_barrier_with_wait_list,
         _enqueue_read_buffer,
         _enqueue_write_buffer,
         _enqueue_copy_buffer,
@@ -144,12 +139,10 @@ from pyopencl._cl import (  # noqa
         _enqueue_copy_buffer_rect,
 
         enqueue_map_buffer,
-        _enqueue_fill_buffer,
         _enqueue_read_image,
         _enqueue_copy_image,
         _enqueue_write_image,
         enqueue_map_image,
-        enqueue_fill_image,
         _enqueue_copy_image_to_buffer,
         _enqueue_copy_buffer_to_image,
 
@@ -158,15 +151,28 @@ from pyopencl._cl import (  # noqa
         ImageFormat,
         get_supported_image_formats,
 
-        ImageDescriptor,
         Image,
         Sampler,
         DeviceTopologyAmd,
         )
 
+if get_cl_header_version() >= (1, 1):
+    from pyopencl._cl import (  # noqa
+          UserEvent,
+        )
 if get_cl_header_version() >= (1, 2):
     from pyopencl._cl import (  # noqa
+        _enqueue_marker_with_wait_list,
+        _enqueue_barrier_with_wait_list,
+
         unload_platform_compiler,
+
+
+        enqueue_migrate_mem_objects,
+        _enqueue_fill_buffer,
+        enqueue_fill_image,
+
+        ImageDescriptor,
         )
 
 if get_cl_header_version() >= (2, 0):
@@ -1047,22 +1053,24 @@ def _add_functionality():
 
     # {{{ SVMAllocation
 
-    SVMAllocation.__doc__ = """An object whose lifetime is tied to an allocation of shared virtual memory.
+    if get_cl_header_version() >= (2, 0):
+        SVMAllocation.__doc__ = """An object whose lifetime is tied to an allocation of shared virtual memory.
 
-        .. note::
+            .. note::
 
-            Most likely, you will not want to use this directly, but rather
-            :func:`svm_empty` and related functions which allow access to this
-            functionality using a friendlier, more Pythonic interface.
+                Most likely, you will not want to use this directly, but rather
+                :func:`svm_empty` and related functions which allow access to this
+                functionality using a friendlier, more Pythonic interface.
 
-        .. versionadded:: 2016.2
+            .. versionadded:: 2016.2
 
-        .. automethod:: __init__(self, ctx, size, alignment, flags=None)
-        .. automethod:: release
-        .. automethod:: enqueue_release
-        """
+            .. automethod:: __init__(self, ctx, size, alignment, flags=None)
+            .. automethod:: release
+            .. automethod:: enqueue_release
+            """
 
-    svmallocation_old_init = SVMAllocation.__init__
+    if get_cl_header_version() >= (2, 0):
+        svmallocation_old_init = SVMAllocation.__init__
 
     def svmallocation_init(self, ctx, size, alignment, flags, _interface=None):
         """
@@ -1080,90 +1088,95 @@ def _add_functionality():
 
         self.__array_interface__ = _interface
 
-    SVMAllocation.__init__ = svmallocation_init
-    # FIXME
-    # SVMAllocation.enqueue_release.__doc__ = """
-    #     :returns: a :class:`pyopencl.Event`
+    if get_cl_header_version() >= (2, 0):
+        SVMAllocation.__init__ = svmallocation_init
+        # FIXME
+        # SVMAllocation.enqueue_release.__doc__ = """
+        #     :returns: a :class:`pyopencl.Event`
 
-    #     |std-enqueue-blurb|
-    #     """
+        #     |std-enqueue-blurb|
+        #     """
 
     # }}}
 
     # {{{ SVM
 
-    SVM.__doc__ = """Tags an object exhibiting the Python buffer interface (such as a
-        :class:`numpy.ndarray`) as referring to shared virtual memory.
+    if get_cl_header_version() >= (2, 0):
+        SVM.__doc__ = """Tags an object exhibiting the Python buffer interface (such as a
+            :class:`numpy.ndarray`) as referring to shared virtual memory.
 
-        Depending on the features of the OpenCL implementation, the following
-        types of objects may be passed to/wrapped in this type:
+            Depending on the features of the OpenCL implementation, the following
+            types of objects may be passed to/wrapped in this type:
 
-        *   coarse-grain shared memory as returned by (e.g.) :func:`csvm_empty`
-            for any implementation of OpenCL 2.0.
+            *   coarse-grain shared memory as returned by (e.g.) :func:`csvm_empty`
+                for any implementation of OpenCL 2.0.
 
-            This is how coarse-grain SVM may be used from both host and device::
+                This is how coarse-grain SVM may be used from both host and device::
 
-                svm_ary = cl.SVM(cl.csvm_empty(ctx, 1000, np.float32, alignment=64))
-                assert isinstance(svm_ary.mem, np.ndarray)
+                    svm_ary = cl.SVM(
+                        cl.csvm_empty(ctx, 1000, np.float32, alignment=64))
+                    assert isinstance(svm_ary.mem, np.ndarray)
 
-                with svm_ary.map_rw(queue) as ary:
-                    ary.fill(17)  # use from host
+                    with svm_ary.map_rw(queue) as ary:
+                        ary.fill(17)  # use from host
 
-                prg.twice(queue, svm_ary.mem.shape, None, svm_ary)
+                    prg.twice(queue, svm_ary.mem.shape, None, svm_ary)
 
-        *   fine-grain shared memory as returned by (e.g.) :func:`fsvm_empty`,
-            if the implementation supports fine-grained shared virtual memory.
-            This memory may directly be passed to a kernel::
+            *   fine-grain shared memory as returned by (e.g.) :func:`fsvm_empty`,
+                if the implementation supports fine-grained shared virtual memory.
+                This memory may directly be passed to a kernel::
 
-                ary = cl.fsvm_empty(ctx, 1000, np.float32)
-                assert isinstance(ary, np.ndarray)
+                    ary = cl.fsvm_empty(ctx, 1000, np.float32)
+                    assert isinstance(ary, np.ndarray)
 
-                prg.twice(queue, ary.shape, None, cl.SVM(ary))
-                queue.finish() # synchronize
-                print(ary) # access from host
+                    prg.twice(queue, ary.shape, None, cl.SVM(ary))
+                    queue.finish() # synchronize
+                    print(ary) # access from host
 
-            Observe how mapping (as needed in coarse-grain SVM) is no longer
-            necessary.
+                Observe how mapping (as needed in coarse-grain SVM) is no longer
+                necessary.
 
-        *   any :class:`numpy.ndarray` (or other Python object with a buffer
-            interface) if the implementation supports fine-grained *system* shared
-            virtual memory.
+            *   any :class:`numpy.ndarray` (or other Python object with a buffer
+                interface) if the implementation supports fine-grained *system*
+                shared virtual memory.
 
-            This is how plain :mod:`numpy` arrays may directly be passed to a
-            kernel::
+                This is how plain :mod:`numpy` arrays may directly be passed to a
+                kernel::
 
-                ary = np.zeros(1000, np.float32)
-                prg.twice(queue, ary.shape, None, cl.SVM(ary))
-                queue.finish() # synchronize
-                print(ary) # access from host
+                    ary = np.zeros(1000, np.float32)
+                    prg.twice(queue, ary.shape, None, cl.SVM(ary))
+                    queue.finish() # synchronize
+                    print(ary) # access from host
 
-        Objects of this type may be passed to kernel calls and :func:`enqueue_copy`.
-        Coarse-grain shared-memory *must* be mapped into host address space using
-        :meth:`map` before being accessed through the :mod:`numpy` interface.
+            Objects of this type may be passed to kernel calls and
+            :func:`enqueue_copy`.  Coarse-grain shared-memory *must* be mapped
+            into host address space using :meth:`map` before being accessed
+            through the :mod:`numpy` interface.
 
-        .. note::
+            .. note::
 
-            This object merely serves as a 'tag' that changes the behavior
-            of functions to which it is passed. It has no special management
-            relationship to the memory it tags. For example, it is permissible
-            to grab a :mod:`numpy.array` out of :attr:`SVM.mem` of one
-            :class:`SVM` instance and use the array to construct another.
-            Neither of the tags need to be kept alive.
+                This object merely serves as a 'tag' that changes the behavior
+                of functions to which it is passed. It has no special management
+                relationship to the memory it tags. For example, it is permissible
+                to grab a :mod:`numpy.array` out of :attr:`SVM.mem` of one
+                :class:`SVM` instance and use the array to construct another.
+                Neither of the tags need to be kept alive.
 
-        .. versionadded:: 2016.2
+            .. versionadded:: 2016.2
 
-        .. attribute:: mem
+            .. attribute:: mem
 
-            The wrapped object.
+                The wrapped object.
 
-        .. automethod:: __init__
-        .. automethod:: map
-        .. automethod:: map_ro
-        .. automethod:: map_rw
-        .. automethod:: as_buffer
-        """
+            .. automethod:: __init__
+            .. automethod:: map
+            .. automethod:: map_ro
+            .. automethod:: map_rw
+            .. automethod:: as_buffer
+            """
 
-    svm_old_init = SVM.__init__
+    if get_cl_header_version() >= (2, 0):
+        svm_old_init = SVM.__init__
 
     def svm_init(self, mem):
         svm_old_init(self, mem)
@@ -1217,12 +1230,13 @@ def _add_functionality():
 
         return Buffer(ctx, flags, size=self.mem.nbytes, hostbuf=self.mem)
 
-    SVM.__init__ = svm_init
-    SVM.map = svm_map
-    SVM.map_ro = svm_map_ro
-    SVM.map_rw = svm_map_rw
-    SVM._enqueue_unmap = svm__enqueue_unmap
-    SVM.as_buffer = svm_as_buffer
+    if get_cl_header_version() >= (2, 0):
+        SVM.__init__ = svm_init
+        SVM.map = svm_map
+        SVM.map_ro = svm_map_ro
+        SVM.map_rw = svm_map_rw
+        SVM._enqueue_unmap = svm__enqueue_unmap
+        SVM.as_buffer = svm_as_buffer
 
     # }}}
 
@@ -1670,7 +1684,7 @@ def enqueue_copy(queue, dest, src, **kwargs):
         else:
             raise ValueError("invalid dest mem object type")
 
-    elif isinstance(dest, SVM):
+    elif get_cl_header_version() >= (2, 0) and isinstance(dest, SVM):
         # to SVM
         if isinstance(src, SVM):
             src = src.mem
@@ -2020,8 +2034,9 @@ _KERNEL_ARG_CLASSES = (
         MemoryObjectHolder,
         Sampler,
         LocalMemory,
-        SVM,
         )
+if get_cl_header_version() >= (2, 0):
+    _KERNEL_ARG_CLASSES = _KERNEL_ARG_CLASSES + (SVM,)
 
 
 # vim: foldmethod=marker
