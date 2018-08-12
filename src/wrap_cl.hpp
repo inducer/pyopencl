@@ -149,7 +149,7 @@
     } \
     else \
     { \
-      PYTHON_FOREACH(py_dev, py_devices) \
+      for (py::handle py_dev: py_devices) \
         devices_vec.push_back( \
             (py_dev).cast<device &>().data()); \
       num_devices = devices_vec.size(); \
@@ -1034,7 +1034,7 @@ namespace pyopencl
 
     if (py_properties.ptr() != Py_None)
     {
-      PYTHON_FOREACH(prop_tuple_py, py_properties)
+      for (py::handle prop_tuple_py: py_properties)
       {
         py::tuple prop_tuple(prop_tuple_py.cast<py::tuple>());
 
@@ -1423,7 +1423,7 @@ namespace pyopencl
     cl_uint num_events_in_wait_list = 0;
     std::vector<cl_event> event_wait_list(len(events));
 
-    PYTHON_FOREACH(evt, events)
+    for (py::handle evt: events)
       event_wait_list[num_events_in_wait_list++] =
         evt.cast<event &>().data();
 
@@ -1482,7 +1482,7 @@ namespace pyopencl
     cl_uint num_events = 0;
     std::vector<cl_event> event_list(len(py_events));
 
-    PYTHON_FOREACH(py_evt, py_events)
+    for (py::handle py_evt: py_events)
       event_list[num_events++] = py_evt.cast<event &>().data();
 
     PYOPENCL_CALL_GUARDED(clEnqueueWaitForEvents, (
@@ -1646,7 +1646,7 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
 
     std::vector<cl_mem> mem_objects;
-    PYTHON_FOREACH(mo, py_mem_objects)
+    for (py::handle mo: py_mem_objects)
       mem_objects.push_back(mo.cast<const memory_object &>().data());
 
     cl_event evt;
@@ -1687,7 +1687,7 @@ namespace pyopencl
         clEnqueueMigrateMemObjectEXT, enqueue_migrate_fn);
 
     std::vector<cl_mem> mem_objects;
-    PYTHON_FOREACH(mo, py_mem_objects)
+    for (py::handle mo: py_mem_objects)
       mem_objects.push_back(mo.cast<memory_object &>().data());
 
     cl_event evt;
@@ -3289,7 +3289,7 @@ namespace pyopencl
 
         std::vector<std::string> header_names;
         std::vector<cl_program> programs;
-        PYTHON_FOREACH(name_hdr_tup_py, py_headers)
+        for (py::handle name_hdr_tup_py: py_headers)
         {
           py::tuple name_hdr_tup = py::reinterpret_borrow<py::tuple>(name_hdr_tup_py);
           if (py::len(name_hdr_tup) != 2)
@@ -3467,7 +3467,7 @@ namespace pyopencl
     PYOPENCL_PARSE_PY_DEVICES;
 
     std::vector<cl_program> programs;
-    PYTHON_FOREACH(py_prg, py_programs)
+    for (py::handle py_prg: py_programs)
     {
       program &prg = (py_prg).cast<program &>();
       programs.push_back(prg.data());
@@ -4015,7 +4015,7 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR; \
     \
     std::vector<cl_mem> mem_objects; \
-    PYTHON_FOREACH(mo, py_mem_objects) \
+    for (py::handle mo: py_mem_objects) \
       mem_objects.push_back((mo).cast<memory_object_holder &>().data()); \
     \
     cl_event evt; \

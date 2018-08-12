@@ -39,9 +39,6 @@ namespace py = pybind11;
 #define DEF_SIMPLE_RW_MEMBER(NAME) \
   def_readwrite(#NAME, &cls::m_##NAME)
 
-#define PYTHON_FOREACH(NAME, ITERABLE) \
-  for (py::handle NAME: ITERABLE)
-
 #define COPY_PY_LIST(TYPE, NAME) \
   { \
     for (auto it: py_##NAME) \
