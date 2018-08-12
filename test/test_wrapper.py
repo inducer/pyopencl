@@ -953,6 +953,7 @@ def test_coarse_grain_svm(ctx_factory):
     dev = ctx.devices[0]
 
     has_svm = (ctx._get_cl_version() >= (2, 0) and
+                ctx.devices[0]._get_cl_version() >= (2, 0) and
                 cl.get_cl_header_version() >= (2, 0))
 
     if dev.platform.name == "Portable Computing Language":

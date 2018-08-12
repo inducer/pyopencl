@@ -31,6 +31,7 @@ import pyopencl.clrandom as clrandom
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl
         as pytest_generate_tests)
+from pyopencl.characterize import has_double_support
 
 try:
     import faulthandler
@@ -59,6 +60,8 @@ def make_ranlux_generator(cl_ctx):
     cltypes.float4])
 def test_clrandom_dtypes(ctx_factory, rng_class, dtype):
     cl_ctx = ctx_factory()
+    if dtype == np.float64 and not has_double_support(cl_ctx.devices[0]):
+        pytest.skip("double precision not supported on this device")
     rng = rng_class(cl_ctx)
 
     size = 10
