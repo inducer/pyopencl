@@ -1,9 +1,8 @@
-"Python 2.7 AMD CPU (+GL and special func)":
+"Python 2.7 AMD CPU":
   script:
   - export PY_EXE=python2.7
   - export PYOPENCL_TEST=amd:pu
-  - export EXTRA_INSTALL="pybind11 numpy mako scipy pyfmmlib"
-  - echo "CL_ENABLE_GL = True" > siteconf.py
+  - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   allow_failure: true
@@ -131,6 +130,20 @@ Python 3.6 POCL:
   - export PY_EXE=python3.6
   - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="pybind11 numpy mako"
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python3.6
+  - pocl
+  except:
+  - tags
+
+Python 3.6 POCL (+GL and special functions):
+  script:
+  - export PY_EXE=python3.6
+  - export PYOPENCL_TEST=portable
+  - export EXTRA_INSTALL="pybind11 numpy mako scipy pyfmmlib"
+  - echo "CL_ENABLE_GL = True" > siteconf.py
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
