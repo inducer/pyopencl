@@ -153,7 +153,7 @@
         devices_vec.push_back( \
             (py_dev).cast<device &>().data()); \
       num_devices = devices_vec.size(); \
-      devices = devices_vec.empty( ) ? NULL : &devices_vec.front(); \
+      devices = devices_vec.empty( ) ? nullptr : &devices_vec.front(); \
     } \
 
 
@@ -303,7 +303,7 @@
     \
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info, \
         (FIRST_ARG, SECOND_ARG, size, \
-         RES_VEC.empty( ) ? NULL : &RES_VEC.front(), &size)); \
+         RES_VEC.empty( ) ? nullptr : &RES_VEC.front(), &size)); \
   }
 
 #define PYOPENCL_GET_STR_INFO(WHAT, FIRST_ARG, SECOND_ARG) \
@@ -315,7 +315,7 @@
     std::vector<char> param_value(param_value_size); \
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info, \
         (FIRST_ARG, SECOND_ARG, param_value_size,  \
-         param_value.empty( ) ? NULL : &param_value.front(), &param_value_size)); \
+         param_value.empty( ) ? nullptr : &param_value.front(), &param_value_size)); \
     \
     return py::cast( \
         param_value.empty( ) ? "" : std::string(&param_value.front(), param_value_size-1)); \
@@ -342,13 +342,13 @@
     if (py_wait_for.ptr() != Py_None) \
     { \
       event_wait_list.resize(len(py_wait_for)); \
-      PYTHON_FOREACH(evt, py_wait_for) \
+      for (py::handle evt: py_wait_for) \
         event_wait_list[num_events_in_wait_list++] = \
           evt.cast<const event &>().data(); \
     }
 
 #define PYOPENCL_WAITLIST_ARGS \
-    num_events_in_wait_list, event_wait_list.empty( ) ? NULL : &event_wait_list.front()
+    num_events_in_wait_list, event_wait_list.empty( ) ? nullptr : &event_wait_list.front()
 
 #define PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, obj) \
     try \
@@ -520,7 +520,7 @@ namespace pyopencl
 
     std::vector<cl_platform_id> platforms(num_platforms);
     PYOPENCL_CALL_GUARDED(clGetPlatformIDs,
-        (num_platforms, platforms.empty( ) ? NULL : &platforms.front(), &num_platforms));
+        (num_platforms, platforms.empty( ) ? nullptr : &platforms.front(), &num_platforms));
 
     py::list result;
     for (cl_platform_id pid: platforms)
@@ -860,17 +860,17 @@ namespace pyopencl
         properties.push_back(0);
 
         cl_device_partition_property *props_ptr
-          = properties.empty( ) ? NULL : &properties.front();
+          = properties.empty( ) ? nullptr : &properties.front();
 
         cl_uint num_entries;
         PYOPENCL_CALL_GUARDED(clCreateSubDevices,
-            (m_device, props_ptr, 0, NULL, &num_entries));
+            (m_device, props_ptr, 0, nullptr, &num_entries));
 
         std::vector<cl_device_id> result;
         result.resize(num_entries);
 
         PYOPENCL_CALL_GUARDED(clCreateSubDevices,
-            (m_device, props_ptr, num_entries, &result.front(), NULL));
+            (m_device, props_ptr, num_entries, &result.front(), nullptr));
 
         py::list py_result;
         for (cl_device_id did: result)
@@ -905,7 +905,7 @@ namespace pyopencl
     std::vector<cl_device_id> devices(num_devices);
     PYOPENCL_CALL_GUARDED(clGetDeviceIDs,
         (m_platform, devtype,
-         num_devices, devices.empty( ) ? NULL : &devices.front(), &num_devices));
+         num_devices, devices.empty( ) ? nullptr : &devices.front(), &num_devices));
 
     py::list result;
     for (cl_device_id did: devices)
@@ -1093,7 +1093,7 @@ namespace pyopencl
       = parse_context_properties(py_properties);
 
     cl_context_properties *props_ptr
-      = props.empty( ) ? NULL : &props.front();
+      = props.empty( ) ? nullptr : &props.front();
 
     cl_int status_code;
 
@@ -1107,14 +1107,14 @@ namespace pyopencl
             "one of 'devices' or 'dev_type' must be None");
 
       std::vector<cl_device_id> devices;
-      PYTHON_FOREACH(py_dev, py_devices)
+      for (py::handle py_dev: py_devices)
         devices.push_back(py_dev.cast<const device &>().data());
 
       PYOPENCL_PRINT_CALL_TRACE("clCreateContext");
       ctx = clCreateContext(
           props_ptr,
           devices.size(),
-          devices.empty( ) ? NULL : &devices.front(),
+          devices.empty( ) ? nullptr : &devices.front(),
           0, 0, &status_code);
     }
     // from dev_type
@@ -1486,7 +1486,7 @@ namespace pyopencl
       event_list[num_events++] = py_evt.cast<event &>().data();
 
     PYOPENCL_CALL_GUARDED(clEnqueueWaitForEvents, (
-          cq.data(), num_events, event_list.empty( ) ? NULL : &event_list.front()));
+          cq.data(), num_events, event_list.empty( ) ? nullptr : &event_list.front()));
   }
 
   inline
@@ -1653,7 +1653,7 @@ namespace pyopencl
     PYOPENCL_RETRY_IF_MEM_ERROR(
       PYOPENCL_CALL_GUARDED(clEnqueueMigrateMemObjects, (
             cq.data(),
-            mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(),
+            mem_objects.size(), mem_objects.empty( ) ? nullptr : &mem_objects.front(),
             flags,
             PYOPENCL_WAITLIST_ARGS, &evt
             ));
@@ -1676,10 +1676,10 @@ namespace pyopencl
     // {{{ get platform
     cl_device_id dev;
     PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo, (cq.data(), CL_QUEUE_DEVICE,
-          sizeof(dev), &dev, NULL));
+          sizeof(dev), &dev, nullptr));
     cl_platform_id plat;
     PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (dev, CL_DEVICE_PLATFORM,
-          sizeof(plat), &plat, NULL));
+          sizeof(plat), &plat, nullptr));
     // }}}
 #endif
 
@@ -1694,7 +1694,7 @@ namespace pyopencl
     PYOPENCL_RETRY_IF_MEM_ERROR(
       PYOPENCL_CALL_GUARDED(enqueue_migrate_fn, (
             cq.data(),
-            mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(),
+            mem_objects.size(), mem_objects.empty( ) ? nullptr : &mem_objects.front(),
             flags,
             PYOPENCL_WAITLIST_ARGS, &evt
             ));
@@ -2326,12 +2326,12 @@ namespace pyopencl
     cl_uint num_image_formats;
     PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
           ctx.data(), flags, image_type,
-          0, NULL, &num_image_formats));
+          0, nullptr, &num_image_formats));
 
     std::vector<cl_image_format> formats(num_image_formats);
     PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
           ctx.data(), flags, image_type,
-          formats.size(), formats.empty( ) ? NULL : &formats.front(), NULL));
+          formats.size(), formats.empty( ) ? nullptr : &formats.front(), nullptr));
 
     PYOPENCL_RETURN_VECTOR(cl_image_format, formats);
   }
@@ -2940,9 +2940,9 @@ namespace pyopencl
       result = py::object(py::reinterpret_steal<py::object>(PyArray_NewFromDescr(
           &PyArray_Type, tp_descr,
           shape.size(),
-          shape.empty() ? NULL : &shape.front(),
-          strides.empty() ? NULL : &strides.front(),
-          mapped, ary_flags, /*obj*/NULL)));
+          shape.empty() ? nullptr : &shape.front(),
+          strides.empty() ? nullptr : &strides.front(),
+          mapped, ary_flags, /*obj*/nullptr)));
 
       if (size_in_bytes != (npy_uintp) PyArray_NBYTES(result.ptr()))
         throw pyopencl::error("enqueue_map_buffer", CL_INVALID_VALUE,
@@ -3024,9 +3024,9 @@ namespace pyopencl
     py::object result = py::reinterpret_steal<py::object>(PyArray_NewFromDescr(
         &PyArray_Type, tp_descr,
         shape.size(),
-        shape.empty() ? NULL : &shape.front(),
-        strides.empty() ? NULL : &strides.front(),
-        mapped, ary_flags, /*obj*/NULL));
+        shape.empty() ? nullptr : &shape.front(),
+        strides.empty() ? nullptr : &strides.front(),
+        mapped, ary_flags, /*obj*/nullptr));
 
     py::object map_py(handle_from_new_ptr(map.release()));
     PyArray_BASE(result.ptr()) = map_py.ptr();
@@ -3200,7 +3200,7 @@ namespace pyopencl
 
               PYOPENCL_CALL_GUARDED(clGetProgramInfo,
                   (m_program, param_name, sizes.size()*sizeof(unsigned char *),
-                   result_ptrs.empty( ) ? NULL : &result_ptrs.front(), 0)); \
+                   result_ptrs.empty( ) ? nullptr : &result_ptrs.front(), 0)); \
 
               py::list py_result;
               ptr = result.get();
@@ -3311,8 +3311,8 @@ namespace pyopencl
         PYOPENCL_CALL_GUARDED_THREADED(clCompileProgram,
             (m_program, num_devices, devices,
              options.c_str(), header_names.size(),
-             programs.empty() ? NULL : &programs.front(),
-             header_name_ptrs.empty() ? NULL : &header_name_ptrs.front(),
+             programs.empty() ? nullptr : &programs.front(),
+             header_name_ptrs.empty() ? nullptr : &header_name_ptrs.front(),
              0, 0));
       }
 #endif
@@ -3397,10 +3397,10 @@ namespace pyopencl
     PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBinary");
     cl_program result = clCreateProgramWithBinary(
         ctx.data(), num_devices,
-        devices.empty( ) ? NULL : &devices.front(),
-        sizes.empty( ) ? NULL : &sizes.front(),
-        binaries.empty( ) ? NULL : &binaries.front(),
-        binary_statuses.empty( ) ? NULL : &binary_statuses.front(),
+        devices.empty( ) ? nullptr : &devices.front(),
+        sizes.empty( ) ? nullptr : &sizes.front(),
+        binaries.empty( ) ? nullptr : &binaries.front(),
+        binary_statuses.empty( ) ? nullptr : &binary_statuses.front(),
         &status_code);
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("clCreateProgramWithBinary", status_code);
@@ -3479,7 +3479,7 @@ namespace pyopencl
         ctx.data(), num_devices, devices,
         options.c_str(),
         programs.size(),
-        programs.empty() ? NULL : &programs.front(),
+        programs.empty() ? nullptr : &programs.front(),
         0, 0,
         &status_code);
 
@@ -3764,7 +3764,7 @@ namespace pyopencl
     std::vector<cl_kernel> kernels(num_kernels);
     PYOPENCL_CALL_GUARDED(clCreateKernelsInProgram, (
           pgm.data(), num_kernels,
-          kernels.empty( ) ? NULL : &kernels.front(), &num_kernels));
+          kernels.empty( ) ? nullptr : &kernels.front(), &num_kernels));
 
     py::list result;
     for (cl_kernel knl: kernels)
@@ -3810,7 +3810,7 @@ namespace pyopencl
       while (global_work_size.size() < work_dim)
         global_work_size.push_back(1);
 
-      local_work_size_ptr = local_work_size.empty( ) ? NULL : &local_work_size.front();
+      local_work_size_ptr = local_work_size.empty( ) ? nullptr : &local_work_size.front();
     }
 
     if (g_times_l && local_work_size_ptr)
@@ -3835,7 +3835,7 @@ namespace pyopencl
           global_work_offset[work_axis] *= local_work_size[work_axis];
       }
 
-      global_work_offset_ptr = global_work_offset.empty( ) ? NULL :  &global_work_offset.front();
+      global_work_offset_ptr = global_work_offset.empty( ) ? nullptr :  &global_work_offset.front();
     }
 
     PYOPENCL_RETRY_RETURN_IF_MEM_ERROR( {
@@ -3845,7 +3845,7 @@ namespace pyopencl
                 knl.data(),
                 work_dim,
                 global_work_offset_ptr,
-                global_work_size.empty( ) ? NULL : &global_work_size.front(),
+                global_work_size.empty( ) ? nullptr : &global_work_size.front(),
                 local_work_size_ptr,
                 PYOPENCL_WAITLIST_ARGS, &evt
                 ));
@@ -4021,7 +4021,7 @@ namespace pyopencl
     cl_event evt; \
     PYOPENCL_CALL_GUARDED(clEnqueue##What##GLObjects, ( \
           cq.data(), \
-          mem_objects.size(), mem_objects.empty( ) ? NULL : &mem_objects.front(), \
+          mem_objects.size(), mem_objects.empty( ) ? nullptr : &mem_objects.front(), \
           PYOPENCL_WAITLIST_ARGS, &evt \
           )); \
     \
@@ -4081,7 +4081,7 @@ namespace pyopencl
           "clGetGLContextInfoKHR extension function not present");
 
     cl_context_properties *props_ptr
-      = props.empty( ) ? NULL : &props.front();
+      = props.empty( ) ? nullptr : &props.front();
 
     switch (param_name)
     {
@@ -4106,7 +4106,7 @@ namespace pyopencl
 
           PYOPENCL_CALL_GUARDED(func_ptr,
               (props_ptr, param_name, size,
-               devices.empty( ) ? NULL : &devices.front(), &size));
+               devices.empty( ) ? nullptr : &devices.front(), &size));
 
           py::list result;
           for (cl_device_id did: devices)
@@ -4265,8 +4265,8 @@ namespace pyopencl
 
     py::object result = py::reinterpret_steal<py::object>(PyArray_NewFromDescr(
         &PyArray_Type, tp_descr,
-        dims.size(), &dims.front(), /*strides*/ NULL,
-        host_ptr, ary_flags, /*obj*/NULL));
+        dims.size(), &dims.front(), /*strides*/ nullptr,
+        host_ptr, ary_flags, /*obj*/nullptr));
 
     if ((size_t) PyArray_NBYTES(result.ptr()) > mem_obj_size)
       throw pyopencl::error("MemoryObject.get_host_array",
