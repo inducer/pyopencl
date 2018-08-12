@@ -12,6 +12,7 @@
 #ifdef __APPLE__
 
 // Mac ------------------------------------------------------------------------
+#include "pyopencl_ext.h"
 #include <OpenCL/opencl.h>
 #ifdef HAVE_GL
 
