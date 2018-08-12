@@ -388,7 +388,7 @@ void pyopencl_expose_part_2(py::module &m)
       .DEF_SIMPLE_METHOD(get_work_group_info)
       .def("_set_arg_null", &cls::set_arg_null)
       .def("_set_arg_buf", &cls::set_arg_buf)
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if PYOPENCL_CL_VERSION >= 0x2000
       .def("_set_arg_svm", &cls::set_arg_svm)
 #endif
       .DEF_SIMPLE_METHOD(set_arg)
