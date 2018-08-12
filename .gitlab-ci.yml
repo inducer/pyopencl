@@ -86,20 +86,6 @@ Python 3.6 AMD GPU:
   except:
   - tags
 
-Python 2.6 POCL CPU:
-  script:
-  - export PY_EXE=python2.6
-  - export PYOPENCL_TEST=portable
-  - export EXTRA_INSTALL="pybind11 numpy mako"
-  - export NO_DOCTESTS=1
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
-  tags:
-  - python2.6
-  - amd-cl-cpu
-  except:
-  - tags
-
 Python 2.7 POCL:
   script:
   - export PY_EXE=python2.7
