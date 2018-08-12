@@ -56,7 +56,6 @@ namespace
   class gl_object_type { };
   class gl_texture_info { };
 
-  class migrate_mem_object_flags_ext {};
   // }}}
 }
 
@@ -879,9 +878,6 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(COMMAND_, COPY_BUFFER_RECT);
     ADD_ATTR(COMMAND_, USER);
 #endif
-#ifdef cl_ext_migrate_memobject
-    ADD_ATTR(COMMAND_, MIGRATE_MEM_OBJECT_EXT);
-#endif
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR(COMMAND_, BARRIER);
     ADD_ATTR(COMMAND_, MIGRATE_MEM_OBJECTS);
@@ -972,13 +968,6 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(GL_, MIPMAP_LEVEL);
   }
 #endif
-
-  {
-    py::class_<migrate_mem_object_flags_ext> cls(m, "migrate_mem_object_flags_ext");
-#ifdef cl_ext_migrate_memobject
-    ADD_ATTR_SUFFIX(MIGRATE_MEM_OBJECT_, HOST, _EXT);
-#endif
-  }
 
   // }}}
 }

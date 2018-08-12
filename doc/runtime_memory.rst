@@ -43,15 +43,6 @@ Memory Migration
 
     Only available with CL 1.2.
 
-.. function:: enqueue_migrate_mem_object_ext(queue, mem_objects, flags=0, wait_for=None)
-
-    :param flags: from :class:`migrate_mem_object_flags_ext`
-
-    .. versionadded:: 2011.2
-
-    Only available with the `cl_ext_migrate_memobject`
-    extension.
-
 Buffer
 ------
 

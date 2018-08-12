@@ -12,7 +12,6 @@
 #ifdef __APPLE__
 
 // Mac ------------------------------------------------------------------------
-#include "pyopencl_ext.h"
 #include <OpenCL/opencl.h>
 #ifdef HAVE_GL
 
@@ -1756,47 +1755,6 @@ namespace pyopencl
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
       PYOPENCL_CALL_GUARDED(clEnqueueMigrateMemObjects, (
-            cq.data(),
-            mem_objects.size(), mem_objects.empty( ) ? nullptr : &mem_objects.front(),
-            flags,
-            PYOPENCL_WAITLIST_ARGS, &evt
-            ));
-      );
-    PYOPENCL_RETURN_NEW_EVENT(evt);
-  }
-#endif
-
-#ifdef cl_ext_migrate_memobject
-  inline
-  event *enqueue_migrate_mem_object_ext(
-      command_queue &cq,
-      py::object py_mem_objects,
-      cl_mem_migration_flags_ext flags,
-      py::object py_wait_for)
-  {
-    PYOPENCL_PARSE_WAIT_FOR;
-
-#if PYOPENCL_CL_VERSION >= 0x1020
-    // {{{ get platform
-    cl_device_id dev;
-    PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo, (cq.data(), CL_QUEUE_DEVICE,
-          sizeof(dev), &dev, nullptr));
-    cl_platform_id plat;
-    PYOPENCL_CALL_GUARDED(clGetDeviceInfo, (dev, CL_DEVICE_PLATFORM,
-          sizeof(plat), &plat, nullptr));
-    // }}}
-#endif
-
-    PYOPENCL_GET_EXT_FUN(plat,
-        clEnqueueMigrateMemObjectEXT, enqueue_migrate_fn);
-
-    std::vector<cl_mem> mem_objects;
-    for (py::handle mo: py_mem_objects)
-      mem_objects.push_back(mo.cast<memory_object &>().data());
-
-    cl_event evt;
-    PYOPENCL_RETRY_IF_MEM_ERROR(
-      PYOPENCL_CALL_GUARDED(enqueue_migrate_fn, (
             cq.data(),
             mem_objects.size(), mem_objects.empty( ) ? nullptr : &mem_objects.front(),
             flags,

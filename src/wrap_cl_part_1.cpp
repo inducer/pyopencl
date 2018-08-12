@@ -205,14 +205,6 @@ void pyopencl_expose_part_1(py::module &m)
       );
 #endif
 
-#ifdef cl_ext_migrate_memobject
-  m.def("enqueue_migrate_mem_object_ext", enqueue_migrate_mem_object_ext,
-      py::arg("queue"),
-      py::arg("mem_objects"),
-      py::arg("flags")=0,
-      py::arg("wait_for")=py::none()
-      );
-#endif
   // }}}
 
   // {{{ buffer

@@ -129,8 +129,6 @@ from pyopencl._cl import (  # noqa
 
         _enqueue_marker,
 
-        enqueue_migrate_mem_object_ext,
-
         _enqueue_read_buffer,
         _enqueue_write_buffer,
         _enqueue_copy_buffer,
