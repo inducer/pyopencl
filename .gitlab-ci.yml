@@ -73,6 +73,10 @@ Python 3.6 AMD GPU:
   - export PY_EXE=python3.6
   - export PYOPENCL_TEST=amd:fiji
   - export EXTRA_INSTALL="pybind11 numpy mako"
+
+  # https://andreask.cs.illinois.edu/MachineShop/UserNotes
+  - export OCL_ICD_VENDORS=/etc/OpenCLwithAMD/vendors
+
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   allow_failure: true
