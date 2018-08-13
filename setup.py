@@ -319,6 +319,7 @@ def main():
                 ],
 
             setup_requires=[
+                "pybind11",
                 "numpy",
                 ],
 
