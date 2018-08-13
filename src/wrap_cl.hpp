@@ -3523,26 +3523,88 @@ namespace pyopencl
       cl_sampler m_sampler;
 
     public:
+#if PYOPENCL_CL_VERSION >= 0x2000
+      sampler(context const &ctx, py::sequence py_props)
+      {
+        int hex_plat_version = ctx.get_hex_platform_version();
+
+        if (hex_plat_version  < 0x2000)
+        {
+          std::cerr <<
+            "sampler properties given as an iterable, "
+            "which uses an OpenCL 2+-only interface, "
+            "but the context's platform does not "
+            "declare OpenCL 2 support. Proceeding "
+            "as requested, but the next thing you see "
+            "may be a crash." << std:: endl;
+        }
+
+        cl_sampler_properties props[py::len(py_props) + 1];
+        {
+          size_t i = 0;
+          for (auto prop: py_props)
+            props[i++] = py::cast<cl_sampler_properties>(prop);
+          props[i++] = 0;
+        }
+
+        cl_int status_code;
+        PYOPENCL_PRINT_CALL_TRACE("clCreateSamplerWithProperties");
+
+        m_sampler = clCreateSamplerWithProperties(
+            ctx.data(),
+            props,
+            &status_code);
+
+        if (status_code != CL_SUCCESS)
+          throw pyopencl::error("Sampler", status_code);
+      }
+#endif
+
       sampler(context const &ctx, bool normalized_coordinates,
           cl_addressing_mode am, cl_filter_mode fm)
       {
-        cl_int status_code;
         PYOPENCL_PRINT_CALL_TRACE("clCreateSampler");
+
+        int hex_plat_version = ctx.get_hex_platform_version();
+#if PYOPENCL_CL_VERSION >= 0x2000
+        if (hex_plat_version  >= 0x2000)
+        {
+            cl_sampler_properties props_list[] = {
+              CL_SAMPLER_NORMALIZED_COORDS, normalized_coordinates,
+              CL_SAMPLER_ADDRESSING_MODE, am,
+              CL_SAMPLER_FILTER_MODE, fm,
+              0,
+            };
+
+            cl_int status_code;
+
+            PYOPENCL_PRINT_CALL_TRACE("clCreateSamplerWithProperties");
+            m_sampler = clCreateSamplerWithProperties(
+                ctx.data(), props_list, &status_code);
+
+            if (status_code != CL_SUCCESS)
+              throw pyopencl::error("Sampler", status_code);
+        }
+        else
+#endif
+        {
+          cl_int status_code;
 
 #if defined(__GNUG__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-        m_sampler = clCreateSampler(
-            ctx.data(),
-            normalized_coordinates,
-            am, fm, &status_code);
+          m_sampler = clCreateSampler(
+              ctx.data(),
+              normalized_coordinates,
+              am, fm, &status_code);
 #if defined(__GNUG__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 
-        if (status_code != CL_SUCCESS)
-          throw pyopencl::error("Sampler", status_code);
+          if (status_code != CL_SUCCESS)
+            throw pyopencl::error("Sampler", status_code);
+        }
       }
 
       sampler(cl_sampler samp, bool retain)

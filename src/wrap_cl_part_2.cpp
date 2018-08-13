@@ -299,6 +299,9 @@ void pyopencl_expose_part_2(py::module &m)
   {
     typedef sampler cls;
     py::class_<cls>(m, "Sampler", py::dynamic_attr())
+#if PYOPENCL_CL_VERSION >= 0x2000
+      .def(py::init<context const &, py::sequence>())
+#endif
       .def(py::init<context const &, bool, cl_addressing_mode, cl_filter_mode>())
       .DEF_SIMPLE_METHOD(get_info)
       .def(py::self == py::self)
