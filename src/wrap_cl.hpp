@@ -1242,7 +1242,6 @@ namespace pyopencl
         }
 
         int hex_plat_version = ctx.get_hex_platform_version();
-        printf("plat version code: %d\n", hex_plat_version);
 
         bool props_given_as_numeric;
         cl_command_queue_properties num_props;
@@ -1306,7 +1305,6 @@ namespace pyopencl
                 "queue properties given as an iterable, "
                 "which is only allowed when PyOpenCL was built "
                 "against an OpenCL 2+ header");
-#endif
 
           if (hex_plat_version  < 0x2000)
           {
@@ -1315,7 +1313,7 @@ namespace pyopencl
                 "which uses an OpenCL 2+-only interface, "
                 "but the context's platform does not "
                 "declare OpenCL 2 support. Proceeding "
-                "as asked, but the next think you see "
+                "as requested, but the next thing you see "
                 "may be a crash." << std:: endl;
           }
 
@@ -1335,6 +1333,7 @@ namespace pyopencl
           if (status_code != CL_SUCCESS)
             throw pyopencl::error("CommandQueue", status_code);
         }
+#endif
       }
 
       ~command_queue()
