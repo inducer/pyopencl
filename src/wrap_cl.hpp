@@ -51,6 +51,7 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <cstdio>
 #include <stdexcept>
 #include <iostream>
 #include <vector>
@@ -1028,6 +1029,47 @@ namespace pyopencl
             throw error("Context.get_info", CL_INVALID_VALUE);
         }
       }
+
+
+      // not exposed to python
+      int get_hex_platform_version() const
+      {
+        std::vector<cl_device_id> devices;
+        PYOPENCL_GET_VEC_INFO(Context, m_context, CL_CONTEXT_DEVICES, devices);
+
+        if (devices.size() == 0)
+          throw error("Context._get_hex_version", CL_INVALID_VALUE,
+              "platform has no devices");
+
+        cl_platform_id plat;
+
+        PYOPENCL_CALL_GUARDED(clGetDeviceInfo,
+            (devices[0], CL_DEVICE_PLATFORM, sizeof(plat), &plat, nullptr));
+
+        std::string plat_version;
+        {
+          size_t param_value_size;
+          PYOPENCL_CALL_GUARDED(clGetPlatformInfo,
+              (plat, CL_PLATFORM_VERSION, 0, 0, &param_value_size));
+
+          std::vector<char> param_value(param_value_size);
+          PYOPENCL_CALL_GUARDED(clGetPlatformInfo,
+              (plat, CL_PLATFORM_VERSION, param_value_size,
+               param_value.empty( ) ? nullptr : &param_value.front(), &param_value_size));
+
+          plat_version =
+              param_value.empty( ) ? "" : std::string(&param_value.front(), param_value_size-1);
+        }
+
+        int major_ver, minor_ver;
+        errno = 0;
+        int match_count = sscanf(plat_version.c_str(), "OpenCL %d.%d ", &major_ver, &minor_ver);
+        if (errno || match_count != 2)
+          throw error("Context._get_hex_version", CL_INVALID_VALUE,
+              "Platform version string did not have expected format");
+
+        return major_ver << 12 | minor_ver << 4;
+      }
   };
 
 
@@ -1183,8 +1225,8 @@ namespace pyopencl
 
       command_queue(
           const context &ctx,
-          const device *py_dev=0,
-          cl_command_queue_properties props=0)
+          const device *py_dev=nullptr,
+          py::object py_props=py::none())
       {
         cl_device_id dev;
         if (py_dev)
@@ -1199,20 +1241,100 @@ namespace pyopencl
           dev = devs[0];
         }
 
-        cl_int status_code;
-        PYOPENCL_PRINT_CALL_TRACE("clCreateCommandQueue");
+        int hex_plat_version = ctx.get_hex_platform_version();
+        printf("plat version code: %d\n", hex_plat_version);
+
+        bool props_given_as_numeric;
+        cl_command_queue_properties num_props;
+        if (py_props.is_none())
+        {
+          num_props = 0;
+          props_given_as_numeric = true;
+        }
+        else
+        {
+          try
+          {
+            num_props = py::cast<cl_command_queue_properties>(py_props);
+            props_given_as_numeric = true;
+          }
+          catch (py::cast_error &)
+          {
+            props_given_as_numeric = false;
+          }
+        }
+
+        if (props_given_as_numeric)
+        {
+#if PYOPENCL_CL_VERSION >= 0x2000
+          if (hex_plat_version  >= 0x2000)
+          {
+            cl_queue_properties props_list[] = { CL_QUEUE_PROPERTIES, num_props, 0 };
+
+            cl_int status_code;
+
+            PYOPENCL_PRINT_CALL_TRACE("clCreateCommandQueueWithProperties");
+            m_queue = clCreateCommandQueueWithProperties(
+                ctx.data(), dev, props_list, &status_code);
+
+            if (status_code != CL_SUCCESS)
+              throw pyopencl::error("CommandQueue", status_code);
+          }
+          else
+#endif
+          {
+            cl_int status_code;
+
+            PYOPENCL_PRINT_CALL_TRACE("clCreateCommandQueue");
 #if defined(__GNUG__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
-        m_queue = clCreateCommandQueue(
-            ctx.data(), dev, props, &status_code);
+            m_queue = clCreateCommandQueue(
+                ctx.data(), dev, num_props, &status_code);
 #if defined(__GNUG__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
+            if (status_code != CL_SUCCESS)
+              throw pyopencl::error("CommandQueue", status_code);
+          }
+        }
+        else
+        {
+#if PYOPENCL_CL_VERSION >= 0x2000
+            throw error("CommandQueue", CL_INVALID_VALUE,
+                "queue properties given as an iterable, "
+                "which is only allowed when PyOpenCL was built "
+                "against an OpenCL 2+ header");
+#endif
 
-        if (status_code != CL_SUCCESS)
-          throw pyopencl::error("CommandQueue", status_code);
+          if (hex_plat_version  < 0x2000)
+          {
+            std::cerr <<
+                "queue properties given as an iterable, "
+                "which uses an OpenCL 2+-only interface, "
+                "but the context's platform does not "
+                "declare OpenCL 2 support. Proceeding "
+                "as asked, but the next think you see "
+                "may be a crash." << std:: endl;
+          }
+
+          cl_queue_properties props[py::len(py_props) + 1];
+          {
+            size_t i = 0;
+            for (auto prop: py_props)
+              props[i++] = py::cast<cl_queue_properties>(prop);
+            props[i++] = 0;
+          }
+
+          cl_int status_code;
+          PYOPENCL_PRINT_CALL_TRACE("clCreateCommandQueueWithProperties");
+          m_queue = clCreateCommandQueueWithProperties(
+              ctx.data(), dev, props, &status_code);
+
+          if (status_code != CL_SUCCESS)
+            throw pyopencl::error("CommandQueue", status_code);
+        }
       }
 
       ~command_queue()

@@ -80,11 +80,10 @@ void pyopencl_expose_part_1(py::module &m)
     typedef command_queue cls;
     py::class_<cls, std::shared_ptr<cls>>(m, "CommandQueue", py::dynamic_attr())
       .def(
-        py::init<const context &,
-          const device *, cl_command_queue_properties>(),
+        py::init<const context &, const device *, py::object>(),
         py::arg("context"),
-        py::arg("device")=py::none(),
-        py::arg("properties")=0)
+        py::arg("device").none(true)=py::none(),
+        py::arg("properties")=py::cast(0))
       .DEF_SIMPLE_METHOD(get_info)
 #if PYOPENCL_CL_VERSION < 0x1010
       .DEF_SIMPLE_METHOD(set_property)
