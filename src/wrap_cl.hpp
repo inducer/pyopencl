@@ -1332,8 +1332,8 @@ namespace pyopencl
 
           if (status_code != CL_SUCCESS)
             throw pyopencl::error("CommandQueue", status_code);
-        }
 #endif
+        }
       }
 
       ~command_queue()
