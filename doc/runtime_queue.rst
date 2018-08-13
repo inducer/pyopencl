@@ -38,6 +38,10 @@ Command Queue
 
         Context manager capability.
 
+    .. versionchanged:: 2018.2
+
+        Added the sequence-of-properties interface for OpenCL 2.
+
     .. attribute:: info
 
         Lower case versions of the :class:`command_queue_info` constants
