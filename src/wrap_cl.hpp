@@ -1526,8 +1526,12 @@ namespace pyopencl
 
         std::thread notif_thread([cb_info]()
             {
-              std::unique_lock<std::mutex> ulk(cb_info->m_mutex);
-              cb_info->m_condvar.wait(ulk);
+              {
+                std::unique_lock<std::mutex> ulk(cb_info->m_mutex);
+                cb_info->m_condvar.wait(ulk);
+
+                // ulk no longer held here, cb_info ready for deletion
+              }
 
               {
                 py::gil_scoped_acquire acquire;
