@@ -128,10 +128,10 @@ namespace
   }
 
   template <typename T, typename ClType>
-  inline T *from_int_ptr(intptr_t obj_ref)
+  inline T *from_int_ptr(intptr_t obj_ref, bool retain)
   {
     ClType clobj = (ClType) obj_ref;
-    return new T(clobj, /* retain */ true);
+    return new T(clobj, retain);
   }
 
   template <typename T>
@@ -144,11 +144,16 @@ namespace
 #define PYOPENCL_EXPOSE_TO_FROM_INT_PTR(CL_TYPENAME) \
   .def_static("from_int_ptr", from_int_ptr<cls, CL_TYPENAME>, \
       py::arg("int_ptr_value"), \
+      py::arg("retain")=true, \
       "(static method) Return a new Python object referencing the C-level " \
       ":c:type:`" #CL_TYPENAME "` object at the location pointed to " \
       "by *int_ptr_value*. The relevant :c:func:`clRetain*` function " \
-      "will be called." \
-      "\n\n.. versionadded:: 2013.2\n") \
+      "will be called if *retain* is True." \
+      "If the previous owner of the object will *not* release the reference, " \
+      "*retain* should be set to *False*, to effectively transfer ownership to " \
+      ":mod:`pyopencl`." \
+      "\n\n.. versionadded:: 2013.2\n" \
+      "\n\n.. versionchanged:: 2016.1\n\n    *retain* added.") \
   .def_property_readonly("int_ptr", to_int_ptr<cls>, \
       "Return an integer corresponding to the pointer value " \
       "of the underlying :c:type:`" #CL_TYPENAME "`. " \

@@ -1775,7 +1775,7 @@ namespace pyopencl
 
   // {{{ memory_object
 
-  py::object create_mem_object_wrapper(cl_mem mem);
+  py::object create_mem_object_wrapper(cl_mem mem, bool retain);
 
   class memory_object_holder
   {
@@ -2480,7 +2480,7 @@ namespace pyopencl
                 return py::none();
               }
 
-              return create_mem_object_wrapper(param_value);
+              return create_mem_object_wrapper(param_value, /* retain */ true);
             }
 
           case CL_IMAGE_NUM_MIP_LEVELS:
@@ -4688,7 +4688,7 @@ namespace pyopencl
 
   // {{{ deferred implementation bits
 
-  inline py::object create_mem_object_wrapper(cl_mem mem)
+  inline py::object create_mem_object_wrapper(cl_mem mem, bool retain=true)
   {
     cl_mem_object_type mem_obj_type;
     PYOPENCL_CALL_GUARDED(clGetMemObjectInfo, \
@@ -4698,7 +4698,7 @@ namespace pyopencl
     {
       case CL_MEM_OBJECT_BUFFER:
         return py::object(handle_from_new_ptr(
-              new buffer(mem, /*retain*/ true)));
+              new buffer(mem, retain)));
       case CL_MEM_OBJECT_IMAGE2D:
       case CL_MEM_OBJECT_IMAGE3D:
 #if PYOPENCL_CL_VERSION >= 0x1020
@@ -4708,17 +4708,17 @@ namespace pyopencl
       case CL_MEM_OBJECT_IMAGE1D_BUFFER:
 #endif
         return py::object(handle_from_new_ptr(
-              new image(mem, /*retain*/ true)));
+              new image(mem, retain)));
       default:
         return py::object(handle_from_new_ptr(
-              new memory_object(mem, /*retain*/ true)));
+              new memory_object(mem, retain)));
     }
   }
 
   inline
-  py::object memory_object_from_int(intptr_t cl_mem_as_int)
+  py::object memory_object_from_int(intptr_t cl_mem_as_int, bool retain)
   {
-    return create_mem_object_wrapper((cl_mem) cl_mem_as_int);
+    return create_mem_object_wrapper((cl_mem) cl_mem_as_int, retain);
   }
 
 

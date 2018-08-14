@@ -187,11 +187,17 @@ void pyopencl_expose_part_1(py::module &m)
       .def_property_readonly("hostbuf", &cls::hostbuf)
 
       .def_static("from_int_ptr", memory_object_from_int,
-        "(static method) Return a new Python object referencing the C-level " \
-        ":c:type:`cl_mem` object at the location pointed to " \
-        "by *int_ptr_value*. The relevant :c:func:`clRetain*` function " \
-        "will be called." \
-        "\n\n.. versionadded:: 2013.2\n") \
+        "(static method) Return a new Python object referencing the C-level "
+        ":c:type:`cl_mem` object at the location pointed to "
+        "by *int_ptr_value*. The relevant :c:func:`clRetain*` function "
+        "will be called if *retain* is True."
+        "If the previous owner of the object will *not* release the reference, "
+        "*retain* should be set to *False*, to effectively transfer ownership to "
+        ":mod:`pyopencl`."
+        "\n\n.. versionadded:: 2013.2\n",
+        "\n\n.. versionchanged:: 2016.1\n\n    *retain* added.",
+        py::arg("int_ptr_value"),
+        py::arg("retain")=true)
       ;
   }
 

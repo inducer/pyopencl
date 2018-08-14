@@ -356,8 +356,8 @@ class Program(object):
         return self._get_prg().int_ptr
     int_ptr = property(int_ptr, doc=_cl._Program.int_ptr.__doc__)
 
-    def from_int_ptr(int_ptr_value):
-        return Program(_cl._Program.from_int_ptr(int_ptr_value))
+    def from_int_ptr(int_ptr_value, retain=true):
+        return Program(_cl._Program.from_int_ptr(int_ptr_value), retain)
     from_int_ptr.__doc__ = _cl._Program.from_int_ptr.__doc__
     from_int_ptr = staticmethod(from_int_ptr)
 
