@@ -37,10 +37,10 @@ namespace pyopencl
   struct reversion_wrapper { T& iterable; };
 
   template <typename T>
-  auto begin (reversion_wrapper<T> w) { return std::rbegin(w.iterable); }
+  auto begin (reversion_wrapper<T> w) { return w.iterable.rbegin(); }
 
   template <typename T>
-  auto end (reversion_wrapper<T> w) { return std::rend(w.iterable); }
+  auto end (reversion_wrapper<T> w) { return w.iterable.rend(); }
 
   template <typename T>
   reversion_wrapper<T> reverse (T&& iterable) { return { iterable }; }
