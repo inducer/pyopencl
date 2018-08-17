@@ -834,9 +834,9 @@ def test_event_set_callback(ctx_factory):
         from time import sleep
         sleep(0.01)
 
-        # wait up to a second
+        # wait up to five seconds (?!)
         counter += 1
-        if counter >= 100:
+        if counter >= 500:
             break
 
     assert got_called
