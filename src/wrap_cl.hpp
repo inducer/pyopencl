@@ -398,15 +398,15 @@ namespace pyopencl
   class error : public std::runtime_error
   {
     private:
-      const char *m_routine;
+      std::string m_routine;
       cl_int m_code;
 
     public:
-      error(const char *rout, cl_int c, const char *msg="")
-        : std::runtime_error(msg), m_routine(rout), m_code(c)
+      error(const char *routine, cl_int c, const char *msg="")
+        : std::runtime_error(msg), m_routine(routine), m_code(c)
       { }
 
-      const char *routine() const
+      const std::string &routine() const
       {
         return m_routine;
       }

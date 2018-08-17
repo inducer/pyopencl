@@ -95,20 +95,29 @@ void pyopencl_expose_constants(py::module &m)
   }
   // }}}
 
+  // {{{ error record
+
+  {
+    typedef error cls;
+    py::class_<error> (m, "_ErrorRecord")
+      .def(py::init<const char *, cl_int, const char *>(),
+          py::arg("routine"),
+          py::arg("code"),
+          py::arg("msg"))
+      .DEF_SIMPLE_METHOD(routine)
+      .DEF_SIMPLE_METHOD(code)
+      .DEF_SIMPLE_METHOD(what)
+      .DEF_SIMPLE_METHOD(is_out_of_memory)
+      ;
+  }
+
+  // }}}
+
   // {{{ constants
 #define ADD_ATTR(PREFIX, NAME) \
   cls.attr(#NAME) = CL_##PREFIX##NAME
 #define ADD_ATTR_SUFFIX(PREFIX, NAME, SUFFIX) \
   cls.attr(#NAME) = CL_##PREFIX##NAME##SUFFIX
-
-  {
-    typedef error cls;
-    py::class_<error> (m, "_error")
-      .DEF_SIMPLE_METHOD(routine)
-      .DEF_SIMPLE_METHOD(code)
-      .DEF_SIMPLE_METHOD(what)
-      ;
-  }
 
   {
     py::class_<status_code> cls(m, "status_code");
