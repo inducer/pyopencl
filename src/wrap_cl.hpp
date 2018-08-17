@@ -745,7 +745,16 @@ namespace pyopencl
             }
           case CL_DEVICE_PARTITION_AFFINITY_DOMAIN:
             {
+#if defined(__GNUG__) && !defined(__clang__)
+#pragma GCC diagnostic push
+// what's being ignored here is an alignment attribute to native size, which
+// shouldn't matter on the relevant ABIs that I'm aware of.
+#pragma GCC diagnostic ignored "-Wignored-attributes"
+#endif
               std::vector<cl_device_affinity_domain> result;
+#if defined(__GNUG__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
               PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
               PYOPENCL_RETURN_VECTOR(cl_device_affinity_domain, result);
             }
