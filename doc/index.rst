@@ -108,6 +108,7 @@ Contents
     runtime_program
     runtime_gl
     array
+    types
     algorithm
     howto
     tools

@@ -1038,6 +1038,13 @@ def _add_functionality():
     def memory_map_exit(self, exc_type, exc_val, exc_tb):
         self.release()
 
+    MemoryMap.__doc__ = """
+        This class may also be used as a context manager in a ``with`` statement.
+        The memory corresponding to this object will be unmapped when
+        this object is deleted or :meth:`release` is called.
+
+        .. automethod:: release
+        """
     MemoryMap.__enter__ = memory_map_enter
     MemoryMap.__exit__ = memory_map_exit
 
@@ -1082,12 +1089,6 @@ def _add_functionality():
 
     if get_cl_header_version() >= (2, 0):
         SVMAllocation.__init__ = svmallocation_init
-        # FIXME
-        # SVMAllocation.enqueue_release.__doc__ = """
-        #     :returns: a :class:`pyopencl.Event`
-
-        #     |std-enqueue-blurb|
-        #     """
 
     # }}}
 

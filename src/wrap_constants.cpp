@@ -797,6 +797,7 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(KERNEL_ARG_, ADDRESS_QUALIFIER);
     ADD_ATTR(KERNEL_ARG_, ACCESS_QUALIFIER);
     ADD_ATTR(KERNEL_ARG_, TYPE_NAME);
+    ADD_ATTR(KERNEL_ARG_, TYPE_QUALIFIER);
     ADD_ATTR(KERNEL_ARG_, NAME);
 #endif
   }

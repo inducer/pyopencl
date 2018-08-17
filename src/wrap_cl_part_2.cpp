@@ -245,7 +245,9 @@ void pyopencl_expose_part_2(py::module &m)
     py::class_<cls>(m, "SVMAllocation", py::dynamic_attr())
       .def(py::init<std::shared_ptr<context>, size_t, cl_uint, cl_svm_mem_flags>())
       .DEF_SIMPLE_METHOD(release)
-      .DEF_SIMPLE_METHOD(enqueue_release)
+      .def("enqueue_release", &cls::enqueue_release,
+          ":returns: a :class:`pyopencl.Event`\n\n"
+          "|std-enqueue-blurb|")
       .def("_ptr_as_int", &cls::ptr_as_int)
       .def(py::self == py::self)
       .def(py::self != py::self)

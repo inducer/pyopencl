@@ -194,7 +194,7 @@ void pyopencl_expose_part_1(py::module &m)
         "If the previous owner of the object will *not* release the reference, "
         "*retain* should be set to *False*, to effectively transfer ownership to "
         ":mod:`pyopencl`."
-        "\n\n.. versionadded:: 2013.2\n",
+        "\n\n.. versionadded:: 2013.2\n"
         "\n\n.. versionchanged:: 2016.1\n\n    *retain* added.",
         py::arg("int_ptr_value"),
         py::arg("retain")=true)
