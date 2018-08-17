@@ -1502,23 +1502,37 @@ namespace pyopencl
 
         bool m_set_callback_suceeded;
 
+        bool m_notify_thread_wakeup_is_genuine;
+
         cl_event m_event;
         cl_int m_command_exec_status;
 
         event_callback_info_t(py::object py_event, py::object py_callback)
-        : m_py_event(py_event), m_py_callback(py_callback), m_set_callback_suceeded(true)
+        : m_py_event(py_event), m_py_callback(py_callback), m_set_callback_suceeded(true),
+        m_notify_thread_wakeup_is_genuine(false)
         {}
       };
 
       static void evt_callback(cl_event evt, cl_int command_exec_status, void *user_data)
       {
+        // FIXME REMOVE
+        puts("event callback: started");
+
         event_callback_info_t *cb_info = reinterpret_cast<event_callback_info_t *>(user_data);
         {
           std::lock_guard<std::mutex> lg(cb_info->m_mutex);
           cb_info->m_event = evt;
           cb_info->m_command_exec_status = command_exec_status;
+          cb_info->m_notify_thread_wakeup_is_genuine = true;
         }
+        // FIXME REMOVE
+        puts("event callback: before cv notify");
+
         cb_info->m_condvar.notify_one();
+
+        // FIXME REMOVE
+        puts("event callback: done");
+
       }
 
     public:
@@ -1535,15 +1549,25 @@ namespace pyopencl
 
         std::thread notif_thread([cb_info]()
             {
+              // FIXME REMOVE
+              puts("thread: started");
               {
                 std::unique_lock<std::mutex> ulk(cb_info->m_mutex);
-                cb_info->m_condvar.wait(ulk);
+                cb_info->m_condvar.wait(
+                    ulk,
+                    [&](){ return cb_info->m_notify_thread_wakeup_is_genuine; });
+
+                // FIXME REMOVE
+                puts("thread: wait returned");
 
                 // ulk no longer held here, cb_info ready for deletion
               }
 
               {
                 py::gil_scoped_acquire acquire;
+
+                // FIXME REMOVE
+                puts("thread: gil acquired");
 
                 if (cb_info->m_set_callback_suceeded)
                 {
@@ -1561,9 +1585,15 @@ namespace pyopencl
                   }
                 }
 
+                // FIXME REMOVE
+                puts("thread: before delete");
+
                 // Need to hold GIL to delete py::object instances in
                 // event_callback_info_t
                 delete cb_info;
+                //
+                // FIXME REMOVE
+                puts("thread: ending");
               }
             });
         // Thread is away--it is now its responsibility to free cb_info.
@@ -1583,6 +1613,7 @@ namespace pyopencl
           {
             std::lock_guard<std::mutex> lg(cb_info->m_mutex);
             cb_info->m_set_callback_suceeded = false;
+            cb_info->m_notify_thread_wakeup_is_genuine = true;
           }
           cb_info->m_condvar.notify_one();
           throw;
