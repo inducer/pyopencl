@@ -134,11 +134,9 @@ from pyopencl._cl import (  # noqa
         _enqueue_write_buffer_rect,
         _enqueue_copy_buffer_rect,
 
-        enqueue_map_buffer,
         _enqueue_read_image,
         _enqueue_copy_image,
         _enqueue_write_image,
-        enqueue_map_image,
         _enqueue_copy_image_to_buffer,
         _enqueue_copy_buffer_to_image,
 
@@ -150,6 +148,13 @@ from pyopencl._cl import (  # noqa
         Image,
         Sampler,
         DeviceTopologyAmd,
+        )
+
+if not _PYPY:
+    # FIXME: Add back to default set when pypy support catches up
+    from pyopencl._cl import (  # noqa
+        enqueue_map_buffer,
+        enqueue_map_image,
         )
 
 if get_cl_header_version() >= (1, 1):
