@@ -181,7 +181,10 @@ PyPy POCL:
   script:
   - export PY_EXE=pypy
   - export PYOPENCL_TEST=portable
-  - export EXTRA_INSTALL="pybind11 numpy mako"
+
+  # https://github.com/pybind/pybind11/pull/1494
+  - export EXTRA_INSTALL="git+https://github.com/inducer/pybind11 numpy mako"
+
   - export NO_DOCTESTS=1
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
