@@ -3103,6 +3103,8 @@ namespace pyopencl
 
 
 
+  // FIXME: Reenable in pypy
+#ifndef PYPY_VERSION
   inline
   py::object enqueue_map_buffer(
       std::shared_ptr<command_queue> cq,
@@ -3177,10 +3179,13 @@ namespace pyopencl
         result,
         handle_from_new_ptr(new event(evt_handle)));
   }
+#endif
 
 
 
 
+  // FIXME: Reenable in pypy
+#ifndef PYPY_VERSION
   inline
   py::object enqueue_map_image(
       std::shared_ptr<command_queue> cq,
@@ -3249,6 +3254,7 @@ namespace pyopencl
         handle_from_new_ptr(new event(evt_handle)),
         row_pitch, slice_pitch);
   }
+#endif
 
   // }}}
 
@@ -4794,6 +4800,8 @@ namespace pyopencl
     }
   }
 
+  // FIXME: Reenable in pypy
+#ifndef PYPY_VERSION
   inline
   py::object get_mem_obj_host_array(
       py::object mem_obj_py,
@@ -4859,6 +4867,7 @@ namespace pyopencl
 
     return result;
   }
+#endif
 
   // }}}
 }

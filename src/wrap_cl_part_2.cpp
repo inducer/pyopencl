@@ -204,6 +204,8 @@ void pyopencl_expose_part_2(py::module &m)
       ;
   }
 
+  // FIXME: Reenable in pypy
+#ifndef PYPY_VERSION
   m.def("enqueue_map_buffer", enqueue_map_buffer,
       py::arg("queue"),
       py::arg("buf"),
@@ -227,6 +229,7 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("strides")=py::none(),
       py::arg("wait_for")=py::none(),
       py::arg("is_blocking")=true);
+#endif
 
   // }}}
 

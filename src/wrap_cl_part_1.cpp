@@ -165,10 +165,13 @@ void pyopencl_expose_part_1(py::module &m)
     typedef memory_object_holder cls;
     py::class_<cls>(m, "MemoryObjectHolder", py::dynamic_attr())
       .DEF_SIMPLE_METHOD(get_info)
+  // FIXME: Reenable in pypy
+#ifndef PYPY_VERSION
       .def("get_host_array", get_mem_obj_host_array,
           py::arg("shape"),
           py::arg("dtype"),
           py::arg("order")="C")
+#endif
       .def("__eq__", [](const cls &self, const cls &other){ return self == other; })
       .def("__ne__", [](const cls &self, const cls &other){ return self != other; })
       .def("__hash__", &cls::hash)

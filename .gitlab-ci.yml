@@ -185,10 +185,6 @@ PyPy POCL:
   - export NO_DOCTESTS=1
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
-
-  # FIXME: For now, on the pybind11 branch
-  allow_failure: true
-
   tags:
   - pypy
   - pocl

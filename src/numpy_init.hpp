@@ -13,7 +13,11 @@ namespace
   {
     static bool do_import_array()
     {
+#ifdef PYPY_VERSION
+      import_array();
+#else
       import_array1(false);
+#endif
       return true;
     }
 
