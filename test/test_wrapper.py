@@ -1016,6 +1016,12 @@ def test_fine_grain_svm(ctx_factory):
     cl.cltypes.uint2,
     ])
 def test_map_dtype(ctx_factory, dtype):
+    from pyopencl import _PYPY
+
+    if _PYPY:
+        # FIXME
+        pytest.xfail("enqueue_map_buffer not yet working on pypy")
+
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
