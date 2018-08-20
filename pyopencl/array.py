@@ -663,7 +663,8 @@ class Array(object):
         if ary is None:
             ary = np.empty(self.shape, self.dtype)
 
-            ary = _as_strided(ary, strides=self.strides)
+            if self.strides != ary.strides:
+                ary = _as_strided(ary, strides=self.strides)
         else:
             if ary.size != self.size:
                 raise TypeError("'ary' has non-matching size")

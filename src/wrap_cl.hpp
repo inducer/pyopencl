@@ -82,7 +82,7 @@
 #endif
 
 
-#if PY_VERSION_HEX >= 0x03000000
+#if (PY_VERSION_HEX >= 0x03000000) or defined(PYPY_VERSION)
 #define PYOPENCL_USE_NEW_BUFFER_INTERFACE
 #define PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(s) std::move(s)
 #else
