@@ -59,11 +59,14 @@ del _size_t_char
 def generate_buffer_arg_setter(gen, arg_idx, buf_var):
     from pytools.py_codegen import Indentation
 
-    if _CPY2:
+    if _CPY2 or _PYPY:
         # https://github.com/numpy/numpy/issues/5381
         gen("if isinstance({buf_var}, np.generic):".format(buf_var=buf_var))
         with Indentation(gen):
-            gen("{buf_var} = np.getbuffer({buf_var})".format(buf_var=buf_var))
+            if _PYPY:
+                gen("{buf_var} = np.asarray({buf_var})".format(buf_var=buf_var))
+            else:
+                gen("{buf_var} = np.getbuffer({buf_var})".format(buf_var=buf_var))
 
     gen("""
         self._set_arg_buf({arg_idx}, {buf_var})
@@ -349,7 +352,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v4",
+        "pyopencl-invoker-cache-v6",
         key_builder=_NumpyTypesKeyBuilder())
 
 
