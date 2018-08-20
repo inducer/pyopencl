@@ -1831,6 +1831,10 @@ def enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
         from warnings import warn
         warn("The context for this queue does not declare OpenCL 1.2 support, so "
                 "the next thing you might see is a crash")
+
+    if _PYPY and isinstance(pattern, np.generic):
+        pattern = np.asarray(pattern)
+
     return _cl._enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for)
 
 # }}}
