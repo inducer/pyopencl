@@ -3291,7 +3291,14 @@ namespace pyopencl
       {
 #ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
         ward = std::unique_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
+#ifdef PYPY_VERSION
+        // FIXME: get a read-only buffer
+        // Not quite honest, but Pypy doesn't consider numpy arrays
+        // created from objects with the __aray_interface__ writeable.
+        ward->get(holder.ptr(), PyBUF_ANY_CONTIGUOUS);
+#else
         ward->get(holder.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
+#endif
         m_ptr = ward->m_buf.buf;
         m_size = ward->m_buf.len;
 #else
