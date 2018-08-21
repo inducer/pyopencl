@@ -31,6 +31,82 @@ THE SOFTWARE.
 
 import sys
 from os.path import exists
+import setuptools
+from setuptools.command.build_ext import build_ext
+
+
+# {{{ boilerplate from https://github.com/pybind/python_example/blob/2ed5a68759cd6ff5d2e5992a91f08616ef457b5c/setup.py  # noqa
+
+class get_pybind_include(object):  # noqa: N801
+    """Helper class to determine the pybind11 include path
+
+    The purpose of this class is to postpone importing pybind11
+    until it is actually installed, so that the ``get_include()``
+    method can be invoked. """
+
+    def __init__(self, user=False):
+        self.user = user
+
+    def __str__(self):
+        import pybind11
+        return pybind11.get_include(self.user)
+
+
+# As of Python 3.6, CCompiler has a `has_flag` method.
+# cf http://bugs.python.org/issue26689
+def has_flag(compiler, flagname):
+    """Return a boolean indicating whether a flag name is supported on
+    the specified compiler.
+    """
+    import tempfile
+    with tempfile.NamedTemporaryFile('w', suffix='.cpp') as f:
+        f.write('int main (int argc, char **argv) { return 0; }')
+        try:
+            compiler.compile([f.name], extra_postargs=[flagname])
+        except setuptools.distutils.errors.CompileError:
+            return False
+    return True
+
+
+def cpp_flag(compiler):
+    """Return the -std=c++[11/14] compiler flag.
+
+    The c++14 is prefered over c++11 (when it is available).
+    """
+    if has_flag(compiler, '-std=c++14'):
+        return '-std=c++14'
+    elif has_flag(compiler, '-std=c++11'):
+        return '-std=c++11'
+    else:
+        raise RuntimeError('Unsupported compiler -- at least C++11 support '
+                           'is needed!')
+
+
+class BuildExt(build_ext):
+    """A custom build extension for adding compiler-specific options."""
+    c_opts = {
+        'msvc': ['/EHsc'],
+        'unix': [],
+    }
+
+    if sys.platform == 'darwin':
+        c_opts['unix'] += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
+
+    def build_extensions(self):
+        ct = self.compiler.compiler_type
+        opts = self.c_opts.get(ct, [])
+        if ct == 'unix':
+            opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
+            opts.append(cpp_flag(self.compiler))
+            if has_flag(self.compiler, '-fvisibility=hidden'):
+                opts.append('-fvisibility=hidden')
+        elif ct == 'msvc':
+            opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
+        for ext in self.extensions:
+            ext.extra_compile_args = opts
+        build_ext.build_extensions(self)
+
+# }}}
 
 
 def get_config_schema():
@@ -38,7 +114,11 @@ def get_config_schema():
             IncludeDir, LibraryDir, Libraries, \
             Switch, StringListOption
 
-    default_cxxflags = ['-std=gnu++11']
+    default_cxxflags = [
+            # Required for pybind11:
+            # https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes
+            "-fvisibility=hidden"
+            ]
 
     if 'darwin' in sys.platform:
         import platform
@@ -100,7 +180,7 @@ def get_config_schema():
 def main():
     from setuptools import find_packages
     from aksetup_helper import (hack_distutils, get_config, setup,
-            check_git_submodules)
+            check_git_submodules, NumpyExtension)
     check_git_submodules()
 
     hack_distutils()
@@ -132,6 +212,8 @@ def main():
             raise
 
     conf["EXTRA_DEFINES"] = extra_defines
+
+    INCLUDE_DIRS = conf["CL_INC_DIR"] + ["pybind11/include"]  # noqa: N806
 
     ver_dic = {}
     version_file = open("pyopencl/version.py")
@@ -181,22 +263,6 @@ def main():
         print("https://pypi.python.org/pypi/pyopencl")
         sys.exit(1)
 
-    # {{{ write cffi build script
-
-    with open("cffi_build.py.in", "rt") as f:
-        build_script_template = f.read()
-
-    format_args = {}
-    for k, v in conf.items():
-        format_args[k] = repr(v)
-
-    build_script = build_script_template.format(**format_args)
-
-    with open("cffi_build.py", "wt") as f:
-        f.write(build_script)
-
-    # }}}
-
     setup(name="pyopencl",
             # metadata
             version=ver_dic["VERSION_TEXT"],
@@ -217,7 +283,6 @@ def main():
                 'Programming Language :: C++',
                 'Programming Language :: Python',
                 'Programming Language :: Python :: 2',
-                'Programming Language :: Python :: 2.6',
                 'Programming Language :: Python :: 2.7',
                 'Programming Language :: Python :: 3',
                 'Programming Language :: Python :: 3.2',
@@ -230,23 +295,42 @@ def main():
             # build info
             packages=find_packages(),
 
+            ext_modules=[
+                NumpyExtension("pyopencl._cl",
+                    [
+                        "src/wrap_constants.cpp",
+                        "src/wrap_cl.cpp",
+                        "src/wrap_cl_part_1.cpp",
+                        "src/wrap_cl_part_2.cpp",
+                        "src/wrap_mempool.cpp",
+                        "src/bitlog.cpp",
+                        ],
+                    include_dirs=INCLUDE_DIRS + [
+                        get_pybind_include(),
+                        get_pybind_include(user=True)
+                        ],
+                    library_dirs=conf["CL_LIB_DIR"],
+                    libraries=conf["CL_LIBNAME"],
+                    define_macros=list(conf["EXTRA_DEFINES"].items()),
+                    extra_compile_args=conf["CXXFLAGS"],
+                    extra_link_args=conf["LDFLAGS"],
+                    language='c++',
+                    ),
+                ],
+
             setup_requires=[
+                "pybind11",
                 "numpy",
-                "cffi>=1.1.0",
                 ],
 
             install_requires=[
                 "numpy",
                 "pytools>=2017.6",
-                "pytest>=2",
                 "decorator>=3.2.0",
-                "cffi>=1.1.0",
                 "appdirs>=1.4.0",
                 "six>=1.9.0",
                 # "Mako>=0.3.6",
                 ],
-
-            cffi_modules=["cffi_build.py:ffi"],
 
             include_package_data=True,
             package_data={
@@ -258,8 +342,11 @@ def main():
                         ]
                     },
 
+            cmdclass={'build_ext': BuildExt},
             zip_safe=False)
 
 
 if __name__ == '__main__':
     main()
+
+# vim: foldmethod=marker

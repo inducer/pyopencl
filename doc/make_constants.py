@@ -335,7 +335,6 @@ const_ext_lookup = {
             "WRITE_BUFFER_RECT": cl_11,
             "COPY_BUFFER_RECT": cl_11,
             "USER": cl_11,
-            "MIGRATE_MEM_OBJECT_EXT": ("cl_ext_migrate_memobject", "2011.2"),
             "BARRIER": cl_12,
             "MIGRATE_MEM_OBJECTS": cl_12,
             "FILL_BUFFER": cl_12,
@@ -408,9 +407,6 @@ const_ext_lookup = {
             "CONTENT_UNDEFINED": cl_12,
             },
 
-        cl.migrate_mem_object_flags_ext: {
-            "HOST": ("cl_ext_migrate_memobject", "2011.2"),
-            },
         }
 try:
     gl_ci = cl.gl_context_info

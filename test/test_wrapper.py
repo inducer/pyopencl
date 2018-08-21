@@ -295,7 +295,9 @@ def test_image_format_constructor():
 
     assert iform.channel_order == cl.channel_order.RGBA
     assert iform.channel_data_type == cl.channel_type.FLOAT
-    assert not iform.__dict__
+
+    if not cl._PYPY:
+        assert not hasattr(iform, "__dict__")
 
 
 def test_device_topology_amd_constructor():
@@ -306,7 +308,8 @@ def test_device_topology_amd_constructor():
     assert topol.device == 4
     assert topol.function == 5
 
-    assert not topol.__dict__
+    if not cl._PYPY:
+        assert not hasattr(topol, "__dict__")
 
 
 def test_nonempty_supported_image_formats(ctx_factory):
@@ -351,7 +354,7 @@ def test_that_python_args_fail(ctx_factory):
     prg.mult(queue, a.shape, None, a_buf, np.float32(2), np.int32(3))
 
     a_result = np.empty_like(a)
-    cl.enqueue_read_buffer(queue, a_buf, a_result).wait()
+    cl.enqueue_copy(queue, a_buf, a_result).wait()
 
 
 def test_image_2d(ctx_factory):
@@ -513,8 +516,8 @@ def test_copy_buffer(ctx_factory):
     buf1 = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
     buf2 = cl.Buffer(context, mf.WRITE_ONLY, b.nbytes)
 
-    cl.enqueue_copy_buffer(queue, buf1, buf2).wait()
-    cl.enqueue_read_buffer(queue, buf2, b).wait()
+    cl.enqueue_copy(queue, buf2, buf1).wait()
+    cl.enqueue_copy(queue, b, buf2).wait()
 
     assert la.norm(a - b) == 0
 
@@ -569,7 +572,7 @@ def test_vector_args(ctx_factory):
 
     prg.set_vec(queue, dest.shape, None, x, dest_buf)
 
-    cl.enqueue_read_buffer(queue, dest_buf, dest).wait()
+    cl.enqueue_copy(queue, dest, dest_buf).wait()
 
     assert (dest == x).all()
 
@@ -665,36 +668,6 @@ def test_unload_compiler(platform):
     cl.unload_platform_compiler(platform)
 
 
-def test_enqueue_task(ctx_factory):
-    ctx = ctx_factory()
-    queue = cl.CommandQueue(ctx)
-    mf = cl.mem_flags
-
-    prg = cl.Program(ctx, """
-    __kernel void
-    reverse(__global const float *in, __global float *out, int n)
-    {
-        for (int i = 0;i < n;i++) {
-            out[i] = in[n - 1 - i];
-        }
-    }
-    """).build()
-    knl = prg.reverse
-
-    n = 100
-    a = np.random.rand(n).astype(np.float32)
-    b = np.empty_like(a)
-
-    buf1 = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
-    buf2 = cl.Buffer(ctx, mf.WRITE_ONLY, b.nbytes)
-
-    knl.set_args(buf1, buf2, np.int32(n))
-    cl.enqueue_task(queue, knl)
-
-    cl.enqueue_copy(queue, b, buf2).wait()
-    assert la.norm(a[::-1] - b) == 0
-
-
 def test_platform_get_devices(ctx_factory):
     ctx = ctx_factory()
     platform = ctx.devices[0].platform
@@ -768,6 +741,10 @@ def test_user_event(ctx_factory):
 
 
 def test_buffer_get_host_array(ctx_factory):
+    if cl._PYPY:
+        # FIXME
+        pytest.xfail("Buffer.get_host_array not yet working on pypy")
+
     ctx = ctx_factory()
     mf = cl.mem_flags
 
@@ -823,7 +800,7 @@ def test_event_set_callback(ctx_factory):
     queue = cl.CommandQueue(ctx)
 
     if ctx._get_cl_version() < (1, 1):
-        pytest.skip("OpenCL 1.1 or newer required fro set_callback")
+        pytest.skip("OpenCL 1.1 or newer required for set_callback")
 
     a_np = np.random.rand(50000).astype(np.float32)
     b_np = np.random.rand(50000).astype(np.float32)
@@ -857,9 +834,17 @@ def test_event_set_callback(ctx_factory):
 
     queue.finish()
 
+    counter = 0
+
     # yuck
-    from time import sleep
-    sleep(0.1)
+    while not got_called:
+        from time import sleep
+        sleep(0.01)
+
+        # wait up to five seconds (?!)
+        counter += 1
+        if counter >= 500:
+            break
 
     assert got_called
 
@@ -952,18 +937,10 @@ def test_coarse_grain_svm(ctx_factory):
 
     dev = ctx.devices[0]
 
-    has_svm = (ctx._get_cl_version() >= (2, 0) and
-                ctx.devices[0]._get_cl_version() >= (2, 0) and
-                cl.get_cl_header_version() >= (2, 0))
-
-    if dev.platform.name == "Portable Computing Language":
-        has_svm = (
-                get_pocl_version(dev.platform) >= (1, 0)
-                and cl.get_cl_header_version() >= (2, 0))
-
-    if not has_svm:
-        from pytest import skip
-        skip("SVM only available in OpenCL 2.0 and higher")
+    from pyopencl.characterize import has_coarse_grain_buffer_svm
+    from pytest import skip
+    if not has_coarse_grain_buffer_svm(queue.device):
+        skip("device does not support coarse-grain SVM")
 
     if ("AMD" in dev.platform.name
             and dev.type & cl.device_type.CPU):
@@ -1012,13 +989,9 @@ def test_fine_grain_svm(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
+    from pyopencl.characterize import has_fine_grain_buffer_svm
     from pytest import skip
-    if (ctx._get_cl_version() < (2, 0) or
-            cl.get_cl_header_version() < (2, 0)):
-        skip("SVM only available in OpenCL 2.0 and higher")
-
-    if not (ctx.devices[0].svm_capabilities
-            & cl.device_svm_capabilities.FINE_GRAIN_BUFFER):
+    if not has_fine_grain_buffer_svm(queue.device):
         skip("device does not support fine-grain SVM")
 
     n = 3000
@@ -1050,6 +1023,10 @@ def test_fine_grain_svm(ctx_factory):
     cl.cltypes.uint2,
     ])
 def test_map_dtype(ctx_factory, dtype):
+    if cl._PYPY:
+        # FIXME
+        pytest.xfail("enqueue_map_buffer not yet working on pypy")
+
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 

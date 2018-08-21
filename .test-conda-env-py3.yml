@@ -9,3 +9,4 @@ dependencies:
 - pocl
 - osx-pocl-opencl
 - mako
+- pybind11

@@ -43,15 +43,6 @@ Memory Migration
 
     Only available with CL 1.2.
 
-.. function:: enqueue_migrate_mem_object_ext(queue, mem_objects, flags=0, wait_for=None)
-
-    :param flags: from :class:`migrate_mem_object_flags_ext`
-
-    .. versionadded:: 2011.2
-
-    Only available with the `cl_ext_migrate_memobject`
-    extension.
-
 Buffer
 ------
 
@@ -361,13 +352,28 @@ Mapping Memory into Host Address Space
 Samplers
 --------
 
-.. class:: Sampler(context, normalized_coords, addressing_mode, filter_mode)
+.. class:: Sampler
 
-    *normalized_coords* is a :class:`bool` indicating whether
-    to use coordinates between 0 and 1 (*True*) or the texture's
-    natural pixel size (*False*).
-    See :class:`addressing_mode` and :class:`filter_mode` for possible
-    argument values.
+
+    .. method:: __init__(context, normalized_coords, addressing_mode, filter_mode)
+
+        *normalized_coords* is a :class:`bool` indicating whether
+        to use coordinates between 0 and 1 (*True*) or the texture's
+        natural pixel size (*False*).
+        See :class:`addressing_mode` and :class:`filter_mode` for possible
+        argument values.
+
+    .. method:: __init__(context, properties)
+
+        :arg properties: a sequence
+            of keys and values from :class:`sampler_properties` as accepted
+            by :c:func:`clCreateSamplerWithProperties` (see the OpenCL
+            spec for details). The trailing *0* is added automatically
+            and does not need to be included.
+
+        Requires OpenCL 2 or newer.
+
+        .. versionadded:: 2018.2
 
     .. attribute:: info
 

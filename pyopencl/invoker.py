@@ -28,7 +28,7 @@ import sys
 import numpy as np
 
 from warnings import warn
-from pyopencl._cffi import ffi as _ffi
+import pyopencl._cl as _cl
 from pytools.persistent_dict import WriteOncePersistentDict
 from pyopencl.tools import _NumpyTypesKeyBuilder
 
@@ -44,7 +44,7 @@ _size_t_char = ({
     4: 'L',
     2: 'H',
     1: 'B',
-})[_ffi.sizeof('size_t')]
+})[_cl._sizeof_size_t()]
 _type_char_map = {
     'n': _size_t_char.lower(),
     'N': _size_t_char
@@ -59,27 +59,24 @@ del _size_t_char
 def generate_buffer_arg_setter(gen, arg_idx, buf_var):
     from pytools.py_codegen import Indentation
 
-    if _CPY2:
+    if _CPY2 or _PYPY:
         # https://github.com/numpy/numpy/issues/5381
         gen("if isinstance({buf_var}, np.generic):".format(buf_var=buf_var))
         with Indentation(gen):
-            gen("{buf_var} = np.getbuffer({buf_var})".format(buf_var=buf_var))
+            if _PYPY:
+                gen("{buf_var} = np.asarray({buf_var})".format(buf_var=buf_var))
+            else:
+                gen("{buf_var} = np.getbuffer({buf_var})".format(buf_var=buf_var))
 
     gen("""
-        c_buf, sz, _ = _cl._c_buffer_from_obj({buf_var})
-        status = _lib.kernel__set_arg_buf(self.ptr, {arg_idx}, c_buf, sz)
-        if status != _ffi.NULL:
-            _handle_error(status)
+        self._set_arg_buf({arg_idx}, {buf_var})
         """
         .format(arg_idx=arg_idx, buf_var=buf_var))
 
 
 def generate_bytes_arg_setter(gen, arg_idx, buf_var):
     gen("""
-        status = _lib.kernel__set_arg_buf(self.ptr, {arg_idx},
-            {buf_var}, len({buf_var}))
-        if status != _ffi.NULL:
-            _handle_error(status)
+        self._set_arg_buf({arg_idx}, {buf_var})
         """
         .format(arg_idx=arg_idx, buf_var=buf_var))
 
@@ -89,11 +86,9 @@ def generate_generic_arg_handler(gen, arg_idx, arg_var):
 
     gen("""
         if {arg_var} is None:
-            status = _lib.kernel__set_arg_null(self.ptr, {arg_idx})
-            if status != _ffi.NULL:
-                _handle_error(status)
-        elif isinstance({arg_var}, _cl._CLKernelArg):
-            self._set_arg_clkernelarg({arg_idx}, {arg_var})
+            self._set_arg_null({arg_idx})
+        elif isinstance({arg_var}, _KERNEL_ARG_CLASSES):
+            self.set_arg({arg_idx}, {arg_var})
         """
         .format(arg_idx=arg_idx, arg_var=arg_var))
 
@@ -289,10 +284,8 @@ def wrap_in_error_handler(body, arg_names):
 
 def add_local_imports(gen):
     gen("import numpy as np")
-    gen("import pyopencl.cffi_cl as _cl")
-    gen(
-        "from pyopencl.cffi_cl import _lib, "
-        "_ffi, _handle_error, _CLKernelArg")
+    gen("import pyopencl._cl as _cl")
+    gen("from pyopencl import _KERNEL_ARG_CLASSES")
     gen("")
 
 
@@ -359,7 +352,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v1",
+        "pyopencl-invoker-cache-v6",
         key_builder=_NumpyTypesKeyBuilder())
 
 

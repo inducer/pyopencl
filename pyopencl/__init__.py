@@ -26,7 +26,7 @@ THE SOFTWARE.
 
 import re
 import six
-from six.moves import input
+from six.moves import input, intern
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
@@ -34,7 +34,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 try:
-    import pyopencl.cffi_cl as _cl
+    import pyopencl._cl as _cl
 except ImportError:
     import os
     from os.path import dirname, join, realpath
@@ -46,7 +46,12 @@ except ImportError:
 
 import numpy as np
 
-from pyopencl.cffi_cl import (  # noqa
+import sys
+
+_PYPY = '__pypy__' in sys.builtin_module_names
+_CPY2 = not _PYPY and sys.version_info < (3,)
+
+from pyopencl._cl import (  # noqa
         get_cl_header_version,
         program_kind,
         status_code,
@@ -94,18 +99,13 @@ from pyopencl.cffi_cl import (  # noqa
         command_execution_status,
         profiling_info,
         mem_migration_flags,
-        mem_migration_flags_ext,
         device_partition_property,
         device_affinity_domain,
-        gl_object_type,
-        gl_texture_info,
-        migrate_mem_object_flags_ext,
 
         Error, MemoryError, LogicError, RuntimeError,
 
         Platform,
         get_platforms,
-        unload_platform_compiler,
 
         Device,
         Context,
@@ -115,30 +115,18 @@ from pyopencl.cffi_cl import (  # noqa
         MemoryObject,
         MemoryMap,
         Buffer,
-        SVMAllocation,
-        SVM,
-        SVMMap,
 
-        CompilerWarning,
         _Program,
         Kernel,
 
         Event,
         wait_for_events,
         NannyEvent,
-        UserEvent,
 
         enqueue_nd_range_kernel,
-        enqueue_task,
 
-        _enqueue_marker_with_wait_list,
         _enqueue_marker,
-        _enqueue_barrier_with_wait_list,
 
-        enqueue_migrate_mem_objects,
-        enqueue_migrate_mem_object_ext,
-
-        _enqueue_barrier_with_wait_list,
         _enqueue_read_buffer,
         _enqueue_write_buffer,
         _enqueue_copy_buffer,
@@ -146,48 +134,105 @@ from pyopencl.cffi_cl import (  # noqa
         _enqueue_write_buffer_rect,
         _enqueue_copy_buffer_rect,
 
-        enqueue_map_buffer,
-        _enqueue_fill_buffer,
         _enqueue_read_image,
         _enqueue_copy_image,
         _enqueue_write_image,
-        enqueue_map_image,
-        enqueue_fill_image,
         _enqueue_copy_image_to_buffer,
         _enqueue_copy_buffer_to_image,
-        enqueue_svm_memfill,
-        enqueue_svm_migratemem,
 
         have_gl,
-        _GLObject,
-        GLBuffer,
-        GLRenderBuffer,
 
         ImageFormat,
         get_supported_image_formats,
 
-        ImageDescriptor,
         Image,
         Sampler,
-        GLTexture,
         DeviceTopologyAmd,
+        )
 
-        add_get_info_attrs as _add_get_info_attrs,
+if not _PYPY:
+    # FIXME: Add back to default set when pypy support catches up
+    from pyopencl._cl import (  # noqa
+        enqueue_map_buffer,
+        enqueue_map_image,
+        )
+
+if get_cl_header_version() >= (1, 1):
+    from pyopencl._cl import (  # noqa
+          UserEvent,
+        )
+if get_cl_header_version() >= (1, 2):
+    from pyopencl._cl import (  # noqa
+        _enqueue_marker_with_wait_list,
+        _enqueue_barrier_with_wait_list,
+
+        unload_platform_compiler,
+
+
+        enqueue_migrate_mem_objects,
+        _enqueue_fill_buffer,
+        enqueue_fill_image,
+
+        ImageDescriptor,
+        )
+
+if get_cl_header_version() >= (2, 0):
+    from pyopencl._cl import (  # noqa
+        SVMAllocation,
+        SVM,
+
+        # FIXME
+        #enqueue_svm_migratemem,
         )
 
 if _cl.have_gl():
+    from pyopencl._cl import (  # noqa
+        gl_object_type,
+        gl_texture_info,
+
+        GLBuffer,
+        GLRenderBuffer,
+        GLTexture,
+        )
+
     try:
-        from pyopencl.cffi_cl import get_apple_cgl_share_group  # noqa
+        from pyopencl._cl import get_apple_cgl_share_group  # noqa
     except ImportError:
         pass
 
     try:
-        from pyopencl.cffi_cl import (  # noqa
+        from pyopencl._cl import (  # noqa
             enqueue_acquire_gl_objects,
             enqueue_release_gl_objects,
         )
     except ImportError:
         pass
+
+import inspect as _inspect
+
+CONSTANT_CLASSES = tuple(
+        getattr(_cl, name) for name in dir(_cl)
+        if _inspect.isclass(getattr(_cl, name))
+        and name[0].islower() and name not in ["zip", "map", "range"])
+
+
+# {{{ diagnostics
+
+class CompilerWarning(UserWarning):
+    pass
+
+
+def compiler_output(text):
+    import os
+    from warnings import warn
+    if int(os.environ.get("PYOPENCL_COMPILER_OUTPUT", "0")):
+        warn(text, CompilerWarning)
+    else:
+        warn("Non-empty compiler output encountered. Set the "
+                "environment variable PYOPENCL_COMPILER_OUTPUT=1 "
+                "to see more.", CompilerWarning)
+
+# }}}
 
 
 # {{{ find pyopencl shipped source code
@@ -310,8 +355,8 @@ class Program(object):
         return self._get_prg().int_ptr
     int_ptr = property(int_ptr, doc=_cl._Program.int_ptr.__doc__)
 
-    def from_int_ptr(int_ptr_value):
-        return Program(_cl._Program.from_int_ptr(int_ptr_value))
+    def from_int_ptr(int_ptr_value, retain=True):
+        return Program(_cl._Program.from_int_ptr(int_ptr_value, retain))
     from_int_ptr.__doc__ = _cl._Program.from_int_ptr.__doc__
     from_int_ptr = staticmethod(from_int_ptr)
 
@@ -478,7 +523,7 @@ class Program(object):
         try:
             return build_func()
         except _cl.RuntimeError as e:
-            msg = e.what
+            msg = str(e)
             if options_bytes:
                 msg = msg + "\n(options: %s)" % options_bytes.decode("utf-8")
 
@@ -496,7 +541,7 @@ class Program(object):
             routine = e.routine
 
             err = _cl.RuntimeError(
-                    _cl.Error._ErrorRecord(
+                    _cl._ErrorRecord(
                         msg=msg,
                         code=code,
                         routine=routine))
@@ -522,9 +567,6 @@ class Program(object):
         return hash(self._get_prg())
 
 
-_add_get_info_attrs(Program, Program.get_info, program_info)
-
-
 def create_program_with_built_in_kernels(context, devices, kernel_names):
     if not isinstance(kernel_names, str):
         kernel_names = ":".join(kernel_names)
@@ -540,9 +582,750 @@ def link_program(context, programs, options=[], devices=None):
 # }}}
 
 
+# {{{ monkeypatch C++ wrappers to add functionality
+
+def _add_functionality():
+    def generic_get_cl_version(self):
+        import re
+        version_string = self.version
+        match = re.match(r"^OpenCL ([0-9]+)\.([0-9]+) .*$", version_string)
+        if match is None:
+            raise RuntimeError("%s %s returned non-conformant "
+                               "platform version string '%s'" %
+                               (type(self).__name__, self, version_string))
+
+        return int(match.group(1)), int(match.group(2))
+
+    # {{{ Platform
+
+    def platform_repr(self):
+        return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
+
+    Platform.__repr__ = platform_repr
+    Platform._get_cl_version = generic_get_cl_version
+
+    # }}}
+
+    # {{{ Device
+
+    def device_repr(self):
+        return "<pyopencl.Device '%s' on '%s' at 0x%x>" % (
+                self.name.strip(), self.platform.name.strip(), self.int_ptr)
+
+    def device_persistent_unique_id(self):
+        return (self.vendor, self.vendor_id, self.name, self.version)
+
+    Device.__repr__ = device_repr
+
+    # undocumented for now:
+    Device._get_cl_version = generic_get_cl_version
+    Device.persistent_unique_id = property(device_persistent_unique_id)
+
+    # }}}
+
+    # {{{ Context
+
+    context_old_init = Context.__init__
+
+    def context_init(self, devices, properties, dev_type, cache_dir=None):
+        if cache_dir is not None:
+            from warnings import warn
+            warn("The 'cache_dir' argument to the Context constructor "
+                "is deprecated and no longer has an effect. "
+                "It was removed because it only applied to the wrapper "
+                "object and not the context itself, leading to inconsistencies.",
+                DeprecationWarning, stacklevel=2)
+
+        context_old_init(self, devices, properties, dev_type)
+
+    def context_repr(self):
+        return "<pyopencl.Context at 0x%x on %s>" % (self.int_ptr,
+                ", ".join(repr(dev) for dev in self.devices))
+
+    def context_get_cl_version(self):
+        return self.devices[0].platform._get_cl_version()
+
+    Context.__repr__ = context_repr
+    from pytools import memoize_method
+    Context._get_cl_version = memoize_method(context_get_cl_version)
+
+    # }}}
+
+    # {{{ CommandQueue
+
+    def command_queue_enter(self):
+        return self
+
+    def command_queue_exit(self, exc_type, exc_val, exc_tb):
+        self.finish()
+
+    def command_queue_get_cl_version(self):
+        return self.context._get_cl_version()
+
+    CommandQueue.__enter__ = command_queue_enter
+    CommandQueue.__exit__ = command_queue_exit
+    CommandQueue._get_cl_version = memoize_method(command_queue_get_cl_version)
+
+    # }}}
+
+    # {{{ _Program (the internal, non-caching version)
+
+    def program_get_build_logs(self):
+        build_logs = []
+        for dev in self.get_info(_cl.program_info.DEVICES):
+            try:
+                log = self.get_build_info(dev, program_build_info.LOG)
+            except Exception:
+                log = "<error retrieving log>"
+
+            build_logs.append((dev, log))
+
+        return build_logs
+
+    def program_build(self, options_bytes, devices=None):
+        err = None
+        try:
+            self._build(options=options_bytes, devices=devices)
+        except Error as e:
+            msg = str(e) + "\n\n" + (75*"="+"\n").join(
+                    "Build on %s:\n\n%s" % (dev, log)
+                    for dev, log in self._get_build_logs())
+            code = e.code
+            routine = e.routine
+
+            err = _cl.RuntimeError(
+                    _cl._ErrorRecord(
+                        msg=msg,
+                        code=code,
+                        routine=routine))
+
+        if err is not None:
+            # Python 3.2 outputs the whole list of currently active exceptions
+            # This serves to remove one (redundant) level from that nesting.
+            raise err
+
+        message = (75*"="+"\n").join(
+                "Build on %s succeeded, but said:\n\n%s" % (dev, log)
+                for dev, log in self._get_build_logs()
+                if log is not None and log.strip())
+
+        if message:
+            if self.kind() == program_kind.SOURCE:
+                build_type = "From-source build"
+            elif self.kind() == program_kind.BINARY:
+                build_type = "From-binary build"
+            else:
+                build_type = "Build"
+
+            compiler_output("%s succeeded, but resulted in non-empty logs:\n%s"
+                    % (build_type, message))
+
+        return self
+
+    _cl._Program._get_build_logs = program_get_build_logs
+    _cl._Program.build = program_build
+
+    # }}}
+
+    # {{{ Event
+    class ProfilingInfoGetter:
+        def __init__(self, event):
+            self.event = event
+
+        def __getattr__(self, name):
+            info_cls = _cl.profiling_info
+
+            try:
+                inf_attr = getattr(info_cls, name.upper())
+            except AttributeError:
+                raise AttributeError("%s has no attribute '%s'"
+                        % (type(self), name))
+            else:
+                return self.event.get_profiling_info(inf_attr)
+
+    _cl.Event.profile = property(ProfilingInfoGetter)
+
+    # }}}
+
+    # {{{ Kernel
+
+    kernel_old_init = Kernel.__init__
+    kernel_old_get_info = Kernel.get_info
+    kernel_old_get_work_group_info = Kernel.get_work_group_info
+
+    def kernel_init(self, prg, name):
+        if not isinstance(prg, _cl._Program):
+            prg = prg._get_prg()
+
+        kernel_old_init(self, prg, name)
+
+        self._setup(prg)
+
+    def kernel__setup(self, prg):
+        self._source = getattr(prg, "_source", None)
+
+        from pyopencl.invoker import generate_enqueue_and_set_args
+        self._enqueue, self._set_args = generate_enqueue_and_set_args(
+                self.function_name, self.num_args, self.num_args,
+                None,
+                warn_about_arg_count_bug=None,
+                work_around_arg_count_bug=None)
+
+        self._wg_info_cache = {}
+        return self
+
+    def kernel_set_scalar_arg_dtypes(self, scalar_arg_dtypes):
+        self._scalar_arg_dtypes = tuple(scalar_arg_dtypes)
+
+        # {{{ arg counting bug handling
+
+        # For example:
+        # https://github.com/pocl/pocl/issues/197
+        # (but Apple CPU has a similar bug)
+
+        work_around_arg_count_bug = False
+        warn_about_arg_count_bug = False
+
+        from pyopencl.characterize import has_struct_arg_count_bug
+
+        count_bug_per_dev = [
+                has_struct_arg_count_bug(dev, self.context)
+                for dev in self.context.devices]
+
+        from pytools import single_valued
+        if any(count_bug_per_dev):
+            if all(count_bug_per_dev):
+                work_around_arg_count_bug = single_valued(count_bug_per_dev)
+            else:
+                warn_about_arg_count_bug = True
+
+        # }}}
+
+        from pyopencl.invoker import generate_enqueue_and_set_args
+        self._enqueue, self._set_args = generate_enqueue_and_set_args(
+                self.function_name,
+                len(scalar_arg_dtypes), self.num_args,
+                self._scalar_arg_dtypes,
+                warn_about_arg_count_bug=warn_about_arg_count_bug,
+                work_around_arg_count_bug=work_around_arg_count_bug)
+
+    def kernel_get_work_group_info(self, param, device):
+        try:
+            return self._wg_info_cache[param, device]
+        except KeyError:
+            pass
+
+        result = kernel_old_get_work_group_info(self, param, device)
+        self._wg_info_cache[param, device] = result
+        return result
+
+    def kernel_set_args(self, *args, **kwargs):
+        # Need to dupicate the 'self' argument for dynamically generated  method
+        return self._set_args(self, *args, **kwargs)
+
+    def kernel_call(self, queue, global_size, local_size, *args, **kwargs):
+        # __call__ can't be overridden directly, so we need this
+        # trampoline hack.
+        return self._enqueue(self, queue, global_size, local_size, *args, **kwargs)
+
+    def kernel_capture_call(self, filename, queue, global_size, local_size,
+            *args, **kwargs):
+        from pyopencl.capture_call import capture_kernel_call
+        capture_kernel_call(self, filename, queue, global_size, local_size,
+                *args, **kwargs)
+
+    def kernel_get_info(self, param_name):
+        val = kernel_old_get_info(self, param_name)
+
+        if isinstance(val, _Program):
+            return Program(val)
+        else:
+            return val
+
+    Kernel.__init__ = kernel_init
+    Kernel._setup = kernel__setup
+    Kernel.get_work_group_info = kernel_get_work_group_info
+    Kernel.set_scalar_arg_dtypes = kernel_set_scalar_arg_dtypes
+    Kernel.set_args = kernel_set_args
+    Kernel.__call__ = kernel_call
+    Kernel.capture_call = kernel_capture_call
+    Kernel.get_info = kernel_get_info
+
+    # }}}
+
+    # {{{ ImageFormat
+
+    def image_format_repr(self):
+        return "ImageFormat(%s, %s)" % (
+                channel_order.to_string(self.channel_order,
+                    "<unknown channel order 0x%x>"),
+                channel_type.to_string(self.channel_data_type,
+                    "<unknown channel data type 0x%x>"))
+
+    def image_format_eq(self, other):
+        return (self.channel_order == other.channel_order
+                and self.channel_data_type == other.channel_data_type)
+
+    def image_format_ne(self, other):
+        return not image_format_eq(self, other)
+
+    def image_format_hash(self):
+        return hash((type(self), self.channel_order, self.channel_data_type))
+
+    ImageFormat.__repr__ = image_format_repr
+    ImageFormat.__eq__ = image_format_eq
+    ImageFormat.__ne__ = image_format_ne
+    ImageFormat.__hash__ = image_format_hash
+
+    # }}}
+
+    # {{{ Image
+
+    image_old_init = Image.__init__
+
+    def image_init(self, context, flags, format, shape=None, pitches=None,
+            hostbuf=None, is_array=False, buffer=None):
+
+        if shape is None and hostbuf is None:
+            raise Error("'shape' must be passed if 'hostbuf' is not given")
+
+        if shape is None and hostbuf is not None:
+            shape = hostbuf.shape
+
+        if hostbuf is not None and not \
+                (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
+            from warnings import warn
+            warn("'hostbuf' was passed, but no memory flags to make use of it.")
+
+        if hostbuf is None and pitches is not None:
+            raise Error("'pitches' may only be given if 'hostbuf' is given")
+
+        if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
+            if buffer is not None and is_array:
+                    raise ValueError(
+                            "'buffer' and 'is_array' are mutually exclusive")
+
+            if len(shape) == 3:
+                if buffer is not None:
+                    raise TypeError(
+                            "'buffer' argument is not supported for 3D arrays")
+                elif is_array:
+                    image_type = mem_object_type.IMAGE2D_ARRAY
+                else:
+                    image_type = mem_object_type.IMAGE3D
+
+            elif len(shape) == 2:
+                if buffer is not None:
+                    raise TypeError(
+                            "'buffer' argument is not supported for 2D arrays")
+                elif is_array:
+                    image_type = mem_object_type.IMAGE1D_ARRAY
+                else:
+                    image_type = mem_object_type.IMAGE2D
+
+            elif len(shape) == 1:
+                if buffer is not None:
+                    image_type = mem_object_type.IMAGE1D_BUFFER
+                elif is_array:
+                    raise TypeError("array of zero-dimensional images not supported")
+                else:
+                    image_type = mem_object_type.IMAGE1D
+
+            else:
+                raise ValueError("images cannot have more than three dimensions")
+
+            desc = ImageDescriptor()
+
+            desc.image_type = image_type
+            desc.shape = shape  # also sets desc.array_size
+
+            if pitches is None:
+                desc.pitches = (0, 0)
+            else:
+                desc.pitches = pitches
+
+            desc.num_mip_levels = 0  # per CL 1.2 spec
+            desc.num_samples = 0  # per CL 1.2 spec
+            desc.buffer = buffer
+
+            image_old_init(self, context, flags, format, desc, hostbuf)
+        else:
+            # legacy init for CL 1.1 and older
+            if is_array:
+                raise TypeError("'is_array=True' is not supported for CL < 1.2")
+            # if num_mip_levels is not None:
+                # raise TypeError(
+                #       "'num_mip_levels' argument is not supported for CL < 1.2")
+            # if num_samples is not None:
+                # raise TypeError(
+                #        "'num_samples' argument is not supported for CL < 1.2")
+            if buffer is not None:
+                raise TypeError("'buffer' argument is not supported for CL < 1.2")
+
+            image_old_init(self, context, flags, format, shape,
+                    pitches, hostbuf)
+
+    class _ImageInfoGetter:
+        def __init__(self, event):
+            from warnings import warn
+            warn("Image.image.attr is deprecated. "
+                    "Use Image.attr directly, instead.")
+
+            self.event = event
+
+        def __getattr__(self, name):
+            try:
+                inf_attr = getattr(_cl.image_info, name.upper())
+            except AttributeError:
+                raise AttributeError("%s has no attribute '%s'"
+                        % (type(self), name))
+            else:
+                return self.event.get_image_info(inf_attr)
+
+    def image_shape(self):
+        if self.type == mem_object_type.IMAGE2D:
+            return (self.width, self.height)
+        elif self.type == mem_object_type.IMAGE3D:
+            return (self.width, self.height, self.depth)
+        else:
+            raise LogicError("only images have shapes")
+
+    Image.__init__ = image_init
+    Image.image = property(_ImageInfoGetter)
+    Image.shape = property(image_shape)
+
+    # }}}
+
+    # {{{ Error
+
+    def error_str(self):
+        val = self.what
+        try:
+            val.routine
+        except AttributeError:
+            return str(val)
+        else:
+            result = ""
+            if val.code() != status_code.SUCCESS:
+                result = status_code.to_string(
+                        val.code(), "<unknown error %d>")
+            routine = val.routine()
+            if routine:
+                result = "%s failed: %s" % (routine, result)
+            what = val.what()
+            if what:
+                if result:
+                    result += " - "
+                result += what
+            return result
+
+    def error_code(self):
+        return self.args[0].code()
+
+    def error_routine(self):
+        return self.args[0].routine()
+
+    def error_what(self):
+        return self.args[0]
+
+    Error.__str__ = error_str
+    Error.code = property(error_code)
+    Error.routine = property(error_routine)
+    Error.what = property(error_what)
+
+    # }}}
+
+    # {{{ MemoryMap
+
+    def memory_map_enter(self):
+        return self
+
+    def memory_map_exit(self, exc_type, exc_val, exc_tb):
+        self.release()
+
+    MemoryMap.__doc__ = """
+        This class may also be used as a context manager in a ``with`` statement.
+        The memory corresponding to this object will be unmapped when
+        this object is deleted or :meth:`release` is called.
+
+        .. automethod:: release
+        """
+    MemoryMap.__enter__ = memory_map_enter
+    MemoryMap.__exit__ = memory_map_exit
+
+    # }}}
+
+    # {{{ SVMAllocation
+
+    if get_cl_header_version() >= (2, 0):
+        SVMAllocation.__doc__ = """An object whose lifetime is tied to an allocation of shared virtual memory.
+
+            .. note::
+
+                Most likely, you will not want to use this directly, but rather
+                :func:`svm_empty` and related functions which allow access to this
+                functionality using a friendlier, more Pythonic interface.
+
+            .. versionadded:: 2016.2
+
+            .. automethod:: __init__(self, ctx, size, alignment, flags=None)
+            .. automethod:: release
+            .. automethod:: enqueue_release
+            """
+
+    if get_cl_header_version() >= (2, 0):
+        svmallocation_old_init = SVMAllocation.__init__
+
+    def svmallocation_init(self, ctx, size, alignment, flags, _interface=None):
+        """
+        :arg ctx: a :class:`Context`
+        :arg flags: some of :class:`svm_mem_flags`.
+        """
+        svmallocation_old_init(self, ctx, size, alignment, flags)
+
+        read_write = (
+                flags & mem_flags.WRITE_ONLY != 0
+                or flags & mem_flags.READ_WRITE != 0)
+
+        _interface["data"] = (
+                int(self._ptr_as_int()), not read_write)
+
+        self.__array_interface__ = _interface
+
+    if get_cl_header_version() >= (2, 0):
+        SVMAllocation.__init__ = svmallocation_init
+
+    # }}}
+
+    # {{{ SVM
+
+    if get_cl_header_version() >= (2, 0):
+        SVM.__doc__ = """Tags an object exhibiting the Python buffer interface (such as a
+            :class:`numpy.ndarray`) as referring to shared virtual memory.
+
+            Depending on the features of the OpenCL implementation, the following
+            types of objects may be passed to/wrapped in this type:
+
+            *   coarse-grain shared memory as returned by (e.g.) :func:`csvm_empty`
+                for any implementation of OpenCL 2.0.
+
+                This is how coarse-grain SVM may be used from both host and device::
+
+                    svm_ary = cl.SVM(
+                        cl.csvm_empty(ctx, 1000, np.float32, alignment=64))
+                    assert isinstance(svm_ary.mem, np.ndarray)
+
+                    with svm_ary.map_rw(queue) as ary:
+                        ary.fill(17)  # use from host
+
+                    prg.twice(queue, svm_ary.mem.shape, None, svm_ary)
+
+            *   fine-grain shared memory as returned by (e.g.) :func:`fsvm_empty`,
+                if the implementation supports fine-grained shared virtual memory.
+                This memory may directly be passed to a kernel::
+
+                    ary = cl.fsvm_empty(ctx, 1000, np.float32)
+                    assert isinstance(ary, np.ndarray)
+
+                    prg.twice(queue, ary.shape, None, cl.SVM(ary))
+                    queue.finish() # synchronize
+                    print(ary) # access from host
+
+                Observe how mapping (as needed in coarse-grain SVM) is no longer
+                necessary.
+
+            *   any :class:`numpy.ndarray` (or other Python object with a buffer
+                interface) if the implementation supports fine-grained *system*
+                shared virtual memory.
+
+                This is how plain :mod:`numpy` arrays may directly be passed to a
+                kernel::
+
+                    ary = np.zeros(1000, np.float32)
+                    prg.twice(queue, ary.shape, None, cl.SVM(ary))
+                    queue.finish() # synchronize
+                    print(ary) # access from host
+
+            Objects of this type may be passed to kernel calls and
+            :func:`enqueue_copy`.  Coarse-grain shared-memory *must* be mapped
+            into host address space using :meth:`map` before being accessed
+            through the :mod:`numpy` interface.
+
+            .. note::
+
+                This object merely serves as a 'tag' that changes the behavior
+                of functions to which it is passed. It has no special management
+                relationship to the memory it tags. For example, it is permissible
+                to grab a :mod:`numpy.array` out of :attr:`SVM.mem` of one
+                :class:`SVM` instance and use the array to construct another.
+                Neither of the tags need to be kept alive.
+
+            .. versionadded:: 2016.2
+
+            .. attribute:: mem
+
+                The wrapped object.
+
+            .. automethod:: __init__
+            .. automethod:: map
+            .. automethod:: map_ro
+            .. automethod:: map_rw
+            .. automethod:: as_buffer
+            """
+
+    if get_cl_header_version() >= (2, 0):
+        svm_old_init = SVM.__init__
+
+    def svm_init(self, mem):
+        svm_old_init(self, mem)
+
+        self.mem = mem
+
+    def svm_map(self, queue, flags, is_blocking=True, wait_for=None):
+        """
+        :arg is_blocking: If *False*, subsequent code must wait on
+            :attr:`SVMMap.event` in the returned object before accessing the
+            mapped memory.
+        :arg flags: a combination of :class:`pyopencl.map_flags`, defaults to
+            read-write.
+        :returns: an :class:`SVMMap` instance
+
+        |std-enqueue-blurb|
+        """
+        return SVMMap(
+                self,
+                queue,
+                _cl._enqueue_svm_map(queue, is_blocking, flags, self, wait_for))
+
+    def svm_map_ro(self, queue, is_blocking=True, wait_for=None):
+        """Like :meth:`map`, but with *flags* set for a read-only map."""
+
+        return self.map(queue, map_flags.READ,
+                is_blocking=is_blocking, wait_for=wait_for)
+
+    def svm_map_rw(self, queue, is_blocking=True, wait_for=None):
+        """Like :meth:`map`, but with *flags* set for a read-only map."""
+
+        return self.map(queue, map_flags.READ | map_flags.WRITE,
+                is_blocking=is_blocking, wait_for=wait_for)
+
+    def svm__enqueue_unmap(self, queue, wait_for=None):
+        return _cl._enqueue_svm_unmap(queue, self, wait_for)
+
+    def svm_as_buffer(self, ctx, flags=None):
+        """
+        :arg ctx: a :class:`Context`
+        :arg flags: a combination of :class:`pyopencl.map_flags`, defaults to
+            read-write.
+        :returns: a :class:`Buffer` corresponding to *self*.
+
+        The memory referred to by this object must not be freed before
+        the returned :class:`Buffer` is released.
+        """
+
+        if flags is None:
+            flags = mem_flags.READ_WRITE
+
+        return Buffer(ctx, flags, size=self.mem.nbytes, hostbuf=self.mem)
+
+    if get_cl_header_version() >= (2, 0):
+        SVM.__init__ = svm_init
+        SVM.map = svm_map
+        SVM.map_ro = svm_map_ro
+        SVM.map_rw = svm_map_rw
+        SVM._enqueue_unmap = svm__enqueue_unmap
+        SVM.as_buffer = svm_as_buffer
+
+    # }}}
+
+    # ORDER DEPENDENCY: Some of the above may override get_info, the effect needs
+    # to be visible through the attributes. So get_info attr creation needs to happen
+    # after the overriding is complete.
+    cls_to_info_cls = {
+            _cl.Platform: (_cl.Platform.get_info, _cl.platform_info, []),
+            _cl.Device: (_cl.Device.get_info, _cl.device_info,
+                ["PLATFORM", "MAX_WORK_GROUP_SIZE", "MAX_COMPUTE_UNITS"]),
+            _cl.Context: (_cl.Context.get_info, _cl.context_info, []),
+            _cl.CommandQueue: (_cl.CommandQueue.get_info, _cl.command_queue_info,
+                ["CONTEXT", "DEVICE"]),
+            _cl.Event: (_cl.Event.get_info, _cl.event_info, []),
+            _cl.MemoryObjectHolder:
+            (MemoryObjectHolder.get_info, _cl.mem_info, []),
+            Image: (_cl.Image.get_image_info, _cl.image_info, []),
+            Program: (Program.get_info, _cl.program_info, []),
+            Kernel: (Kernel.get_info, _cl.kernel_info, []),
+            _cl.Sampler: (Sampler.get_info, _cl.sampler_info, []),
+            }
+
+    def to_string(cls, value, default_format=None):
+        for name in dir(cls):
+            if (not name.startswith("_") and getattr(cls, name) == value):
+                return name
+
+        if default_format is None:
+            raise ValueError("a name for value %d was not found in %s"
+                    % (value, cls.__name__))
+        else:
+            return default_format % value
+
+    for cls in CONSTANT_CLASSES:
+        cls.to_string = classmethod(to_string)
+
+    # {{{ get_info attributes -------------------------------------------------
+
+    def make_getinfo(info_method, info_name, info_attr):
+        def result(self):
+            return info_method(self, info_attr)
+
+        return property(result)
+
+    def make_cacheable_getinfo(info_method, info_name, cache_attr, info_attr):
+        def result(self):
+            try:
+                return getattr(self, cache_attr)
+            except AttributeError:
+                pass
+
+            result = info_method(self, info_attr)
+            setattr(self, cache_attr, result)
+            return result
+
+        return property(result)
+
+    for cls, (info_method, info_class, cacheable_attrs) \
+            in six.iteritems(cls_to_info_cls):
+        for info_name, info_value in six.iteritems(info_class.__dict__):
+            if info_name == "to_string" or info_name.startswith("_"):
+                continue
+
+            info_lower = info_name.lower()
+            info_constant = getattr(info_class, info_name)
+            if info_name in cacheable_attrs:
+                cache_attr = intern("_info_cache_"+info_lower)
+                setattr(cls, info_lower, make_cacheable_getinfo(
+                    info_method, info_lower, cache_attr, info_constant))
+            else:
+                setattr(cls, info_lower, make_getinfo(
+                        info_method, info_name, info_constant))
+
+    # }}}
+
+    if _cl.have_gl():
+        def gl_object_get_gl_object(self):
+            return self.get_gl_object_info()[1]
+
+        GLBuffer.gl_object = property(gl_object_get_gl_object)
+        GLTexture.gl_object = property(gl_object_get_gl_object)
+
+
+_add_functionality()
+
+# }}}
+
+
 # {{{ create_some_context
 
-def create_some_context(interactive=None, answers=None, cache_dir=None):
+def create_some_context(interactive=None, answers=None):
     import os
     if answers is None:
         if "PYOPENCL_CTX" in os.environ:
@@ -553,7 +1336,7 @@ def create_some_context(interactive=None, answers=None, cache_dir=None):
             from pyopencl.tools import get_test_platforms_and_devices
             for plat, devs in get_test_platforms_and_devices():
                 for dev in devs:
-                    return Context([dev], cache_dir=cache_dir)
+                    return Context([dev])
 
     if answers is not None:
         pre_provided_answers = answers
@@ -668,7 +1451,7 @@ def create_some_context(interactive=None, answers=None, cache_dir=None):
         raise RuntimeError("not all provided choices were used by "
                 "create_some_context. (left over: '%s')" % ":".join(answers))
 
-    return Context(devices, cache_dir=cache_dir)
+    return Context(devices)
 
 
 _csc = create_some_context
@@ -676,46 +1459,54 @@ _csc = create_some_context
 # }}}
 
 
+# {{{ SVMMap
+
+class SVMMap(object):
+    """
+    .. attribute:: event
+
+    .. versionadded:: 2016.2
+
+    .. automethod:: release
+
+    This class may also be used as a context manager in a ``with`` statement.
+    :meth:`release` will be called upon exit from the ``with`` region.
+    The value returned to the ``as`` part of the context manager is the
+    mapped Python object (e.g. a :mod:`numpy` array).
+    """
+    def __init__(self, svm, queue, event):
+        self.svm = svm
+        self.queue = queue
+        self.event = event
+
+    def __del__(self):
+        if self.svm is not None:
+            self.release()
+
+    def __enter__(self):
+        return self.svm.mem
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+
+    def release(self, queue=None, wait_for=None):
+        """
+        :arg queue: a :class:`pyopencl.CommandQueue`. Defaults to the one
+            with which the map was created, if not specified.
+        :returns: a :class:`pyopencl.Event`
+
+        |std-enqueue-blurb|
+        """
+
+        evt = self.svm._enqueue_unmap(self.queue)
+        self.svm = None
+
+        return evt
+
+# }}}
+
+
 # {{{ enqueue_copy
-
-def _mark_copy_deprecated(func):
-    def new_func(*args, **kwargs):
-        from warnings import warn
-        warn("'%s' has been deprecated in version 2011.1. Please use "
-                "enqueue_copy() instead." % func.__name__[1:], DeprecationWarning,
-                stacklevel=2)
-        return func(*args, **kwargs)
-
-    try:
-        from functools import update_wrapper
-    except ImportError:
-        pass
-    else:
-        try:
-            update_wrapper(new_func, func)
-        except AttributeError:
-            pass
-
-    return new_func
-
-
-enqueue_read_image = _mark_copy_deprecated(_cl._enqueue_read_image)
-enqueue_write_image = _mark_copy_deprecated(_cl._enqueue_write_image)
-enqueue_copy_image = _mark_copy_deprecated(_cl._enqueue_copy_image)
-enqueue_copy_image_to_buffer = _mark_copy_deprecated(
-        _cl._enqueue_copy_image_to_buffer)
-enqueue_copy_buffer_to_image = _mark_copy_deprecated(
-        _cl._enqueue_copy_buffer_to_image)
-enqueue_read_buffer = _mark_copy_deprecated(_cl._enqueue_read_buffer)
-enqueue_write_buffer = _mark_copy_deprecated(_cl._enqueue_write_buffer)
-enqueue_copy_buffer = _mark_copy_deprecated(_cl._enqueue_copy_buffer)
-
-
-if _cl.get_cl_header_version() >= (1, 1):
-    enqueue_read_buffer_rect = _mark_copy_deprecated(_cl._enqueue_read_buffer_rect)
-    enqueue_write_buffer_rect = _mark_copy_deprecated(_cl._enqueue_write_buffer_rect)
-    enqueue_copy_buffer_rect = _mark_copy_deprecated(_cl._enqueue_copy_buffer_rect)
-
 
 def enqueue_copy(queue, dest, src, **kwargs):
     """Copy from :class:`Image`, :class:`Buffer` or the host to
@@ -891,12 +1682,13 @@ def enqueue_copy(queue, dest, src, **kwargs):
         else:
             raise ValueError("invalid dest mem object type")
 
-    elif isinstance(dest, SVM):
+    elif get_cl_header_version() >= (2, 0) and isinstance(dest, SVM):
         # to SVM
         if isinstance(src, SVM):
             src = src.mem
 
         return _cl._enqueue_svm_memcpy(queue, dest.mem, src, **kwargs)
+
     else:
         # assume to-host
 
@@ -1039,12 +1831,58 @@ def enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
         from warnings import warn
         warn("The context for this queue does not declare OpenCL 1.2 support, so "
                 "the next thing you might see is a crash")
+
+    if _PYPY and isinstance(pattern, np.generic):
+        pattern = np.asarray(pattern)
+
     return _cl._enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for)
 
 # }}}
 
 
 # {{{ numpy-like svm allocation
+
+def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
+    """Fill shared virtual memory with a pattern.
+
+    :arg dest: a Python buffer object, optionally wrapped in an :class:`SVM` object
+    :arg pattern: a Python buffer object (e.g. a :class:`numpy.ndarray` with the
+        fill pattern to be used.
+    :arg byte_count: The size of the memory to be fill. Defaults to the
+        entirety of *dest*.
+
+    |std-enqueue-blurb|
+
+    .. versionadded:: 2016.2
+    """
+
+    if not isinstance(dest, SVM):
+        dest = SVM(dest)
+
+    return _cl._enqueue_svm_memfill(
+            queue, dest, pattern, byte_count=None, wait_for=None)
+
+
+def enqueue_svm_migratemem(queue, svms, flags, wait_for=None):
+    """
+    :arg svms: a collection of Python buffer objects (e.g. :mod:`numpy`
+        arrrays), optionally wrapped in :class:`SVM` objects.
+    :arg flags: a combination of :class:`mem_migration_flags`
+
+    |std-enqueue-blurb|
+
+    .. versionadded:: 2016.2
+
+    This function requires OpenCL 2.1.
+    """
+
+    return _cl._enqueue_svm_migratemem(
+            queue,
+            [svm.mem if isinstance(svm, SVM) else svm
+                for svm in svms],
+            flags,
+            wait_for)
+
 
 def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
     """Allocate an empty :class:`numpy.ndarray` of the given *shape*, *dtype*
@@ -1192,5 +2030,15 @@ def fsvm_empty_like(ctx, ary, alignment=None):
             ary)
 
 # }}}
+
+
+_KERNEL_ARG_CLASSES = (
+        MemoryObjectHolder,
+        Sampler,
+        LocalMemory,
+        )
+if get_cl_header_version() >= (2, 0):
+    _KERNEL_ARG_CLASSES = _KERNEL_ARG_CLASSES + (SVM,)
+
 
 # vim: foldmethod=marker

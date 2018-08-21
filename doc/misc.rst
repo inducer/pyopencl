@@ -121,6 +121,8 @@ checking `this file
 Note that the triple-quoted strings containing the source must start with
 `"""//CL// ..."""`.
 
+.. _ipython-integration:
+
 IPython integration
 -------------------
 
