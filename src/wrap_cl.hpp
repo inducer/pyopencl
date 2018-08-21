@@ -445,8 +445,22 @@ namespace pyopencl
 
     void get(PyObject *obj, int flags)
     {
+#ifdef PYPY_VERSION
+      // work around https://bitbucket.org/pypy/pypy/issues/2873
+      if (flags & PyBUF_ANY_CONTIGUOUS)
+      {
+        int flags_wo_cont = flags & ~PyBUF_ANY_CONTIGUOUS;
+        if (PyObject_GetBuffer(obj, &m_buf, flags_wo_cont | PyBUF_C_CONTIGUOUS))
+        {
+          PyErr_Clear();
+          if (PyObject_GetBuffer(obj, &m_buf, flags_wo_cont | PyBUF_F_CONTIGUOUS))
+            throw py::error_already_set();
+        }
+      }
+#else
       if (PyObject_GetBuffer(obj, &m_buf, flags))
         throw py::error_already_set();
+#endif
 
       m_initialized = true;
     }
