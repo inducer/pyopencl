@@ -457,10 +457,10 @@ namespace pyopencl
             throw py::error_already_set();
         }
       }
-#else
+      else
+#endif
       if (PyObject_GetBuffer(obj, &m_buf, flags))
         throw py::error_already_set();
-#endif
 
       m_initialized = true;
     }
