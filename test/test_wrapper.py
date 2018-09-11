@@ -1048,6 +1048,10 @@ def test_compile_link(ctx_factory):
     if ctx._get_cl_version() < (1, 2) or cl.get_cl_header_version() < (1, 2):
         pytest.skip("Context and ICD loader must understand CL1.2 for compile/link")
 
+    platform = ctx.devices[0].platform
+    if platform.name == "Apple":
+        pytest.skip("Apple doesn't like our compile/link test")
+
     queue = cl.CommandQueue(ctx)
     vsink_prg = cl.Program(ctx, """//CL//
         void value_sink(float x)
