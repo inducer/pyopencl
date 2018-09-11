@@ -162,9 +162,8 @@ void ${kernel_name}(
         {
             scan_type value;
         };
-
-        // padded in WG_SIZE to avoid bank conflicts
     %endif
+    // padded in WG_SIZE to avoid bank conflicts
     LOCAL_MEM struct wrapped_scan_type ldata[K + 1][WG_SIZE + 1];
 
     %if is_segmented:
