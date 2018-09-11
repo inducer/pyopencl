@@ -394,6 +394,8 @@
 
 namespace pyopencl
 {
+  class program;
+
   // {{{ error
   class error : public std::runtime_error
   {
@@ -401,10 +403,29 @@ namespace pyopencl
       std::string m_routine;
       cl_int m_code;
 
+      // This is here because clLinkProgram returns a program
+      // object *just* so that there is somewhere for it to
+      // stuff the linker logs. :/
+      bool m_program_initialized;
+      cl_program m_program;
+
     public:
       error(const char *routine, cl_int c, const char *msg="")
-        : std::runtime_error(msg), m_routine(routine), m_code(c)
+        : std::runtime_error(msg), m_routine(routine), m_code(c),
+        m_program_initialized(false), m_program(nullptr)
       { }
+
+      error(const char *routine, cl_program prg, cl_int c,
+          const char *msg="")
+        : std::runtime_error(msg), m_routine(routine), m_code(c),
+        m_program_initialized(true), m_program(prg)
+      { }
+
+      virtual ~error()
+      {
+        if (m_program_initialized)
+          clReleaseProgram(m_program);
+      }
 
       const std::string &routine() const
       {
@@ -422,6 +443,8 @@ namespace pyopencl
             || code() == CL_OUT_OF_RESOURCES
             || code() == CL_OUT_OF_HOST_MEMORY);
       }
+
+      program *get_program() const;
 
   };
 
@@ -4075,7 +4098,7 @@ namespace pyopencl
         &status_code);
 
     if (status_code != CL_SUCCESS)
-      throw pyopencl::error("clLinkPorgram", status_code);
+      throw pyopencl::error("clLinkProgram", result, status_code);
 
     try
     {
@@ -4735,6 +4758,11 @@ namespace pyopencl
 
 
   // {{{ deferred implementation bits
+
+  inline program *error::get_program() const
+  {
+    return new program(m_program, /* retain */ true);
+  }
 
   inline py::object create_mem_object_wrapper(cl_mem mem, bool retain=true)
   {

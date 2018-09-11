@@ -555,7 +555,8 @@ class Program(object):
     def compile(self, options=[], devices=None, headers=[]):
         options_bytes, _ = self._process_build_options(self._context, options)
 
-        return self._prg.compile(options_bytes, devices, headers)
+        self._get_prg().compile(options_bytes, devices, headers)
+        return self
 
     def __eq__(self, other):
         return self._get_prg() == other._get_prg()
@@ -577,7 +578,9 @@ def create_program_with_built_in_kernels(context, devices, kernel_names):
 
 def link_program(context, programs, options=[], devices=None):
     options_bytes, _ = Program._process_build_options(context, options)
-    return Program(_Program.link(context, programs, options_bytes, devices))
+    programs = [prg._get_prg() for prg in programs]
+    raw_prg = _Program.link(context, programs, options_bytes, devices)
+    return Program(raw_prg)
 
 # }}}
 

@@ -1042,6 +1042,31 @@ def test_map_dtype(ctx_factory, dtype):
         assert array.dtype == dt
 
 
+def test_compile_link(ctx_factory):
+    ctx = ctx_factory()
+
+    if ctx._get_cl_version() < (1, 2) or cl.get_cl_header_version() < (1, 2):
+        pytest.skip("Context and ICD loader must understand CL1.2 for compile/link")
+
+    queue = cl.CommandQueue(ctx)
+    vsink_prg = cl.Program(ctx, """//CL//
+        void value_sink(float x)
+        {
+        }
+        """).compile()
+    main_prg = cl.Program(ctx, """//CL//
+        void value_sink(float x);
+
+        __kernel void experiment()
+        {
+            value_sink(3.1415f + get_global_id(0));
+        }
+        """).compile()
+    z = cl.link_program(ctx, [vsink_prg, main_prg], devices=ctx.devices)
+    z.experiment(queue, (128**2,), (128,))
+    queue.finish()
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa

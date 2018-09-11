@@ -108,6 +108,7 @@ void pyopencl_expose_constants(py::module &m)
       .DEF_SIMPLE_METHOD(code)
       .DEF_SIMPLE_METHOD(what)
       .DEF_SIMPLE_METHOD(is_out_of_memory)
+      .def("_program", &cls::get_program)
       ;
   }
 
