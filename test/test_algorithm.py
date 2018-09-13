@@ -569,6 +569,38 @@ def test_scan(ctx_factory, dtype, scan_cls):
         collect()
 
 
+@pytest.mark.parametrize("scan_cls", (GenericScanKernel, GenericDebugScanKernel))
+def test_scan_with_vectorargs_with_offsets(ctx_factory, scan_cls):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.tools import VectorArg
+
+    knl = scan_cls(
+            context, float,
+            arguments=[
+                VectorArg(float, "input", with_offset=True),
+                VectorArg(int, "segment", with_offset=True),
+                ],
+            input_expr="input[i]",
+            is_segment_start_expr="segment[i]",
+            scan_expr="a+b", neutral="0",
+            output_statement="""
+                input[i] = item;
+                """)
+
+    n = 20
+
+    host_data = np.random.randint(0, 10, n).astype(float)
+    dev_data = cl.array.to_device(queue, host_data)
+    segment_data = np.zeros(n, dtype=int)
+    dev_segment_data = cl.array.to_device(queue, segment_data)
+
+    knl(dev_data, dev_segment_data)
+
+    assert (dev_data.get() == np.cumsum(host_data)).all()
+
+
 def test_copy_if(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
@@ -654,7 +686,6 @@ def test_index_preservation(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    from pyopencl.scan import GenericScanKernel, GenericDebugScanKernel
     classes = [GenericScanKernel]
 
     dev = context.devices[0]
