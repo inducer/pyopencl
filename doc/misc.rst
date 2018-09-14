@@ -209,13 +209,17 @@ other software to be turned into the corresponding :mod:`pyopencl` objects.
 User-visible Changes
 ====================
 
-Version 2017.2
+Version 2018.2
 --------------
 
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
+
+* Use pybind11.
+* Many bug fixes.
+* Support arrays with offsets in scan kernels.
 
 Version 2018.1
 --------------
