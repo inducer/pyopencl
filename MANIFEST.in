@@ -1,10 +1,8 @@
 recursive-include pyopencl/cl *.h *.cl
 
-include src/c_wrapper/*.hpp
-include src/c_wrapper/*.h
-include src/c_wrapper/*.cpp
-include src/c_wrapper/mingw-std-threads/mingw.*.h
-include src/c_wrapper/mingw-std-threads/README.md
+include src/*.h
+include src/*.hpp
+include src/*.cpp
 include *.h
 include test/*.py
 include test/*.h
