@@ -1363,7 +1363,7 @@ namespace pyopencl
                 "may be a crash." << std:: endl;
           }
 
-          cl_queue_properties props[py::len(py_props) + 1];
+          std::vector<cl_queue_properties> props(py::len(py_props) + 1);
           {
             size_t i = 0;
             for (auto prop: py_props)
@@ -1374,7 +1374,7 @@ namespace pyopencl
           cl_int status_code;
           PYOPENCL_PRINT_CALL_TRACE("clCreateCommandQueueWithProperties");
           m_queue = clCreateCommandQueueWithProperties(
-              ctx.data(), dev, props, &status_code);
+              ctx.data(), dev, props.data(), &status_code);
 
           if (status_code != CL_SUCCESS)
             throw pyopencl::error("CommandQueue", status_code);
@@ -3610,7 +3610,7 @@ namespace pyopencl
             "may be a crash." << std:: endl;
         }
 
-        cl_sampler_properties props[py::len(py_props) + 1];
+        std::vector<cl_sampler_properties> props(py::len(py_props) + 1);
         {
           size_t i = 0;
           for (auto prop: py_props)
@@ -3623,7 +3623,7 @@ namespace pyopencl
 
         m_sampler = clCreateSamplerWithProperties(
             ctx.data(),
-            props,
+            props.data(),
             &status_code);
 
         if (status_code != CL_SUCCESS)
@@ -4005,7 +4005,7 @@ namespace pyopencl
       sizes.push_back(len);
     }
 
-    cl_int binary_statuses[num_devices];
+    std::vector<cl_int> binary_statuses(num_devices);
 
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBinary");
@@ -4014,7 +4014,7 @@ namespace pyopencl
         devices.empty( ) ? nullptr : &devices.front(),
         sizes.empty( ) ? nullptr : &sizes.front(),
         binaries.empty( ) ? nullptr : &binaries.front(),
-        binary_statuses,
+        binary_statuses.data(),
         &status_code);
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("clCreateProgramWithBinary", status_code);
