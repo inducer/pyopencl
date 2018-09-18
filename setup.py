@@ -177,7 +177,29 @@ def get_config_schema():
         ])
 
 
+SEPARATOR = "-"*75
+
+
 def main():
+    try:
+        import pybind11  # noqa
+    except ImportError:
+        print(SEPARATOR)
+        print("Pybind11 is not installed.")
+        print(SEPARATOR)
+        print("Very likely, the build process after this message will fail.")
+        print("")
+        print("Simply press Ctrl+C and type")
+        print("python -m pip install pybind11")
+        print("to fix this. If you don't, the build will continue ")
+        print("in a few seconds.")
+        print("")
+        print("[1] https://pybind11.readthedocs.io/en/stable/")
+        print(SEPARATOR)
+
+        from aksetup_helper import count_down_delay
+        count_down_delay(delay=10)
+
     from setuptools import find_packages
     from aksetup_helper import (hack_distutils, get_config, setup,
             check_git_submodules, NumpyExtension)
@@ -224,14 +246,12 @@ def main():
 
     exec(compile(version_file_contents, "pyopencl/version.py", 'exec'), ver_dic)
 
-    separator = "-"*75
-
     try:
         import mako  # noqa
     except ImportError:
-        print(separator)
+        print(SEPARATOR)
         print("Mako is not installed.")
-        print(separator)
+        print(SEPARATOR)
         print("That is not a problem, as most of PyOpenCL will be just fine ")
         print("without it. Some higher-level parts of pyopencl (such as ")
         print("pyopencl.reduction) will not function without the templating engine ")
@@ -244,9 +264,9 @@ def main():
         print("either now or after the installation completes to fix this.")
         print("")
         print("[1] http://www.makotemplates.org/")
-        print(separator)
+        print(SEPARATOR)
         print("Hit Ctrl-C now if you'd like to think about the situation.")
-        print(separator)
+        print(SEPARATOR)
 
         from aksetup_helper import count_down_delay
         count_down_delay(delay=5)
