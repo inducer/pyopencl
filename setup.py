@@ -59,12 +59,13 @@ def has_flag(compiler, flagname):
     the specified compiler.
     """
     import tempfile
-    with tempfile.NamedTemporaryFile('w', suffix='.cpp') as f:
+    with tempfile.NamedTemporaryFile('w', suffix='.cpp', delete=False) as f:
         f.write('int main (int argc, char **argv) { return 0; }')
-        try:
-            compiler.compile([f.name], extra_postargs=[flagname])
-        except setuptools.distutils.errors.CompileError:
-            return False
+        fname = f.name
+    try:
+        compiler.compile([fname], extra_postargs=[flagname])
+    except setuptools.distutils.errors.CompileError:
+        return False
     return True
 
 
