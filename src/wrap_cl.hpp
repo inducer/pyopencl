@@ -93,7 +93,7 @@
 #if defined(_WIN32)
 // MSVC does not understand variable-length arrays
 #define PYOPENCL_STACK_CONTAINER(TYPE, NAME, COUNT) std::vector<TYPE> NAME(COUNT)
-#define PYOPENCL_STACK_CONTAINER_GET_PTR(NAME) (name.size() ? name.data() : nullptr)
+#define PYOPENCL_STACK_CONTAINER_GET_PTR(NAME) (NAME.size() ? NAME.data() : nullptr)
 #else
 // gcc et al complain about stripping attributes in template arguments
 #define PYOPENCL_STACK_CONTAINER(TYPE, NAME, COUNT) TYPE NAME[COUNT]
