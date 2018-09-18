@@ -345,14 +345,13 @@ void pyopencl_expose_part_2(py::module &m)
           py::arg("context"),
           py::arg("devices"),
           py::arg("binaries"))
-#if (PYOPENCL_CL_VERSION >= 0x1020) && \
+#if (PYOPENCL_CL_VERSION >= 0x1020) || \
       ((PYOPENCL_CL_VERSION >= 0x1030) && defined(__APPLE__))
       .def_static("create_with_built_in_kernels",
           create_program_with_built_in_kernels,
           py::arg("context"),
           py::arg("devices"),
-          py::arg("kernel_names"),
-          py::return_value_policy<py::manage_new_object>())
+          py::arg("kernel_names"))
 #endif
       .DEF_SIMPLE_METHOD(kind)
       .DEF_SIMPLE_METHOD(get_info)
