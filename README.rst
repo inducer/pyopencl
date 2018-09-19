@@ -36,11 +36,15 @@ spirit of its sister project `PyCUDA <http://mathema.tician.de/software/pycuda>`
 * Broad support. PyOpenCL was tested and works with Apple's, AMD's, and Nvidia's 
   CL implementations.
 
-What you'll need:
+Simple 4-step `install instructions <https://documen.tician.de/pyopencl/misc.html#installation>`_
+using Conda on Linux and macOS (that also install a working OpenCL implementation!)
+can be found in the `documentation <https://documen.tician.de/pyopencl/>`_.
 
-*   gcc/g++ at or newer than version 4.8.2 and binutils at or newer than 2.23.52.0.1-10
-    (CentOS version number).
-    On Windows, use the `mingwpy <https://anaconda.org/carlkl/mingwpy>`_ compilers.
+What you'll need if you do *not* want to use the convenient instructions above and
+instead build from source:
+
+*   gcc/g++ new enough to be compatible with pybind11
+    (see their `FAQ <https://pybind11.readthedocs.io/en/stable/faq.html>`_)
 *   `numpy <http://numpy.org>`_, and
 *   an OpenCL implementation. (See this `howto <http://wiki.tiker.net/OpenCLHowTo>`_ for how to get one.)
 
@@ -48,7 +52,8 @@ Places on the web related to PyOpenCL:
 
 * `Python package index <http://pypi.python.org/pypi/pyopencl>`_ (download releases)
 
+* `Documentation <http://documen.tician.de/pyopencl>`_ (read how things work)
+* `Conda Forge <https://anaconda.org/conda-forge/pyopencl>`_ (download binary packages for Linux, macOS, Windows)
 * `C. Gohlke's Windows binaries <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`_ (download Windows binaries)
 * `Github <http://github.com/inducer/pyopencl>`_ (get latest source code, file bugs)
-* `Documentation <http://documen.tician.de/pyopencl>`_ (read how things work)
 * `Wiki <http://wiki.tiker.net/PyOpenCL>`_ (read installation tips, get examples, read FAQ)
