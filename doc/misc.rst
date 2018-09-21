@@ -93,12 +93,16 @@ the built-in drivers can be temperamental, and they have not advanced as quickly
 as one might like. To make PyOpenCL use a more up-to-date (and open-source)
 CPU-based OpenCL driver, type the following:
 
-``conda install osx-pocl-opencl pocl`` (OS X)
+``conda install osx-pocl-opencl pocl pyopencl`` (OS X)
 
 Note that, by installing ``osx-pocl-opencl``, you will no longer be able to
 use PyOpenCL to talk to the system-wide Apple OpenCL drivers. To regain access
 to those drivers, simply uninstall ``osx-pocl-opencl`` and reinstall ``pyopencl``
 afterwards.
+
+In addition, you will also be unaffected by Apple's pending deprecation of
+OpenCL functionality--you'll be able to keep using OpenCL irrespective of what
+Apple does.
 
 Installing from source
 ----------------------
