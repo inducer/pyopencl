@@ -349,7 +349,10 @@ class Program(object):
         return self._get_prg().get_build_info(*args, **kwargs)
 
     def all_kernels(self):
-        return self._get_prg().all_kernels()
+        result = self._get_prg().all_kernels()
+        for knl in result:
+            knl._setup(self)
+        return result
 
     def int_ptr(self):
         return self._get_prg().int_ptr
