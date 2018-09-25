@@ -48,7 +48,6 @@ else:
 def _skip_if_pocl(plat, up_to_version, msg='unsupported by pocl'):
     if plat.vendor == "The pocl project":
         if up_to_version is None or get_pocl_version(plat) <= up_to_version:
-            import pytest
             pytest.skip(msg)
 
 
@@ -122,7 +121,7 @@ def test_get_info(ctx_factory):
     def do_test(cl_obj, info_cls, func=None, try_attr_form=True):
         if func is None:
             def func(info):
-                cl_obj.get_info(info)
+                    cl_obj.get_info(info)
 
         for info_name in dir(info_cls):
             if not info_name.startswith("_") and info_name != "to_string":
@@ -182,8 +181,19 @@ def test_get_info(ctx_factory):
 
     do_test(a_buf, cl.mem_info)
 
-    kernel = prg.sum
+    kernel = prg.all_kernels()[0]
     do_test(kernel, cl.kernel_info)
+
+    for i in range(2):  # exercise cache
+        for info_name in dir(cl.kernel_work_group_info):
+            if not info_name.startswith("_") and info_name != "to_string":
+                try:
+                    print("kernel_wg_info: %s" % info_name)
+                    kernel.get_work_group_info(
+                            getattr(cl.kernel_work_group_info, info_name),
+                            device)
+                except cl.LogicError as err:
+                    print("<error: %s>" % err)
 
     evt = kernel(queue, (n,), None, a_buf)
     do_test(evt, cl.event_info)
