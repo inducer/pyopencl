@@ -835,6 +835,8 @@ _IGNORED_WORDS = set("""
 
         a b prev_item i last_item prev_value
         N NO_SEG_BOUNDARY across_seg_boundary
+
+        arg_offset_adjustment
         """.split())
 
 
