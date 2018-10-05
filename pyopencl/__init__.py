@@ -2041,6 +2041,7 @@ def fsvm_empty_like(ctx, ary, alignment=None):
 _KERNEL_ARG_CLASSES = (
         MemoryObjectHolder,
         Sampler,
+        CommandQueue,
         LocalMemory,
         )
 if get_cl_header_version() >= (2, 0):
