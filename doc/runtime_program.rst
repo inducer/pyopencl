@@ -171,6 +171,7 @@ Kernel
           :class:`Image`, etc.)
         * An instance of :class:`LocalMemory`.
         * An instance of :class:`Sampler`.
+        * An instance of :class:`CommandQueue`. (CL 2.0 and higher only)
 
     .. method:: set_args(self, *args)
 
