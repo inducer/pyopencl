@@ -4215,6 +4215,13 @@ namespace pyopencl
             (m_kernel, arg_index, sizeof(cl_sampler), &s));
       }
 
+      void set_arg_command_queue(cl_uint arg_index, command_queue const &queue)
+      {
+        cl_command_queue q = queue.data();
+        PYOPENCL_CALL_GUARDED(clSetKernelArg,
+            (m_kernel, arg_index, sizeof(cl_command_queue), &q));
+      }
+
       void set_arg_buf(cl_uint arg_index, py::object py_buffer)
       {
         const void *buf;
@@ -4291,6 +4298,13 @@ namespace pyopencl
         try
         {
           set_arg_sampler(arg_index, arg.cast<const sampler &>());
+          return;
+        }
+        catch (py::cast_error &) { }
+
+        try
+        {
+          set_arg_command_queue(arg_index, arg.cast<const command_queue &>());
           return;
         }
         catch (py::cast_error &) { }
