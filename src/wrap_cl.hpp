@@ -2066,11 +2066,13 @@ namespace pyopencl
 
 #if PY_VERSION_HEX >= 0x03020000
         if (PySlice_GetIndicesEx(slc.ptr(),
-#else
-        if (PySlice_GetIndicesEx(reinterpret_cast<PySliceObject *>(slc.ptr()),
-#endif
               my_length, &start, &end, &stride, &length) != 0)
           throw py::error_already_set();
+#else
+        if (PySlice_GetIndicesEx(reinterpret_cast<PySliceObject *>(slc.ptr()),
+              my_length, &start, &end, &stride, &length) != 0)
+          throw py::error_already_set();
+#endif
 
         if (stride != 1)
           throw pyopencl::error("Buffer.__getitem__", CL_INVALID_VALUE,
