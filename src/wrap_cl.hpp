@@ -1355,12 +1355,12 @@ namespace pyopencl
         }
         else
         {
-#if PYOPENCL_CL_VERSION >= 0x2000
+#if PYOPENCL_CL_VERSION < 0x2000
             throw error("CommandQueue", CL_INVALID_VALUE,
                 "queue properties given as an iterable, "
                 "which is only allowed when PyOpenCL was built "
                 "against an OpenCL 2+ header");
-
+#else
           if (hex_plat_version  < 0x2000)
           {
             std::cerr <<
