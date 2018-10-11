@@ -104,16 +104,6 @@ Buffer
 
     .. versionadded:: 2011.2
 
-.. function:: enqueue_copy_buffer(queue, src, dst, byte_count=-1, src_offset=0, dst_offset=0, wait_for=None)
-
-    :arg src: the source :class:`Buffer`
-    :arg dst: the destination device :class:`Buffer`
-    :arg byte_count: the number of bytes to copy
-
-    Performs a device to device copy from `src` to `dst`.
-
-    |std-enqueue-blurb|
-
 .. _svm:
 
 Shared Virtual Memory (SVM)
