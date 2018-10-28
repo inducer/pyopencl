@@ -52,7 +52,7 @@ Python 3.6 AMD CPU:
 
 Python 3.6 Titan X:
   script:
-  - export PY_EXE=python3.5
+  - export PY_EXE=python3.6
   - export PYOPENCL_TEST=nvi:titan
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
@@ -60,6 +60,22 @@ Python 3.6 Titan X:
   tags:
   - python3.6
   - nvidia-titan-x
+  except:
+  - tags
+  artifacts:
+    reports:
+      junit: test/pytest.xml
+
+Python 3.6 Titan V:
+  script:
+  - export PY_EXE=python3.6
+  - export PYOPENCL_TEST=nvi:titan
+  - export EXTRA_INSTALL="pybind11 numpy mako"
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - ". ./build-and-test-py-project.sh"
+  tags:
+  - python3.6
+  - nvidia-titan-v
   except:
   - tags
   artifacts:

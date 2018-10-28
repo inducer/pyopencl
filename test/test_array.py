@@ -1170,28 +1170,25 @@ def test_fancy_indexing(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    numpy_dest = np.zeros((4,), np.int32)
-    numpy_idx = np.arange(3, 0, -1, dtype=np.int32)
-    numpy_src = np.arange(8, 11, dtype=np.int32)
-    numpy_dest[numpy_idx] = numpy_src
+    n = 2 ** 20 + 2**18 + 22
+    numpy_dest = np.zeros(n, dtype=np.int32)
+    numpy_idx = np.arange(n, dtype=np.int32)
+    np.random.shuffle(numpy_idx)
+    numpy_src = 20000+np.arange(n, dtype=np.int32)
 
-    cl_dest = cl_array.zeros(queue, (4,), np.int32)
-    cl_idx = cl_array.arange(queue, 3, 0, -1, dtype=np.int32)
-    cl_src = cl_array.arange(queue, 8, 11, dtype=np.int32)
-    cl_dest[cl_idx] = cl_src
-
-    assert np.all(numpy_dest == cl_dest.get())
-
-    cl_idx[1] = 3
-    cl_idx[2] = 2
-
-    numpy_idx[1] = 3
-    numpy_idx[2] = 2
+    cl_dest = cl_array.to_device(queue, numpy_dest)
+    cl_idx = cl_array.to_device(queue, numpy_idx)
+    cl_src = cl_array.to_device(queue, numpy_src)
 
     numpy_dest[numpy_idx] = numpy_src
     cl_dest[cl_idx] = cl_src
 
-    assert np.all(numpy_dest == cl_dest.get())
+    assert np.array_equal(numpy_dest, cl_dest.get())
+
+    numpy_dest = numpy_src[numpy_idx]
+    cl_dest = cl_src[cl_idx]
+
+    assert np.array_equal(numpy_dest, cl_dest.get())
 
 
 def test_multi_put(ctx_factory):
