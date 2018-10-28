@@ -1,6 +1,4 @@
-from __future__ import division, print_function
-from __future__ import absolute_import
-from six.moves import range
+from __future__ import division, print_function, absolute_import
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -23,6 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
+
+from six.moves import range
 
 import math
 import numpy as np
@@ -298,8 +298,7 @@ def test_bessel(ctx_factory):
 
             if use_pyfmmlib and (
                     which_func == "j"
-                    or
-                    (which_func == "y" and n in [0, 1])):
+                    or (which_func == "y" and n in [0, 1])):
                 pyfmm_bessel = pfymm_result[:, n]
                 error_pyfmm = get_err(cl_bessel, pyfmm_bessel)
                 assert error_pyfmm < 1e-10, error_pyfmm
