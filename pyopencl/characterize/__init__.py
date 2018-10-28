@@ -390,8 +390,8 @@ def has_struct_arg_count_bug(dev, ctx=None):
 
 
 def _may_have_svm(dev):
-    has_svm = (dev.platform._get_cl_version() >= (2, 0) and
-                cl.get_cl_header_version() >= (2, 0))
+    has_svm = (dev.platform._get_cl_version() >= (2, 0)
+            and cl.get_cl_header_version() >= (2, 0))
 
     if dev.platform.name == "Portable Computing Language":
         has_svm = (
@@ -402,18 +402,18 @@ def _may_have_svm(dev):
 
 
 def has_coarse_grain_buffer_svm(dev):
-    return (_may_have_svm(dev) and
-            bool(dev.svm_capabilities
+    return (_may_have_svm(dev)
+            and bool(dev.svm_capabilities
                 & cl.device_svm_capabilities.COARSE_GRAIN_BUFFER))
 
 
 def has_fine_grain_buffer_svm(dev):
-    return (_may_have_svm(dev) and
-            bool(dev.svm_capabilities
+    return (_may_have_svm(dev)
+            and bool(dev.svm_capabilities
                 & cl.device_svm_capabilities.FINE_GRAIN_BUFFER))
 
 
 def has_fine_grain_system_svm(dev):
-    return (_may_have_svm(dev) and
-            bool(dev.svm_capabilities
+    return (_may_have_svm(dev)
+            and bool(dev.svm_capabilities
                 & cl.device_svm_capabilities.FINE_GRAIN_SYSTEM))

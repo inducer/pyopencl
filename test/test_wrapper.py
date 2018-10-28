@@ -667,8 +667,8 @@ def test_wait_for_events(ctx_factory):
 
 
 def test_unload_compiler(platform):
-    if (platform._get_cl_version() < (1, 2) or
-            cl.get_cl_header_version() < (1, 2)):
+    if (platform._get_cl_version() < (1, 2)
+            or cl.get_cl_header_version() < (1, 2)):
         from pytest import skip
         skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
     _skip_if_pocl(platform, (0, 13), 'pocl does not support unloading compiler')
@@ -688,8 +688,8 @@ def test_platform_get_devices(ctx_factory):
 
     dev_types = [cl.device_type.ACCELERATOR, cl.device_type.ALL,
                  cl.device_type.CPU, cl.device_type.DEFAULT, cl.device_type.GPU]
-    if (platform._get_cl_version() >= (1, 2) and
-            cl.get_cl_header_version() >= (1, 2)
+    if (platform._get_cl_version() >= (1, 2)
+            and cl.get_cl_header_version() >= (1, 2)
             and not platform.name.lower().startswith("nvidia")):
         dev_types.append(cl.device_type.CUSTOM)
 
@@ -706,8 +706,8 @@ def test_platform_get_devices(ctx_factory):
 
 def test_user_event(ctx_factory):
     ctx = ctx_factory()
-    if (ctx._get_cl_version() < (1, 1) and
-            cl.get_cl_header_version() < (1, 1)):
+    if (ctx._get_cl_version() < (1, 1)
+            and cl.get_cl_header_version() < (1, 1)):
         from pytest import skip
         skip("UserEvent is only available in OpenCL 1.1")
 
@@ -762,8 +762,8 @@ def test_buffer_get_host_array(ctx_factory):
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.USE_HOST_PTR, hostbuf=host_buf)
     host_buf2 = buf.get_host_array(25, np.float32)
     assert (host_buf == host_buf2).all()
-    assert (host_buf.__array_interface__['data'][0] ==
-            host_buf.__array_interface__['data'][0])
+    assert (host_buf.__array_interface__['data'][0]
+            == host_buf.__array_interface__['data'][0])
     assert host_buf2.base is buf
 
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.ALLOC_HOST_PTR, size=100)
@@ -887,8 +887,8 @@ def test_global_offset(ctx_factory):
 
 def test_sub_buffers(ctx_factory):
     ctx = ctx_factory()
-    if (ctx._get_cl_version() < (1, 1) or
-            cl.get_cl_header_version() < (1, 1)):
+    if (ctx._get_cl_version() < (1, 1)
+            or cl.get_cl_header_version() < (1, 1)):
         from pytest import skip
         skip("sub-buffers are only available in OpenCL 1.1")
 
@@ -917,8 +917,8 @@ def test_spirv(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
-    if (ctx._get_cl_version() < (2, 1) or
-            cl.get_cl_header_version() < (2, 1)):
+    if (ctx._get_cl_version() < (2, 1)
+            or cl.get_cl_header_version() < (2, 1)):
         from pytest import skip
         skip("SPIR-V program creation only available in OpenCL 2.1 and higher")
 
