@@ -298,8 +298,7 @@ def test_bessel(ctx_factory):
 
             if use_pyfmmlib and (
                     which_func == "j"
-                    or
-                    (which_func == "y" and n in [0, 1])):
+                    or (which_func == "y" and n in [0, 1])):
                 pyfmm_bessel = pfymm_result[:, n]
                 error_pyfmm = get_err(cl_bessel, pyfmm_bessel)
                 assert error_pyfmm < 1e-10, error_pyfmm
