@@ -161,9 +161,9 @@ def get_config_schema():
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
         Switch(
             "CL_USE_SHIPPED_EXT", False,
-            "Use the pyopencl version of CL/cl_ext.h which includes" +
-            " a broader range of vendor-specific OpenCL extension attributes" +
-            " than the standard Khronos (or vendor specific) CL/cl_ext.h."),
+            "Use the pyopencl version of CL/cl_ext.h which includes"
+            + " a broader range of vendor-specific OpenCL extension attributes"
+            + " than the standard Khronos (or vendor specific) CL/cl_ext.h."),
         Option("CL_PRETEND_VERSION", None,
             "Dotted CL version (e.g. 1.2) which you'd like to use."),
 
@@ -182,28 +182,10 @@ SEPARATOR = "-"*75
 
 
 def main():
-    try:
-        import pybind11  # noqa
-    except ImportError:
-        print(SEPARATOR)
-        print("Pybind11 is not installed.")
-        print(SEPARATOR)
-        print("Very likely, the build process after this message will fail.")
-        print("")
-        print("Simply press Ctrl+C and type")
-        print("python -m pip install pybind11")
-        print("to fix this. If you don't, the build will continue ")
-        print("in a few seconds.")
-        print("")
-        print("[1] https://pybind11.readthedocs.io/en/stable/")
-        print(SEPARATOR)
-
-        from aksetup_helper import count_down_delay
-        count_down_delay(delay=10)
-
     from setuptools import find_packages
     from aksetup_helper import (hack_distutils, get_config, setup,
-            check_git_submodules, NumpyExtension)
+            check_pybind11, check_git_submodules, NumpyExtension)
+    check_pybind11()
     check_git_submodules()
 
     hack_distutils()
