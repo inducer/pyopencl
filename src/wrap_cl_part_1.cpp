@@ -309,8 +309,8 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("buffer_origin"),
       py::arg("host_origin"),
       py::arg("region"),
-      py::arg("buffer_pitches")=py::tuple(),
-      py::arg("host_pitches")=py::tuple(),
+      py::arg("buffer_pitches")=py::none(),
+      py::arg("host_pitches")=py::none(),
       py::arg("wait_for")=py::none(),
       py::arg("is_blocking")=true
       );
@@ -321,8 +321,8 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("buffer_origin"),
       py::arg("host_origin"),
       py::arg("region"),
-      py::arg("buffer_pitches")=py::tuple(),
-      py::arg("host_pitches")=py::tuple(),
+      py::arg("buffer_pitches")=py::none(),
+      py::arg("host_pitches")=py::none(),
       py::arg("wait_for")=py::none(),
       py::arg("is_blocking")=true
       );
@@ -333,8 +333,8 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("src_origin"),
       py::arg("dst_origin"),
       py::arg("region"),
-      py::arg("src_pitches")=py::tuple(),
-      py::arg("dst_pitches")=py::tuple(),
+      py::arg("src_pitches")=py::none(),
+      py::arg("dst_pitches")=py::none(),
       py::arg("wait_for")=py::none()
       );
 #endif
