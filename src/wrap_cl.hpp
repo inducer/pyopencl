@@ -2348,8 +2348,8 @@ namespace pyopencl
       py::object py_buffer_origin,
       py::object py_host_origin,
       py::object py_region,
-      py::sequence py_buffer_pitches,
-      py::sequence py_host_pitches,
+      py::object py_buffer_pitches,
+      py::object py_host_pitches,
       py::object py_wait_for,
       bool is_blocking
       )

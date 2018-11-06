@@ -86,7 +86,7 @@ namespace py = pybind11;
   size_t NAME[2] = {0, 0}; \
   if (py_##NAME.ptr() != Py_None) \
   { \
-    py::tuple py_tup_##NAME = py_##NAME; \
+    py::tuple py_tup_##NAME = py::cast<py::sequence>(py_##NAME);	\
     size_t my_len = len(py_tup_##NAME); \
     if (my_len > 2) \
       throw error("transfer", CL_INVALID_VALUE, #NAME "has too many components"); \
