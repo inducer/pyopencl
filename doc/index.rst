@@ -59,7 +59,7 @@ Tutorials
   `Lecture 2 <http://tiker.net/pub/simula-pyopencl-lec2.pdf>`_
   `Problem set 1 <http://tiker.net/pub/simula-pyopencl-probset1.pdf>`_
   `Problem set 2 <http://tiker.net/pub/simula-pyopencl-probset2.pdf>`_
-* Ian Johnson's `PyOpenCL tutorial <http://enja.org/2011/02/22/adventures-in-pyopencl-part-1-getting-started-with-python/>`_.
+* Ian Johnson's `PyOpenCL tutorial <https://web.archive.org/web/20170907175053/http://enja.org:80/2011/02/22/adventures-in-pyopencl-part-1-getting-started-with-python>`_.
 
 Software that works with or enhances PyOpenCL
 =============================================
