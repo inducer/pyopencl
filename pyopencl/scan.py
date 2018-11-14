@@ -1480,6 +1480,9 @@ class GenericScanKernel(_GenericScanKernelBase):
             # We're done here. (But pretend to return an event.)
             return cl.enqueue_marker(queue, wait_for=wait_for)
 
+        from pyopencl.tools import expand_runtime_arg_list
+        data_args = list(expand_runtime_arg_list(self.parsed_args, args))
+
         # }}}
 
         l1_info = self.first_level_scan_info
@@ -1509,9 +1512,6 @@ class GenericScanKernel(_GenericScanKernelBase):
                     allocator=allocator)
 
         # }}}
-
-        from pyopencl.tools import expand_runtime_arg_list
-        data_args = list(expand_runtime_arg_list(self.parsed_args, args))
 
         # {{{ first level scan of interval (one interval per block)
 
