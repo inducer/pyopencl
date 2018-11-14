@@ -880,6 +880,33 @@ def test_list_builder(ctx_factory):
     assert (inf.lists.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
 
 
+def test_list_builder_with_offset(ctx_factory):
+    from pytest import importorskip
+    importorskip("mako")
+
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    from pyopencl.algorithm import ListOfListsBuilder
+    from pyopencl.tools import VectorArg
+    builder = ListOfListsBuilder(context, [("mylist", np.int32)], """//CL//
+            void generate(LIST_ARG_DECL USER_ARG_DECL index_type i)
+            {
+                APPEND_mylist(input_list[i]);
+            }
+            """, arg_decls=[
+                VectorArg(float, "input_list", with_offset=True)])
+
+    input_list = cl.array.zeros(queue, (20,), float)
+    input_list[10:] = 1
+
+    result, evt = builder(queue, 10, input_list[10:])
+
+    inf = result["mylist"]
+    assert inf.count == 10
+    assert (inf.lists.get() == 1).all()
+
+
 def test_list_builder_with_empty_elim(ctx_factory):
     from pytest import importorskip
     importorskip("mako")

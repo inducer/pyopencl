@@ -401,6 +401,17 @@ def get_arg_offset_adjuster_code(arg_types):
     return "\n".join(result)
 
 
+def expand_runtime_arg_list(args, user_args):
+    data_args = []
+    for arg_descr, arg_val in zip(args, user_args):
+        if isinstance(arg_descr, VectorArg):
+            data_args.append(arg_val.base_data)
+            if arg_descr.with_offset:
+                data_args.append(arg_val.offset)
+        else:
+            data_args.append(arg_val)
+    return tuple(data_args)
+
 # }}}
 
 
