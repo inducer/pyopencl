@@ -1120,12 +1120,12 @@ class ListOfListsBuilder:
                     data_args.append(arg_val)
                     if arg_descr.with_offset:
                         raise ValueError(
-                                "with_offset=True specified for argument '%d' "
-                                "but the argument is not an array." % i)
+                                "with_offset=True specified for argument %d "
+                                "but the argument is not an array" % i)
                     continue
 
                 if arg_val.ndim != 1:
-                    raise ValueError("Only 1D arrays supported")
+                    raise ValueError("argument %d is a multidimensional array" % i)
 
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
