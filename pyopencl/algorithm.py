@@ -1042,8 +1042,11 @@ class ListOfListsBuilder:
     def __call__(self, queue, n_objects, *args, **kwargs):
         """
         :arg args: arguments corresponding to arg_decls in the constructor.
-            Arguments must be either 1D :class:`pyopencl.array.Array` objects
-            or :class:`pyopencl.MemoryObject` objects.
+            Array-like arguments must be either
+            1D :class:`pyopencl.array.Array` objects or
+            :class:`pyopencl.MemoryObject` objects, the latter of which
+            can be obtained from a :class:`pyopencl.array.Array` using the
+            :attr:`pyopencl.array.Array.data` attribute.
         :arg allocator: optionally, the allocator to use to allocate new
             arrays.
         :arg omit_lists: An iterable of list names that should *not* be built
