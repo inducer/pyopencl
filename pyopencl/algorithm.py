@@ -1042,8 +1042,8 @@ class ListOfListsBuilder:
     def __call__(self, queue, n_objects, *args, **kwargs):
         """
         :arg args: arguments corresponding to arg_decls in the constructor.
-            :class:`pyopencl.array.Array` are not allowed directly and should
-            be passed as their :attr:`pyopencl.array.Array.data` attribute instead.
+            Arguments must be either 1D :class:`pyopencl.array.Array' objects
+            or :class:`pyopencl.MemoryObject' objects.
         :arg allocator: optionally, the allocator to use to allocate new
             arrays.
         :arg omit_lists: An iterable of list names that should *not* be built
@@ -1123,6 +1123,9 @@ class ListOfListsBuilder:
                                 "with_offset=True specified for argument '%d' "
                                 "but the argument is not an array." % i)
                     continue
+
+                if arg_val.ndim != 1:
+                    raise ValueError("Only 1D arrays supported")
 
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
