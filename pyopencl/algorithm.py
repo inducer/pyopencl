@@ -35,7 +35,7 @@ import numpy as np
 import pyopencl as cl
 import pyopencl.array  # noqa
 from pyopencl.scan import ScanTemplate
-from pyopencl.tools import dtype_to_ctype
+from pyopencl.tools import dtype_to_ctype, get_arg_offset_adjuster_code
 from pytools import memoize, memoize_method, Record
 from mako.template import Template
 
@@ -609,8 +609,8 @@ typedef ${index_type} index_type;
 
 #define LIST_ARG_DECL ${user_list_arg_decl}
 #define LIST_ARGS ${user_list_args}
-#define USER_ARG_DECL ${user_arg_decl}
-#define USER_ARGS ${user_args}
+#define USER_ARG_DECL ${user_arg_decl_no_offset}
+#define USER_ARGS ${user_args_no_offset}
 
 // }}}
 
@@ -622,7 +622,8 @@ __kernel
 %if do_not_vectorize:
 __attribute__((reqd_work_group_size(1, 1, 1)))
 %endif
-void ${kernel_name}(${kernel_list_arg_decl} USER_ARG_DECL index_type n)
+void ${kernel_name}(
+    ${kernel_list_arg_decl} ${user_arg_decl_with_offset} index_type n)
 
 {
     %if not do_not_vectorize:
@@ -663,6 +664,7 @@ void ${kernel_name}(${kernel_list_arg_decl} USER_ARG_DECL index_type n)
             %endfor
         %endif
 
+        ${arg_offset_adjustment}
         generate(${kernel_list_arg_values} USER_ARGS i);
 
         %if is_count_stage:
@@ -817,6 +819,16 @@ class ListOfListsBuilder:
         from pyopencl.tools import parse_arg_list
         self.arg_decls = parse_arg_list(arg_decls)
 
+        # To match with the signature of the user-supplied generate(), arguments
+        # can't appear to have offsets.
+        arg_decls_no_offset = []
+        from pyopencl.tools import VectorArg
+        for arg in self.arg_decls:
+            if isinstance(arg, VectorArg) and arg.with_offset:
+                arg = VectorArg(arg.dtype, arg.name)
+            arg_decls_no_offset.append(arg)
+        self.arg_decls_no_offset = arg_decls_no_offset
+
         self.count_sharing = count_sharing
 
         self.name_prefix = name_prefix
@@ -925,8 +937,10 @@ class ListOfListsBuilder:
                 kernel_list_arg_values=_get_arg_list(user_list_args, prefix="&"),
                 user_list_arg_decl=_get_arg_decl(user_list_args),
                 user_list_args=_get_arg_list(user_list_args),
-                user_arg_decl=_get_arg_decl(self.arg_decls),
-                user_args=_get_arg_list(self.arg_decls),
+                user_arg_decl_with_offset=_get_arg_decl(self.arg_decls),
+                user_arg_decl_no_offset=_get_arg_decl(self.arg_decls_no_offset),
+                user_args_no_offset=_get_arg_list(self.arg_decls_no_offset),
+                arg_offset_adjustment=get_arg_offset_adjuster_code(self.arg_decls),
 
                 list_names_and_dtypes=self.list_names_and_dtypes,
                 count_sharing=self.count_sharing,
@@ -996,8 +1010,10 @@ class ListOfListsBuilder:
                 kernel_list_arg_values=kernel_list_arg_values,
                 user_list_arg_decl=_get_arg_decl(user_list_args),
                 user_list_args=_get_arg_list(user_list_args),
-                user_arg_decl=_get_arg_decl(self.arg_decls),
-                user_args=_get_arg_list(self.arg_decls),
+                user_arg_decl_with_offset=_get_arg_decl(self.arg_decls),
+                user_arg_decl_no_offset=_get_arg_decl(self.arg_decls_no_offset),
+                user_args_no_offset=_get_arg_list(self.arg_decls_no_offset),
+                arg_offset_adjustment=get_arg_offset_adjuster_code(self.arg_decls),
 
                 list_names_and_dtypes=self.list_names_and_dtypes,
                 count_sharing=self.count_sharing,
@@ -1094,6 +1110,9 @@ class ListOfListsBuilder:
         scan_kernel = self.get_scan_kernel(index_dtype)
         if self.eliminate_empty_output_lists:
             compress_kernel = self.get_compress_kernel(index_dtype)
+
+        from pyopencl.tools import expand_runtime_arg_list
+        args = expand_runtime_arg_list(self.arg_decls, args)
 
         # {{{ allocate memory for counts
 
