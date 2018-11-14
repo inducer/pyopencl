@@ -897,13 +897,14 @@ def test_list_builder_with_offset(ctx_factory):
             """, arg_decls=[
                 VectorArg(float, "input_list", with_offset=True)])
 
-    input_list = cl.array.zeros(queue, (20,), float)
+    n = 10000
+    input_list = cl.array.zeros(queue, (n + 10,), float)
     input_list[10:] = 1
 
-    result, evt = builder(queue, 10, input_list[10:])
+    result, evt = builder(queue, n, input_list[10:])
 
     inf = result["mylist"]
-    assert inf.count == 10
+    assert inf.count == n
     assert (inf.lists.get() == 1).all()
 
 
