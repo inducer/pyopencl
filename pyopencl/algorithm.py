@@ -1122,6 +1122,7 @@ class ListOfListsBuilder:
                         raise ValueError(
                                 "with_offset=True specified for argument '%d' "
                                 "but the argument is not an array." % i)
+                    continue
 
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
