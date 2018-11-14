@@ -1480,8 +1480,15 @@ class GenericScanKernel(_GenericScanKernelBase):
             # We're done here. (But pretend to return an event.)
             return cl.enqueue_marker(queue, wait_for=wait_for)
 
-        from pyopencl.tools import expand_runtime_arg_list
-        data_args = list(expand_runtime_arg_list(self.parsed_args, args))
+        data_args = []
+        for arg_descr, arg_val in zip(self.parsed_args, args):
+            from pyopencl.tools import VectorArg
+            if isinstance(arg_descr, VectorArg):
+                data_args.append(arg_val.base_data)
+                if arg_descr.with_offset:
+                    data_args.append(arg_val.offset)
+            else:
+                data_args.append(arg_val)
 
         # }}}
 

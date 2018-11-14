@@ -1111,8 +1111,26 @@ class ListOfListsBuilder:
         if self.eliminate_empty_output_lists:
             compress_kernel = self.get_compress_kernel(index_dtype)
 
-        from pyopencl.tools import expand_runtime_arg_list
-        args = expand_runtime_arg_list(self.arg_decls, args)
+        data_args = []
+        for i, (arg_descr, arg_val) in enumerate(zip(self.arg_decls, args)):
+            from pyopencl.tools import VectorArg
+            if isinstance(arg_descr, VectorArg):
+                from pyopencl import MemoryObject
+                if isinstance(arg_val, MemoryObject):
+                    data_args.append(arg_val)
+                    if arg_descr.with_offset:
+                        raise ValueError(
+                                "with_offset=True specified for argument '%d' "
+                                "but the argument is not an array." % i)
+
+                data_args.append(arg_val.base_data)
+                if arg_descr.with_offset:
+                    data_args.append(arg_val.offset)
+            else:
+                data_args.append(arg_val)
+
+        del args
+        data_args = tuple(data_args)
 
         # {{{ allocate memory for counts
 
@@ -1151,7 +1169,7 @@ class ListOfListsBuilder:
             gsize, lsize = splay(queue, n_objects)
 
         count_event = count_kernel(queue, gsize, lsize,
-                *(tuple(count_list_args) + args + (n_objects,)),
+                *(tuple(count_list_args) + data_args + (n_objects,)),
                 **dict(wait_for=wait_for))
 
         compress_events = {}
@@ -1257,7 +1275,7 @@ class ListOfListsBuilder:
         # }}}
 
         evt = write_kernel(queue, gsize, lsize,
-                *(tuple(write_list_args) + args + (n_objects,)),
+                *(tuple(write_list_args) + data_args + (n_objects,)),
                 **dict(wait_for=scan_events))
 
         return result, evt
