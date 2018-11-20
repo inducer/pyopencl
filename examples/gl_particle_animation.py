@@ -143,8 +143,8 @@ cl_velocity = cl.Buffer(context, mf.COPY_HOST_PTR, hostbuf=np_velocity)
 cl_start_position = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np_position)
 cl_start_velocity = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np_velocity)
 
-cl_gl_position = cl.GLBuffer(context, mf.READ_WRITE, int(gl_position.buffer))
-cl_gl_color = cl.GLBuffer(context, mf.READ_WRITE, int(gl_color.buffer))
+cl_gl_position = cl.GLBuffer(context, mf.READ_WRITE, int(gl_position))
+cl_gl_color = cl.GLBuffer(context, mf.READ_WRITE, int(gl_color))
 
 kernel = """__kernel void particle_fountain(__global float4* position, 
                                             __global float4* color, 
