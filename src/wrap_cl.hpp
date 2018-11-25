@@ -1585,7 +1585,7 @@ namespace pyopencl
         {}
       };
 
-      static void evt_callback(cl_event evt, cl_int command_exec_status, void *user_data)
+      static void CL_CALLBACK evt_callback(cl_event evt, cl_int command_exec_status, void *user_data)
       {
         event_callback_info_t *cb_info = reinterpret_cast<event_callback_info_t *>(user_data);
         {
