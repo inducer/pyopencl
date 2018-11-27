@@ -242,7 +242,7 @@ def _find_pyopencl_include_path():
     try:
         # Try to find the resource with pkg_resources (the recommended
         # setuptools approach)
-        return resource_filename(Requirement.parse("pyopencl"), "pyopencl/cl")
+        include_path = resource_filename(Requirement.parse("pyopencl"), "pyopencl/cl")
     except DistributionNotFound:
         # If pkg_resources can't find it (e.g. if the module is part of a
         # frozen application), try to find the include path in the same
@@ -255,6 +255,10 @@ def _find_pyopencl_include_path():
         if not exists(include_path):
             raise
 
+    # Quote the path if it contains a space and is not quoted already.
+    if ' ' in include_path and not include_path.startswith('"'):
+        return '"' + include_path + '"'
+    else:
         return include_path
 
 # }}}
@@ -384,35 +388,6 @@ class Program(object):
 
     # {{{ build
 
-    if six.PY3:
-        _find_unsafe_re_opts = re.ASCII
-    else:
-        _find_unsafe_re_opts = 0
-
-    _find_unsafe = re.compile(br'[^\w@%+=:,./-]', _find_unsafe_re_opts).search
-
-    @classmethod
-    def _shlex_quote(cls, s):
-        """Return a shell-escaped version of the string *s*."""
-
-        # Stolen from https://hg.python.org/cpython/file/default/Lib/shlex.py#l276
-
-        if not s:
-            return "''"
-
-        if cls._find_unsafe(s) is None:
-            return s
-
-        # use single quotes, and put single quotes into double quotes
-        # the string $'b is then quoted as '$'"'"'b'
-        import sys
-        if sys.platform.startswith("win"):
-            # not sure how to escape that
-            assert b'"' not in s
-            return b'"' + s + b'"'
-        else:
-            return b"'" + s.replace(b"'", b"'\"'\"'") + b"'"
-
     @classmethod
     def _process_build_options(cls, context, options):
         if isinstance(options, six.string_types):
@@ -447,6 +422,12 @@ class Program(object):
 
         # {{{ find include path
 
+        def unquote(path):
+            if path.startswith('"') and path.endswith('"'):
+                return path[1:-1]
+            else:
+                return path
+
         include_path = ["."]
 
         option_idx = 0
@@ -455,10 +436,10 @@ class Program(object):
             if option.startswith("-I") or option.startswith("/I"):
                 if len(option) == 2:
                     if option_idx+1 < len(options):
-                        include_path.append(options[option_idx+1])
+                        include_path.append(unquote(options[option_idx+1]))
                     option_idx += 2
                 else:
-                    include_path.append(option[2:].lstrip())
+                    include_path.append(unquote(option[2:].lstrip()))
                     option_idx += 1
             else:
                 option_idx += 1
@@ -466,8 +447,6 @@ class Program(object):
         # }}}
 
         options = [encode_if_necessary(s) for s in options]
-
-        options = [cls._shlex_quote(s) for s in options]
 
         return b" ".join(options), include_path
 
