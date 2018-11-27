@@ -24,7 +24,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import re
 import six
 from six.moves import input, intern
 
@@ -242,7 +241,8 @@ def _find_pyopencl_include_path():
     try:
         # Try to find the resource with pkg_resources (the recommended
         # setuptools approach)
-        include_path = resource_filename(Requirement.parse("pyopencl"), "pyopencl/cl")
+        include_path = resource_filename(
+                Requirement.parse("pyopencl"), "pyopencl/cl")
     except DistributionNotFound:
         # If pkg_resources can't find it (e.g. if the module is part of a
         # frozen application), try to find the include path in the same
