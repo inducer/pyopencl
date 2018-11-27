@@ -256,6 +256,7 @@ def _find_pyopencl_include_path():
             raise
 
     # Quote the path if it contains a space and is not quoted already.
+    # See https://github.com/inducer/pyopencl/issues/250 for discussion.
     if ' ' in include_path and not include_path.startswith('"'):
         return '"' + include_path + '"'
     else:
