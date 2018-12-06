@@ -330,16 +330,17 @@ void ${kernel_name}(
                 const index_type offset_end = interval_end - unit_base;
             %endif
 
-            for(index_type k = 1; k < K; k++)
+            for (index_type k = 1; k < K; k++)
             {
                 %if is_tail:
-                if (K * LID_0 + k < offset_end)
+                if ((index_type) (K * LID_0 + k) < offset_end)
                 %endif
                 {
                     scan_type tmp = ldata[k][LID_0].value;
-                    index_type seq_i = unit_base + K*LID_0 + k;
 
                     %if is_segmented:
+                    index_type seq_i = unit_base + K*LID_0 + k;
+
                     if (l_segment_start_flags[k][LID_0])
                     {
                         first_segment_start_in_k_group = min(
