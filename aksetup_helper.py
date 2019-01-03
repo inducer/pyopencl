@@ -92,7 +92,7 @@ class NumpyBuildExtCommand(BaseBuildExtCommand):
             if numpy_incpath not in extension.include_dirs:
                 extension.include_dirs.append(numpy_incpath)
 
-        super(NumpyBuildExtCommand, self).build_extension(extension)
+        BaseBuildExtCommand.build_extension(self, extension)
 
 
 # {{{ tools
@@ -878,7 +878,7 @@ def check_pybind11():
         count_down_delay(delay=10)
 
 
-# {{{ boilerplate from https://github.com/pybind/python_example/blob/2ed5a68759cd6ff5d2e5992a91f08616ef457b5c/setup.py  # noqa
+# {{{ (modified) boilerplate from https://github.com/pybind/python_example/blob/2ed5a68759cd6ff5d2e5992a91f08616ef457b5c/setup.py  # noqa
 
 class get_pybind_include(object):  # noqa: N801
     """Helper class to determine the pybind11 include path
@@ -949,7 +949,7 @@ class PybindBuildExtCommand(NumpyBuildExtCommand):
         for ext in self.extensions:
             ext.extra_compile_args = ext.extra_compile_args + opts
 
-        super(PybindBuildExtCommand, self).build_extensions()
+        NumpyBuildExtCommand.build_extensions(self)
 
 # }}}
 
