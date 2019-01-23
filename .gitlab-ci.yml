@@ -253,6 +253,17 @@ PyPy POCL:
     reports:
       junit: test/pytest.xml
 
+Pylint:
+  script:
+  - EXTRA_INSTALL="pybind11 numpy mako"
+  - py_version=3.6
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
+  - ". ./prepare-and-run-pylint.sh pymbolic test/test_*.py"
+  tags:
+  - python3.6
+  except:
+  - tags
+
 Documentation:
   script:
   - EXTRA_INSTALL="pybind11 numpy mako"
