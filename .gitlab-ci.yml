@@ -255,7 +255,7 @@
 #
 Pylint:
   script:
-  - EXTRA_INSTALL="pybind11 numpy mako"
+  - EXTRA_INSTALL="pybind11 numpy mako matplotlib"
   - py_version=3.6
   # After installation, PyOpenCL cannot be used from the source directory due
   # to package shadowing. To work around this, build in editable mode so there
