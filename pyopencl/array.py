@@ -446,7 +446,6 @@ class Array(object):
             shape = (shape,)
 
         if isinstance(size, np.integer):
-            # bombs if s is a Python integer
             size = size.item()
 
         if strides is None:
