@@ -484,56 +484,6 @@ def get_copy_kernel(context, dtype_dest, dtype_src):
             name="copy")
 
 
-@context_dependent_memoize
-def get_linear_combination_kernel(summand_descriptors,
-        dtype_z):
-    # TODO: Port this!
-    raise NotImplementedError
-
-    from pyopencl.tools import dtype_to_ctype
-    from pyopencl.elementwise import \
-            VectorArg, ScalarArg, get_elwise_module
-
-    args = []
-    preamble = []
-    loop_prep = []
-    summands = []
-    tex_names = []
-
-    for i, (is_gpu_scalar, scalar_dtype, vector_dtype) in \
-            enumerate(summand_descriptors):
-        if is_gpu_scalar:
-            preamble.append(
-                    "texture <%s, 1, cudaReadModeElementType> tex_a%d;"
-                    % (dtype_to_ctype(scalar_dtype, with_fp_tex_hack=True), i))
-            args.append(VectorArg(vector_dtype, "x%d" % i, with_offset=True))
-            tex_names.append("tex_a%d" % i)
-            loop_prep.append(
-                    "%s a%d = fp_tex1Dfetch(tex_a%d, 0)"
-                    % (dtype_to_ctype(scalar_dtype), i, i))
-        else:
-            args.append(ScalarArg(scalar_dtype, "a%d" % i))
-            args.append(VectorArg(vector_dtype, "x%d" % i, with_offset=True))
-
-        summands.append("a%d*x%d[i]" % (i, i))
-
-    args.append(VectorArg(dtype_z, "z", with_offset=True))
-    args.append(ScalarArg(np.uintp, "n"))
-
-    mod = get_elwise_module(args,
-            "z[i] = " + " + ".join(summands),
-            "linear_combination",
-            preamble="\n".join(preamble),
-            loop_prep=";\n".join(loop_prep))
-
-    func = mod.get_function("linear_combination")
-    tex_src = [mod.get_texref(tn) for tn in tex_names]
-    func.prepare("".join(arg.struct_char for arg in args),
-            (1, 1, 1), texrefs=tex_src)
-
-    return func, tex_src
-
-
 def complex_dtype_to_name(dtype):
     if dtype == np.complex128:
         return "cdouble"

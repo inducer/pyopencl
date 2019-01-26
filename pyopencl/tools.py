@@ -899,6 +899,9 @@ class KernelTemplateBase(object):
     def get_renderer(self, type_aliases, var_values, context=None, options=[]):
         return _TemplateRenderer(self, type_aliases, var_values)
 
+    def build_inner(self, context, *args, **kwargs):
+        raise NotImplementedError
+
     def build(self, context, *args, **kwargs):
         """Provide caching for an :meth:`build_inner`."""
 

@@ -1967,8 +1967,8 @@ def svm_empty_like(ctx, flags, ary, alignment=None):
     else:
         raise ValueError("array is neither C- nor Fortran-contiguous")
 
-    return svm_empty(ctx, ary.shape, ary.dtype, order,
-            flags=flags, alignment=alignment)
+    return svm_empty(ctx, flags, ary.shape, ary.dtype, order,
+            alignment=alignment)
 
 
 def csvm_empty(ctx, shape, dtype, order="C", alignment=None):

@@ -1008,7 +1008,7 @@ def test_event_management(ctx_factory):
     from pyopencl.clrandom import rand as clrand
 
     x = clrand(queue, (5, 10), dtype=np.float32)
-    assert len(x.events) == 1, len(x._events)
+    assert len(x.events) == 1, len(x.events)
 
     x.finish()
 

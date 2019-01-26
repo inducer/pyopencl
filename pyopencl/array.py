@@ -2280,9 +2280,8 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
     vec_count = len(arrays)
 
     if out is None:
-        out = [Array(queue, dest_shape, a_dtype,
-            allocator=a_allocator, queue=queue)
-            for i in range(vec_count)]
+        out = [Array(queue, dest_shape, a_dtype, allocator=a_allocator)
+                for _ in range(vec_count)]
     else:
         if a_dtype != single_valued(o.dtype for o in out):
             raise TypeError("arrays and out must have the same dtype")
