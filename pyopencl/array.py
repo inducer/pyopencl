@@ -425,13 +425,13 @@ class Array(object):
 
         # invariant here: allocator, queue set
 
-        # {{{ determine shape and strides
+        # {{{ determine shape, size, and strides
         dtype = np.dtype(dtype)
 
         try:
-            s = 1
+            size = 1
             for dim in shape:
-                s *= dim
+                size *= dim
         except TypeError:
             import sys
             if sys.version_info >= (3,):
@@ -442,12 +442,12 @@ class Array(object):
             if not isinstance(shape, admissible_types):
                 raise TypeError("shape must either be iterable or "
                         "castable to an integer")
-            s = shape
+            size = shape
             shape = (shape,)
 
-        if isinstance(s, np.integer):
+        if isinstance(size, np.integer):
             # bombs if s is a Python integer
-            s = np.asscalar(s)
+            size = size.item()
 
         if strides is None:
             strides = _make_strides(dtype.itemsize, shape, order)
@@ -475,7 +475,7 @@ class Array(object):
         else:
             self.events = events
 
-        self.size = s
+        self.size = size
         alloc_nbytes = self.nbytes = self.dtype.itemsize * self.size
 
         self.allocator = allocator
