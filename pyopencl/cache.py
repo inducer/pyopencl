@@ -480,7 +480,6 @@ def create_built_program_from_source_cached(ctx, src, options_bytes, devices=Non
             already_built = False
 
     except Exception as e:
-        raise
         from pyopencl import Error
         if (isinstance(e, Error)
                 and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE):
