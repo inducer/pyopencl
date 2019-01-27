@@ -1,4 +1,4 @@
-# Based on: https://gitlab.tiker.net/inducer/ci-support/blob/237bf5f0414a47499bc9ce4ef54ebd285e6fe648/.pylintrc-default
+# Based on: https://gitlab.tiker.net/inducer/ci-support/raw/237bf5f0414a47499bc9ce4ef54ebd285e6fe648/.pylintrc-default
 
 [MASTER]
 
