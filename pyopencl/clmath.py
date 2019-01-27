@@ -1,4 +1,7 @@
 from __future__ import absolute_import
+
+# pylint:disable=unexpected-keyword-arg  # for @elwise_kernel_runner
+
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """

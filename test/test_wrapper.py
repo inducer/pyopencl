@@ -120,8 +120,7 @@ def test_get_info(ctx_factory):
 
     def do_test(cl_obj, info_cls, func=None, try_attr_form=True):
         if func is None:
-            def func(info):
-                    cl_obj.get_info(info)
+            func = cl_obj.get_info
 
         for info_name in dir(info_cls):
             if not info_name.startswith("_") and info_name != "to_string":
@@ -1030,7 +1029,7 @@ def test_fine_grain_svm(ctx_factory):
 
 @pytest.mark.parametrize("dtype", [
     np.uint,
-    cl.cltypes.uint2,
+    cltypes.uint2,
     ])
 def test_map_dtype(ctx_factory, dtype):
     if cl._PYPY:
