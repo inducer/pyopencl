@@ -253,7 +253,6 @@
 #     reports:
 #       junit: test/pytest.xml
 #
-
 Pylint:
   script:
   - EXTRA_INSTALL="pybind11 numpy mako matplotlib PyOpenGl IPython"
@@ -266,7 +265,6 @@ Pylint:
   - ". ./prepare-and-run-pylint.sh pyopencl test/test_*.py"
   tags:
   - python3.7
-  - pocl
   except:
   - tags
 
