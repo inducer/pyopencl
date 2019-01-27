@@ -270,7 +270,7 @@ Pylint:
 
 Documentation:
   script:
-  - EXTRA_INSTALL="pybind11 numpy mako matplotlib"
+  - EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-docs.sh
   - ". ./build-docs.sh"
   tags:
