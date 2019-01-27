@@ -26,7 +26,7 @@ done
 
 
 /opt/python/cp37-cp37m/bin/pip install twine
-for WHEEL in /io/wheelhouse/pyopencl-gm*.whl; do
+for WHEEL in /io/wheelhouse/pyopencl_gm*.whl; do
     # /opt/python/cp37-cp37m/bin/twine upload --repository-url https://test.pypi.org/legacy/ "${WHEEL}"
     /opt/python/cp37-cp37m/bin/twine upload -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" "${WHEEL}"
 done
