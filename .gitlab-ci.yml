@@ -253,6 +253,21 @@ PyPy POCL:
     reports:
       junit: test/pytest.xml
 
+Pylint:
+  script:
+  - EXTRA_INSTALL="pybind11 numpy mako matplotlib PyOpenGl IPython"
+  - py_version=3.6
+  # After installation, PyOpenCL cannot be used from the source directory due
+  # to package shadowing. To work around this, build in editable mode so there
+  # is only one copy of everything.
+  - PROJECT_INSTALL_FLAGS="--editable"
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
+  - ". ./prepare-and-run-pylint.sh pyopencl test/test_*.py"
+  tags:
+  - python3.6
+  except:
+  - tags
+
 Documentation:
   script:
   - EXTRA_INSTALL="pybind11 numpy mako"

@@ -571,7 +571,7 @@ def test_bitwise(ctx_factory):
 
         # Test unary ~
         res_dev = ~a_dev
-        res = ~a
+        res = ~a  # pylint:disable=invalid-unary-operand-type
         assert (res_dev.get() == res).all()
 
 # }}}
@@ -1008,7 +1008,7 @@ def test_event_management(ctx_factory):
     from pyopencl.clrandom import rand as clrand
 
     x = clrand(queue, (5, 10), dtype=np.float32)
-    assert len(x.events) == 1, len(x._events)
+    assert len(x.events) == 1, len(x.events)
 
     x.finish()
 
@@ -1072,7 +1072,7 @@ def test_skip_slicing(ctx_factory):
     a = cl_array.to_device(queue, a_host)
     b = a[::3]
     assert b.shape == b_host.shape
-    assert np.array_equal(b[1].get(), b_host[1])
+    assert np.array_equal(b[1].get(), b_host[1])  # noqa pylint:disable=unsubscriptable-object
 
 
 def test_transpose(ctx_factory):

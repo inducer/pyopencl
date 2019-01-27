@@ -482,7 +482,7 @@ def create_built_program_from_source_cached(ctx, src, options_bytes, devices=Non
     except Exception as e:
         from pyopencl import Error
         if (isinstance(e, Error)
-                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE):
+                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE):  # noqa pylint:disable=no-member
             # no need to try again
             raise
 

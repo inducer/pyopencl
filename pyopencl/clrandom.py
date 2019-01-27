@@ -424,6 +424,18 @@ class Random123GeneratorBase(object):
     .. automethod:: normal
     """
 
+    @property
+    def header_name(self):
+        raise NotImplementedError
+
+    @property
+    def generator_name(self):
+        raise NotImplementedError
+
+    @property
+    def key_length(self):
+        raise NotImplementedError
+
     def __init__(self, context, key=None, counter=None, seed=None):
         int32_info = np.iinfo(np.int32)
         from random import Random

@@ -78,5 +78,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
     else:
-        import py.test
-        py.test.cmdline.main([__file__])
+        from pytest import main
+        main([__file__])

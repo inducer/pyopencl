@@ -50,15 +50,15 @@ class WallTimer(Timer):
     def start(self):
         from time import time
         self.queue.finish()
-        self.start = time()
+        self.start_time = time()
 
     def stop(self):
         from time import time
         self.queue.finish()
-        self.end = time()
+        self.end_time = time()
 
     def get_elapsed(self):
-        return self.end-self.start
+        return self.end_time-self.start_time
 
 
 def _get_time(queue, f, timer_factory=None, desired_duration=0.1,

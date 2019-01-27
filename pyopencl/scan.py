@@ -1137,6 +1137,9 @@ class _GenericScanKernelBase(object):
 
     # }}}
 
+    def finish_setup(self):
+        raise NotImplementedError
+
 
 generic_scan_kernel_cache = WriteOncePersistentDict(
         "pyopencl-generated-scan-kernel-cache-v1",
@@ -1725,6 +1728,10 @@ class _LegacyScanKernelBase(GenericScanKernel):
                 neutral=neutral,
                 output_statement=self.ary_output_statement,
                 options=options, preamble=preamble, devices=devices)
+
+    @property
+    def ary_output_statement(self):
+        raise NotImplementedError
 
     def __call__(self, input_ary, output_ary=None, allocator=None, queue=None):
         allocator = allocator or input_ary.allocator
