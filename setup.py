@@ -190,7 +190,7 @@ def main():
         print("https://pypi.python.org/pypi/pyopencl")
         sys.exit(1)
 
-    setup(name="pyopencl",
+    setup(name="pyopencl-gmagno",
             # metadata
             version=ver_dic["VERSION_TEXT"],
             description="Python wrapper for OpenCL",
