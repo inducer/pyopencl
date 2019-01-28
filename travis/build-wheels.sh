@@ -25,7 +25,16 @@ for whl in wheelhouse/*.whl; do
 done
 
 /opt/python/cp37-cp37m/bin/pip install twine
-for WHEEL in /io/wheelhouse/pyopencl_gm*.whl; do
-    # /opt/python/cp37-cp37m/bin/twine upload --skip-existing --repository-url https://test.pypi.org/legacy/ "${WHEEL}"
-    /opt/python/cp37-cp37m/bin/twine upload --skip-existing -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" "${WHEEL}"
+for WHEEL in /io/wheelhouse/pyopencl*.whl; do
+    # dev
+    # /opt/python/cp37-cp37m/bin/twine upload \
+    #     --skip-existing \
+    #     --repository-url https://test.pypi.org/legacy/ \
+    #     -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
+    #     "${WHEEL}"
+    # prod
+    /opt/python/cp37-cp37m/bin/twine upload \
+        --skip-existing \
+        -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
+        "${WHEEL}"
 done
