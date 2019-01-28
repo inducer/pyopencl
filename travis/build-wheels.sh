@@ -24,9 +24,8 @@ for whl in wheelhouse/*.whl; do
     auditwheel repair "$whl" -w /io/wheelhouse/
 done
 
-
 /opt/python/cp37-cp37m/bin/pip install twine
 for WHEEL in /io/wheelhouse/pyopencl_gm*.whl; do
-    # /opt/python/cp37-cp37m/bin/twine upload --repository-url https://test.pypi.org/legacy/ "${WHEEL}"
-    /opt/python/cp37-cp37m/bin/twine upload -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" "${WHEEL}"
+    # /opt/python/cp37-cp37m/bin/twine upload --skip-existing --repository-url https://test.pypi.org/legacy/ "${WHEEL}"
+    /opt/python/cp37-cp37m/bin/twine upload --skip-existing -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" "${WHEEL}"
 done
