@@ -1,8 +1,5 @@
 notifications:
   email: false
-branches:
-  only:
-    - master
 if: tag IS present
 matrix:
   include:
