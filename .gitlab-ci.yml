@@ -16,16 +16,16 @@
     reports:
       junit: test/pytest.xml
 
-Python 3.6 Intel CPU:
+Python 3 Intel CPU:
   script:
-  - export PY_EXE=python3.6
+  - export PY_EXE=python3
   - export PYOPENCL_TEST="intel(r):pu"
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   allow_failure: true
   tags:
-  - python3.6
+  - python3
   - intel-cl-cpu
   except:
   - tags
@@ -33,16 +33,16 @@ Python 3.6 Intel CPU:
     reports:
       junit: test/pytest.xml
 
-Python 3.6 AMD CPU:
+Python 3 AMD CPU:
   script:
-  - export PY_EXE=python3.6
+  - export PY_EXE=python3
   - export PYOPENCL_TEST=amd:pu
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   allow_failure: true
   tags:
-  - python3.6
+  - python3
   - amd-cl-cpu
   except:
   - tags
@@ -50,15 +50,15 @@ Python 3.6 AMD CPU:
     reports:
       junit: test/pytest.xml
 
-Python 3.6 Titan X:
+Python 3 Titan X:
   script:
-  - export PY_EXE=python3.6
+  - export PY_EXE=python3
   - export PYOPENCL_TEST=nvi:titan
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.6
+  - python3
   - nvidia-titan-x
   except:
   - tags
@@ -66,15 +66,15 @@ Python 3.6 Titan X:
     reports:
       junit: test/pytest.xml
 
-Python 3.6 Titan V:
+Python 3 Titan V:
   script:
-  - export PY_EXE=python3.6
+  - export PY_EXE=python3
   - export PYOPENCL_TEST=nvi:titan
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.6
+  - python3
   - nvidia-titan-v
   except:
   - tags
@@ -82,15 +82,15 @@ Python 3.6 Titan V:
     reports:
       junit: test/pytest.xml
 
-Python 3.6 K40:
+Python 3 K40:
   script:
-  - export PY_EXE=python3.6
+  - export PY_EXE=python3
   - export PYOPENCL_TEST=nvi:k40
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.6
+  - python3
   - nvidia-k40
   except:
   - tags
@@ -98,9 +98,9 @@ Python 3.6 K40:
     reports:
       junit: test/pytest.xml
 
-Python 3.6 AMD GPU:
+Python 3 AMD GPU:
   script:
-  - export PY_EXE=python3.6
+  - export PY_EXE=python3
   - export PYOPENCL_TEST=amd:fiji
   - export EXTRA_INSTALL="pybind11 numpy mako"
 
@@ -111,7 +111,7 @@ Python 3.6 AMD GPU:
   - ". ./build-and-test-py-project.sh"
   allow_failure: true
   tags:
-  - python3.6
+  - python3
   - amd-fiji
   except:
   - tags
@@ -135,15 +135,15 @@ Python 2.7 POCL:
     reports:
       junit: test/pytest.xml
 
-Python 3.7 POCL:
+Python 3 POCL:
   script:
-  - export PY_EXE=python3.7
+  - export PY_EXE=python3
   - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.7
+  - python3
   - pocl
   except:
   - tags
@@ -151,16 +151,16 @@ Python 3.7 POCL:
     reports:
       junit: test/pytest.xml
 
-Python 3.6 POCL CL 1.1:
+Python 3 POCL CL 1.1:
   script:
-  - export PY_EXE=python3.6
+  - export PY_EXE=python3
   - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - echo "CL_PRETEND_VERSION = '1.1'" > siteconf.py
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.6
+  - python3
   - pocl
   except:
   - tags
@@ -168,15 +168,15 @@ Python 3.6 POCL CL 1.1:
     reports:
       junit: test/pytest.xml
 
-Python 3.6 POCL:
+Python 3 POCL:
   script:
-  - export PY_EXE=python3.6
+  - export PY_EXE=python3
   - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.6
+  - python3
   - pocl
   except:
   - tags
@@ -184,16 +184,16 @@ Python 3.6 POCL:
     reports:
       junit: test/pytest.xml
 
-Python 3.6 POCL (+GL and special functions):
+Python 3 POCL (+GL and special functions):
   script:
-  - export PY_EXE=python3.6
+  - export PY_EXE=python3
   - export PYOPENCL_TEST=portable
   - export EXTRA_INSTALL="pybind11 numpy mako scipy pyfmmlib"
   - echo "CL_ENABLE_GL = True" > siteconf.py
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
-  - python3.6
+  - python3
   - pocl
   except:
   - tags
@@ -256,7 +256,7 @@ PyPy POCL:
 Pylint:
   script:
   - EXTRA_INSTALL="pybind11 numpy mako matplotlib PyOpenGl IPython"
-  - py_version=3.6
+  - export PY_EXE=python3
   # After installation, PyOpenCL cannot be used from the source directory due
   # to package shadowing. To work around this, build in editable mode so there
   # is only one copy of everything.
@@ -264,7 +264,7 @@ Pylint:
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
   - ". ./prepare-and-run-pylint.sh pyopencl test/test_*.py"
   tags:
-  - python3.6
+  - python3
   except:
   - tags
 
@@ -283,6 +283,6 @@ Flake8:
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
   - ". ./prepare-and-run-flake8.sh pyopencl test"
   tags:
-  - python3.6
+  - python3
   except:
   - tags

@@ -57,10 +57,10 @@ not complicated::
 .. class:: ImmediateAllocator(queue, mem_flags=pyopencl.mem_flags.READ_WRITE)
 
     *mem_flags* takes its values from :class:`pyopencl.mem_flags` and corresponds
-    to the *flags* argument of :class:`pyopencl.Buffer`. DeferredAllocator
-    has the same semantics as regular OpenCL buffer allocation, i.e. it may
-    promise memory to be available that later on (in any call to a buffer-using
-    CL function).
+    to the *flags* argument of :class:`pyopencl.Buffer`.
+    :class:`ImmediateAllocator` will attempt to ensure at allocation time that
+    allocated memory is actually available. If no memory is available, an out-of-memory
+    error is reported at allocation time.
 
     .. versionadded:: 2013.1
 
