@@ -816,7 +816,7 @@ class _TemplateRenderer(object):
 
         if with_offset:
             def vec_arg_factory(typename, name):
-                    return _VectorArgPlaceholder(typename, name, with_offset=True)
+                return _VectorArgPlaceholder(typename, name, with_offset=True)
         else:
             vec_arg_factory = _VectorArgPlaceholder
 

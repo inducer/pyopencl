@@ -888,8 +888,8 @@ def _add_functionality():
 
         if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
             if buffer is not None and is_array:
-                    raise ValueError(
-                            "'buffer' and 'is_array' are mutually exclusive")
+                raise ValueError(
+                        "'buffer' and 'is_array' are mutually exclusive")
 
             if len(shape) == 3:
                 if buffer is not None:
