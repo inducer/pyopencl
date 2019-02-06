@@ -1081,6 +1081,21 @@ class Array(object):
 
     __rtruediv__ = __rdiv__
 
+
+    def __itruediv__(self, other):
+        if isinstance(other, Array):
+            self.add_event(
+                    self._div(self, self, other))
+        else:
+            if other == 1:
+                return self.copy()
+            else:
+                common_dtype = _get_common_dtype(self, other, self.queue)
+                self.add_event(
+                    self._axpbz(self, common_dtype.type(1/other), self, self.dtype.type(0)))
+
+        return self
+        
     def __and__(self, other):
         common_dtype = _get_common_dtype(self, other, self.queue)
 
