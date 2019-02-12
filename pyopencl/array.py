@@ -1091,7 +1091,7 @@ class Array(object):
                 self._div(self, self, other))
         else:
             if other == 1:
-                return self.copy()
+                return self
             else:
                 # cast 1/other to float32, as float64 might not be available...
                 self.add_event(
