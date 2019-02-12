@@ -918,8 +918,8 @@ def test_spirv(ctx_factory):
 
     if (ctx._get_cl_version() < (2, 1)
             or cl.get_cl_header_version() < (2, 1)):
-        from pytest import skip
-        skip("SPIR-V program creation only available in OpenCL 2.1 and higher")
+        pytest.skip("SPIR-V program creation only available "
+                "in OpenCL 2.1 and higher")
 
     n = 50000
 
@@ -930,7 +930,10 @@ def test_spirv(ctx_factory):
     with open("add-vectors-%d.spv" % queue.device.address_bits, "rb") as spv_file:
         spv = spv_file.read()
 
-    prg = cl.Program(ctx, spv)
+    prg = cl.Program(ctx, spv).build()
+    if (not prg.all_kernels()
+            and queue.device.platform.name.startswith("AMD Accelerated")):
+        pytest.skip("SPIR-V program creation on AMD did not result in any kernels")
 
     prg.sum(queue, a_dev.shape, None, a_dev.data, b_dev.data, dest_dev.data)
 
