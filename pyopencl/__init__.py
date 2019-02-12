@@ -1692,10 +1692,11 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
     elif get_cl_header_version() >= (2, 0) and isinstance(dest, SVM):
         # to SVM
-        if isinstance(src, SVM):
-            src = src.mem
+        if not isinstance(src, SVM):
+            src = SVM(src)
 
-        return _cl._enqueue_svm_memcpy(queue, dest.mem, src, **kwargs)
+        is_blocking = kwargs.pop("is_blocking", True)
+        return _cl._enqueue_svm_memcpy(queue, is_blocking, dest, src, **kwargs)
 
     else:
         # assume to-host
@@ -1723,7 +1724,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
         elif isinstance(src, SVM):
             # from svm
             # dest is not a SVM instance, otherwise we'd be in the branch above
-            return _cl._enqueue_svm_memcpy(queue, dest, src.mem, **kwargs)
+            is_blocking = kwargs.pop("is_blocking", True)
+            return _cl._enqueue_svm_memcpy(
+                    queue, is_blocking, SVM(dest), src, **kwargs)
         else:
             # assume from-host
             raise TypeError("enqueue_copy cannot perform host-to-host transfers")

@@ -284,7 +284,7 @@ void pyopencl_expose_part_2(py::module &m)
       ;
   }
 
-  m.def("_enqueue_svm_memcpyw", enqueue_svm_memcpy,
+  m.def("_enqueue_svm_memcpy", enqueue_svm_memcpy,
       py::arg("queue"),
       py::arg("is_blocking"),
       py::arg("dst"),
