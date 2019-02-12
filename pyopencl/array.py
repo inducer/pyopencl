@@ -42,13 +42,19 @@ from pyopencl.compyte.array import (
         c_contiguous_strides as _c_contiguous_strides,
         equal_strides as _equal_strides,
         ArrayFlags as _ArrayFlags,
-        get_common_dtype as _get_common_dtype_base)
+        get_common_dtype as _get_common_dtype_base,
+        get_truedivide_dtype as _get_truedivide_dtype_base)
 from pyopencl.characterize import has_double_support
 from pyopencl import cltypes
 
 
 def _get_common_dtype(obj1, obj2, queue):
     return _get_common_dtype_base(obj1, obj2,
+                                  has_double_support(queue.device))
+
+
+def _get_truedivide_dtype(obj1, obj2, queue):
+    return _get_truedivide_dtype_base(obj1, obj2,
                                   has_double_support(queue.device))
 
 
@@ -1043,20 +1049,20 @@ class Array(object):
     def __div__(self, other):
         """Divides an array by an array or a scalar, i.e. ``self / other``.
         """
+        common_dtype = _get_truedivide_dtype(self, other, self.queue)
         if isinstance(other, Array):
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
+            result = self._new_like_me(common_dtype)
             result.add_event(self._div(result, self, other))
         else:
             if other == 1:
                 return self.copy()
             else:
                 # create a new array for the result
-                common_dtype = _get_common_dtype(self, other, self.queue)
                 result = self._new_like_me(common_dtype)
                 result.add_event(
                         self._axpbz(result,
-                            common_dtype.type(1/other), self, self.dtype.type(0)))
+                                    np.true_divide(common_dtype.type(1), other),
+                                    self, self.dtype.type(0)))
 
         return result
 
@@ -1065,13 +1071,13 @@ class Array(object):
     def __rdiv__(self, other):
         """Divides an array by a scalar or an array, i.e. ``other / self``.
         """
+        common_dtype = _get_truedivide_dtype(self, other, self.queue)
+
         if isinstance(other, Array):
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
+            result = self._new_like_me(common_dtype)
             result.add_event(other._div(result, self))
         else:
             # create a new array for the result
-            common_dtype = _get_common_dtype(self, other, self.queue)
             result = self._new_like_me(common_dtype)
             result.add_event(
                     self._rdiv_scalar(result, self, common_dtype.type(other)))
@@ -1081,9 +1087,10 @@ class Array(object):
     __rtruediv__ = __rdiv__
 
     def __itruediv__(self, other):
-        common_dtype = _get_common_dtype(self, other, self.queue)
-        if common_dtype is not self.dtype:
-            raise TypeError("Cannot cast division output from {!r} to {!r}"
+        # raise an error if the result cannot be cast to self
+        common_dtype = _get_truedivide_dtype(self, other, self.queue)
+        if not np.can_cast(common_dtype, self.dtype.type):
+            raise TypeError("Cannot cast {!r} to {!r}"
                             .format(self.dtype, common_dtype))
 
         if isinstance(other, Array):
@@ -1093,10 +1100,9 @@ class Array(object):
             if other == 1:
                 return self
             else:
-                # cast 1/other to float32, as float64 might not be available...
                 self.add_event(
-                    self._axpbz(self, np.float32(1/other),
-                                self, common_dtype.type(0)))
+                    self._axpbz(self, common_dtype.type(np.true_divide(1, other)),
+                                self, self.dtype.type(0)))
 
         return self
 

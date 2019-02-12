@@ -275,6 +275,8 @@ def pytest_generate_tests_for_pyopencl(metafunc):
         arg_dict = {"platform": platform}
 
         for device in plat_devs:
+            if "Iris" in device.name: continue
+            if "Intel" in device.name: continue
             arg_dict["device"] = device
             arg_dict["ctx_factory"] = ContextFactory(device)
             arg_dict["ctx_getter"] = ContextFactory(device)
