@@ -351,6 +351,7 @@ void pyopencl_expose_part_2(py::module &m)
       .value("UNKNOWN", cls::KND_UNKNOWN)
       .value("SOURCE", cls::KND_SOURCE)
       .value("BINARY", cls::KND_BINARY)
+      .value("IL", cls::KND_IL)
       ;
 
     py::class_<cls>(m, "_Program", py::dynamic_attr())
@@ -404,6 +405,10 @@ void pyopencl_expose_part_2(py::module &m)
       PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_program)
       ;
   }
+
+#if (PYOPENCL_CL_VERSION >= 0x2010)
+  m.def("_create_program_with_il", create_program_with_il);
+#endif
 
 #if PYOPENCL_CL_VERSION >= 0x1020
   m.def("unload_platform_compiler", unload_platform_compiler);

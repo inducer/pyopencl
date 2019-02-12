@@ -370,9 +370,9 @@ class Program(object):
 
             from pyopencl.tools import is_spirv
             if is_spirv(source):
-                # no caching in SPIR-V case
+                # FIXME no caching in SPIR-V case
                 self._context = context
-                self._prg = _cl._Program(context, source)
+                self._prg = _cl._create_program_with_il(context, source)
                 return
 
             import sys
@@ -720,6 +720,8 @@ def _add_functionality():
                 build_type = "From-source build"
             elif self.kind() == program_kind.BINARY:
                 build_type = "From-binary build"
+            elif self.kind() == program_kind.IL:
+                build_type = "From-IL build"
             else:
                 build_type = "Build"
 

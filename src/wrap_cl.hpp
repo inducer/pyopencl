@@ -3768,7 +3768,7 @@ namespace pyopencl
   class program : noncopyable
   {
     public:
-      enum program_kind_type { KND_UNKNOWN, KND_SOURCE, KND_BINARY };
+      enum program_kind_type { KND_UNKNOWN, KND_SOURCE, KND_BINARY, KND_IL };
 
     private:
       cl_program m_program;
@@ -4103,6 +4103,35 @@ namespace pyopencl
     }
   }
 #endif
+
+
+
+#if (PYOPENCL_CL_VERSION >= 0x2010)
+  inline
+  program *create_program_with_il(
+      context &ctx,
+      std::string const &src)
+  {
+    cl_int status_code;
+    PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithIL");
+    cl_program result = clCreateProgramWithIL(
+        ctx.data(), src.c_str(), src.size(), &status_code);
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("clCreateProgramWithIL", status_code);
+
+    try
+    {
+      return new program(result, false, program::KND_IL);
+    }
+    catch (...)
+    {
+      clReleaseProgram(result);
+      throw;
+    }
+  }
+#endif
+
+
 
 
 
