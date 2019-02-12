@@ -957,6 +957,10 @@ def test_coarse_grain_svm(ctx_factory):
     if ("AMD" in dev.platform.name
             and dev.type & cl.device_type.CPU):
         pytest.xfail("AMD CPU doesn't do coarse-grain SVM")
+    if ("AMD" in dev.platform.name
+            and dev.type & cl.device_type.GPU
+            ):
+        pytest.xfail("AMD GPU crashes on SVM unmap")
 
     n = 3000
     svm_ary = cl.SVM(cl.csvm_empty(ctx, (n,), np.float32, alignment=64))
