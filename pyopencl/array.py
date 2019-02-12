@@ -1065,7 +1065,7 @@ class Array(object):
     def __rdiv__(self, other):
         """Divides an array by a scalar or an array, i.e. ``other / self``.
         """
-
+        
         if isinstance(other, Array):
             result = self._new_like_me(
                     _get_common_dtype(self, other, self.queue))
@@ -1083,16 +1083,20 @@ class Array(object):
 
 
     def __itruediv__(self, other):
+        common_dtype = _get_common_dtype(self, other, self.queue)
+        if common_dtype is not self.dtype:
+            raise TypeError("Cannot cast division output from {!r} to {!r}".format(self.dtype, common_dtype))
+
         if isinstance(other, Array):
             self.add_event(
-                    self._div(self, self, other))
+                self._div(self, self, other))
         else:
             if other == 1:
                 return self.copy()
             else:
-                common_dtype = _get_common_dtype(self, other, self.queue)
+                # cast 1/other to float32, as float64 might not be available...
                 self.add_event(
-                    self._axpbz(self, common_dtype.type(1/other), self, self.dtype.type(0)))
+                    self._axpbz(self, np.float32(1/other), self, common_dtype.type(0)))
 
         return self
         

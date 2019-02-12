@@ -507,13 +507,13 @@ def test_divide_inplace_scalar(ctx_factory):
 
     for dtype in (np.uint8, np.int8, np.uint16, np.int16, np.uint32, np.int32, np.float32):
         #test data
-        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(np.float32)
-        s = 3.14159
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype)
+        s = 40
 
         a_gpu = cl_array.to_device(queue, a)
         a_gpu /= s
         a_divide = a_gpu.get()
-        assert (np.abs(a / s - a_divide) < 1e-3).all()
+        assert (np.abs((a / s).astype(dtype) - a_divide) < 1e-3).all()
 
 def test_divide_inplace_array(ctx_factory):
     """Test inplace division of arrays."""
@@ -523,8 +523,8 @@ def test_divide_inplace_array(ctx_factory):
 
     for dtype in (np.uint8, np.int8, np.uint16, np.int16, np.uint32, np.int32, np.float32):
         #test data
-        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(np.float32)
-        b = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10]).astype(np.float32)
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype)
+        b = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10]).astype(dtype)
 
         a_gpu = cl_array.to_device(queue, a)
         b_gpu = cl_array.to_device(queue, b)
