@@ -101,7 +101,7 @@ Python 3 K40:
 Python 3 AMD GPU:
   script:
   - export PY_EXE=python3
-  - export PYOPENCL_TEST=amd:fiji
+  - export PYOPENCL_TEST=amd:gfx803
   - export EXTRA_INSTALL="pybind11 numpy mako"
 
   # https://andreask.cs.illinois.edu/MachineShop/UserNotes
@@ -109,7 +109,6 @@ Python 3 AMD GPU:
 
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
-  allow_failure: true
   tags:
   - python3
   - amd-fiji

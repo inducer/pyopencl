@@ -265,6 +265,66 @@ def _find_pyopencl_include_path():
 # }}}
 
 
+# {{{ build option munging
+
+def _split_options_if_necessary(options):
+    if isinstance(options, six.string_types):
+        import shlex
+        if six.PY2:
+            # shlex.split takes bytes (py2 str) on py2
+            if isinstance(options, six.text_type):
+                options = options.encode("utf-8")
+        else:
+            # shlex.split takes unicode (py3 str) on py3
+            if isinstance(options, six.binary_type):
+                options = options.decode("utf-8")
+
+        options = shlex.split(options)
+
+    return options
+
+
+def _find_include_path(options):
+    def unquote(path):
+        if path.startswith('"') and path.endswith('"'):
+            return path[1:-1]
+        else:
+            return path
+
+    include_path = ["."]
+
+    option_idx = 0
+    while option_idx < len(options):
+        option = options[option_idx].strip()
+        if option.startswith("-I") or option.startswith("/I"):
+            if len(option) == 2:
+                if option_idx+1 < len(options):
+                    include_path.append(unquote(options[option_idx+1]))
+                option_idx += 2
+            else:
+                include_path.append(unquote(option[2:].lstrip()))
+                option_idx += 1
+        else:
+            option_idx += 1
+
+    # }}}
+
+    return include_path
+
+
+def _options_to_bytestring(options):
+    def encode_if_necessary(s):
+        if isinstance(s, six.text_type):
+            return s.encode("utf-8")
+        else:
+            return s
+
+    return b" ".join(encode_if_necessary(s) for s in options)
+
+
+# }}}
+
+
 # {{{ Program (wrapper around _Program, adds caching support)
 
 _DEFAULT_BUILD_OPTIONS = []
@@ -310,9 +370,9 @@ class Program(object):
 
             from pyopencl.tools import is_spirv
             if is_spirv(source):
-                # no caching in SPIR-V case
+                # FIXME no caching in SPIR-V case
                 self._context = context
-                self._prg = _cl._Program(context, source)
+                self._prg = _cl._create_program_with_il(context, source)
                 return
 
             import sys
@@ -390,25 +450,8 @@ class Program(object):
     # {{{ build
 
     @classmethod
-    def _process_build_options(cls, context, options):
-        if isinstance(options, six.string_types):
-            import shlex
-            if six.PY2:
-                # shlex.split takes bytes (py2 str) on py2
-                if isinstance(options, six.text_type):
-                    options = options.encode("utf-8")
-            else:
-                # shlex.split takes unicode (py3 str) on py3
-                if isinstance(options, six.binary_type):
-                    options = options.decode("utf-8")
-
-            options = shlex.split(options)
-
-        def encode_if_necessary(s):
-            if isinstance(s, six.text_type):
-                return s.encode("utf-8")
-            else:
-                return s
+    def _process_build_options(cls, context, options, _add_include_path=False):
+        options = _split_options_if_necessary(options)
 
         options = (options
                 + _DEFAULT_BUILD_OPTIONS
@@ -421,35 +464,9 @@ class Program(object):
         if forced_options:
             options = options + forced_options.split()
 
-        # {{{ find include path
-
-        def unquote(path):
-            if path.startswith('"') and path.endswith('"'):
-                return path[1:-1]
-            else:
-                return path
-
-        include_path = ["."]
-
-        option_idx = 0
-        while option_idx < len(options):
-            option = options[option_idx].strip()
-            if option.startswith("-I") or option.startswith("/I"):
-                if len(option) == 2:
-                    if option_idx+1 < len(options):
-                        include_path.append(unquote(options[option_idx+1]))
-                    option_idx += 2
-                else:
-                    include_path.append(unquote(option[2:].lstrip()))
-                    option_idx += 1
-            else:
-                option_idx += 1
-
-        # }}}
-
-        options = [encode_if_necessary(s) for s in options]
-
-        return b" ".join(options), include_path
+        return (
+                _options_to_bytestring(options),
+                _find_include_path(options))
 
     def build(self, options=[], devices=None, cache_dir=None):
         options_bytes, include_path = self._process_build_options(
@@ -559,8 +576,11 @@ def create_program_with_built_in_kernels(context, devices, kernel_names):
         context, devices, kernel_names))
 
 
-def link_program(context, programs, options=[], devices=None):
-    options_bytes, _ = Program._process_build_options(context, options)
+def link_program(context, programs, options=None, devices=None):
+    if options is None:
+        options = []
+
+    options_bytes = _options_to_bytestring(_split_options_if_necessary(options))
     programs = [prg._get_prg() for prg in programs]
     raw_prg = _Program.link(context, programs, options_bytes, devices)
     return Program(raw_prg)
@@ -700,6 +720,8 @@ def _add_functionality():
                 build_type = "From-source build"
             elif self.kind() == program_kind.BINARY:
                 build_type = "From-binary build"
+            elif self.kind() == program_kind.IL:
+                build_type = "From-IL build"
             else:
                 build_type = "Build"
 
@@ -1670,10 +1692,11 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
     elif get_cl_header_version() >= (2, 0) and isinstance(dest, SVM):
         # to SVM
-        if isinstance(src, SVM):
-            src = src.mem
+        if not isinstance(src, SVM):
+            src = SVM(src)
 
-        return _cl._enqueue_svm_memcpy(queue, dest.mem, src, **kwargs)
+        is_blocking = kwargs.pop("is_blocking", True)
+        return _cl._enqueue_svm_memcpy(queue, is_blocking, dest, src, **kwargs)
 
     else:
         # assume to-host
@@ -1701,7 +1724,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
         elif isinstance(src, SVM):
             # from svm
             # dest is not a SVM instance, otherwise we'd be in the branch above
-            return _cl._enqueue_svm_memcpy(queue, dest, src.mem, **kwargs)
+            is_blocking = kwargs.pop("is_blocking", True)
+            return _cl._enqueue_svm_memcpy(
+                    queue, is_blocking, SVM(dest), src, **kwargs)
         else:
             # assume from-host
             raise TypeError("enqueue_copy cannot perform host-to-host transfers")
