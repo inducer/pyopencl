@@ -1,12 +1,15 @@
 Installation
 ============
 
+Installing from Conda Forge
+---------------------------
+
 By far the easiest way to install PyOpenCL is to use the packages available in
 `Conda Forge <https://conda-forge.org/>`_. Conda Forge is a repository of
 community-maintained packages for the `Conda <https://conda.io/docs/>`_
 package manager.
 
-On Linux and OS X, the following set of instructions should work:
+On Linux or OS X, the following set of instructions should work:
 
 #.  Install a version of `miniconda <https://conda.io/miniconda.html>`_
     that fits your system. Both Python 2 and Python 3 work.
@@ -37,20 +40,20 @@ with PyOpenCL from Conda Forge.
 
 It is important to note that OpenCL is not restricted to GPUs. In fact, no special
 hardware is required to use OpenCL for computation--your existing CPU is enough.
-On Linux, type:
+On Linux or macOS, type:
 
 #.  ``conda install pocl``
 
 to install a CPU-based OpenCL driver. On Windows, you may install e.g.
 the `CPU OpenCL driver from Intel <https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime>`_.
-OS X has support for OpenCL built into the operating system and does not need
-additional software to run code based on PyOpenCL (but see below).
+On macOS, pocl can offer a marked robustness (and, sometimes, performance)
+improvement over the OpenCL drivers built into the operating system.
 
 You are now ready to run code based on PyOpenCL, such as the `code
 examples <https://github.com/inducer/pyopencl/tree/master/examples>`_.
 
-Using vendor-supplied OpenCL drivers (Linux)
---------------------------------------------
+Using vendor-supplied OpenCL drivers (mainly on Linux)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The instructions above help you get a basic OpenCL environment going that
 will work independently of whether you have specialized hardware (such as GPUs
@@ -76,33 +79,21 @@ qualified path names of the shared library providing the OpenCL driver.
     Note that you should replace ``ENVIRONMENTNAME`` with the name of your environment,
     shown between parentheses on your command line prompt.
 
-If you have other OpenCL drivers installed (such as for your GPU), those will be
+On Linux, if you have other OpenCL drivers installed (such as for your GPU), those will be
 in :file:`/etc/OpenCL/vendors`. You can make them work with PyOpenCL from Conda Forge
-by simply copying them to the above folder.
+by placing a symbolic link to :file:`/etc/OpenCL/vendors` in the directory described
+above. The version of ocl-icd installed with PyOpenCL from Conda Forge in Linux will
+automatically recurse and find system-wide ICDs *if* that link is present.
 
 If you are looking for more information, see `ocl-icd
 <https://github.com/OCL-dev/ocl-icd>`_ and its documentation. Ocl-icd is the
-"ICD loader" used by PyOpenCL when installed from Conda Forge. It represents the
-code behind :file:`libOpenCL.so`.
+"ICD loader" used by PyOpenCL when installed from Conda Forge on Linux.
+It represents the code behind :file:`libOpenCL.so`.
 
-Getting a better CPU-based OpenCL driver (OS X)
------------------------------------------------
-
-OS X has support for both CPU- and GPU-based OpenCL built in. Unfortunately,
-the built-in drivers can be temperamental, and they have not advanced as quickly
-as one might like. To make PyOpenCL use a more up-to-date (and open-source)
-CPU-based OpenCL driver, type the following:
-
-``conda install osx-pocl-opencl pocl pyopencl`` (OS X)
-
-Note that, by installing ``osx-pocl-opencl``, you will no longer be able to
-use PyOpenCL to talk to the system-wide Apple OpenCL drivers. To regain access
-to those drivers, simply uninstall ``osx-pocl-opencl`` and reinstall ``pyopencl``
-afterwards.
-
-In addition, you will also be unaffected by Apple's pending deprecation of
-OpenCL functionality--you'll be able to keep using OpenCL irrespective of what
-Apple does.
+On macOS, the packaging of PyOpenCL for Conda Forge relies on the
+`Khronos ICD Loader <https://github.com/KhronosGroup/OpenCL-ICD-Loader>`_,
+and it is packaged so that the OpenCL drivers built into the operating system
+are automatically available, in addition to other ICDs installed manually.
 
 Installing from source
 ----------------------
