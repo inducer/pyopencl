@@ -4,7 +4,10 @@ PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
 .. image:: https://gitlab.tiker.net/inducer/pyopencl/badges/master/pipeline.svg
    :target: https://gitlab.tiker.net/inducer/pyopencl/commits/master
 .. image:: https://badge.fury.io/py/pyopencl.png
-  :target: http://pypi.python.org/pypi/pyopencl
+   :target: http://pypi.python.org/pypi/pyopencl
+.. image:: https://travis-ci.org/inducer/pyopencl.svg?branch=master
+   :target: https://travis-ci.org/inducer/pyopencl
+(Travis only builds binary wheels for releases, see `#264 <https://github.com/inducer/pyopencl/pull/264>`_)
 
 PyOpenCL lets you access GPUs and other massively parallel compute
 devices from Python. It tries to offer computing goodness in the
