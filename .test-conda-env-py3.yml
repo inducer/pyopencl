@@ -7,6 +7,5 @@ dependencies:
 - git
 - conda-forge::numpy
 - pocl
-- khronos-opencl-icd-loader
 - mako
 - pybind11
