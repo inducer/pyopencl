@@ -53,6 +53,10 @@ done
 /opt/python/cp37-cp37m/bin/pip install delocate
 /opt/python/cp37-cp37m/bin/python /io/travis/fix-wheel.py /deps/ocl-icd/COPYING
 
+if [[ "${TWINE_USERNAME}" == "" ]]; then
+    exit 0
+fi
+
 /opt/python/cp37-cp37m/bin/pip install twine
 for WHEEL in /io/wheelhouse/pyopencl*.whl; do
     # dev
