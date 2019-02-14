@@ -32,6 +32,9 @@ from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 import logging
 logger = logging.getLogger(__name__)
 
+import os
+os.environ["PYOPENCL_HOME"] = os.path.dirname(os.path.abspath(__file__))
+
 try:
     import pyopencl._cl as _cl
 except ImportError:
