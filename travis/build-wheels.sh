@@ -29,7 +29,17 @@ cd /io
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
-    "${PYBIN}/pip" install numpy pybind11 mako
+    if [[ "${PYBIN}" == *cp36* ]]; then
+        NUMPY_VERSION="1.11.3"
+    elif [[ "${PYBIN}" == *cp37* ]]; then
+        NUMPY_VERSION="1.14.5"
+    elif [[ "${PYBIN}" == *cp35* ]]; then
+        NUMPY_VERSION="1.9.3"
+    else
+        NUMPY_VERSION="1.8.2"
+    fi
+    # Build with the oldest numpy available to be compatible with newer ones
+    "${PYBIN}/pip" install "numpy==${NUMPY_VERSION}" pybind11 mako
     "${PYBIN}/pip" wheel /io/ -w wheelhouse/
 done
 
