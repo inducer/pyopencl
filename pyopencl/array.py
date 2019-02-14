@@ -2002,15 +2002,16 @@ def _arange_knl(result, start, step):
 
 
 def arange(queue, *args, **kwargs):
-    """Create a :class:`Array` filled with numbers spaced `step` apart,
-    starting from `start` and ending at `stop`.
+    """arange(queue, [start, ] stop [, step], **kwargs)
+    Create a :class:`Array` filled with numbers spaced `step` apart,
+    starting from `start` and ending at `stop`. If not given, *start*
+    defaults to 0, *step* defaults to 1.
 
     For floating point arguments, the length of the result is
     `ceil((stop - start)/step)`.  This rule may result in the last
     element of the result being greater than `stop`.
 
-    *dtype*, if not specified, is taken as the largest common type
-    of *start*, *stop* and *step*.
+    *dtype* is a required keyword argument.
 
     .. versionchanged:: 2011.1
         *context* argument was deprecated.
