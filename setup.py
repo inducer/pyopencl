@@ -260,7 +260,7 @@ def main():
                 ],
             extras_require={
                 'pocl':  ["pocl_binary_distribution>=1.2"],
-            }
+            },
             include_package_data=True,
             package_data={
                     "pyopencl": [
