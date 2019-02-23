@@ -260,6 +260,7 @@ def main():
                 ],
             extras_require={
                 'pocl':  ["pocl_binary_distribution>=1.2"],
+                'oclgrind':  ["oclgrind_binary_distribution>=18.3"],
             },
             include_package_data=True,
             package_data={
