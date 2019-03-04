@@ -262,6 +262,7 @@ Pylint:
   - PROJECT_INSTALL_FLAGS="--editable"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
   - ". ./prepare-and-run-pylint.sh pyopencl test/test_*.py"
+  allow_failure: true
   tags:
   - python3
   except:
