@@ -258,7 +258,10 @@ def main():
                 "six>=1.9.0",
                 # "Mako>=0.3.6",
                 ],
-
+            extras_require={
+                'pocl':  ["pocl_binary_distribution>=1.2"],
+                'oclgrind':  ["oclgrind_binary_distribution>=18.3"],
+            },
             include_package_data=True,
             package_data={
                     "pyopencl": [
