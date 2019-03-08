@@ -95,6 +95,32 @@ On macOS, the packaging of PyOpenCL for Conda Forge relies on the
 and it is packaged so that the OpenCL drivers built into the operating system
 are automatically available, in addition to other ICDs installed manually.
 
+Installing from PyPI with Linux wheels
+--------------------------------------
+
+PyOpenCL distributes manylinux1 wheels in PyPI. These wheels are compatible with
+GLIBC>=2.5 based distributions.
+
+On Linux, type
+
+#.  ``pip install pyopencl``
+
+The wheels comes with OCL-ICD bundled and configured to use any OpenCL implementation
+supporting ICD interface installed in :file:`/etc/OpenCL/vendors`
+
+You can also install the following CPU based OpenCL implementation using pip shipped as binary
+wheels. Note that pyopencl has to be installed using a wheel for pyopencl to recognize these
+wheels.
+
+To install pyopencl with pocl, a CPU based implementation do,
+
+#.  ``pip install pyopencl[pocl]``
+
+To install pyopencl with oclgrind, an OpenCL debugger do,
+
+#.  ``pip install pyopencl[oclgrind]``
+
+
 Installing from source
 ----------------------
 
