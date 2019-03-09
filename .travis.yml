@@ -18,5 +18,6 @@ install:
 script:
   - pwd
   - ls -la
+  - if [[ "${TRAVIS_TAG}" == "" ]]; then unset TWINE_USERNAME; fi
   - docker run --rm -v `pwd`:/io -e TWINE_USERNAME -e TWINE_PASSWORD $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
   - ls wheelhouse/
