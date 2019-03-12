@@ -1086,6 +1086,19 @@ def test_compile_link(ctx_factory):
     queue.finish()
 
 
+def test_copy_buffer_rect(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    arr1 = cl_array.zeros(queue, (2, 3), "f")
+    arr2 = cl_array.zeros(queue, (4, 5), "f")
+    arr1.fill(1)
+    cl.enqueue_copy(
+            queue, arr2.data, arr1.data,
+            src_origin=(0, 0), dst_origin=(1, 1),
+            region=arr1.shape[::-1])
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa

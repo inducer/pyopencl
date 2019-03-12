@@ -2404,8 +2404,8 @@ namespace pyopencl
       py::object py_buffer_origin,
       py::object py_host_origin,
       py::object py_region,
-      py::sequence py_buffer_pitches,
-      py::sequence py_host_pitches,
+      py::object py_buffer_pitches,
+      py::object py_host_pitches,
       py::object py_wait_for,
       bool is_blocking
       )
@@ -2459,8 +2459,8 @@ namespace pyopencl
       py::object py_src_origin,
       py::object py_dst_origin,
       py::object py_region,
-      py::sequence py_src_pitches,
-      py::sequence py_dst_pitches,
+      py::object py_src_pitches,
+      py::object py_dst_pitches,
       py::object py_wait_for)
   {
     PYOPENCL_PARSE_WAIT_FOR;
