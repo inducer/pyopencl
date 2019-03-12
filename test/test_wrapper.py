@@ -1091,7 +1091,7 @@ def test_copy_buffer_rect(ctx_factory):
     queue = cl.CommandQueue(ctx)
 
     arr1 = cl_array.zeros(queue, (2, 3), "f")
-    arr2 = cl_parray.zeros(queue, (4, 5), "f")
+    arr2 = cl_array.zeros(queue, (4, 5), "f")
     arr1.fill(1)
     cl.enqueue_copy(
             queue, arr2.data, arr1.data,
