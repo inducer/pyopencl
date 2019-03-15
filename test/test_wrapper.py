@@ -552,7 +552,7 @@ def test_mempool(ctx_factory):
 
 
 def test_mempool_2(ctx_factory):
-    from pyopencl.tools import MemoryPool
+    from pyopencl.tools import MemoryPool, ImmediateAllocator
     from random import randrange
 
     context = ctx_factory()
