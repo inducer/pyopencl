@@ -238,8 +238,8 @@ namespace
     wrapper
       .def_property_readonly("held_blocks", &cls::held_blocks)
       .def_property_readonly("active_blocks", &cls::active_blocks)
-      .DEF_SIMPLE_STATIC_METHOD(bin_number)
-      .DEF_SIMPLE_STATIC_METHOD(alloc_size)
+      .DEF_SIMPLE_METHOD(bin_number)
+      .DEF_SIMPLE_METHOD(alloc_size)
       .DEF_SIMPLE_METHOD(free_held)
       .DEF_SIMPLE_METHOD(stop_holding)
       ;
@@ -293,7 +293,10 @@ void pyopencl_expose_mempool(py::module &m)
       cls, /* boost::noncopyable, */
       std::shared_ptr<cls>> wrapper( m, "MemoryPool");
     wrapper
-      .def(py::init<cl_allocator_base const &>())
+      .def(py::init<cl_allocator_base const &, unsigned>(),
+          py::arg("allocator"),
+          py::arg("leading_bits_in_bin_id")=4
+          )
       .def("allocate", device_pool_allocate)
       .def("__call__", device_pool_allocate)
       // undoc for now

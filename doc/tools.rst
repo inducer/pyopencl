@@ -68,13 +68,36 @@ not complicated::
 
         Allocate a :class:`pyopencl.Buffer` of the given *size*.
 
-.. class:: MemoryPool(allocator)
+.. class:: MemoryPool(allocator[, leading_bits_in_bin_id])
 
     A memory pool for OpenCL device memory. *allocator* must be an instance of
     one of the above classes, and should be an :class:`ImmediateAllocator`.
     The memory pool assumes that allocation failures are reported
     by the allocator immediately, and not in the OpenCL-typical
     deferred manner.
+
+    .. note::
+
+        The current implementation of the memory pool will retain allocated
+        memory after it is returned by the application and keep it in a bin
+        identified by the leading *leading_bits_in_bin_id* bits of the
+        allocation size. To ensure that allocations within each bin are
+        interchangeable, allocation sizes are rounded up to the largest size
+        that shares the leading bits of the requested allocation size.
+
+        The current default value of *leading_bits_in_bin_id* is
+        four, but this may change in future versions and is not
+        guaranteed.
+
+        *leading_bits_in_bin_id* must be passed by keyword,
+        and its role is purely advisory. It is not guaranteed
+        that future versions of the pool will use the
+        same allocation scheme and/or honor *leading_bits_in_bin_id*.
+
+    .. versionchanged:: 2019.1
+
+        Current bin allocation behavior documented, *leading_bits_in_bin_id*
+        added.
 
     .. attribute:: held_blocks
 
