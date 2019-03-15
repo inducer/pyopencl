@@ -551,17 +551,22 @@ def test_mempool(ctx_factory):
     pool.stop_holding()
 
 
-def test_mempool_2():
+def test_mempool_2(ctx_factory):
     from pyopencl.tools import MemoryPool
     from random import randrange
 
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    pool = MemoryPool(ImmediateAllocator(queue))
+
     for i in range(2000):
         s = randrange(1 << 31) >> randrange(32)
-        bin_nr = MemoryPool.bin_number(s)
-        asize = MemoryPool.alloc_size(bin_nr)
+        bin_nr = pool.bin_number(s)
+        asize = pool.alloc_size(bin_nr)
 
         assert asize >= s, s
-        assert MemoryPool.bin_number(asize) == bin_nr, s
+        assert pool.bin_number(asize) == bin_nr, s
         assert asize < asize*(1+1/8)
 
 
