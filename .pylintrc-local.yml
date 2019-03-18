@@ -1,8 +1,5 @@
 - arg: ignore
   val: compyte
-# https://github.com/PyCQA/pylint/issues/2694  
-- arg: disable
-  val: assignment-from-no-return
 - arg: generated-members
   val:
     - cltypes.*
