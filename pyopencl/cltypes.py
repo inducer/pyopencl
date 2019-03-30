@@ -42,6 +42,8 @@ ulong = np.uint64
 half = np.float16
 float = np.float32
 double = np.float64
+cfloat_t = np.complex64
+cdouble_t = np.complex128
 
 
 # {{{ vector types
