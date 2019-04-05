@@ -16,7 +16,7 @@ rm -rf ruby-2.1.2
 
 git clone --branch v2.2.12 https://github.com/OCL-dev/ocl-icd
 cd ocl-icd
-curl -L -O https://raw.githubusercontent.com/conda-forge/ocl-icd-feedstock/master/recipe/install-headers.patch
+curl -L -O https://raw.githubusercontent.com/conda-forge/ocl-icd-feedstock/22625432a0ae85920825dfeb103af9fe7bd6a950/recipe/install-headers.patch
 git apply install-headers.patch
 curl -L -O https://github.com/isuruf/ocl-icd/commit/3862386b51930f95d9ad1089f7157a98165d5a6b.patch
 git apply 76fab891c277886ef88af73c57328f8a47bdb6a4.patch
