@@ -254,7 +254,7 @@ def pytest_generate_tests_for_pyopencl(metafunc):
     arg_names = []
 
     for arg in ("platform", "device", "ctx_factory", "ctx_getter"):
-        if arg not in metafunc.funcargnames:
+        if arg not in metafunc.fixturenames:
             continue
 
         if arg == "ctx_getter":
