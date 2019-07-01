@@ -5,6 +5,7 @@ PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
    :target: https://gitlab.tiker.net/inducer/pyopencl/commits/master
 .. image:: https://badge.fury.io/py/pyopencl.png
    :target: http://pypi.python.org/pypi/pyopencl
+
 (Also: `Travis CI <https://travis-ci.org/inducer/pyopencl/builds>`_ to build binary wheels for releases, see `#264 <https://github.com/inducer/pyopencl/pull/264>`_)
 
 PyOpenCL lets you access GPUs and other massively parallel compute
@@ -27,7 +28,7 @@ spirit of its sister project `PyCUDA <http://mathema.tician.de/software/pycuda>`
 * Speed. PyOpenCL's base layer is written in C++, so all the niceties
   above are virtually free.
 
-* Helpful and complete `Documentation <http://documen.tician.de/pyopencl>`_
+* Helpful and complete `Documentation <http://documen.tician.de/pyopencl>`__
   as well as a `Wiki <http://wiki.tiker.net/PyOpenCL>`_.
 
 * Liberal license. PyOpenCL is open-source under the 
@@ -39,7 +40,7 @@ spirit of its sister project `PyCUDA <http://mathema.tician.de/software/pycuda>`
 
 Simple 4-step `install instructions <https://documen.tician.de/pyopencl/misc.html#installation>`_
 using Conda on Linux and macOS (that also install a working OpenCL implementation!)
-can be found in the `documentation <https://documen.tician.de/pyopencl/>`_.
+can be found in the `documentation <https://documen.tician.de/pyopencl/>`__.
 
 What you'll need if you do *not* want to use the convenient instructions above and
 instead build from source:
@@ -53,7 +54,7 @@ Places on the web related to PyOpenCL:
 
 * `Python package index <http://pypi.python.org/pypi/pyopencl>`_ (download releases)
 
-* `Documentation <http://documen.tician.de/pyopencl>`_ (read how things work)
+* `Documentation <http://documen.tician.de/pyopencl>`__ (read how things work)
 * `Conda Forge <https://anaconda.org/conda-forge/pyopencl>`_ (download binary packages for Linux, macOS, Windows)
 * `C. Gohlke's Windows binaries <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`_ (download Windows binaries)
 * `Github <http://github.com/inducer/pyopencl>`_ (get latest source code, file bugs)
