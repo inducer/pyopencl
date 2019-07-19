@@ -628,9 +628,11 @@ def test_context_dep_memoize(ctx_factory):
     assert counter[0] == 1
 
 
-def test_can_build_binary(ctx_factory):
+def test_can_build_and_run_binary(ctx_factory):
     ctx = ctx_factory()
-    device, = ctx.devices
+    queue = cl.CommandQueue(ctx)
+
+    device = queue.device
 
     program = cl.Program(ctx, """
     __kernel void simple(__global float *in, __global float *out)
@@ -642,6 +644,12 @@ def test_can_build_binary(ctx_factory):
 
     foo = cl.Program(ctx, [device], [binary])
     foo.build()
+
+    n = 256
+    a_dev = cl.clrandom.rand(queue, n, np.float32)
+    dest_dev = cl_array.empty_like(a_dev)
+
+    foo.simple(queue, (n,), (16,), a_dev.data, dest_dev.data)
 
 
 def test_enqueue_barrier_marker(ctx_factory):
