@@ -106,6 +106,11 @@ class CacheLockManager(CleanupBase):
                     warn("could not obtain cache lock--delete '%s' if necessary"
                             % self.lock_file)
 
+                if attempts > 3 * 60:
+                    raise RuntimeError("waited more than three minutes "
+                            "on the lock file '%s'"
+                            "--something is wrong" % self.lock_file)
+
             cleanup_m.register(self)
 
     def clean_up(self):
