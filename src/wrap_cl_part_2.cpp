@@ -24,6 +24,9 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
+#define NO_IMPORT_ARRAY
+#define PY_ARRAY_UNIQUE_SYMBOL pyopencl_ARRAY_API
+
 #include "wrap_cl.hpp"
 
 

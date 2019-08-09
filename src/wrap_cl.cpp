@@ -24,6 +24,8 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
+#define PY_ARRAY_UNIQUE_SYMBOL pyopencl_ARRAY_API
+
 #include "wrap_cl.hpp"
 
 
@@ -39,8 +41,21 @@ extern void pyopencl_expose_part_1(py::module &m);
 extern void pyopencl_expose_part_2(py::module &m);
 extern void pyopencl_expose_mempool(py::module &m);
 
+static bool import_numpy_helper()
+{
+#ifdef PYPY_VERSION
+      import_array();
+#else
+      import_array1(false);
+#endif
+  return true;
+}
+
 PYBIND11_MODULE(_cl, m)
 {
+  if (!import_numpy_helper())
+    throw py::error_already_set();
+
   pyopencl_expose_constants(m);
   pyopencl_expose_part_1(m);
   pyopencl_expose_part_2(m);

@@ -31,8 +31,7 @@
 #include <pybind11/pybind11.h>
 
 #include <numeric>
-#include "numpy_init.hpp"
-
+#include <numpy/arrayobject.h>
 
 
 
