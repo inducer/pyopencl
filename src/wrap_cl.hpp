@@ -84,7 +84,7 @@
 #include <utility>
 #include <numeric>
 #include "wrap_helpers.hpp"
-#include "numpy_init.hpp"
+#include <numpy/arrayobject.h>
 #include "tools.hpp"
 
 #ifdef PYOPENCL_PRETEND_CL_VERSION

@@ -28,6 +28,9 @@
 // first to prevent OS X from overriding a bunch of macros. (e.g. isspace)
 #include <Python.h>
 
+#define NO_IMPORT_ARRAY
+#define PY_ARRAY_UNIQUE_SYMBOL pyopencl_ARRAY_API
+
 #include <memory>
 #include <vector>
 #include "wrap_helpers.hpp"
