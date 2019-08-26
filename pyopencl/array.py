@@ -720,7 +720,7 @@ class Array(object):
                     "device-to-host transfers",
                     DeprecationWarning, 2)
 
-        ary, event1 = self.get(queue=queue, ary=ary, async_=async_, **kwargs)
+        ary, event1 = self._get(queue=queue, ary=ary, async_=async_, **kwargs)
 
         return ary
 
@@ -732,7 +732,7 @@ class Array(object):
         :meth:`pyopencl.enqueue_copy`.
         """
 
-        return self.get(queue=queue, ary=ary, async_=True, **kwargs)
+        return self._get(queue=queue, ary=ary, async_=True, **kwargs)
 
     def copy(self, queue=_copy_queue):
         """
