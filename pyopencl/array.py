@@ -305,6 +305,7 @@ class Array(object):
     .. attribute :: T
     .. automethod :: set
     .. automethod :: get
+    .. automethod :: get_async
     .. automethod :: copy
 
     .. automethod :: __str__
@@ -374,6 +375,12 @@ class Array(object):
     If an array is used from within an out-of-order queue, it needs to take
     care of its own operation ordering. The facilities in this section make
     this possible.
+
+    .. note::
+
+        Currently, read and write events are not distinguished.
+        As a result, e.g., read-only operations will needlessly wait on other
+        read-only operations (i.e., executed among asynchronous queues).
 
     .. versionadded:: 2014.1.1
 
@@ -627,23 +634,7 @@ class Array(object):
                     is_blocking=not async_)
             self.add_event(event1)
 
-    def get(self, queue=None, ary=None, async_=None, **kwargs):
-        """Transfer the contents of *self* into *ary* or a newly allocated
-        :mod:`numpy.ndarray`. If *ary* is given, it must have the same
-        shape and dtype.
-
-        .. versionchanged:: 2015.2
-
-            *ary* with different shape was deprecated.
-
-        .. versionchanged:: 2017.2.1
-
-            Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
-            we will continue to  accept *async* as a parameter, however this
-            should be considered deprecated. *async_* is the new, official
-            spelling.
-        """
-
+    def _get(self, queue=None, ary=None, async_=None, **kwargs):
         # {{{ handle 'async' deprecation
 
         async_arg = kwargs.pop("async", None)
@@ -688,11 +679,60 @@ class Array(object):
                     "to associate one.")
 
         if self.size:
-            cl.enqueue_copy(queue, ary, self.base_data,
+            event1 = cl.enqueue_copy(queue, ary, self.base_data,
                     device_offset=self.offset,
                     wait_for=self.events, is_blocking=not async_)
+            self.add_event(event1)
+        else:
+            event1 = None
+
+        return ary, event1
+
+    def get(self, queue=None, ary=None, async_=None, **kwargs):
+        """Transfer the contents of *self* into *ary* or a newly allocated
+        :mod:`numpy.ndarray`. If *ary* is given, it must have the same
+        shape and dtype.
+
+        .. versionchanged:: 2019.1
+
+            Calling with `async_=True` was deprecated and replaced by
+            :meth:`get_async`.
+            The event returned by :meth:`pyopencl.enqueue_copy` is now stored into
+            :attr:`events` to ensure data is not modified before the copy is
+            complete.
+
+        .. versionchanged:: 2015.2
+
+            *ary* with different shape was deprecated.
+
+        .. versionchanged:: 2017.2.1
+
+            Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
+            we will continue to  accept *async* as a parameter, however this
+            should be considered deprecated. *async_* is the new, official
+            spelling.
+        """
+
+        if async_:
+            from warnings import warn
+            warn("calling pyopencl.Array.get with `async_=True` is deprecated. "
+                    "Please use pyopencl.Array.get_async for asynchronous "
+                    "device-to-host transfers",
+                    DeprecationWarning, 2)
+
+        ary, event1 = self.get(queue=queue, ary=ary, async_=async_, **kwargs)
 
         return ary
+
+    def get_async(self, queue=None, ary=None, **kwargs):
+        """
+        Asynchronous version of :meth:`get`, following the same calling convention
+        while returning a tuple ``(ary, event)`` containing the host array `ary`
+        and the :class:`pyopencl.NannyEvent` `event` returned by
+        :meth:`pyopencl.enqueue_copy`.
+        """
+
+        return self.get(queue=queue, ary=ary, async_=True, **kwargs)
 
     def copy(self, queue=_copy_queue):
         """
