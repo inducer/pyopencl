@@ -726,8 +726,8 @@ class Array(object):
 
     def get_async(self, queue=None, ary=None, **kwargs):
         """
-        Asynchronous version of :meth:`get`, following the same calling convention
-        while returning a tuple ``(ary, event)`` containing the host array `ary`
+        Asynchronous version of :meth:`get` which returns a tuple ``(ary, event)``
+        containing the host array `ary`
         and the :class:`pyopencl.NannyEvent` `event` returned by
         :meth:`pyopencl.enqueue_copy`.
         """
