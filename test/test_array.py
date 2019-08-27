@@ -1231,15 +1231,15 @@ def test_get_async(ctx_factory):
     b_gpu.finish()
     assert np.abs(b1 - b).mean() < 1e-5
 
-    b1 = b_gpu.get_async()  # testing that this waits for events
-    b_gpu.finish()
+    b1, evt = b_gpu.get_async()  # testing that this waits for events
+    evt.wait()
     assert np.abs(b1 - b).mean() < 1e-5
 
     wait_event = cl.UserEvent(context)
     b_gpu.add_event(wait_event)
-    b = b_gpu.get_async()  # testing that this doesn't hang
+    b, evt = b_gpu.get_async()  # testing that this doesn't hang
     wait_event.set_status(cl.command_execution_status.COMPLETE)
-    b_gpu.finish()
+    evt.wait()
     assert np.abs(b1 - b).mean() < 1e-5
 
 
