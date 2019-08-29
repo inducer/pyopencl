@@ -8,7 +8,7 @@ jobs:
     -
         script: |
             set -e
-            sed 's/python=3/python<3/' .test-conda-env-py3.yml > .test-conda-env-py2.yml
+            sed 's/python=3/python=2.7/' .test-conda-env-py3.yml > .test-conda-env-py2.yml
             CONDA_ENVIRONMENT=.test-conda-env-py2.yml
             curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
             . ./build-and-test-py-project-within-miniconda.sh
