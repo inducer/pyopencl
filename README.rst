@@ -2,9 +2,14 @@ PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
 ---------------------------------------------------------------
 
 .. image:: https://gitlab.tiker.net/inducer/pyopencl/badges/master/pipeline.svg
-   :target: https://gitlab.tiker.net/inducer/pyopencl/commits/master
+    :alt: Gitlab Build Status
+    :target: https://gitlab.tiker.net/inducer/pyopencl/commits/master
+.. image:: https://dev.azure.com/ak-spam/inducer/_apis/build/status/inducer.pyopencl?branchName=master
+    :alt: Azure Build Status
+    :target: https://dev.azure.com/ak-spam/inducer/_build/latest?definitionId=5&branchName=master
 .. image:: https://badge.fury.io/py/pyopencl.png
-   :target: http://pypi.python.org/pypi/pyopencl
+    :alt: Python Package Index Release Page
+    :target: https://pypi.org/project/pyopencl/
 
 (Also: `Travis CI <https://travis-ci.org/inducer/pyopencl/builds>`_ to build binary wheels for releases, see `#264 <https://github.com/inducer/pyopencl/pull/264>`_)
 
