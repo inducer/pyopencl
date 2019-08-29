@@ -1,6 +1,21 @@
 jobs:
 -
-    job: 'Pytest'
+    job: 'Pytest Python 2'
+    pool:
+        vmImage: 'ubuntu-16.04'
+
+    steps:
+    -
+        script: |
+            set -e
+            CONDA_ENVIRONMENT=.test-conda-env-py2.yml
+            curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
+            . ./build-and-test-py-project-within-miniconda.sh
+
+        displayName: 'Pytest Conda'
+
+-
+    job: 'Pytest Python 3'
     pool:
         vmImage: 'ubuntu-16.04'
 
@@ -13,6 +28,7 @@ jobs:
             . ./build-and-test-py-project-within-miniconda.sh
 
         displayName: 'Pytest Conda'
+
 
 -
     job: 'Flake8'
