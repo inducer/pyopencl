@@ -205,6 +205,7 @@ Python 3 Conda Apple:
   - CONDA_ENVIRONMENT=.test-conda-env-py3.yml
   - export CC=gcc
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
+  - "./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL"
   - ". ./build-and-test-py-project-within-miniconda.sh"
   tags:
   - apple
