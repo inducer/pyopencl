@@ -1,6 +1,6 @@
 jobs:
 -
-    job: 'Pytest Python 2'
+    job: 'Python2'
     pool:
         vmImage: 'ubuntu-16.04'
 
@@ -15,7 +15,7 @@ jobs:
         displayName: 'Pytest Conda'
 
 -
-    job: 'Pytest Python 3'
+    job: 'Python3'
     pool:
         vmImage: 'ubuntu-16.04'
 
