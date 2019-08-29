@@ -1,9 +1,10 @@
-name: test-conda-env-py3
+name: test-conda-env
 channels:
 - conda-forge
 - defaults
 
 dependencies:
+- python=3
 - git
 - conda-forge::numpy
 - pocl
