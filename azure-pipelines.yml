@@ -15,6 +15,12 @@ jobs:
 
         displayName: 'Pytest Conda'
 
+    -
+        task: PublishTestResults@2
+        inputs:
+            testResultsFormat: 'JUnit'
+            testResultsFiles: 'test/pytest.xml'
+
 -
     job: 'Python3'
     pool:
