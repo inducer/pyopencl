@@ -1560,6 +1560,14 @@ namespace pyopencl
         PYOPENCL_CALL_GUARDED_THREADED(clWaitForEvents, (1, &m_event));
       }
 
+      // Called from a destructor context below:
+      // - Should not release the GIL
+      // - Should fail gracefully in the face of errors
+      virtual void wait_during_cleanup_without_releasing_the_gil()
+      {
+        PYOPENCL_CALL_GUARDED_CLEANUP(clWaitForEvents, (1, &m_event));
+      }
+
 #if PYOPENCL_CL_VERSION >= 0x1010
     // {{{ set_callback, by way of a a thread-based construction
 
@@ -1688,7 +1696,11 @@ namespace pyopencl
       { }
 
       ~nanny_event()
-      { wait(); }
+      {
+        // It appears that Pybind can get very confused if we release the GIL here:
+        // https://github.com/inducer/pyopencl/issues/296
+        wait_during_cleanup_without_releasing_the_gil();
+      }
 
       py::object get_ward() const
       {
@@ -1703,6 +1715,12 @@ namespace pyopencl
       virtual void wait()
       {
         event::wait();
+        m_ward.reset();
+      }
+
+      virtual void wait_during_cleanup_without_releasing_the_gil()
+      {
+        event::wait_during_cleanup_without_releasing_the_gil();
         m_ward.reset();
       }
   };
@@ -1726,7 +1744,11 @@ namespace pyopencl
       { }
 
       ~nanny_event()
-      { wait(); }
+      {
+        // It appears that Pybind can get very confused if we release the GIL here:
+        // https://github.com/inducer/pyopencl/issues/296
+        wait_during_cleanup_without_releasing_the_gil();
+      }
 
       py::object get_ward() const
       { return m_ward; }
@@ -1734,6 +1756,12 @@ namespace pyopencl
       virtual void wait()
       {
         event::wait();
+        m_ward = py::none();
+      }
+
+      virtual void wait_during_cleanup_without_releasing_the_gil()
+      {
+        event::wait_during_cleanup_without_releasing_the_gil();
         m_ward = py::none();
       }
   };

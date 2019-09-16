@@ -1112,6 +1112,33 @@ def test_copy_buffer_rect(ctx_factory):
             region=arr1.shape[::-1])
 
 
+def test_threaded_nanny_events(ctx_factory):
+    # https://github.com/inducer/pyopencl/issues/296
+
+    import gc
+    import threading
+
+    def create_arrays_thread(n1=10, n2=20):
+        ctx = ctx_factory()
+        queue = cl.CommandQueue(ctx)
+        for i1 in range(n2):
+            for i in range(n1):
+                acl = cl.array.zeros(queue, 10, dtype=np.float32)
+                acl.get()
+            # Garbage collection triggers the error
+            print("collected ", str(gc.collect()))
+            print("stats ", gc.get_stats())
+
+    t1 = threading.Thread(target=create_arrays_thread)
+    t2 = threading.Thread(target=create_arrays_thread)
+
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa
