@@ -34,7 +34,7 @@ spirit of its sister project `PyCUDA <https://mathema.tician.de/software/pycuda>
   above are virtually free.
 
 * Helpful and complete `Documentation <https://documen.tician.de/pyopencl>`__
-  as well as a `Wiki <http://wiki.tiker.net/PyOpenCL>`_.
+  as well as a `Wiki <https://wiki.tiker.net/PyOpenCL>`_.
 
 * Liberal license. PyOpenCL is open-source under the 
   `MIT license <https://en.wikipedia.org/wiki/MIT_License>`_
@@ -53,7 +53,7 @@ instead build from source:
 *   gcc/g++ new enough to be compatible with pybind11
     (see their `FAQ <https://pybind11.readthedocs.io/en/stable/faq.html>`_)
 *   `numpy <https://numpy.org>`_, and
-*   an OpenCL implementation. (See this `howto <http://wiki.tiker.net/OpenCLHowTo>`_ for how to get one.)
+*   an OpenCL implementation. (See this `howto <https://wiki.tiker.net/OpenCLHowTo>`_ for how to get one.)
 
 Places on the web related to PyOpenCL:
 
@@ -61,6 +61,6 @@ Places on the web related to PyOpenCL:
 
 * `Documentation <https://documen.tician.de/pyopencl>`__ (read how things work)
 * `Conda Forge <https://anaconda.org/conda-forge/pyopencl>`_ (download binary packages for Linux, macOS, Windows)
-* `C. Gohlke's Windows binaries <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`_ (download Windows binaries)
+* `C. Gohlke's Windows binaries <https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`_ (download Windows binaries)
 * `Github <https://github.com/inducer/pyopencl>`_ (get latest source code, file bugs)
-* `Wiki <http://wiki.tiker.net/PyOpenCL>`_ (read installation tips, get examples, read FAQ)
+* `Wiki <https://wiki.tiker.net/PyOpenCL>`_ (read installation tips, get examples, read FAQ)
