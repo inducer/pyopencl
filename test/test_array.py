@@ -667,7 +667,7 @@ def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
 def test_array_method(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
-    arr = make_random_array(queue, np.float32, (32, 32))
+    arr = make_random_array(queue, np.float32, 1024)
     np.testing.assert_array_equal(arr, arr.get())
 
 def test_numpy_integer_shape(ctx_factory):
