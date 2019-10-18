@@ -670,6 +670,7 @@ def test_array_method(ctx_factory):
     arr = make_random_array(queue, np.float32, 1024)
     np.testing.assert_array_equal(arr, arr.get())
 
+
 def test_numpy_integer_shape(ctx_factory):
     try:
         list(np.int32(17))
