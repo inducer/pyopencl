@@ -376,12 +376,6 @@ class Array(object):
     care of its own operation ordering. The facilities in this section make
     this possible.
 
-    .. note::
-
-        Currently, read and write events are not distinguished.
-        As a result, e.g., read-only operations will needlessly wait on other
-        read-only operations (i.e., executed among asynchronous queues).
-
     .. versionadded:: 2014.1.1
 
     .. attribute:: events
