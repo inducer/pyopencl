@@ -687,7 +687,7 @@ class Array(object):
         :mod:`numpy.ndarray`. If *ary* is given, it must have the same
         shape and dtype.
 
-        .. versionchanged:: 2019.1
+        .. versionchanged:: 2019.1.2
 
             Calling with `async_=True` was deprecated and replaced by
             :meth:`get_async`.
@@ -724,6 +724,8 @@ class Array(object):
         containing the host array `ary`
         and the :class:`pyopencl.NannyEvent` `event` returned by
         :meth:`pyopencl.enqueue_copy`.
+
+        .. versionadded:: 2019.1.2
         """
 
         return self._get(queue=queue, ary=ary, async_=True, **kwargs)
