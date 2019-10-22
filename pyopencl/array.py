@@ -584,6 +584,10 @@ class Array(object):
         *ary* must have the same dtype and size (not necessarily shape) as
         *self*.
 
+        *async_* is a Boolean indicating whether the function is allowed
+        to return before the transfer completes. To avoid synchronization
+        bugs, this defaults to *False*.
+
         .. versionchanged:: 2017.2.1
 
             Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
