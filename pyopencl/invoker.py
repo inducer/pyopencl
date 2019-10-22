@@ -284,7 +284,7 @@ def wrap_in_error_handler(body, arg_names):
 
 def add_local_imports(gen):
     gen("import numpy as np")
-    gen("import pyopencl._cl as _cl")
+    gen("import pyopencl as _cl")
     gen("from pyopencl import _KERNEL_ARG_CLASSES")
     gen("")
 
@@ -352,7 +352,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v6",
+        "pyopencl-invoker-cache-v7",
         key_builder=_NumpyTypesKeyBuilder())
 
 

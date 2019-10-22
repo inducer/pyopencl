@@ -1139,6 +1139,23 @@ def test_threaded_nanny_events(ctx_factory):
     t2.join()
 
 
+def test_concurrency_checker(ctx_factory):
+    import pyopencl.check_concurrency as ccheck
+
+    ccheck.enable()
+
+    ctx = ctx_factory()
+    queue1 = cl.CommandQueue(ctx)
+    queue2 = cl.CommandQueue(ctx)
+
+    arr1 = cl_array.zeros(queue1, (10,), np.float32)
+    arr2 = cl_array.zeros(queue2, (10,), np.float32)
+    del arr1.events[:]
+    del arr2.events[:]
+
+    arr1 + arr2
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa
