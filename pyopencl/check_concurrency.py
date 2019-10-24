@@ -23,12 +23,17 @@ THE SOFTWARE.
 """
 
 import pyopencl as cl
+import pyopencl.invoker
+
+import traceback
 import weakref
 from collections import namedtuple
+
 
 OpRecord = namedtuple("OpRecord", [
     "kernel_name",
     "queue",
+    "event"
     ])
 
 
@@ -40,78 +45,119 @@ BUFFER_TO_OPS = weakref.WeakKeyDictionary()
 CURRENT_BUF_ARGS = weakref.WeakKeyDictionary()
 
 
-prev_enqueue_nd_range_kernel = None
-prev_kernel__set_arg_buf = None
-prev_kernel_set_arg = None
+def add_local_imports_wrapper(gen):
+    cl.invoker.add_local_imports(gen)
+    # NOTE: need to import pyopencl to be able to wrap it in generated code
+    gen("import pyopencl as _cl")
+    gen("")
 
 
-def my_set_arg(kernel, index, obj):
+def set_arg_wrapper(cc, kernel, index, obj):
+    if cc.verbose:
+        # FIXME: should really use logging
+        print('set_arg: %s %s' % (kernel.function_name, index))
+
     if isinstance(obj, cl.Buffer):
         arg_dict = CURRENT_BUF_ARGS.setdefault(kernel, {})
         arg_dict[index] = weakref.ref(obj)
-    return prev_kernel_set_arg(kernel, index, obj)
+    return cc.prev_kernel_set_arg(kernel, index, obj)
 
 
-def my_enqueue_nd_range_kernel(
-        queue, kernel, global_size, local_size,
+def check_events(wait_for_events, prior_events):
+    for evt in wait_for_events:
+        if evt in prior_events:
+            return True
+
+    return False
+
+
+def enqueue_nd_range_kernel_wrapper(
+        cc, queue, kernel, global_size, local_size,
         global_offset=None, wait_for=None, g_times_l=None):
-    evt = prev_enqueue_nd_range_kernel(
+    if cc.verbose:
+        print('enqueue_nd_range_kernel: %s' % (kernel.function_name,))
+
+    evt = cc.prev_enqueue_nd_range_kernel(
         queue, kernel, global_size, local_size,
         global_offset, wait_for, g_times_l)
 
     arg_dict = CURRENT_BUF_ARGS.get(kernel)
-    if arg_dict is not None:
-        for buf in arg_dict.values():
-            buf = buf()
-            if buf is None:
+    if arg_dict is None:
+        return evt
+
+    for index, buf in arg_dict.items():
+        buf = buf()
+        if buf is None:
+            continue
+
+        prior_ops = BUFFER_TO_OPS.setdefault(buf, [])
+        prior_events = []
+        for prior_op in prior_ops:
+            prev_queue = prior_op.queue()
+            if prev_queue is None:
                 continue
 
-            prior_ops = BUFFER_TO_OPS.setdefault(buf, [])
-            for prior_op in prior_ops:
-                prev_queue = prior_op.queue()
+            if prev_queue.int_ptr != queue.int_ptr:
+                if cc.show_traceback:
+                    print("Traceback")
+                    traceback.print_stack()
 
-                if prev_queue is not None and prev_queue.int_ptr != queue.int_ptr:
-                    print("DIFFERENT QUEUES",
-                            kernel.function_name, prior_op.kernel_name)
+                print('DifferentQueuesInKernel: argument %d current kernel `%s` '
+                        'previous kernel `%s`' % (
+                            index, kernel.function_name, prior_op.kernel_name))
 
-            prior_ops.append(
-                    OpRecord(
-                        kernel_name=kernel.function_name,
-                        queue=weakref.ref(queue),)
-                    )
+                prior_event = prior_op.event()
+                if prior_event is not None:
+                    prior_events.append(prior_event)
+
+        if not check_events(wait_for, prior_events):
+            print('EventsNotFound')
+
+        prior_ops.append(
+                OpRecord(
+                    kernel_name=kernel.function_name,
+                    queue=weakref.ref(queue),
+                    event=weakref.ref(evt),)
+                )
 
     return evt
 
 
 class ConcurrencyCheck(object):
+    prev_enqueue_nd_range_kernel = None
+    prev_kernel_set_arg = None
+    prev_get_cl_header_version = None
+
+    def __init__(self, show_traceback=True, verbose=True):
+        self.show_traceback = show_traceback
+        self.verbose = verbose
+
     def __enter__(self):
-        global prev_enqueue_nd_range_kernel
-        global prev_kernel_set_arg
-        global prev_get_cl_header_version
+        if self.prev_enqueue_nd_range_kernel is not None:
+            raise RuntimeError('cannot nest `ConcurrencyCheck`s')
 
-        if prev_enqueue_nd_range_kernel is not None:
-            raise RuntimeError("already enabled")
+        self.prev_enqueue_nd_range_kernel = cl.enqueue_nd_range_kernel
+        self.prev_kernel_set_arg = cl.Kernel.set_arg
+        self.prev_get_cl_header_version = cl.get_cl_header_version
 
-        prev_enqueue_nd_range_kernel = cl.enqueue_nd_range_kernel
-        prev_kernel_set_arg = cl.Kernel.set_arg
-        prev_get_cl_header_version = cl.get_cl_header_version
-
-        cl.Kernel.set_arg = my_set_arg
-        cl.enqueue_nd_range_kernel = my_enqueue_nd_range_kernel
+        from functools import partial
+        cl.Kernel.set_arg = lambda a, b, c: set_arg_wrapper(self, a, b, c)
+        cl.enqueue_nd_range_kernel = \
+                partial(enqueue_nd_range_kernel_wrapper, self)
+        cl.invoker.add_local_imports = \
+                add_local_imports_wrapper
 
         # I can't be bothered to handle clEnqueueFillBuffer
         cl.get_cl_header_version = lambda: (1, 1)
 
     def __exit__(self, exc_type, exc_value, traceback):
-        global prev_enqueue_nd_range_kernel
-        global prev_kernel_set_arg
-        global prev_get_cl_header_version
+        cl.enqueue_nd_range_kernel = self.prev_enqueue_nd_range_kernel
+        cl.Kernel.set_arg = self.prev_kernel_set_arg
+        cl.get_cl_header_version = self.prev_get_cl_header_version
 
-        cl.enqueue_nd_range_kernel = prev_enqueue_nd_range_kernel
-        cl.Kernel.set_arg = prev_kernel_set_arg
-        cl.get_cl_header_version = prev_get_cl_header_version
-
-        prev_enqueue_nd_range_kernel = None
+        self.prev_enqueue_nd_range_kernel = None
 
         BUFFER_TO_OPS.clear()
         CURRENT_BUF_ARGS.clear()
+
+# vim: foldmethod=marker

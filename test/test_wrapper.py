@@ -1149,7 +1149,7 @@ def test_concurrency_checker(ctx_factory):
 
         arr1 = cl_array.zeros(queue1, (10,), np.float32)
         arr2 = cl_array.zeros(queue2, (10,), np.float32)
-        del arr1.events[:]
+        # del arr1.events[:]
         del arr2.events[:]
 
         arr1 + arr2
