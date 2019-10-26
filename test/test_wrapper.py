@@ -1140,8 +1140,17 @@ def test_threaded_nanny_events(ctx_factory):
 
 
 def test_concurrency_checker(ctx_factory):
-    import pyopencl.check_concurrency as ccheck
+    import logging
+    logger = logging.getLogger('pyopencl.check_concurrency')
 
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    import pyopencl.check_concurrency as ccheck
     with ccheck.ConcurrencyCheck():
         ctx = ctx_factory()
         queue1 = cl.CommandQueue(ctx)
@@ -1152,7 +1161,9 @@ def test_concurrency_checker(ctx_factory):
         # del arr1.events[:]
         del arr2.events[:]
 
-        arr1 + arr2
+        arr1 - arr2
+
+    print('done')
 
 
 if __name__ == "__main__":
