@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 OpRecord = namedtuple("OpRecord", [
     "kernel_name",
     "queue",
+    "event",
     ])
 
 
@@ -51,25 +52,9 @@ QUEUE_TO_EVENTS = weakref.WeakKeyDictionary()
 
 # {{{ helpers
 
-def remove_finished_events(events):
-    global QUEUE_TO_EVENTS
-
-    for evt in events:
-        queue = evt.get_info(cl.event_info.COMMAND_QUEUE)
-        if queue not in QUEUE_TO_EVENTS:
-            continue
-
-        logger.info('[RM] %s: %s', queue, hash(evt))
-        QUEUE_TO_EVENTS[queue].remove(hash(evt))
-
-
 def add_events(queue, events):
-    global QUEUE_TO_EVENTS
-
-    logger.debug('[ADD] %s: %s', queue, set(hash(evt) for evt in events))
-    QUEUE_TO_EVENTS.setdefault(queue, set()).update(
-            [hash(evt) for evt in events])
-
+    logger.debug('[ADD] %s: %s', queue, events)
+    QUEUE_TO_EVENTS.setdefault(queue, weakref.WeakSet()).update(events)
 
 # }}}
 
@@ -96,14 +81,6 @@ def wrapper_set_arg(cc, kernel, index, obj):
     return cc.call('set_arg')(kernel, index, obj)
 
 
-def wrapper_wait_for_events(cc, events):
-    """Wraps :func:`pyopencl.wait_for_events`"""
-
-    remove_finished_events(events)
-
-    return cc.call('wait_for_events')(events)
-
-
 def wrapper_finish(cc, queue):
     """Wraps :meth:`pyopencl.CommandQueue.finish`"""
 
@@ -119,13 +96,17 @@ def wrapper_enqueue_nd_range_kernel(cc,
     """Wraps :func:`pyopencl.enqueue_nd_range_kernel`"""
 
     logger.debug('enqueue_nd_range_kernel: %s', kernel.function_name)
+    evt = cc.call('enqueue_nd_range_kernel')(queue, kernel,
+            global_size, local_size, global_offset, wait_for, g_times_l)
+    add_events(queue, [evt])
 
     arg_dict = CURRENT_BUF_ARGS.get(kernel)
     if arg_dict is not None:
-        synced_events = set([hash(evt) for evt in wait_for]) \
-                | QUEUE_TO_EVENTS.get(queue, set())
-        logger.debug("synced events: %s", synced_events)
+        synced_events = weakref.WeakSet()
+        if wait_for is not None:
+            synced_events |= weakref.WeakSet(wait_for)
 
+        indices = list(arg_dict.keys())
         for index, buf in arg_dict.items():
             logger.debug("%s: arg %d" % (kernel.function_name, index))
 
@@ -134,6 +115,7 @@ def wrapper_enqueue_nd_range_kernel(cc,
                 continue
 
             prior_ops = BUFFER_TO_OPS.setdefault(buf, [])
+            unsynced_events = []
             for op in prior_ops:
                 prior_queue = op.queue()
                 if prior_queue is None:
@@ -141,33 +123,39 @@ def wrapper_enqueue_nd_range_kernel(cc,
                 if prior_queue.int_ptr == queue.int_ptr:
                     continue
 
-                prior_events = QUEUE_TO_EVENTS.get(prior_queue, set())
-                unsynced_events = prior_events - synced_events
-                logger.debug("%s prior events: %s", prior_queue, prior_events)
-                logger.debug("unsynced events: %s", unsynced_events)
+                prior_event = op.event()
+                if prior_event is None:
+                    continue
 
-                if unsynced_events:
-                    if cc.show_traceback:
-                        print("Traceback")
-                        traceback.print_stack()
-                    from warnings import warn
+                prior_queue_events = QUEUE_TO_EVENTS.get(
+                        prior_queue, weakref.WeakSet())
+                if prior_event in prior_queue_events \
+                        and prior_event not in synced_events:
+                    unsynced_events.append(op.kernel_name)
 
-                    warn("\nEventsNotSynced: argument %d "
-                            "current kernel `%s` previous kernel `%s`\n"
-                            "events `%s` not found in `wait_for` "
-                            "or synced with `queue.finish()` "
-                            "or `cl.wait_for_events()`" % (
-                                index, kernel.function_name, op.kernel_name,
-                                unsynced_events),
-                            RuntimeWarning, stacklevel=5)
+            logger.debug("unsynced events: %s", list(unsynced_events))
+            if unsynced_events:
+                if cc.show_traceback:
+                    print("Traceback")
+                    traceback.print_stack()
+
+                from warnings import warn
+                warn("\n[%5d] EventsNotSynced: argument `%s` in `%s`\n"
+                        "%7s current kernel `%s` previous kernels %s\n"
+                        "%7s %d events not found in `wait_for` "
+                        "or synced with `queue.finish()` "
+                        "or `cl.wait_for_events()`\n" % (
+                            cc.concurrency_issues,
+                            index, indices, " ",
+                            kernel.function_name, ", ".join(unsynced_events), " ",
+                            len(unsynced_events)),
+                        RuntimeWarning, stacklevel=5)
+                cc.concurrency_issues += 1
 
             prior_ops.append(OpRecord(
                 kernel_name=kernel.function_name,
-                queue=weakref.ref(queue),))
-
-    evt = cc.call('enqueue_nd_range_kernel')(queue, kernel,
-            global_size, local_size, global_offset, wait_for, g_times_l)
-    add_events(queue, [evt])
+                queue=weakref.ref(queue),
+                event=weakref.ref(evt),))
 
     return evt
 
@@ -207,6 +195,7 @@ class ConcurrencyCheck(object):
 
     def __enter__(self):
         self._entered = True
+        self.concurrency_issues = 0
 
         # allow monkeypatching in generated code
         self._monkey_patch(cl.invoker, 'add_local_imports')
@@ -221,8 +210,8 @@ class ConcurrencyCheck(object):
         # catch events
         self._monkey_patch(cl.Event, '__hash__',
                 wrapper=lambda x: x.int_ptr)
-        self._monkey_patch(cl, 'wait_for_events')
-        self._monkey_patch(cl.CommandQueue, 'finish')
+        self._monkey_patch(cl.CommandQueue, 'finish',
+                wrapper=lambda a: wrapper_finish(self, a))
         # catch kernel calls to check concurrency
         self._monkey_patch(cl, 'enqueue_nd_range_kernel')
 

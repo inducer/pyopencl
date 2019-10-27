@@ -45,6 +45,25 @@ else:
     faulthandler.enable()
 
 
+def with_concurrency_check(func):
+    def wrapper(*args, **kwargs):
+        import pyopencl.check_concurrency as cc
+        with cc.ConcurrencyCheck():
+            func(*args, **kwargs)
+
+    import logging
+    logger = logging.getLogger('pyopencl.check_concurrency')
+
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    return wrapper
+
+
 def _skip_if_pocl(plat, up_to_version, msg='unsupported by pocl'):
     if plat.vendor == "The pocl project":
         if up_to_version is None or get_pocl_version(plat) <= up_to_version:
@@ -1139,31 +1158,18 @@ def test_threaded_nanny_events(ctx_factory):
     t2.join()
 
 
+@with_concurrency_check
 def test_concurrency_checker(ctx_factory):
-    import logging
-    logger = logging.getLogger('pyopencl.check_concurrency')
+    ctx = ctx_factory()
+    queue1 = cl.CommandQueue(ctx)
+    queue2 = cl.CommandQueue(ctx)
 
-    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-    handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
+    arr1 = cl_array.zeros(queue1, (10,), np.float32)
+    arr2 = cl_array.zeros(queue2, (10,), np.float32)
+    # del arr1.events[:]
+    del arr2.events[:]
 
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
-
-    import pyopencl.check_concurrency as ccheck
-    with ccheck.ConcurrencyCheck():
-        ctx = ctx_factory()
-        queue1 = cl.CommandQueue(ctx)
-        queue2 = cl.CommandQueue(ctx)
-
-        arr1 = cl_array.zeros(queue1, (10,), np.float32)
-        arr2 = cl_array.zeros(queue2, (10,), np.float32)
-        # del arr1.events[:]
-        del arr2.events[:]
-
-        arr1 - arr2
-
-    print('done')
+    arr1 - arr2
 
 
 if __name__ == "__main__":
