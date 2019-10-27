@@ -1529,9 +1529,16 @@ def enqueue_copy(queue, dest, src, **kwargs):
     :arg wait_for: (optional, default empty)
     :arg is_blocking: Wait for completion. Defaults to *True*.
       (Available on any copy involving host memory)
-
     :return: A :class:`NannyEvent` if the transfer involved a
         host-side buffer, otherwise an :class:`Event`.
+
+    .. note::
+
+        Be aware that when the deletion of the :class:`NannyEvent` that is
+        returned by the function if the transfer involved a host-side buffer
+        will block until the transfer is complete, so be sure to keep a
+        reference to this :class:`Event` as long as necessary for the
+        transfer to complete.
 
     .. note::
 
