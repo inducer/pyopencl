@@ -50,15 +50,6 @@ CURRENT_BUF_ARGS = weakref.WeakKeyDictionary()
 QUEUE_TO_EVENTS = weakref.WeakKeyDictionary()
 
 
-# {{{ helpers
-
-def add_events(queue, events):
-    logger.debug('[ADD] %s: %s', queue, events)
-    QUEUE_TO_EVENTS.setdefault(queue, weakref.WeakSet()).update(events)
-
-# }}}
-
-
 # {{{ wrappers
 
 def wrapper_add_local_imports(cc, gen):
@@ -98,7 +89,7 @@ def wrapper_enqueue_nd_range_kernel(cc,
     logger.debug('enqueue_nd_range_kernel: %s', kernel.function_name)
     evt = cc.call('enqueue_nd_range_kernel')(queue, kernel,
             global_size, local_size, global_offset, wait_for, g_times_l)
-    add_events(queue, [evt])
+    QUEUE_TO_EVENTS.setdefault(queue, weakref.WeakSet()).add(evt)
 
     arg_dict = CURRENT_BUF_ARGS.get(kernel)
     if arg_dict is not None:
@@ -163,6 +154,23 @@ def wrapper_enqueue_nd_range_kernel(cc,
 
 
 # {{{
+
+def with_concurrency_check(func):
+    def wrapper(func, *args, **kwargs):
+        with ConcurrencyCheck():
+            return func(*args, **kwargs)
+
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+
+    global logger
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
+
+    from pytools import decorator
+    return decorator.decorator(wrapper, func)
+
 
 class ConcurrencyCheck(object):
     _entered = False

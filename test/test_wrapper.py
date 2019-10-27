@@ -35,6 +35,7 @@ import pyopencl.clrandom
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import get_pocl_version
+from pyopencl.check_concurrency import with_concurrency_check
 
 # Are CL implementations crashy? You be the judge. :)
 try:
@@ -43,25 +44,6 @@ except ImportError:
     pass
 else:
     faulthandler.enable()
-
-
-def with_concurrency_check(func):
-    def wrapper(*args, **kwargs):
-        import pyopencl.check_concurrency as cc
-        with cc.ConcurrencyCheck():
-            func(*args, **kwargs)
-
-    import logging
-    logger = logging.getLogger('pyopencl.check_concurrency')
-
-    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-    handler = logging.StreamHandler()
-    handler.setFormatter(formatter)
-
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
-
-    return wrapper
 
 
 def _skip_if_pocl(plat, up_to_version, msg='unsupported by pocl'):
