@@ -33,6 +33,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 OpRecord = namedtuple("OpRecord", [
+    "arg_name",
     "kernel_name",
     "queue",
     "event",
@@ -72,6 +73,16 @@ def wrapper_set_arg(cc, kernel, index, obj):
     return cc.call('set_arg')(kernel, index, obj)
 
 
+def wrapper_wait_for_events(cc, wait_for):
+    for evt in wait_for:
+        queue = evt.get_info(cl.event_info.COMMAND_QUEUE)
+        if queue not in QUEUE_TO_EVENTS:
+            continue
+
+        if evt in QUEUE_TO_EVENTS[queue]:
+            QUEUE_TO_EVENTS[queue].remove(evt)
+
+
 def wrapper_finish(cc, queue):
     """Wraps :meth:`pyopencl.CommandQueue.finish`"""
 
@@ -93,17 +104,21 @@ def wrapper_enqueue_nd_range_kernel(cc,
 
     arg_dict = CURRENT_BUF_ARGS.get(kernel)
     if arg_dict is not None:
-        synced_events = weakref.WeakSet()
+        synced_events = set()
         if wait_for is not None:
-            synced_events |= weakref.WeakSet(wait_for)
+            synced_events |= set(wait_for)
 
-        indices = list(arg_dict.keys())
-        for index, buf in arg_dict.items():
+        for ibuf, (index, buf) in enumerate(arg_dict.items()):
             logger.debug("%s: arg %d" % (kernel.function_name, index))
 
             buf = buf()
             if buf is None:
                 continue
+
+            try:
+                arg_name = kernel.get_arg_info(index, cl.kernel_arg_info.NAME)
+            except cl.RuntimeError:
+                arg_name = str(ibuf)
 
             prior_ops = BUFFER_TO_OPS.setdefault(buf, [])
             unsynced_events = []
@@ -114,39 +129,35 @@ def wrapper_enqueue_nd_range_kernel(cc,
                 if prior_queue.int_ptr == queue.int_ptr:
                     continue
 
-                prior_event = op.event()
-                if prior_event is None:
-                    continue
-
-                prior_queue_events = QUEUE_TO_EVENTS.get(
-                        prior_queue, weakref.WeakSet())
-                if prior_event in prior_queue_events \
-                        and prior_event not in synced_events:
-                    unsynced_events.append(op.kernel_name)
+                prior_queue_events = QUEUE_TO_EVENTS.get(prior_queue, set())
+                if op.event in prior_queue_events \
+                        and op.event not in synced_events:
+                    unsynced_events.append((op.arg_name, op.kernel_name))
 
             logger.debug("unsynced events: %s", list(unsynced_events))
             if unsynced_events:
                 if cc.show_traceback:
                     print("Traceback")
                     traceback.print_stack()
+                cc.concurrency_issues += 1
 
                 from warnings import warn
-                warn("\n[%5d] EventsNotSynced: argument `%s` in `%s`\n"
-                        "%7s current kernel `%s` previous kernels %s\n"
+                warn("\n[%5d] EventsNotSynced: argument `%s` kernel `%s`\n"
+                        "%7s previous kernels %s\n"
                         "%7s %d events not found in `wait_for` "
                         "or synced with `queue.finish()` "
                         "or `cl.wait_for_events()`\n" % (
                             cc.concurrency_issues,
-                            index, indices, " ",
-                            kernel.function_name, ", ".join(unsynced_events), " ",
+                            arg_name, kernel.function_name, " ",
+                            ", ".join([str(x) for x in unsynced_events]), " ",
                             len(unsynced_events)),
                         RuntimeWarning, stacklevel=5)
-                cc.concurrency_issues += 1
 
             prior_ops.append(OpRecord(
+                arg_name=arg_name,
                 kernel_name=kernel.function_name,
                 queue=weakref.ref(queue),
-                event=weakref.ref(evt),))
+                event=evt,))
 
     return evt
 
@@ -179,6 +190,7 @@ class ConcurrencyCheck(object):
         self.show_traceback = show_traceback
 
         self._overwritten_attrs = {}
+        print(self, self._entered)
         if self._entered:
             raise RuntimeError('cannot nest `ConcurrencyCheck`s')
 
@@ -202,7 +214,7 @@ class ConcurrencyCheck(object):
         return func
 
     def __enter__(self):
-        self._entered = True
+        ConcurrencyCheck._entered = True
         self.concurrency_issues = 0
 
         # allow monkeypatching in generated code
@@ -218,10 +230,13 @@ class ConcurrencyCheck(object):
         # catch events
         self._monkey_patch(cl.Event, '__hash__',
                 wrapper=lambda x: x.int_ptr)
+        self._monkey_patch(cl, 'wait_for_events')
         self._monkey_patch(cl.CommandQueue, 'finish',
                 wrapper=lambda a: wrapper_finish(self, a))
         # catch kernel calls to check concurrency
         self._monkey_patch(cl, 'enqueue_nd_range_kernel')
+
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         for name, (obj, orig) in self._overwritten_attrs.items():
@@ -232,9 +247,10 @@ class ConcurrencyCheck(object):
 
         BUFFER_TO_OPS.clear()
         CURRENT_BUF_ARGS.clear()
+        QUEUE_TO_EVENTS.clear()
 
         self._overwritten_attrs.clear()
-        self._entered = False
+        ConcurrencyCheck._entered = False
 
 # }}}
 
