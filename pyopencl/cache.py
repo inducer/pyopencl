@@ -474,28 +474,36 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
 def create_built_program_from_source_cached(ctx, src, options_bytes, devices=None,
         cache_dir=None, include_path=None):
     try:
+        was_cached = False
+        already_built = False
         if cache_dir is not False:
             prg, already_built, was_cached = \
                     _create_built_program_from_source_cached(
                             ctx, src, options_bytes, devices, cache_dir,
                             include_path=include_path)
+            if was_cached and not already_built:
+                prg.build(options_bytes, devices)
+                already_built = True
         else:
             prg = _cl._Program(ctx, src)
-            was_cached = False
-            already_built = False
 
     except Exception as e:
         from pyopencl import Error
-        if (isinstance(e, Error)
-                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE):  # noqa pylint:disable=no-member
-            # no need to try again
+        build_program_failure = (isinstance(e, Error)
+                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE)  # noqa pylint:disable=no-member
+
+        # Mac error on intel CPU driver: can't build from cached version.
+        # If we get a build_program_failure from the cached version then
+        # build from source instead, otherwise report the failure.
+        if build_program_failure and not was_cached:
             raise
 
-        from warnings import warn
-        from traceback import format_exc
-        warn("PyOpenCL compiler caching failed with an exception:\n"
-                "[begin exception]\n%s[end exception]"
-                % format_exc())
+        if not build_program_failure:
+            from warnings import warn
+            from traceback import format_exc
+            warn("PyOpenCL compiler caching failed with an exception:\n"
+                    "[begin exception]\n%s[end exception]"
+                    % format_exc())
 
         prg = _cl._Program(ctx, src)
         was_cached = False
