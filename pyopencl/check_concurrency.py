@@ -53,6 +53,75 @@ CURRENT_BUF_ARGS = weakref.WeakKeyDictionary()
 QUEUE_TO_EVENTS = weakref.WeakKeyDictionary()
 
 
+# {{{ helpers
+
+def show_traceback_menu(kernel, arg, current_op, ops):
+    def print_menu():
+        m = 1
+
+        def print_option(text):
+            nonlocal m
+            print('    [%2d] %s' % (m, text))
+            m += 1
+
+        print()
+        print("Choose action:")
+        print_option("Show info for current kernel call")
+        print_option("Show traceback for current kernel call")
+        for op in ops:
+            print_option("Show info for kernel `%s` call" % op.kernel_name)
+            print_option("Show traceback for kernel `%s` call" % op.kernel_name)
+        print_option("Enter debugger (pudb)")
+        print_option("Continue")
+        return m - 1
+
+    def print_op(op, knl):
+        print('Argument:    %s' % op.arg_name)
+        print('Kernel:      %s' % op.kernel_name)
+        if knl is not None:
+            args = CURRENT_BUF_ARGS.get(knl)
+            args = [x.name for x in args.values()]
+            print("Arguments:   %s" % args)
+        print('Event:       %s' % op.event)
+        print('Queue:       %s (dead %s)' % (op.queue, op.queue() is None))
+
+    while True:
+        nchoices = print_menu()
+        choice = input("Choice [%d]: " % nchoices)
+        print()
+
+        if not choice:
+            break
+
+        try:
+            choice = int(choice)
+        except ValueError:
+            print("ValueError: Invalid choice")
+            continue
+
+        if choice <= 0 or choice > nchoices:
+            print("ValueError: Invalid choice")
+            continue
+
+        if choice == 1:
+            print_op(current_op, kernel)
+        elif choice == 2:
+            print("Traceback")
+            print("".join(traceback.format_stack()[:-3]))
+        elif choice == nchoices - 1:
+            import pudb
+            pudb.set_trace()
+        elif choice == nchoices:
+            break
+        elif (choice - 3) % 2 == 0:
+            print_op(ops[(choice - 3) // 2], None)
+        elif (choice - 3) % 2 == 1:
+            print("Traceback")
+            print("".join(ops[(choice - 3) // 2].stack[:-2]))
+
+# }}}
+
+
 # {{{ wrappers
 
 def wrapper_add_local_imports(cc, gen):
@@ -114,61 +183,58 @@ def wrapper_enqueue_nd_range_kernel(cc,
     QUEUE_TO_EVENTS.setdefault(queue, set()).add(evt)
 
     arg_dict = CURRENT_BUF_ARGS.get(kernel)
-    if arg_dict is not None:
-        synced_events = set()
-        if wait_for is not None:
-            synced_events |= set(wait_for)
+    if arg_dict is None:
+        return evt
 
-        for arg in arg_dict.values():
-            logger.debug("%s: arg %s" % (kernel.function_name, arg.name))
+    synced_events = set() if wait_for is None else set(wait_for)
+    for arg in arg_dict.values():
+        logger.debug("%s: arg %s" % (kernel.function_name, arg.name))
 
-            buf = arg.buf()
-            if buf is None:
+        buf = arg.buf()
+        if buf is None:
+            continue
+
+        current_op = OpRecord(
+            arg_name=arg.name,
+            kernel_name=kernel.function_name,
+            queue=weakref.ref(queue),
+            event=evt,
+            stack=traceback.format_stack())
+        prior_ops = BUFFER_TO_OPS.setdefault(buf, [])
+
+        unsynced_events = []
+        for op in prior_ops:
+            prior_queue = op.queue()
+            if prior_queue is None:
+                continue
+            if prior_queue.int_ptr == queue.int_ptr:
                 continue
 
-            prior_ops = BUFFER_TO_OPS.setdefault(buf, [])
-            unsynced_events = []
-            for op in prior_ops:
-                prior_queue = op.queue()
-                if prior_queue is None:
-                    continue
-                if prior_queue.int_ptr == queue.int_ptr:
-                    continue
+            prior_queue_events = QUEUE_TO_EVENTS.get(prior_queue, set())
+            if op.event in prior_queue_events \
+                    and op.event not in synced_events:
+                unsynced_events.append(op)
 
-                prior_queue_events = QUEUE_TO_EVENTS.get(prior_queue, set())
-                if op.event in prior_queue_events \
-                        and op.event not in synced_events:
-                    unsynced_events.append((op.arg_name, op.kernel_name))
+        logger.debug("unsynced events: %s",
+                [op.event for op in unsynced_events])
 
-            logger.debug("unsynced events: %s", list(unsynced_events))
+        if unsynced_events:
+            from warnings import warn
+            warn("\nEventsNotSynced: argument `%s` kernel `%s`\n"
+                    "%7s previous kernels %s\n"
+                    "%7s %d events not found in `wait_for` "
+                    "or synced with `queue.finish()` "
+                    "or `cl.wait_for_events()`\n" % (
+                        arg.name, kernel.function_name, " ",
+                        ", ".join([str((op.arg_name, op.kernel_name))
+                            for op in unsynced_events]), " ",
+                        len(unsynced_events)),
+                    RuntimeWarning, stacklevel=5)
 
-            tb = "".join(traceback.format_stack())
-            if unsynced_events:
-                cc.concurrency_issues += 1
+            if cc.show_traceback:
+                show_traceback_menu(kernel, arg, current_op, unsynced_events)
 
-                from warnings import warn
-                warn("\n[%5d] EventsNotSynced: argument `%s` kernel `%s`\n"
-                        "%7s previous kernels %s\n"
-                        "%7s %d events not found in `wait_for` "
-                        "or synced with `queue.finish()` "
-                        "or `cl.wait_for_events()`\n" % (
-                            cc.concurrency_issues,
-                            arg.name, kernel.function_name, " ",
-                            ", ".join([str(x) for x in unsynced_events]), " ",
-                            len(unsynced_events)),
-                        RuntimeWarning, stacklevel=5)
-
-                if cc.show_traceback:
-                    print("Traceback\n%s" % tb)
-                    import pudb
-                    pudb.set_trace()
-
-            prior_ops.append(OpRecord(
-                arg_name=arg.name,
-                kernel_name=kernel.function_name,
-                queue=weakref.ref(queue),
-                event=evt,
-                stack=tb))
+        prior_ops.append(current_op)
 
     return evt
 
@@ -179,7 +245,7 @@ def wrapper_enqueue_nd_range_kernel(cc,
 
 def with_concurrency_check(func):
     def wrapper(func, *args, **kwargs):
-        with ConcurrencyCheck(show_traceback=True):
+        with ConcurrencyCheck(show_traceback=False):
             return func(*args, **kwargs)
 
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
