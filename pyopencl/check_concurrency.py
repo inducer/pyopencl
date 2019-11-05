@@ -59,7 +59,6 @@ def print_menu(ops):
     m = {"count": 1}
 
     def print_option(text):
-        nonlocal m
         print('    [%2d] %s' % (m["count"], text))
         m["count"] += 1
 
