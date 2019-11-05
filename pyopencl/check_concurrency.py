@@ -55,38 +55,45 @@ QUEUE_TO_EVENTS = weakref.WeakKeyDictionary()
 
 # {{{ helpers
 
+def print_menu(ops):
+    m = {"count": 1}
+
+    def print_option(text):
+        nonlocal m
+        print('    [%2d] %s' % (m["count"], text))
+        m["count"] += 1
+
+    print("Choose action:")
+    print_option("Show info for current kernel call")
+    print_option("Show traceback for current kernel call")
+    for op in ops:
+        print_option("Show info for kernel `%s` call" % op.kernel_name)
+        print_option("Show traceback for kernel `%s` call" % op.kernel_name)
+    print_option("Enter debugger (pudb)")
+    print_option("Continue")
+
+    return m["count"] - 1
+
+
+def print_op(op, knl):
+    print('Argument:    %s' % op.arg_name)
+    print('Kernel:      %s' % op.kernel_name)
+    if knl is not None:
+        args = CURRENT_BUF_ARGS.get(knl)
+        args = [x.name for x in args.values()]
+        print("Arguments:   %s" % args)
+    print('Event:       %s' % op.event)
+    print('Queue:       %s (dead %s)' % (op.queue, op.queue() is None))
+
+
 def show_traceback_menu(kernel, arg, current_op, ops):
-    def print_menu():
-        m = 1
-
-        def print_option(text):
-            nonlocal m
-            print('    [%2d] %s' % (m, text))
-            m += 1
-
-        print()
-        print("Choose action:")
-        print_option("Show info for current kernel call")
-        print_option("Show traceback for current kernel call")
-        for op in ops:
-            print_option("Show info for kernel `%s` call" % op.kernel_name)
-            print_option("Show traceback for kernel `%s` call" % op.kernel_name)
-        print_option("Enter debugger (pudb)")
-        print_option("Continue")
-        return m - 1
-
-    def print_op(op, knl):
-        print('Argument:    %s' % op.arg_name)
-        print('Kernel:      %s' % op.kernel_name)
-        if knl is not None:
-            args = CURRENT_BUF_ARGS.get(knl)
-            args = [x.name for x in args.values()]
-            print("Arguments:   %s" % args)
-        print('Event:       %s' % op.event)
-        print('Queue:       %s (dead %s)' % (op.queue, op.queue() is None))
+    print()
+    print("Current buffer `%s` in kernel `%s` has unsynced events "
+          "with calls to the kernels %s" % (arg.name, kernel.function_name,
+          [op.kernel_name for op in ops]))
 
     while True:
-        nchoices = print_menu()
+        nchoices = print_menu(ops)
         choice = input("Choice [%d]: " % nchoices)
         print()
 
@@ -109,8 +116,11 @@ def show_traceback_menu(kernel, arg, current_op, ops):
             print("Traceback")
             print("".join(traceback.format_stack()[:-3]))
         elif choice == nchoices - 1:
-            import pudb
-            pudb.set_trace()
+            try:
+                import pudb
+                pudb.set_trace()
+            except ImportError:
+                print("ImportError: pudb not found")
         elif choice == nchoices:
             break
         elif (choice - 3) % 2 == 0:
@@ -118,6 +128,8 @@ def show_traceback_menu(kernel, arg, current_op, ops):
         elif (choice - 3) % 2 == 1:
             print("Traceback")
             print("".join(ops[(choice - 3) // 2].stack[:-2]))
+
+        print()
 
 # }}}
 
@@ -143,6 +155,8 @@ def wrapper_set_arg(cc, kernel, index, obj):
         try:
             arg_name = kernel.get_arg_info(index, cl.kernel_arg_info.NAME)
         except cl.RuntimeError:
+            arg_name = str(index)
+        except AttributeError:
             arg_name = str(index)
 
         arg_dict[index] = ArgRecord(
