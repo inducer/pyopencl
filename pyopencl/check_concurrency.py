@@ -37,8 +37,10 @@ OpRecord = namedtuple("OpRecord", [
     "kernel_name",
     "queue",
     "event",
+    "stack",
     ])
 
+ArgRecord = namedtuple("ArgRecord", ["name", "buf"])
 
 # mapping from buffers to list of
 #   (kernel_name, queue weakref)
@@ -55,7 +57,7 @@ QUEUE_TO_EVENTS = weakref.WeakKeyDictionary()
 
 def wrapper_add_local_imports(cc, gen):
     """Wraps :func:`pyopencl.invoker.add_local_imports`"""
-    cc.call('add_local_imports')(gen)
+    cc.func('add_local_imports')(gen)
 
     # NOTE: need to import pyopencl to be able to wrap it in generated code
     gen("import pyopencl as _cl")
@@ -68,9 +70,18 @@ def wrapper_set_arg(cc, kernel, index, obj):
     logger.debug('set_arg: %s %s', kernel.function_name, index)
     if isinstance(obj, cl.Buffer):
         arg_dict = CURRENT_BUF_ARGS.setdefault(kernel, {})
-        arg_dict[index] = weakref.ref(obj)
 
-    return cc.call('set_arg')(kernel, index, obj)
+        try:
+            arg_name = kernel.get_arg_info(index, cl.kernel_arg_info.NAME)
+        except cl.RuntimeError:
+            arg_name = str(index)
+
+        arg_dict[index] = ArgRecord(
+                name=arg_name,
+                buf=weakref.ref(obj),
+                )
+
+    return cc.func('set_arg')(kernel, index, obj)
 
 
 def wrapper_wait_for_events(cc, wait_for):
@@ -89,7 +100,7 @@ def wrapper_finish(cc, queue):
     if queue in QUEUE_TO_EVENTS:
         QUEUE_TO_EVENTS[queue].clear()
 
-    return cc.call('finish')(queue)
+    return cc.func('finish')(queue)
 
 
 def wrapper_enqueue_nd_range_kernel(cc,
@@ -98,9 +109,9 @@ def wrapper_enqueue_nd_range_kernel(cc,
     """Wraps :func:`pyopencl.enqueue_nd_range_kernel`"""
 
     logger.debug('enqueue_nd_range_kernel: %s', kernel.function_name)
-    evt = cc.call('enqueue_nd_range_kernel')(queue, kernel,
+    evt = cc.func('enqueue_nd_range_kernel')(queue, kernel,
             global_size, local_size, global_offset, wait_for, g_times_l)
-    QUEUE_TO_EVENTS.setdefault(queue, weakref.WeakSet()).add(evt)
+    QUEUE_TO_EVENTS.setdefault(queue, set()).add(evt)
 
     arg_dict = CURRENT_BUF_ARGS.get(kernel)
     if arg_dict is not None:
@@ -108,17 +119,12 @@ def wrapper_enqueue_nd_range_kernel(cc,
         if wait_for is not None:
             synced_events |= set(wait_for)
 
-        for ibuf, (index, buf) in enumerate(arg_dict.items()):
-            logger.debug("%s: arg %d" % (kernel.function_name, index))
+        for arg in arg_dict.values():
+            logger.debug("%s: arg %s" % (kernel.function_name, arg.name))
 
-            buf = buf()
+            buf = arg.buf()
             if buf is None:
                 continue
-
-            try:
-                arg_name = kernel.get_arg_info(index, cl.kernel_arg_info.NAME)
-            except cl.RuntimeError:
-                arg_name = str(ibuf)
 
             prior_ops = BUFFER_TO_OPS.setdefault(buf, [])
             unsynced_events = []
@@ -135,10 +141,9 @@ def wrapper_enqueue_nd_range_kernel(cc,
                     unsynced_events.append((op.arg_name, op.kernel_name))
 
             logger.debug("unsynced events: %s", list(unsynced_events))
+
+            tb = "".join(traceback.format_stack())
             if unsynced_events:
-                if cc.show_traceback:
-                    print("Traceback")
-                    traceback.print_stack()
                 cc.concurrency_issues += 1
 
                 from warnings import warn
@@ -148,16 +153,22 @@ def wrapper_enqueue_nd_range_kernel(cc,
                         "or synced with `queue.finish()` "
                         "or `cl.wait_for_events()`\n" % (
                             cc.concurrency_issues,
-                            arg_name, kernel.function_name, " ",
+                            arg.name, kernel.function_name, " ",
                             ", ".join([str(x) for x in unsynced_events]), " ",
                             len(unsynced_events)),
                         RuntimeWarning, stacklevel=5)
 
+                if cc.show_traceback:
+                    print("Traceback\n%s" % tb)
+                    import pudb
+                    pudb.set_trace()
+
             prior_ops.append(OpRecord(
-                arg_name=arg_name,
+                arg_name=arg.name,
                 kernel_name=kernel.function_name,
                 queue=weakref.ref(queue),
-                event=evt,))
+                event=evt,
+                stack=tb))
 
     return evt
 
@@ -168,7 +179,7 @@ def wrapper_enqueue_nd_range_kernel(cc,
 
 def with_concurrency_check(func):
     def wrapper(func, *args, **kwargs):
-        with ConcurrencyCheck():
+        with ConcurrencyCheck(show_traceback=True):
             return func(*args, **kwargs)
 
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
@@ -183,6 +194,29 @@ def with_concurrency_check(func):
     return decorator.decorator(wrapper, func)
 
 
+class MonkeyPatch(object):
+    def __init__(self, cc, obj, attr, wrapper=None):
+        def wrapper_partial(*args, **kwargs):
+            func = globals()["wrapper_%s" % attr]
+            return func(cc, *args, **kwargs)
+
+        if wrapper is None:
+            wrapper = wrapper_partial
+
+        func = getattr(obj, attr, None)
+        setattr(obj, attr, wrapper)
+
+        self.obj = obj
+        self.attr = attr
+        self.func = func
+
+    def undo(self):
+        if self.func is None:
+            delattr(self.obj, self.attr)
+        else:
+            setattr(self.obj, self.attr, self.func)
+
+
 class ConcurrencyCheck(object):
     _entered = False
 
@@ -190,60 +224,41 @@ class ConcurrencyCheck(object):
         self.show_traceback = show_traceback
 
         self._overwritten_attrs = {}
-        print(self, self._entered)
         if self._entered:
             raise RuntimeError('cannot nest `ConcurrencyCheck`s')
 
-    def _monkey_patch(self, obj, name, wrapper=None):
-        orig_attr = getattr(obj, name, None)
-        if wrapper is None:
-            from functools import partial
-            try:
-                wrapper = partial(globals()["wrapper_%s" % name], self)
-            except KeyError:
-                raise
-
-        setattr(obj, name, wrapper)
-        logger.debug('Monkey patched %s `%s` method `%s`' % (
-                type(obj).__name__, obj.__name__, name))
-
-        self._overwritten_attrs[name] = (obj, orig_attr)
-
-    def call(self, name):
-        _, func = self._overwritten_attrs[name]
-        return func
+    def func(self, attr):
+        return self._overwritten_attrs[attr].func
 
     def __enter__(self):
         ConcurrencyCheck._entered = True
         self.concurrency_issues = 0
 
+        def monkeypatch(obj, attr, wrapper=None):
+            p = MonkeyPatch(self, obj, attr, wrapper=wrapper)
+            self._overwritten_attrs[attr] = p
+
         # allow monkeypatching in generated code
-        self._monkey_patch(cl.invoker, 'add_local_imports')
+        monkeypatch(cl.invoker, 'add_local_imports')
         # fix version to avoid handling enqueue_fill_buffer
         # in pyopencl.array.Array._zero_fill::1223
-        self._monkey_patch(cl, 'get_cl_header_version',
-                wrapper=lambda: (1, 1))
+        monkeypatch(cl, 'get_cl_header_version', wrapper=lambda: (1, 1))
 
         # catch kernel argument buffers
-        self._monkey_patch(cl.Kernel, 'set_arg',
-                wrapper=lambda a, b, c: wrapper_set_arg(self, a, b, c))
+        monkeypatch(cl.Kernel, 'set_arg')
         # catch events
-        self._monkey_patch(cl.Event, '__hash__',
+        monkeypatch(cl.Event, '__hash__',
                 wrapper=lambda x: x.int_ptr)
-        self._monkey_patch(cl, 'wait_for_events')
-        self._monkey_patch(cl.CommandQueue, 'finish',
-                wrapper=lambda a: wrapper_finish(self, a))
+        monkeypatch(cl, 'wait_for_events')
+        monkeypatch(cl.CommandQueue, 'finish')
         # catch kernel calls to check concurrency
-        self._monkey_patch(cl, 'enqueue_nd_range_kernel')
+        monkeypatch(cl, 'enqueue_nd_range_kernel')
 
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        for name, (obj, orig) in self._overwritten_attrs.items():
-            if orig is None:
-                delattr(obj, name)
-            else:
-                setattr(obj, name, orig)
+        for p in self._overwritten_attrs.values():
+            p.undo()
 
         BUFFER_TO_OPS.clear()
         CURRENT_BUF_ARGS.clear()
