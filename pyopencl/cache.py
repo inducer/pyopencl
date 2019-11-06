@@ -36,13 +36,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-try:
-    import hashlib
-    new_hash = hashlib.md5
-except ImportError:
-    # for Python << 2.5
-    import md5
-    new_hash = md5.new
+import hashlib
+new_hash = hashlib.md5
 
 
 def _erase_dir(dir):
