@@ -49,6 +49,20 @@ the `CPU OpenCL driver from Intel <https://software.intel.com/en-us/articles/ope
 On macOS, pocl can offer a marked robustness (and, sometimes, performance)
 improvement over the OpenCL drivers built into the operating system.
 
+On Linux and macOS, you can use Oclgrind to detect memory access errors.
+
+#. ``conda install oclgrind``
+
+On Linux Intel Broadwell or newer processors with an Intel graphics card, you
+can use NEO.
+
+#. ``conda install intel-compute-compute``
+
+On Linux Intel Sandybridge or newer processors with an Intel graphics card, you
+can use Beignet.
+
+#. ``conda install beignet``
+
 You are now ready to run code based on PyOpenCL, such as the `code
 examples <https://github.com/inducer/pyopencl/tree/master/examples>`_.
 
