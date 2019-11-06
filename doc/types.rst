@@ -21,6 +21,11 @@ see that a cl_long is 64 bit unsigned integer. Use the module as follows:
     >>> cl_long = cl.cltypes.long(1235) # maps to numpy.int64
     >>> floats = np.empty((128,), dtype=cl.cltypes.float) # array of numpy.float32
 
+.. note::
+
+    The OpenCL type ``bool`` does not have a correpsonding :mod:`numpy` type defined here,
+    because OpenCL does not specify the in-memory representation (or even the storage
+    size) for this type.
 
 Vector Types
 ------------
