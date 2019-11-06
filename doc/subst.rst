@@ -13,3 +13,15 @@
 
 .. |copy-depr| replace:: **Note:** This function is deprecated as of PyOpenCL 2011.1.
         Use :func:`enqueue_copy` instead.
+
+.. |glsize| replace:: *global_size* and *local_size* are tuples of identical length, with
+        between one and three entries. *global_size* specifies the overall size
+        of the computational grid: one work item will be launched for every
+        integer point in the grid. *local_size* specifies the workgroup size,
+        which must evenly divide the *global_size* in a dimension-by-dimension
+        manner.  *None* may be passed for local_size, in which case the
+        implementation will use an implementation-defined workgroup size.
+        If *g_times_l* is *True*, the global size will be multiplied by the
+        local size. (which makes the behavior more like Nvidia CUDA) In this case,
+        *global_size* and *local_size* also do not have to have the same number
+        of entries.

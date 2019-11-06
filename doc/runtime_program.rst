@@ -212,12 +212,7 @@ Kernel
         :meth:`set_arg` to see what argument types are allowed.
         |std-enqueue-blurb|
 
-        *None* may be passed for local_size.
-
-        If *g_times_l* is specified, the global size will be multiplied by the
-        local size. (which makes the behavior more like Nvidia CUDA) In this case,
-        *global_size* and *local_size* also do not have to have the same number
-        of dimensions.
+        |glsize|
 
         .. note::
 
@@ -287,10 +282,7 @@ Kernel
 
     |std-enqueue-blurb|
 
-    If *g_times_l* is specified, the global size will be multiplied by the
-    local size. (which makes the behavior more like Nvidia CUDA) In this case,
-    *global_size* and *local_size* also do not have to have the same number
-    of dimensions.
+    |glsize|
 
     .. versionchanged:: 2011.1
         Added the *g_times_l* keyword arg.
