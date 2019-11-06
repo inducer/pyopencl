@@ -81,9 +81,11 @@ qualified path names of the shared library providing the OpenCL driver.
 
 On Linux, if you have other OpenCL drivers installed (such as for your GPU), those will be
 in :file:`/etc/OpenCL/vendors`. You can make them work with PyOpenCL from Conda Forge
-by placing a symbolic link to :file:`/etc/OpenCL/vendors` in the directory described
-above. The version of ocl-icd installed with PyOpenCL from Conda Forge in Linux will
-automatically recurse and find system-wide ICDs *if* that link is present.
+by using the command::
+
+    conda install ocl-icd-system
+
+will make sure these system-wide ICDs are also visible  in your conda environment.
 
 If you are looking for more information, see `ocl-icd
 <https://github.com/OCL-dev/ocl-icd>`_ and its documentation. Ocl-icd is the
