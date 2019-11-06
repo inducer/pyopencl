@@ -1777,9 +1777,10 @@ def image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False):
     dtype = ary.dtype
     if num_channels is None:
 
-        from pyopencl.array import vec
+        import pyopencl.cltypes
         try:
-            dtype, num_channels = vec.type_to_scalar_and_count[dtype]
+            dtype, num_channels = \
+                    pyopencl.cltypes.vec_type_to_scalar_and_count[dtype]
         except KeyError:
             # It must be a scalar type then.
             num_channels = 1
