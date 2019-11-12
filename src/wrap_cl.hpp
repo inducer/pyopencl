@@ -4484,6 +4484,11 @@ namespace pyopencl
           case CL_KERNEL_ARG_TYPE_NAME:
           case CL_KERNEL_ARG_NAME:
             PYOPENCL_GET_STR_INFO(KernelArg, PYOPENCL_FIRST_ARG, param_name);
+
+          case CL_KERNEL_ARG_TYPE_QUALIFIER:
+            PYOPENCL_GET_INTEGRAL_INFO(KernelArg,
+                PYOPENCL_FIRST_ARG, param_name,
+                cl_kernel_arg_type_qualifier);
 #undef PYOPENCL_FIRST_ARG
           default:
             throw error("Kernel.get_arg_info", CL_INVALID_VALUE);
