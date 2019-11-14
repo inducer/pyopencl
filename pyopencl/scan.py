@@ -1468,6 +1468,11 @@ class GenericScanKernel(_GenericScanKernelBase):
         n = kwargs.get("size")
         wait_for = kwargs.get("wait_for")
 
+        if wait_for is None:
+            wait_for = []
+        else:
+            wait_for = list(wait_for)
+
         if len(args) != len(self.parsed_args):
             raise TypeError("expected %d arguments, got %d" %
                     (len(self.parsed_args), len(args)))
@@ -1490,6 +1495,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
                     data_args.append(arg_val.offset)
+                wait_for.extend(arg_val.events)
             else:
                 data_args.append(arg_val)
 
@@ -1678,6 +1684,12 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         n = kwargs.get("size")
         wait_for = kwargs.get("wait_for")
 
+        if wait_for is None:
+            wait_for = []
+        else:
+            # We'll be modifying it below.
+            wait_for = list(wait_for)
+
         if len(args) != len(self.parsed_args):
             raise TypeError("expected %d arguments, got %d" %
                     (len(self.parsed_args), len(args)))
@@ -1700,6 +1712,7 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
                     data_args.append(arg_val.offset)
+                wait_for.extend(arg_val.events)
             else:
                 data_args.append(arg_val)
 

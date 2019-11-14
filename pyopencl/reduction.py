@@ -304,6 +304,12 @@ class ReductionKernel:
         return_event = kwargs.pop("return_event", False)
         out = kwargs.pop("out", None)
 
+        if wait_for is None:
+            wait_for = []
+        else:
+            # We'll be modifying it below.
+            wait_for = list(wait_for)
+
         range_ = kwargs.pop("range", None)
         slice_ = kwargs.pop("slice", None)
 
@@ -327,6 +333,7 @@ class ReductionKernel:
                     invocation_args.append(arg.base_data)
                     if arg_tp.with_offset:
                         invocation_args.append(arg.offset)
+                    wait_for.extend(arg.events)
                 else:
                     invocation_args.append(arg)
 
@@ -412,6 +419,8 @@ class ReductionKernel:
                         + invocation_args + size_args),
                     wait_for=wait_for)
             wait_for = [last_evt]
+
+            result.add_event(last_evt)
 
             if group_count == 1:
                 if return_event:

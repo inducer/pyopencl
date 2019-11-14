@@ -1,12 +1,11 @@
-"""Scan primitive."""
+"""Algorithms built on scans."""
 
-from __future__ import division
-from __future__ import absolute_import
-from six.moves import range
-from six.moves import zip
+from __future__ import division, absolute_import
 
-__copyright__ = """Copyright 2011-2012 Andreas Kloeckner \
-                   Copyright 2017 Hao Gao"""
+__copyright__ = """
+Copyright 2011-2012 Andreas Kloeckner
+Copyright 2017 Hao Gao
+"""
 
 __license__ = """
 Permission is hereby granted, free of charge, to any person
@@ -31,6 +30,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
+from six.moves import range, zip
+
 import numpy as np
 import pyopencl as cl
 import pyopencl.array  # noqa
@@ -38,6 +39,30 @@ from pyopencl.scan import ScanTemplate
 from pyopencl.tools import dtype_to_ctype, get_arg_offset_adjuster_code
 from pytools import memoize, memoize_method, Record
 from mako.template import Template
+
+
+# {{{ "extra args" handling utility
+
+def _extract_extra_args_types_values(extra_args):
+    from pyopencl.tools import VectorArg, ScalarArg
+
+    extra_args_types = []
+    extra_args_values = []
+    extra_wait_for = []
+    for name, val in extra_args:
+        if isinstance(val, cl.array.Array):
+            extra_args_types.append(VectorArg(val.dtype, name, with_offset=False))
+            extra_args_values.append(val)
+            extra_wait_for.extend(val.events)
+        elif isinstance(val, np.generic):
+            extra_args_types.append(ScalarArg(val.dtype, name))
+            extra_args_values.append(val)
+        else:
+            raise RuntimeError("argument '%d' not understood" % name)
+
+    return tuple(extra_args_types), extra_args_values, extra_wait_for
+
+# }}}
 
 
 # {{{ copy_if
@@ -51,24 +76,6 @@ _copy_if_template = ScanTemplate(
             if (i+1 == N) *count = item;
             """,
         template_processor="printf")
-
-
-def extract_extra_args_types_values(extra_args):
-    from pyopencl.tools import VectorArg, ScalarArg
-
-    extra_args_types = []
-    extra_args_values = []
-    for name, val in extra_args:
-        if isinstance(val, cl.array.Array):
-            extra_args_types.append(VectorArg(val.dtype, name, with_offset=False))
-            extra_args_values.append(val)
-        elif isinstance(val, np.generic):
-            extra_args_types.append(ScalarArg(val.dtype, name))
-            extra_args_values.append(val)
-        else:
-            raise RuntimeError("argument '%d' not understood" % name)
-
-    return tuple(extra_args_types), extra_args_values
 
 
 def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
@@ -94,7 +101,12 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
     else:
         scan_dtype = np.int32
 
-    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
+    if wait_for is None:
+        wait_for = []
+
+    extra_args_types, extra_args_values, extra_wait_for = \
+        _extract_extra_args_types_values(extra_args)
+    wait_for = wait_for + extra_wait_for
 
     knl = _copy_if_template.build(ary.context,
             type_aliases=(("scan_t", scan_dtype), ("item_t", ary.dtype)),
@@ -175,7 +187,12 @@ def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
     else:
         scan_dtype = np.uint32
 
-    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
+    if wait_for is None:
+        wait_for = []
+
+    extra_args_types, extra_args_values, extra_wait_for = \
+            _extract_extra_args_types_values(extra_args)
+    wait_for = wait_for + extra_wait_for
 
     knl = _partition_template.build(
             ary.context,
@@ -242,7 +259,12 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
     else:
         scan_dtype = np.uint32
 
-    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
+    if wait_for is None:
+        wait_for = []
+
+    extra_args_types, extra_args_values, extra_wait_for = \
+            _extract_extra_args_types_values(extra_args)
+    wait_for = wait_for + extra_wait_for
 
     knl = _unique_template.build(
             ary.context,
@@ -1104,6 +1126,9 @@ class ListOfListsBuilder:
 
         if wait_for is None:
             wait_for = []
+        else:
+            # We'll be modifying it below.
+            wait_for = list(wait_for)
 
         count_kernel = self.get_count_kernel(index_dtype)
         write_kernel = self.get_write_kernel(index_dtype)
@@ -1130,6 +1155,7 @@ class ListOfListsBuilder:
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
                     data_args.append(arg_val.offset)
+                wait_for.extend(arg_val.events)
             else:
                 data_args.append(arg_val)
 

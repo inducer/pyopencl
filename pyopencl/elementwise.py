@@ -1,9 +1,7 @@
 """Elementwise functionality."""
 
-from __future__ import division
-from __future__ import absolute_import
-from six.moves import range
-from six.moves import zip
+from __future__ import division, absolute_import
+from six.moves import range, zip
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -250,6 +248,15 @@ class ElementwiseKernel:
         use_range = range_ is not None or slice_ is not None
         kernel, arg_descrs = self.get_kernel(use_range)
 
+        queue = kwargs.pop("queue", None)
+        wait_for = kwargs.pop("wait_for", None)
+
+        if wait_for is None:
+            wait_for = []
+        else:
+            # We'll be modifying it below.
+            wait_for = list(wait_for)
+
         # {{{ assemble arg array
 
         invocation_args = []
@@ -265,13 +272,12 @@ class ElementwiseKernel:
                 invocation_args.append(arg.base_data)
                 if arg_descr.with_offset:
                     invocation_args.append(arg.offset)
+                wait_for.extend(arg.events)
             else:
                 invocation_args.append(arg)
 
         # }}}
 
-        queue = kwargs.pop("queue", None)
-        wait_for = kwargs.pop("wait_for", None)
         if kwargs:
             raise TypeError("unknown keyword arguments: '%s'"
                     % ", ".join(kwargs))
