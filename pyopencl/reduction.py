@@ -410,7 +410,7 @@ class ReductionKernel:
                     (stage_inf.group_size,),
                     *([result.base_data, result.offset]
                         + invocation_args + size_args),
-                    **dict(wait_for=wait_for))
+                    wait_for=wait_for)
             wait_for = [last_evt]
 
             if group_count == 1:

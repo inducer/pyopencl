@@ -21,7 +21,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 Derived from code within the Thrust project, https://github.com/thrust/thrust/
-
 """
 
 import six
@@ -1541,7 +1540,7 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         l1_evt = l1_info.kernel(
                 queue, (num_intervals,), (l1_info.wg_size,),
-                *scan1_args, **dict(g_times_l=True, wait_for=wait_for))
+                *scan1_args, g_times_l=True, wait_for=wait_for)
 
         # }}}
 
@@ -1561,7 +1560,7 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         l2_evt = l2_info.kernel(
                 queue, (1,), (l1_info.wg_size,),
-                *scan2_args, **dict(g_times_l=True, wait_for=[l1_evt]))
+                *scan2_args, g_times_l=True, wait_for=[l1_evt])
 
         # }}}
 
@@ -1577,7 +1576,7 @@ class GenericScanKernel(_GenericScanKernelBase):
         return self.final_update_info.kernel(
                 queue, (num_intervals,),
                 (self.final_update_info.update_wg_size,),
-                *upd_args, **dict(g_times_l=True, wait_for=[l2_evt]))
+                *upd_args, g_times_l=True, wait_for=[l2_evt])
 
         # }}}
 
@@ -1707,7 +1706,7 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         # }}}
 
         return self.kernel(queue, (1,), (1,),
-                *(data_args + [n]), **dict(wait_for=wait_for))
+                *(data_args + [n]), wait_for=wait_for)
 
 # }}}
 
