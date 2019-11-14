@@ -217,6 +217,9 @@ CONSTANT_CLASSES = tuple(
         if _inspect.isclass(getattr(_cl, name))
         and name[0].islower() and name not in ["zip", "map", "range"])
 
+BITFIELD_CONSTANT_CLASSES = (
+        _cl.kernel_arg_type_qualifier,
+        )
 
 # {{{ diagnostics
 
@@ -1269,16 +1272,21 @@ def _add_functionality():
             }
 
     def to_string(cls, value, default_format=None):
-        names = []
-        for name in dir(cls):
-            attr = getattr(cls, name)
-            if name.startswith('_') or type(attr) is not type(value):
-                continue
-            if attr == value or attr & value:
-                names.append(name)
-
-        if names:
-            return " ".join(names)
+        if cls._is_bitfield:
+            names = []
+            for name in dir(cls):
+                attr = getattr(cls, name)
+                if not isinstance(attr, int):
+                    continue
+                if attr == value or attr & value:
+                    names.append(name)
+            if names:
+                return " ".join(names)
+        else:
+            for name in dir(cls):
+                if (not name.startswith("_")
+                        and getattr(cls, name) == value):
+                    return name
 
         if default_format is None:
             raise ValueError("a name for value %d was not found in %s"
@@ -1287,6 +1295,7 @@ def _add_functionality():
             return default_format % value
 
     for cls in CONSTANT_CLASSES:
+        cls._is_bitfield = cls in BITFIELD_CONSTANT_CLASSES
         cls.to_string = classmethod(to_string)
 
     # {{{ get_info attributes -------------------------------------------------
