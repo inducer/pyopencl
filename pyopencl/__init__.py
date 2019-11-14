@@ -1269,9 +1269,16 @@ def _add_functionality():
             }
 
     def to_string(cls, value, default_format=None):
+        names = []
         for name in dir(cls):
-            if (not name.startswith("_") and getattr(cls, name) == value):
-                return name
+            attr = getattr(cls, name)
+            if name.startswith('_') or type(attr) is not type(value):
+                continue
+            if attr == value or attr & value:
+                names.append(name)
+
+        if names:
+            return " ".join(names)
 
         if default_format is None:
             raise ValueError("a name for value %d was not found in %s"
