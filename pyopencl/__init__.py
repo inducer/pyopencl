@@ -218,8 +218,28 @@ CONSTANT_CLASSES = tuple(
         and name[0].islower() and name not in ["zip", "map", "range"])
 
 BITFIELD_CONSTANT_CLASSES = (
+        _cl.device_type,
+        _cl.device_fp_config,
+        _cl.device_exec_capabilities,
+        _cl.command_queue_properties,
+        _cl.mem_flags,
+        _cl.map_flags,
         _cl.kernel_arg_type_qualifier,
         )
+
+if get_cl_header_version() >= (1, 2):
+    BITFIELD_CONSTANT_CLASSES += (
+        _cl.device_affinity_domain,
+        _cl.mem_migration_flags,
+        )
+
+if get_cl_header_version() >= (2, 0):
+    BITFIELD_CONSTANT_CLASSES += (
+        _cl.device_svm_capabilities,
+        _cl.queue_properties,
+        _cl.svm_mem_flags,
+        )
+
 
 # {{{ diagnostics
 
