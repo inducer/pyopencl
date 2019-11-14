@@ -104,9 +104,8 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
     count = ary._new_with_changes(data=None, offset=0,
             shape=(), strides=(), dtype=scan_dtype)
 
-    # **dict is a Py2.5 workaround
     evt = knl(ary, out, count, *extra_args_values,
-            **dict(queue=queue, wait_for=wait_for))
+            queue=queue, wait_for=wait_for)
 
     return out, count, evt
 
@@ -189,9 +188,8 @@ def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
     count = ary._new_with_changes(data=None, offset=0,
             shape=(), strides=(), dtype=scan_dtype)
 
-    # **dict is a Py2.5 workaround
     evt = knl(ary, out_true, out_false, count, *extra_args_values,
-            **dict(queue=queue, wait_for=wait_for))
+            queue=queue, wait_for=wait_for)
 
     return out_true, out_false, count, evt
 
@@ -256,9 +254,8 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
     count = ary._new_with_changes(data=None, offset=0,
             shape=(), strides=(), dtype=scan_dtype)
 
-    # **dict is a Py2.5 workaround
     evt = knl(ary, out, count, *extra_args_values,
-            **dict(queue=queue, wait_for=wait_for))
+            queue=queue, wait_for=wait_for)
 
     return out, count, evt
 
@@ -541,7 +538,7 @@ class RadixSort(object):
             scan_args = args + sorted_args + [base_bit]
 
             last_evt = self.scan_kernel(*scan_args,
-                    **dict(queue=queue, wait_for=wait_for))
+                    queue=queue, wait_for=wait_for)
             wait_for = [last_evt]
 
             # substitute sorted
@@ -1177,7 +1174,7 @@ class ListOfListsBuilder:
 
         count_event = count_kernel(queue, gsize, lsize,
                 *(tuple(count_list_args) + data_args + (n_objects,)),
-                **dict(wait_for=wait_for))
+                wait_for=wait_for)
 
         compress_events = {}
         for name, dtype in self.list_names_and_dtypes:
@@ -1283,7 +1280,7 @@ class ListOfListsBuilder:
 
         evt = write_kernel(queue, gsize, lsize,
                 *(tuple(write_list_args) + data_args + (n_objects,)),
-                **dict(wait_for=scan_events))
+                wait_for=scan_events)
 
         return result, evt
 

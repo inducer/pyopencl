@@ -158,7 +158,7 @@ def elwise_kernel_runner(kernel_getter):
                 actual_args.append(arg)
         actual_args.append(repr_ary.size)
 
-        return knl(queue, gs, ls, *actual_args, **dict(wait_for=wait_for))
+        return knl(queue, gs, ls, *actual_args, wait_for=wait_for)
 
     try:
         from functools import update_wrapper
@@ -2383,7 +2383,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
                     + [use_fill_cla.base_data, use_fill_cla.offset]
                     + [array_lengths_cla.base_data, array_lengths_cla.offset]
                     + [dest_indices.size]),
-                **dict(wait_for=wait_for_this))
+                wait_for=wait_for_this)
 
         for o in out[chunk_slice]:
             o.add_event(evt)
