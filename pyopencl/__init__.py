@@ -1293,7 +1293,7 @@ def _add_functionality():
                 if attr == value or attr & value:
                     names.append(name)
             if names:
-                return " ".join(names)
+                return " | ".join(names)
         else:
             for name in dir(cls):
                 if (not name.startswith("_")
