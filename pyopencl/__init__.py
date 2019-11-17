@@ -1562,11 +1562,11 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
     .. note::
 
-        Be aware that when the deletion of the :class:`NannyEvent` that is
+        Be aware that the deletion of the :class:`NannyEvent` that is
         returned by the function if the transfer involved a host-side buffer
         will block until the transfer is complete, so be sure to keep a
-        reference to this :class:`Event` as long as necessary for the
-        transfer to complete.
+        reference to this :class:`Event` until the
+        transfer has completed.
 
     .. note::
 
