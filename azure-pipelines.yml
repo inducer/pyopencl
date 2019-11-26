@@ -64,3 +64,11 @@ jobs:
             . ./prepare-and-run-flake8.sh pyopencl test
 
         displayName: 'Flake8'
+
+schedules:
+-
+    cron: "0 0 * * 0"
+    displayName: Weekly build
+    branches:
+        include:
+        - master
