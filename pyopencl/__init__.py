@@ -264,8 +264,7 @@ def _find_pyopencl_include_path():
     except Exception:
         # Try to find the resource with pkg_resources (the recommended
         # setuptools approach). This is very slow.
-        from pkg_resources import (Requirement, resource_filename,
-                                   DistributionNotFound)
+        from pkg_resources import Requirement, resource_filename
         include_path = resource_filename(
                 Requirement.parse("pyopencl"), "pyopencl/cl")
 
