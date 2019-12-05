@@ -260,13 +260,15 @@ def _find_pyopencl_include_path():
         # Try to find the include path in the same directory as this file
         include_path = join(abspath(dirname(__file__)), "cl")
         if not exists(include_path):
-            raise IOError()
+            raise IOError("unable to find pyopencl include path")
     except Exception:
         # Try to find the resource with pkg_resources (the recommended
         # setuptools approach). This is very slow.
         from pkg_resources import Requirement, resource_filename
         include_path = resource_filename(
                 Requirement.parse("pyopencl"), "pyopencl/cl")
+        if not exists(include_path):
+            raise IOError("unable to find pyopencl include path")
 
     # Quote the path if it contains a space and is not quoted already.
     # See https://github.com/inducer/pyopencl/issues/250 for discussion.
