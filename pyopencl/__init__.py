@@ -381,7 +381,7 @@ class Program(object):
         if arg2 is None:
             # 1-argument form: program
             self._prg = arg1
-            self._context = self._prg.context
+            self._context = self._prg.get_info(program_info.CONTEXT)
 
         elif arg3 is None:
             # 2-argument form: context, source
