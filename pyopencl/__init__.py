@@ -381,6 +381,7 @@ class Program(object):
         if arg2 is None:
             # 1-argument form: program
             self._prg = arg1
+            self._context = self._prg.get_info(program_info.CONTEXT)
 
         elif arg3 is None:
             # 2-argument form: context, source
@@ -422,7 +423,6 @@ class Program(object):
                     stacklevel=3)
 
             self._prg = _cl._Program(self._context, self._source)
-            del self._context
             return self._prg
 
     def get_info(self, arg):
