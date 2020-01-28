@@ -58,6 +58,18 @@ Device
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
 
+    .. attribute :: hashable_model_and_version_identifier
+
+        An unspecified data type that can be used to (as precisely as possible,
+        given identifying information available in OpenCL) identify a given
+        model and software stack version of a compute device. Note that this
+        identifier does not differentiate between different instances of the
+        same device installed in a single host.
+
+        The returned data type is hashable.
+
+        .. versionadded:: 2020.1
+
     .. method:: create_sub_devices(properties)
 
         *properties* is an array of one (or more) of the forms::

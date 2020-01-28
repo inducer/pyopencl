@@ -56,6 +56,9 @@ def test_get_info(ctx_factory):
     device, = ctx.devices
     platform = device.platform
 
+    device.persistent_unique_id
+    device.hashable_model_and_version_identifier
+
     failure_count = [0]
 
     pocl_quirks = [
