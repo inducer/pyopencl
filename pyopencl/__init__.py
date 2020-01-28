@@ -633,13 +633,22 @@ def _add_functionality():
         return "<pyopencl.Device '%s' on '%s' at 0x%x>" % (
                 self.name.strip(), self.platform.name.strip(), self.int_ptr)
 
+    def device_hashable_model_and_version_identifier(self):
+        return ("v1", self.vendor, self.vendor_id, self.name, self.version)
+
     def device_persistent_unique_id(self):
-        return (self.vendor, self.vendor_id, self.name, self.version)
+        from warnings import warn
+        warn("Device.persistent_unique_id is deprecated. "
+                "Use Device.hashable_model_and_version_identifier instead.",
+                DeprecationWarning, stacklevel=2)
+        return device_hashable_model_and_version_identifier(self)
 
     Device.__repr__ = device_repr
 
     # undocumented for now:
     Device._get_cl_version = generic_get_cl_version
+    Device.hashable_model_and_version_identifier = property(
+            device_hashable_model_and_version_identifier)
     Device.persistent_unique_id = property(device_persistent_unique_id)
 
     # }}}
