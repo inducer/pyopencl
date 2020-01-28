@@ -22,6 +22,7 @@ include configure.py
 include Makefile.in
 include aksetup_helper.py
 include README_SETUP.txt
+include pyproject.toml
 include README.rst
 include LICENSE
 
