@@ -220,6 +220,7 @@ PyPy POCL:
   - export PY_EXE=pypy
   - export PYOPENCL_TEST=portable
 
+  - rm -f pyproject.toml  # to avoid installing vanilla numpy
   # https://github.com/pybind/pybind11/pull/1494
   - export EXTRA_INSTALL="git+https://github.com/inducer/pybind11 numpy mako"
 
