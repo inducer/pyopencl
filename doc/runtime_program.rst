@@ -286,8 +286,3 @@ Kernel
 
     .. versionchanged:: 2011.1
         Added the *g_times_l* keyword arg.
-
-
-.. function:: enqueue_task(queue, kernel, wait_for=None)
-
-    |std-enqueue-blurb|
