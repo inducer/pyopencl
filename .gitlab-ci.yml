@@ -64,6 +64,7 @@ Python 3 K40:
       junit: test/pytest.xml
 
 Python 3 AMD GPU:
+  allow_failure: true
   script:
   - export PY_EXE=python3
   - export PYOPENCL_TEST=amd:gfx803
