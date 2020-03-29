@@ -1,21 +1,3 @@
-"Python 2.7 AMD CPU":
-  script:
-  - export PY_EXE=python2.7
-  - export PYOPENCL_TEST=amd:pu
-  - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
-  allow_failure: true
-  tags:
-  - python2.7
-  - amd-cl-cpu
-  - opengl
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
 Python 3 Intel CPU:
   script:
   - export PY_EXE=python3
@@ -82,6 +64,7 @@ Python 3 K40:
       junit: test/pytest.xml
 
 Python 3 AMD GPU:
+  allow_failure: true
   script:
   - export PY_EXE=python3
   - export PYOPENCL_TEST=amd:gfx803
@@ -220,9 +203,10 @@ PyPy POCL:
   - export PY_EXE=pypy
   - export PYOPENCL_TEST=portable
 
-  - rm -f pyproject.toml  # to avoid installing vanilla numpy
-  # https://github.com/pybind/pybind11/pull/1494
-  - export EXTRA_INSTALL="git+https://github.com/inducer/pybind11 numpy mako"
+  # On pypy, this seems to install old versions from the package index
+  # independently of whether newer ones are already present.
+  - rm -f pyproject.toml 
+  - export EXTRA_INSTALL="pybind11 numpy mako"
 
   - export NO_DOCTESTS=1
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
