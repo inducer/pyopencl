@@ -219,6 +219,10 @@ PyPy POCL:
   script:
   - export PY_EXE=pypy
   - export PYOPENCL_TEST=portable
+
+  # On pypy, this seems to install old versions from the package index
+  # independently of whether newer ones are already present.
+  - rm -f pyproject.toml 
   - export EXTRA_INSTALL="pybind11 numpy mako"
 
   - export NO_DOCTESTS=1
