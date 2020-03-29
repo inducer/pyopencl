@@ -4,9 +4,9 @@ PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
 .. image:: https://gitlab.tiker.net/inducer/pyopencl/badges/master/pipeline.svg
     :alt: Gitlab Build Status
     :target: https://gitlab.tiker.net/inducer/pyopencl/commits/master
-.. image:: https://dev.azure.com/ak-spam/inducer/_apis/build/status/inducer.pyopencl?branchName=master
-    :alt: Azure Build Status
-    :target: https://dev.azure.com/ak-spam/inducer/_build/latest?definitionId=5&branchName=master
+.. image:: https://github.com/inducer/pyopencl/workflows/CI/badge.svg?branch=master
+    :alt: Github Build Status
+    :target: https://github.com/inducer/pyopencl/actions?query=branch%3Amaster+workflow%3ACI
 .. image:: https://badge.fury.io/py/pyopencl.png
     :alt: Python Package Index Release Page
     :target: https://pypi.org/project/pyopencl/
