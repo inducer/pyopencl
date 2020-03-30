@@ -563,7 +563,9 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
                     dims_str += "[%d]" % dim
             except TypeError:
                 dims_str = "[%d]" % array_dims
-            c_fields.append("  %s %s%s;" % (dtype_to_ctype(array_dtype), field_name, dims_str))
+            c_fields.append("  %s %s%s;" % (
+                dtype_to_ctype(array_dtype), field_name, dims_str)
+            )
         else:
             c_fields.append("  %s %s;" % (dtype_to_ctype(field_dtype), field_name))
 
