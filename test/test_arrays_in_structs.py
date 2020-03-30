@@ -29,6 +29,7 @@ import pyopencl.tools as cl_tools
 from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 
+
 def test_struct_with_array_fields(ctx_factory):
     #
     # typedef struct {
@@ -43,12 +44,15 @@ def test_struct_with_array_fields(ctx_factory):
     uint_arr_2 = cl_tools.get_or_register_dtype('uint_arr_2', uint_arr_2)
     uint_arr_3_4 = np.dtype((cltypes.uint, (3, 4)))
     uint_arr_3_4 = cl_tools.get_or_register_dtype('uint_arr_3_4', uint_arr_3_4)
-    my_struct = np.dtype([('x', uint_arr_2),('y', cltypes.float),('z', uint_arr_3_4)])
+    my_struct = np.dtype([
+        ('x', uint_arr_2),
+        ('y', cltypes.float),
+        ('z', uint_arr_3_4)
+    ])
     my_struct, _ = cl_tools.match_dtype_to_c_struct(device, 'my_struct', my_struct)
 
-if __name__ == "__main__":
 
-    import pyopencl
+if __name__ == "__main__":
 
     import sys
     if len(sys.argv) > 1:
