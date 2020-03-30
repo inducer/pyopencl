@@ -463,6 +463,13 @@ class _CDeclList:
         if dtype in pyopencl.cltypes.vec_type_to_scalar_and_count:
             return
 
+        if hasattr(dtype, "subdtype") and dtype.subdtype is not None:
+            if dtype.subdtype[0] in [np.float64 or np.complex128]:
+                self.saw_double = True
+            if dtype.subdtype[0].kind == "c":
+                self.saw_complex = True
+            return
+
         for name, field_data in sorted(six.iteritems(dtype.fields)):
             field_dtype, offset = field_data[:2]
             self.add_dtype(field_dtype)
@@ -547,7 +554,18 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     c_fields = []
     for field_name, dtype_and_offset in fields:
         field_dtype, offset = dtype_and_offset[:2]
-        c_fields.append("  %s %s;" % (dtype_to_ctype(field_dtype), field_name))
+        if hasattr(field_dtype, "subdtype") and field_dtype.subdtype is not None:
+            array_dtype = field_dtype.subdtype[0]
+            array_dims = field_dtype.subdtype[1]
+            dims_str = ""
+            try:
+                for dim in array_dims:
+                    dims_str += "[%d]" % dim
+            except TypeError:
+                dims_str = "[%d]" % array_dims
+            c_fields.append("  %s %s%s;" % (dtype_to_ctype(array_dtype), field_name, dims_str))
+        else:
+            c_fields.append("  %s %s;" % (dtype_to_ctype(field_dtype), field_name))
 
     c_decl = "typedef struct {\n%s\n} %s;\n\n" % (
             "\n".join(c_fields),
