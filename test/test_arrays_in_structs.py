@@ -49,13 +49,15 @@ def test_struct_with_array_fields(ctx_factory):
         ("y", cltypes.int),
         ("z", cltypes.uint, (3, 4))
     ])
-    my_struct, cdecl = cl_tools.match_dtype_to_c_struct(device, "my_struct", my_struct)
+    my_struct, cdecl = cl_tools.match_dtype_to_c_struct(
+        device, "my_struct", my_struct
+    )
 
     # a random buffer of 4 structs
     my_struct_arr = np.array([
-        ([81, 24], -57, [[15, 28, 45,  7], [71, 95, 65, 84], [ 2, 11, 59,  9]]),
-        ([ 5, 20],  47, [[15, 53,  7, 59], [73, 22, 27, 86], [59,  6, 39, 49]]),
-        ([11, 99], -32, [[73, 83,  4, 65], [19, 21, 22, 27], [ 1, 55,  6, 64]]),
+        ([81, 24], -57, [[15, 28, 45,  7], [71, 95, 65, 84], [2, 11, 59,  9]]),
+        ([5, 20],  47, [[15, 53,  7, 59], [73, 22, 27, 86], [59,  6, 39, 49]]),
+        ([11, 99], -32, [[73, 83,  4, 65], [19, 21, 22, 27], [1, 55,  6, 64]]),
         ([57, 38], -54, [[74, 90, 38, 67], [77, 30, 99, 18], [91,  3, 63, 67]])
     ], dtype=my_struct)
 
@@ -75,7 +77,6 @@ def test_struct_with_array_fields(ctx_factory):
                 res[i] += s.z[r][c];
     }""" % cdecl
 
-    from pyopencl import mem_flags
     mem_flags1 = mem_flags.READ_ONLY | mem_flags.COPY_HOST_PTR
     mem_flags2 = mem_flags.WRITE_ONLY
 
