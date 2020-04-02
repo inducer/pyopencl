@@ -464,10 +464,7 @@ class _CDeclList:
             return
 
         if hasattr(dtype, "subdtype") and dtype.subdtype is not None:
-            if dtype.subdtype[0] in [np.float64 or np.complex128]:
-                self.saw_double = True
-            if dtype.subdtype[0].kind == "c":
-                self.saw_complex = True
+            self.add_dtype(dtype.subdtype[0])
             return
 
         for name, field_data in sorted(six.iteritems(dtype.fields)):
@@ -556,6 +553,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
         field_dtype, offset = dtype_and_offset[:2]
         if hasattr(field_dtype, "subdtype") and field_dtype.subdtype is not None:
             array_dtype = field_dtype.subdtype[0]
+            if hasattr(array_dtype, "subdtype") and array_dtype.subdtype is not None:
+                raise NotImplementedError("nested array dtypes are not supported")
             array_dims = field_dtype.subdtype[1]
             dims_str = ""
             try:
