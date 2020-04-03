@@ -34,7 +34,6 @@ jobs:
                 sed 's/python=3/python=2.7/' .test-conda-env-py3.yml > .test-conda-env-py2.yml
                 CONDA_ENVIRONMENT=.test-conda-env-py2.yml
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
-                python ./configure.py --cl-inc-dir="$CONDA_PREFIX/include" --cl-lib-dir="$CONDA_PREFIX/lib"
                 . ./build-and-test-py-project-within-miniconda.sh
 
     pytest3:
@@ -46,7 +45,6 @@ jobs:
             run: |
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
-                python ./configure.py --cl-inc-dir="$CONDA_PREFIX/include" --cl-lib-dir="$CONDA_PREFIX/lib"
                 . ./build-and-test-py-project-within-miniconda.sh
 
 # vim: sw=4
