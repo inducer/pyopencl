@@ -24,7 +24,7 @@ matrix:
   - sudo: required
     services:
       - docker
-    arch: aarch64
+    arch: arm64
     env:
       - DOCKER_IMAGE=quay.io/pypa/manylinux2014_aarch64
   - sudo: required
