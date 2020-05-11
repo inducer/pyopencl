@@ -26,7 +26,13 @@ matrix:
       - docker
     arch: aarch64
     env:
-      - DOCKER_IAMGE=quay.io/pypa/manylinux2014_aarch64
+      - DOCKER_IMAGE=quay.io/pypa/manylinux2014_aarch64
+  - sudo: required
+    services:
+      - docker
+    arch: s390x
+    env:
+      - DOCKER_IMAGE=quay.io/pypa/manylinux2014_s390x
 install:
   - docker pull $DOCKER_IMAGE
 script:
