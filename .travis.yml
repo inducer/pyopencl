@@ -5,14 +5,28 @@ matrix:
   - sudo: required
     services:
       - docker
+    arch: amd64
     env:
       - DOCKER_IMAGE=quay.io/pypa/manylinux1_x86_64
   - sudo: required
     services:
       - docker
+    arch: amd64
     env:
       - DOCKER_IMAGE=quay.io/pypa/manylinux1_i686
       - PRE_CMD=linux32
+  - sudo: required
+    services:
+      - docker
+    arch: ppc64le
+    env:
+      - DOCKER_IMAGE=quay.io/pypa/manylinux2014_ppc64le
+  - sudo: required
+    services:
+      - docker
+    arch: aarch64
+    env:
+      - DOCKER_IAMGE=quay.io/pypa/manylinux2014_aarch64
 install:
   - docker pull $DOCKER_IMAGE
 script:
