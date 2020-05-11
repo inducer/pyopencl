@@ -8,7 +8,7 @@ yum install -y git yum
 curl -L -O http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz
 tar -xf ruby-2.1.2.tar.gz
 cd ruby-2.1.2
-./configure
+./configure --disable-install-doc --disable-install-rdoc
 make -j4
 make install
 cd ..
