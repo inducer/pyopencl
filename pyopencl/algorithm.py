@@ -296,9 +296,9 @@ def to_bin(n):
     return ''.join(digs[::-1])
 
 
-def _padded_bin(i, l):
+def _padded_bin(i, nbits):
     s = to_bin(i)
-    while len(s) < l:
+    while len(s) < nbits:
         s = '0' + s
     return s
 
