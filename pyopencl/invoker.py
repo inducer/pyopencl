@@ -162,7 +162,7 @@ def generate_specific_arg_handling_body(function_name,
                         "some (but not all) of the target devices mishandle "
                         "struct kernel arguments (hence the workaround is "
                         "disabled".format(
-                            knl_name=function_name, stacklevel=2))
+                            knl_name=function_name), stacklevel=2)
 
             if arg_dtype == np.complex64:
                 arg_char = "f"

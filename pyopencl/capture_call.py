@@ -51,8 +51,8 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
     cg("")
 
     cg('CODE = r"""//CL//')
-    for l in source.split("\n"):
-        cg(l)
+    for line in source.split("\n"):
+        cg(line)
     cg('"""')
 
     # {{{ invocation

@@ -161,7 +161,7 @@ if not _PYPY:
 
 if get_cl_header_version() >= (1, 1):
     from pyopencl._cl import (  # noqa
-          UserEvent,
+        UserEvent,
         )
 if get_cl_header_version() >= (1, 2):
     from pyopencl._cl import (  # noqa
