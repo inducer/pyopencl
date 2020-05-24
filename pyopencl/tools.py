@@ -31,9 +31,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 import six
 from six.moves import zip, intern
 
+# Do not add a pyopencl import here: This will add an import cycle.
+
 import numpy as np
 from decorator import decorator
-import pyopencl as cl
 from pytools import memoize, memoize_method
 from pyopencl._cl import bitlog2  # noqa: F401
 from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
@@ -177,6 +178,8 @@ def get_test_platforms_and_devices(plat_dev_string=None):
     :return: list of tuples (platform, [device, device, ...])
     """
 
+    import pyopencl as cl
+
     if plat_dev_string is None:
         import os
         plat_dev_string = os.environ.get("PYOPENCL_TEST", None)
@@ -227,6 +230,8 @@ def get_test_platforms_and_devices(plat_dev_string=None):
 
 
 def pytest_generate_tests_for_pyopencl(metafunc):
+    import pyopencl as cl
+
     class ContextFactory:
         def __init__(self, device):
             self.device = device
@@ -404,6 +409,8 @@ def get_arg_offset_adjuster_code(arg_types):
 
 
 def get_gl_sharing_context_properties():
+    import pyopencl as cl
+
     ctx_props = cl.context_properties
 
     from OpenGL import platform as gl_platform
@@ -544,6 +551,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     :func:`get_or_register_dtype` on the modified `dtype` returned by this
     function, not the original one.
     """
+
+    import pyopencl as cl
 
     fields = sorted(six.iteritems(dtype.fields),
             key=lambda name_dtype_offset: name_dtype_offset[1][1])
@@ -788,6 +797,7 @@ class _TemplateRenderer(object):
         return str(result)
 
     def get_rendered_kernel(self, txt, kernel_name):
+        import pyopencl as cl
         prg = cl.Program(self.context, self(txt)).build(self.options)
 
         kernel_name_prefix = self.var_dict.get("kernel_name_prefix")
