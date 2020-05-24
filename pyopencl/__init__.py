@@ -29,6 +29,9 @@ from six.moves import input, intern
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
+# must import, otherwise dtype registry will not be fully populated
+import pyopencl.cltypes  # noqa: F401
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -1811,7 +1814,6 @@ def image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False):
     dtype = ary.dtype
     if num_channels is None:
 
-        import pyopencl.cltypes
         try:
             dtype, num_channels = \
                     pyopencl.cltypes.vec_type_to_scalar_and_count[dtype]
