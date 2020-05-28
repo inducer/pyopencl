@@ -87,7 +87,7 @@ Python 3 AMD GPU:
 Python 2.7 POCL:
   script:
   - export PY_EXE=python2.7
-  - export PYOPENCL_TEST=portable
+  - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -103,7 +103,7 @@ Python 2.7 POCL:
 Python 3 POCL:
   script:
   - export PY_EXE=python3
-  - export PYOPENCL_TEST=portable
+  - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -119,7 +119,7 @@ Python 3 POCL:
 Python 3 POCL CL 1.1:
   script:
   - export PY_EXE=python3
-  - export PYOPENCL_TEST=portable
+  - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - echo "CL_PRETEND_VERSION = '1.1'" > siteconf.py
@@ -136,7 +136,7 @@ Python 3 POCL CL 1.1:
 Python 3 POCL:
   script:
   - export PY_EXE=python3
-  - export PYOPENCL_TEST=portable
+  - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -152,7 +152,7 @@ Python 3 POCL:
 Python 3 POCL (+GL and special functions):
   script:
   - export PY_EXE=python3
-  - export PYOPENCL_TEST=portable
+  - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako scipy pyfmmlib"
   - echo "CL_ENABLE_GL = True" > siteconf.py
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
@@ -201,7 +201,7 @@ Python 3 Conda Apple:
 PyPy POCL:
   script:
   - export PY_EXE=pypy
-  - export PYOPENCL_TEST=portable
+  - export PYOPENCL_TEST=portable:pthread
 
   # On pypy, this seems to install old versions from the package index
   # independently of whether newer ones are already present.
