@@ -1160,6 +1160,26 @@ def test_threaded_nanny_events(ctx_factory):
     t2.join()
 
 
+@pytest.mark.parametrize("empty_shape", [(0,), (3, 0, 2)])
+def test_empty_ndrange(ctx_factory, empty_shape):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    if ctx._get_cl_version() < (1, 2) or cl.get_cl_header_version() < (1, 2):
+        pytest.skip("OpenCL 1.2 required for empty NDRange suuport")
+
+    a = cl_array.zeros(queue, empty_shape, dtype=np.float32)
+
+    prg = cl.Program(ctx, """
+        __kernel void twice(__global float *a_g)
+        {
+          a_g[get_global_id(0)] += 2;
+        }
+        """).build()
+
+    prg.twice(queue, a.shape, None, a.data, allow_empty_ndrange=True)
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa
