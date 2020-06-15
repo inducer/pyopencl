@@ -104,6 +104,9 @@ namespace
 
       pointer_type allocate(size_type s)
       {
+        if (s == 0)
+          return nullptr;
+
         return pyopencl::create_buffer(m_context->data(), m_flags, s, 0);
       }
   };
@@ -137,6 +140,9 @@ namespace
 
       pointer_type allocate(size_type s)
       {
+        if (s == 0)
+          return nullptr;
+
         pointer_type ptr =  pyopencl::create_buffer(
             m_context->data(), m_flags, s, 0);
 

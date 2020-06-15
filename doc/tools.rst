@@ -54,6 +54,11 @@ not complicated::
 
         Allocate a :class:`pyopencl.Buffer` of the given *size*.
 
+        .. versionchanged :: 2020.2
+
+            The allocator will succeed even for allocations of size zero,
+            returning *None*.
+
 .. class:: ImmediateAllocator(queue, mem_flags=pyopencl.mem_flags.READ_WRITE)
 
     *mem_flags* takes its values from :class:`pyopencl.mem_flags` and corresponds
@@ -67,6 +72,11 @@ not complicated::
     .. method:: __call__(size)
 
         Allocate a :class:`pyopencl.Buffer` of the given *size*.
+
+        .. versionchanged :: 2020.2
+
+            The allocator will succeed even for allocations of size zero,
+            returning *None*.
 
 .. class:: MemoryPool(allocator[, leading_bits_in_bin_id])
 
