@@ -46,8 +46,9 @@ not complicated::
     bound to contexts, not devices, and memory availability depends on which
     device the buffer is used with.)
 
-    .. versionchanged::
-        In version 2013.1, :class:`CLAllocator` was deprecated and replaced
+    .. versionchanged :: 2013.1
+
+        :class:`CLAllocator` was deprecated and replaced
         by :class:`DeferredAllocator`.
 
     .. method:: __call__(size)
