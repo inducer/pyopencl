@@ -231,6 +231,7 @@ Kernel
             <http://lists.tiker.net/pipermail/pyopencl/2012-October/001311.html>`_.
 
         .. versionchanged:: 0.92
+
             *local_size* was promoted to third positional argument from being a
             keyword argument. The old keyword argument usage will continue to
             be accepted with a warning throughout the 0.92 release cycle.
@@ -242,6 +243,7 @@ Kernel
             it from working.
 
         .. versionchanged:: 2011.1
+
             Added the *g_times_l* keyword arg.
 
         .. versionchanged:: 2020.2
