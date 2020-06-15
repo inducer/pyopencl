@@ -33,7 +33,8 @@ import pyopencl.array as cl_array
 import pyopencl.cltypes as cltypes
 import pyopencl.clrandom
 from pyopencl.tools import (  # noqa
-        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
+        pytest_generate_tests_for_pyopencl as pytest_generate_tests,
+        ImmediateAllocator, DeferredAllocator)
 from pyopencl.characterize import get_pocl_version
 
 # Are CL implementations crashy? You be the judge. :)
@@ -571,6 +572,23 @@ def test_mempool_2(ctx_factory):
         assert asize >= s, s
         assert pool.bin_number(asize) == bin_nr, s
         assert asize < asize*(1+1/8)
+
+
+@pytest.mark.parametrize("allocator_cls", [ImmediateAllocator, DeferredAllocator])
+def test_allocator(ctx_factory, allocator_cls):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    if allocator_cls is DeferredAllocator:
+        allocator = allocator_cls(context)
+    else:
+        allocator = allocator_cls(queue)
+
+    mem = allocator(15)
+    mem2 = allocator(0)
+
+    assert mem is not None
+    assert mem2 is None
 
 
 def test_vector_args(ctx_factory):

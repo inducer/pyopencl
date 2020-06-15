@@ -197,6 +197,15 @@ namespace
       alloc.try_release_blocks();
     }
 
+    if (!mem)
+    {
+      if (size == 0)
+        return nullptr;
+      else
+        throw pyopencl::error("Allocator", CL_INVALID_VALUE,
+            "allocator succeeded but returned NULL cl_mem");
+    }
+
     try
     {
       return new pyopencl::buffer(mem, false);
