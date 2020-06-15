@@ -1222,6 +1222,9 @@ class Array(object):
     def _zero_fill(self, queue=None, wait_for=None):
         queue = queue or self.queue
 
+        if not self.size:
+            return
+
         if (
                 queue._get_cl_version() >= (1, 2)
                 and cl.get_cl_header_version() >= (1, 2)):
