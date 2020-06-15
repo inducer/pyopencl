@@ -144,7 +144,10 @@ namespace
         // This looks (and is) expensive. But immediate allocators
         // have their main use in memory pools, whose basic assumption
         // is that allocation is too expensive anyway--but they rely
-        // on exact 'out-of-memory' information.
+        // on 'out-of-memory' being reported on allocation. (If it is
+        // reported in a deferred manner, it has no way to react
+        // (e.g. by freeing unused memory) because it is not part of
+        // the call stack.
         unsigned zero = 0;
         PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
               m_queue.data(),
