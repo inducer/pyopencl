@@ -205,14 +205,17 @@ Kernel
                prg.kernel(queue, n_globals, None, args)
 
 
-    .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
+    .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False, allow_empty_ndrange=False)
 
         Use :func:`enqueue_nd_range_kernel` to enqueue a kernel execution, after using
         :meth:`set_args` to set each argument in turn. See the documentation for
         :meth:`set_arg` to see what argument types are allowed.
-        |std-enqueue-blurb|
 
         |glsize|
+
+        |empty-nd-range|
+
+        |std-enqueue-blurb|
 
         .. note::
 
@@ -240,6 +243,10 @@ Kernel
 
         .. versionchanged:: 2011.1
             Added the *g_times_l* keyword arg.
+
+        .. versionchanged:: 2020.2
+
+            Added the *allow_empty_ndrange* keyword argument.
 
     .. method:: capture_call(filename, queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
 
@@ -278,11 +285,18 @@ Kernel
 
         The size of local buffer in bytes to be provided.
 
-.. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False)
-
-    |std-enqueue-blurb|
+.. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False, allow_empty_ndrange=False)
 
     |glsize|
 
+    |empty-nd-range|
+
+    |std-enqueue-blurb|
+
     .. versionchanged:: 2011.1
+
         Added the *g_times_l* keyword arg.
+
+    .. versionchanged:: 2020.2
+
+        Added the *allow_empty_ndrange* keyword argument.
