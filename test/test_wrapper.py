@@ -1171,13 +1171,13 @@ def test_empty_ndrange(ctx_factory, empty_shape):
     a = cl_array.zeros(queue, empty_shape, dtype=np.float32)
 
     prg = cl.Program(ctx, """
-        __kernel void twice(__global float *a_g)
+        __kernel void add_two(__global float *a_g)
         {
           a_g[get_global_id(0)] += 2;
         }
         """).build()
 
-    prg.twice(queue, a.shape, None, a.data, allow_empty_ndrange=True)
+    prg.add_two(queue, a.shape, None, a.data, allow_empty_ndrange=True)
 
 
 if __name__ == "__main__":
