@@ -461,7 +461,8 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("local_work_size"),
       py::arg("global_work_offset")=py::none(),
       py::arg("wait_for")=py::none(),
-      py::arg("g_times_l")=false
+      py::arg("g_times_l")=false,
+      py::arg("allow_empty_ndrange")=false
       );
 
   // TODO: clEnqueueNativeKernel

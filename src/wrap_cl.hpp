@@ -4527,7 +4527,8 @@ namespace pyopencl
       py::object py_local_work_size,
       py::object py_global_work_offset,
       py::object py_wait_for,
-      bool g_times_l)
+      bool g_times_l,
+      bool allow_empty_ndrange)
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
@@ -4580,6 +4581,33 @@ namespace pyopencl
       }
 
       global_work_offset_ptr = global_work_offset.empty( ) ? nullptr :  &global_work_offset.front();
+    }
+
+    if (allow_empty_ndrange)
+    {
+#if PYOPENCL_CL_VERSION >= 0x1020
+      bool is_empty = false;
+      for (cl_uint work_axis = 0; work_axis < work_dim; ++work_axis)
+        if (global_work_size[work_axis] == 0)
+          is_empty = true;
+      if (local_work_size_ptr)
+        for (cl_uint work_axis = 0; work_axis < work_dim; ++work_axis)
+          if (local_work_size_ptr[work_axis] == 0)
+            is_empty = true;
+
+      if (is_empty)
+      {
+        cl_event evt;
+        PYOPENCL_CALL_GUARDED(clEnqueueMarkerWithWaitList, (
+              cq.data(), PYOPENCL_WAITLIST_ARGS, &evt));
+        PYOPENCL_RETURN_NEW_EVENT(evt);
+      }
+#else
+      // clEnqueueWaitForEvents + clEnqueueMarker is not equivalent
+      // in the case of an out-of-order queue.
+      throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
+          "allow_empty_ndrange requires OpenCL 1.2");
+#endif
     }
 
     PYOPENCL_RETRY_RETURN_IF_MEM_ERROR( {

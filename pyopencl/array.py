@@ -483,23 +483,22 @@ class Array(object):
         self.allocator = allocator
 
         if data is None:
-            if alloc_nbytes <= 0:
-                if alloc_nbytes == 0:
-                    # Work around CL not allowing zero-sized buffers.
-                    alloc_nbytes = 1
+            if alloc_nbytes < 0:
+                raise ValueError("cannot allocate CL buffer with "
+                        "negative size")
 
-                else:
-                    raise ValueError("cannot allocate CL buffer with "
-                            "negative size")
+            elif alloc_nbytes == 0:
+                self.base_data = None
 
-            if allocator is None:
-                if context is None and queue is not None:
-                    context = queue.context
-
-                self.base_data = cl.Buffer(
-                        context, cl.mem_flags.READ_WRITE, alloc_nbytes)
             else:
-                self.base_data = self.allocator(alloc_nbytes)
+                if allocator is None:
+                    if context is None and queue is not None:
+                        context = queue.context
+
+                    self.base_data = cl.Buffer(
+                            context, cl.mem_flags.READ_WRITE, alloc_nbytes)
+                else:
+                    self.base_data = self.allocator(alloc_nbytes)
         else:
             self.base_data = data
 
@@ -1222,6 +1221,9 @@ class Array(object):
 
     def _zero_fill(self, queue=None, wait_for=None):
         queue = queue or self.queue
+
+        if not self.size:
+            return
 
         if (
                 queue._get_cl_version() >= (1, 2)

@@ -46,13 +46,19 @@ not complicated::
     bound to contexts, not devices, and memory availability depends on which
     device the buffer is used with.)
 
-    .. versionchanged::
-        In version 2013.1, :class:`CLAllocator` was deprecated and replaced
+    .. versionchanged :: 2013.1
+
+        :class:`CLAllocator` was deprecated and replaced
         by :class:`DeferredAllocator`.
 
     .. method:: __call__(size)
 
         Allocate a :class:`pyopencl.Buffer` of the given *size*.
+
+        .. versionchanged :: 2020.2
+
+            The allocator will succeed even for allocations of size zero,
+            returning *None*.
 
 .. class:: ImmediateAllocator(queue, mem_flags=pyopencl.mem_flags.READ_WRITE)
 
@@ -67,6 +73,11 @@ not complicated::
     .. method:: __call__(size)
 
         Allocate a :class:`pyopencl.Buffer` of the given *size*.
+
+        .. versionchanged :: 2020.2
+
+            The allocator will succeed even for allocations of size zero,
+            returning *None*.
 
 .. class:: MemoryPool(allocator[, leading_bits_in_bin_id])
 
