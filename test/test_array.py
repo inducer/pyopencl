@@ -1324,13 +1324,15 @@ def test_negative_dim_rejection(ctx_factory):
         cl_array.Array(queue, shape=-10, dtype=np.float)
 
     with pytest.raises(ValueError):
-        cl_array.Array(queue, shape=(-1, +1), dtype=np.float)
+        cl_array.Array(queue, shape=(-10,), dtype=np.float)
 
-    with pytest.raises(ValueError):
-        cl_array.Array(queue, shape=(+1, -1), dtype=np.float)
+    for left_dim in (-1, 0, 1):
+        with pytest.raises(ValueError):
+            cl_array.Array(queue, shape=(left_dim, -1), dtype=np.float)
 
-    with pytest.raises(ValueError):
-        cl_array.Array(queue, shape=(-1, -1), dtype=np.float)
+    for right_dim in (-1, 0, 1):
+        with pytest.raises(ValueError):
+            cl_array.Array(queue, shape=(-1, right_dim), dtype=np.float)
 
 
 if __name__ == "__main__":
