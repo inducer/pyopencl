@@ -448,6 +448,9 @@ class Array(object):
             size = shape
             shape = (shape,)
 
+        if any(dim < 0 for dim in shape):
+            raise ValueError("negative dimensions are not allowed")
+
         if isinstance(size, np.integer):
             size = size.item()
 

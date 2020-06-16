@@ -1316,6 +1316,23 @@ def test_outoforderqueue_reductions(ctx_factory):
     assert b1 == a.sum() and b2 == a.dot(3 - a) and b3 == 0
 
 
+def test_negative_dim_rejection(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    with pytest.raises(ValueError):
+        cl_array.Array(queue, shape=-10, dtype=np.float)
+
+    with pytest.raises(ValueError):
+        cl_array.Array(queue, shape=(-1, +1), dtype=np.float)
+
+    with pytest.raises(ValueError):
+        cl_array.Array(queue, shape=(+1, -1), dtype=np.float)
+
+    with pytest.raises(ValueError):
+        cl_array.Array(queue, shape=(-1, -1), dtype=np.float)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
