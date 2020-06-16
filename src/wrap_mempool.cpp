@@ -104,6 +104,9 @@ namespace
 
       pointer_type allocate(size_type s)
       {
+        if (s == 0)
+          return nullptr;
+
         return pyopencl::create_buffer(m_context->data(), m_flags, s, 0);
       }
   };
@@ -137,6 +140,9 @@ namespace
 
       pointer_type allocate(size_type s)
       {
+        if (s == 0)
+          return nullptr;
+
         pointer_type ptr =  pyopencl::create_buffer(
             m_context->data(), m_flags, s, 0);
 
@@ -144,7 +150,10 @@ namespace
         // This looks (and is) expensive. But immediate allocators
         // have their main use in memory pools, whose basic assumption
         // is that allocation is too expensive anyway--but they rely
-        // on exact 'out-of-memory' information.
+        // on 'out-of-memory' being reported on allocation. (If it is
+        // reported in a deferred manner, it has no way to react
+        // (e.g. by freeing unused memory) because it is not part of
+        // the call stack.)
         unsigned zero = 0;
         PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
               m_queue.data(),
@@ -186,6 +195,15 @@ namespace
       }
 
       alloc.try_release_blocks();
+    }
+
+    if (!mem)
+    {
+      if (size == 0)
+        return nullptr;
+      else
+        throw pyopencl::error("Allocator", CL_INVALID_VALUE,
+            "allocator succeeded but returned NULL cl_mem");
     }
 
     try

@@ -197,7 +197,7 @@ Pylint:
   # is only one copy of everything.
   - PROJECT_INSTALL_FLAGS="--editable"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
-  - ". ./prepare-and-run-pylint.sh pyopencl test/test_*.py"
+  - . ./prepare-and-run-pylint.sh "$CI_PROJECT_NAME" test/test_*.py
   tags:
   - python3
   except:
@@ -216,7 +216,7 @@ Documentation:
 Flake8:
   script:
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
-  - ". ./prepare-and-run-flake8.sh pyopencl test"
+  - . ./prepare-and-run-flake8.sh "$CI_PROJECT_NAME" test
   tags:
   - python3
   except:

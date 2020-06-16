@@ -1335,6 +1335,19 @@ def test_negative_dim_rejection(ctx_factory):
             cl_array.Array(queue, shape=(-1, right_dim), dtype=np.float)
 
 
+@pytest.mark.parametrize("empty_shape", [0, (), (3, 0, 2)])
+def test_zero_size_array(ctx_factory, empty_shape):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = cl_array.zeros(queue, empty_shape, dtype=np.float32)
+    b = cl_array.zeros(queue, empty_shape, dtype=np.float32)
+    b.fill(1)
+    c = a + b
+    c_host = c.get()
+    cl_array.to_device(queue, c_host)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])

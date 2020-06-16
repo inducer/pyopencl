@@ -322,7 +322,9 @@ def _generate_enqueue_and_set_args_module(function_name,
                 ", ".join(
                     ["self", "queue", "global_size", "local_size"]
                     + arg_names
-                    + ["global_offset=None", "g_times_l=None",
+                    + ["global_offset=None",
+                        "g_times_l=None",
+                        "allow_empty_ndrange=False",
                         "wait_for=None"])))
 
     with Indentation(gen):
@@ -331,7 +333,8 @@ def _generate_enqueue_and_set_args_module(function_name,
 
         gen("""
             return _cl.enqueue_nd_range_kernel(queue, self, global_size, local_size,
-                    global_offset, wait_for, g_times_l=g_times_l)
+                    global_offset, wait_for, g_times_l=g_times_l,
+                    allow_empty_ndrange=allow_empty_ndrange)
             """)
 
     # }}}
@@ -352,7 +355,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v6",
+        "pyopencl-invoker-cache-v7",
         key_builder=_NumpyTypesKeyBuilder())
 
 
