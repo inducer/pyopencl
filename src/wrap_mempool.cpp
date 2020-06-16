@@ -153,7 +153,7 @@ namespace
         // on 'out-of-memory' being reported on allocation. (If it is
         // reported in a deferred manner, it has no way to react
         // (e.g. by freeing unused memory) because it is not part of
-        // the call stack.
+        // the call stack.)
         unsigned zero = 0;
         PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
               m_queue.data(),
