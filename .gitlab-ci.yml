@@ -167,7 +167,7 @@ Python 3 Conda Apple:
 
 PyPy POCL:
   script:
-  - export PY_EXE=pypy
+  - export PY_EXE=pypy3
   - export PYOPENCL_TEST=portable:pthread
 
   # On pypy, this seems to install old versions from the package index
