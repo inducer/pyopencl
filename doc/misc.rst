@@ -248,13 +248,22 @@ other software to be turned into the corresponding :mod:`pyopencl` objects.
 User-visible Changes
 ====================
 
-Version 2018.2
+Version 2020.3
 --------------
-
 .. note::
 
     This version is currently under development. You can get snapshots from
     PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
+
+Version 2020.2
+--------------
+
+- Drop Python 2 support.
+- Add ``allow_empty_ndrange`` to kernel enqueue.
+- Bug fixes.
+
+Version 2018.2
+--------------
 
 * Use pybind11.
 * Many bug fixes.
