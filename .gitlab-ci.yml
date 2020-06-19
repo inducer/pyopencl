@@ -165,7 +165,7 @@ Python 3 Conda Apple:
     reports:
       junit: test/pytest.xml
 
-PyPy POCL:
+PyPy3 POCL:
   script:
   - export PY_EXE=pypy3
   - export PYOPENCL_TEST=portable:pthread
