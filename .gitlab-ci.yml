@@ -179,6 +179,8 @@ PyPy3 POCL:
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
 
+  allow_failure: true
+
   tags:
   - pypy
   - pocl
