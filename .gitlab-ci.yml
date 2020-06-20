@@ -165,9 +165,9 @@ Python 3 Conda Apple:
     reports:
       junit: test/pytest.xml
 
-PyPy POCL:
+PyPy3 POCL:
   script:
-  - export PY_EXE=pypy
+  - export PY_EXE=pypy3
   - export PYOPENCL_TEST=portable:pthread
 
   # On pypy, this seems to install old versions from the package index
@@ -178,6 +178,8 @@ PyPy POCL:
   - export NO_DOCTESTS=1
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
+
+  allow_failure: true
 
   tags:
   - pypy
