@@ -693,7 +693,7 @@ def _add_functionality():
         self.finish()
 
     def command_queue_get_cl_version(self):
-        return self.context._get_cl_version()
+        return self.device._get_cl_version()
 
     CommandQueue.__enter__ = command_queue_enter
     CommandQueue.__exit__ = command_queue_exit
