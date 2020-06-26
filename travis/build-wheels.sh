@@ -33,8 +33,6 @@ for PYBIN in /opt/python/*/bin; do
         NUMPY_VERSION="1.11.3"
     elif [[ "${PYBIN}" == *cp37* ]]; then
         NUMPY_VERSION="1.14.5"
-    elif [[ "${PYBIN}" == *cp35* ]]; then
-        NUMPY_VERSION="1.9.3"
     elif [[ "${PYBIN}" == *cp38* ]]; then
         NUMPY_VERSION="1.17.3"
     else
