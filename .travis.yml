@@ -1,5 +1,3 @@
-notifications:
-  email: false
 matrix:
   include:
   - sudo: required
