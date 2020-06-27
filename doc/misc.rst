@@ -58,7 +58,7 @@ On Linux and macOS, you can use Oclgrind to detect memory access errors.
 On Linux Intel Broadwell or newer processors with an Intel graphics card, you
 can use NEO.
 
-#. ``conda install intel-compute-compute``
+#. ``conda install intel-compute-runtime``
 
 On Linux Intel Sandybridge or newer processors with an Intel graphics card, you
 can use Beignet.
