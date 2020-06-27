@@ -33,14 +33,10 @@ for PYBIN in /opt/python/*/bin; do
         NUMPY_VERSION="1.11.3"
     elif [[ "${PYBIN}" == *cp37* ]]; then
         NUMPY_VERSION="1.14.5"
-    elif [[ "${PYBIN}" == *cp35* ]]; then
-        NUMPY_VERSION="1.9.3"
     elif [[ "${PYBIN}" == *cp38* ]]; then
         NUMPY_VERSION="1.17.3"
-    elif [[ "${PYBIN}" == *cp39* ]]; then
-        continue
     else
-        NUMPY_VERSION="1.8.2"
+        continue
     fi
     # Build with the oldest numpy available to be compatible with newer ones
     "${PYBIN}/pip" install "numpy==${NUMPY_VERSION}" pybind11 mako
