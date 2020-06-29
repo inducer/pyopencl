@@ -4,6 +4,35 @@ set -e -x
 mkdir -p /deps
 cd /deps
 
+function start_spinner {
+    if [ -n "$SPINNER_PID" ]; then
+        return
+    fi
+
+    >&2 echo "Building libraries..."
+    # Start a process that runs as a keep-alive
+    # to avoid travis quitting if there is no output
+    (while true; do
+        sleep 60
+        >&2 echo "Still building..."
+    done) &
+    SPINNER_PID=$!
+    disown
+}
+
+function stop_spinner {
+    if [ ! -n "$SPINNER_PID" ]; then
+        return
+    fi
+
+    kill $SPINNER_PID
+    unset SPINNER_PID
+
+    >&2 echo "Building libraries finished."
+}
+
+start_spinner
+
 yum install -y git yum
 curl -L -O http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz
 tar -xf ruby-2.1.2.tar.gz
@@ -72,3 +101,5 @@ for WHEEL in /io/wheelhouse/pyopencl*.whl; do
         -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
         "${WHEEL}"
 done
+
+stop_spinner
