@@ -34,6 +34,7 @@ jobs:
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
                 echo "- matplotlib" >> $CONDA_ENVIRONMENT
                 echo "- pyopengl" >> $CONDA_ENVIRONMENT
+                echo "- ipython" >> $CONDA_ENVIRONMENT
                 echo "-------------------------------------------"
                 cat $CONDA_ENVIRONMENT
                 echo "-------------------------------------------"
