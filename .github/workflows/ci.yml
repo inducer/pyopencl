@@ -24,8 +24,28 @@ jobs:
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
                 . ./prepare-and-run-flake8.sh "$(basename $GITHUB_REPOSITORY)" ./test
 
-    pytest3:
-        name: Pytest on Py3
+    pylint:
+        name: Pylint
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3-pylint.yml
+                cp .test-conda-env-py3.yml $CONDA_ENVIRONMENT
+                echo "-------------------------------------------"
+                cat $CONDA_ENVIRONMENT
+                echo "-------------------------------------------"
+                USE_CONDA_BUILD=1
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
+
+                # Pylint won't find the Cython bits without this
+                PROJECT_INSTALL_FLAGS="--editable"
+
+                . ./prepare-and-run-pylint.sh "$(basename $GITHUB_REPOSITORY)" test/test_*.py
+
+    pytest:
+        name: Pytest Linux
         runs-on: ubuntu-latest
         steps:
         -   uses: actions/checkout@v2
