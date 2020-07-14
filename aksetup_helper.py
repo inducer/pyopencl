@@ -36,10 +36,12 @@ def setup(*args, **kwargs):
 
 def get_numpy_incpath():
     from imp import find_module
-    # avoid actually importing numpy, it screws up distutils
-    file, pathname, descr = find_module("numpy")
-    from os.path import join
-    return join(pathname, "core", "include")
+    # importing numpy will fail if numpy was installed by pip because of
+    # setup_requires. Doing the following should avoid that
+    # http://stackoverflow.com/questions/19919905/how-to-bootstrap-numpy-installation-in-setup-py
+    __builtins__.__NUMPY_SETUP__ = False
+    import numpy
+    return numpy.get_include()
 
 
 class NumpyExtension(Extension):

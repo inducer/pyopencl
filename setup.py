@@ -232,7 +232,6 @@ def main():
                         ],
                     include_dirs=INCLUDE_DIRS + [
                         get_pybind_include(),
-                        get_pybind_include(user=True)
                         ],
                     library_dirs=conf["CL_LIB_DIR"],
                     libraries=conf["CL_LIBNAME"],
@@ -244,7 +243,7 @@ def main():
                 ],
 
             setup_requires=[
-                "pybind11",
+                "pybind11>=2.5.0",
                 "numpy",
                 ],
 
