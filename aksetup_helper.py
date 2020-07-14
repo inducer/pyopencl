@@ -39,7 +39,10 @@ def get_numpy_incpath():
     # importing numpy will fail if numpy was installed by pip because of
     # setup_requires. Doing the following should avoid that
     # http://stackoverflow.com/questions/19919905/how-to-bootstrap-numpy-installation-in-setup-py
-    __builtins__.__NUMPY_SETUP__ = False
+    if isinstance(__builtins__, dict):
+        __builtins__["__NUMPY_SETUP__"] = False
+    else:
+        __builtins__.__NUMPY_SETUP__ = False
     import numpy
     return numpy.get_include()
 
