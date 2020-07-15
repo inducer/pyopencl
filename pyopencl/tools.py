@@ -286,8 +286,15 @@ def pytest_generate_tests_for_pyopencl(metafunc):
 
             arg_values.append(tuple(arg_dict[name] for name in arg_names))
 
+    def idfn(val):
+        if isinstance(val, cl.Platform):
+            # Don't show address, so that parallel test collection works
+            return f"<pyopencl.Platform '{val.name}'>"
+        else:
+            return str(val)
+
     if arg_names:
-        metafunc.parametrize(arg_names, arg_values, ids=str)
+        metafunc.parametrize(arg_names, arg_values, ids=idfn)
 
 
 # {{{ C argument lists

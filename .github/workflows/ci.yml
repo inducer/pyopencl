@@ -35,6 +35,7 @@ jobs:
                 echo "- matplotlib" >> $CONDA_ENVIRONMENT
                 echo "- pyopengl" >> $CONDA_ENVIRONMENT
                 echo "- ipython" >> $CONDA_ENVIRONMENT
+                echo "- pytest" >> $CONDA_ENVIRONMENT
                 echo "-------------------------------------------"
                 cat $CONDA_ENVIRONMENT
                 echo "-------------------------------------------"
