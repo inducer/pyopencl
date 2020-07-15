@@ -23,6 +23,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+# avoid spurious: pytest.mark.parametrize is not callable
+# pylint: disable=not-callable
+
 import numpy as np
 import numpy.linalg as la
 import sys

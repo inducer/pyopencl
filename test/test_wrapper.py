@@ -22,6 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+# avoid spurious: pytest.mark.parametrize is not callable
+# pylint: disable=not-callable
+
 from six.moves import range
 
 import numpy as np
