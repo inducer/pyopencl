@@ -59,6 +59,10 @@ Python 3 K40:
   - nvidia-k40
   except:
   - tags
+  
+  # https://github.com/illinois-scicomp/machine-shop-maintenance/issues/7
+  allow_failure: true
+
   artifacts:
     reports:
       junit: test/pytest.xml
