@@ -943,9 +943,6 @@ class PybindBuildExtCommand(NumpyBuildExtCommand):
         'unix': [],
     }
 
-    if sys.platform == 'darwin':
-        c_opts['unix'] += ['-stdlib=libc++', '-mmacosx-version-min=10.7']
-
     def build_extensions(self):
         ct = self.compiler.compiler_type
         opts = self.c_opts.get(ct, [])
@@ -956,6 +953,11 @@ class PybindBuildExtCommand(NumpyBuildExtCommand):
             cxx_opts.append(cpp_flag(self.compiler))
             if has_flag(self.compiler, '-fvisibility=hidden'):
                 opts.append('-fvisibility=hidden')
+            if sys.platform == 'darwin':
+                if has_flag(self.compiler, '-stdlib=libc++'):
+                    opts.append('-stdlib=libc++')
+                if has_flag(self.compiler, '-mmacosx-version-min=10.7'):
+                    opts.append('-mmacosx-version-min=10.7')
         elif ct == 'msvc':
             opts.append('/DVERSION_INFO=\\"%s\\"' % self.distribution.get_version())
         for ext in self.extensions:
