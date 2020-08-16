@@ -341,6 +341,7 @@ class Array(object):
     .. autoattribute :: real
     .. autoattribute :: imag
     .. automethod :: conj
+    .. automethod :: conjugate
 
     .. automethod :: __getitem__
     .. automethod :: __setitem__
@@ -1471,6 +1472,8 @@ class Array(object):
             return result
         else:
             return self
+
+    conjugate = conj
 
     # }}}
 
