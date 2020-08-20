@@ -33,7 +33,7 @@ function stop_spinner {
 
 start_spinner
 
-yum install -y git yum
+yum install -y git yum openssl-devel
 curl -L -O http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz
 tar -xf ruby-2.1.2.tar.gz
 cd ruby-2.1.2
