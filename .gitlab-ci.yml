@@ -47,25 +47,24 @@ Python 3 Titan V:
     reports:
       junit: test/pytest.xml
 
-Python 3 K40:
-  script:
-  - export PY_EXE=python3
-  - export PYOPENCL_TEST=nvi:k40
-  - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
-  tags:
-  - python3
-  - nvidia-k40
-  except:
-  - tags
-  
-  # https://github.com/illinois-scicomp/machine-shop-maintenance/issues/7
-  allow_failure: true
+# https://github.com/illinois-scicomp/machine-shop-maintenance/issues/7
 
-  artifacts:
-    reports:
-      junit: test/pytest.xml
+# Python 3 K40:
+#   script:
+#   - export PY_EXE=python3
+#   - export PYOPENCL_TEST=nvi:k40
+#   - export EXTRA_INSTALL="pybind11 numpy mako"
+#   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+#   - ". ./build-and-test-py-project.sh"
+#   tags:
+#   - python3
+#   - nvidia-k40
+#   except:
+#   - tags
+#
+#   artifacts:
+#     reports:
+#       junit: test/pytest.xml
 
 Python 3 AMD GPU:
   allow_failure: true
