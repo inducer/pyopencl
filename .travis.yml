@@ -13,12 +13,6 @@ matrix:
     env:
       - DOCKER_IMAGE=quay.io/pypa/manylinux1_i686
       - PRE_CMD=linux32
-  - sudo: required
-    services:
-      - docker
-    arch: s390x
-    env:
-      - DOCKER_IMAGE=quay.io/pypa/manylinux2014_s390x
 install:
   - docker pull $DOCKER_IMAGE
 script:
