@@ -293,7 +293,8 @@ void pyopencl_expose_mempool(py::module &m)
           std::shared_ptr<pyopencl::context> const &>())
       .def(py::init<
           std::shared_ptr<pyopencl::context> const &,
-          cl_mem_flags>())
+          cl_mem_flags>(),
+          py::arg("queue"), py::arg("mem_flags"))
       ;
   }
 
@@ -303,7 +304,8 @@ void pyopencl_expose_mempool(py::module &m)
         m, "_tools_ImmediateAllocator");
     wrapper
       .def(py::init<pyopencl::command_queue &>())
-      .def(py::init<pyopencl::command_queue &, cl_mem_flags>())
+      .def(py::init<pyopencl::command_queue &, cl_mem_flags>(),
+          py::arg("queue"), py::arg("mem_flags"))
       ;
   }
 
