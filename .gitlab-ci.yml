@@ -175,7 +175,7 @@ PyPy3 POCL:
 
   # On pypy, this seems to install old versions from the package index
   # independently of whether newer ones are already present.
-  - rm -f pyproject.toml 
+  - rm -f pyproject.toml
   - export EXTRA_INSTALL="pybind11 numpy mako"
 
   - export NO_DOCTESTS=1
@@ -213,8 +213,6 @@ Documentation:
   - ". ./build-docs.sh"
   tags:
   - linux
-  only:
-  - master
 
 Flake8:
   script:
