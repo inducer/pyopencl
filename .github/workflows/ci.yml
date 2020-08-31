@@ -84,7 +84,7 @@ jobs:
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
                 . ci-support.sh
-                build_py_project_in_venv
+                build_py_project_in_conda_env
                 build_docs
 
 # vim: sw=4
