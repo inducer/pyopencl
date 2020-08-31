@@ -87,6 +87,7 @@ from pyopencl._cl import (  # noqa
         addressing_mode,
         filter_mode,
         sampler_info,
+        sampler_properties,
         map_flags,
         program_info,
         program_build_info,
@@ -1135,8 +1136,9 @@ def _add_functionality():
     # {{{ SVM
 
     if get_cl_header_version() >= (2, 0):
-        SVM.__doc__ = """Tags an object exhibiting the Python buffer interface (such as a
-            :class:`numpy.ndarray`) as referring to shared virtual memory.
+        SVM.__doc__ = """Tags an object exhibiting the Python buffer interface
+            (such as a :class:`numpy.ndarray`) as referring to shared virtual
+            memory.
 
             Depending on the features of the OpenCL implementation, the following
             types of objects may be passed to/wrapped in this type:
@@ -1191,7 +1193,7 @@ def _add_functionality():
                 This object merely serves as a 'tag' that changes the behavior
                 of functions to which it is passed. It has no special management
                 relationship to the memory it tags. For example, it is permissible
-                to grab a :mod:`numpy.array` out of :attr:`SVM.mem` of one
+                to grab a :class:`numpy.ndarray` out of :attr:`SVM.mem` of one
                 :class:`SVM` instance and use the array to construct another.
                 Neither of the tags need to be kept alive.
 

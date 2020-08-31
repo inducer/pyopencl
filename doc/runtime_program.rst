@@ -8,6 +8,21 @@ OpenCL Runtime: Programs and Kernels
 Program
 -------
 
+.. envvar:: PYOPENCL_NO_CACHE
+
+    By setting the environment variable :envvar:`PYOPENCL_NO_CACHE` to any
+    non-empty value, this caching is suppressed.
+
+    .. versionadded:: 2013.1
+
+.. envvar:: PYOPENCL_BUILD_OPTIONS
+
+    Any options found in the environment variable
+    :envvar:`PYOPENCL_BUILD_OPTIONS` will be appended to *options*
+    in :meth:`Program.build`.
+
+    .. versionadded:: 2013.1
+
 .. class:: Program(context, src)
            Program(context, devices, binaries)
 
@@ -47,17 +62,13 @@ Program
         If passed *cache_dir* is None and context was created with None cache_dir:
         built binaries will be cached in an on-disk cache called
         :file:`pyopencl-compiler-cache-vN-uidNAME-pyVERSION` in the directory
-        returned by :func:`tempfile.gettempdir`.  By setting the environment
-        variable :envvar:`PYOPENCL_NO_CACHE` to any non-empty value, this
-        caching is suppressed.  Any options found in the environment variable
-        :envvar:`PYOPENCL_BUILD_OPTIONS` will be appended to *options*.
+        returned by :func:`tempfile.gettempdir`.
+
+        See also :envvar:`PYOPENCL_NO_CACHE`, :envvar:`PYOPENCL_BUILD_OPTIONS`.
 
         .. versionchanged:: 2011.1
-            *options* may now also be a :class:`list` of :class:`str`.
 
-        .. versionchanged:: 2013.1
-            Added :envvar:`PYOPENCL_NO_CACHE`.
-            Added :envvar:`PYOPENCL_BUILD_OPTIONS`.
+            *options* may now also be a :class:`list` of :class:`str`.
 
     .. method:: compile(self, options=[], devices=None, headers=[])
 

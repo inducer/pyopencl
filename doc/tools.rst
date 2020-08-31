@@ -15,7 +15,7 @@ fresh memory area is allocated for each intermediate result. Memory pools are a
 remedy for this problem based on the observation that often many of the block
 allocations are of the same sizes as previously used ones.
 
-Then, instead of fully returning the memory to the system and incurring the 
+Then, instead of fully returning the memory to the system and incurring the
 associated reallocation overhead, the pool holds on to the memory and uses it
 to satisfy future allocations of similarly-sized blocks. The pool reacts
 appropriately to out-of-memory conditions as long as all memory allocations
@@ -36,6 +36,15 @@ not complicated::
     memory is returned to the pool. This supports the same interface
     as :class:`pyopencl.Buffer`.
 
+.. class:: AllocatorInterface
+
+   An interface implemented by various memory allocation functions
+   in :mod:`pyopencl`.
+
+    .. method:: __call__(size)
+
+        Allocate and return a :class:`pyopencl.Buffer` of the given *size*.
+
 .. class:: DeferredAllocator(context, mem_flags=pyopencl.mem_flags.READ_WRITE)
 
     *mem_flags* takes its values from :class:`pyopencl.mem_flags` and corresponds
@@ -46,9 +55,11 @@ not complicated::
     bound to contexts, not devices, and memory availability depends on which
     device the buffer is used with.)
 
+    Implements :class:`AllocatorInterface`.
+
     .. versionchanged :: 2013.1
 
-        :class:`CLAllocator` was deprecated and replaced
+        ``CLAllocator`` was deprecated and replaced
         by :class:`DeferredAllocator`.
 
     .. method:: __call__(size)
@@ -68,6 +79,8 @@ not complicated::
     allocated memory is actually available. If no memory is available, an out-of-memory
     error is reported at allocation time.
 
+    Implements :class:`AllocatorInterface`.
+
     .. versionadded:: 2013.1
 
     .. method:: __call__(size)
@@ -86,6 +99,8 @@ not complicated::
     The memory pool assumes that allocation failures are reported
     by the allocator immediately, and not in the OpenCL-typical
     deferred manner.
+
+    Implements :class:`AllocatorInterface`.
 
     .. note::
 
@@ -125,7 +140,7 @@ not complicated::
 
     .. method:: __call__(size)
 
-        Synonym for :meth:`allocate` to match :class:`CLAllocator` interface.
+        Synonym for :meth:`allocate` to match the :class:`AllocatorInterface`.
 
         .. versionadded: 2011.2
 

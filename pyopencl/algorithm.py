@@ -425,7 +425,7 @@ class RadixSort(object):
     """Provides a general `radix sort <https://en.wikipedia.org/wiki/Radix_sort>`_
     on the compute device.
 
-    .. seealso:: :class:`pyopencl.algorithm.BitonicSort`
+    .. seealso:: :class:`pyopencl.bitonic_sort.BitonicSort`
 
     .. versionadded:: 2013.1
     """

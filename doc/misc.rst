@@ -381,8 +381,8 @@ Version 2013.1
 * Deprecated :func:`pyopencl.tools.register_dtype` in favor of
   :func:`pyopencl.tools.get_or_register_dtype`.
 * Clean up the :class:`pyopencl.array.Array` constructor interface.
-* Deprecate :class:`pyopencl.array.DefaultAllocator`.
-* Deprecate :class:`pyopencl.tools.CLAllocator`.
+* Deprecate ``pyopencl.array.DefaultAllocator``.
+* Deprecate ``pyopencl.tools.CLAllocator``
 * Introduce :class:`pyopencl.tools.DeferredAllocator`, :class:`pyopencl.tools.ImmediateAllocator`.
 * Allow arrays whose beginning does not coincide with the beginning of their
   :attr:`pyopencl.array.Array.data` :class:`pyopencl.Buffer`.
@@ -416,7 +416,7 @@ Version 2013.1
     may take a very long time to execute. This is because :mod:`numpy` first
     builds an object array of (compute-device) scalars (!) before it decides that
     that's probably not such a bright idea and finally calls
-    :meth:`pyopencl.array.Array.__rmul__`.
+    ``pyopencl.array.Array.__rmul__``.
 
     Note that only left arithmetic operations of :class:`pyopencl.array.Array`
     by :mod:`numpy` scalars are affected. Python's number types (:class:`float` etc.)
@@ -443,7 +443,7 @@ Version 2012.1
 Version 2011.2
 --------------
 
-* Add :func:`pyopencl.enqueue_migrate_mem_object`.
+* Add :func:`pyopencl.enqueue_migrate_mem_objects`.
 * Add :func:`pyopencl.image_from_array`.
 * IMPORTANT BUGFIX: Kernel caching was broken for all the 2011.1.x releases, with
   severe consequences on the execution time of :class:`pyopencl.array.Array`
@@ -451,7 +451,7 @@ Version 2011.2
   Henrik Andresen at a `PyOpenCL workshop at DTU <http://gpulab.imm.dtu.dk/courses.html>`_
   first noticed the strange timings.
 * All comparable PyOpenCL objects are now also hashable.
-* Add :func:`pyopencl.tools.context_dependent_memoize` to the documented
+* Add ``pyopencl.tools.context_dependent_memoize`` to the documented
   functionality.
 * Base :mod:`pyopencl.clrandom` on `RANLUXCL <https://bitbucket.org/ivarun/ranluxcl>`_,
   add functionality.
@@ -459,13 +459,13 @@ Version 2011.2
 * Add :mod:`pyopencl.characterize`.
 * Ensure compatibility with OS X Lion.
 * Add :func:`pyopencl.tools.register_dtype` to enable scan/reduction on struct types.
-* :func:`pyopencl.enqueue_migrate_mem_object` was renamed
-  :func:`pyopencl.enqueue_migrate_mem_object_ext`.
-  :func:`pyopencl.enqueue_migrate_mem_object` now refers to the OpenCL 1.2 function
+* :func:``pyopencl.enqueue_migrate_mem_objects`` was renamed
+  ``pyopencl.enqueue_migrate_mem_objects_ext``.
+  :func:`pyopencl.enqueue_migrate_mem_objects` now refers to the OpenCL 1.2 function
   of this name, if available.
-* :func:`pyopencl.create_sub_devices` was renamed
-  :func:`pyopencl.create_sub_devices_ext`.
-  :func:`pyopencl.create_sub_devices` now refers to the OpenCL 1.2 function
+* :meth:`pyopencl.Device.create_sub_devices` was renamed
+  ``pyopencl.Device.create_sub_devices_ext``.
+  :meth:`pyopencl.Device.create_sub_devices` now refers to the OpenCL 1.2 function
   of this name, if available.
 * Alpha support for OpenCL 1.2.
 
@@ -485,14 +485,14 @@ Version 2011.1
 * All *is_blocking* parameters now default to *True* to avoid
   crashy-by-default behavior. (suggested by Jan Meinke)
   In particular, this change affects
-  :func:`pyopencl.enqueue_read_buffer`,
-  :func:`pyopencl.enqueue_write_buffer`,
-  :func:`pyopencl.enqueue_read_buffer_rect`,
-  :func:`pyopencl.enqueue_write_buffer_rect`,
-  :func:`pyopencl.enqueue_read_image`,
-  :func:`pyopencl.enqueue_write_image`,
-  :func:`pyopencl.enqueue_map_buffer`,
-  :func:`pyopencl.enqueue_map_image`.
+  ``pyopencl.enqueue_read_buffer``,
+  ``pyopencl.enqueue_write_buffer``,
+  ``pyopencl.enqueue_read_buffer_rect``,
+  ``pyopencl.enqueue_write_buffer_rect``,
+  ``pyopencl.enqueue_read_image``,
+  ``pyopencl.enqueue_write_image``,
+  ``pyopencl.enqueue_map_buffer``,
+  ``pyopencl.enqueue_map_image``.
 * Add :mod:`pyopencl.reduction`.
 * Add :ref:`reductions`.
 * Add :mod:`pyopencl.scan`.
@@ -534,7 +534,7 @@ Version 0.91.5
 * Add :attr:`pyopencl.ImageFormat.channel_count`,
   :attr:`pyopencl.ImageFormat.dtype_size`,
   :attr:`pyopencl.ImageFormat.itemsize`.
-* Add missing :func:`pyopencl.enqueue_copy_buffer`.
+* Add missing ``pyopencl.enqueue_copy_buffer``.
 * Add :func:`pyopencl.create_some_context`.
 * Add :func:`pyopencl.enqueue_barrier`, which was previously missing.
 
@@ -558,7 +558,7 @@ Version 0.91.2
 
 * :meth:`pyopencl.Program.build` now captures build logs and adds them
   to the exception text.
-* Deprecate :func:`pyopencl.create_context_from_type` in favor of second
+* Deprecate ``pyopencl.create_context_from_type`` in favor of second
   form of :class:`pyopencl.Context` constructor
 * Introduce :class:`pyopencl.LocalMemory`.
 * Document kernel invocation and :meth:`pyopencl.Kernel.set_arg`.
@@ -569,7 +569,7 @@ Version 0.91.1
 * Fixed a number of bugs, notably involving :class:`pyopencl.Sampler`.
 * :class:`pyopencl.Device`, :class:`pyopencl.Platform`,
   :class:`pyopencl.Context` now have nicer string representations.
-* Add :attr:`Image.shape`. (suggested by David Garcia)
+* Add :attr:`pyopencl.Image.shape`. (suggested by David Garcia)
 
 Version 0.91
 ------------
@@ -580,26 +580,26 @@ Version 0.91
 * Add :meth:`pyopencl.ImageFormat.__repr__`.
 * Add :meth:`pyopencl.addressing_mode.to_string` and colleagues.
 * The `pitch` arguments to
-  :func:`pyopencl.create_image_2d`,
-  :func:`pyopencl.create_image_3d`,
-  :func:`pyopencl.enqueue_read_image`, and
-  :func:`pyopencl.enqueue_write_image`
+  ``pyopencl.create_image_2d``,
+  ``pyopencl.create_image_3d``,
+  ``pyopencl.enqueue_read_image``, and
+  ``pyopencl.enqueue_write_image``
   are now defaulted to zero. The argument order of `enqueue_{read,write}_image`
   has changed for this reason.
 * Deprecate
-  :func:`pyopencl.create_image_2d`,
-  :func:`pyopencl.create_image_3d`
+  ``pyopencl.create_image_2d``,
+  ``pyopencl.create_image_3d``
   in favor of the :class:`pyopencl.Image` constructor.
 * Deprecate
-  :func:`pyopencl.create_program_with_source`,
-  :func:`pyopencl.create_program_with_binary`
+  ``pyopencl.create_program_with_source``,
+  ``pyopencl.create_program_with_binary``
   in favor of the :class:`pyopencl.Program` constructor.
 * Deprecate
-  :func:`pyopencl.create_buffer`,
-  :func:`pyopencl.create_host_buffer`
+  ``pyopencl.create_buffer``,
+  ``pyopencl.create_host_buffer``
   in favor of the :class:`pyopencl.Buffer` constructor.
-* :meth:`pyopencl.MemoryObject.get_image_info` now actually exists.
-* Add :attr:`pyopencl.MemoryObject.image.info`.
+* :meth:`pyopencl.Image.get_image_info` now actually exists.
+* Add :attr:`pyopencl.Image.info`.
 * Fix API tracing.
 * Add constructor arguments to :class:`pyopencl.ImageFormat`.  (suggested by David Garcia)
 
@@ -698,3 +698,117 @@ Andreas Klöckner's work on :mod:`pyopencl` was supported in part by
 AK also gratefully acknowledges a hardware gift from Nvidia Corporation.  The
 views and opinions expressed herein do not necessarily reflect those of the
 funding agencies.
+
+Documentation Cross-References
+==============================
+
+Numpy
+-----
+.. currentmodule:: numpy
+
+.. class:: int8
+
+    See :class:`numpy.generic`.
+
+.. class:: int32
+
+    See :class:`numpy.generic`.
+
+.. class:: float64
+
+    See :class:`numpy.generic`.
+
+OpenCL Specification
+--------------------
+.. c:type:: cl_platform_id
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#opencl-platform-layer>`__.
+
+.. c:type:: cl_device_id
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#opencl-platform-layer>`__.
+
+.. c:type:: cl_context
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_contexts>`__.
+
+.. c:type:: cl_command_queue
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_command_queues>`__.
+
+.. c:type:: cl_mem
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_memory_objects>`__.
+
+.. c:type:: cl_program
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_program_objects>`__.
+
+.. c:type:: cl_kernel
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_kernel_objects>`__.
+
+.. c:type:: cl_sampler
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_sampler_objects>`__.
+
+.. c:type:: cl_event
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#event-objects>`__.
+
+.. c:function:: void clCreateCommandQueueWithProperties()
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#clCreateCommandQueueWithProperties>`__.
+
+.. c:function:: void clCreateSamplerWithProperties()
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#clCreateSamplerWithProperties>`__.
+
+Internal Types
+--------------
+
+.. currentmodule:: pyopencl._cl
+
+.. class:: Platform
+
+    See :class:`pyopencl.Platform`.
+
+.. class:: Device
+
+    See :class:`pyopencl.Device`.
+
+.. class:: CommandQueue
+
+    See :class:`pyopencl.CommandQueue`.
+
+.. class:: Context
+
+    See :class:`pyopencl.Context`.
+
+.. class:: Event
+
+    See :class:`pyopencl.Event`.
+
+.. class:: SVMAllocation
+
+    See :class:`pyopencl.SVMAllocation`.
+
+.. class:: MemoryMap
+
+    See :class:`pyopencl.MemoryMap`.
+
+.. class:: Sampler
+
+    See :class:`pyopencl.Sampler`.
+
+.. class:: Program
+
+    See :class:`pyopencl.Program`.
+
+.. class:: _Program
+
+    See :class:`pyopencl.Program`.
+
+.. class:: Kernel
+
+    See :class:`pyopencl.Kernel`.

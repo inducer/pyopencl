@@ -135,12 +135,12 @@ Context
     .. note::
 
         For
-        :attr:`context_properties.CL_GL_CONTEXT_KHR`,
-        :attr:`context_properties.CL_EGL_DISPLAY_KHR`,
-        :attr:`context_properties.CL_GLX_DISPLAY_KHR`,
-        :attr:`context_properties.CL_WGL_HDC_KHR`, and
-        :attr:`context_properties.CL_CGL_SHAREGROUP_KHR`
-        :attr:`context_properties.CL_CGL_SHAREGROUP_APPLE`
+        ``context_properties.CL_GL_CONTEXT_KHR``,
+        ``context_properties.CL_EGL_DISPLAY_KHR``,
+        ``context_properties.CL_GLX_DISPLAY_KHR``,
+        ``context_properties.CL_WGL_HDC_KHR``, and
+        ``context_properties.CL_CGL_SHAREGROUP_KHR``
+        ``context_properties.CL_CGL_SHAREGROUP_APPLE``
         the value in the key-value pair is a PyOpenGL context or display
         instance.
 
