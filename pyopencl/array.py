@@ -212,12 +212,12 @@ class Array(object):
     as in :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
     broadcasting of scalars. (e.g. `array+5`)
 
-    *cq* must be a :class:`pyopencl.CommandQueue` or a :class:`pyopencl.Context`.
+    *cq* must be a :class:`~pyopencl.CommandQueue` or a :class:`~pyopencl.Context`.
 
     If it is a queue, *cq* specifies the queue in which the array carries out
     its computations by default. If a default queue (and thereby overloaded
     operators and many other niceties) are not desired, pass a
-    :class:`Context`.
+    :class:`~pyopencl.Context`.
 
     *allocator* may be `None` or a callable that, upon being called with an
     argument of the number of bytes to be allocated, returns an
@@ -691,7 +691,7 @@ class Array(object):
 
     def get(self, queue=None, ary=None, async_=None, **kwargs):
         """Transfer the contents of *self* into *ary* or a newly allocated
-        :mod:`numpy.ndarray`. If *ary* is given, it must have the same
+        :class:`numpy.ndarray`. If *ary* is given, it must have the same
         shape and dtype.
 
         .. versionchanged:: 2019.1.2
@@ -739,7 +739,7 @@ class Array(object):
 
     def copy(self, queue=_copy_queue):
         """
-        :arg queue: The :class:`CommandQueue` for the returned array.
+        :arg queue: The :class:`~pyopencl.CommandQueue` for the returned array.
 
         .. versionchanged:: 2017.1.2
             Updates the queue of the returned array.
@@ -1958,7 +1958,7 @@ def to_device(queue, ary, allocator=None, async_=None,
     """Return a :class:`Array` that is an exact copy of the
     :class:`numpy.ndarray` instance *ary*.
 
-    :arg array_queue: The :class:`CommandQueue` which will
+    :arg array_queue: The :class:`~pyopencl.CommandQueue` which will
         be stored in the resulting array. Useful
         to make sure there is no implicit queue associated
         with the array by passing *None*.

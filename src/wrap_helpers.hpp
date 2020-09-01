@@ -173,7 +173,7 @@ namespace
       py::arg("retain")=true, \
       "(static method) Return a new Python object referencing the C-level " \
       ":c:type:`" #CL_TYPENAME "` object at the location pointed to " \
-      "by *int_ptr_value*. The relevant :c:func:`clRetain*` function " \
+      "by *int_ptr_value*. The relevant ``clRetain*`` function " \
       "will be called if *retain* is True." \
       "If the previous owner of the object will *not* release the reference, " \
       "*retain* should be set to *False*, to effectively transfer ownership to " \

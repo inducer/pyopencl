@@ -1,7 +1,7 @@
 OpenCL Type Mapping
 ===================
 
-.. module:: pyopencl.types
+.. module:: pyopencl.cltypes
 
 .. _type-mappings:
 
