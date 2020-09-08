@@ -2,7 +2,6 @@
 
 # pylint:disable=unexpected-keyword-arg  # for @elwise_kernel_runner
 
-from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -29,8 +28,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-import six
-from six.moves import range, reduce
+from functools import reduce
 
 import numpy as np
 import pyopencl.elementwise as elementwise
@@ -65,7 +63,7 @@ except Exception:
         return False
 
 
-class VecLookupWarner(object):
+class VecLookupWarner:
     def __getattr__(self, name):
         from warnings import warn
         warn("pyopencl.array.vec is deprecated. "
@@ -206,7 +204,7 @@ class _copy_queue:  # noqa
     pass
 
 
-class Array(object):
+class Array:
     """A :class:`numpy.ndarray` work-alike that stores its data and performs
     its computations on the compute device.  *shape* and *dtype* work exactly
     as in :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
@@ -437,11 +435,7 @@ class Array(object):
             for dim in shape:
                 size *= dim
         except TypeError:
-            import sys
-            if sys.version_info >= (3,):
-                admissible_types = (int, np.integer)
-            else:
-                admissible_types = (np.integer,) + six.integer_types
+            admissible_types = (int, np.integer)
 
             if not isinstance(shape, admissible_types):
                 raise TypeError("shape must either be iterable or "
@@ -773,7 +767,7 @@ class Array(object):
         return repr(self.get())
 
     def safely_stringify_for_pudb(self):
-        return "cl.Array %s %s" % (self.dtype, self.shape)
+        return f"cl.Array {self.dtype} {self.shape}"
 
     def __hash__(self):
         raise TypeError("pyopencl arrays are not hashable.")
@@ -1949,7 +1943,7 @@ def as_strided(ary, shape=None, strides=None):
             data=ary.data, strides=strides)
 
 
-class _same_as_transfer(object):  # noqa
+class _same_as_transfer:  # noqa
     pass
 
 
@@ -2107,7 +2101,7 @@ def arange(queue, *args, **kwargs):
         raise ValueError("too many arguments")
 
     admissible_names = ["start", "stop", "step", "dtype", "allocator"]
-    for k, v in six.iteritems(kwargs):
+    for k, v in kwargs.items():
         if k in admissible_names:
             if getattr(inf, k) is None:
                 setattr(inf, k, v)

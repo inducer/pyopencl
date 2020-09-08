@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 __copyright__ = "Copyright (C) 2018 Matt Wala"
 
 __license__ = """

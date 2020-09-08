@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import division, absolute_import, print_function
-
 __copyright__ = "Copyright (C) 2009-15 Andreas Kloeckner"
 
 __license__ = """
@@ -25,7 +21,7 @@ THE SOFTWARE.
 """
 
 import six
-from six.moves import input, intern
+from six.moves import intern
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
@@ -53,8 +49,7 @@ import numpy as np
 
 import sys
 
-_PYPY = '__pypy__' in sys.builtin_module_names
-_CPY2 = not _PYPY and sys.version_info < (3,)
+_PYPY = "__pypy__" in sys.builtin_module_names
 
 from pyopencl._cl import (  # noqa
         get_cl_header_version,
@@ -264,7 +259,7 @@ def _find_pyopencl_include_path():
         # Try to find the include path in the same directory as this file
         include_path = join(abspath(dirname(__file__)), "cl")
         if not exists(include_path):
-            raise IOError("unable to find pyopencl include path")
+            raise OSError("unable to find pyopencl include path")
     except Exception:
         # Try to find the resource with pkg_resources (the recommended
         # setuptools approach). This is very slow.
@@ -272,11 +267,11 @@ def _find_pyopencl_include_path():
         include_path = resource_filename(
                 Requirement.parse("pyopencl"), "pyopencl/cl")
         if not exists(include_path):
-            raise IOError("unable to find pyopencl include path")
+            raise OSError("unable to find pyopencl include path")
 
     # Quote the path if it contains a space and is not quoted already.
     # See https://github.com/inducer/pyopencl/issues/250 for discussion.
-    if ' ' in include_path and not include_path.startswith('"'):
+    if " " in include_path and not include_path.startswith('"'):
         return '"' + include_path + '"'
     else:
         return include_path
@@ -287,15 +282,15 @@ def _find_pyopencl_include_path():
 # {{{ build option munging
 
 def _split_options_if_necessary(options):
-    if isinstance(options, six.string_types):
+    if isinstance(options, str):
         import shlex
         if six.PY2:
             # shlex.split takes bytes (py2 str) on py2
-            if isinstance(options, six.text_type):
+            if isinstance(options, str):
                 options = options.encode("utf-8")
         else:
             # shlex.split takes unicode (py3 str) on py3
-            if isinstance(options, six.binary_type):
+            if isinstance(options, bytes):
                 options = options.decode("utf-8")
 
         options = shlex.split(options)
@@ -333,7 +328,7 @@ def _find_include_path(options):
 
 def _options_to_bytestring(options):
     def encode_if_necessary(s):
-        if isinstance(s, six.text_type):
+        if isinstance(s, str):
             return s.encode("utf-8")
         else:
             return s
@@ -377,7 +372,7 @@ def enable_debugging(platform_or_context):
                 % platform.name)
 
 
-class Program(object):
+class Program:
     def __init__(self, arg1, arg2=None, arg3=None):
         if arg2 is None:
             # 1-argument form: program
@@ -396,7 +391,7 @@ class Program(object):
                 return
 
             import sys
-            if isinstance(source, six.text_type) and sys.version_info < (3,):
+            if isinstance(source, str) and sys.version_info < (3,):
                 from warnings import warn
                 warn("Received OpenCL source code in Unicode, "
                      "should be ASCII string. Attempting conversion.",
@@ -492,7 +487,7 @@ class Program(object):
                 self._context, options)
 
         if cache_dir is None:
-            cache_dir = getattr(self._context, 'cache_dir', None)
+            cache_dir = getattr(self._context, "cache_dir", None)
 
         import os
         build_descr = None
@@ -624,7 +619,7 @@ def _add_functionality():
     # {{{ Platform
 
     def platform_repr(self):
-        return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
+        return f"<pyopencl.Platform '{self.name}' at 0x{self.int_ptr:x}>"
 
     Platform.__repr__ = platform_repr
     Platform._get_cl_version = generic_get_cl_version
@@ -634,7 +629,7 @@ def _add_functionality():
     # {{{ Device
 
     def device_repr(self):
-        return "<pyopencl.Device '%s' on '%s' at 0x%x>" % (
+        return "<pyopencl.Device '{}' on '{}' at 0x{:x}>".format(
                 self.name.strip(), self.platform.name.strip(), self.int_ptr)
 
     def device_hashable_model_and_version_identifier(self):
@@ -673,7 +668,7 @@ def _add_functionality():
         context_old_init(self, devices, properties, dev_type)
 
     def context_repr(self):
-        return "<pyopencl.Context at 0x%x on %s>" % (self.int_ptr,
+        return "<pyopencl.Context at 0x{:x} on {}>".format(self.int_ptr,
                 ", ".join(repr(dev) for dev in self.devices))
 
     def context_get_cl_version(self):
@@ -722,7 +717,7 @@ def _add_functionality():
             self._build(options=options_bytes, devices=devices)
         except Error as e:
             msg = str(e) + "\n\n" + (75*"="+"\n").join(
-                    "Build on %s:\n\n%s" % (dev, log)
+                    f"Build on {dev}:\n\n{log}"
                     for dev, log in self._get_build_logs())
             code = e.code
             routine = e.routine
@@ -739,7 +734,7 @@ def _add_functionality():
             raise err
 
         message = (75*"="+"\n").join(
-                "Build on %s succeeded, but said:\n\n%s" % (dev, log)
+                f"Build on {dev} succeeded, but said:\n\n{log}"
                 for dev, log in self._get_build_logs()
                 if log is not None and log.strip())
 
@@ -892,7 +887,7 @@ def _add_functionality():
     # {{{ ImageFormat
 
     def image_format_repr(self):
-        return "ImageFormat(%s, %s)" % (
+        return "ImageFormat({}, {})".format(
                 channel_order.to_string(self.channel_order,
                     "<unknown channel order 0x%x>"),
                 channel_type.to_string(self.channel_data_type,
@@ -1047,7 +1042,7 @@ def _add_functionality():
                         val.code(), "<unknown error %d>")
             routine = val.routine()
             if routine:
-                result = "%s failed: %s" % (routine, result)
+                result = f"{routine} failed: {result}"
             what = val.what()
             if what:
                 if result:
@@ -1343,8 +1338,8 @@ def _add_functionality():
         return property(result)
 
     for cls, (info_method, info_class, cacheable_attrs) \
-            in six.iteritems(cls_to_info_cls):
-        for info_name, info_value in six.iteritems(info_class.__dict__):
+            in cls_to_info_cls.items():
+        for info_name, info_value in info_class.__dict__.items():
             if info_name == "to_string" or info_name.startswith("_"):
                 continue
 
@@ -1413,7 +1408,7 @@ def create_some_context(interactive=None, answers=None):
         if answers:
             return str(answers.pop(0))
         elif not interactive:
-            return ''
+            return ""
         else:
             user_input = input(prompt)
             user_inputs.append(user_input)
@@ -1511,7 +1506,7 @@ _csc = create_some_context
 
 # {{{ SVMMap
 
-class SVMMap(object):
+class SVMMap:
     """
     .. attribute:: event
 
@@ -1971,11 +1966,7 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
         for dim in shape:
             s *= dim
     except TypeError:
-        import sys
-        if sys.version_info >= (3,):
-            admissible_types = (int, np.integer)
-        else:
-            admissible_types = (np.integer,) + six.integer_types
+        admissible_types = (int, np.integer)
 
         if not isinstance(shape, admissible_types):
             raise TypeError("shape must either be iterable or "

@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import absolute_import
-
 # PyOpenCL documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun 13 00:51:19 2008.
 #

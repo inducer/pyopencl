@@ -1,6 +1,5 @@
 """Various helpful bits and pieces without much of a common theme."""
 
-from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2010 Andreas Kloeckner"
 
@@ -28,8 +27,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-import six
-from six.moves import zip, intern
+from sys import intern
 
 # Do not add a pyopencl import here: This will add an import cycle.
 
@@ -219,7 +217,7 @@ def get_test_platforms_and_devices(plat_dev_string=None):
 
         found = False
         for obj in objs:
-            if identifier.lower() in (obj.name + ' ' + obj.vendor).lower():
+            if identifier.lower() in (obj.name + " " + obj.vendor).lower():
                 return obj
         if not found:
             raise RuntimeError("object '%s' not found" % identifier)
@@ -321,7 +319,7 @@ def pytest_generate_tests_for_pyopencl(metafunc):
 
 # {{{ C argument lists
 
-class Argument(object):
+class Argument:
     pass
 
 
@@ -331,7 +329,7 @@ class DtypedArgument(Argument):
         self.name = name
 
     def __repr__(self):
-        return "%s(%r, %s)" % (
+        return "{}({!r}, {})".format(
                 self.__class__.__name__,
                 self.name,
                 self.dtype)
@@ -345,17 +343,17 @@ class VectorArg(DtypedArgument):
     def declarator(self):
         if self.with_offset:
             # Two underscores -> less likelihood of a name clash.
-            return "__global %s *%s__base, long %s__offset" % (
+            return "__global {} *{}__base, long {}__offset".format(
                     dtype_to_ctype(self.dtype), self.name, self.name)
         else:
-            result = "__global %s *%s" % (dtype_to_ctype(self.dtype), self.name)
+            result = "__global {} *{}".format(dtype_to_ctype(self.dtype), self.name)
 
         return result
 
 
 class ScalarArg(DtypedArgument):
     def declarator(self):
-        return "%s %s" % (dtype_to_ctype(self.dtype), self.name)
+        return "{} {}".format(dtype_to_ctype(self.dtype), self.name)
 
 
 class OtherArg(Argument):
@@ -503,7 +501,7 @@ class _CDeclList:
             self.add_dtype(dtype.subdtype[0])
             return
 
-        for name, field_data in sorted(six.iteritems(dtype.fields)):
+        for name, field_data in sorted(dtype.fields.items()):
             field_dtype, offset = field_data[:2]
             self.add_dtype(field_dtype)
 
@@ -583,7 +581,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     import pyopencl as cl
 
-    fields = sorted(six.iteritems(dtype.fields),
+    fields = sorted(dtype.fields.items(),
             key=lambda name_dtype_offset: name_dtype_offset[1][1])
 
     c_fields = []
@@ -600,13 +598,14 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
                     dims_str += "[%d]" % dim
             except TypeError:
                 dims_str = "[%d]" % array_dims
-            c_fields.append("  %s %s%s;" % (
+            c_fields.append("  {} {}{};".format(
                 dtype_to_ctype(array_dtype), field_name, dims_str)
             )
         else:
-            c_fields.append("  %s %s;" % (dtype_to_ctype(field_dtype), field_name))
+            c_fields.append(
+                    "  {} {};".format(dtype_to_ctype(field_dtype), field_name))
 
-    c_decl = "typedef struct {\n%s\n} %s;\n\n" % (
+    c_decl = "typedef struct {{\n{}\n}} {};\n\n".format(
             "\n".join(c_fields),
             name)
 
@@ -683,12 +682,12 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     try:
         dtype_arg_dict = {
-            'names': [field_name
+            "names": [field_name
                       for field_name, (field_dtype, offset) in fields],
-            'formats': [field_dtype
+            "formats": [field_dtype
                         for field_name, (field_dtype, offset) in fields],
-            'offsets': [int(x) for x in offsets],
-            'itemsize': int(size_and_offsets[0]),
+            "offsets": [int(x) for x in offsets],
+            "itemsize": int(size_and_offsets[0]),
             }
         dtype = np.dtype(dtype_arg_dict)
         if dtype.itemsize != size_and_offsets[0]:
@@ -704,8 +703,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
             for offset, (field_name, (field_dtype, _)) in zip(offsets, fields):
                 if offset > total_size:
                     padding_count += 1
-                    yield ('__pycl_padding%d' % padding_count,
-                           'V%d' % offset - total_size)
+                    yield ("__pycl_padding%d" % padding_count,
+                           "V%d" % offset - total_size)
                 yield field_name, field_dtype
                 total_size = field_dtype.itemsize + offset
         dtype = np.dtype(list(calc_field_type()))
@@ -731,7 +730,7 @@ def dtype_to_c_struct(device, dtype):
     def dtypes_match():
         result = len(dtype.fields) == len(matched_dtype.fields)
 
-        for name, val in six.iteritems(dtype.fields):
+        for name, val in dtype.fields.items():
             result = result and matched_dtype.fields[name] == val
 
         return result
@@ -802,7 +801,7 @@ class _ScalarArgPlaceholder(_ArgumentPlaceholder):
     target_class = ScalarArg
 
 
-class _TemplateRenderer(object):
+class _TemplateRenderer:
     def __init__(self, template, type_aliases, var_values, context=None,
             options=[]):
         self.template = template
@@ -909,18 +908,18 @@ class _TemplateRenderer(object):
         if arguments is not None:
             cdl.visit_arguments(arguments)
 
-        for _, tv in sorted(six.iteritems(self.type_aliases)):
+        for _, tv in sorted(self.type_aliases.items()):
             cdl.add_dtype(tv)
 
         type_alias_decls = [
-                "typedef %s %s;" % (dtype_to_ctype(val), name)
-                for name, val in sorted(six.iteritems(self.type_aliases))
+                "typedef {} {};".format(dtype_to_ctype(val), name)
+                for name, val in sorted(self.type_aliases.items())
                 ]
 
         return cdl.get_declarations() + "\n" + "\n".join(type_alias_decls)
 
 
-class KernelTemplateBase(object):
+class KernelTemplateBase:
     def __init__(self, template_processor=None):
         self.template_processor = template_processor
 
@@ -963,7 +962,7 @@ class KernelTemplateBase(object):
     def build(self, context, *args, **kwargs):
         """Provide caching for an :meth:`build_inner`."""
 
-        cache_key = (context, args, tuple(sorted(six.iteritems(kwargs))))
+        cache_key = (context, args, tuple(sorted(kwargs.items())))
         try:
             return self.build_cache[cache_key]
         except KeyError:
@@ -1018,7 +1017,7 @@ def array_module(a):
 def is_spirv(s):
     spirv_magic = b"\x07\x23\x02\x03"
     return (
-            isinstance(s, six.binary_type)
+            isinstance(s, bytes)
             and (
                 s[:4] == spirv_magic
                 or s[:4] == spirv_magic[::-1]))

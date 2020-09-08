@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-from __future__ import absolute_import, print_function
 
 import six.moves.xmlrpc_client
 destwiki = six.moves.xmlrpc_client.ServerProxy("http://wiki.tiker.net?action=xmlrpc2")
@@ -53,6 +52,6 @@ for page in all_pages:
                 outf.close()
 
     except Exception as e:
-        print("Error when processing %s: %s" % (page, e))
+        print(f"Error when processing {page}: {e}")
         from traceback import print_exc
         print_exc()

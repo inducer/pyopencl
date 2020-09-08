@@ -1,6 +1,5 @@
 """Algorithms built on scans."""
 
-from __future__ import division, absolute_import
 
 __copyright__ = """
 Copyright 2011-2012 Andreas Kloeckner
@@ -30,7 +29,6 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-from six.moves import range, zip
 
 import numpy as np
 import pyopencl as cl
@@ -293,13 +291,13 @@ def to_bin(n):
         digs.append(str(n % 2))
         n >>= 1
 
-    return ''.join(digs[::-1])
+    return "".join(digs[::-1])
 
 
 def _padded_bin(i, nbits):
     s = to_bin(i)
     while len(s) < nbits:
-        s = '0' + s
+        s = "0" + s
     return s
 
 
@@ -310,7 +308,7 @@ def _make_sort_scan_type(device, bits, index_dtype):
 
     fields = []
     for mnr in range(2**bits):
-        fields.append(('c%s' % _padded_bin(mnr, bits), index_dtype))
+        fields.append(("c%s" % _padded_bin(mnr, bits), index_dtype))
 
     dtype = np.dtype(fields)
 
@@ -421,7 +419,7 @@ RADIX_SORT_OUTPUT_STMT_TPL = Template(r"""//CL//
 from pyopencl.scan import GenericScanKernel
 
 
-class RadixSort(object):
+class RadixSort:
     """Provides a general `radix sort <https://en.wikipedia.org/wiki/Radix_sort>`_
     on the compute device.
 
@@ -478,7 +476,7 @@ class RadixSort(object):
 
             boundary_mnr = known_bits + "1" + (self.bits-len(known_bits)-1)*"0"
 
-            return ("((mnr < %s) ? %s : %s)" % (
+            return ("((mnr < {}) ? {} : {})".format(
                 int(boundary_mnr, 2),
                 get_count_branch(known_bits+"0"),
                 get_count_branch(known_bits+"1")))
@@ -894,11 +892,7 @@ class ListOfListsBuilder:
             __global ${index_t} *compressed_indices,
             __global ${index_t} *num_non_empty_list
         """
-        from sys import version_info
-        if version_info > (3, 0):
-            arguments = Template(arguments)
-        else:
-            arguments = Template(arguments, disable_unicode=True)
+        arguments = Template(arguments)
 
         from pyopencl.scan import GenericScanKernel
         return GenericScanKernel(
@@ -937,7 +931,7 @@ class ListOfListsBuilder:
                 continue
 
             name = "plb_loc_%s_count" % name
-            user_list_args.append(OtherArg("%s *%s" % (
+            user_list_args.append(OtherArg("{} *{}".format(
                 index_ctype, name), name))
 
         kernel_name = self.name_prefix+"_count"
@@ -1008,10 +1002,10 @@ class ListOfListsBuilder:
                     VectorArg(index_dtype, "%s_compressed_indices" % name))
 
             index_name = "plb_%s_index" % name
-            user_list_args.append(OtherArg("%s *%s" % (
+            user_list_args.append(OtherArg("{} *{}".format(
                 index_ctype, index_name), index_name))
 
-            kernel_list_arg_values += "%s, &%s, " % (list_name, index_name)
+            kernel_list_arg_values += f"{list_name}, &{index_name}, "
 
         kernel_name = self.name_prefix+"_write"
 
@@ -1332,7 +1326,7 @@ def _make_cl_int_literal(value, dtype):
     return result
 
 
-class KeyValueSorter(object):
+class KeyValueSorter:
     """Given arrays *values* and *keys* of equal length
     and a number *nkeys* of keys, returns a tuple `(starts,
     lists)`, as follows: *values* and *keys* are sorted

@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -25,7 +23,6 @@ THE SOFTWARE.
 # avoid spurious: pytest.mark.parametrize is not callable
 # pylint: disable=not-callable
 
-from six.moves import range
 
 import numpy as np
 import numpy.linalg as la
@@ -49,7 +46,7 @@ else:
     faulthandler.enable()
 
 
-def _skip_if_pocl(plat, up_to_version, msg='unsupported by pocl'):
+def _skip_if_pocl(plat, up_to_version, msg="unsupported by pocl"):
     if plat.vendor == "The pocl project":
         if up_to_version is None or get_pocl_version(plat) <= up_to_version:
             pytest.skip(msg)
@@ -385,7 +382,7 @@ def test_image_2d(ctx_factory):
     if "Intel" in device.vendor and "31360.31426" in device.version:
         from pytest import skip
         skip("images crashy on %s" % device)
-    _skip_if_pocl(device.platform, None, 'pocl does not support CL_ADDRESS_CLAMP')
+    _skip_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
 
     prg = cl.Program(context, """
         __kernel void copy_image(
@@ -457,7 +454,7 @@ def test_image_3d(ctx_factory):
     if device.platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("images crashy on %s" % device)
-    _skip_if_pocl(device.platform, None, 'pocl does not support CL_ADDRESS_CLAMP')
+    _skip_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
 
     prg = cl.Program(context, """
         __kernel void copy_image_plane(
@@ -680,7 +677,7 @@ def test_enqueue_barrier_marker(ctx_factory):
     ctx = ctx_factory()
     # Still relevant on pocl 1.0RC1.
     _skip_if_pocl(
-            ctx.devices[0].platform, (1, 0), 'pocl crashes on enqueue_barrier')
+            ctx.devices[0].platform, (1, 0), "pocl crashes on enqueue_barrier")
 
     queue = cl.CommandQueue(ctx)
 
@@ -707,7 +704,7 @@ def test_unload_compiler(platform):
             or cl.get_cl_header_version() < (1, 2)):
         from pytest import skip
         skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
-    _skip_if_pocl(platform, (0, 13), 'pocl does not support unloading compiler')
+    _skip_if_pocl(platform, (0, 13), "pocl does not support unloading compiler")
     if platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("Intel proprietary driver does not support unloading compiler")
@@ -734,7 +731,7 @@ def test_platform_get_devices(ctx_factory):
         devs = platform.get_devices(dev_type)
         if dev_type in (cl.device_type.DEFAULT,
                         cl.device_type.ALL,
-                        getattr(cl.device_type, 'CUSTOM', None)):
+                        getattr(cl.device_type, "CUSTOM", None)):
             continue
         for dev in devs:
             assert dev.type & dev_type == dev_type
@@ -767,22 +764,22 @@ def test_user_event(ctx_factory):
     Thread(target=event_waiter1, args=(evt, 1)).start()
     sleep(.05)
     if status.get(1, False):
-        raise RuntimeError('UserEvent triggered before set_status')
+        raise RuntimeError("UserEvent triggered before set_status")
     evt.set_status(cl.command_execution_status.COMPLETE)
     sleep(.05)
     if not status.get(1, False):
-        raise RuntimeError('UserEvent.wait timeout')
+        raise RuntimeError("UserEvent.wait timeout")
     assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
     evt = cl.UserEvent(ctx)
     Thread(target=event_waiter2, args=(evt, 2)).start()
     sleep(.05)
     if status.get(2, False):
-        raise RuntimeError('UserEvent triggered before set_status')
+        raise RuntimeError("UserEvent triggered before set_status")
     evt.set_status(cl.command_execution_status.COMPLETE)
     sleep(.05)
     if not status.get(2, False):
-        raise RuntimeError('cl.wait_for_events timeout on UserEvent')
+        raise RuntimeError("cl.wait_for_events timeout on UserEvent")
     assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
 
@@ -798,8 +795,8 @@ def test_buffer_get_host_array(ctx_factory):
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.USE_HOST_PTR, hostbuf=host_buf)
     host_buf2 = buf.get_host_array(25, np.float32)
     assert (host_buf == host_buf2).all()
-    assert (host_buf.__array_interface__['data'][0]
-            == host_buf.__array_interface__['data'][0])
+    assert (host_buf.__array_interface__["data"][0]
+            == host_buf.__array_interface__["data"][0])
     assert host_buf2.base is buf
 
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.ALLOC_HOST_PTR, size=100)
@@ -979,7 +976,7 @@ def test_spirv(ctx_factory):
 
 def test_coarse_grain_svm(ctx_factory):
     import sys
-    is_pypy = '__pypy__' in sys.builtin_module_names
+    is_pypy = "__pypy__" in sys.builtin_module_names
 
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
@@ -1036,7 +1033,7 @@ def test_coarse_grain_svm(ctx_factory):
 
 def test_fine_grain_svm(ctx_factory):
     import sys
-    is_pypy = '__pypy__' in sys.builtin_module_names
+    is_pypy = "__pypy__" in sys.builtin_module_names
 
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)

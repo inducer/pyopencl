@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 # example by Roger Pau Monn'e
 import pyopencl as cl
 import numpy as np
