@@ -1038,7 +1038,7 @@ void pyopencl_expose_constants(py::module &m)
 
   // }}}
 
-  // {{{ CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD
+  // {{{ CL_DEVICE_TOPOLOGY_AMD
 
 #ifdef CL_DEVICE_TOPOLOGY_AMD
   {
