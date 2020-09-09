@@ -1032,21 +1032,25 @@ def test_coarse_grain_svm(ctx_factory):
 
     # {{{ https://github.com/inducer/pyopencl/issues/372
 
-    svm_buf_arr = cl.svm_empty(ctx, cl.svm_mem_flags.READ_ONLY, 10, np.int32)
-    svm_out_arr = cl.svm_empty(ctx, cl.svm_mem_flags.READ_WRITE, 10, np.int32)
+    buf_arr = cl.svm_empty(ctx, cl.svm_mem_flags.READ_ONLY, 10, np.int32)
+    out_arr = cl.svm_empty(ctx, cl.svm_mem_flags.READ_WRITE, 10, np.int32)
 
-    with cl.SVM(svm_buf_arr).map_rw(queue) as ary:
+    svm_buf_arr = cl.SVM(buf_arr)
+    svm_out_arr = cl.SVM(out_arr)
+    with svm_buf_arr.map_rw(queue) as ary:
         ary.fill(17)
 
-    prg_ro = cl.Program(ctx, """
+    prg_ro = cl.Program(ctx, r"""
         __kernel void twice_ro(__global int *out_g, __global int *in_g)
         {
           out_g[get_global_id(0)] = 2*in_g[get_global_id(0)];
         }
         """).build()
 
-    prg_ro.twice_ro(queue, svm_buf_arr.shape, None,
-            cl.SVM(svm_out_arr), cl.SVM(svm_buf_arr))
+    prg_ro.twice_ro(queue, buf_arr.shape, None, svm_out_arr, svm_buf_arr)
+
+    with svm_out_arr.map_ro(queue) as ary:
+        print(ary)
 
     # }}}
 
