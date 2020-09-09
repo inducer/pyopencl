@@ -1,6 +1,5 @@
 """PyOpenCL compiler cache."""
 
-from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2011 Andreas Kloeckner"
 
@@ -24,8 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import six
-from six.moves import zip
 import pyopencl._cl as _cl
 import re
 import sys
@@ -49,7 +46,7 @@ def _erase_dir(dir):
 
 
 def update_checksum(checksum, obj):
-    if isinstance(obj, six.text_type):
+    if isinstance(obj, str):
         checksum.update(obj.encode("utf8"))
     else:
         checksum.update(obj)
@@ -57,7 +54,7 @@ def update_checksum(checksum, obj):
 
 # {{{ cleanup
 
-class CleanupBase(object):
+class CleanupBase:
     pass
 
 
@@ -168,8 +165,8 @@ def get_dependencies(src, include_path):
 
                 if included_file_name not in result:
                     try:
-                        src_file = open(included_file_name, "rt")
-                    except IOError:
+                        src_file = open(included_file_name)
+                    except OSError:
                         continue
 
                     try:
@@ -198,7 +195,7 @@ def get_dependencies(src, include_path):
 
     _inner(src)
 
-    result = list((name,) + vals for name, vals in six.iteritems(result))
+    result = list((name,) + vals for name, vals in result.items())
     result.sort()
 
     return result
@@ -275,7 +272,7 @@ def retrieve_from_cache(cache_dir, cache_key):
 
                 try:
                     info_file = open(info_path, "rb")
-                except IOError:
+                except OSError:
                     raise _InvalidInfoFile()
 
                 try:
@@ -330,8 +327,8 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
     if cache_dir is None:
         import appdirs
         cache_dir = join(appdirs.user_cache_dir("pyopencl", "pyopencl"),
-                "pyopencl-compiler-cache-v2-py%s" % (
-                    ".".join(str(i) for i in sys.version_info),))
+                "pyopencl-compiler-cache-v2-py{}".format(
+                    ".".join(str(i) for i in sys.version_info)))
 
     # {{{ ensure cache directory exists
 
@@ -369,7 +366,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
             logs.append(log)
 
     message = (75*"="+"\n").join(
-            "Build on %s succeeded, but said:\n\n%s" % (dev, log)
+            f"Build on {dev} succeeded, but said:\n\n{log}"
             for dev, log in zip(devices, logs)
             if log is not None and log.strip())
 

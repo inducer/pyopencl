@@ -1,6 +1,5 @@
 """Scan primitive."""
 
-from __future__ import division, absolute_import
 
 __copyright__ = """
 Copyright 2011-2012 Andreas Kloeckner
@@ -22,9 +21,6 @@ limitations under the License.
 
 Derived from code within the Thrust project, https://github.com/thrust/thrust/
 """
-
-import six
-from six.moves import range, zip
 
 import numpy as np
 
@@ -939,7 +935,7 @@ class ScanPerformanceWarning(UserWarning):
     pass
 
 
-class _GenericScanKernelBase(object):
+class _GenericScanKernelBase:
     # {{{ constructor, argument processing
 
     def __init__(self, ctx, dtype,
@@ -1733,7 +1729,7 @@ class _LegacyScanKernelBase(GenericScanKernel):
         scan_ctype = dtype_to_ctype(dtype)
         GenericScanKernel.__init__(self,
                 ctx, dtype,
-                arguments="__global %s *input_ary, __global %s *output_ary" % (
+                arguments="__global {} *input_ary, __global {} *output_ary".format(
                     scan_ctype, scan_ctype),
                 input_expr="input_ary[i]",
                 scan_expr=scan_expr,
@@ -1752,7 +1748,7 @@ class _LegacyScanKernelBase(GenericScanKernel):
         if output_ary is None:
             output_ary = input_ary
 
-        if isinstance(output_ary, (str, six.text_type)) and output_ary == "new":
+        if isinstance(output_ary, (str, str)) and output_ary == "new":
             output_ary = cl.array.empty_like(input_ary, allocator=allocator)
 
         if input_ary.shape != output_ary.shape:

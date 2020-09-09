@@ -1,5 +1,3 @@
-from __future__ import division, with_statement, absolute_import, print_function
-
 __copyright__ = """
 Copyright (c) 2011, Eric Bainville
 Copyright (c) 2015, Ilya Efimoff
@@ -50,7 +48,7 @@ def _is_power_of_2(n):
     return n == 0 or 2**bitlog2(n) == n
 
 
-class BitonicSort(object):
+class BitonicSort:
     """Sort an array (or one axis of one) using a sorting network.
 
     Will only work if the axis of the array to be sorted has a length
@@ -64,14 +62,14 @@ class BitonicSort(object):
     """
 
     kernels_srcs = {
-            'B2': _tmpl.ParallelBitonic_B2,
-            'B4': _tmpl.ParallelBitonic_B4,
-            'B8': _tmpl.ParallelBitonic_B8,
-            'B16': _tmpl.ParallelBitonic_B16,
-            'C4': _tmpl.ParallelBitonic_C4,
-            'BL': _tmpl.ParallelBitonic_Local,
-            'BLO': _tmpl.ParallelBitonic_Local_Optim,
-            'PML': _tmpl.ParallelMerge_Local
+            "B2": _tmpl.ParallelBitonic_B2,
+            "B4": _tmpl.ParallelBitonic_B4,
+            "B8": _tmpl.ParallelBitonic_B8,
+            "B16": _tmpl.ParallelBitonic_B16,
+            "C4": _tmpl.ParallelBitonic_C4,
+            "BL": _tmpl.ParallelBitonic_Local,
+            "BLO": _tmpl.ParallelBitonic_Local_Optim,
+            "PML": _tmpl.ParallelMerge_Local
             }
 
     def __init__(self, context):
@@ -162,7 +160,7 @@ class BitonicSort(object):
         key_ctype = dtype_to_ctype(key_dtype)
 
         if idx_dtype is None:
-            idx_ctype = 'uint'  # Dummy
+            idx_ctype = "uint"  # Dummy
 
         else:
             idx_ctype = dtype_to_ctype(idx_dtype)
@@ -206,7 +204,7 @@ class BitonicSort(object):
 
         length = wg >> 1
         prg = self.get_program(
-                'BLO', argsort, (1, 1, key_ctype, idx_ctype, ds, ns))
+                "BLO", argsort, (1, 1, key_ctype, idx_ctype, ds, ns))
         run_queue.append((prg.run, size, (wg,), True))
 
         while length < ds:
@@ -215,16 +213,16 @@ class BitonicSort(object):
                 ninc = 0
                 direction = length << 1
                 if allowb16 and inc >= 8 and ninc == 0:
-                    letter = 'B16'
+                    letter = "B16"
                     ninc = 4
                 elif allowb8 and inc >= 4 and ninc == 0:
-                    letter = 'B8'
+                    letter = "B8"
                     ninc = 3
                 elif allowb4 and inc >= 2 and ninc == 0:
-                    letter = 'B4'
+                    letter = "B4"
                     ninc = 2
                 elif inc >= 0:
-                    letter = 'B2'
+                    letter = "B2"
                     ninc = 1
 
                 nthreads = size >> ninc

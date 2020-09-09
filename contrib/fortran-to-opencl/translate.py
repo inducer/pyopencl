@@ -1,8 +1,4 @@
-from __future__ import division, with_statement
-from __future__ import absolute_import
-from __future__ import print_function
 import six
-from six.moves import range
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -366,12 +362,12 @@ class ComplexCCodeMapper(CCodeMapperBase):
 
             complex_sum = self.rec(complexes[0], myprec)
             for child in complexes[1:]:
-                complex_sum = "%s_add(%s, %s)" % (
+                complex_sum = "{}_add({}, {})".format(
                         tgt_name, complex_sum,
                         self.rec(child, PREC_NONE))
 
             if real_sum:
-                result = "%s_add(%s_fromreal(%s), %s)" % (
+                result = "{}_add({}_fromreal({}), {})".format(
                         tgt_name, tgt_name, real_sum, complex_sum)
             else:
                 result = complex_sum
@@ -402,12 +398,12 @@ class ComplexCCodeMapper(CCodeMapperBase):
 
             complex_prd = self.rec(complexes[0], myprec)
             for child in complexes[1:]:
-                complex_prd = "%s_mul(%s, %s)" % (
+                complex_prd = "{}_mul({}, {})".format(
                         tgt_name, complex_prd,
                         self.rec(child, PREC_NONE))
 
             if real_prd:
-                result = "%s_rmul(%s, %s)" % (tgt_name, real_prd, complex_prd)
+                result = f"{tgt_name}_rmul({real_prd}, {complex_prd})"
             else:
                 result = complex_prd
 
@@ -423,17 +419,17 @@ class ComplexCCodeMapper(CCodeMapperBase):
         if not (n_complex or d_complex):
             return CCodeMapperBase.map_quotient(self, expr, enclosing_prec)
         elif n_complex and not d_complex:
-            return "%s_divider(%s, %s)" % (
+            return "{}_divider({}, {})".format(
                     complex_type_name(tgt_dtype),
                     self.rec(expr.numerator, PREC_NONE),
                     self.rec(expr.denominator, PREC_NONE))
         elif not n_complex and d_complex:
-            return "%s_rdivide(%s, %s)" % (
+            return "{}_rdivide({}, {})".format(
                     complex_type_name(tgt_dtype),
                     self.rec(expr.numerator, PREC_NONE),
                     self.rec(expr.denominator, PREC_NONE))
         else:
-            return "%s_divide(%s, %s)" % (
+            return "{}_divide({}, {})".format(
                     complex_type_name(tgt_dtype),
                     self.rec(expr.numerator, PREC_NONE),
                     self.rec(expr.denominator, PREC_NONE))
@@ -460,12 +456,12 @@ class ComplexCCodeMapper(CCodeMapperBase):
                 e_complex = 'c' == self.infer_type(expr.exponent).kind
 
                 if b_complex and not e_complex:
-                    return "%s_powr(%s, %s)" % (
+                    return "{}_powr({}, {})".format(
                             complex_type_name(tgt_dtype),
                             self.rec(expr.base, PREC_NONE),
                             self.rec(expr.exponent, PREC_NONE))
                 else:
-                    return "%s_pow(%s, %s)" % (
+                    return "{}_pow({}, {})".format(
                             complex_type_name(tgt_dtype),
                             self.rec(expr.base, PREC_NONE),
                             self.rec(expr.exponent, PREC_NONE))
@@ -522,7 +518,7 @@ class CCodeMapper(ComplexCCodeMapper):
             if name == "dble":
                 name = "real"
 
-            name = "%s_%s" % (
+            name = "{}_{}".format(
                     complex_type_name(tgt_dtype),
                     name)
 
@@ -532,7 +528,7 @@ class CCodeMapper(ComplexCCodeMapper):
             if name == "aimag":
                 name = "imag"
 
-            name = "%s_%s" % (
+            name = "{}_{}".format(
                     complex_type_name(arg_dtype),
                     name)
 
@@ -568,7 +564,7 @@ class CCodeMapper(ComplexCCodeMapper):
         from pymbolic.mapper.stringifier import PREC_NONE
         if expr.dtype.kind == "c":
             r, i = expr.value
-            return "%s_new(%s, %s)" % (
+            return "{}_new({}, {})".format(
                     complex_type_name(expr.dtype),
                     self.rec(r, PREC_NONE),
                     self.rec(i, PREC_NONE))
@@ -581,7 +577,7 @@ class CCodeMapper(ComplexCCodeMapper):
 
 # }}}
 
-class Scope(object):
+class Scope:
     def __init__(self, subprogram_name, arg_names=set()):
         self.subprogram_name = subprogram_name
 
@@ -608,8 +604,8 @@ class Scope(object):
 
     def known_names(self):
         return (self.used_names
-                | set(six.iterkeys(self.dim_map))
-                | set(six.iterkeys(self.type_map)))
+                | set(self.dim_map.keys())
+                | set(self.type_map.keys()))
 
     def is_known(self, name):
         return (name in self.used_names
@@ -643,12 +639,12 @@ class Scope(object):
     def translate_var_name(self, name):
         shape = self.dim_map.get(name)
         if name in self.data and shape is not None:
-            return "%s_%s" % (self.subprogram_name, name)
+            return f"{self.subprogram_name}_{name}"
         else:
             return name
 
 
-class FTreeWalkerBase(object):
+class FTreeWalkerBase:
     def __init__(self):
         self.scope_stack = []
 
@@ -675,7 +671,7 @@ class FTreeWalkerBase(object):
 
     ENTITY_RE = re.compile(
             r"^(?P<name>[_0-9a-zA-Z]+)"
-            "(\((?P<shape>[-+*0-9:a-zA-Z,]+)\))?$")
+            r"(\((?P<shape>[-+*0-9:a-zA-Z,]+)\))?$")
 
     def parse_dimension_specs(self, dim_decls):
         def parse_bounds(bounds_str):
@@ -949,7 +945,7 @@ class F2CLTranslator(FTreeWalkerBase):
 
             if shape is not None:
                 dim_stmt = cgen.Statement(
-                    "dimension \"fortran\" %s[%s]" % (
+                    "dimension \"fortran\" {}[{}]".format(
                         scope.translate_var_name(name),
                         ", ".join(gen_shape(s) for s in shape)
                         ))
@@ -975,7 +971,7 @@ class F2CLTranslator(FTreeWalkerBase):
                             cgen.Initializer(
                                 CLConstant(
                                     cgen.ArrayOf(self.get_declarator(
-                                        "%s_%s" % (scope.subprogram_name, name)))),
+                                        f"{scope.subprogram_name}_{name}"))),
                                 "{ %s }" % ",\n".join(self.gen_expr(x) for x in data)
                                 ))
             else:
@@ -1231,11 +1227,11 @@ class F2CLTranslator(FTreeWalkerBase):
             cast = self.force_casts.get(
                     (node.designator, i))
             if cast is not None:
-                result = "(%s) (%s)" % (cast, result)
+                result = f"({cast}) ({result})"
 
             return result
 
-        return cgen.Statement("%s(%s)" % (
+        return cgen.Statement("{}({})".format(
             node.designator,
             ", ".join(transform_arg(i, arg_str)
                 for i, arg_str in enumerate(node.items))))
@@ -1328,9 +1324,9 @@ class F2CLTranslator(FTreeWalkerBase):
                 comp_op = "<="
 
             return cgen.For(
-                    "%s = %s" % (loop_var, self.gen_expr(start)),
-                    "%s %s %s" % (loop_var, comp_op, self.gen_expr(stop)),
-                    "%s += %s" % (loop_var, self.gen_expr(step)),
+                    "{} = {}".format(loop_var, self.gen_expr(start)),
+                    "{} {} {}".format(loop_var, comp_op, self.gen_expr(stop)),
+                    "{} += {}".format(loop_var, self.gen_expr(step)),
                     cgen.block_if_necessary(body))
 
         else:

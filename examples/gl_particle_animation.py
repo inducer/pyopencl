@@ -1,4 +1,3 @@
-from __future__ import absolute_import
 # Visualization of particles with gravity
 # Source: http://enja.org/2010/08/27/adventures-in-opencl-part-2-particles-with-opengl/
 

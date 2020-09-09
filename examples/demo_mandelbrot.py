@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 # I found this example for PyCuda here:
 # http://wiki.tiker.net/PyCuda/Examples/Mandelbrot
 #
@@ -24,7 +22,6 @@ import time
 import numpy as np
 
 import pyopencl as cl
-from six.moves import range
 
 # You can choose a calculation routine below (calc_fractal), uncomment
 # one of the three lines to test the three variations
@@ -117,7 +114,7 @@ if __name__ == '__main__':
         import tkinter as tk
     from PIL import Image, ImageTk
 
-    class Mandelbrot(object):
+    class Mandelbrot:
         def __init__(self):
             # create window
             self.root = tk.Tk()

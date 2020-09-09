@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 # pylint:disable=unexpected-keyword-arg  # for @elwise_kernel_runner
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
@@ -35,7 +33,7 @@ def _make_unary_array_func(name):
     def knl_runner(result, arg):
         if arg.dtype.kind == "c":
             from pyopencl.elementwise import complex_dtype_to_name
-            fname = "%s_%s" % (complex_dtype_to_name(arg.dtype), name)
+            fname = "{}_{}".format(complex_dtype_to_name(arg.dtype), name)
         else:
             fname = name
 

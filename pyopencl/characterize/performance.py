@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -22,7 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from six.moves import range
 import pyopencl as cl
 import numpy as np
 
@@ -100,7 +97,7 @@ def _get_time(queue, f, timer_factory=None, desired_duration=0.1,
 
 # {{{ transfer measurements
 
-class HostDeviceTransferBase(object):
+class HostDeviceTransferBase:
     def __init__(self, queue, block_size):
         self.queue = queue
         self.host_buf = np.empty(block_size, dtype=np.uint8)
@@ -117,7 +114,7 @@ class DeviceToHostTransfer(HostDeviceTransferBase):
         return cl.enqueue_copy(self. queue, self.host_buf, self.dev_buf)
 
 
-class DeviceToDeviceTransfer(object):
+class DeviceToDeviceTransfer:
     def __init__(self, queue, block_size):
         self.queue = queue
         mf = cl.mem_flags

@@ -1,5 +1,3 @@
-from __future__ import division, with_statement, absolute_import, print_function
-
 __copyright__ = "Copyright (C) 2020 Sotiris Niarchos"
 
 __license__ = """
