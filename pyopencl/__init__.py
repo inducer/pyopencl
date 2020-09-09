@@ -1114,10 +1114,8 @@ def _add_functionality():
         """
         svmallocation_old_init(self, ctx, size, alignment, flags)
 
-        read_write = (
-                flags & mem_flags.WRITE_ONLY != 0
-                or flags & mem_flags.READ_WRITE != 0)
-
+        # mem_flags.READ_ONLY applies to kernels, not the host
+        read_write = True
         _interface["data"] = (
                 int(self._ptr_as_int()), not read_write)
 
