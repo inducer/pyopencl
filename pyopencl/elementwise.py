@@ -503,36 +503,36 @@ def real_dtype(dtype):
 
 @context_dependent_memoize
 def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
-    ax = "a*x[i]"
-    by = "b*y[i]"
+    result_t = dtype_to_ctype(dtype_z)
 
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
 
-    if x_is_complex:
-        ax = "%s_mul(a, x[i])" % complex_dtype_to_name(dtype_x)
+    if dtype_z.kind == "c":
+        # a and b will always be complex here.
+        z_ct = complex_dtype_to_name(dtype_z)
 
-    if y_is_complex:
-        by = "%s_mul(b, y[i])" % complex_dtype_to_name(dtype_y)
+        if x_is_complex:
+            ax = f"{z_ct}_mul(a, {z_ct}_cast(x[i]))"
+        else:
+            ax = f"{z_ct}_mulr(a, x[i])"
 
-    if x_is_complex and not y_is_complex:
-        by = "{}_fromreal({})".format(complex_dtype_to_name(dtype_x), by)
+        if y_is_complex:
+            by = f"{z_ct}_mul(b, {z_ct}_cast(y[i]))"
+        else:
+            by = f"{z_ct}_mulr(b, y[i])"
 
-    if not x_is_complex and y_is_complex:
-        ax = "{}_fromreal({})".format(complex_dtype_to_name(dtype_y), ax)
-
-    if x_is_complex or y_is_complex:
-        result = (
-                "{root}_add({root}_cast({ax}), {root}_cast({by}))"
-                .format(
-                    ax=ax,
-                    by=by,
-                    root=complex_dtype_to_name(dtype_z)))
+        result = f"{z_ct}_add({ax}, {by})"
     else:
+        # real-only
+
+        ax = f"a*(({result_t}) x[i])"
+        by = f"b*(({result_t}) y[i])"
+
         result = f"{ax} + {by}"
 
     return get_elwise_kernel(context,
-            "{tp_z} *z, {tp_x} a, {tp_x} *x, {tp_y} b, {tp_y} *y".format(
+            "{tp_z} *z, {tp_z} a, {tp_x} *x, {tp_z} b, {tp_y} *y".format(
                 tp_x=dtype_to_ctype(dtype_x),
                 tp_y=dtype_to_ctype(dtype_y),
                 tp_z=dtype_to_ctype(dtype_z),

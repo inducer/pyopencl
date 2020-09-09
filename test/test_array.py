@@ -426,12 +426,20 @@ def test_addition_scalar(ctx_factory):
     assert (7 + a == a_added).all()
 
 
-def test_substract_array(ctx_factory):
+@pytest.mark.parametrize(("dtype_a", "dtype_b"),
+        [
+            (np.float32, np.float32),
+            (np.float32, np.int32),
+            (np.int32, np.int32),
+            (np.int64, np.int32),
+            (np.int64, np.uint32),
+            ])
+def test_subtract_array(ctx_factory, dtype_a, dtype_b):
     """Test the substraction of two arrays."""
     #test data
-    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
+    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(dtype_a)
     b = np.array([10, 20, 30, 40, 50,
-                  60, 70, 80, 90, 100]).astype(np.float32)
+                  60, 70, 80, 90, 100]).astype(dtype_b)
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)

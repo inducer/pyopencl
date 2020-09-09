@@ -82,6 +82,10 @@ except Exception:
         return False
 
 
+class InconsistentOpenCLQueueWarning(UserWarning):
+    pass
+
+
 class VecLookupWarner:
     def __getattr__(self, name):
         from warnings import warn
@@ -144,7 +148,11 @@ def elwise_kernel_runner(kernel_getter):
 
     def kernel_runner(*args, **kwargs):
         repr_ary = args[0]
-        queue = kwargs.pop("queue", None) or repr_ary.queue
+        queue = kwargs.pop("queue", None)
+        implicit_queue = queue is None
+        if implicit_queue:
+            queue = repr_ary.queue
+
         wait_for = kwargs.pop("wait_for", None)
 
         # wait_for must be a copy, because we modify it in-place below
@@ -171,6 +179,16 @@ def elwise_kernel_runner(kernel_getter):
                 actual_args.append(arg.base_data)
                 actual_args.append(arg.offset)
                 wait_for.extend(arg.events)
+
+                if (implicit_queue
+                        and arg.queue is not None
+                        and arg.queue != queue):
+                    from warnings import warn
+
+                    warn("Implicit queue in elementwise operation does not match "
+                            "queue of a provided argument. This will become an "
+                            "error in 2021.",
+                            type=InconsistentOpenCLQueueWarning)
             else:
                 actual_args.append(arg)
         actual_args.append(repr_ary.size)
@@ -1008,7 +1026,7 @@ class Array:
             result.add_event(
                     self._axpbyz(result,
                         self.dtype.type(1), self,
-                        other.dtype.type(-1), other))
+                        result.dtype.type(-1), other))
 
             return result
         else:
@@ -1031,7 +1049,7 @@ class Array:
         # other must be a scalar
         result = self._new_like_me(common_dtype)
         result.add_event(
-                self._axpbz(result, self.dtype.type(-1), self,
+                self._axpbz(result, result.dtype.type(-1), self,
                     common_dtype.type(other)))
         return result
 
