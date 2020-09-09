@@ -503,23 +503,24 @@ def real_dtype(dtype):
 
 @context_dependent_memoize
 def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
-    ax = "a*x[i]"
-    by = "b*y[i]"
+    result_t = dtype_to_ctype(dtype_z)
 
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
 
     if x_is_complex:
         ax = "%s_mul(a, x[i])" % complex_dtype_to_name(dtype_x)
+    elif not x_is_complex and y_is_complex:
+        ax = "{}_fromreal({})".format(complex_dtype_to_name(dtype_y), ax)
+    else:
+        ax = f"a*(({result_t}) x[i])"
 
     if y_is_complex:
         by = "%s_mul(b, y[i])" % complex_dtype_to_name(dtype_y)
-
-    if x_is_complex and not y_is_complex:
+    elif x_is_complex and not y_is_complex:
         by = "{}_fromreal({})".format(complex_dtype_to_name(dtype_x), by)
-
-    if not x_is_complex and y_is_complex:
-        ax = "{}_fromreal({})".format(complex_dtype_to_name(dtype_y), ax)
+    else:
+        by = f"b*(({result_t}) y[i])"
 
     if x_is_complex or y_is_complex:
         result = (
@@ -532,7 +533,7 @@ def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
         result = f"{ax} + {by}"
 
     return get_elwise_kernel(context,
-            "{tp_z} *z, {tp_x} a, {tp_x} *x, {tp_y} b, {tp_y} *y".format(
+            "{tp_z} *z, {tp_z} a, {tp_x} *x, {tp_z} b, {tp_y} *y".format(
                 tp_x=dtype_to_ctype(dtype_x),
                 tp_y=dtype_to_ctype(dtype_y),
                 tp_z=dtype_to_ctype(dtype_z),

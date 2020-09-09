@@ -1008,7 +1008,7 @@ class Array:
             result.add_event(
                     self._axpbyz(result,
                         self.dtype.type(1), self,
-                        other.dtype.type(-1), other))
+                        result.dtype.type(-1), other))
 
             return result
         else:
@@ -1031,7 +1031,7 @@ class Array:
         # other must be a scalar
         result = self._new_like_me(common_dtype)
         result.add_event(
-                self._axpbz(result, self.dtype.type(-1), self,
+                self._axpbz(result, result.dtype.type(-1), self,
                     common_dtype.type(other)))
         return result
 
