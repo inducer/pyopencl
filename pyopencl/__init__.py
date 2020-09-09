@@ -58,6 +58,7 @@ from pyopencl._cl import (  # noqa: F401
         platform_info,
         device_type,
         device_info,
+        device_topology_type_amd,
         device_fp_config,
         device_mem_cache_type,
         device_local_mem_type,
