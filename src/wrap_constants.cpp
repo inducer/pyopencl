@@ -503,7 +503,9 @@ void pyopencl_expose_constants(py::module &m)
 
   {
     py::class_<device_topology_type_amd> cls(m, "device_topology_type_amd");
+#ifdef CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD
     cls.attr("PCIE") = CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD;
+#endif
   }
 
   {
