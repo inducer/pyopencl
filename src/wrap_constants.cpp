@@ -40,7 +40,7 @@ namespace
   class platform_info { };
   class device_type { };
   class device_info { };
-  class device_topooly_type_amd { };
+  class device_topology_type_amd { };
   class device_fp_config { };
   class device_mem_cache_type { };
   class device_local_mem_type { };
@@ -502,7 +502,7 @@ void pyopencl_expose_constants(py::module &m)
   }
 
   {
-    py::class_<device_topooly_type_amd> cls(m, "device_topooly_type_amd");
+    py::class_<device_topology_type_amd> cls(m, "device_topology_type_amd");
     cls.attr("PCIE") = CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD;
   }
 
@@ -1038,23 +1038,43 @@ void pyopencl_expose_constants(py::module &m)
 
   // }}}
 
-#ifdef CL_DEVICE_TOPOLOGY_AMD
-  // {{{ cl_device_topology_amd
+  // {{{ CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD
 
+#ifdef CL_DEVICE_TOPOLOGY_AMD
   {
     typedef cl_device_topology_amd cls;
-    py::class_<cls>(m, "DeviceTopologyAMD")
-    .def("type", [](cls &self) { return self.raw.type; })
-    .def("raw", [](cls &self) { return self.raw.data; })
-    .def("pcie_unused", [](cls &self) { return self.pcie.bus; })
-    .def("pcie_bus", [](cls &self) { return self.pcie.bus; })
-    .def("pcie_device", [](cls &self) { return self.pcie.device; })
-    .def("pcie_function", [](cls &self) { return self.pcie.function; })
-    ;
+    py::class_<cls>(m, "DeviceTopologyAmd")
+      .def(py::init(
+            [](cl_char bus, cl_char device, cl_char function)
+            {
+              cl_device_topology_amd result;
+              result.pcie.bus = bus;
+              result.pcie.device = device;
+              result.pcie.function = function;
+              return result;
+            }),
+          py::arg("bus")=0,
+          py::arg("device")=0,
+          py::arg("function")=0)
+
+      .def_property("type",
+          [](cls &t) { return t.pcie.type; },
+          [](cls &t, cl_uint val) { t.pcie.type = val; })
+
+      .def_property("bus",
+          [](cls &t) { return t.pcie.bus; },
+          [](cls &t, cl_char val) { t.pcie.bus = val; })
+      .def_property("device",
+          [](cls &t) { return t.pcie.device; },
+          [](cls &t, cl_char val) { t.pcie.device = val; })
+      .def_property("function",
+          [](cls &t) { return t.pcie.function; },
+          [](cls &t, cl_char val) { t.pcie.function = val; })
+      ;
   }
+#endif
 
   // }}}
-#endif
 
 }
 
