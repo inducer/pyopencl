@@ -1030,26 +1030,6 @@ def test_coarse_grain_svm(ctx_factory):
         cl.enqueue_copy(queue, new_ary, svm_ary)
         assert np.array_equal(orig_ary*2, new_ary)
 
-    # {{{ https://github.com/inducer/pyopencl/issues/372
-
-    svm_buf_arr = cl.svm_empty(ctx, cl.svm_mem_flags.READ_ONLY, 10, np.int32)
-    svm_out_arr = cl.svm_empty(ctx, cl.svm_mem_flags.READ_WRITE, 10, np.int32)
-
-    with cl.SVM(svm_buf_arr).map_rw(queue) as ary:
-        ary.fill(17)
-
-    prg_ro = cl.Program(ctx, """
-        __kernel void twice_ro(__global int *out_g, __global int *in_g)
-        {
-          out_g[get_global_id(0)] = 2*in_g[get_global_id(0)];
-        }
-        """).build()
-
-    prg_ro.twice_ro(queue, svm_buf_arr.shape, None,
-            cl.SVM(svm_out_arr), cl.SVM(svm_buf_arr))
-
-    # }}}
-
 
 def test_fine_grain_svm(ctx_factory):
     import sys
