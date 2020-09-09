@@ -187,7 +187,7 @@ const_ext_lookup = {
             "SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS": cl_21,
             },
 
-        cl.device_topoly_type_amd: {
+        cl.device_topology_type_amd: {
             "PCIE": amd_devattr,
             },
 
