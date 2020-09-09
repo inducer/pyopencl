@@ -79,6 +79,7 @@ from pyopencl._cl import (  # noqa
         mem_object_type,
         mem_info,
         image_info,
+        pipe_info,
         addressing_mode,
         filter_mode,
         sampler_info,
@@ -102,6 +103,10 @@ from pyopencl._cl import (  # noqa
         mem_migration_flags,
         device_partition_property,
         device_affinity_domain,
+        device_atomic_capabilities,
+
+        version_bits,
+        khronos_vendor_id,
 
         Error, MemoryError, LogicError, RuntimeError,
 
@@ -229,6 +234,8 @@ BITFIELD_CONSTANT_CLASSES = (
         _cl.device_svm_capabilities,
         _cl.queue_properties,
         _cl.svm_mem_flags,
+        _cl.device_atomic_capabilities,
+        _cl.version_bits,
         )
 
 

@@ -58,6 +58,7 @@ namespace
   class mem_object_type { };
   class mem_info { };
   class image_info { };
+  class pipe_info { };
   class addressing_mode { };
   class filter_mode { };
   class sampler_info { };
@@ -82,6 +83,10 @@ namespace
 
   class device_partition_property { };
   class device_affinity_domain { };
+  class device_atomic_capabilities { };
+
+  class version_bits { };
+  class khronos_vendor_id { };
 
   class gl_object_type { };
   class gl_texture_info { };
@@ -249,6 +254,13 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(PLATFORM_, VENDOR);
 #if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
     ADD_ATTR(PLATFORM_, EXTENSIONS);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR(PLATFORM_, HOST_TIMER_RESOLUTION);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(PLATFORM_, NUMERIC_VERSION);
+    ADD_ATTR(PLATFORM_, EXTENSIONS_WITH_VERSION);
 #endif
   }
 
@@ -459,6 +471,22 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef CL_DEVICE_ME_VERSION_INTEL
     ADD_ATTR(DEVICE_, ME_VERSION_INTEL);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(DEVICE_, NUMERIC_VERSION);
+    ADD_ATTR(DEVICE_, EXTENSIONS_WITH_VERSION);
+    ADD_ATTR(DEVICE_, ILS_WITH_VERSION);
+    ADD_ATTR(DEVICE_, BUILT_IN_KERNELS_WITH_VERSION);
+    ADD_ATTR(DEVICE_, ATOMIC_MEMORY_CAPABILITIES);
+    ADD_ATTR(DEVICE_, ATOMIC_FENCE_CAPABILITIES);
+    ADD_ATTR(DEVICE_, NON_UNIFORM_WORK_GROUP_SUPPORT);
+    ADD_ATTR(DEVICE_, OPENCL_C_ALL_VERSIONS);
+    ADD_ATTR(DEVICE_, PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
+    ADD_ATTR(DEVICE_, WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT);
+    ADD_ATTR(DEVICE_, GENERIC_ADDRESS_SPACE_SUPPORT);
+    ADD_ATTR(DEVICE_, OPENCL_C_FEATURES);
+    ADD_ATTR(DEVICE_, DEVICE_ENQUEUE_SUPPORT);
+    ADD_ATTR(DEVICE_, PIPE_SUPPORT);
+#endif
 
     /* cl_qcom_ext_host_ptr */
 #ifdef CL_DEVICE_EXT_MEM_PADDING_IN_BYTES_QCOM
@@ -595,6 +623,9 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(QUEUE_, DEVICE);
     ADD_ATTR(QUEUE_, REFERENCE_COUNT);
     ADD_ATTR(QUEUE_, PROPERTIES);
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(QUEUE_, PROPERTIES_ARRAY);
+#endif
   }
 
   {
@@ -602,6 +633,9 @@ void pyopencl_expose_constants(py::module &m)
 #if PYOPENCL_CL_VERSION >= 0x2000
     ADD_ATTR(QUEUE_, PROPERTIES);
     ADD_ATTR(QUEUE_, SIZE);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR(QUEUE_, DEVICE_DEFAULT);
 #endif
   }
 
@@ -713,6 +747,9 @@ void pyopencl_expose_constants(py::module &m)
 #if PYOPENCL_CL_VERSION >= 0x2000
     ADD_ATTR(MEM_, USES_SVM_POINTER);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(MEM_, PROPERTIES);
+#endif
   }
 
   {
@@ -732,6 +769,16 @@ void pyopencl_expose_constants(py::module &m)
 #endif
   }
 
+  {
+    py::class_<pipe_info> cls(m, "pipe_info");
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(PIPE_, PACKET_SIZE);
+    ADD_ATTR(PIPE_, MAX_PACKETS);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(PIPE_, PROPERTIES);
+#endif
+  }
   {
     py::class_<addressing_mode> cls(m, "addressing_mode");
     ADD_ATTR(ADDRESS_, NONE);
@@ -760,6 +807,9 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(SAMPLER_, MIP_FILTER_MODE);
     ADD_ATTR(SAMPLER_, LOD_MIN);
     ADD_ATTR(SAMPLER_, LOD_MAX);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(SAMPLER_, PROPERTIES);
 #endif
   }
 
@@ -939,6 +989,9 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(COMMAND_, SVM_MAP);
     ADD_ATTR(COMMAND_, SVM_UNMAP);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(COMMAND_, SVM_MIGRATE_MEM);
+#endif
   }
 
   {
@@ -1000,6 +1053,40 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_AFFINITY_DOMAIN_, NEXT_PARTITIONABLE);
 #endif
   }
+
+  {
+    py::class_<device_atomic_capabilities> cls(m, "device_atomic_capabilities");
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(DEVICE_ATOMIC_, ORDER_RELAXED);
+    ADD_ATTR(DEVICE_ATOMIC_, ORDER_ACQ_REL);
+    ADD_ATTR(DEVICE_ATOMIC_, ORDER_SEQ_CST);
+    ADD_ATTR(DEVICE_ATOMIC_, SCOPE_WORK_ITEM);
+    ADD_ATTR(DEVICE_ATOMIC_, SCOPE_WORK_GROUP);
+    ADD_ATTR(DEVICE_ATOMIC_, SCOPE_DEVICE);
+    ADD_ATTR(DEVICE_ATOMIC_, SCOPE_ALL_DEVICES);
+#endif
+  }
+
+  {
+    py::class_<version_bits> cls(m, "version_bits");
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(VERSION_, MAJOR_BITS);
+    ADD_ATTR(VERSION_, MINOR_BITS);
+    ADD_ATTR(VERSION_, PATCH_BITS);
+
+    ADD_ATTR(VERSION_, MAJOR_MASK);
+    ADD_ATTR(VERSION_, MINOR_MASK);
+    ADD_ATTR(VERSION_, PATCH_MASK);
+#endif
+  }
+
+  {
+    py::class_<khronos_vendor_id> cls(m, "khronos_vendor_id");
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(KHRONOS_VENDOR_ID_, CODEPLAY);
+#endif
+  }
+
 
 #ifdef HAVE_GL
   {
