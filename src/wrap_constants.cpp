@@ -40,6 +40,7 @@ namespace
   class platform_info { };
   class device_type { };
   class device_info { };
+  class device_topooly_type_amd { };
   class device_fp_config { };
   class device_mem_cache_type { };
   class device_local_mem_type { };
@@ -358,6 +359,7 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_, PCI_SLOT_ID_NV);
 #endif
 #endif
+
 // {{{ cl_amd_device_attribute_query
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
     ADD_ATTR(DEVICE_, PROFILING_TIMER_OFFSET_AMD);
@@ -398,7 +400,6 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
     ADD_ATTR(DEVICE_, LOCAL_MEM_BANKS_AMD);
 #endif
-// }}}
 #ifdef CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD
     ADD_ATTR(DEVICE_, THREAD_TRACE_SUPPORTED_AMD);
 #endif
@@ -411,6 +412,19 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD
     ADD_ATTR(DEVICE_, AVAILABLE_ASYNC_QUEUES_AMD);
 #endif
+#ifdef CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_AMD
+    ADD_ATTR(DEVICE_, PREFERRED_WORK_GROUP_SIZE_AMD);
+#endif
+#ifdef CL_DEVICE_MAX_WORK_GROUP_SIZE_AMD
+    ADD_ATTR(DEVICE_, MAX_WORK_GROUP_SIZE_AMD);
+#endif
+#ifdef CL_DEVICE_PREFERRED_CONSTANT_BUFFER_SIZE_AMD
+    ADD_ATTR(DEVICE_, PREFERRED_CONSTANT_BUFFER_SIZE_AMD);
+#endif
+#ifdef CL_DEVICE_PCIE_ID_AMD
+    ADD_ATTR(DEVICE_, PCIE_ID_AMD);
+#endif
+// }}}
 
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
     ADD_ATTR(DEVICE_, MAX_ATOMIC_COUNTERS_EXT);
@@ -485,6 +499,11 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef CL_DEVICE_NUM_SIMULTANEOUS_INTEROPS_INTEL
     ADD_ATTR(DEVICE_, NUM_SIMULTANEOUS_INTEROPS_INTEL);
 #endif
+  }
+
+  {
+    py::class_<device_topooly_type_amd> cls(m, "device_topooly_type_amd");
+    cls.attr("PCIE") = CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD;
   }
 
   {
@@ -1018,6 +1037,25 @@ void pyopencl_expose_constants(py::module &m)
 #endif
 
   // }}}
+
+#ifdef CL_DEVICE_TOPOLOGY_AMD
+  // {{{ cl_device_topology_amd
+
+  {
+    typedef cl_device_topology_amd cls;
+    py::class_<cls>(m, "DeviceTopologyAMD")
+    .def("type", [](cls &self) { return self.raw.type; })
+    .def("raw", [](cls &self) { return self.raw.data; })
+    .def("pcie_unused", [](cls &self) { return self.pcie.bus; })
+    .def("pcie_bus", [](cls &self) { return self.pcie.bus; })
+    .def("pcie_device", [](cls &self) { return self.pcie.device; })
+    .def("pcie_function", [](cls &self) { return self.pcie.function; })
+    ;
+  }
+
+  // }}}
+#endif
+
 }
 
 
