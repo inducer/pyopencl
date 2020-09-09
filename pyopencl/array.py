@@ -50,6 +50,25 @@ def _get_common_dtype(obj1, obj2, queue):
                                   has_double_support(queue.device))
 
 
+def _get_truedivide_dtype(obj1, obj2, queue):
+    # the dtype of the division result obj1 / obj2
+
+    allow_double = has_double_support(queue.device)
+
+    x1 = obj1 if np.isscalar(obj1) else np.ones(1, obj1.dtype)
+    x2 = obj2 if np.isscalar(obj2) else np.ones(1, obj2.dtype)
+
+    result = (x1/x2).dtype
+
+    if not allow_double:
+        if result == np.float64:
+            result = np.dtype(np.float32)
+        elif result == np.complex128:
+            result = np.dtype(np.complex64)
+
+    return result
+
+
 # Work around PyPy not currently supporting the object dtype.
 # (Yes, it doesn't even support checking!)
 # (as of May 27, 2014 on PyPy 2.3)
@@ -1080,20 +1099,20 @@ class Array:
     def __div__(self, other):
         """Divides an array by an array or a scalar, i.e. ``self / other``.
         """
+        common_dtype = _get_truedivide_dtype(self, other, self.queue)
         if isinstance(other, Array):
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
+            result = self._new_like_me(common_dtype)
             result.add_event(self._div(result, self, other))
         else:
             if other == 1:
                 return self.copy()
             else:
                 # create a new array for the result
-                common_dtype = _get_common_dtype(self, other, self.queue)
                 result = self._new_like_me(common_dtype)
                 result.add_event(
                         self._axpbz(result,
-                            common_dtype.type(1/other), self, self.dtype.type(0)))
+                                    np.true_divide(common_dtype.type(1), other),
+                                    self, self.dtype.type(0)))
 
         return result
 
@@ -1102,14 +1121,13 @@ class Array:
     def __rdiv__(self, other):
         """Divides an array by a scalar or an array, i.e. ``other / self``.
         """
+        common_dtype = _get_truedivide_dtype(self, other, self.queue)
 
         if isinstance(other, Array):
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
+            result = self._new_like_me(common_dtype)
             result.add_event(other._div(result, self))
         else:
             # create a new array for the result
-            common_dtype = _get_common_dtype(self, other, self.queue)
             result = self._new_like_me(common_dtype)
             result.add_event(
                     self._rdiv_scalar(result, self, common_dtype.type(other)))
@@ -1117,6 +1135,26 @@ class Array:
         return result
 
     __rtruediv__ = __rdiv__
+
+    def __itruediv__(self, other):
+        # raise an error if the result cannot be cast to self
+        common_dtype = _get_truedivide_dtype(self, other, self.queue)
+        if not np.can_cast(common_dtype, self.dtype.type):
+            raise TypeError("Cannot cast {!r} to {!r}"
+                            .format(self.dtype, common_dtype))
+
+        if isinstance(other, Array):
+            self.add_event(
+                self._div(self, self, other))
+        else:
+            if other == 1:
+                return self
+            else:
+                self.add_event(
+                    self._axpbz(self, common_dtype.type(np.true_divide(1, other)),
+                                self, self.dtype.type(0)))
+
+        return self
 
     def __and__(self, other):
         common_dtype = _get_common_dtype(self, other, self.queue)
