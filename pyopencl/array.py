@@ -50,7 +50,6 @@ def _get_common_dtype(obj1, obj2, queue):
                                   has_double_support(queue.device))
 
 
-
 def _get_truedivide_dtype(obj1, obj2, queue):
     # the dtype of the division result obj1 / obj2
 
@@ -68,7 +67,6 @@ def _get_truedivide_dtype(obj1, obj2, queue):
             result = np.dtype(np.complex64)
 
     return result
-
 
 
 # Work around PyPy not currently supporting the object dtype.
