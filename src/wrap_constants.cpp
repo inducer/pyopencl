@@ -24,6 +24,9 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
+#define NO_IMPORT_ARRAY
+#define PY_ARRAY_UNIQUE_SYMBOL pyopencl_ARRAY_API
+
 #include "wrap_cl.hpp"
 
 
@@ -58,6 +61,7 @@ namespace
   class addressing_mode { };
   class filter_mode { };
   class sampler_info { };
+  class sampler_properties { };
   class map_flags { };
   class program_info { };
   class program_build_info { };
@@ -757,6 +761,13 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(SAMPLER_, LOD_MIN);
     ADD_ATTR(SAMPLER_, LOD_MAX);
 #endif
+  }
+
+  {
+    py::class_<sampler_properties> cls(m, "sampler_properties");
+    ADD_ATTR(SAMPLER_, NORMALIZED_COORDS);
+    ADD_ATTR(SAMPLER_, ADDRESSING_MODE);
+    ADD_ATTR(SAMPLER_, FILTER_MODE);
   }
 
   {

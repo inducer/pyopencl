@@ -1,0 +1,7 @@
+- arg: ignore
+  val: compyte
+- arg: generated-members
+  val:
+    - cltypes.*
+    - gl_platform.*
+    - mako.template

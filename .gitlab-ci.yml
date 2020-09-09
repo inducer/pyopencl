@@ -1,49 +1,14 @@
-"Python 2.7 AMD CPU":
-  script:
-  - export PY_EXE=python2.7
-  - export PYOPENCL_TEST=amd:pu
-  - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
-  allow_failure: true
-  tags:
-  - python2.7
-  - amd-cl-cpu
-  - opengl
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
 Python 3 Intel CPU:
   script:
   - export PY_EXE=python3
+  - source /opt/enable-intel-cl.sh
   - export PYOPENCL_TEST="intel(r):pu"
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
-  allow_failure: true
   tags:
   - python3
   - intel-cl-cpu
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
-Python 3 AMD CPU:
-  script:
-  - export PY_EXE=python3
-  - export PYOPENCL_TEST=amd:pu
-  - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
-  allow_failure: true
-  tags:
-  - python3
-  - amd-cl-cpu
   except:
   - tags
   artifacts:
@@ -82,26 +47,30 @@ Python 3 Titan V:
     reports:
       junit: test/pytest.xml
 
-Python 3 K40:
-  script:
-  - export PY_EXE=python3
-  - export PYOPENCL_TEST=nvi:k40
-  - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
-  tags:
-  - python3
-  - nvidia-k40
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
+# https://github.com/illinois-scicomp/machine-shop-maintenance/issues/7
+
+# Python 3 K40:
+#   script:
+#   - export PY_EXE=python3
+#   - export PYOPENCL_TEST=nvi:k40
+#   - export EXTRA_INSTALL="pybind11 numpy mako"
+#   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+#   - ". ./build-and-test-py-project.sh"
+#   tags:
+#   - python3
+#   - nvidia-k40
+#   except:
+#   - tags
+#
+#   artifacts:
+#     reports:
+#       junit: test/pytest.xml
 
 Python 3 AMD GPU:
+  allow_failure: true
   script:
   - export PY_EXE=python3
-  - export PYOPENCL_TEST=amd:fiji
+  - export PYOPENCL_TEST=amd:gfx803
   - export EXTRA_INSTALL="pybind11 numpy mako"
 
   # https://andreask.cs.illinois.edu/MachineShop/UserNotes
@@ -109,7 +78,6 @@ Python 3 AMD GPU:
 
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
-  allow_failure: true
   tags:
   - python3
   - amd-fiji
@@ -119,26 +87,10 @@ Python 3 AMD GPU:
     reports:
       junit: test/pytest.xml
 
-Python 2.7 POCL:
-  script:
-  - export PY_EXE=python2.7
-  - export PYOPENCL_TEST=portable
-  - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
-  tags:
-  - python2.7
-  - pocl
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
 Python 3 POCL:
   script:
   - export PY_EXE=python3
-  - export PYOPENCL_TEST=portable
+  - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -154,7 +106,7 @@ Python 3 POCL:
 Python 3 POCL CL 1.1:
   script:
   - export PY_EXE=python3
-  - export PYOPENCL_TEST=portable
+  - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - echo "CL_PRETEND_VERSION = '1.1'" > siteconf.py
@@ -171,7 +123,7 @@ Python 3 POCL CL 1.1:
 Python 3 POCL:
   script:
   - export PY_EXE=python3
-  - export PYOPENCL_TEST=portable
+  - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
@@ -187,7 +139,7 @@ Python 3 POCL:
 Python 3 POCL (+GL and special functions):
   script:
   - export PY_EXE=python3
-  - export PYOPENCL_TEST=portable
+  - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako scipy pyfmmlib"
   - echo "CL_ENABLE_GL = True" > siteconf.py
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
@@ -201,28 +153,12 @@ Python 3 POCL (+GL and special functions):
     reports:
       junit: test/pytest.xml
 
-Python 2.7 Apple:
-  script:
-  - export PY_EXE=python2.7
-  - export PYOPENCL_TEST=app:cpu
-  - export EXTRA_INSTALL="pybind11 numpy mako"
-  - export PKG_CONFIG_PATH=/usr/local/opt/libffi/lib/pkgconfig
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
-  tags:
-  - python2.7
-  - apple
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
 Python 3 Conda Apple:
   script:
   - CONDA_ENVIRONMENT=.test-conda-env-py3.yml
   - export CC=gcc
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
+  - "./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL"
   - ". ./build-and-test-py-project-within-miniconda.sh"
   tags:
   - apple
@@ -232,13 +168,15 @@ Python 3 Conda Apple:
     reports:
       junit: test/pytest.xml
 
-PyPy POCL:
+PyPy3 POCL:
   script:
-  - export PY_EXE=pypy
-  - export PYOPENCL_TEST=portable
+  - export PY_EXE=pypy3
+  - export PYOPENCL_TEST=portable:pthread
 
-  # https://github.com/pybind/pybind11/pull/1494
-  - export EXTRA_INSTALL="git+https://github.com/inducer/pybind11 numpy mako"
+  # On pypy, this seems to install old versions from the package index
+  # independently of whether newer ones are already present.
+  - rm -f pyproject.toml
+  - export EXTRA_INSTALL="pybind11 numpy mako"
 
   - export NO_DOCTESTS=1
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
@@ -262,7 +200,7 @@ Pylint:
   # is only one copy of everything.
   - PROJECT_INSTALL_FLAGS="--editable"
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
-  - ". ./prepare-and-run-pylint.sh pyopencl test/test_*.py"
+  - . ./prepare-and-run-pylint.sh "$CI_PROJECT_NAME" test/test_*.py
   tags:
   - python3
   except:
@@ -275,13 +213,11 @@ Documentation:
   - ". ./build-docs.sh"
   tags:
   - linux
-  only:
-  - master
 
 Flake8:
   script:
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
-  - ". ./prepare-and-run-flake8.sh pyopencl test"
+  - . ./prepare-and-run-flake8.sh "$CI_PROJECT_NAME" test
   tags:
   - python3
   except:

@@ -1,6 +1,5 @@
 """Various helpful bits and pieces without much of a common theme."""
 
-from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2010 Andreas Kloeckner"
 
@@ -28,12 +27,12 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-import six
-from six.moves import zip, intern
+from sys import intern
+
+# Do not add a pyopencl import here: This will add an import cycle.
 
 import numpy as np
 from decorator import decorator
-import pyopencl as cl
 from pytools import memoize, memoize_method
 from pyopencl._cl import bitlog2  # noqa: F401
 from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
@@ -171,11 +170,38 @@ atexit.register(clear_first_arg_caches)
 # }}}
 
 
+# {{{ pytest fixtures
+
+class _ContextFactory:
+    def __init__(self, device):
+        self.device = device
+
+    def __call__(self):
+        # Get rid of leftovers from past tests.
+        # CL implementations are surprisingly limited in how many
+        # simultaneous contexts they allow...
+        clear_first_arg_caches()
+
+        from gc import collect
+        collect()
+
+        import pyopencl as cl
+        return cl.Context([self.device])
+
+    def __str__(self):
+        # Don't show address, so that parallel test collection works
+        return ("<context factory for <pyopencl.Device '%s' on '%s'>" %
+                (self.device.name.strip(),
+                 self.device.platform.name.strip()))
+
+
 def get_test_platforms_and_devices(plat_dev_string=None):
     """Parse a string of the form 'PYOPENCL_TEST=0:0,1;intel:i5'.
 
     :return: list of tuples (platform, [device, device, ...])
     """
+
+    import pyopencl as cl
 
     if plat_dev_string is None:
         import os
@@ -191,7 +217,7 @@ def get_test_platforms_and_devices(plat_dev_string=None):
 
         found = False
         for obj in objs:
-            if identifier.lower() in (obj.name + ' ' + obj.vendor).lower():
+            if identifier.lower() in (obj.name + " " + obj.vendor).lower():
                 return obj
         if not found:
             raise RuntimeError("object '%s' not found" % identifier)
@@ -226,35 +252,18 @@ def get_test_platforms_and_devices(plat_dev_string=None):
                 for platform in cl.get_platforms()]
 
 
-def pytest_generate_tests_for_pyopencl(metafunc):
-    class ContextFactory:
-        def __init__(self, device):
-            self.device = device
+def get_pyopencl_fixture_arg_names(metafunc, extra_arg_names=None):
+    if extra_arg_names is None:
+        extra_arg_names = []
 
-        def __call__(self):
-            # Get rid of leftovers from past tests.
-            # CL implementations are surprisingly limited in how many
-            # simultaneous contexts they allow...
-
-            clear_first_arg_caches()
-
-            from gc import collect
-            collect()
-
-            return cl.Context([self.device])
-
-        def __str__(self):
-            # Don't show address, so that parallel test collection works
-            return ("<context factory for <pyopencl.Device '%s' on '%s'>" %
-                    (self.device.name.strip(),
-                     self.device.platform.name.strip()))
-
-    test_plat_and_dev = get_test_platforms_and_devices()
+    supported_arg_names = [
+            "platform", "device",
+            "ctx_factory", "ctx_getter",
+            ] + extra_arg_names
 
     arg_names = []
-
-    for arg in ("platform", "device", "ctx_factory", "ctx_getter"):
-        if arg not in metafunc.funcargnames:
+    for arg in supported_arg_names:
+        if arg not in metafunc.fixturenames:
             continue
 
         if arg == "ctx_getter":
@@ -265,29 +274,52 @@ def pytest_generate_tests_for_pyopencl(metafunc):
 
         arg_names.append(arg)
 
+    return arg_names
+
+
+def get_pyopencl_fixture_arg_values():
+    import pyopencl as cl
+
     arg_values = []
-
-    for platform, plat_devs in test_plat_and_dev:
-        if arg_names == ["platform"]:
-            arg_values.append((platform,))
-            continue
-
+    for platform, devices in get_test_platforms_and_devices():
         arg_dict = {"platform": platform}
 
-        for device in plat_devs:
+        for device in devices:
             arg_dict["device"] = device
-            arg_dict["ctx_factory"] = ContextFactory(device)
-            arg_dict["ctx_getter"] = ContextFactory(device)
+            arg_dict["ctx_factory"] = _ContextFactory(device)
+            arg_dict["ctx_getter"] = _ContextFactory(device)
 
-            arg_values.append(tuple(arg_dict[name] for name in arg_names))
+        arg_values.append(arg_dict)
 
-    if arg_names:
-        metafunc.parametrize(arg_names, arg_values, ids=str)
+    def idfn(val):
+        if isinstance(val, cl.Platform):
+            # Don't show address, so that parallel test collection works
+            return f"<pyopencl.Platform '{val.name}'>"
+        else:
+            return str(val)
+
+    return arg_values, idfn
+
+
+def pytest_generate_tests_for_pyopencl(metafunc):
+    arg_names = get_pyopencl_fixture_arg_names(metafunc)
+    if not arg_names:
+        return
+
+    arg_values, ids = get_pyopencl_fixture_arg_values()
+    arg_values = [
+            tuple(arg_dict[name] for name in arg_names)
+            for arg_dict in arg_values
+            ]
+
+    metafunc.parametrize(arg_names, arg_values, ids=ids)
+
+# }}}
 
 
 # {{{ C argument lists
 
-class Argument(object):
+class Argument:
     pass
 
 
@@ -297,7 +329,7 @@ class DtypedArgument(Argument):
         self.name = name
 
     def __repr__(self):
-        return "%s(%r, %s)" % (
+        return "{}({!r}, {})".format(
                 self.__class__.__name__,
                 self.name,
                 self.dtype)
@@ -311,17 +343,17 @@ class VectorArg(DtypedArgument):
     def declarator(self):
         if self.with_offset:
             # Two underscores -> less likelihood of a name clash.
-            return "__global %s *%s__base, long %s__offset" % (
+            return "__global {} *{}__base, long {}__offset".format(
                     dtype_to_ctype(self.dtype), self.name, self.name)
         else:
-            result = "__global %s *%s" % (dtype_to_ctype(self.dtype), self.name)
+            result = "__global {} *{}".format(dtype_to_ctype(self.dtype), self.name)
 
         return result
 
 
 class ScalarArg(DtypedArgument):
     def declarator(self):
-        return "%s %s" % (dtype_to_ctype(self.dtype), self.name)
+        return "{} {}".format(dtype_to_ctype(self.dtype), self.name)
 
 
 class OtherArg(Argument):
@@ -404,6 +436,8 @@ def get_arg_offset_adjuster_code(arg_types):
 
 
 def get_gl_sharing_context_properties():
+    import pyopencl as cl
+
     ctx_props = cl.context_properties
 
     from OpenGL import platform as gl_platform
@@ -463,7 +497,11 @@ class _CDeclList:
         if dtype in pyopencl.cltypes.vec_type_to_scalar_and_count:
             return
 
-        for name, field_data in sorted(six.iteritems(dtype.fields)):
+        if hasattr(dtype, "subdtype") and dtype.subdtype is not None:
+            self.add_dtype(dtype.subdtype[0])
+            return
+
+        for name, field_data in sorted(dtype.fields.items()):
             field_dtype, offset = field_data[:2]
             self.add_dtype(field_dtype)
 
@@ -541,15 +579,33 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     function, not the original one.
     """
 
-    fields = sorted(six.iteritems(dtype.fields),
+    import pyopencl as cl
+
+    fields = sorted(dtype.fields.items(),
             key=lambda name_dtype_offset: name_dtype_offset[1][1])
 
     c_fields = []
     for field_name, dtype_and_offset in fields:
         field_dtype, offset = dtype_and_offset[:2]
-        c_fields.append("  %s %s;" % (dtype_to_ctype(field_dtype), field_name))
+        if hasattr(field_dtype, "subdtype") and field_dtype.subdtype is not None:
+            array_dtype = field_dtype.subdtype[0]
+            if hasattr(array_dtype, "subdtype") and array_dtype.subdtype is not None:
+                raise NotImplementedError("nested array dtypes are not supported")
+            array_dims = field_dtype.subdtype[1]
+            dims_str = ""
+            try:
+                for dim in array_dims:
+                    dims_str += "[%d]" % dim
+            except TypeError:
+                dims_str = "[%d]" % array_dims
+            c_fields.append("  {} {}{};".format(
+                dtype_to_ctype(array_dtype), field_name, dims_str)
+            )
+        else:
+            c_fields.append(
+                    "  {} {};".format(dtype_to_ctype(field_dtype), field_name))
 
-    c_decl = "typedef struct {\n%s\n} %s;\n\n" % (
+    c_decl = "typedef struct {{\n{}\n}} {};\n\n".format(
             "\n".join(c_fields),
             name)
 
@@ -626,12 +682,12 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     try:
         dtype_arg_dict = {
-            'names': [field_name
+            "names": [field_name
                       for field_name, (field_dtype, offset) in fields],
-            'formats': [field_dtype
+            "formats": [field_dtype
                         for field_name, (field_dtype, offset) in fields],
-            'offsets': [int(x) for x in offsets],
-            'itemsize': int(size_and_offsets[0]),
+            "offsets": [int(x) for x in offsets],
+            "itemsize": int(size_and_offsets[0]),
             }
         dtype = np.dtype(dtype_arg_dict)
         if dtype.itemsize != size_and_offsets[0]:
@@ -647,8 +703,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
             for offset, (field_name, (field_dtype, _)) in zip(offsets, fields):
                 if offset > total_size:
                     padding_count += 1
-                    yield ('__pycl_padding%d' % padding_count,
-                           'V%d' % offset - total_size)
+                    yield ("__pycl_padding%d" % padding_count,
+                           "V%d" % offset - total_size)
                 yield field_name, field_dtype
                 total_size = field_dtype.itemsize + offset
         dtype = np.dtype(list(calc_field_type()))
@@ -674,7 +730,7 @@ def dtype_to_c_struct(device, dtype):
     def dtypes_match():
         result = len(dtype.fields) == len(matched_dtype.fields)
 
-        for name, val in six.iteritems(dtype.fields):
+        for name, val in dtype.fields.items():
             result = result and matched_dtype.fields[name] == val
 
         return result
@@ -745,7 +801,7 @@ class _ScalarArgPlaceholder(_ArgumentPlaceholder):
     target_class = ScalarArg
 
 
-class _TemplateRenderer(object):
+class _TemplateRenderer:
     def __init__(self, template, type_aliases, var_values, context=None,
             options=[]):
         self.template = template
@@ -769,6 +825,7 @@ class _TemplateRenderer(object):
         return str(result)
 
     def get_rendered_kernel(self, txt, kernel_name):
+        import pyopencl as cl
         prg = cl.Program(self.context, self(txt)).build(self.options)
 
         kernel_name_prefix = self.var_dict.get("kernel_name_prefix")
@@ -851,18 +908,18 @@ class _TemplateRenderer(object):
         if arguments is not None:
             cdl.visit_arguments(arguments)
 
-        for _, tv in sorted(six.iteritems(self.type_aliases)):
+        for _, tv in sorted(self.type_aliases.items()):
             cdl.add_dtype(tv)
 
         type_alias_decls = [
-                "typedef %s %s;" % (dtype_to_ctype(val), name)
-                for name, val in sorted(six.iteritems(self.type_aliases))
+                "typedef {} {};".format(dtype_to_ctype(val), name)
+                for name, val in sorted(self.type_aliases.items())
                 ]
 
         return cdl.get_declarations() + "\n" + "\n".join(type_alias_decls)
 
 
-class KernelTemplateBase(object):
+class KernelTemplateBase:
     def __init__(self, template_processor=None):
         self.template_processor = template_processor
 
@@ -905,7 +962,7 @@ class KernelTemplateBase(object):
     def build(self, context, *args, **kwargs):
         """Provide caching for an :meth:`build_inner`."""
 
-        cache_key = (context, args, tuple(sorted(six.iteritems(kwargs))))
+        cache_key = (context, args, tuple(sorted(kwargs.items())))
         try:
             return self.build_cache[cache_key]
         except KeyError:
@@ -960,7 +1017,7 @@ def array_module(a):
 def is_spirv(s):
     spirv_magic = b"\x07\x23\x02\x03"
     return (
-            isinstance(s, six.binary_type)
+            isinstance(s, bytes)
             and (
                 s[:4] == spirv_magic
                 or s[:4] == spirv_magic[::-1]))

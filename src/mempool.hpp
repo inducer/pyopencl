@@ -91,11 +91,13 @@ namespace PYGPU_PACKAGE
       bool m_stop_holding;
       int m_trace;
 
+      unsigned m_leading_bits_in_bin_id;
+
     public:
-      memory_pool(Allocator const &alloc=Allocator())
+      memory_pool(Allocator const &alloc=Allocator(), unsigned leading_bits_in_bin_id=4)
         : m_allocator(alloc.copy()),
         m_held_blocks(0), m_active_blocks(0), m_stop_holding(false),
-        m_trace(false)
+        m_trace(false), m_leading_bits_in_bin_id(leading_bits_in_bin_id)
       {
         if (m_allocator->is_deferred())
         {
@@ -109,17 +111,21 @@ namespace PYGPU_PACKAGE
       virtual ~memory_pool()
       { free_held(); }
 
-      static const unsigned mantissa_bits = 2;
-      static const unsigned mantissa_mask = (1 << mantissa_bits) - 1;
+    private:
+      unsigned mantissa_mask() const
+      {
+        return (1 << m_leading_bits_in_bin_id) - 1;
+      }
 
-      static bin_nr_t bin_number(size_type size)
+    public:
+      bin_nr_t bin_number(size_type size)
       {
         signed l = bitlog2(size);
-        size_type shifted = signed_right_shift(size, l-signed(mantissa_bits));
-        if (size && (shifted & (1 << mantissa_bits)) == 0)
+        size_type shifted = signed_right_shift(size, l-signed(m_leading_bits_in_bin_id));
+        if (size && (shifted & (1 << m_leading_bits_in_bin_id)) == 0)
           throw std::runtime_error("memory_pool::bin_number: bitlog2 fault");
-        size_type chopped = shifted & mantissa_mask;
-        return l << mantissa_bits | chopped;
+        size_type chopped = shifted & mantissa_mask();
+        return l << m_leading_bits_in_bin_id | chopped;
       }
 
       void set_trace(bool flag)
@@ -130,19 +136,19 @@ namespace PYGPU_PACKAGE
           --m_trace;
       }
 
-      static size_type alloc_size(bin_nr_t bin)
+      size_type alloc_size(bin_nr_t bin)
       {
-        bin_nr_t exponent = bin >> mantissa_bits;
-        bin_nr_t mantissa = bin & mantissa_mask;
+        bin_nr_t exponent = bin >> m_leading_bits_in_bin_id;
+        bin_nr_t mantissa = bin & mantissa_mask();
 
         size_type ones = signed_left_shift(1,
-            signed(exponent)-signed(mantissa_bits)
+            signed(exponent)-signed(m_leading_bits_in_bin_id)
             );
         if (ones) ones -= 1;
 
         size_type head = signed_left_shift(
-           (1<<mantissa_bits) | mantissa,
-            signed(exponent)-signed(mantissa_bits));
+           (1<<m_leading_bits_in_bin_id) | mantissa,
+            signed(exponent)-signed(m_leading_bits_in_bin_id));
         if (ones & head)
           throw std::runtime_error("memory_pool::alloc_size: bit-counting fault");
         return head | ones;

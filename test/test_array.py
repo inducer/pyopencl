@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-from __future__ import division, with_statement, absolute_import, print_function
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -23,11 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+# avoid spurious: pytest.mark.parametrize is not callable
+# pylint: disable=not-callable
+
 import numpy as np
 import numpy.linalg as la
 import sys
 
-from six.moves import range
 import pytest
 
 import pyopencl as cl
@@ -154,7 +155,7 @@ def test_mix_complex(ctx_factory):
                         # served a Python complex that is really a
                         # smaller numpy complex.
 
-                        print("HOST_DTYPE: %s DEV_DTYPE: %s" % (
+                        print("HOST_DTYPE: {} DEV_DTYPE: {}".format(
                                 host_result.dtype, dev_result.dtype))
 
                         dev_result = dev_result.astype(host_result.dtype)
@@ -627,8 +628,8 @@ def test_bitwise(ctx_factory):
 
         a = a_dev.get()
         b = b_dev.get()
-        s = int((clrand(queue, (), a=int32_min, b=1+int32_max, dtype=np.int64)
-                 .astype(b_dtype).get()))
+        s = int(clrand(queue, (), a=int32_min, b=1+int32_max, dtype=np.int64)
+                 .astype(b_dtype).get())
 
         import operator as o
 
@@ -809,7 +810,7 @@ def test_nan_arithmetic(ctx_factory):
         a = np.random.randn(*shape).astype(np.float32)
         from random import randrange
         for i in range(size // 10):
-            a[randrange(0, size)] = float('nan')
+            a[randrange(0, size)] = float("nan")
         return a
 
     size = 1 << 20
@@ -868,7 +869,7 @@ def test_diff(ctx_factory):
     a = a_dev.get()
 
     err = la.norm(
-            (cl.array.diff(a_dev).get() - np.diff(a)))
+            cl.array.diff(a_dev).get() - np.diff(a))
     assert err < 1e-4
 
 
@@ -1152,7 +1153,7 @@ def test_reshape(ctx_factory):
     # using -1 as unknown dimension
     assert a_dev.reshape(-1, 32).shape == (4, 32)
     assert a_dev.reshape((32, -1)).shape == (32, 4)
-    assert a_dev.reshape(((8, -1, 4))).shape == (8, 4, 4)
+    assert a_dev.reshape((8, -1, 4)).shape == (8, 4, 4)
 
     import pytest
     with pytest.raises(ValueError):
@@ -1314,6 +1315,32 @@ def test_multi_put(ctx_factory):
     assert np.all(np.all(out_compare[i] == out_arrays[i].get()) for i in range(9))
 
 
+def test_get_async(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = np.random.rand(10**6).astype(np.dtype("float32"))
+    a_gpu = cl_array.to_device(queue, a)
+    b = a + a**5 + 1
+    b_gpu = a_gpu + a_gpu**5 + 1
+
+    # deprecated, but still test
+    b1 = b_gpu.get(async_=True)  # testing that this waits for events
+    b_gpu.finish()
+    assert np.abs(b1 - b).mean() < 1e-5
+
+    b1, evt = b_gpu.get_async()  # testing that this waits for events
+    evt.wait()
+    assert np.abs(b1 - b).mean() < 1e-5
+
+    wait_event = cl.UserEvent(context)
+    b_gpu.add_event(wait_event)
+    b, evt = b_gpu.get_async()  # testing that this doesn't hang
+    wait_event.set_status(cl.command_execution_status.COMPLETE)
+    evt.wait()
+    assert np.abs(b1 - b).mean() < 1e-5
+
+
 def test_outoforderqueue_get(ctx_factory):
     context = ctx_factory()
     try:
@@ -1321,7 +1348,7 @@ def test_outoforderqueue_get(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype('float32'))
+    a = np.random.rand(10**6).astype(np.dtype("float32"))
     a_gpu = cl_array.to_device(queue, a)
     b_gpu = a_gpu + a_gpu**5 + 1
     b1 = b_gpu.get()  # testing that this waits for events
@@ -1336,7 +1363,7 @@ def test_outoforderqueue_copy(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype('float32'))
+    a = np.random.rand(10**6).astype(np.dtype("float32"))
     a_gpu = cl_array.to_device(queue, a)
     c_gpu = a_gpu**2 - 7
     b_gpu = c_gpu.copy()  # testing that this waits for and creates events
@@ -1354,8 +1381,8 @@ def test_outoforderqueue_indexing(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype('float32'))
-    i = (8e5 + 1e5 * np.random.rand(10**5)).astype(np.dtype('int32'))
+    a = np.random.rand(10**6).astype(np.dtype("float32"))
+    i = (8e5 + 1e5 * np.random.rand(10**5)).astype(np.dtype("int32"))
     a_gpu = cl_array.to_device(queue, a)
     i_gpu = cl_array.to_device(queue, i)
     c_gpu = (a_gpu**2)[i_gpu - 10000]
@@ -1378,7 +1405,7 @@ def test_outoforderqueue_reductions(ctx_factory):
     except Exception:
         pytest.skip("out-of-order queue not available")
     # 0/1 values to avoid accumulated rounding error
-    a = (np.random.rand(10**6) > 0.5).astype(np.dtype('float32'))
+    a = (np.random.rand(10**6) > 0.5).astype(np.dtype("float32"))
     a[800000] = 10  # all<5 looks true until near the end
     a_gpu = cl_array.to_device(queue, a)
     b1 = cl_array.sum(a_gpu).get()
@@ -1387,9 +1414,39 @@ def test_outoforderqueue_reductions(ctx_factory):
     assert b1 == a.sum() and b2 == a.dot(3 - a) and b3 == 0
 
 
+def test_negative_dim_rejection(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    with pytest.raises(ValueError):
+        cl_array.Array(queue, shape=-10, dtype=np.float)
+
+    with pytest.raises(ValueError):
+        cl_array.Array(queue, shape=(-10,), dtype=np.float)
+
+    for left_dim in (-1, 0, 1):
+        with pytest.raises(ValueError):
+            cl_array.Array(queue, shape=(left_dim, -1), dtype=np.float)
+
+    for right_dim in (-1, 0, 1):
+        with pytest.raises(ValueError):
+            cl_array.Array(queue, shape=(-1, right_dim), dtype=np.float)
+
+
+@pytest.mark.parametrize("empty_shape", [0, (), (3, 0, 2)])
+def test_zero_size_array(ctx_factory, empty_shape):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = cl_array.zeros(queue, empty_shape, dtype=np.float32)
+    b = cl_array.zeros(queue, empty_shape, dtype=np.float32)
+    b.fill(1)
+    c = a + b
+    c_host = c.get()
+    cl_array.to_device(queue, c_host)
+
+
 if __name__ == "__main__":
-    # make sure that import failures get reported, instead of skipping the
-    # tests.
     if len(sys.argv) > 1:
         exec(sys.argv[1])
     else:

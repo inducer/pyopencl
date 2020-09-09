@@ -8,6 +8,21 @@ OpenCL Runtime: Programs and Kernels
 Program
 -------
 
+.. envvar:: PYOPENCL_NO_CACHE
+
+    By setting the environment variable :envvar:`PYOPENCL_NO_CACHE` to any
+    non-empty value, this caching is suppressed.
+
+    .. versionadded:: 2013.1
+
+.. envvar:: PYOPENCL_BUILD_OPTIONS
+
+    Any options found in the environment variable
+    :envvar:`PYOPENCL_BUILD_OPTIONS` will be appended to *options*
+    in :meth:`Program.build`.
+
+    .. versionadded:: 2013.1
+
 .. class:: Program(context, src)
            Program(context, devices, binaries)
 
@@ -47,17 +62,13 @@ Program
         If passed *cache_dir* is None and context was created with None cache_dir:
         built binaries will be cached in an on-disk cache called
         :file:`pyopencl-compiler-cache-vN-uidNAME-pyVERSION` in the directory
-        returned by :func:`tempfile.gettempdir`.  By setting the environment
-        variable :envvar:`PYOPENCL_NO_CACHE` to any non-empty value, this
-        caching is suppressed.  Any options found in the environment variable
-        :envvar:`PYOPENCL_BUILD_OPTIONS` will be appended to *options*.
+        returned by :func:`tempfile.gettempdir`.
+
+        See also :envvar:`PYOPENCL_NO_CACHE`, :envvar:`PYOPENCL_BUILD_OPTIONS`.
 
         .. versionchanged:: 2011.1
-            *options* may now also be a :class:`list` of :class:`str`.
 
-        .. versionchanged:: 2013.1
-            Added :envvar:`PYOPENCL_NO_CACHE`.
-            Added :envvar:`PYOPENCL_BUILD_OPTIONS`.
+            *options* may now also be a :class:`list` of :class:`str`.
 
     .. method:: compile(self, options=[], devices=None, headers=[])
 
@@ -205,19 +216,17 @@ Kernel
                prg.kernel(queue, n_globals, None, args)
 
 
-    .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
+    .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False, allow_empty_ndrange=False)
 
         Use :func:`enqueue_nd_range_kernel` to enqueue a kernel execution, after using
         :meth:`set_args` to set each argument in turn. See the documentation for
         :meth:`set_arg` to see what argument types are allowed.
+
+        |glsize|
+
+        |empty-nd-range|
+
         |std-enqueue-blurb|
-
-        *None* may be passed for local_size.
-
-        If *g_times_l* is specified, the global size will be multiplied by the
-        local size. (which makes the behavior more like Nvidia CUDA) In this case,
-        *global_size* and *local_size* also do not have to have the same number
-        of dimensions.
 
         .. note::
 
@@ -233,6 +242,7 @@ Kernel
             <http://lists.tiker.net/pipermail/pyopencl/2012-October/001311.html>`_.
 
         .. versionchanged:: 0.92
+
             *local_size* was promoted to third positional argument from being a
             keyword argument. The old keyword argument usage will continue to
             be accepted with a warning throughout the 0.92 release cycle.
@@ -244,7 +254,12 @@ Kernel
             it from working.
 
         .. versionchanged:: 2011.1
+
             Added the *g_times_l* keyword arg.
+
+        .. versionchanged:: 2020.2
+
+            Added the *allow_empty_ndrange* keyword argument.
 
     .. method:: capture_call(filename, queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
 
@@ -283,19 +298,18 @@ Kernel
 
         The size of local buffer in bytes to be provided.
 
-.. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False)
+.. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False, allow_empty_ndrange=False)
+
+    |glsize|
+
+    |empty-nd-range|
 
     |std-enqueue-blurb|
-
-    If *g_times_l* is specified, the global size will be multiplied by the
-    local size. (which makes the behavior more like Nvidia CUDA) In this case,
-    *global_size* and *local_size* also do not have to have the same number
-    of dimensions.
 
     .. versionchanged:: 2011.1
+
         Added the *g_times_l* keyword arg.
 
+    .. versionchanged:: 2020.2
 
-.. function:: enqueue_task(queue, kernel, wait_for=None)
-
-    |std-enqueue-blurb|
+        Added the *allow_empty_ndrange* keyword argument.

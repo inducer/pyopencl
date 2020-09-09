@@ -15,7 +15,7 @@ fresh memory area is allocated for each intermediate result. Memory pools are a
 remedy for this problem based on the observation that often many of the block
 allocations are of the same sizes as previously used ones.
 
-Then, instead of fully returning the memory to the system and incurring the 
+Then, instead of fully returning the memory to the system and incurring the
 associated reallocation overhead, the pool holds on to the memory and uses it
 to satisfy future allocations of similarly-sized blocks. The pool reacts
 appropriately to out-of-memory conditions as long as all memory allocations
@@ -36,6 +36,15 @@ not complicated::
     memory is returned to the pool. This supports the same interface
     as :class:`pyopencl.Buffer`.
 
+.. class:: AllocatorInterface
+
+   An interface implemented by various memory allocation functions
+   in :mod:`pyopencl`.
+
+    .. method:: __call__(size)
+
+        Allocate and return a :class:`pyopencl.Buffer` of the given *size*.
+
 .. class:: DeferredAllocator(context, mem_flags=pyopencl.mem_flags.READ_WRITE)
 
     *mem_flags* takes its values from :class:`pyopencl.mem_flags` and corresponds
@@ -46,13 +55,21 @@ not complicated::
     bound to contexts, not devices, and memory availability depends on which
     device the buffer is used with.)
 
-    .. versionchanged::
-        In version 2013.1, :class:`CLAllocator` was deprecated and replaced
+    Implements :class:`AllocatorInterface`.
+
+    .. versionchanged :: 2013.1
+
+        ``CLAllocator`` was deprecated and replaced
         by :class:`DeferredAllocator`.
 
     .. method:: __call__(size)
 
         Allocate a :class:`pyopencl.Buffer` of the given *size*.
+
+        .. versionchanged :: 2020.2
+
+            The allocator will succeed even for allocations of size zero,
+            returning *None*.
 
 .. class:: ImmediateAllocator(queue, mem_flags=pyopencl.mem_flags.READ_WRITE)
 
@@ -62,19 +79,51 @@ not complicated::
     allocated memory is actually available. If no memory is available, an out-of-memory
     error is reported at allocation time.
 
+    Implements :class:`AllocatorInterface`.
+
     .. versionadded:: 2013.1
 
     .. method:: __call__(size)
 
         Allocate a :class:`pyopencl.Buffer` of the given *size*.
 
-.. class:: MemoryPool(allocator)
+        .. versionchanged :: 2020.2
+
+            The allocator will succeed even for allocations of size zero,
+            returning *None*.
+
+.. class:: MemoryPool(allocator[, leading_bits_in_bin_id])
 
     A memory pool for OpenCL device memory. *allocator* must be an instance of
     one of the above classes, and should be an :class:`ImmediateAllocator`.
     The memory pool assumes that allocation failures are reported
     by the allocator immediately, and not in the OpenCL-typical
     deferred manner.
+
+    Implements :class:`AllocatorInterface`.
+
+    .. note::
+
+        The current implementation of the memory pool will retain allocated
+        memory after it is returned by the application and keep it in a bin
+        identified by the leading *leading_bits_in_bin_id* bits of the
+        allocation size. To ensure that allocations within each bin are
+        interchangeable, allocation sizes are rounded up to the largest size
+        that shares the leading bits of the requested allocation size.
+
+        The current default value of *leading_bits_in_bin_id* is
+        four, but this may change in future versions and is not
+        guaranteed.
+
+        *leading_bits_in_bin_id* must be passed by keyword,
+        and its role is purely advisory. It is not guaranteed
+        that future versions of the pool will use the
+        same allocation scheme and/or honor *leading_bits_in_bin_id*.
+
+    .. versionchanged:: 2019.1
+
+        Current bin allocation behavior documented, *leading_bits_in_bin_id*
+        added.
 
     .. attribute:: held_blocks
 
@@ -91,7 +140,7 @@ not complicated::
 
     .. method:: __call__(size)
 
-        Synonym for :meth:`allocate` to match :class:`CLAllocator` interface.
+        Synonym for :meth:`allocate` to match the :class:`AllocatorInterface`.
 
         .. versionadded: 2011.2
 

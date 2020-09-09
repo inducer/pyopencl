@@ -24,6 +24,9 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
+#define NO_IMPORT_ARRAY
+#define PY_ARRAY_UNIQUE_SYMBOL pyopencl_ARRAY_API
+
 #include "wrap_cl.hpp"
 
 
@@ -218,7 +221,7 @@ void pyopencl_expose_part_1(py::module &m)
       .def_static("from_int_ptr", memory_object_from_int,
         "(static method) Return a new Python object referencing the C-level "
         ":c:type:`cl_mem` object at the location pointed to "
-        "by *int_ptr_value*. The relevant :c:func:`clRetain*` function "
+        "by *int_ptr_value*. The relevant ``clRetain*`` function "
         "will be called if *retain* is True."
         "If the previous owner of the object will *not* release the reference, "
         "*retain* should be set to *False*, to effectively transfer ownership to "

@@ -19,7 +19,7 @@ evaluate multi-stage expressions on one or several operands in a single pass.
     .. method:: __call__(*args, wait_for=None)
 
         Invoke the generated scalar kernel. The arguments may either be scalars or
-        :class:`GPUArray` instances.
+        :class:`pyopencl.array.Array` instances.
 
         |std-enqueue-blurb|
 
@@ -110,7 +110,7 @@ Prefix Sums ("scan")
     or include statements.
 
 A prefix sum is a running sum of an array, as provided by
-e.g. :mod:`numpy.cumsum`::
+e.g. :func:`numpy.cumsum`::
 
     >>> import numpy as np
     >>> a = [1,1,1,1,1,2,2,2,2,2]
@@ -169,7 +169,8 @@ in PyOpenCL:
 * Segmented scans
 
 * Access to the previous item in *input_expr* (e.g. for comparisons)
-  See the `implementation <https://github.com/inducer/pyopencl/blob/master/pyopencl/scan.py#L1353>`_ of :func:`unique` for an example.
+  See the `implementation <https://github.com/inducer/pyopencl/blob/master/pyopencl/scan.py#L1353>`_
+  of :func:`pyopencl.algorithm.unique` for an example.
 
 Making Custom Scan Kernels
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

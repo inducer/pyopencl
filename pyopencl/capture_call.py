@@ -1,7 +1,3 @@
-from __future__ import with_statement, division
-from __future__ import absolute_import
-from six.moves import zip
-
 __copyright__ = "Copyright (C) 2013 Andreas Kloeckner"
 
 __license__ = """
@@ -51,8 +47,8 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
     cg("")
 
     cg('CODE = r"""//CL//')
-    for l in source.split("\n"):
-        cg(l)
+    for line in source.split("\n"):
+        cg(line)
     cg('"""')
 
     # {{{ invocation
@@ -83,13 +79,13 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
             elif isinstance(arg, (int, float)):
                 kernel_args.append(repr(arg))
             elif isinstance(arg, np.integer):
-                kernel_args.append("np.%s(%s)" % (
+                kernel_args.append("np.{}({})".format(
                     arg.dtype.type.__name__, repr(int(arg))))
             elif isinstance(arg, np.floating):
-                kernel_args.append("np.%s(%s)" % (
+                kernel_args.append("np.{}({})".format(
                     arg.dtype.type.__name__, repr(float(arg))))
             elif isinstance(arg, np.complexfloating):
-                kernel_args.append("np.%s(%s)" % (
+                kernel_args.append("np.{}({})".format(
                     arg.dtype.type.__name__, repr(complex(arg))))
             else:
                 try:
@@ -133,7 +129,7 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
                     % ", ".join(
                         strify_dtype(dt) for dt in kernel._scalar_arg_dtypes))
 
-        cg("knl(queue, %s, %s," % (repr(g_size), repr(l_size)))
+        cg("knl(queue, {}, {},".format(repr(g_size), repr(l_size)))
         cg("    %s)" % ", ".join(kernel_args))
         cg("")
         cg("queue.finish()")
@@ -163,7 +159,7 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
     # {{{ file trailer
 
     cg("")
-    cg("if __name__ == \"__main__\":")
+    cg('if __name__ == "__main__":')
     with Indentation(cg):
         cg("main()")
     cg("")

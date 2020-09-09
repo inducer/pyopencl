@@ -58,6 +58,18 @@ Device
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
 
+    .. attribute :: hashable_model_and_version_identifier
+
+        An unspecified data type that can be used to (as precisely as possible,
+        given identifying information available in OpenCL) identify a given
+        model and software stack version of a compute device. Note that this
+        identifier does not differentiate between different instances of the
+        same device installed in a single host.
+
+        The returned data type is hashable.
+
+        .. versionadded:: 2020.1
+
     .. method:: create_sub_devices(properties)
 
         *properties* is an array of one (or more) of the forms::
@@ -123,12 +135,12 @@ Context
     .. note::
 
         For
-        :attr:`context_properties.CL_GL_CONTEXT_KHR`,
-        :attr:`context_properties.CL_EGL_DISPLAY_KHR`,
-        :attr:`context_properties.CL_GLX_DISPLAY_KHR`,
-        :attr:`context_properties.CL_WGL_HDC_KHR`, and
-        :attr:`context_properties.CL_CGL_SHAREGROUP_KHR`
-        :attr:`context_properties.CL_CGL_SHAREGROUP_APPLE`
+        ``context_properties.CL_GL_CONTEXT_KHR``,
+        ``context_properties.CL_EGL_DISPLAY_KHR``,
+        ``context_properties.CL_GLX_DISPLAY_KHR``,
+        ``context_properties.CL_WGL_HDC_KHR``, and
+        ``context_properties.CL_CGL_SHAREGROUP_KHR``
+        ``context_properties.CL_CGL_SHAREGROUP_APPLE``
         the value in the key-value pair is a PyOpenGL context or display
         instance.
 

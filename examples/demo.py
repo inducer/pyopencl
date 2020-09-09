@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, print_function
 import numpy as np
 import pyopencl as cl
 
@@ -33,3 +31,4 @@ cl.enqueue_copy(queue, res_np, res_g)
 # Check on CPU with Numpy:
 print(res_np - (a_np + b_np))
 print(np.linalg.norm(res_np - (a_np + b_np)))
+assert np.allclose(res_np, a_np + b_np)

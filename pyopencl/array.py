@@ -2,7 +2,6 @@
 
 # pylint:disable=unexpected-keyword-arg  # for @elwise_kernel_runner
 
-from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -29,8 +28,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-import six
-from six.moves import range, reduce
+from functools import reduce
 
 import numpy as np
 import pyopencl.elementwise as elementwise
@@ -86,7 +84,7 @@ except Exception:
         return False
 
 
-class VecLookupWarner(object):
+class VecLookupWarner:
     def __getattr__(self, name):
         from warnings import warn
         warn("pyopencl.array.vec is deprecated. "
@@ -179,7 +177,7 @@ def elwise_kernel_runner(kernel_getter):
                 actual_args.append(arg)
         actual_args.append(repr_ary.size)
 
-        return knl(queue, gs, ls, *actual_args, **dict(wait_for=wait_for))
+        return knl(queue, gs, ls, *actual_args, wait_for=wait_for)
 
     try:
         from functools import update_wrapper
@@ -227,18 +225,18 @@ class _copy_queue:  # noqa
     pass
 
 
-class Array(object):
+class Array:
     """A :class:`numpy.ndarray` work-alike that stores its data and performs
     its computations on the compute device.  *shape* and *dtype* work exactly
     as in :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
     broadcasting of scalars. (e.g. `array+5`)
 
-    *cq* must be a :class:`pyopencl.CommandQueue` or a :class:`pyopencl.Context`.
+    *cq* must be a :class:`~pyopencl.CommandQueue` or a :class:`~pyopencl.Context`.
 
     If it is a queue, *cq* specifies the queue in which the array carries out
     its computations by default. If a default queue (and thereby overloaded
     operators and many other niceties) are not desired, pass a
-    :class:`Context`.
+    :class:`~pyopencl.Context`.
 
     *allocator* may be `None` or a callable that, upon being called with an
     argument of the number of bytes to be allocated, returns an
@@ -326,6 +324,7 @@ class Array(object):
     .. attribute :: T
     .. automethod :: set
     .. automethod :: get
+    .. automethod :: get_async
     .. automethod :: copy
 
     .. automethod :: __str__
@@ -361,6 +360,7 @@ class Array(object):
     .. autoattribute :: real
     .. autoattribute :: imag
     .. automethod :: conj
+    .. automethod :: conjugate
 
     .. automethod :: __getitem__
     .. automethod :: __setitem__
@@ -456,17 +456,16 @@ class Array(object):
             for dim in shape:
                 size *= dim
         except TypeError:
-            import sys
-            if sys.version_info >= (3,):
-                admissible_types = (int, np.integer)
-            else:
-                admissible_types = (np.integer,) + six.integer_types
+            admissible_types = (int, np.integer)
 
             if not isinstance(shape, admissible_types):
                 raise TypeError("shape must either be iterable or "
                         "castable to an integer")
             size = shape
             shape = (shape,)
+
+        if any(dim < 0 for dim in shape):
+            raise ValueError("negative dimensions are not allowed")
 
         if isinstance(size, np.integer):
             size = size.item()
@@ -503,23 +502,22 @@ class Array(object):
         self.allocator = allocator
 
         if data is None:
-            if alloc_nbytes <= 0:
-                if alloc_nbytes == 0:
-                    # Work around CL not allowing zero-sized buffers.
-                    alloc_nbytes = 1
+            if alloc_nbytes < 0:
+                raise ValueError("cannot allocate CL buffer with "
+                        "negative size")
 
-                else:
-                    raise ValueError("cannot allocate CL buffer with "
-                            "negative size")
+            elif alloc_nbytes == 0:
+                self.base_data = None
 
-            if allocator is None:
-                if context is None and queue is not None:
-                    context = queue.context
-
-                self.base_data = cl.Buffer(
-                        context, cl.mem_flags.READ_WRITE, alloc_nbytes)
             else:
-                self.base_data = self.allocator(alloc_nbytes)
+                if allocator is None:
+                    if context is None and queue is not None:
+                        context = queue.context
+
+                    self.base_data = cl.Buffer(
+                            context, cl.mem_flags.READ_WRITE, alloc_nbytes)
+                else:
+                    self.base_data = self.allocator(alloc_nbytes)
         else:
             self.base_data = data
 
@@ -604,6 +602,10 @@ class Array(object):
         *ary* must have the same dtype and size (not necessarily shape) as
         *self*.
 
+        *async_* is a Boolean indicating whether the function is allowed
+        to return before the transfer completes. To avoid synchronization
+        bugs, this defaults to *False*.
+
         .. versionchanged:: 2017.2.1
 
             Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
@@ -648,23 +650,7 @@ class Array(object):
                     is_blocking=not async_)
             self.add_event(event1)
 
-    def get(self, queue=None, ary=None, async_=None, **kwargs):
-        """Transfer the contents of *self* into *ary* or a newly allocated
-        :mod:`numpy.ndarray`. If *ary* is given, it must have the same
-        shape and dtype.
-
-        .. versionchanged:: 2015.2
-
-            *ary* with different shape was deprecated.
-
-        .. versionchanged:: 2017.2.1
-
-            Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
-            we will continue to  accept *async* as a parameter, however this
-            should be considered deprecated. *async_* is the new, official
-            spelling.
-        """
-
+    def _get(self, queue=None, ary=None, async_=None, **kwargs):
         # {{{ handle 'async' deprecation
 
         async_arg = kwargs.pop("async", None)
@@ -709,15 +695,66 @@ class Array(object):
                     "to associate one.")
 
         if self.size:
-            cl.enqueue_copy(queue, ary, self.base_data,
+            event1 = cl.enqueue_copy(queue, ary, self.base_data,
                     device_offset=self.offset,
                     wait_for=self.events, is_blocking=not async_)
+            self.add_event(event1)
+        else:
+            event1 = None
+
+        return ary, event1
+
+    def get(self, queue=None, ary=None, async_=None, **kwargs):
+        """Transfer the contents of *self* into *ary* or a newly allocated
+        :class:`numpy.ndarray`. If *ary* is given, it must have the same
+        shape and dtype.
+
+        .. versionchanged:: 2019.1.2
+
+            Calling with `async_=True` was deprecated and replaced by
+            :meth:`get_async`.
+            The event returned by :meth:`pyopencl.enqueue_copy` is now stored into
+            :attr:`events` to ensure data is not modified before the copy is
+            complete.
+
+        .. versionchanged:: 2015.2
+
+            *ary* with different shape was deprecated.
+
+        .. versionchanged:: 2017.2.1
+
+            Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
+            we will continue to  accept *async* as a parameter, however this
+            should be considered deprecated. *async_* is the new, official
+            spelling.
+        """
+
+        if async_:
+            from warnings import warn
+            warn("calling pyopencl.Array.get with `async_=True` is deprecated. "
+                    "Please use pyopencl.Array.get_async for asynchronous "
+                    "device-to-host transfers",
+                    DeprecationWarning, 2)
+
+        ary, event1 = self._get(queue=queue, ary=ary, async_=async_, **kwargs)
 
         return ary
 
+    def get_async(self, queue=None, ary=None, **kwargs):
+        """
+        Asynchronous version of :meth:`get` which returns a tuple ``(ary, event)``
+        containing the host array `ary`
+        and the :class:`pyopencl.NannyEvent` `event` returned by
+        :meth:`pyopencl.enqueue_copy`.
+
+        .. versionadded:: 2019.1.2
+        """
+
+        return self._get(queue=queue, ary=ary, async_=True, **kwargs)
+
     def copy(self, queue=_copy_queue):
         """
-        :arg queue: The :class:`CommandQueue` for the returned array.
+        :arg queue: The :class:`~pyopencl.CommandQueue` for the returned array.
 
         .. versionchanged:: 2017.1.2
             Updates the queue of the returned array.
@@ -751,7 +788,7 @@ class Array(object):
         return repr(self.get())
 
     def safely_stringify_for_pudb(self):
-        return "cl.Array %s %s" % (self.dtype, self.shape)
+        return f"cl.Array {self.dtype} {self.shape}"
 
     def __hash__(self):
         raise TypeError("pyopencl arrays are not hashable.")
@@ -1223,6 +1260,9 @@ class Array(object):
     def _zero_fill(self, queue=None, wait_for=None):
         queue = queue or self.queue
 
+        if not self.size:
+            return
+
         if (
                 queue._get_cl_version() >= (1, 2)
                 and cl.get_cl_header_version() >= (1, 2)):
@@ -1466,6 +1506,8 @@ class Array(object):
             return result
         else:
             return self
+
+    conjugate = conj
 
     # }}}
 
@@ -1941,7 +1983,7 @@ def as_strided(ary, shape=None, strides=None):
             data=ary.data, strides=strides)
 
 
-class _same_as_transfer(object):  # noqa
+class _same_as_transfer:  # noqa
     pass
 
 
@@ -1950,7 +1992,7 @@ def to_device(queue, ary, allocator=None, async_=None,
     """Return a :class:`Array` that is an exact copy of the
     :class:`numpy.ndarray` instance *ary*.
 
-    :arg array_queue: The :class:`CommandQueue` which will
+    :arg array_queue: The :class:`~pyopencl.CommandQueue` which will
         be stored in the resulting array. Useful
         to make sure there is no implicit queue associated
         with the array by passing *None*.
@@ -2042,15 +2084,16 @@ def _arange_knl(result, start, step):
 
 
 def arange(queue, *args, **kwargs):
-    """Create a :class:`Array` filled with numbers spaced `step` apart,
-    starting from `start` and ending at `stop`.
+    """arange(queue, [start, ] stop [, step], **kwargs)
+    Create a :class:`Array` filled with numbers spaced `step` apart,
+    starting from `start` and ending at `stop`. If not given, *start*
+    defaults to 0, *step* defaults to 1.
 
     For floating point arguments, the length of the result is
     `ceil((stop - start)/step)`.  This rule may result in the last
     element of the result being greater than `stop`.
 
-    *dtype*, if not specified, is taken as the largest common type
-    of *start*, *stop* and *step*.
+    *dtype* is a required keyword argument.
 
     .. versionchanged:: 2011.1
         *context* argument was deprecated.
@@ -2098,7 +2141,7 @@ def arange(queue, *args, **kwargs):
         raise ValueError("too many arguments")
 
     admissible_names = ["start", "stop", "step", "dtype", "allocator"]
-    for k, v in six.iteritems(kwargs):
+    for k, v in kwargs.items():
         if k in admissible_names:
             if getattr(inf, k) is None:
                 setattr(inf, k, v)
@@ -2382,7 +2425,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
                     + [use_fill_cla.base_data, use_fill_cla.offset]
                     + [array_lengths_cla.base_data, array_lengths_cla.offset]
                     + [dest_indices.size]),
-                **dict(wait_for=wait_for_this))
+                wait_for=wait_for_this)
 
         for o in out[chunk_slice]:
             o.add_event(evt)

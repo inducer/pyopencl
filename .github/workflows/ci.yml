@@ -1,0 +1,90 @@
+name: CI
+on:
+    push:
+        branches:
+        - master
+    pull_request:
+        paths-ignore:
+        - 'doc/*.rst'
+    schedule:
+        - cron:  '17 3 * * 0'
+
+jobs:
+    flake8:
+        name: Flake8
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -
+            uses: actions/setup-python@v1
+            with:
+                python-version: '3.x'
+        -   name: "Main Script"
+            run: |
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
+                . ./prepare-and-run-flake8.sh "$(basename $GITHUB_REPOSITORY)" ./test
+
+    pylint:
+        name: Pylint
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                echo "- matplotlib" >> $CONDA_ENVIRONMENT
+                echo "- pyopengl" >> $CONDA_ENVIRONMENT
+                echo "- ipython" >> $CONDA_ENVIRONMENT
+                echo "-------------------------------------------"
+                cat $CONDA_ENVIRONMENT
+                echo "-------------------------------------------"
+                USE_CONDA_BUILD=1
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
+
+                # Pylint won't find the Cython bits without this
+                PROJECT_INSTALL_FLAGS="--editable"
+
+                . ./prepare-and-run-pylint.sh "$(basename $GITHUB_REPOSITORY)" test/test_*.py
+
+    pytest:
+        name: Pytest Linux
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
+                . ./build-and-test-py-project-within-miniconda.sh
+
+    pytest_mac:
+        name: Pytest Mac
+        runs-on: macos-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                export CC=gcc
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
+                ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
+                . ./build-and-test-py-project-within-miniconda.sh
+
+    docs:
+        name: Documentation
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -
+            uses: actions/setup-python@v1
+            with:
+                python-version: '3.x'
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+                . ci-support.sh
+                build_py_project_in_conda_env
+                build_docs
+
+# vim: sw=4

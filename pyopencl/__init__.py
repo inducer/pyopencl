@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import division, absolute_import, print_function
-
 __copyright__ = "Copyright (C) 2009-15 Andreas Kloeckner"
 
 __license__ = """
@@ -25,12 +21,18 @@ THE SOFTWARE.
 """
 
 import six
-from six.moves import input, intern
+from six.moves import intern
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
+# must import, otherwise dtype registry will not be fully populated
+import pyopencl.cltypes  # noqa: F401
+
 import logging
 logger = logging.getLogger(__name__)
+
+import os
+os.environ["PYOPENCL_HOME"] = os.path.dirname(os.path.abspath(__file__))
 
 try:
     import pyopencl._cl as _cl
@@ -47,8 +49,7 @@ import numpy as np
 
 import sys
 
-_PYPY = '__pypy__' in sys.builtin_module_names
-_CPY2 = not _PYPY and sys.version_info < (3,)
+_PYPY = "__pypy__" in sys.builtin_module_names
 
 from pyopencl._cl import (  # noqa
         get_cl_header_version,
@@ -81,6 +82,7 @@ from pyopencl._cl import (  # noqa
         addressing_mode,
         filter_mode,
         sampler_info,
+        sampler_properties,
         map_flags,
         program_info,
         program_build_info,
@@ -158,7 +160,7 @@ if not _PYPY:
 
 if get_cl_header_version() >= (1, 1):
     from pyopencl._cl import (  # noqa
-          UserEvent,
+        UserEvent,
         )
 if get_cl_header_version() >= (1, 2):
     from pyopencl._cl import (  # noqa
@@ -214,6 +216,21 @@ CONSTANT_CLASSES = tuple(
         if _inspect.isclass(getattr(_cl, name))
         and name[0].islower() and name not in ["zip", "map", "range"])
 
+BITFIELD_CONSTANT_CLASSES = (
+        _cl.device_type,
+        _cl.device_fp_config,
+        _cl.device_exec_capabilities,
+        _cl.command_queue_properties,
+        _cl.mem_flags,
+        _cl.map_flags,
+        _cl.kernel_arg_type_qualifier,
+        _cl.device_affinity_domain,
+        _cl.mem_migration_flags,
+        _cl.device_svm_capabilities,
+        _cl.queue_properties,
+        _cl.svm_mem_flags,
+        )
+
 
 # {{{ diagnostics
 
@@ -237,30 +254,87 @@ def compiler_output(text):
 # {{{ find pyopencl shipped source code
 
 def _find_pyopencl_include_path():
-    from pkg_resources import Requirement, resource_filename, DistributionNotFound
+    from os.path import join, abspath, dirname, exists
     try:
+        # Try to find the include path in the same directory as this file
+        include_path = join(abspath(dirname(__file__)), "cl")
+        if not exists(include_path):
+            raise OSError("unable to find pyopencl include path")
+    except Exception:
         # Try to find the resource with pkg_resources (the recommended
-        # setuptools approach)
+        # setuptools approach). This is very slow.
+        from pkg_resources import Requirement, resource_filename
         include_path = resource_filename(
                 Requirement.parse("pyopencl"), "pyopencl/cl")
-    except DistributionNotFound:
-        # If pkg_resources can't find it (e.g. if the module is part of a
-        # frozen application), try to find the include path in the same
-        # directory as this file
-        from os.path import join, abspath, dirname, exists
-
-        include_path = join(abspath(dirname(__file__)), "cl")
-        # If that doesn't exist, just re-raise the exception caught from
-        # resource_filename.
         if not exists(include_path):
-            raise
+            raise OSError("unable to find pyopencl include path")
 
     # Quote the path if it contains a space and is not quoted already.
     # See https://github.com/inducer/pyopencl/issues/250 for discussion.
-    if ' ' in include_path and not include_path.startswith('"'):
+    if " " in include_path and not include_path.startswith('"'):
         return '"' + include_path + '"'
     else:
         return include_path
+
+# }}}
+
+
+# {{{ build option munging
+
+def _split_options_if_necessary(options):
+    if isinstance(options, str):
+        import shlex
+        if six.PY2:
+            # shlex.split takes bytes (py2 str) on py2
+            if isinstance(options, str):
+                options = options.encode("utf-8")
+        else:
+            # shlex.split takes unicode (py3 str) on py3
+            if isinstance(options, bytes):
+                options = options.decode("utf-8")
+
+        options = shlex.split(options)
+
+    return options
+
+
+def _find_include_path(options):
+    def unquote(path):
+        if path.startswith('"') and path.endswith('"'):
+            return path[1:-1]
+        else:
+            return path
+
+    include_path = ["."]
+
+    option_idx = 0
+    while option_idx < len(options):
+        option = options[option_idx].strip()
+        if option.startswith("-I") or option.startswith("/I"):
+            if len(option) == 2:
+                if option_idx+1 < len(options):
+                    include_path.append(unquote(options[option_idx+1]))
+                option_idx += 2
+            else:
+                include_path.append(unquote(option[2:].lstrip()))
+                option_idx += 1
+        else:
+            option_idx += 1
+
+    # }}}
+
+    return include_path
+
+
+def _options_to_bytestring(options):
+    def encode_if_necessary(s):
+        if isinstance(s, str):
+            return s.encode("utf-8")
+        else:
+            return s
+
+    return b" ".join(encode_if_necessary(s) for s in options)
+
 
 # }}}
 
@@ -298,11 +372,12 @@ def enable_debugging(platform_or_context):
                 % platform.name)
 
 
-class Program(object):
+class Program:
     def __init__(self, arg1, arg2=None, arg3=None):
         if arg2 is None:
             # 1-argument form: program
             self._prg = arg1
+            self._context = self._prg.get_info(program_info.CONTEXT)
 
         elif arg3 is None:
             # 2-argument form: context, source
@@ -310,13 +385,13 @@ class Program(object):
 
             from pyopencl.tools import is_spirv
             if is_spirv(source):
-                # no caching in SPIR-V case
+                # FIXME no caching in SPIR-V case
                 self._context = context
-                self._prg = _cl._Program(context, source)
+                self._prg = _cl._create_program_with_il(context, source)
                 return
 
             import sys
-            if isinstance(source, six.text_type) and sys.version_info < (3,):
+            if isinstance(source, str) and sys.version_info < (3,):
                 from warnings import warn
                 warn("Received OpenCL source code in Unicode, "
                      "should be ASCII string. Attempting conversion.",
@@ -344,7 +419,6 @@ class Program(object):
                     stacklevel=3)
 
             self._prg = _cl._Program(self._context, self._source)
-            del self._context
             return self._prg
 
     def get_info(self, arg):
@@ -390,25 +464,8 @@ class Program(object):
     # {{{ build
 
     @classmethod
-    def _process_build_options(cls, context, options):
-        if isinstance(options, six.string_types):
-            import shlex
-            if six.PY2:
-                # shlex.split takes bytes (py2 str) on py2
-                if isinstance(options, six.text_type):
-                    options = options.encode("utf-8")
-            else:
-                # shlex.split takes unicode (py3 str) on py3
-                if isinstance(options, six.binary_type):
-                    options = options.decode("utf-8")
-
-            options = shlex.split(options)
-
-        def encode_if_necessary(s):
-            if isinstance(s, six.text_type):
-                return s.encode("utf-8")
-            else:
-                return s
+    def _process_build_options(cls, context, options, _add_include_path=False):
+        options = _split_options_if_necessary(options)
 
         options = (options
                 + _DEFAULT_BUILD_OPTIONS
@@ -421,42 +478,16 @@ class Program(object):
         if forced_options:
             options = options + forced_options.split()
 
-        # {{{ find include path
-
-        def unquote(path):
-            if path.startswith('"') and path.endswith('"'):
-                return path[1:-1]
-            else:
-                return path
-
-        include_path = ["."]
-
-        option_idx = 0
-        while option_idx < len(options):
-            option = options[option_idx].strip()
-            if option.startswith("-I") or option.startswith("/I"):
-                if len(option) == 2:
-                    if option_idx+1 < len(options):
-                        include_path.append(unquote(options[option_idx+1]))
-                    option_idx += 2
-                else:
-                    include_path.append(unquote(option[2:].lstrip()))
-                    option_idx += 1
-            else:
-                option_idx += 1
-
-        # }}}
-
-        options = [encode_if_necessary(s) for s in options]
-
-        return b" ".join(options), include_path
+        return (
+                _options_to_bytestring(options),
+                _find_include_path(options))
 
     def build(self, options=[], devices=None, cache_dir=None):
         options_bytes, include_path = self._process_build_options(
                 self._context, options)
 
         if cache_dir is None:
-            cache_dir = getattr(self._context, 'cache_dir', None)
+            cache_dir = getattr(self._context, "cache_dir", None)
 
         import os
         build_descr = None
@@ -559,8 +590,11 @@ def create_program_with_built_in_kernels(context, devices, kernel_names):
         context, devices, kernel_names))
 
 
-def link_program(context, programs, options=[], devices=None):
-    options_bytes, _ = Program._process_build_options(context, options)
+def link_program(context, programs, options=None, devices=None):
+    if options is None:
+        options = []
+
+    options_bytes = _options_to_bytestring(_split_options_if_necessary(options))
     programs = [prg._get_prg() for prg in programs]
     raw_prg = _Program.link(context, programs, options_bytes, devices)
     return Program(raw_prg)
@@ -585,7 +619,7 @@ def _add_functionality():
     # {{{ Platform
 
     def platform_repr(self):
-        return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
+        return f"<pyopencl.Platform '{self.name}' at 0x{self.int_ptr:x}>"
 
     Platform.__repr__ = platform_repr
     Platform._get_cl_version = generic_get_cl_version
@@ -595,16 +629,25 @@ def _add_functionality():
     # {{{ Device
 
     def device_repr(self):
-        return "<pyopencl.Device '%s' on '%s' at 0x%x>" % (
+        return "<pyopencl.Device '{}' on '{}' at 0x{:x}>".format(
                 self.name.strip(), self.platform.name.strip(), self.int_ptr)
 
+    def device_hashable_model_and_version_identifier(self):
+        return ("v1", self.vendor, self.vendor_id, self.name, self.version)
+
     def device_persistent_unique_id(self):
-        return (self.vendor, self.vendor_id, self.name, self.version)
+        from warnings import warn
+        warn("Device.persistent_unique_id is deprecated. "
+                "Use Device.hashable_model_and_version_identifier instead.",
+                DeprecationWarning, stacklevel=2)
+        return device_hashable_model_and_version_identifier(self)
 
     Device.__repr__ = device_repr
 
     # undocumented for now:
     Device._get_cl_version = generic_get_cl_version
+    Device.hashable_model_and_version_identifier = property(
+            device_hashable_model_and_version_identifier)
     Device.persistent_unique_id = property(device_persistent_unique_id)
 
     # }}}
@@ -625,7 +668,7 @@ def _add_functionality():
         context_old_init(self, devices, properties, dev_type)
 
     def context_repr(self):
-        return "<pyopencl.Context at 0x%x on %s>" % (self.int_ptr,
+        return "<pyopencl.Context at 0x{:x} on {}>".format(self.int_ptr,
                 ", ".join(repr(dev) for dev in self.devices))
 
     def context_get_cl_version(self):
@@ -646,7 +689,7 @@ def _add_functionality():
         self.finish()
 
     def command_queue_get_cl_version(self):
-        return self.context._get_cl_version()
+        return self.device._get_cl_version()
 
     CommandQueue.__enter__ = command_queue_enter
     CommandQueue.__exit__ = command_queue_exit
@@ -674,7 +717,7 @@ def _add_functionality():
             self._build(options=options_bytes, devices=devices)
         except Error as e:
             msg = str(e) + "\n\n" + (75*"="+"\n").join(
-                    "Build on %s:\n\n%s" % (dev, log)
+                    f"Build on {dev}:\n\n{log}"
                     for dev, log in self._get_build_logs())
             code = e.code
             routine = e.routine
@@ -691,7 +734,7 @@ def _add_functionality():
             raise err
 
         message = (75*"="+"\n").join(
-                "Build on %s succeeded, but said:\n\n%s" % (dev, log)
+                f"Build on {dev} succeeded, but said:\n\n{log}"
                 for dev, log in self._get_build_logs()
                 if log is not None and log.strip())
 
@@ -700,6 +743,8 @@ def _add_functionality():
                 build_type = "From-source build"
             elif self.kind() == program_kind.BINARY:
                 build_type = "From-binary build"
+            elif self.kind() == program_kind.IL:
+                build_type = "From-IL build"
             else:
                 build_type = "Build"
 
@@ -842,7 +887,7 @@ def _add_functionality():
     # {{{ ImageFormat
 
     def image_format_repr(self):
-        return "ImageFormat(%s, %s)" % (
+        return "ImageFormat({}, {})".format(
                 channel_order.to_string(self.channel_order,
                     "<unknown channel order 0x%x>"),
                 channel_type.to_string(self.channel_data_type,
@@ -997,7 +1042,7 @@ def _add_functionality():
                         val.code(), "<unknown error %d>")
             routine = val.routine()
             if routine:
-                result = "%s failed: %s" % (routine, result)
+                result = f"{routine} failed: {result}"
             what = val.what()
             if what:
                 if result:
@@ -1069,10 +1114,8 @@ def _add_functionality():
         """
         svmallocation_old_init(self, ctx, size, alignment, flags)
 
-        read_write = (
-                flags & mem_flags.WRITE_ONLY != 0
-                or flags & mem_flags.READ_WRITE != 0)
-
+        # mem_flags.READ_ONLY applies to kernels, not the host
+        read_write = True
         _interface["data"] = (
                 int(self._ptr_as_int()), not read_write)
 
@@ -1086,8 +1129,9 @@ def _add_functionality():
     # {{{ SVM
 
     if get_cl_header_version() >= (2, 0):
-        SVM.__doc__ = """Tags an object exhibiting the Python buffer interface (such as a
-            :class:`numpy.ndarray`) as referring to shared virtual memory.
+        SVM.__doc__ = """Tags an object exhibiting the Python buffer interface
+            (such as a :class:`numpy.ndarray`) as referring to shared virtual
+            memory.
 
             Depending on the features of the OpenCL implementation, the following
             types of objects may be passed to/wrapped in this type:
@@ -1142,7 +1186,7 @@ def _add_functionality():
                 This object merely serves as a 'tag' that changes the behavior
                 of functions to which it is passed. It has no special management
                 relationship to the memory it tags. For example, it is permissible
-                to grab a :mod:`numpy.array` out of :attr:`SVM.mem` of one
+                to grab a :class:`numpy.ndarray` out of :attr:`SVM.mem` of one
                 :class:`SVM` instance and use the array to construct another.
                 Neither of the tags need to be kept alive.
 
@@ -1244,9 +1288,21 @@ def _add_functionality():
             }
 
     def to_string(cls, value, default_format=None):
-        for name in dir(cls):
-            if (not name.startswith("_") and getattr(cls, name) == value):
-                return name
+        if cls._is_bitfield:
+            names = []
+            for name in dir(cls):
+                attr = getattr(cls, name)
+                if not isinstance(attr, int):
+                    continue
+                if attr == value or attr & value:
+                    names.append(name)
+            if names:
+                return " | ".join(names)
+        else:
+            for name in dir(cls):
+                if (not name.startswith("_")
+                        and getattr(cls, name) == value):
+                    return name
 
         if default_format is None:
             raise ValueError("a name for value %d was not found in %s"
@@ -1255,6 +1311,7 @@ def _add_functionality():
             return default_format % value
 
     for cls in CONSTANT_CLASSES:
+        cls._is_bitfield = cls in BITFIELD_CONSTANT_CLASSES
         cls.to_string = classmethod(to_string)
 
     # {{{ get_info attributes -------------------------------------------------
@@ -1279,8 +1336,8 @@ def _add_functionality():
         return property(result)
 
     for cls, (info_method, info_class, cacheable_attrs) \
-            in six.iteritems(cls_to_info_cls):
-        for info_name, info_value in six.iteritems(info_class.__dict__):
+            in cls_to_info_cls.items():
+        for info_name, info_value in info_class.__dict__.items():
             if info_name == "to_string" or info_name.startswith("_"):
                 continue
 
@@ -1349,7 +1406,7 @@ def create_some_context(interactive=None, answers=None):
         if answers:
             return str(answers.pop(0))
         elif not interactive:
-            return ''
+            return ""
         else:
             user_input = input(prompt)
             user_inputs.append(user_input)
@@ -1447,7 +1504,7 @@ _csc = create_some_context
 
 # {{{ SVMMap
 
-class SVMMap(object):
+class SVMMap:
     """
     .. attribute:: event
 
@@ -1504,9 +1561,16 @@ def enqueue_copy(queue, dest, src, **kwargs):
     :arg wait_for: (optional, default empty)
     :arg is_blocking: Wait for completion. Defaults to *True*.
       (Available on any copy involving host memory)
-
     :return: A :class:`NannyEvent` if the transfer involved a
         host-side buffer, otherwise an :class:`Event`.
+
+    .. note::
+
+        Be aware that the deletion of the :class:`NannyEvent` that is
+        returned by the function if the transfer involved a host-side buffer
+        will block until the transfer is complete, so be sure to keep a
+        reference to this :class:`Event` until the
+        transfer has completed.
 
     .. note::
 
@@ -1670,10 +1734,11 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
     elif get_cl_header_version() >= (2, 0) and isinstance(dest, SVM):
         # to SVM
-        if isinstance(src, SVM):
-            src = src.mem
+        if not isinstance(src, SVM):
+            src = SVM(src)
 
-        return _cl._enqueue_svm_memcpy(queue, dest.mem, src, **kwargs)
+        is_blocking = kwargs.pop("is_blocking", True)
+        return _cl._enqueue_svm_memcpy(queue, is_blocking, dest, src, **kwargs)
 
     else:
         # assume to-host
@@ -1701,7 +1766,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
         elif isinstance(src, SVM):
             # from svm
             # dest is not a SVM instance, otherwise we'd be in the branch above
-            return _cl._enqueue_svm_memcpy(queue, dest, src.mem, **kwargs)
+            is_blocking = kwargs.pop("is_blocking", True)
+            return _cl._enqueue_svm_memcpy(
+                    queue, is_blocking, SVM(dest), src, **kwargs)
         else:
             # assume from-host
             raise TypeError("enqueue_copy cannot perform host-to-host transfers")
@@ -1742,9 +1809,9 @@ def image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False):
     dtype = ary.dtype
     if num_channels is None:
 
-        from pyopencl.array import vec
         try:
-            dtype, num_channels = vec.type_to_scalar_and_count[dtype]
+            dtype, num_channels = \
+                    pyopencl.cltypes.vec_type_to_scalar_and_count[dtype]
         except KeyError:
             # It must be a scalar type then.
             num_channels = 1
@@ -1897,11 +1964,7 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
         for dim in shape:
             s *= dim
     except TypeError:
-        import sys
-        if sys.version_info >= (3,):
-            admissible_types = (int, np.integer)
-        else:
-            admissible_types = (np.integer,) + six.integer_types
+        admissible_types = (int, np.integer)
 
         if not isinstance(shape, admissible_types):
             raise TypeError("shape must either be iterable or "

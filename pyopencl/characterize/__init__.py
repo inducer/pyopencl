@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import
-
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -24,8 +22,6 @@ THE SOFTWARE.
 
 import pyopencl as cl
 from pytools import memoize
-import six
-from six.moves import range, zip
 
 
 class CLCharacterizationWarning(UserWarning):
@@ -237,13 +233,13 @@ def why_not_local_access_conflict_free(dev, itemsize,
 
             bank = (addr // gran) % bank_count
             bank_accesses.setdefault(bank, []).append(
-                    "w.item %s -> %s" % (work_item_id, idx[::-1]))
+                    "w.item {} -> {}".format(work_item_id, idx[::-1]))
 
         conflict_multiplicity = max(
-                len(acc) for acc in six.itervalues(bank_accesses))
+                len(acc) for acc in bank_accesses.values())
 
         if conflict_multiplicity > 1:
-            for bank, acc in six.iteritems(bank_accesses):
+            for bank, acc in bank_accesses.items():
                 if len(acc) == conflict_multiplicity:
                     conflicts.append(
                             (conflict_multiplicity,

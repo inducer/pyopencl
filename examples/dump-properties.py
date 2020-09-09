@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 import pyopencl as cl
 from optparse import OptionParser
 
@@ -21,13 +19,13 @@ def print_info(obj, info_cls):
 
             if (info_cls == cl.device_info and info_name == "PARTITION_TYPES_EXT"
                     and isinstance(info_value, list)):
-                print("%s: %s" % (info_name, [
+                print("{}: {}".format(info_name, [
                     cl.device_partition_property_ext.to_string(v,
                         "<unknown device partition property %d>")
                     for v in info_value]))
             else:
                 try:
-                    print("%s: %s" % (info_name, info_value))
+                    print(f"{info_name}: {info_value}")
                 except:
                     print("%s: <error>" % info_name)
 
@@ -72,13 +70,13 @@ for platform in cl.get_platforms():
                             return result
 
                         formats = ", ".join(
-                                "%s-%s" % (
+                                "{}-{}".format(
                                     cl.channel_order.to_string(iform.channel_order,
                                         "<unknown channel order 0x%x>"),
                                     str_chd_type(iform.channel_data_type))
                                 for iform in formats)
 
-                    print("%s %s FORMATS: %s\n" % (
+                    print("{} {} FORMATS: {}\n".format(
                             cl.mem_object_type.to_string(itype),
                             cl.mem_flags.to_string(mf),
                             formats))

@@ -1,12 +1,10 @@
-"""Scan primitive."""
+"""Algorithms built on scans."""
 
-from __future__ import division
-from __future__ import absolute_import
-from six.moves import range
-from six.moves import zip
 
-__copyright__ = """Copyright 2011-2012 Andreas Kloeckner \
-                   Copyright 2017 Hao Gao"""
+__copyright__ = """
+Copyright 2011-2012 Andreas Kloeckner
+Copyright 2017 Hao Gao
+"""
 
 __license__ = """
 Permission is hereby granted, free of charge, to any person
@@ -31,6 +29,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
+
 import numpy as np
 import pyopencl as cl
 import pyopencl.array  # noqa
@@ -38,6 +37,30 @@ from pyopencl.scan import ScanTemplate
 from pyopencl.tools import dtype_to_ctype, get_arg_offset_adjuster_code
 from pytools import memoize, memoize_method, Record
 from mako.template import Template
+
+
+# {{{ "extra args" handling utility
+
+def _extract_extra_args_types_values(extra_args):
+    from pyopencl.tools import VectorArg, ScalarArg
+
+    extra_args_types = []
+    extra_args_values = []
+    extra_wait_for = []
+    for name, val in extra_args:
+        if isinstance(val, cl.array.Array):
+            extra_args_types.append(VectorArg(val.dtype, name, with_offset=False))
+            extra_args_values.append(val)
+            extra_wait_for.extend(val.events)
+        elif isinstance(val, np.generic):
+            extra_args_types.append(ScalarArg(val.dtype, name))
+            extra_args_values.append(val)
+        else:
+            raise RuntimeError("argument '%d' not understood" % name)
+
+    return tuple(extra_args_types), extra_args_values, extra_wait_for
+
+# }}}
 
 
 # {{{ copy_if
@@ -51,24 +74,6 @@ _copy_if_template = ScanTemplate(
             if (i+1 == N) *count = item;
             """,
         template_processor="printf")
-
-
-def extract_extra_args_types_values(extra_args):
-    from pyopencl.tools import VectorArg, ScalarArg
-
-    extra_args_types = []
-    extra_args_values = []
-    for name, val in extra_args:
-        if isinstance(val, cl.array.Array):
-            extra_args_types.append(VectorArg(val.dtype, name, with_offset=False))
-            extra_args_values.append(val)
-        elif isinstance(val, np.generic):
-            extra_args_types.append(ScalarArg(val.dtype, name))
-            extra_args_values.append(val)
-        else:
-            raise RuntimeError("argument '%d' not understood" % name)
-
-    return tuple(extra_args_types), extra_args_values
 
 
 def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
@@ -94,7 +99,12 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
     else:
         scan_dtype = np.int32
 
-    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
+    if wait_for is None:
+        wait_for = []
+
+    extra_args_types, extra_args_values, extra_wait_for = \
+        _extract_extra_args_types_values(extra_args)
+    wait_for = wait_for + extra_wait_for
 
     knl = _copy_if_template.build(ary.context,
             type_aliases=(("scan_t", scan_dtype), ("item_t", ary.dtype)),
@@ -104,9 +114,8 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
     count = ary._new_with_changes(data=None, offset=0,
             shape=(), strides=(), dtype=scan_dtype)
 
-    # **dict is a Py2.5 workaround
     evt = knl(ary, out, count, *extra_args_values,
-            **dict(queue=queue, wait_for=wait_for))
+            queue=queue, wait_for=wait_for)
 
     return out, count, evt
 
@@ -176,7 +185,12 @@ def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
     else:
         scan_dtype = np.uint32
 
-    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
+    if wait_for is None:
+        wait_for = []
+
+    extra_args_types, extra_args_values, extra_wait_for = \
+            _extract_extra_args_types_values(extra_args)
+    wait_for = wait_for + extra_wait_for
 
     knl = _partition_template.build(
             ary.context,
@@ -189,9 +203,8 @@ def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=N
     count = ary._new_with_changes(data=None, offset=0,
             shape=(), strides=(), dtype=scan_dtype)
 
-    # **dict is a Py2.5 workaround
     evt = knl(ary, out_true, out_false, count, *extra_args_values,
-            **dict(queue=queue, wait_for=wait_for))
+            queue=queue, wait_for=wait_for)
 
     return out_true, out_false, count, evt
 
@@ -244,7 +257,12 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
     else:
         scan_dtype = np.uint32
 
-    extra_args_types, extra_args_values = extract_extra_args_types_values(extra_args)
+    if wait_for is None:
+        wait_for = []
+
+    extra_args_types, extra_args_values, extra_wait_for = \
+            _extract_extra_args_types_values(extra_args)
+    wait_for = wait_for + extra_wait_for
 
     knl = _unique_template.build(
             ary.context,
@@ -256,9 +274,8 @@ def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
     count = ary._new_with_changes(data=None, offset=0,
             shape=(), strides=(), dtype=scan_dtype)
 
-    # **dict is a Py2.5 workaround
     evt = knl(ary, out, count, *extra_args_values,
-            **dict(queue=queue, wait_for=wait_for))
+            queue=queue, wait_for=wait_for)
 
     return out, count, evt
 
@@ -274,13 +291,13 @@ def to_bin(n):
         digs.append(str(n % 2))
         n >>= 1
 
-    return ''.join(digs[::-1])
+    return "".join(digs[::-1])
 
 
-def _padded_bin(i, l):
+def _padded_bin(i, nbits):
     s = to_bin(i)
-    while len(s) < l:
-        s = '0' + s
+    while len(s) < nbits:
+        s = "0" + s
     return s
 
 
@@ -291,7 +308,7 @@ def _make_sort_scan_type(device, bits, index_dtype):
 
     fields = []
     for mnr in range(2**bits):
-        fields.append(('c%s' % _padded_bin(mnr, bits), index_dtype))
+        fields.append(("c%s" % _padded_bin(mnr, bits), index_dtype))
 
     dtype = np.dtype(fields)
 
@@ -402,11 +419,11 @@ RADIX_SORT_OUTPUT_STMT_TPL = Template(r"""//CL//
 from pyopencl.scan import GenericScanKernel
 
 
-class RadixSort(object):
+class RadixSort:
     """Provides a general `radix sort <https://en.wikipedia.org/wiki/Radix_sort>`_
     on the compute device.
 
-    .. seealso:: :class:`pyopencl.algorithm.BitonicSort`
+    .. seealso:: :class:`pyopencl.bitonic_sort.BitonicSort`
 
     .. versionadded:: 2013.1
     """
@@ -459,7 +476,7 @@ class RadixSort(object):
 
             boundary_mnr = known_bits + "1" + (self.bits-len(known_bits)-1)*"0"
 
-            return ("((mnr < %s) ? %s : %s)" % (
+            return ("((mnr < {}) ? {} : {})".format(
                 int(boundary_mnr, 2),
                 get_count_branch(known_bits+"0"),
                 get_count_branch(known_bits+"1")))
@@ -541,7 +558,7 @@ class RadixSort(object):
             scan_args = args + sorted_args + [base_bit]
 
             last_evt = self.scan_kernel(*scan_args,
-                    **dict(queue=queue, wait_for=wait_for))
+                    queue=queue, wait_for=wait_for)
             wait_for = [last_evt]
 
             # substitute sorted
@@ -875,11 +892,7 @@ class ListOfListsBuilder:
             __global ${index_t} *compressed_indices,
             __global ${index_t} *num_non_empty_list
         """
-        from sys import version_info
-        if version_info > (3, 0):
-            arguments = Template(arguments)
-        else:
-            arguments = Template(arguments, disable_unicode=True)
+        arguments = Template(arguments)
 
         from pyopencl.scan import GenericScanKernel
         return GenericScanKernel(
@@ -918,7 +931,7 @@ class ListOfListsBuilder:
                 continue
 
             name = "plb_loc_%s_count" % name
-            user_list_args.append(OtherArg("%s *%s" % (
+            user_list_args.append(OtherArg("{} *{}".format(
                 index_ctype, name), name))
 
         kernel_name = self.name_prefix+"_count"
@@ -989,10 +1002,10 @@ class ListOfListsBuilder:
                     VectorArg(index_dtype, "%s_compressed_indices" % name))
 
             index_name = "plb_%s_index" % name
-            user_list_args.append(OtherArg("%s *%s" % (
+            user_list_args.append(OtherArg("{} *{}".format(
                 index_ctype, index_name), index_name))
 
-            kernel_list_arg_values += "%s, &%s, " % (list_name, index_name)
+            kernel_list_arg_values += f"{list_name}, &{index_name}, "
 
         kernel_name = self.name_prefix+"_write"
 
@@ -1107,6 +1120,9 @@ class ListOfListsBuilder:
 
         if wait_for is None:
             wait_for = []
+        else:
+            # We'll be modifying it below.
+            wait_for = list(wait_for)
 
         count_kernel = self.get_count_kernel(index_dtype)
         write_kernel = self.get_write_kernel(index_dtype)
@@ -1133,6 +1149,7 @@ class ListOfListsBuilder:
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
                     data_args.append(arg_val.offset)
+                wait_for.extend(arg_val.events)
             else:
                 data_args.append(arg_val)
 
@@ -1177,7 +1194,7 @@ class ListOfListsBuilder:
 
         count_event = count_kernel(queue, gsize, lsize,
                 *(tuple(count_list_args) + data_args + (n_objects,)),
-                **dict(wait_for=wait_for))
+                wait_for=wait_for)
 
         compress_events = {}
         for name, dtype in self.list_names_and_dtypes:
@@ -1283,7 +1300,7 @@ class ListOfListsBuilder:
 
         evt = write_kernel(queue, gsize, lsize,
                 *(tuple(write_list_args) + data_args + (n_objects,)),
-                **dict(wait_for=scan_events))
+                wait_for=scan_events)
 
         return result, evt
 
@@ -1309,7 +1326,7 @@ def _make_cl_int_literal(value, dtype):
     return result
 
 
-class KeyValueSorter(object):
+class KeyValueSorter:
     """Given arrays *values* and *keys* of equal length
     and a number *nkeys* of keys, returns a tuple `(starts,
     lists)`, as follows: *values* and *keys* are sorted

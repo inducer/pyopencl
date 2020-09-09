@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, print_function
 
 __copyright__ = """
 Copyright (C) 2009-15 Andreas Kloeckner
@@ -44,10 +42,10 @@ def get_config_schema():
             "-fvisibility=hidden"
             ]
 
-    if 'darwin' in sys.platform:
+    if "darwin" in sys.platform:
         import platform
         osx_ver, _, _ = platform.mac_ver()
-        osx_ver = '.'.join(osx_ver.split('.')[:2])
+        osx_ver = ".".join(osx_ver.split(".")[:2])
 
         sysroot_paths = [
                 "/Applications/Xcode.app/Contents/Developer/Platforms/"
@@ -57,14 +55,14 @@ def get_config_schema():
 
         default_libs = []
         default_cxxflags = default_cxxflags + [
-                '-stdlib=libc++', '-mmacosx-version-min=10.7',
-                '-arch', 'i386', '-arch', 'x86_64'
+                "-stdlib=libc++", "-mmacosx-version-min=10.7",
+                "-arch', 'i386", "-arch", "x86_64"
                 ]
 
         from os.path import isdir
         for srp in sysroot_paths:
             if isdir(srp):
-                default_cxxflags.extend(['-isysroot', srp])
+                default_cxxflags.extend(["-isysroot", srp])
                 break
 
         default_ldflags = default_cxxflags[:] + ["-Wl,-framework,OpenCL"]
@@ -151,7 +149,7 @@ def main():
     finally:
         version_file.close()
 
-    exec(compile(version_file_contents, "pyopencl/version.py", 'exec'), ver_dic)
+    exec(compile(version_file_contents, "pyopencl/version.py", "exec"), ver_dic)
 
     try:
         import mako  # noqa
@@ -194,29 +192,25 @@ def main():
             # metadata
             version=ver_dic["VERSION_TEXT"],
             description="Python wrapper for OpenCL",
-            long_description=open("README.rst", "rt").read(),
+            long_description=open("README.rst").read(),
             author="Andreas Kloeckner",
             author_email="inform@tiker.net",
             license="MIT",
             url="http://mathema.tician.de/software/pyopencl",
             classifiers=[
-                'Environment :: Console',
-                'Development Status :: 5 - Production/Stable',
-                'Intended Audience :: Developers',
-                'Intended Audience :: Other Audience',
-                'Intended Audience :: Science/Research',
-                'License :: OSI Approved :: MIT License',
-                'Natural Language :: English',
-                'Programming Language :: C++',
-                'Programming Language :: Python',
-                'Programming Language :: Python :: 2',
-                'Programming Language :: Python :: 2.7',
-                'Programming Language :: Python :: 3',
-                'Programming Language :: Python :: 3.2',
-                'Programming Language :: Python :: 3.3',
-                'Topic :: Scientific/Engineering',
-                'Topic :: Scientific/Engineering :: Mathematics',
-                'Topic :: Scientific/Engineering :: Physics',
+                "Environment :: Console",
+                "Development Status :: 5 - Production/Stable",
+                "Intended Audience :: Developers",
+                "Intended Audience :: Other Audience",
+                "Intended Audience :: Science/Research",
+                "License :: OSI Approved :: MIT License",
+                "Natural Language :: English",
+                "Programming Language :: C++",
+                "Programming Language :: Python",
+                "Programming Language :: Python :: 3",
+                "Topic :: Scientific/Engineering",
+                "Topic :: Scientific/Engineering :: Mathematics",
+                "Topic :: Scientific/Engineering :: Physics",
                 ],
 
             # build info
@@ -234,31 +228,33 @@ def main():
                         ],
                     include_dirs=INCLUDE_DIRS + [
                         get_pybind_include(),
-                        get_pybind_include(user=True)
                         ],
                     library_dirs=conf["CL_LIB_DIR"],
                     libraries=conf["CL_LIBNAME"],
                     define_macros=list(conf["EXTRA_DEFINES"].items()),
                     extra_compile_args=conf["CXXFLAGS"],
                     extra_link_args=conf["LDFLAGS"],
-                    language='c++',
+                    language="c++",
                     ),
                 ],
 
             setup_requires=[
-                "pybind11",
+                "pybind11>=2.5.0",
                 "numpy",
                 ],
 
+            python_requires="~=3.6",
             install_requires=[
                 "numpy",
                 "pytools>=2017.6",
                 "decorator>=3.2.0",
                 "appdirs>=1.4.0",
-                "six>=1.9.0",
                 # "Mako>=0.3.6",
                 ],
-
+            extras_require={
+                "pocl":  ["pocl_binary_distribution>=1.2"],
+                "oclgrind":  ["oclgrind_binary_distribution>=18.3"],
+            },
             include_package_data=True,
             package_data={
                     "pyopencl": [
@@ -269,11 +265,11 @@ def main():
                         ]
                     },
 
-            cmdclass={'build_ext': PybindBuildExtCommand},
+            cmdclass={"build_ext": PybindBuildExtCommand},
             zip_safe=False)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 
 # vim: foldmethod=marker

@@ -64,4 +64,5 @@ build-and-test-py-project.sh
 cffi_build.py
 
 .cache
+.pytest_cache
 .idea

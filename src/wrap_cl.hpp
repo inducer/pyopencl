@@ -84,7 +84,7 @@
 #include <utility>
 #include <numeric>
 #include "wrap_helpers.hpp"
-#include "numpy_init.hpp"
+#include <numpy/arrayobject.h>
 #include "tools.hpp"
 
 #ifdef PYOPENCL_PRETEND_CL_VERSION
@@ -109,7 +109,6 @@
 
 
 #if (PY_VERSION_HEX >= 0x03000000) or defined(PYPY_VERSION)
-#define PYOPENCL_USE_NEW_BUFFER_INTERFACE
 #define PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(s) std::move(s)
 #else
 #define PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(s) (s)
@@ -487,8 +486,8 @@ namespace pyopencl
 
 
   // {{{ buffer interface helper
-  //
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
+
+
   class py_buffer_wrapper : public noncopyable
   {
     private:
@@ -529,7 +528,7 @@ namespace pyopencl
         PyBuffer_Release(&m_buf);
     }
   };
-#endif
+
 
   // }}}
 
@@ -1560,6 +1559,14 @@ namespace pyopencl
         PYOPENCL_CALL_GUARDED_THREADED(clWaitForEvents, (1, &m_event));
       }
 
+      // Called from a destructor context below:
+      // - Should not release the GIL
+      // - Should fail gracefully in the face of errors
+      virtual void wait_during_cleanup_without_releasing_the_gil()
+      {
+        PYOPENCL_CALL_GUARDED_CLEANUP(clWaitForEvents, (1, &m_event));
+      }
+
 #if PYOPENCL_CL_VERSION >= 0x1010
     // {{{ set_callback, by way of a a thread-based construction
 
@@ -1672,7 +1679,6 @@ namespace pyopencl
 #endif
   };
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
   class nanny_event : public event
   {
     // In addition to everything an event does, the nanny event holds a reference
@@ -1688,7 +1694,11 @@ namespace pyopencl
       { }
 
       ~nanny_event()
-      { wait(); }
+      {
+        // It appears that Pybind can get very confused if we release the GIL here:
+        // https://github.com/inducer/pyopencl/issues/296
+        wait_during_cleanup_without_releasing_the_gil();
+      }
 
       py::object get_ward() const
       {
@@ -1705,39 +1715,13 @@ namespace pyopencl
         event::wait();
         m_ward.reset();
       }
-  };
-#else
-  class nanny_event : public event
-  {
-    // In addition to everything an event does, the nanny event holds a reference
-    // to a Python object and waits for its own completion upon destruction.
 
-    protected:
-      py::object        m_ward;
-
-    public:
-
-      nanny_event(cl_event evt, bool retain, py::object ward)
-        : event(evt, retain), m_ward(ward)
-      { }
-
-      nanny_event(nanny_event const &src)
-        : event(src), m_ward(src.m_ward)
-      { }
-
-      ~nanny_event()
-      { wait(); }
-
-      py::object get_ward() const
-      { return m_ward; }
-
-      virtual void wait()
+      virtual void wait_during_cleanup_without_releasing_the_gil()
       {
-        event::wait();
-        m_ward = py::none();
+        event::wait_during_cleanup_without_releasing_the_gil();
+        m_ward.reset();
       }
   };
-#endif
 
 
 
@@ -1894,11 +1878,7 @@ namespace pyopencl
   class memory_object : noncopyable, public memory_object_holder
   {
     public:
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
       typedef std::unique_ptr<py_buffer_wrapper> hostbuf_t;
-#else
-      typedef py::object hostbuf_t;
-#endif
 
     private:
       bool m_valid;
@@ -1945,14 +1925,10 @@ namespace pyopencl
 
       py::object hostbuf()
       {
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
         if (m_hostbuf.get())
           return py::reinterpret_borrow<py::object>(m_hostbuf->m_buf.obj);
         else
           return py::none();
-#else
-        return m_hostbuf;
-#endif
       }
 
       const cl_mem data() const
@@ -2136,7 +2112,6 @@ namespace pyopencl
 
     void *buf = 0;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> retained_buf_obj;
     if (py_hostbuf.ptr() != Py_None)
     {
@@ -2158,42 +2133,11 @@ namespace pyopencl
       if (size == 0)
         size = retained_buf_obj->m_buf.len;
     }
-#else
-    py::object retained_buf_obj;
-    if (py_hostbuf.ptr() != Py_None)
-    {
-      PYOPENCL_BUFFER_SIZE_T len;
-      if ((flags & CL_MEM_USE_HOST_PTR)
-          && ((flags & CL_MEM_READ_WRITE)
-            || (flags & CL_MEM_WRITE_ONLY)))
-      {
-        if (PyObject_AsWriteBuffer(py_hostbuf.ptr(), &buf, &len))
-          throw py::error_already_set();
-      }
-      else
-      {
-        if (PyObject_AsReadBuffer(
-              py_hostbuf.ptr(), const_cast<const void **>(&buf), &len))
-          throw py::error_already_set();
-      }
-
-      if (flags & CL_MEM_USE_HOST_PTR)
-        retained_buf_obj = py_hostbuf;
-
-      if (size > size_t(len))
-        throw pyopencl::error("Buffer", CL_INVALID_VALUE,
-            "specified size is greater than host buffer size");
-      if (size == 0)
-        size = len;
-    }
-#endif
 
     cl_mem mem = create_buffer_gc(ctx.data(), flags, size, buf);
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     if (!(flags & CL_MEM_USE_HOST_PTR))
       retained_buf_obj.reset();
-#endif
 
     try
     {
@@ -2226,18 +2170,12 @@ namespace pyopencl
     void *buf;
     PYOPENCL_BUFFER_SIZE_T len;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
 
     buf = ward->m_buf.buf;
     len = ward->m_buf.len;
-#else
-    py::object ward = buffer;
-    if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
-      throw py::error_already_set();
-#endif
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
@@ -2269,18 +2207,12 @@ namespace pyopencl
     const void *buf;
     PYOPENCL_BUFFER_SIZE_T len;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
 
     buf = ward->m_buf.buf;
     len = ward->m_buf.len;
-#else
-    py::object ward = buffer;
-    if (PyObject_AsReadBuffer(buffer.ptr(), &buf, &len))
-      throw py::error_already_set();
-#endif
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
@@ -2363,19 +2295,11 @@ namespace pyopencl
 
     void *buf;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
 
     buf = ward->m_buf.buf;
-#else
-    py::object ward = buffer;
-
-    PYOPENCL_BUFFER_SIZE_T len;
-    if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
-      throw py::error_already_set();
-#endif
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
@@ -2404,8 +2328,8 @@ namespace pyopencl
       py::object py_buffer_origin,
       py::object py_host_origin,
       py::object py_region,
-      py::sequence py_buffer_pitches,
-      py::sequence py_host_pitches,
+      py::object py_buffer_pitches,
+      py::object py_host_pitches,
       py::object py_wait_for,
       bool is_blocking
       )
@@ -2419,18 +2343,11 @@ namespace pyopencl
 
     const void *buf;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
 
     buf = ward->m_buf.buf;
-#else
-    py::object ward = buffer;
-    PYOPENCL_BUFFER_SIZE_T len;
-    if (PyObject_AsReadBuffer(buffer.ptr(), &buf, &len))
-      throw py::error_already_set();
-#endif
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
@@ -2459,8 +2376,8 @@ namespace pyopencl
       py::object py_src_origin,
       py::object py_dst_origin,
       py::object py_region,
-      py::sequence py_src_pitches,
-      py::sequence py_dst_pitches,
+      py::object py_src_pitches,
+      py::object py_dst_pitches,
       py::object py_wait_for)
   {
     PYOPENCL_PARSE_WAIT_FOR;
@@ -2508,17 +2425,12 @@ namespace pyopencl
     const void *pattern_buf;
     PYOPENCL_BUFFER_SIZE_T pattern_len;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(pattern.ptr(), PyBUF_ANY_CONTIGUOUS);
 
     pattern_buf = ward->m_buf.buf;
     pattern_len = ward->m_buf.len;
-#else
-    if (PyObject_AsReadBuffer(pattern.ptr(), &pattern_buf, &pattern_len))
-      throw py::error_already_set();
-#endif
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
@@ -2697,7 +2609,6 @@ namespace pyopencl
     void *buf = 0;
     PYOPENCL_BUFFER_SIZE_T len = 0;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> retained_buf_obj;
     if (buffer.ptr() != Py_None)
     {
@@ -2714,28 +2625,6 @@ namespace pyopencl
       buf = retained_buf_obj->m_buf.buf;
       len = retained_buf_obj->m_buf.len;
     }
-#else
-    py::object retained_buf_obj;
-    if (buffer.ptr() != Py_None)
-    {
-      if ((flags & CL_MEM_USE_HOST_PTR)
-          && ((flags & CL_MEM_READ_WRITE)
-            || (flags & CL_MEM_WRITE_ONLY)))
-      {
-        if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
-          throw py::error_already_set();
-      }
-      else
-      {
-        if (PyObject_AsReadBuffer(
-              buffer.ptr(), const_cast<const void **>(&buf), &len))
-          throw py::error_already_set();
-      }
-
-      if (flags & CL_MEM_USE_HOST_PTR)
-        retained_buf_obj = buffer;
-    }
-#endif
 
     unsigned dims = py::len(shape);
     cl_int status_code;
@@ -2810,10 +2699,8 @@ namespace pyopencl
       throw pyopencl::error("Image", CL_INVALID_VALUE,
           "invalid dimension");
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     if (!(flags & CL_MEM_USE_HOST_PTR))
       retained_buf_obj.reset();
-#endif
 
     try
     {
@@ -2843,7 +2730,6 @@ namespace pyopencl
 
     void *buf = 0;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> retained_buf_obj;
     if (buffer.ptr() != Py_None)
     {
@@ -2859,29 +2745,6 @@ namespace pyopencl
 
       buf = retained_buf_obj->m_buf.buf;
     }
-#else
-    py::object retained_buf_obj;
-    PYOPENCL_BUFFER_SIZE_T len;
-    if (buffer.ptr() != Py_None)
-    {
-      if ((flags & CL_MEM_USE_HOST_PTR)
-          && ((flags & CL_MEM_READ_WRITE)
-            || (flags & CL_MEM_WRITE_ONLY)))
-      {
-        if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
-          throw py::error_already_set();
-      }
-      else
-      {
-        if (PyObject_AsReadBuffer(
-              buffer.ptr(), const_cast<const void **>(&buf), &len))
-          throw py::error_already_set();
-      }
-
-      if (flags & CL_MEM_USE_HOST_PTR)
-        retained_buf_obj = buffer;
-    }
-#endif
 
     PYOPENCL_PRINT_CALL_TRACE("clCreateImage");
     cl_int status_code;
@@ -2889,10 +2752,8 @@ namespace pyopencl
     if (status_code != CL_SUCCESS)
       throw pyopencl::error("clCreateImage", status_code);
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     if (!(flags & CL_MEM_USE_HOST_PTR))
       retained_buf_obj.reset();
-#endif
 
     try
     {
@@ -2927,18 +2788,11 @@ namespace pyopencl
 
     void *buf;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
 
     buf = ward->m_buf.buf;
-#else
-    py::object ward = buffer;
-    PYOPENCL_BUFFER_SIZE_T len;
-    if (PyObject_AsWriteBuffer(buffer.ptr(), &buf, &len))
-      throw py::error_already_set();
-#endif
 
     cl_event evt;
 
@@ -2973,18 +2827,11 @@ namespace pyopencl
 
     const void *buf;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
 
     buf = ward->m_buf.buf;
-#else
-    py::object ward = buffer;
-    PYOPENCL_BUFFER_SIZE_T len;
-    if (PyObject_AsReadBuffer(buffer.ptr(), &buf, &len))
-      throw py::error_already_set();
-#endif
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
@@ -3106,17 +2953,11 @@ namespace pyopencl
 
     const void *color_buf;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
     ward->get(color.ptr(), PyBUF_ANY_CONTIGUOUS);
 
     color_buf = ward->m_buf.buf;
-#else
-    PYOPENCL_BUFFER_SIZE_T color_len;
-    if (PyObject_AsReadBuffer(color.ptr(), &color_buf, &color_len))
-      throw py::error_already_set();
-#endif
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
@@ -3342,14 +3183,11 @@ namespace pyopencl
     private:
       void *m_ptr;
       PYOPENCL_BUFFER_SIZE_T m_size;
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
-        std::unique_ptr<py_buffer_wrapper> ward;
-#endif
+      std::unique_ptr<py_buffer_wrapper> ward;
 
     public:
       svm_arg_wrapper(py::object holder)
       {
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
         ward = std::unique_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
 #ifdef PYPY_VERSION
         // FIXME: get a read-only buffer
@@ -3361,11 +3199,6 @@ namespace pyopencl
 #endif
         m_ptr = ward->m_buf.buf;
         m_size = ward->m_buf.len;
-#else
-        py::object ward = holder;
-        if (PyObject_AsWriteBuffer(holder.ptr(), &m_ptr, &m_size))
-          throw py::error_already_set();
-#endif
       }
 
       void *ptr() const
@@ -3497,18 +3330,12 @@ namespace pyopencl
     const void *pattern_ptr;
     PYOPENCL_BUFFER_SIZE_T pattern_len;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
     std::unique_ptr<py_buffer_wrapper> pattern_ward(new py_buffer_wrapper);
 
     pattern_ward->get(py_pattern.ptr(), PyBUF_ANY_CONTIGUOUS);
 
     pattern_ptr = pattern_ward->m_buf.buf;
     pattern_len = pattern_ward->m_buf.len;
-#else
-    py::object pattern_ward = py_pattern;
-    if (PyObject_AsReadBuffer(py_pattern.ptr(), &pattern_ptr, &pattern_len))
-      throw py::error_already_set();
-#endif
 
     size_t fill_size = dst.size();
     if (!byte_count.is_none())
@@ -3768,7 +3595,7 @@ namespace pyopencl
   class program : noncopyable
   {
     public:
-      enum program_kind_type { KND_UNKNOWN, KND_SOURCE, KND_BINARY };
+      enum program_kind_type { KND_UNKNOWN, KND_SOURCE, KND_BINARY, KND_IL };
 
     private:
       cl_program m_program;
@@ -4025,18 +3852,12 @@ namespace pyopencl
       const void *buf;
       PYOPENCL_BUFFER_SIZE_T len;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
       py_buffer_wrapper buf_wrapper;
 
       buf_wrapper.get(py::object(py_binaries[i]).ptr(), PyBUF_ANY_CONTIGUOUS);
 
       buf = buf_wrapper.m_buf.buf;
       len = buf_wrapper.m_buf.len;
-#else
-      if (PyObject_AsReadBuffer(
-            py::object(py_binaries[i]).ptr(), &buf, &len))
-        throw py::error_already_set();
-#endif
 
       binaries.push_back(reinterpret_cast<const unsigned char *>(buf));
       sizes.push_back(len);
@@ -4103,6 +3924,35 @@ namespace pyopencl
     }
   }
 #endif
+
+
+
+#if (PYOPENCL_CL_VERSION >= 0x2010)
+  inline
+  program *create_program_with_il(
+      context &ctx,
+      std::string const &src)
+  {
+    cl_int status_code;
+    PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithIL");
+    cl_program result = clCreateProgramWithIL(
+        ctx.data(), src.c_str(), src.size(), &status_code);
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("clCreateProgramWithIL", status_code);
+
+    try
+    {
+      return new program(result, false, program::KND_IL);
+    }
+    catch (...)
+    {
+      clReleaseProgram(result);
+      throw;
+    }
+  }
+#endif
+
+
 
 
 
@@ -4255,7 +4105,6 @@ namespace pyopencl
         const void *buf;
         PYOPENCL_BUFFER_SIZE_T len;
 
-#ifdef PYOPENCL_USE_NEW_BUFFER_INTERFACE
         py_buffer_wrapper buf_wrapper;
 
         try
@@ -4271,14 +4120,6 @@ namespace pyopencl
 
         buf = buf_wrapper.m_buf.buf;
         len = buf_wrapper.m_buf.len;
-#else
-        if (PyObject_AsReadBuffer(py_buffer.ptr(), &buf, &len))
-        {
-          PyErr_Clear();
-          throw error("Kernel.set_arg", CL_INVALID_VALUE,
-              "invalid kernel argument");
-        }
-#endif
 
         PYOPENCL_CALL_GUARDED(clSetKernelArg,
             (m_kernel, arg_index, len, buf));
@@ -4427,6 +4268,11 @@ namespace pyopencl
           case CL_KERNEL_ARG_TYPE_NAME:
           case CL_KERNEL_ARG_NAME:
             PYOPENCL_GET_STR_INFO(KernelArg, PYOPENCL_FIRST_ARG, param_name);
+
+          case CL_KERNEL_ARG_TYPE_QUALIFIER:
+            PYOPENCL_GET_INTEGRAL_INFO(KernelArg,
+                PYOPENCL_FIRST_ARG, param_name,
+                cl_kernel_arg_type_qualifier);
 #undef PYOPENCL_FIRST_ARG
           default:
             throw error("Kernel.get_arg_info", CL_INVALID_VALUE);
@@ -4465,7 +4311,8 @@ namespace pyopencl
       py::object py_local_work_size,
       py::object py_global_work_offset,
       py::object py_wait_for,
-      bool g_times_l)
+      bool g_times_l,
+      bool allow_empty_ndrange)
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
@@ -4518,6 +4365,33 @@ namespace pyopencl
       }
 
       global_work_offset_ptr = global_work_offset.empty( ) ? nullptr :  &global_work_offset.front();
+    }
+
+    if (allow_empty_ndrange)
+    {
+#if PYOPENCL_CL_VERSION >= 0x1020
+      bool is_empty = false;
+      for (cl_uint work_axis = 0; work_axis < work_dim; ++work_axis)
+        if (global_work_size[work_axis] == 0)
+          is_empty = true;
+      if (local_work_size_ptr)
+        for (cl_uint work_axis = 0; work_axis < work_dim; ++work_axis)
+          if (local_work_size_ptr[work_axis] == 0)
+            is_empty = true;
+
+      if (is_empty)
+      {
+        cl_event evt;
+        PYOPENCL_CALL_GUARDED(clEnqueueMarkerWithWaitList, (
+              cq.data(), PYOPENCL_WAITLIST_ARGS, &evt));
+        PYOPENCL_RETURN_NEW_EVENT(evt);
+      }
+#else
+      // clEnqueueWaitForEvents + clEnqueueMarker is not equivalent
+      // in the case of an out-of-order queue.
+      throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
+          "allow_empty_ndrange requires OpenCL 1.2");
+#endif
     }
 
     PYOPENCL_RETRY_RETURN_IF_MEM_ERROR( {

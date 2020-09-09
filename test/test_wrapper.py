@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -22,7 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from six.moves import range
+# avoid spurious: pytest.mark.parametrize is not callable
+# pylint: disable=not-callable
+
 
 import numpy as np
 import numpy.linalg as la
@@ -33,7 +33,8 @@ import pyopencl.array as cl_array
 import pyopencl.cltypes as cltypes
 import pyopencl.clrandom
 from pyopencl.tools import (  # noqa
-        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
+        pytest_generate_tests_for_pyopencl as pytest_generate_tests,
+        ImmediateAllocator, DeferredAllocator)
 from pyopencl.characterize import get_pocl_version
 
 # Are CL implementations crashy? You be the judge. :)
@@ -45,7 +46,7 @@ else:
     faulthandler.enable()
 
 
-def _skip_if_pocl(plat, up_to_version, msg='unsupported by pocl'):
+def _skip_if_pocl(plat, up_to_version, msg="unsupported by pocl"):
     if plat.vendor == "The pocl project":
         if up_to_version is None or get_pocl_version(plat) <= up_to_version:
             pytest.skip(msg)
@@ -55,6 +56,9 @@ def test_get_info(ctx_factory):
     ctx = ctx_factory()
     device, = ctx.devices
     platform = device.platform
+
+    device.persistent_unique_id
+    device.hashable_model_and_version_identifier
 
     failure_count = [0]
 
@@ -378,7 +382,7 @@ def test_image_2d(ctx_factory):
     if "Intel" in device.vendor and "31360.31426" in device.version:
         from pytest import skip
         skip("images crashy on %s" % device)
-    _skip_if_pocl(device.platform, None, 'pocl does not support CL_ADDRESS_CLAMP')
+    _skip_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
 
     prg = cl.Program(context, """
         __kernel void copy_image(
@@ -450,7 +454,7 @@ def test_image_3d(ctx_factory):
     if device.platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("images crashy on %s" % device)
-    _skip_if_pocl(device.platform, None, 'pocl does not support CL_ADDRESS_CLAMP')
+    _skip_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
 
     prg = cl.Program(context, """
         __kernel void copy_image_plane(
@@ -551,18 +555,40 @@ def test_mempool(ctx_factory):
     pool.stop_holding()
 
 
-def test_mempool_2():
-    from pyopencl.tools import MemoryPool
+def test_mempool_2(ctx_factory):
+    from pyopencl.tools import MemoryPool, ImmediateAllocator
     from random import randrange
+
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    pool = MemoryPool(ImmediateAllocator(queue))
 
     for i in range(2000):
         s = randrange(1 << 31) >> randrange(32)
-        bin_nr = MemoryPool.bin_number(s)
-        asize = MemoryPool.alloc_size(bin_nr)
+        bin_nr = pool.bin_number(s)
+        asize = pool.alloc_size(bin_nr)
 
         assert asize >= s, s
-        assert MemoryPool.bin_number(asize) == bin_nr, s
+        assert pool.bin_number(asize) == bin_nr, s
         assert asize < asize*(1+1/8)
+
+
+@pytest.mark.parametrize("allocator_cls", [ImmediateAllocator, DeferredAllocator])
+def test_allocator(ctx_factory, allocator_cls):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    if allocator_cls is DeferredAllocator:
+        allocator = allocator_cls(context)
+    else:
+        allocator = allocator_cls(queue)
+
+    mem = allocator(15)
+    mem2 = allocator(0)
+
+    assert mem is not None
+    assert mem2 is None
 
 
 def test_vector_args(ctx_factory):
@@ -623,9 +649,11 @@ def test_context_dep_memoize(ctx_factory):
     assert counter[0] == 1
 
 
-def test_can_build_binary(ctx_factory):
+def test_can_build_and_run_binary(ctx_factory):
     ctx = ctx_factory()
-    device, = ctx.devices
+    queue = cl.CommandQueue(ctx)
+
+    device = queue.device
 
     program = cl.Program(ctx, """
     __kernel void simple(__global float *in, __global float *out)
@@ -638,12 +666,18 @@ def test_can_build_binary(ctx_factory):
     foo = cl.Program(ctx, [device], [binary])
     foo.build()
 
+    n = 256
+    a_dev = cl.clrandom.rand(queue, n, np.float32)
+    dest_dev = cl_array.empty_like(a_dev)
+
+    foo.simple(queue, (n,), (16,), a_dev.data, dest_dev.data)
+
 
 def test_enqueue_barrier_marker(ctx_factory):
     ctx = ctx_factory()
     # Still relevant on pocl 1.0RC1.
     _skip_if_pocl(
-            ctx.devices[0].platform, (1, 0), 'pocl crashes on enqueue_barrier')
+            ctx.devices[0].platform, (1, 0), "pocl crashes on enqueue_barrier")
 
     queue = cl.CommandQueue(ctx)
 
@@ -670,7 +704,7 @@ def test_unload_compiler(platform):
             or cl.get_cl_header_version() < (1, 2)):
         from pytest import skip
         skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
-    _skip_if_pocl(platform, (0, 13), 'pocl does not support unloading compiler')
+    _skip_if_pocl(platform, (0, 13), "pocl does not support unloading compiler")
     if platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("Intel proprietary driver does not support unloading compiler")
@@ -697,7 +731,7 @@ def test_platform_get_devices(ctx_factory):
         devs = platform.get_devices(dev_type)
         if dev_type in (cl.device_type.DEFAULT,
                         cl.device_type.ALL,
-                        getattr(cl.device_type, 'CUSTOM', None)):
+                        getattr(cl.device_type, "CUSTOM", None)):
             continue
         for dev in devs:
             assert dev.type & dev_type == dev_type
@@ -730,22 +764,22 @@ def test_user_event(ctx_factory):
     Thread(target=event_waiter1, args=(evt, 1)).start()
     sleep(.05)
     if status.get(1, False):
-        raise RuntimeError('UserEvent triggered before set_status')
+        raise RuntimeError("UserEvent triggered before set_status")
     evt.set_status(cl.command_execution_status.COMPLETE)
     sleep(.05)
     if not status.get(1, False):
-        raise RuntimeError('UserEvent.wait timeout')
+        raise RuntimeError("UserEvent.wait timeout")
     assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
     evt = cl.UserEvent(ctx)
     Thread(target=event_waiter2, args=(evt, 2)).start()
     sleep(.05)
     if status.get(2, False):
-        raise RuntimeError('UserEvent triggered before set_status')
+        raise RuntimeError("UserEvent triggered before set_status")
     evt.set_status(cl.command_execution_status.COMPLETE)
     sleep(.05)
     if not status.get(2, False):
-        raise RuntimeError('cl.wait_for_events timeout on UserEvent')
+        raise RuntimeError("cl.wait_for_events timeout on UserEvent")
     assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
 
@@ -761,8 +795,8 @@ def test_buffer_get_host_array(ctx_factory):
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.USE_HOST_PTR, hostbuf=host_buf)
     host_buf2 = buf.get_host_array(25, np.float32)
     assert (host_buf == host_buf2).all()
-    assert (host_buf.__array_interface__['data'][0]
-            == host_buf.__array_interface__['data'][0])
+    assert (host_buf.__array_interface__["data"][0]
+            == host_buf.__array_interface__["data"][0])
     assert host_buf2.base is buf
 
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.ALLOC_HOST_PTR, size=100)
@@ -918,8 +952,8 @@ def test_spirv(ctx_factory):
 
     if (ctx._get_cl_version() < (2, 1)
             or cl.get_cl_header_version() < (2, 1)):
-        from pytest import skip
-        skip("SPIR-V program creation only available in OpenCL 2.1 and higher")
+        pytest.skip("SPIR-V program creation only available "
+                "in OpenCL 2.1 and higher")
 
     n = 50000
 
@@ -930,7 +964,10 @@ def test_spirv(ctx_factory):
     with open("add-vectors-%d.spv" % queue.device.address_bits, "rb") as spv_file:
         spv = spv_file.read()
 
-    prg = cl.Program(ctx, spv)
+    prg = cl.Program(ctx, spv).build()
+    if (not prg.all_kernels()
+            and queue.device.platform.name.startswith("AMD Accelerated")):
+        pytest.skip("SPIR-V program creation on AMD did not result in any kernels")
 
     prg.sum(queue, a_dev.shape, None, a_dev.data, b_dev.data, dest_dev.data)
 
@@ -939,7 +976,7 @@ def test_spirv(ctx_factory):
 
 def test_coarse_grain_svm(ctx_factory):
     import sys
-    is_pypy = '__pypy__' in sys.builtin_module_names
+    is_pypy = "__pypy__" in sys.builtin_module_names
 
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
@@ -954,6 +991,9 @@ def test_coarse_grain_svm(ctx_factory):
     if ("AMD" in dev.platform.name
             and dev.type & cl.device_type.CPU):
         pytest.xfail("AMD CPU doesn't do coarse-grain SVM")
+    if ("AMD" in dev.platform.name
+            and dev.type & cl.device_type.GPU):
+        pytest.xfail("AMD GPU crashes on SVM unmap")
 
     n = 3000
     svm_ary = cl.SVM(cl.csvm_empty(ctx, (n,), np.float32, alignment=64))
@@ -990,10 +1030,30 @@ def test_coarse_grain_svm(ctx_factory):
         cl.enqueue_copy(queue, new_ary, svm_ary)
         assert np.array_equal(orig_ary*2, new_ary)
 
+    # {{{ https://github.com/inducer/pyopencl/issues/372
+
+    svm_buf_arr = cl.svm_empty(ctx, cl.svm_mem_flags.READ_ONLY, 10, np.int32)
+    svm_out_arr = cl.svm_empty(ctx, cl.svm_mem_flags.READ_WRITE, 10, np.int32)
+
+    with cl.SVM(svm_buf_arr).map_rw(queue) as ary:
+        ary.fill(17)
+
+    prg_ro = cl.Program(ctx, """
+        __kernel void twice_ro(__global int *out_g, __global int *in_g)
+        {
+          out_g[get_global_id(0)] = 2*in_g[get_global_id(0)];
+        }
+        """).build()
+
+    prg_ro.twice_ro(queue, svm_buf_arr.shape, None,
+            cl.SVM(svm_out_arr), cl.SVM(svm_buf_arr))
+
+    # }}}
+
 
 def test_fine_grain_svm(ctx_factory):
     import sys
-    is_pypy = '__pypy__' in sys.builtin_module_names
+    is_pypy = "__pypy__" in sys.builtin_module_names
 
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
@@ -1078,6 +1138,66 @@ def test_compile_link(ctx_factory):
     z = cl.link_program(ctx, [vsink_prg, main_prg], devices=ctx.devices)
     z.experiment(queue, (128**2,), (128,))
     queue.finish()
+
+
+def test_copy_buffer_rect(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    arr1 = cl_array.zeros(queue, (2, 3), "f")
+    arr2 = cl_array.zeros(queue, (4, 5), "f")
+    arr1.fill(1)
+    cl.enqueue_copy(
+            queue, arr2.data, arr1.data,
+            src_origin=(0, 0), dst_origin=(1, 1),
+            region=arr1.shape[::-1])
+
+
+def test_threaded_nanny_events(ctx_factory):
+    # https://github.com/inducer/pyopencl/issues/296
+
+    import gc
+    import threading
+
+    def create_arrays_thread(n1=10, n2=20):
+        ctx = ctx_factory()
+        queue = cl.CommandQueue(ctx)
+        for i1 in range(n2):
+            for i in range(n1):
+                acl = cl.array.zeros(queue, 10, dtype=np.float32)
+                acl.get()
+            # Garbage collection triggers the error
+            print("collected ", str(gc.collect()))
+            print("stats ", gc.get_stats())
+
+    t1 = threading.Thread(target=create_arrays_thread)
+    t2 = threading.Thread(target=create_arrays_thread)
+
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
+
+
+@pytest.mark.parametrize("empty_shape", [(0,), (3, 0, 2)])
+def test_empty_ndrange(ctx_factory, empty_shape):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    if ctx._get_cl_version() < (1, 2) or cl.get_cl_header_version() < (1, 2):
+        pytest.skip("OpenCL 1.2 required for empty NDRange suuport")
+
+    a = cl_array.zeros(queue, empty_shape, dtype=np.float32)
+
+    prg = cl.Program(ctx, """
+        __kernel void add_two(__global float *a_g)
+        {
+          a_g[get_global_id(0)] += 2;
+        }
+        """).build()
+
+    prg.add_two(queue, a.shape, None, a.data, allow_empty_ndrange=True)
 
 
 if __name__ == "__main__":

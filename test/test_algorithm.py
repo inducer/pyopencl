@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-from __future__ import division, with_statement, absolute_import, print_function
 
 __copyright__ = "Copyright (C) 2013 Andreas Kloeckner"
 
@@ -24,7 +23,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from six.moves import range, zip
+# avoid spurious: pytest.mark.parametrize is not callable
+# pylint: disable=not-callable
+
 import numpy as np
 import numpy.linalg as la
 import sys
@@ -75,7 +76,7 @@ def test_elwise_kernel_with_options(ctx_factory):
 
     in_gpu = clrand(queue, (50,), np.float32)
 
-    options = ['-D', 'ADD_ONE']
+    options = ["-D", "ADD_ONE"]
     add_one = ElementwiseKernel(
         context,
         "float* out, const float *in",
@@ -378,7 +379,7 @@ def test_dot(ctx_factory):
                 vdot_ab = np.vdot(a, b)
             except NotImplementedError:
                 import sys
-                is_pypy = '__pypy__' in sys.builtin_module_names
+                is_pypy = "__pypy__" in sys.builtin_module_names
                 if is_pypy:
                     print("PYPY: VDOT UNIMPLEMENTED")
                     continue
@@ -500,7 +501,7 @@ def summarize_error(obtained, desired, orig, thresh=1e-5):
             bad_count += 1
 
             if bad_count < bad_limit:
-                entries.append("%r (want: %r, got: %r, orig: %r)" % (
+                entries.append("{!r} (want: {!r}, got: {!r}, orig: {!r})".format(
                     obtained[i], desired[i], obtained[i], orig[i]))
         else:
             if bad_count:
@@ -849,7 +850,7 @@ def test_sort(ctx_factory, scan_kernel):
 
         numpy_elapsed = numpy_end-dev_end
         dev_elapsed = dev_end-dev_start
-        print("  dev: %.2f MKeys/s numpy: %.2f MKeys/s ratio: %.2fx" % (
+        print("  dev: {:.2f} MKeys/s numpy: {:.2f} MKeys/s ratio: {:.2f}x".format(
                 1e-6*n/dev_elapsed, 1e-6*n/numpy_elapsed, numpy_elapsed/dev_elapsed))
         assert (a_dev_sorted.get() == a_sorted).all()
 
@@ -1070,7 +1071,7 @@ def test_bitonic_sort(ctx_factory, size, dtype):
 @pytest.mark.bitonic
 def test_bitonic_argsort(ctx_factory, size, dtype):
     import sys
-    is_pypy = '__pypy__' in sys.builtin_module_names
+    is_pypy = "__pypy__" in sys.builtin_module_names
 
     if not size and is_pypy:
         # https://bitbucket.org/pypy/numpy/issues/53/specifying-strides-on-zero-sized-array

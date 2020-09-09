@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 __copyright__ = "Copyright (C) 2018 Matt Wala"
 
 __license__ = """
@@ -21,6 +19,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
+
+# avoid spurious: pytest.mark.parametrize is not callable
+# pylint: disable=not-callable
 
 import numpy as np
 import pytest

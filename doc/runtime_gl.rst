@@ -51,7 +51,7 @@ with GL support. See :func:`have_gl`.
 
     .. method:: get_gl_texture_info(param)
 
-        See :class:`gl_texture_info` for values of *param*.  Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`.
+        See ``gl_texture_info`` for values of *param*.  Only available when PyOpenCL is compiled with GL support. See :func:`have_gl`.
 
 .. function:: enqueue_acquire_gl_objects(queue, mem_objects, wait_for=None)
 

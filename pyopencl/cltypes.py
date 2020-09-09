@@ -1,5 +1,3 @@
-# encoding: utf8
-
 __copyright__ = "Copyright (C) 2016 Jonathan Mackenzie"
 
 __license__ = """
@@ -24,7 +22,7 @@ import numpy as np
 from pyopencl.tools import get_or_register_dtype
 import warnings
 
-if __file__.endswith('array.py'):
+if __file__.endswith("array.py"):
     warnings.warn("pyopencl.array.vec is deprecated. Please use pyopencl.cltypes")
 
 """
@@ -48,8 +46,8 @@ double = np.float64
 
 def _create_vector_types():
     _mapping = [(k, globals()[k]) for k in
-                ['char', 'uchar', 'short', 'ushort', 'int',
-                 'uint', 'long', 'ulong', 'float', 'double']]
+                ["char", "uchar", "short", "ushort", "int",
+                 "uint", "long", "ulong", "float", "double"]]
 
     def set_global(key, val):
         globals()[key] = val

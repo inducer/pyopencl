@@ -28,6 +28,9 @@
 // first to prevent OS X from overriding a bunch of macros. (e.g. isspace)
 #include <Python.h>
 
+#define NO_IMPORT_ARRAY
+#define PY_ARRAY_UNIQUE_SYMBOL pyopencl_ARRAY_API
+
 #include <memory>
 #include <vector>
 #include "wrap_helpers.hpp"
@@ -101,6 +104,9 @@ namespace
 
       pointer_type allocate(size_type s)
       {
+        if (s == 0)
+          return nullptr;
+
         return pyopencl::create_buffer(m_context->data(), m_flags, s, 0);
       }
   };
@@ -134,6 +140,9 @@ namespace
 
       pointer_type allocate(size_type s)
       {
+        if (s == 0)
+          return nullptr;
+
         pointer_type ptr =  pyopencl::create_buffer(
             m_context->data(), m_flags, s, 0);
 
@@ -141,7 +150,10 @@ namespace
         // This looks (and is) expensive. But immediate allocators
         // have their main use in memory pools, whose basic assumption
         // is that allocation is too expensive anyway--but they rely
-        // on exact 'out-of-memory' information.
+        // on 'out-of-memory' being reported on allocation. (If it is
+        // reported in a deferred manner, it has no way to react
+        // (e.g. by freeing unused memory) because it is not part of
+        // the call stack.)
         unsigned zero = 0;
         PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
               m_queue.data(),
@@ -183,6 +195,15 @@ namespace
       }
 
       alloc.try_release_blocks();
+    }
+
+    if (!mem)
+    {
+      if (size == 0)
+        return nullptr;
+      else
+        throw pyopencl::error("Allocator", CL_INVALID_VALUE,
+            "allocator succeeded but returned NULL cl_mem");
     }
 
     try
@@ -238,8 +259,8 @@ namespace
     wrapper
       .def_property_readonly("held_blocks", &cls::held_blocks)
       .def_property_readonly("active_blocks", &cls::active_blocks)
-      .DEF_SIMPLE_STATIC_METHOD(bin_number)
-      .DEF_SIMPLE_STATIC_METHOD(alloc_size)
+      .DEF_SIMPLE_METHOD(bin_number)
+      .DEF_SIMPLE_METHOD(alloc_size)
       .DEF_SIMPLE_METHOD(free_held)
       .DEF_SIMPLE_METHOD(stop_holding)
       ;
@@ -272,7 +293,8 @@ void pyopencl_expose_mempool(py::module &m)
           std::shared_ptr<pyopencl::context> const &>())
       .def(py::init<
           std::shared_ptr<pyopencl::context> const &,
-          cl_mem_flags>())
+          cl_mem_flags>(),
+          py::arg("queue"), py::arg("mem_flags"))
       ;
   }
 
@@ -282,7 +304,8 @@ void pyopencl_expose_mempool(py::module &m)
         m, "_tools_ImmediateAllocator");
     wrapper
       .def(py::init<pyopencl::command_queue &>())
-      .def(py::init<pyopencl::command_queue &, cl_mem_flags>())
+      .def(py::init<pyopencl::command_queue &, cl_mem_flags>(),
+          py::arg("queue"), py::arg("mem_flags"))
       ;
   }
 
@@ -293,7 +316,10 @@ void pyopencl_expose_mempool(py::module &m)
       cls, /* boost::noncopyable, */
       std::shared_ptr<cls>> wrapper( m, "MemoryPool");
     wrapper
-      .def(py::init<cl_allocator_base const &>())
+      .def(py::init<cl_allocator_base const &, unsigned>(),
+          py::arg("allocator"),
+          py::arg("leading_bits_in_bin_id")=4
+          )
       .def("allocate", device_pool_allocate)
       .def("__call__", device_pool_allocate)
       // undoc for now

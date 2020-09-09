@@ -1,9 +1,5 @@
 """Elementwise functionality."""
 
-from __future__ import division
-from __future__ import absolute_import
-from six.moves import range
-from six.moves import zip
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -83,29 +79,29 @@ def get_elwise_program(context, arguments, operation,
                 stacklevel=3)
 
     source = ("""//CL//
-        %(preamble)s
+        {preamble}
 
         #define PYOPENCL_ELWISE_CONTINUE continue
 
-        __kernel void %(name)s(%(arguments)s)
-        {
+        __kernel void {name}({arguments})
+        {{
           int lid = get_local_id(0);
           int gsize = get_global_size(0);
           int work_group_start = get_local_size(0)*get_group_id(0);
           long i;
 
-          %(loop_prep)s;
-          %(body)s
-          %(after_loop)s;
-        }
-        """ % {
-            "arguments": ", ".join(arg.declarator() for arg in arguments),
-            "name": name,
-            "preamble": preamble,
-            "loop_prep": loop_prep,
-            "after_loop": after_loop,
-            "body": body % dict(operation=operation),
-            })
+          {loop_prep};
+          {body}
+          {after_loop};
+        }}
+        """.format(
+            arguments=", ".join(arg.declarator() for arg in arguments),
+            name=name,
+            preamble=preamble,
+            loop_prep=loop_prep,
+            after_loop=after_loop,
+            body=body % dict(operation=operation),
+            ))
 
     from pyopencl import Program
     return Program(context, source).build(options)
@@ -136,7 +132,7 @@ def get_elwise_kernel_and_types(context, arguments, operation,
                         #define PYOPENCL_DEFINE_CDOUBLE
                         """)
                     have_double_pragma = True
-            if arg.dtype.kind == 'c':
+            if arg.dtype.kind == "c":
                 if not have_complex_include:
                     includes.append("#include <pyopencl-complex.h>\n")
                     have_complex_include = True
@@ -250,6 +246,15 @@ class ElementwiseKernel:
         use_range = range_ is not None or slice_ is not None
         kernel, arg_descrs = self.get_kernel(use_range)
 
+        queue = kwargs.pop("queue", None)
+        wait_for = kwargs.pop("wait_for", None)
+
+        if wait_for is None:
+            wait_for = []
+        else:
+            # We'll be modifying it below.
+            wait_for = list(wait_for)
+
         # {{{ assemble arg array
 
         invocation_args = []
@@ -265,13 +270,12 @@ class ElementwiseKernel:
                 invocation_args.append(arg.base_data)
                 if arg_descr.with_offset:
                     invocation_args.append(arg.offset)
+                wait_for.extend(arg.events)
             else:
                 invocation_args.append(arg)
 
         # }}}
 
-        queue = kwargs.pop("queue", None)
-        wait_for = kwargs.pop("wait_for", None)
         if kwargs:
             raise TypeError("unknown keyword arguments: '%s'"
                     % ", ".join(kwargs))
@@ -465,20 +469,20 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
 def get_copy_kernel(context, dtype_dest, dtype_src):
     src = "src[i]"
     if dtype_dest.kind == "c" != dtype_src.kind:
-        src = "%s_fromreal(%s)" % (complex_dtype_to_name(dtype_dest), src)
+        src = "{}_fromreal({})".format(complex_dtype_to_name(dtype_dest), src)
 
     if dtype_dest.kind == "c" and dtype_src != dtype_dest:
-        src = "%s_cast(%s)" % (complex_dtype_to_name(dtype_dest), src),
+        src = "{}_cast({})".format(complex_dtype_to_name(dtype_dest), src),
 
     if dtype_dest != dtype_src and (
             dtype_dest.kind == "V" or dtype_src.kind == "V"):
         raise TypeError("copying between non-identical struct types")
 
     return get_elwise_kernel(context,
-            "%(tp_dest)s *dest, %(tp_src)s *src" % {
-                "tp_dest": dtype_to_ctype(dtype_dest),
-                "tp_src": dtype_to_ctype(dtype_src),
-                },
+            "{tp_dest} *dest, {tp_src} *src".format(
+                tp_dest=dtype_to_ctype(dtype_dest),
+                tp_src=dtype_to_ctype(dtype_src),
+                ),
             "dest[i] = %s" % src,
             preamble=dtype_to_c_struct(context.devices[0], dtype_dest),
             name="copy")
@@ -512,10 +516,10 @@ def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
         by = "%s_mul(b, y[i])" % complex_dtype_to_name(dtype_y)
 
     if x_is_complex and not y_is_complex:
-        by = "%s_fromreal(%s)" % (complex_dtype_to_name(dtype_x), by)
+        by = "{}_fromreal({})".format(complex_dtype_to_name(dtype_x), by)
 
     if not x_is_complex and y_is_complex:
-        ax = "%s_fromreal(%s)" % (complex_dtype_to_name(dtype_y), ax)
+        ax = "{}_fromreal({})".format(complex_dtype_to_name(dtype_y), ax)
 
     if x_is_complex or y_is_complex:
         result = (
@@ -525,14 +529,14 @@ def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
                     by=by,
                     root=complex_dtype_to_name(dtype_z)))
     else:
-        result = "%s + %s" % (ax, by)
+        result = f"{ax} + {by}"
 
     return get_elwise_kernel(context,
-            "%(tp_z)s *z, %(tp_x)s a, %(tp_x)s *x, %(tp_y)s b, %(tp_y)s *y" % {
-                "tp_x": dtype_to_ctype(dtype_x),
-                "tp_y": dtype_to_ctype(dtype_y),
-                "tp_z": dtype_to_ctype(dtype_z),
-                },
+            "{tp_z} *z, {tp_x} a, {tp_x} *x, {tp_y} b, {tp_y} *y".format(
+                tp_x=dtype_to_ctype(dtype_x),
+                tp_y=dtype_to_ctype(dtype_y),
+                tp_z=dtype_to_ctype(dtype_z),
+                ),
             "z[i] = %s" % result,
             name="axpbyz")
 
@@ -551,33 +555,33 @@ def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
         x = "x[i]"
 
         if dtype_x != dtype_z:
-            x = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), x)
+            x = "{}_cast({})".format(complex_dtype_to_name(dtype_z), x)
 
         if a_is_complex:
             if dtype_a != dtype_z:
-                a = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), a)
+                a = "{}_cast({})".format(complex_dtype_to_name(dtype_z), a)
 
-            ax = "%s_mul(%s, %s)" % (complex_dtype_to_name(dtype_z), a, x)
+            ax = "{}_mul({}, {})".format(complex_dtype_to_name(dtype_z), a, x)
         else:
-            ax = "%s_rmul(%s, %s)" % (complex_dtype_to_name(dtype_z), a, x)
+            ax = "{}_rmul({}, {})".format(complex_dtype_to_name(dtype_z), a, x)
     elif a_is_complex:
         a = "a"
         x = "x[i]"
 
         if dtype_a != dtype_z:
-            a = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), a)
-        ax = "%s_mulr(%s, %s)" % (complex_dtype_to_name(dtype_z), a, x)
+            a = "{}_cast({})".format(complex_dtype_to_name(dtype_z), a)
+        ax = "{}_mulr({}, {})".format(complex_dtype_to_name(dtype_z), a, x)
 
     b = "b"
     if z_is_complex and not b_is_complex:
-        b = "%s_fromreal(%s)" % (complex_dtype_to_name(dtype_z), b)
+        b = "{}_fromreal({})".format(complex_dtype_to_name(dtype_z), b)
 
     if z_is_complex and not (a_is_complex or x_is_complex):
-        ax = "%s_fromreal(%s)" % (complex_dtype_to_name(dtype_z), ax)
+        ax = "{}_fromreal({})".format(complex_dtype_to_name(dtype_z), ax)
 
     if z_is_complex:
-        ax = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), ax)
-        b = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), b)
+        ax = "{}_cast({})".format(complex_dtype_to_name(dtype_z), ax)
+        b = "{}_cast({})".format(complex_dtype_to_name(dtype_z), b)
 
     if a_is_complex or x_is_complex or b_is_complex:
         expr = "{root}_add({ax}, {b})".format(
@@ -585,15 +589,15 @@ def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
                 b=b,
                 root=complex_dtype_to_name(dtype_z))
     else:
-        expr = "%s + %s" % (ax, b)
+        expr = f"{ax} + {b}"
 
     return get_elwise_kernel(context,
-            "%(tp_z)s *z, %(tp_a)s a, %(tp_x)s *x,%(tp_b)s b" % {
-                "tp_a": dtype_to_ctype(dtype_a),
-                "tp_x": dtype_to_ctype(dtype_x),
-                "tp_b": dtype_to_ctype(dtype_b),
-                "tp_z": dtype_to_ctype(dtype_z),
-                },
+            "{tp_z} *z, {tp_a} a, {tp_x} *x,{tp_b} b".format(
+                tp_a=dtype_to_ctype(dtype_a),
+                tp_x=dtype_to_ctype(dtype_x),
+                tp_b=dtype_to_ctype(dtype_b),
+                tp_z=dtype_to_ctype(dtype_z),
+                ),
             "z[i] = " + expr,
             name="axpb")
 
@@ -607,25 +611,25 @@ def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z):
     y = "y[i]"
 
     if x_is_complex and dtype_x != dtype_z:
-        x = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), x)
+        x = "{}_cast({})".format(complex_dtype_to_name(dtype_z), x)
     if y_is_complex and dtype_y != dtype_z:
-        y = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), y)
+        y = "{}_cast({})".format(complex_dtype_to_name(dtype_z), y)
 
     if x_is_complex and y_is_complex:
-        xy = "%s_mul(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+        xy = "{}_mul({}, {})".format(complex_dtype_to_name(dtype_z), x, y)
     elif x_is_complex and not y_is_complex:
-        xy = "%s_mulr(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+        xy = "{}_mulr({}, {})".format(complex_dtype_to_name(dtype_z), x, y)
     elif not x_is_complex and y_is_complex:
-        xy = "%s_rmul(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+        xy = "{}_rmul({}, {})".format(complex_dtype_to_name(dtype_z), x, y)
     else:
-        xy = "%s * %s" % (x, y)
+        xy = f"{x} * {y}"
 
     return get_elwise_kernel(context,
-            "%(tp_z)s *z, %(tp_x)s *x, %(tp_y)s *y" % {
-                "tp_x": dtype_to_ctype(dtype_x),
-                "tp_y": dtype_to_ctype(dtype_y),
-                "tp_z": dtype_to_ctype(dtype_z),
-                },
+            "{tp_z} *z, {tp_x} *x, {tp_y} *y".format(
+                tp_x=dtype_to_ctype(dtype_x),
+                tp_y=dtype_to_ctype(dtype_y),
+                tp_z=dtype_to_ctype(dtype_z),
+                ),
             "z[i] = %s" % xy,
             name="multiply")
 
@@ -641,28 +645,28 @@ def get_divide_kernel(context, dtype_x, dtype_y, dtype_z):
 
     if z_is_complex and dtype_x != dtype_y:
         if x_is_complex and dtype_x != dtype_z:
-            x = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), x)
+            x = "{}_cast({})".format(complex_dtype_to_name(dtype_z), x)
         if y_is_complex and dtype_y != dtype_z:
-            y = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), y)
+            y = "{}_cast({})".format(complex_dtype_to_name(dtype_z), y)
 
     if x_is_complex and y_is_complex:
-        xoy = "%s_divide(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+        xoy = "{}_divide({}, {})".format(complex_dtype_to_name(dtype_z), x, y)
     elif not x_is_complex and y_is_complex:
-        xoy = "%s_rdivide(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+        xoy = "{}_rdivide({}, {})".format(complex_dtype_to_name(dtype_z), x, y)
     elif x_is_complex and not y_is_complex:
-        xoy = "%s_divider(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+        xoy = "{}_divider({}, {})".format(complex_dtype_to_name(dtype_z), x, y)
     else:
-        xoy = "%s / %s" % (x, y)
+        xoy = f"{x} / {y}"
 
     if z_is_complex:
-        xoy = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), xoy)
+        xoy = "{}_cast({})".format(complex_dtype_to_name(dtype_z), xoy)
 
     return get_elwise_kernel(context,
-            "%(tp_z)s *z, %(tp_x)s *x, %(tp_y)s *y" % {
-                "tp_x": dtype_to_ctype(dtype_x),
-                "tp_y": dtype_to_ctype(dtype_y),
-                "tp_z": dtype_to_ctype(dtype_z),
-                },
+            "{tp_z} *z, {tp_x} *x, {tp_y} *y".format(
+                tp_x=dtype_to_ctype(dtype_x),
+                tp_y=dtype_to_ctype(dtype_y),
+                tp_z=dtype_to_ctype(dtype_z),
+                ),
             "z[i] = %s" % xoy,
             name="divide")
 
@@ -679,25 +683,25 @@ def get_rdivide_elwise_kernel(context, dtype_x, dtype_y, dtype_z):
 
     if z_is_complex and dtype_x != dtype_y:
         if x_is_complex and dtype_x != dtype_z:
-            x = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), x)
+            x = "{}_cast({})".format(complex_dtype_to_name(dtype_z), x)
         if y_is_complex and dtype_y != dtype_z:
-            y = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), y)
+            y = "{}_cast({})".format(complex_dtype_to_name(dtype_z), y)
 
     if x_is_complex and y_is_complex:
-        yox = "%s_divide(%s, %s)" % (complex_dtype_to_name(dtype_z), y, x)
+        yox = "{}_divide({}, {})".format(complex_dtype_to_name(dtype_z), y, x)
     elif not y_is_complex and x_is_complex:
-        yox = "%s_rdivide(%s, %s)" % (complex_dtype_to_name(dtype_z), y, x)
+        yox = "{}_rdivide({}, {})".format(complex_dtype_to_name(dtype_z), y, x)
     elif y_is_complex and not x_is_complex:
-        yox = "%s_divider(%s, %s)" % (complex_dtype_to_name(dtype_z), y, x)
+        yox = "{}_divider({}, {})".format(complex_dtype_to_name(dtype_z), y, x)
     else:
-        yox = "%s / %s" % (y, x)
+        yox = f"{y} / {x}"
 
     return get_elwise_kernel(context,
-            "%(tp_z)s *z, %(tp_x)s *x, %(tp_y)s y" % {
-                "tp_x": dtype_to_ctype(dtype_x),
-                "tp_y": dtype_to_ctype(dtype_y),
-                "tp_z": dtype_to_ctype(dtype_z),
-                },
+            "{tp_z} *z, {tp_x} *x, {tp_y} y".format(
+                tp_x=dtype_to_ctype(dtype_x),
+                tp_y=dtype_to_ctype(dtype_y),
+                tp_z=dtype_to_ctype(dtype_z),
+                ),
             "z[i] = %s" % yox,
             name="divide_r")
 
@@ -705,9 +709,9 @@ def get_rdivide_elwise_kernel(context, dtype_x, dtype_y, dtype_z):
 @context_dependent_memoize
 def get_fill_kernel(context, dtype):
     return get_elwise_kernel(context,
-            "%(tp)s *z, %(tp)s a" % {
-                "tp": dtype_to_ctype(dtype),
-                },
+            "{tp} *z, {tp} a".format(
+                tp=dtype_to_ctype(dtype),
+                ),
             "z[i] = a",
             preamble=dtype_to_c_struct(context.devices[0], dtype),
             name="fill")
@@ -716,9 +720,9 @@ def get_fill_kernel(context, dtype):
 @context_dependent_memoize
 def get_reverse_kernel(context, dtype):
     return get_elwise_kernel(context,
-            "%(tp)s *z, %(tp)s *y" % {
-                "tp": dtype_to_ctype(dtype),
-                },
+            "{tp} *z, {tp} *y".format(
+                tp=dtype_to_ctype(dtype),
+                ),
             "z[i] = y[n-1-i]",
             name="reverse")
 
@@ -764,23 +768,23 @@ def get_pow_kernel(context, dtype_x, dtype_y, dtype_z,
 
     if z_is_complex and dtype_x != dtype_y:
         if x_is_complex and dtype_x != dtype_z:
-            x = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), x)
+            x = "{}_cast({})".format(complex_dtype_to_name(dtype_z), x)
         if y_is_complex and dtype_y != dtype_z:
-            y = "%s_cast(%s)" % (complex_dtype_to_name(dtype_z), y)
+            y = "{}_cast({})".format(complex_dtype_to_name(dtype_z), y)
     elif dtype_x != dtype_y:
         if dtype_x != dtype_z:
-            x = "(%s) (%s)" % (dtype_to_ctype(dtype_z), x)
+            x = "({}) ({})".format(dtype_to_ctype(dtype_z), x)
         if dtype_y != dtype_z:
-            y = "(%s) (%s)" % (dtype_to_ctype(dtype_z), y)
+            y = "({}) ({})".format(dtype_to_ctype(dtype_z), y)
 
     if x_is_complex and y_is_complex:
-        result = "%s_pow(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+        result = "{}_pow({}, {})".format(complex_dtype_to_name(dtype_z), x, y)
     elif x_is_complex and not y_is_complex:
-        result = "%s_powr(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+        result = "{}_powr({}, {})".format(complex_dtype_to_name(dtype_z), x, y)
     elif not x_is_complex and y_is_complex:
-        result = "%s_rpow(%s, %s)" % (complex_dtype_to_name(dtype_z), x, y)
+        result = "{}_rpow({}, {})".format(complex_dtype_to_name(dtype_z), x, y)
     else:
-        result = "pow(%s, %s)" % (x, y)
+        result = f"pow({x}, {y})"
 
     return get_elwise_kernel(context,
             ("%(tp_z)s *z, " + x_ctype + ", "+y_ctype) % {
@@ -876,7 +880,7 @@ def get_binary_func_kernel(context, func_name, x_dtype, y_dtype, out_dtype,
 def get_float_binary_func_kernel(context, func_name, x_dtype, y_dtype,
                                  out_dtype, preamble="", name=None):
     if (np.array(0, x_dtype) * np.array(0, y_dtype)).itemsize > 4:
-        arg_type = 'double'
+        arg_type = "double"
         preamble = """
         #if __OPENCL_C_VERSION__ < 120
         #pragma OPENCL EXTENSION cl_khr_fp64: enable
@@ -884,13 +888,13 @@ def get_float_binary_func_kernel(context, func_name, x_dtype, y_dtype,
         #define PYOPENCL_DEFINE_CDOUBLE
         """ + preamble
     else:
-        arg_type = 'float'
+        arg_type = "float"
     return get_elwise_kernel(context, [
         VectorArg(out_dtype, "z", with_offset=True),
         VectorArg(x_dtype, "x", with_offset=True),
         VectorArg(y_dtype, "y", with_offset=True),
         ],
-        "z[i] = %s((%s)x[i], (%s)y[i])" % (func_name, arg_type, arg_type),
+        f"z[i] = {func_name}(({arg_type})x[i], ({arg_type})y[i])",
         name="%s_kernel" % func_name if name is None else name,
         preamble=preamble)
 
@@ -898,7 +902,7 @@ def get_float_binary_func_kernel(context, func_name, x_dtype, y_dtype,
 @context_dependent_memoize
 def get_fmod_kernel(context, out_dtype=np.float32, arg_dtype=np.float32,
                     mod_dtype=np.float32):
-    return get_float_binary_func_kernel(context, 'fmod', arg_dtype,
+    return get_float_binary_func_kernel(context, "fmod", arg_dtype,
                                         mod_dtype, out_dtype)
 
 
@@ -936,7 +940,7 @@ def get_frexp_kernel(context, sign_dtype=np.float32, exp_dtype=np.float32,
 def get_ldexp_kernel(context, out_dtype=np.float32, sig_dtype=np.float32,
                      expt_dtype=np.float32):
     return get_binary_func_kernel(
-        context, '_PYOCL_LDEXP', sig_dtype, expt_dtype, out_dtype,
+        context, "_PYOCL_LDEXP", sig_dtype, expt_dtype, out_dtype,
         preamble="#define _PYOCL_LDEXP(x, y) ldexp(x, (int)(y))",
         name="ldexp_kernel")
 

@@ -1,6 +1,5 @@
 """Scan primitive."""
 
-from __future__ import division, absolute_import
 
 __copyright__ = """
 Copyright 2011-2012 Andreas Kloeckner
@@ -21,11 +20,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 Derived from code within the Thrust project, https://github.com/thrust/thrust/
-
 """
-
-import six
-from six.moves import range, zip
 
 import numpy as np
 
@@ -940,7 +935,7 @@ class ScanPerformanceWarning(UserWarning):
     pass
 
 
-class _GenericScanKernelBase(object):
+class _GenericScanKernelBase:
     # {{{ constructor, argument processing
 
     def __init__(self, ctx, dtype,
@@ -1469,6 +1464,11 @@ class GenericScanKernel(_GenericScanKernelBase):
         n = kwargs.get("size")
         wait_for = kwargs.get("wait_for")
 
+        if wait_for is None:
+            wait_for = []
+        else:
+            wait_for = list(wait_for)
+
         if len(args) != len(self.parsed_args):
             raise TypeError("expected %d arguments, got %d" %
                     (len(self.parsed_args), len(args)))
@@ -1491,6 +1491,7 @@ class GenericScanKernel(_GenericScanKernelBase):
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
                     data_args.append(arg_val.offset)
+                wait_for.extend(arg_val.events)
             else:
                 data_args.append(arg_val)
 
@@ -1541,7 +1542,7 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         l1_evt = l1_info.kernel(
                 queue, (num_intervals,), (l1_info.wg_size,),
-                *scan1_args, **dict(g_times_l=True, wait_for=wait_for))
+                *scan1_args, g_times_l=True, wait_for=wait_for)
 
         # }}}
 
@@ -1561,7 +1562,7 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         l2_evt = l2_info.kernel(
                 queue, (1,), (l1_info.wg_size,),
-                *scan2_args, **dict(g_times_l=True, wait_for=[l1_evt]))
+                *scan2_args, g_times_l=True, wait_for=[l1_evt])
 
         # }}}
 
@@ -1577,7 +1578,7 @@ class GenericScanKernel(_GenericScanKernelBase):
         return self.final_update_info.kernel(
                 queue, (num_intervals,),
                 (self.final_update_info.update_wg_size,),
-                *upd_args, **dict(g_times_l=True, wait_for=[l2_evt]))
+                *upd_args, g_times_l=True, wait_for=[l2_evt])
 
         # }}}
 
@@ -1679,6 +1680,12 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         n = kwargs.get("size")
         wait_for = kwargs.get("wait_for")
 
+        if wait_for is None:
+            wait_for = []
+        else:
+            # We'll be modifying it below.
+            wait_for = list(wait_for)
+
         if len(args) != len(self.parsed_args):
             raise TypeError("expected %d arguments, got %d" %
                     (len(self.parsed_args), len(args)))
@@ -1701,13 +1708,14 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
                     data_args.append(arg_val.offset)
+                wait_for.extend(arg_val.events)
             else:
                 data_args.append(arg_val)
 
         # }}}
 
         return self.kernel(queue, (1,), (1,),
-                *(data_args + [n]), **dict(wait_for=wait_for))
+                *(data_args + [n]), wait_for=wait_for)
 
 # }}}
 
@@ -1721,7 +1729,7 @@ class _LegacyScanKernelBase(GenericScanKernel):
         scan_ctype = dtype_to_ctype(dtype)
         GenericScanKernel.__init__(self,
                 ctx, dtype,
-                arguments="__global %s *input_ary, __global %s *output_ary" % (
+                arguments="__global {} *input_ary, __global {} *output_ary".format(
                     scan_ctype, scan_ctype),
                 input_expr="input_ary[i]",
                 scan_expr=scan_expr,
@@ -1740,7 +1748,7 @@ class _LegacyScanKernelBase(GenericScanKernel):
         if output_ary is None:
             output_ary = input_ary
 
-        if isinstance(output_ary, (str, six.text_type)) and output_ary == "new":
+        if isinstance(output_ary, (str, str)) and output_ary == "new":
             output_ary = cl.array.empty_like(input_ary, allocator=allocator)
 
         if input_ary.shape != output_ary.shape:

@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import
-
 __copyright__ = """
 Copyright (C) 2017 Andreas Kloeckner
 """
@@ -32,22 +30,20 @@ import pyopencl._cl as _cl
 from pytools.persistent_dict import WriteOncePersistentDict
 from pyopencl.tools import _NumpyTypesKeyBuilder
 
-_PYPY = '__pypy__' in sys.builtin_module_names
-_CPY2 = not _PYPY and sys.version_info < (3,)
-_CPY26 = _CPY2 and sys.version_info < (2, 7)
+_PYPY = "__pypy__" in sys.builtin_module_names
 
 
 # {{{ arg packing helpers
 
 _size_t_char = ({
-    8: 'Q',
-    4: 'L',
-    2: 'H',
-    1: 'B',
+    8: "Q",
+    4: "L",
+    2: "H",
+    1: "B",
 })[_cl._sizeof_size_t()]
 _type_char_map = {
-    'n': _size_t_char.lower(),
-    'N': _size_t_char
+    "n": _size_t_char.lower(),
+    "N": _size_t_char
 }
 del _size_t_char
 
@@ -59,9 +55,9 @@ del _size_t_char
 def generate_buffer_arg_setter(gen, arg_idx, buf_var):
     from pytools.py_codegen import Indentation
 
-    if _CPY2 or _PYPY:
+    if _PYPY:
         # https://github.com/numpy/numpy/issues/5381
-        gen("if isinstance({buf_var}, np.generic):".format(buf_var=buf_var))
+        gen(f"if isinstance({buf_var}, np.generic):")
         with Indentation(gen):
             if _PYPY:
                 gen("{buf_var} = np.asarray({buf_var})".format(buf_var=buf_var))
@@ -109,9 +105,9 @@ def generate_generic_arg_handling_body(num_args):
         gen("pass")
 
     for i in range(num_args):
-        gen("# process argument {arg_idx}".format(arg_idx=i))
+        gen(f"# process argument {i}")
         gen("")
-        gen("current_arg = {arg_idx}".format(arg_idx=i))
+        gen(f"current_arg = {i}")
         generate_generic_arg_handler(gen, i, "arg%d" % i)
         gen("")
 
@@ -139,9 +135,9 @@ def generate_specific_arg_handling_body(function_name,
         gen("pass")
 
     for arg_idx, arg_dtype in enumerate(scalar_arg_dtypes):
-        gen("# process argument {arg_idx}".format(arg_idx=arg_idx))
+        gen(f"# process argument {arg_idx}")
         gen("")
-        gen("current_arg = {arg_idx}".format(arg_idx=arg_idx))
+        gen(f"current_arg = {arg_idx}")
         arg_var = "arg%d" % arg_idx
 
         if arg_dtype is None:
@@ -162,7 +158,7 @@ def generate_specific_arg_handling_body(function_name,
                         "some (but not all) of the target devices mishandle "
                         "struct kernel arguments (hence the workaround is "
                         "disabled".format(
-                            knl_name=function_name, stacklevel=2))
+                            knl_name=function_name), stacklevel=2)
 
             if arg_dtype == np.complex64:
                 arg_char = "f"
@@ -203,16 +199,6 @@ def generate_specific_arg_handling_body(function_name,
                 cl_arg_idx += 1
 
             fp_arg_count += 2
-
-        elif arg_dtype.char in "IL" and _CPY26:
-            # Prevent SystemError: ../Objects/longobject.c:336: bad
-            # argument to internal function
-
-            gen(
-                    "buf = pack('{arg_char}', long({arg_var}))"
-                    .format(arg_char=arg_dtype.char, arg_var=arg_var))
-            generate_bytes_arg_setter(gen, cl_arg_idx, "buf")
-            cl_arg_idx += 1
 
         else:
             if arg_dtype.kind == "f":
@@ -322,7 +308,9 @@ def _generate_enqueue_and_set_args_module(function_name,
                 ", ".join(
                     ["self", "queue", "global_size", "local_size"]
                     + arg_names
-                    + ["global_offset=None", "g_times_l=None",
+                    + ["global_offset=None",
+                        "g_times_l=None",
+                        "allow_empty_ndrange=False",
                         "wait_for=None"])))
 
     with Indentation(gen):
@@ -331,7 +319,8 @@ def _generate_enqueue_and_set_args_module(function_name,
 
         gen("""
             return _cl.enqueue_nd_range_kernel(queue, self, global_size, local_size,
-                    global_offset, wait_for, g_times_l=g_times_l)
+                    global_offset, wait_for, g_times_l=g_times_l,
+                    allow_empty_ndrange=allow_empty_ndrange)
             """)
 
     # }}}
@@ -352,7 +341,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v6",
+        "pyopencl-invoker-cache-v7",
         key_builder=_NumpyTypesKeyBuilder())
 
 

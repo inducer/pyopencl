@@ -1,15 +1,11 @@
-from __future__ import division
-from __future__ import absolute_import
-
 from IPython.core.magic import (magics_class, Magics, cell_magic, line_magic)
 
 import pyopencl as cl
 import sys
-import six
 
 
 def _try_to_utf8(text):
-    if isinstance(text, six.text_type):
+    if isinstance(text, str):
         return text.encode("utf8")
     return text
 
@@ -48,16 +44,16 @@ class PyOpenCLMagics(Magics):
     def cl_kernel(self, line, cell):
         kernel = cell
 
-        opts, args = self.parse_options(line, 'o:')
-        build_options = opts.get('o', '')
+        opts, args = self.parse_options(line, "o:")
+        build_options = opts.get("o", "")
 
         self._run_kernel(kernel, build_options)
 
     def _load_kernel_and_options(self, line):
-        opts, args = self.parse_options(line, 'o:f:')
+        opts, args = self.parse_options(line, "o:f:")
 
-        build_options = opts.get('o')
-        kernel = self.shell.find_user_code(opts.get('f') or args)
+        build_options = opts.get("o")
+        kernel = self.shell.find_user_code(opts.get("f") or args)
 
         return kernel, build_options
 
@@ -72,9 +68,9 @@ class PyOpenCLMagics(Magics):
         header = "%%cl_kernel"
 
         if build_options:
-            header = '%s -o "%s"' % (header, build_options)
+            header = f'{header} -o "{build_options}"'
 
-        content = "%s\n\n%s" % (header, kernel)
+        content = f"{header}\n\n{kernel}"
 
         self.shell.set_next_input(content)
 

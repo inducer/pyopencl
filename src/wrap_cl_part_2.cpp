@@ -24,6 +24,9 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
+#define NO_IMPORT_ARRAY
+#define PY_ARRAY_UNIQUE_SYMBOL pyopencl_ARRAY_API
+
 #include "wrap_cl.hpp"
 
 
@@ -284,7 +287,7 @@ void pyopencl_expose_part_2(py::module &m)
       ;
   }
 
-  m.def("_enqueue_svm_memcpyw", enqueue_svm_memcpy,
+  m.def("_enqueue_svm_memcpy", enqueue_svm_memcpy,
       py::arg("queue"),
       py::arg("is_blocking"),
       py::arg("dst"),
@@ -351,6 +354,7 @@ void pyopencl_expose_part_2(py::module &m)
       .value("UNKNOWN", cls::KND_UNKNOWN)
       .value("SOURCE", cls::KND_SOURCE)
       .value("BINARY", cls::KND_BINARY)
+      .value("IL", cls::KND_IL)
       ;
 
     py::class_<cls>(m, "_Program", py::dynamic_attr())
@@ -405,6 +409,10 @@ void pyopencl_expose_part_2(py::module &m)
       ;
   }
 
+#if (PYOPENCL_CL_VERSION >= 0x2010)
+  m.def("_create_program_with_il", create_program_with_il);
+#endif
+
 #if PYOPENCL_CL_VERSION >= 0x1020
   m.def("unload_platform_compiler", unload_platform_compiler);
 #endif
@@ -453,7 +461,8 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("local_work_size"),
       py::arg("global_work_offset")=py::none(),
       py::arg("wait_for")=py::none(),
-      py::arg("g_times_l")=false
+      py::arg("g_times_l")=false,
+      py::arg("allow_empty_ndrange")=false
       );
 
   // TODO: clEnqueueNativeKernel
