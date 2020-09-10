@@ -58,6 +58,7 @@ def get_extra_lines(tup):
         yield "    .. versionadded:: %s" % pyopencl_ver
         yield ""
 
+
 const_ext_lookup = {
         cl.status_code: {
             "PLATFORM_NOT_FOUND_KHR": ("cl_khr_icd", "2011.1"),
@@ -184,6 +185,10 @@ const_ext_lookup = {
             "IL_VERSION": cl_21,
             "MAX_NUM_SUB_GROUPS": cl_21,
             "SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS": cl_21,
+            },
+
+        cl.device_topology_type_amd: {
+            "PCIE": amd_devattr,
             },
 
         cl.mem_object_type: {

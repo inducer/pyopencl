@@ -51,13 +51,14 @@ import sys
 
 _PYPY = "__pypy__" in sys.builtin_module_names
 
-from pyopencl._cl import (  # noqa
+from pyopencl._cl import (  # noqa: F401
         get_cl_header_version,
         program_kind,
         status_code,
         platform_info,
         device_type,
         device_info,
+        device_topology_type_amd,
         device_fp_config,
         device_mem_cache_type,
         device_local_mem_type,
@@ -148,8 +149,12 @@ from pyopencl._cl import (  # noqa
 
         Image,
         Sampler,
-        DeviceTopologyAmd,
         )
+
+try:
+    from pyopencl._cl import DeviceTopologyAmd  # noqa: F401
+except ImportError:
+    pass
 
 if not _PYPY:
     # FIXME: Add back to default set when pypy support catches up

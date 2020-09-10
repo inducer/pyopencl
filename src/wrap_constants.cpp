@@ -40,6 +40,7 @@ namespace
   class platform_info { };
   class device_type { };
   class device_info { };
+  class device_topology_type_amd { };
   class device_fp_config { };
   class device_mem_cache_type { };
   class device_local_mem_type { };
@@ -358,6 +359,7 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_, PCI_SLOT_ID_NV);
 #endif
 #endif
+
 // {{{ cl_amd_device_attribute_query
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
     ADD_ATTR(DEVICE_, PROFILING_TIMER_OFFSET_AMD);
@@ -398,7 +400,6 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
     ADD_ATTR(DEVICE_, LOCAL_MEM_BANKS_AMD);
 #endif
-// }}}
 #ifdef CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD
     ADD_ATTR(DEVICE_, THREAD_TRACE_SUPPORTED_AMD);
 #endif
@@ -411,6 +412,19 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD
     ADD_ATTR(DEVICE_, AVAILABLE_ASYNC_QUEUES_AMD);
 #endif
+#ifdef CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_AMD
+    ADD_ATTR(DEVICE_, PREFERRED_WORK_GROUP_SIZE_AMD);
+#endif
+#ifdef CL_DEVICE_MAX_WORK_GROUP_SIZE_AMD
+    ADD_ATTR(DEVICE_, MAX_WORK_GROUP_SIZE_AMD);
+#endif
+#ifdef CL_DEVICE_PREFERRED_CONSTANT_BUFFER_SIZE_AMD
+    ADD_ATTR(DEVICE_, PREFERRED_CONSTANT_BUFFER_SIZE_AMD);
+#endif
+#ifdef CL_DEVICE_PCIE_ID_AMD
+    ADD_ATTR(DEVICE_, PCIE_ID_AMD);
+#endif
+// }}}
 
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
     ADD_ATTR(DEVICE_, MAX_ATOMIC_COUNTERS_EXT);
@@ -484,6 +498,13 @@ void pyopencl_expose_constants(py::module &m)
 #endif
 #ifdef CL_DEVICE_NUM_SIMULTANEOUS_INTEROPS_INTEL
     ADD_ATTR(DEVICE_, NUM_SIMULTANEOUS_INTEROPS_INTEL);
+#endif
+  }
+
+  {
+    py::class_<device_topology_type_amd> cls(m, "device_topology_type_amd");
+#ifdef CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD
+    cls.attr("PCIE") = CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD;
 #endif
   }
 
@@ -1018,6 +1039,45 @@ void pyopencl_expose_constants(py::module &m)
 #endif
 
   // }}}
+
+  // {{{ CL_DEVICE_TOPOLOGY_AMD
+
+#ifdef CL_DEVICE_TOPOLOGY_AMD
+  {
+    typedef cl_device_topology_amd cls;
+    py::class_<cls>(m, "DeviceTopologyAmd")
+      .def(py::init(
+            [](cl_char bus, cl_char device, cl_char function)
+            {
+              cl_device_topology_amd result;
+              result.pcie.bus = bus;
+              result.pcie.device = device;
+              result.pcie.function = function;
+              return result;
+            }),
+          py::arg("bus")=0,
+          py::arg("device")=0,
+          py::arg("function")=0)
+
+      .def_property("type",
+          [](cls &t) { return t.pcie.type; },
+          [](cls &t, cl_uint val) { t.pcie.type = val; })
+
+      .def_property("bus",
+          [](cls &t) { return t.pcie.bus; },
+          [](cls &t, cl_char val) { t.pcie.bus = val; })
+      .def_property("device",
+          [](cls &t) { return t.pcie.device; },
+          [](cls &t, cl_char val) { t.pcie.device = val; })
+      .def_property("function",
+          [](cls &t) { return t.pcie.function; },
+          [](cls &t, cl_char val) { t.pcie.function = val; })
+      ;
+  }
+#endif
+
+  // }}}
+
 }
 
 

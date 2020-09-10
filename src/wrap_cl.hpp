@@ -364,7 +364,7 @@
 
 
 
-#define PYOPENCL_GET_INTEGRAL_INFO(WHAT, FIRST_ARG, SECOND_ARG, TYPE) \
+#define PYOPENCL_GET_TYPED_INFO(WHAT, FIRST_ARG, SECOND_ARG, TYPE) \
   { \
     TYPE param_value; \
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info, \
@@ -669,7 +669,7 @@ namespace pyopencl
       py::object get_info(cl_device_info param_name) const
       {
 #define DEV_GET_INT_INF(TYPE) \
-        PYOPENCL_GET_INTEGRAL_INFO(Device, m_device, param_name, TYPE);
+        PYOPENCL_GET_TYPED_INFO(Device, m_device, param_name, TYPE);
 
         switch (param_name)
         {
@@ -836,15 +836,15 @@ namespace pyopencl
 // {{{ AMD dev attrs cl_amd_device_attribute_query
 //
 // types of AMD dev attrs divined from
-// https://www.khronos.org/registry/cl/api/1.2/cl.hpp
+// https://github.com/KhronosGroup/OpenCL-CLHPP/blob/3b03738fef487378b188d21cc5f2bae276aa8721/include/CL/opencl.hpp#L1471-L1500
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
           case CL_DEVICE_PROFILING_TIMER_OFFSET_AMD: DEV_GET_INT_INF(cl_ulong);
 #endif
-/* FIXME
 #ifdef CL_DEVICE_TOPOLOGY_AMD
           case CL_DEVICE_TOPOLOGY_AMD:
+            PYOPENCL_GET_TYPED_INFO(
+                Device, m_device, param_name, cl_device_topology_amd);
 #endif
-*/
 #ifdef CL_DEVICE_BOARD_NAME_AMD
           case CL_DEVICE_BOARD_NAME_AMD: ;
             PYOPENCL_GET_STR_INFO(Device, m_device, param_name);
@@ -875,6 +875,17 @@ namespace pyopencl
 #ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
           case CL_DEVICE_LOCAL_MEM_BANKS_AMD: DEV_GET_INT_INF(cl_uint);
 #endif
+// FIXME: MISSING:
+//
+// CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD
+// CL_DEVICE_GFXIP_MAJOR_AMD
+// CL_DEVICE_GFXIP_MINOR_AMD
+// CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD
+// CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_AMD
+// CL_DEVICE_MAX_WORK_GROUP_SIZE_AMD
+// CL_DEVICE_PREFERRED_CONSTANT_BUFFER_SIZE_AMD
+// CL_DEVICE_PCIE_ID_AMD
+
 // }}}
 
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
@@ -1037,7 +1048,7 @@ namespace pyopencl
         switch (param_name)
         {
           case CL_CONTEXT_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(
+            PYOPENCL_GET_TYPED_INFO(
                 Context, m_context, param_name, cl_uint);
 
           case CL_CONTEXT_DEVICES:
@@ -1101,7 +1112,7 @@ namespace pyopencl
 
 #if PYOPENCL_CL_VERSION >= 0x1010
           case CL_CONTEXT_NUM_DEVICES:
-            PYOPENCL_GET_INTEGRAL_INFO(
+            PYOPENCL_GET_TYPED_INFO(
                 Context, m_context, param_name, cl_uint);
 #endif
 
@@ -1438,10 +1449,10 @@ namespace pyopencl
             PYOPENCL_GET_OPAQUE_INFO(CommandQueue, m_queue, param_name,
                 cl_device_id, device);
           case CL_QUEUE_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
+            PYOPENCL_GET_TYPED_INFO(CommandQueue, m_queue, param_name,
                 cl_uint);
           case CL_QUEUE_PROPERTIES:
-            PYOPENCL_GET_INTEGRAL_INFO(CommandQueue, m_queue, param_name,
+            PYOPENCL_GET_TYPED_INFO(CommandQueue, m_queue, param_name,
                 cl_command_queue_properties);
 
           default:
@@ -1517,13 +1528,13 @@ namespace pyopencl
             PYOPENCL_GET_OPAQUE_INFO(Event, m_event, param_name,
                 cl_command_queue, command_queue);
           case CL_EVENT_COMMAND_TYPE:
-            PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
+            PYOPENCL_GET_TYPED_INFO(Event, m_event, param_name,
                 cl_command_type);
           case CL_EVENT_COMMAND_EXECUTION_STATUS:
-            PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
+            PYOPENCL_GET_TYPED_INFO(Event, m_event, param_name,
                 cl_int);
           case CL_EVENT_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(Event, m_event, param_name,
+            PYOPENCL_GET_TYPED_INFO(Event, m_event, param_name,
                 cl_uint);
 #if PYOPENCL_CL_VERSION >= 0x1010
           case CL_EVENT_CONTEXT:
@@ -1547,7 +1558,7 @@ namespace pyopencl
 #if PYOPENCL_CL_VERSION >= 0x2000
           case CL_PROFILING_COMMAND_COMPLETE:
 #endif
-            PYOPENCL_GET_INTEGRAL_INFO(EventProfiling, m_event, param_name,
+            PYOPENCL_GET_TYPED_INFO(EventProfiling, m_event, param_name,
                 cl_ulong);
           default:
             throw error("Event.get_profiling_info", CL_INVALID_VALUE);
@@ -2462,7 +2473,7 @@ namespace pyopencl
         switch (param_name)
         {
           case CL_IMAGE_FORMAT:
-            PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name,
+            PYOPENCL_GET_TYPED_INFO(Image, data(), param_name,
                 cl_image_format);
           case CL_IMAGE_ELEMENT_SIZE:
           case CL_IMAGE_ROW_PITCH:
@@ -2473,7 +2484,7 @@ namespace pyopencl
 #if PYOPENCL_CL_VERSION >= 0x1020
           case CL_IMAGE_ARRAY_SIZE:
 #endif
-            PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, size_t);
+            PYOPENCL_GET_TYPED_INFO(Image, data(), param_name, size_t);
 
 #if PYOPENCL_CL_VERSION >= 0x1020
           case CL_IMAGE_BUFFER:
@@ -2492,7 +2503,7 @@ namespace pyopencl
 
           case CL_IMAGE_NUM_MIP_LEVELS:
           case CL_IMAGE_NUM_SAMPLES:
-            PYOPENCL_GET_INTEGRAL_INFO(Image, data(), param_name, cl_uint);
+            PYOPENCL_GET_TYPED_INFO(Image, data(), param_name, cl_uint);
 #endif
 
           default:
@@ -3566,19 +3577,19 @@ namespace pyopencl
         switch (param_name)
         {
           case CL_SAMPLER_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
+            PYOPENCL_GET_TYPED_INFO(Sampler, m_sampler, param_name,
                 cl_uint);
           case CL_SAMPLER_CONTEXT:
             PYOPENCL_GET_OPAQUE_INFO(Sampler, m_sampler, param_name,
                 cl_context, context);
           case CL_SAMPLER_ADDRESSING_MODE:
-            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
+            PYOPENCL_GET_TYPED_INFO(Sampler, m_sampler, param_name,
                 cl_addressing_mode);
           case CL_SAMPLER_FILTER_MODE:
-            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
+            PYOPENCL_GET_TYPED_INFO(Sampler, m_sampler, param_name,
                 cl_filter_mode);
           case CL_SAMPLER_NORMALIZED_COORDS:
-            PYOPENCL_GET_INTEGRAL_INFO(Sampler, m_sampler, param_name,
+            PYOPENCL_GET_TYPED_INFO(Sampler, m_sampler, param_name,
                 cl_bool);
 
           default:
@@ -3631,13 +3642,13 @@ namespace pyopencl
         switch (param_name)
         {
           case CL_PROGRAM_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
+            PYOPENCL_GET_TYPED_INFO(Program, m_program, param_name,
                 cl_uint);
           case CL_PROGRAM_CONTEXT:
             PYOPENCL_GET_OPAQUE_INFO(Program, m_program, param_name,
                 cl_context, context);
           case CL_PROGRAM_NUM_DEVICES:
-            PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
+            PYOPENCL_GET_TYPED_INFO(Program, m_program, param_name,
                 cl_uint);
           case CL_PROGRAM_DEVICES:
             {
@@ -3703,7 +3714,7 @@ namespace pyopencl
             // }}}
 #if PYOPENCL_CL_VERSION >= 0x1020
           case CL_PROGRAM_NUM_KERNELS:
-            PYOPENCL_GET_INTEGRAL_INFO(Program, m_program, param_name,
+            PYOPENCL_GET_TYPED_INFO(Program, m_program, param_name,
                 size_t);
           case CL_PROGRAM_KERNEL_NAMES:
             PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
@@ -3722,7 +3733,7 @@ namespace pyopencl
         {
 #define PYOPENCL_FIRST_ARG m_program, dev.data() // hackety hack
           case CL_PROGRAM_BUILD_STATUS:
-            PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
+            PYOPENCL_GET_TYPED_INFO(ProgramBuild,
                 PYOPENCL_FIRST_ARG, param_name,
                 cl_build_status);
           case CL_PROGRAM_BUILD_OPTIONS:
@@ -3731,13 +3742,13 @@ namespace pyopencl
                 PYOPENCL_FIRST_ARG, param_name);
 #if PYOPENCL_CL_VERSION >= 0x1020
           case CL_PROGRAM_BINARY_TYPE:
-            PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
+            PYOPENCL_GET_TYPED_INFO(ProgramBuild,
                 PYOPENCL_FIRST_ARG, param_name,
                 cl_program_binary_type);
 #endif
 #if PYOPENCL_CL_VERSION >= 0x2000
           case CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SIZE:
-            PYOPENCL_GET_INTEGRAL_INFO(ProgramBuild,
+            PYOPENCL_GET_TYPED_INFO(ProgramBuild,
                 PYOPENCL_FIRST_ARG, param_name,
                 size_t);
 #endif
@@ -4189,7 +4200,7 @@ namespace pyopencl
             PYOPENCL_GET_STR_INFO(Kernel, m_kernel, param_name);
           case CL_KERNEL_NUM_ARGS:
           case CL_KERNEL_REFERENCE_COUNT:
-            PYOPENCL_GET_INTEGRAL_INFO(Kernel, m_kernel, param_name,
+            PYOPENCL_GET_TYPED_INFO(Kernel, m_kernel, param_name,
                 cl_uint);
           case CL_KERNEL_CONTEXT:
             PYOPENCL_GET_OPAQUE_INFO(Kernel, m_kernel, param_name,
@@ -4215,7 +4226,7 @@ namespace pyopencl
         {
 #define PYOPENCL_FIRST_ARG m_kernel, dev.data() // hackety hack
           case CL_KERNEL_WORK_GROUP_SIZE:
-            PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
+            PYOPENCL_GET_TYPED_INFO(KernelWorkGroup,
                 PYOPENCL_FIRST_ARG, param_name,
                 size_t);
           case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
@@ -4230,13 +4241,13 @@ namespace pyopencl
 #if PYOPENCL_CL_VERSION >= 0x1010
           case CL_KERNEL_PRIVATE_MEM_SIZE:
 #endif
-            PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
+            PYOPENCL_GET_TYPED_INFO(KernelWorkGroup,
                 PYOPENCL_FIRST_ARG, param_name,
                 cl_ulong);
 
 #if PYOPENCL_CL_VERSION >= 0x1010
           case CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE:
-            PYOPENCL_GET_INTEGRAL_INFO(KernelWorkGroup,
+            PYOPENCL_GET_TYPED_INFO(KernelWorkGroup,
                 PYOPENCL_FIRST_ARG, param_name,
                 size_t);
 #endif
@@ -4256,12 +4267,12 @@ namespace pyopencl
         {
 #define PYOPENCL_FIRST_ARG m_kernel, arg_index // hackety hack
           case CL_KERNEL_ARG_ADDRESS_QUALIFIER:
-            PYOPENCL_GET_INTEGRAL_INFO(KernelArg,
+            PYOPENCL_GET_TYPED_INFO(KernelArg,
                 PYOPENCL_FIRST_ARG, param_name,
                 cl_kernel_arg_address_qualifier);
 
           case CL_KERNEL_ARG_ACCESS_QUALIFIER:
-            PYOPENCL_GET_INTEGRAL_INFO(KernelArg,
+            PYOPENCL_GET_TYPED_INFO(KernelArg,
                 PYOPENCL_FIRST_ARG, param_name,
                 cl_kernel_arg_access_qualifier);
 
@@ -4270,7 +4281,7 @@ namespace pyopencl
             PYOPENCL_GET_STR_INFO(KernelArg, PYOPENCL_FIRST_ARG, param_name);
 
           case CL_KERNEL_ARG_TYPE_QUALIFIER:
-            PYOPENCL_GET_INTEGRAL_INFO(KernelArg,
+            PYOPENCL_GET_TYPED_INFO(KernelArg,
                 PYOPENCL_FIRST_ARG, param_name,
                 cl_kernel_arg_type_qualifier);
 #undef PYOPENCL_FIRST_ARG
@@ -4476,9 +4487,9 @@ namespace pyopencl
         switch (param_name)
         {
           case CL_GL_TEXTURE_TARGET:
-            PYOPENCL_GET_INTEGRAL_INFO(GLTexture, data(), param_name, GLenum);
+            PYOPENCL_GET_TYPED_INFO(GLTexture, data(), param_name, GLenum);
           case CL_GL_MIPMAP_LEVEL:
-            PYOPENCL_GET_INTEGRAL_INFO(GLTexture, data(), param_name, GLint);
+            PYOPENCL_GET_TYPED_INFO(GLTexture, data(), param_name, GLint);
 
           default:
             throw error("MemoryObject.get_gl_texture_info", CL_INVALID_VALUE);
@@ -4729,22 +4740,22 @@ namespace pyopencl
     switch (param_name)
     {
       case CL_MEM_TYPE:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
+        PYOPENCL_GET_TYPED_INFO(MemObject, data(), param_name,
             cl_mem_object_type);
       case CL_MEM_FLAGS:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
+        PYOPENCL_GET_TYPED_INFO(MemObject, data(), param_name,
             cl_mem_flags);
       case CL_MEM_SIZE:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
+        PYOPENCL_GET_TYPED_INFO(MemObject, data(), param_name,
             size_t);
       case CL_MEM_HOST_PTR:
         throw pyopencl::error("MemoryObject.get_info", CL_INVALID_VALUE,
             "Use MemoryObject.get_host_array to get host pointer.");
       case CL_MEM_MAP_COUNT:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
+        PYOPENCL_GET_TYPED_INFO(MemObject, data(), param_name,
             cl_uint);
       case CL_MEM_REFERENCE_COUNT:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
+        PYOPENCL_GET_TYPED_INFO(MemObject, data(), param_name,
             cl_uint);
       case CL_MEM_CONTEXT:
         PYOPENCL_GET_OPAQUE_INFO(MemObject, data(), param_name,
@@ -4765,7 +4776,7 @@ namespace pyopencl
           return create_mem_object_wrapper(param_value);
         }
       case CL_MEM_OFFSET:
-        PYOPENCL_GET_INTEGRAL_INFO(MemObject, data(), param_name,
+        PYOPENCL_GET_TYPED_INFO(MemObject, data(), param_name,
             size_t);
 #endif
 
