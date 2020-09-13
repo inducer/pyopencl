@@ -580,6 +580,20 @@ namespace pyopencl
 #endif
             PYOPENCL_GET_STR_INFO(Platform, m_platform, param_name);
 
+#if PYOPENCL_CL_VERSION >= 0x2010
+          case CL_PLATFORM_HOST_TIMER_RESOLUTION:
+            PYOPENCL_GET_TYPED_INFO(Platform, m_platform, param_name, cl_ulong);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+          case CL_PLATFORM_NUMERIC_VERSION:
+            PYOPENCL_GET_TYPED_INFO(Platform, m_platform, param_name, cl_version);
+          case CL_PLATFORM_EXTENSIONS_WITH_VERSION:
+            {
+              std::vector<cl_name_version> result;
+              PYOPENCL_GET_VEC_INFO(Platform, m_platform, param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_name_version, result);
+            }
+#endif
           default:
             throw error("Platform.get_info", CL_INVALID_VALUE);
         }
@@ -916,6 +930,28 @@ namespace pyopencl
           case CL_DEVICE_MAX_NUM_SUB_GROUPS: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS: DEV_GET_INT_INF(cl_bool);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+          case CL_DEVICE_NUMERIC_VERSION: DEV_GET_INT_INF(cl_version);
+          case CL_DEVICE_EXTENSIONS_WITH_VERSION:
+          case CL_DEVICE_ILS_WITH_VERSION:
+          case CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION:
+          case CL_DEVICE_OPENCL_C_ALL_VERSIONS:
+          case CL_DEVICE_OPENCL_C_FEATURES:
+            {
+              std::vector<cl_name_version> result;
+              PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_name_version, result);
+            }
+          case CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES: DEV_GET_INT_INF(cl_device_atomic_capabilities);
+          case CL_DEVICE_ATOMIC_FENCE_CAPABILITIES: DEV_GET_INT_INF(cl_device_atomic_capabilities);
+          case CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT: DEV_GET_INT_INF(cl_bool);
+          case CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE: DEV_GET_INT_INF(size_t);
+          case CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT: DEV_GET_INT_INF(cl_bool);
+          case CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT: DEV_GET_INT_INF(cl_bool);
+          case CL_DEVICE_DEVICE_ENQUEUE_SUPPORT: DEV_GET_INT_INF(cl_bool);
+          case CL_DEVICE_PIPE_SUPPORT: DEV_GET_INT_INF(cl_bool);
+#endif
+
 #ifdef CL_DEVICE_ME_VERSION_INTEL
           case CL_DEVICE_ME_VERSION_INTEL: DEV_GET_INT_INF(cl_uint);
 #endif
