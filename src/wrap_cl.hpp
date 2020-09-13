@@ -52,7 +52,7 @@
 #else
 
 // elsewhere ------------------------------------------------------------------
-#define CL_TARGET_OPENCL_VERSION 220
+#define CL_TARGET_OPENCL_VERSION 300
 
 #include <CL/cl.h>
 #include "pyopencl_ext.h"
@@ -91,7 +91,9 @@
 #define PYOPENCL_CL_VERSION PYOPENCL_PRETEND_CL_VERSION
 #else
 
-#if defined(CL_VERSION_2_2)
+#if defined(CL_VERSION_3_0)
+#define PYOPENCL_CL_VERSION 0x3000
+#elif defined(CL_VERSION_2_2)
 #define PYOPENCL_CL_VERSION 0x2020
 #elif defined(CL_VERSION_2_1)
 #define PYOPENCL_CL_VERSION 0x2010
