@@ -1171,6 +1171,7 @@ void pyopencl_expose_constants(py::module &m)
             [](cl_char bus, cl_char device, cl_char function)
             {
               cl_device_topology_amd result;
+              result.pcie.type = CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD;
               result.pcie.bus = bus;
               result.pcie.device = device;
               result.pcie.function = function;
