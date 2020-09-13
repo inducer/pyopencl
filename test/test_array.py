@@ -426,12 +426,20 @@ def test_addition_scalar(ctx_factory):
     assert (7 + a == a_added).all()
 
 
-def test_substract_array(ctx_factory):
+@pytest.mark.parametrize(("dtype_a", "dtype_b"),
+        [
+            (np.float32, np.float32),
+            (np.float32, np.int32),
+            (np.int32, np.int32),
+            (np.int64, np.int32),
+            (np.int64, np.uint32),
+            ])
+def test_subtract_array(ctx_factory, dtype_a, dtype_b):
     """Test the substraction of two arrays."""
     #test data
-    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
+    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(dtype_a)
     b = np.array([10, 20, 30, 40, 50,
-                  60, 70, 80, 90, 100]).astype(np.float32)
+                  60, 70, 80, 90, 100]).astype(dtype_b)
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -471,14 +479,29 @@ def test_divide_scalar(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
-    a_gpu = cl_array.to_device(queue, a)
+    dtypes = (np.uint8, np.uint16, np.uint32,
+                  np.int8, np.int16, np.int32,
+                  np.float32, np.complex64)
+    from pyopencl.characterize import has_double_support
+    if has_double_support(queue.device):
+        dtypes = dtypes + (np.float64, np.complex128)
 
-    result = (a_gpu / 2).get()
-    assert (a / 2 == result).all()
+    from itertools import product
 
-    result = (2 / a_gpu).get()
-    assert (np.abs(2 / a - result) < 1e-5).all()
+    for dtype_a, dtype_s in product(dtypes, repeat=2):
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype_a)
+        s = dtype_s(40)
+        a_gpu = cl_array.to_device(queue, a)
+
+        b = a / s
+        b_gpu = a_gpu / s
+        assert (np.abs(b_gpu.get() - b) < 1e-3).all()
+        assert b_gpu.dtype is b.dtype
+
+        c = s / a
+        c_gpu = s / a_gpu
+        assert (np.abs(c_gpu.get() - c) < 1e-3).all()
+        assert c_gpu.dtype is c.dtype
 
 
 def test_divide_array(ctx_factory):
@@ -487,18 +510,100 @@ def test_divide_array(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    #test data
-    a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(np.float32)
-    b = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10]).astype(np.float32)
+    dtypes = (np.float32, np.complex64)
+    from pyopencl.characterize import has_double_support
+    if has_double_support(queue.device):
+        dtypes = dtypes + (np.float64, np.complex128)
 
-    a_gpu = cl_array.to_device(queue, a)
-    b_gpu = cl_array.to_device(queue, b)
+    from itertools import product
 
-    a_divide = (a_gpu / b_gpu).get()
-    assert (np.abs(a / b - a_divide) < 1e-3).all()
+    for dtype_a, dtype_b in product(dtypes, repeat=2):
 
-    a_divide = (b_gpu / a_gpu).get()
-    assert (np.abs(b / a - a_divide) < 1e-3).all()
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype_a)
+        b = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10]).astype(dtype_b)
+
+        a_gpu = cl_array.to_device(queue, a)
+        b_gpu = cl_array.to_device(queue, b)
+        c = a / b
+        c_gpu = (a_gpu / b_gpu)
+        assert (np.abs(c_gpu.get() - c) < 1e-3).all()
+        assert c_gpu.dtype is c.dtype
+
+        d = b / a
+        d_gpu = (b_gpu / a_gpu)
+        assert (np.abs(d_gpu.get() - d) < 1e-3).all()
+        assert d_gpu.dtype is d.dtype
+
+
+def test_divide_inplace_scalar(ctx_factory):
+    """Test inplace division of arrays and a scalar."""
+
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    dtypes = (np.uint8, np.uint16, np.uint32,
+                  np.int8, np.int16, np.int32,
+                  np.float32, np.complex64)
+    from pyopencl.characterize import has_double_support
+    if has_double_support(queue.device):
+        dtypes = dtypes + (np.float64, np.complex128)
+
+    from itertools import product
+
+    for dtype_a, dtype_s in product(dtypes, repeat=2):
+
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype_a)
+        s = dtype_s(40)
+        a_gpu = cl_array.to_device(queue, a)
+
+        # ensure the same behavior as inplace numpy.ndarray division
+        try:
+            a /= s
+        except TypeError:
+            with np.testing.assert_raises(TypeError):
+                a_gpu /= s
+        else:
+            a_gpu /= s
+            assert (np.abs(a_gpu.get() - a) < 1e-3).all()
+            assert a_gpu.dtype is a.dtype
+
+
+def test_divide_inplace_array(ctx_factory):
+    """Test inplace division of arrays."""
+
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    dtypes = (np.uint8, np.uint16, np.uint32,
+                  np.int8, np.int16, np.int32,
+                  np.float32, np.complex64)
+    from pyopencl.characterize import has_double_support
+    if has_double_support(queue.device):
+        dtypes = dtypes + (np.float64, np.complex128)
+
+    from itertools import product
+
+    for dtype_a, dtype_b in product(dtypes, repeat=2):
+        print(dtype_a, dtype_b)
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype_a)
+        b = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10]).astype(dtype_b)
+
+        a_gpu = cl_array.to_device(queue, a)
+        b_gpu = cl_array.to_device(queue, b)
+
+        # ensure the same behavior as inplace numpy.ndarray division
+        try:
+            a_gpu /= b_gpu
+        except TypeError:
+            # pass for now, as numpy casts differently for in-place and out-place
+            # true_divide
+            pass
+            # with np.testing.assert_raises(TypeError):
+            #     a /= b
+        else:
+            a /= b
+            assert (np.abs(a_gpu.get() - a) < 1e-3).all()
+            assert a_gpu.dtype is a.dtype
 
 
 def test_bitwise(ctx_factory):

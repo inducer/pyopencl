@@ -203,6 +203,10 @@ const_ext_lookup = {
             "PIPE_SUPPORT": cl_30,
             },
 
+        cl.device_topology_type_amd: {
+            "PCIE": amd_devattr,
+            },
+
         cl.mem_object_type: {
             "IMAGE2D_ARRAY": cl_12,
             "IMAGE1D": cl_12,
