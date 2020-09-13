@@ -481,10 +481,6 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_, MAX_NUM_SUB_GROUPS);
     ADD_ATTR(DEVICE_, SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS);
 #endif
-    /* cl_intel_advanced_motion_estimation */
-#ifdef CL_DEVICE_ME_VERSION_INTEL
-    ADD_ATTR(DEVICE_, ME_VERSION_INTEL);
-#endif
 #if PYOPENCL_CL_VERSION >= 0x3000
     ADD_ATTR(DEVICE_, NUMERIC_VERSION);
     ADD_ATTR(DEVICE_, EXTENSIONS_WITH_VERSION);
@@ -500,6 +496,10 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_, OPENCL_C_FEATURES);
     ADD_ATTR(DEVICE_, DEVICE_ENQUEUE_SUPPORT);
     ADD_ATTR(DEVICE_, PIPE_SUPPORT);
+#endif
+    /* cl_intel_advanced_motion_estimation */
+#ifdef CL_DEVICE_ME_VERSION_INTEL
+    ADD_ATTR(DEVICE_, ME_VERSION_INTEL);
 #endif
 
     /* cl_qcom_ext_host_ptr */
