@@ -1127,6 +1127,40 @@ void pyopencl_expose_constants(py::module &m)
 
   // }}}
 
+  // {{{ cl_name_version
+#if PYOPENCL_CL_VERSION >= 0x3000
+  {
+    typedef cl_name_version cls;
+    py::class_<cls>(m, "NameVersion")
+      .def(py::init(
+            [](cl_version version, const char* name)
+            {
+              cl_name_version result;
+              result.version = version;
+              result.name[0] = '\0';
+              // https://stackoverflow.com/a/1258577
+              strncat(result.name, name, CL_NAME_VERSION_MAX_NAME_SIZE-1);
+              return result;
+            }),
+          py::arg("version")=0,
+          py::arg("name")=0)
+
+      .def_property("version",
+          [](cls &t) { return t.version; },
+          [](cls &t, cl_version val) { t.version = val; })
+      .def_property("name",
+          [](cls &t) { return t.name; },
+          [](cls &t, const char *name)
+          {
+              t.name[0] = '\0';
+              // https://stackoverflow.com/a/1258577
+              strncat(t.name, name, CL_NAME_VERSION_MAX_NAME_SIZE-1);
+          })
+      ;
+  }
+#endif
+  // }}}
+
   // {{{ CL_DEVICE_TOPOLOGY_AMD
 
 #ifdef CL_DEVICE_TOPOLOGY_AMD
