@@ -30,6 +30,21 @@
 // CL 1.2 undecided:
 // clSetPrintfCallback
 
+// CL 2.0 missing:
+// pipes
+
+// CL 2.1 missing:
+// clGetKernelSubGroupInfo
+// clSetDefaultDeviceCommandQueue
+// clGetDeviceAndHostTimer
+// clGetHostTimer
+// clCloneKernel
+// clEnqueueSVMMigrateMem
+
+// CL 3.0 missing:
+// clCreateBufferWithProperties
+// clCreateImageWithProperties
+
 // {{{ includes
 
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS
