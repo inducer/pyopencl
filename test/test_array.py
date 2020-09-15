@@ -479,6 +479,9 @@ def test_divide_scalar(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
+    if queue.device.platform.name == "Apple":
+        pytest.xfail("Apple CL compiler crashes on this.")
+
     dtypes = (np.uint8, np.uint16, np.uint32,
                   np.int8, np.int16, np.int32,
                   np.float32, np.complex64)
@@ -540,6 +543,9 @@ def test_divide_inplace_scalar(ctx_factory):
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+
+    if queue.device.platform.name == "Apple":
+        pytest.xfail("Apple CL compiler crashes on this.")
 
     dtypes = (np.uint8, np.uint16, np.uint32,
                   np.int8, np.int16, np.int32,
