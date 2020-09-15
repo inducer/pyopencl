@@ -3701,8 +3701,7 @@ namespace pyopencl
             PYOPENCL_GET_OPAQUE_INFO(Program, m_program, param_name,
                 cl_context, context);
           case CL_PROGRAM_NUM_DEVICES:
-            PYOPENCL_GET_TYPED_INFO(Program, m_program, param_name,
-                cl_uint);
+            PYOPENCL_GET_TYPED_INFO(Program, m_program, param_name, cl_uint);
           case CL_PROGRAM_DEVICES:
             {
               std::vector<cl_device_id> result;
