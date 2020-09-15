@@ -869,6 +869,13 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(PROGRAM_, NUM_KERNELS);
     ADD_ATTR(PROGRAM_, KERNEL_NAMES);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR(PROGRAM_, IL);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2020
+    ADD_ATTR(PROGRAM_, SCOPE_GLOBAL_CTORS_PRESENT);
+    ADD_ATTR(PROGRAM_, SCOPE_GLOBAL_DTORS_PRESENT);
+#endif
   }
 
   {

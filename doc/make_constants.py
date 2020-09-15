@@ -319,6 +319,9 @@ const_ext_lookup = {
         cl.program_info: {
             "NUM_KERNELS": cl_12,
             "KERNEL_NAMES": cl_12,
+            "PROGRAM_IL": cl_21_late,
+            "SCOPE_GLOBAL_CTORS_PRESENT": cl_22,
+            "SCOPE_GLOBAL_DTORS_PRESENT": cl_22,
             },
 
         cl.program_build_info: {

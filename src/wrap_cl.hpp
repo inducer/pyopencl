@@ -3773,6 +3773,15 @@ namespace pyopencl
           case CL_PROGRAM_KERNEL_NAMES:
             PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+          case CL_PROGRAM_IL:
+            PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2020
+          case CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT:
+          case CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT:
+            PYOPENCL_GET_TYPED_INFO(Program, m_program, param_name, cl_bool);
+#endif
 
           default:
             throw error("Program.get_info", CL_INVALID_VALUE);
