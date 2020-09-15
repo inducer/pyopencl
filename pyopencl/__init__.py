@@ -105,6 +105,7 @@ from pyopencl._cl import (  # noqa: F401
         device_partition_property,
         device_affinity_domain,
         device_atomic_capabilities,
+        device_enqueue_capabilities,
 
         version_bits,
         khronos_vendor_id,
@@ -240,6 +241,7 @@ BITFIELD_CONSTANT_CLASSES = (
         _cl.queue_properties,
         _cl.svm_mem_flags,
         _cl.device_atomic_capabilities,
+        _cl.device_enqueue_capabilities,
         _cl.version_bits,
         )
 

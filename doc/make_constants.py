@@ -459,6 +459,11 @@ const_ext_lookup = {
             "SCOPE_ALL_DEVICES": cl_30,
             },
 
+        cl.device_enqueue_capabilities: {
+            "SUPPORTED": cl_30,
+            "REPLACEABLE_DEFAULT": cl_30,
+            },
+
         cl.profiling_info: {
             "COMPLETE": cl_20,
             },

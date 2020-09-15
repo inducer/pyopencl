@@ -86,6 +86,7 @@ namespace
   class device_partition_property { };
   class device_affinity_domain { };
   class device_atomic_capabilities { };
+  class device_enqueue_capabilities { };
 
   class version_bits { };
   class khronos_vendor_id { };
@@ -1127,6 +1128,13 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_ATOMIC_, SCOPE_WORK_GROUP);
     ADD_ATTR(DEVICE_ATOMIC_, SCOPE_DEVICE);
     ADD_ATTR(DEVICE_ATOMIC_, SCOPE_ALL_DEVICES);
+#endif
+  }
+  {
+    py::class_<device_enqueue_capabilities> cls(m, "device_enqueue_capabilities");
+#if (PYOPENCL_CL_VERSION >= 0x3000) && defined(CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES)
+    ADD_ATTR(DEVICE_ENQUEUE, SUPPORTED);
+    ADD_ATTR(DEVICE_ENQUEUE, REPLACEABLE_DEFAULT);
 #endif
   }
 
