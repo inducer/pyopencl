@@ -1133,8 +1133,8 @@ void pyopencl_expose_constants(py::module &m)
   {
     py::class_<device_enqueue_capabilities> cls(m, "device_enqueue_capabilities");
 #if (PYOPENCL_CL_VERSION >= 0x3000) && defined(CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES)
-    ADD_ATTR(DEVICE_ENQUEUE_, SUPPORTED);
-    ADD_ATTR(DEVICE_ENQUEUE_, REPLACEABLE_DEFAULT);
+    ADD_ATTR(DEVICE_QUEUE_, SUPPORTED);
+    ADD_ATTR(DEVICE_QUEUE_, REPLACEABLE_DEFAULT);
 #endif
   }
 
