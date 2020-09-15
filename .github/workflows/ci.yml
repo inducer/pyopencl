@@ -66,7 +66,8 @@ jobs:
         -   name: "Main Script"
             run: |
                 export CC=gcc
-                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                CONDA_ENVIRONMENT=.test-conda-env.yml
+                grep -v ocl-icd .test-conda-env-py3.yml > $CONDA_ENVIRONMENT
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
                 ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
                 . ./build-and-test-py-project-within-miniconda.sh
