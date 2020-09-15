@@ -1509,6 +1509,24 @@ namespace pyopencl
           case CL_QUEUE_PROPERTIES:
             PYOPENCL_GET_TYPED_INFO(CommandQueue, m_queue, param_name,
                 cl_command_queue_properties);
+#if PYOPENCL_CL_VERSION >= 0x2000
+          case CL_QUEUE_SIZE:
+            PYOPENCL_GET_TYPED_INFO(CommandQueue, m_queue, param_name,
+                cl_uint);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+          case CL_QUEUE_DEVICE_DEFAULT:
+            PYOPENCL_GET_OPAQUE_INFO(
+                CommandQueue, m_queue, param_name, cl_command_queue, command_queue);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+          case CL_QUEUE_PROPERTIES_ARRAY:
+            {
+              std::vector<cl_queue_properties> result;
+              PYOPENCL_GET_VEC_INFO(CommandQueue, m_queue, param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_queue_properties, result);
+            }
+#endif
 
           default:
             throw error("CommandQueue.get_info", CL_INVALID_VALUE);
