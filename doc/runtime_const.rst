@@ -12,7 +12,7 @@ OpenCL Runtime: Constants
 
         Only available with OpenCL 3.0 or newer.
 
-    .. versionaddedd:: 2020.3
+    .. versionadded:: 2020.3
 
     .. method:: __init__(version, name)
     .. attribute:: version
