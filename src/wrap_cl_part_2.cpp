@@ -401,6 +401,11 @@ void pyopencl_expose_part_2(py::module &m)
           py::arg("devices")=py::none()
           )
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2020
+      .def("set_specialization_constant", &cls::set_specialization_constant,
+          py::arg("spec_id"),
+          py::arg("buffer"))
+#endif
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)

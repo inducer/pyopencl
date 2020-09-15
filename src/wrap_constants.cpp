@@ -240,6 +240,11 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(, INVALID_DEVICE_QUEUE);
 #endif
 
+#if PYOPENCL_CL_VERSION >= 0x2020
+    ADD_ATTR(, INVALID_SPEC_ID);
+    ADD_ATTR(, MAX_SIZE_RESTRICTION_EXCEEDED);
+#endif
+
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     ADD_ATTR(, DEVICE_PARTITION_FAILED_EXT);
     ADD_ATTR(, INVALID_PARTITION_COUNT_EXT);

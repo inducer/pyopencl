@@ -31,6 +31,7 @@ cl_12 = ("CL_1.2", "2011.2")
 cl_12_2015 = ("CL_1.2", "2015.2")
 cl_20 = ("CL_2.0", "2015.2")
 cl_21 = ("CL_2.1", "2016.2")
+cl_22 = ("CL_2.1", "2020.3")
 cl_30 = ("CL_3.0", "2020.3")
 amd_devattr = ("cl_amd_device_attribute_query", "2013.2")
 qcom_hp_devattr = ("cl_qcom_ext_host_ptr", "2016.2")
@@ -82,6 +83,9 @@ const_ext_lookup = {
 
             "INVALID_PIPE_SIZE": cl_20,
             "INVALID_DEVICE_QUEUE": cl_20,
+
+            "INVALID_SPEC_ID": cl_22,
+            "MAX_SIZE_RESTRICTION_EXCEEDED": cl_22,
 
             },
 

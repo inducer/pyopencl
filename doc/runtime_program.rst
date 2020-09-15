@@ -110,6 +110,12 @@ Program
 
         Returns a list of all :class:`Kernel` objects in the :class:`Program`.
 
+    .. method:: set_specialization_constant(spec_id, buffer)
+
+        Only available with CL 2.2 and newer.
+
+        .. versionadded:: 2020.3
+
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
 

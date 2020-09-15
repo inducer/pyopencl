@@ -41,6 +41,8 @@
 // clCloneKernel
 // clEnqueueSVMMigrateMem
 
+// CL 2.2 complete
+
 // CL 3.0 missing:
 // clCreateBufferWithProperties
 // clCreateImageWithProperties
@@ -3856,6 +3858,16 @@ namespace pyopencl
              programs.empty() ? nullptr : &programs.front(),
              header_name_ptrs.empty() ? nullptr : &header_name_ptrs.front(),
              0, 0));
+      }
+#endif
+
+#if PYOPENCL_CL_VERSION >= 0x2020
+      void set_specialization_constant(cl_uint spec_id, py::object py_buffer)
+      {
+        py_buffer_wrapper bufwrap;
+        bufwrap.get(py_buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
+        PYOPENCL_CALL_GUARDED(clSetProgramSpecializationConstant,
+            (m_program, spec_id, bufwrap.m_buf.len, bufwrap.m_buf.buf));
       }
 #endif
   };
