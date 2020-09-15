@@ -75,6 +75,7 @@ namespace
   class kernel_arg_access_qualifier { };
   class kernel_arg_type_qualifier { };
   class kernel_work_group_info { };
+  class kernel_sub_group_info { };
   class event_info { };
   class command_type { };
   class command_execution_status { };
@@ -963,6 +964,17 @@ void pyopencl_expose_constants(py::module &m)
 #endif
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR(KERNEL_, GLOBAL_WORK_SIZE);
+#endif
+  }
+
+  {
+    py::class_<kernel_sub_group_info> cls(m, "kernel_sub_group_info");
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR(KERNEL_, MAX_SUB_GROUP_SIZE_FOR_NDRANGE);
+    ADD_ATTR(KERNEL_, SUB_GROUP_COUNT_FOR_NDRANGE);
+    ADD_ATTR(KERNEL_, LOCAL_SIZE_FOR_SUB_GROUP_COUNT);
+    ADD_ATTR(KERNEL_, MAX_NUM_SUB_GROUPS);
+    ADD_ATTR(KERNEL_, COMPILE_NUM_SUB_GROUPS);
 #endif
   }
 

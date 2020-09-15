@@ -30,6 +30,7 @@ cl_11 = ("CL_1.1", "0.92")
 cl_12 = ("CL_1.2", "2011.2")
 cl_12_2015 = ("CL_1.2", "2015.2")
 cl_20 = ("CL_2.0", "2015.2")
+cl_21_late = ("CL_2.1", "2020.3")
 cl_21 = ("CL_2.1", "2016.2")
 cl_22 = ("CL_2.1", "2020.3")
 cl_30 = ("CL_3.0", "2020.3")
@@ -266,6 +267,14 @@ const_ext_lookup = {
             "PREFERRED_WORK_GROUP_SIZE_MULTIPLE": cl_11,
             "PRIVATE_MEM_SIZE": cl_11,
             "GLOBAL_WORK_SIZE": cl_12,
+            },
+
+        cl.kernel_sub_group_info: {
+            "MAX_SUB_GROUP_SIZE_FOR_NDRANGE": cl_21_late,
+            "SUB_GROUP_COUNT_FOR_NDRANGE": cl_21_late,
+            "LOCAL_SIZE_FOR_SUB_GROUP_COUNT": cl_21_late,
+            "MAX_NUM_SUB_GROUPS": cl_21_late,
+            "COMPILE_NUM_SUB_GROUPS": cl_21_late,
             },
 
         cl.addressing_mode: {
