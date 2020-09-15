@@ -4870,6 +4870,19 @@ namespace pyopencl
         PYOPENCL_GET_TYPED_INFO(MemObject, data(), param_name,
             size_t);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+      case CL_MEM_USES_SVM_POINTER:
+        PYOPENCL_GET_TYPED_INFO(MemObject, data(), param_name,
+            cl_bool);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+      case CL_MEM_PROPERTIES:
+            {
+              std::vector<cl_mem_properties> result;
+              PYOPENCL_GET_VEC_INFO(MemObject, data(), param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_mem_properties, result);
+            }
+#endif
 
       default:
         throw error("MemoryObjectHolder.get_info", CL_INVALID_VALUE);
