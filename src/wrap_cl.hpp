@@ -970,7 +970,7 @@ namespace pyopencl
           case CL_DEVICE_DEVICE_ENQUEUE_SUPPORT: DEV_GET_INT_INF(cl_bool);
 #endif
 #ifdef CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES
-          case CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES: DEV_GET_INT_INF(cl_device_enqueue_capabilities);
+          case CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES: DEV_GET_INT_INF(cl_device_device_enqueue_capabilities);
 #endif
 
           case CL_DEVICE_PIPE_SUPPORT: DEV_GET_INT_INF(cl_bool);
