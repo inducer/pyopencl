@@ -740,6 +740,12 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR( , UNSIGNED_INT32);
     ADD_ATTR( , HALF_FLOAT);
     ADD_ATTR( , FLOAT);
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR( , UNORM_INT24);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR( , UNORM_INT_101010_2);
+#endif
   }
 
   {
@@ -838,6 +844,13 @@ void pyopencl_expose_constants(py::module &m)
 #if PYOPENCL_CL_VERSION >= 0x3000
     ADD_ATTR(SAMPLER_, PROPERTIES);
 #endif
+// {{{ cl_khr_mipmap_image
+#ifdef CL_SAMPLER_MIP_FILTER_MODE_KHR
+    ADD_ATTR(SAMPLER_, MIP_FILTER_MODE_KHR);
+    ADD_ATTR(SAMPLER_, LOD_MIN_KHR);
+    ADD_ATTR(SAMPLER_, LOD_MAX_KHR);
+#endif
+// }}}
   }
 
   {

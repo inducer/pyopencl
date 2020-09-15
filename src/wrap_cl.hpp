@@ -3664,6 +3664,23 @@ namespace pyopencl
           case CL_SAMPLER_NORMALIZED_COORDS:
             PYOPENCL_GET_TYPED_INFO(Sampler, m_sampler, param_name,
                 cl_bool);
+#if PYOPENCL_CL_VERSION >= 0x3000
+          case CL_SAMPLER_PROPERTIES:
+            {
+              std::vector<cl_sampler_properties> result;
+              PYOPENCL_GET_VEC_INFO(Sampler, m_sampler, param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_sampler_properties, result);
+            }
+#endif
+
+#ifdef CL_SAMPLER_MIP_FILTER_MODE_KHR
+          case CL_SAMPLER_MIP_FILTER_MODE_KHR:
+            PYOPENCL_GET_TYPED_INFO(Sampler, m_sampler, param_name,
+                cl_filter_mode);
+          case CL_SAMPLER_LOD_MIN_KHR:
+          case CL_SAMPLER_LOD_MAX_KHR:
+            PYOPENCL_GET_TYPED_INFO(Sampler, m_sampler, param_name, float);
+#endif
 
           default:
             throw error("Sampler.get_info", CL_INVALID_VALUE);

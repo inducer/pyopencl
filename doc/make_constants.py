@@ -251,6 +251,11 @@ const_ext_lookup = {
             "INTEROP_USER_SYNC": cl_12,
             },
 
+        cl.channel_type: {
+            "UNORM_INT24": ("CL_1.2", "2020.3"),
+            "UNORM_INT_101010_2": ("CL_2.1", "2020.3"),
+            },
+
         cl.channel_order: {
             "Rx": cl_11,
             "RGx": cl_11,
@@ -282,9 +287,12 @@ const_ext_lookup = {
             },
 
         cl.sampler_info: {
-            "MIP_FILTER_MODE": cl_20,
-            "LOD_MIN": cl_20,
-            "LOD_MAX": cl_20,
+            "MIP_FILTER_MODE": ("(deprecated)", "2015.2"),
+            "LOD_MIN": ("(deprecated)", "2015.2"),
+            "LOD_MAX": ("(deprecated)", "2015.2"),
+            "MIP_FILTER_MODE_KHR": ("cl_khr_mipmap_image", "2020.3"),
+            "LOD_MIN_KHR": ("cl_khr_mipmap_image", "2020.3"),
+            "LOD_MAX_KHR": ("cl_khr_mipmap_image", "2020.3"),
             "PROPERTIES": cl_30,
             },
 
