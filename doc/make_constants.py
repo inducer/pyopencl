@@ -204,7 +204,7 @@ const_ext_lookup = {
             "WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT": cl_30,
             "GENERIC_ADDRESS_SPACE_SUPPORT": cl_30,
             "OPENCL_C_FEATURES": cl_30,
-            "DEVICE_ENQUEUE_SUPPORT": cl_30,
+            "DEVICE_ENQUEUE_CAPABILITIES": cl_30,
             "PIPE_SUPPORT": cl_30,
             },
 

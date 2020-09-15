@@ -500,7 +500,12 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_, WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT);
     ADD_ATTR(DEVICE_, GENERIC_ADDRESS_SPACE_SUPPORT);
     ADD_ATTR(DEVICE_, OPENCL_C_FEATURES);
-    ADD_ATTR(DEVICE_, DEVICE_ENQUEUE_SUPPORT);
+#ifdef CL_DEVICE_DEVICE_ENQUEUE_SUPPORT
+    // some busted headers shipped by Debian have this
+    cls.attr("DEVICE_ENQUEUE_CAPABILITIES") = CL_DEVICE_DEVICE_ENQUEUE_SUPPORT;
+#else
+    ADD_ATTR(DEVICE_, DEVICE_ENQUEUE_CAPABILITIES);
+#endif
     ADD_ATTR(DEVICE_, PIPE_SUPPORT);
 #endif
     /* cl_intel_advanced_motion_estimation */
