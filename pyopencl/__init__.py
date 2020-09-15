@@ -96,6 +96,7 @@ from pyopencl._cl import (  # noqa: F401
         kernel_arg_access_qualifier,
         kernel_arg_type_qualifier,
         kernel_work_group_info,
+        kernel_sub_group_info,
 
         event_info,
         command_type,
