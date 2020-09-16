@@ -764,6 +764,10 @@ OpenCL Specification
 
    See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#clCreateSamplerWithProperties>`__.
 
+.. c:function:: void clCreatePipe()
+
+   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#clCreatePipe>`__.
+
 Internal Types
 --------------
 
