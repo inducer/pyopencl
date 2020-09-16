@@ -37,7 +37,6 @@
 // clSetDefaultDeviceCommandQueue
 // clGetDeviceAndHostTimer
 // clGetHostTimer
-// clCloneKernel
 // clEnqueueSVMMigrateMem
 
 // CL 2.2 complete
