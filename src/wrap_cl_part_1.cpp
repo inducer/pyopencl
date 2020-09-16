@@ -103,6 +103,9 @@ void pyopencl_expose_part_1(py::module &m)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
       PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_context)
+#if PYOPENCL_CL_VERSION >= 0x2010
+      .DEF_SIMPLE_METHOD(set_default_device_command_queue)
+#endif
       ;
   }
 

@@ -174,6 +174,8 @@ Context
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
 
+    .. method:: set_default_device_command_queue(dev, queue)
+
     |comparable|
 
 .. function:: create_some_context(interactive=True, answers=None, cache_dir=None)

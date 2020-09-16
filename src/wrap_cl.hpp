@@ -34,7 +34,6 @@
 
 // CL 2.1 missing:
 // clGetKernelSubGroupInfo
-// clSetDefaultDeviceCommandQueue
 // clEnqueueSVMMigrateMem
 
 // CL 2.2 complete
@@ -437,6 +436,7 @@
 namespace pyopencl
 {
   class program;
+  class command_queue;
 
   // {{{ error
   class error : public std::runtime_error
@@ -1229,6 +1229,10 @@ namespace pyopencl
 
         return major_ver << 12 | minor_ver << 4;
       }
+
+#if PYOPENCL_CL_VERSION >= 0x2010
+      void set_default_device_command_queue(device const &dev, command_queue const &queue);
+#endif
   };
 
 
@@ -4911,6 +4915,15 @@ namespace pyopencl
 
 
   // {{{ deferred implementation bits
+
+#if PYOPENCL_CL_VERSION >= 0x2010
+  inline void context::set_default_device_command_queue(device const &dev, command_queue const &queue)
+  {
+    PYOPENCL_CALL_GUARDED(clSetDefaultDeviceCommandQueue,
+        (m_context, dev.data(), queue.data()));
+  }
+#endif
+
 
   inline program *error::get_program() const
   {
