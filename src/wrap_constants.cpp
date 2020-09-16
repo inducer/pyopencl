@@ -60,6 +60,7 @@ namespace
   class mem_info { };
   class image_info { };
   class pipe_info { };
+  class pipe_properties { };
   class addressing_mode { };
   class filter_mode { };
   class sampler_info { };
@@ -816,6 +817,14 @@ void pyopencl_expose_constants(py::module &m)
 #endif
 #if PYOPENCL_CL_VERSION >= 0x3000
     ADD_ATTR(PIPE_, PROPERTIES);
+#endif
+  }
+
+  {
+    py::class_<pipe_info> cls(m, "pipe_properties");
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(PIPE_, PACKET_SIZE);
+    ADD_ATTR(PIPE_, MAX_PACKETS);
 #endif
   }
   {

@@ -81,6 +81,7 @@ from pyopencl._cl import (  # noqa: F401
         mem_info,
         image_info,
         pipe_info,
+        pipe_properties,
         addressing_mode,
         filter_mode,
         sampler_info,

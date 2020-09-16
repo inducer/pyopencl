@@ -320,6 +320,11 @@ const_ext_lookup = {
             "PROPERTIES": cl_30,
             },
 
+        cl.pipe_properties: {
+            "PACKET_SIZE": ("CL_2.0", "2020.3"),
+            "MAX_PACKETS": ("CL_2.0", "2020.3"),
+            },
+
         cl.map_flags: {
             "WRITE_INVALIDATE_REGION": cl_12,
             },
