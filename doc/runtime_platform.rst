@@ -45,6 +45,8 @@ Device
 
 .. class:: Device
 
+    Two instances of this class may be compared using *=="* and *"!="*.
+
     .. attribute:: info
 
         Lower case versions of the :class:`device_info` constants
@@ -88,7 +90,19 @@ Device
 
         .. versionadded:: 2011.2
 
-    Two instances of this class may be compared using *=="* and *"!="*.
+    .. method:: device_and_host_timer
+
+        :returns: a tuple ``(device_timestamp, host_timestamp)``.
+
+        Only available with CL 2.0.
+
+        .. versionadded:: 2020.3
+
+    .. method:: host_timer
+
+        Only available with CL 2.0.
+
+        .. versionadded:: 2020.3
 
 Context
 -------

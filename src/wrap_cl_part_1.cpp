@@ -68,6 +68,10 @@ void pyopencl_expose_part_1(py::module &m)
       .DEF_SIMPLE_METHOD(create_sub_devices)
 #endif
       PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_device_id)
+#if PYOPENCL_CL_VERSION >= 0x2010
+      .DEF_SIMPLE_METHOD(device_and_host_timer)
+      .DEF_SIMPLE_METHOD(host_timer)
+#endif
       ;
   }
 

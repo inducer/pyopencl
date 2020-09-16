@@ -35,8 +35,6 @@
 // CL 2.1 missing:
 // clGetKernelSubGroupInfo
 // clSetDefaultDeviceCommandQueue
-// clGetDeviceAndHostTimer
-// clGetHostTimer
 // clEnqueueSVMMigrateMem
 
 // CL 2.2 complete
@@ -1031,6 +1029,23 @@ namespace pyopencl
       }
 #endif
 
+#if PYOPENCL_CL_VERSION >= 0x2010
+      py::tuple device_and_host_timer() const
+      {
+        cl_ulong device_timestamp, host_timestamp;
+        PYOPENCL_CALL_GUARDED(clGetDeviceAndHostTimer,
+            (m_device, &device_timestamp, &host_timestamp));
+        return py::make_tuple(device_timestamp, host_timestamp);
+      }
+
+      cl_ulong host_timer() const
+      {
+        cl_ulong host_timestamp;
+        PYOPENCL_CALL_GUARDED(clGetHostTimer,
+            (m_device, &host_timestamp));
+        return host_timestamp;
+      }
+#endif
   };
 
 
