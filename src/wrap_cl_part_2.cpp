@@ -222,6 +222,36 @@ void pyopencl_expose_part_2(py::module &m)
 
   // }}}
 
+  // {{{ pipe
+
+  {
+    typedef pyopencl::pipe cls;
+    py::class_<cls, memory_object>(m, "Pipe", py::dynamic_attr())
+#if PYOPENCL_CL_VERSION >= 0x2000
+      .def(
+          py::init(
+            [](
+              context const &ctx,
+              cl_mem_flags flags,
+              cl_uint pipe_packet_size,
+              cl_uint pipe_max_packets,
+              py::sequence py_props)
+            {
+              return create_pipe(ctx, flags, pipe_packet_size, pipe_max_packets, py_props);
+            }),
+          py::arg("context"),
+          py::arg("flags"),
+          py::arg("packet_size"),
+          py::arg("max_packets"),
+          py::arg("properties")
+          )
+#endif
+      .DEF_SIMPLE_METHOD(get_pipe_info)
+      ;
+  }
+
+  // }}}
+
   // {{{ memory_map
   {
     typedef memory_map cls;

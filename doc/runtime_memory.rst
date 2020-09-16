@@ -381,3 +381,23 @@ Samplers
 
     |comparable|
 
+Pipes
+-----
+
+.. class:: Pipe(context, flags, packet_size, max_packets, properties)
+
+    See :class:`mem_flags` for values of *flags*.
+
+    :arg properties: a sequence
+        of keys and values from :class:`pipe_properties` as accepted
+        by :c:func:`clCreatePipe`. The trailing *0* is added automatically
+        and does not need to be included.
+
+    This function Requires OpenCL 2 or newer.
+
+    .. versionadded:: 2020.3
+
+    .. method:: get_pipe_info(param)
+
+        See :class:`pipe_info` for values of *param*.
+

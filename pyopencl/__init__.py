@@ -156,6 +156,10 @@ from pyopencl._cl import (  # noqa: F401
 
         Image,
         Sampler,
+
+        # This class is available unconditionally, even though CL only
+        # has it on CL2.0 and newer.
+        Pipe,
         )
 
 try:
@@ -1014,7 +1018,7 @@ def _add_functionality():
     class _ImageInfoGetter:
         def __init__(self, event):
             from warnings import warn
-            warn("Image.image.attr is deprecated. "
+            warn("Image.image.attr is deprecated and will go away in 2021. "
                     "Use Image.attr directly, instead.")
 
             self.event = event
@@ -1297,6 +1301,7 @@ def _add_functionality():
             _cl.MemoryObjectHolder:
             (MemoryObjectHolder.get_info, _cl.mem_info, []),
             Image: (_cl.Image.get_image_info, _cl.image_info, []),
+            Pipe: (_cl.Image.get_pipe_info, _cl.pipe_info, []),
             Program: (Program.get_info, _cl.program_info, []),
             Kernel: (Kernel.get_info, _cl.kernel_info, []),
             _cl.Sampler: (Sampler.get_info, _cl.sampler_info, []),

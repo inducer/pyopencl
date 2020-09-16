@@ -30,8 +30,7 @@
 // CL 1.2 undecided:
 // clSetPrintfCallback
 
-// CL 2.0 missing:
-// pipes
+// CL 2.0 complete
 
 // CL 2.1 missing:
 // clGetKernelSubGroupInfo
@@ -2580,7 +2579,7 @@ namespace pyopencl
 #endif
 
           default:
-            throw error("MemoryObject.get_image_info", CL_INVALID_VALUE);
+            throw error("Image.get_image_info", CL_INVALID_VALUE);
         }
       }
   };
@@ -3054,6 +3053,80 @@ namespace pyopencl
       );
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
+#endif
+
+  // }}}
+
+
+  // {{{ pipe
+
+  class pipe : public memory_object
+  {
+    public:
+      pipe(cl_mem mem, bool retain)
+        : memory_object(mem, retain)
+      { }
+
+      py::object get_pipe_info(cl_pipe_info param_name) const
+      {
+#if PYOPENCL_CL_VERSION >= 0x2000
+        switch (param_name)
+        {
+          case CL_PIPE_PACKET_SIZE:
+          case CL_PIPE_MAX_PACKETS:
+            PYOPENCL_GET_TYPED_INFO(Pipe, data(), param_name, cl_uint);
+
+          default:
+            throw error("Pipe.get_pipe_info", CL_INVALID_VALUE);
+        }
+#else
+        throw error("Pipes not available. PyOpenCL was not compiled against a CL2+ header.",
+            CL_INVALID_VALUE);
+#endif
+      }
+  };
+
+#if PYOPENCL_CL_VERSION >= 0x2000
+  inline
+  pipe *create_pipe(
+      context const &ctx,
+      cl_mem_flags flags,
+      cl_uint pipe_packet_size,
+      cl_uint pipe_max_packets,
+      py::sequence py_props)
+  {
+    PYOPENCL_STACK_CONTAINER(cl_pipe_properties, props, py::len(py_props) + 1);
+    {
+      size_t i = 0;
+      for (auto prop: py_props)
+        props[i++] = py::cast<cl_pipe_properties>(prop);
+      props[i++] = 0;
+    }
+
+    cl_int status_code;
+    PYOPENCL_PRINT_CALL_TRACE("clCreatePipe");
+
+    cl_mem mem = clCreatePipe(
+        ctx.data(),
+        flags,
+        pipe_packet_size,
+        pipe_max_packets,
+        PYOPENCL_STACK_CONTAINER_GET_PTR(props),
+        &status_code);
+
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("Pipe", status_code);
+
+    try
+    {
+      return new pipe(mem, false);
+    }
+    catch (...)
+    {
+      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+      throw;
+    }
+}
 #endif
 
   // }}}
