@@ -821,7 +821,7 @@ void pyopencl_expose_constants(py::module &m)
   }
 
   {
-    py::class_<pipe_info> cls(m, "pipe_properties");
+    py::class_<pipe_properties> cls(m, "pipe_properties");
 #if PYOPENCL_CL_VERSION >= 0x2000
     ADD_ATTR(PIPE_, PACKET_SIZE);
     ADD_ATTR(PIPE_, MAX_PACKETS);
