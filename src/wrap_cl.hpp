@@ -127,13 +127,6 @@
 #endif
 
 
-#if (PY_VERSION_HEX >= 0x03000000) or defined(PYPY_VERSION)
-#define PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(s) std::move(s)
-#else
-#define PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(s) (s)
-#endif
-
-
 #if defined(_WIN32)
 // MSVC does not understand variable-length arrays
 #define PYOPENCL_STACK_CONTAINER(TYPE, NAME, COUNT) std::vector<TYPE> NAME(COUNT)
@@ -1983,12 +1976,12 @@ namespace pyopencl
         if (retain)
           PYOPENCL_CALL_GUARDED(clRetainMemObject, (mem));
 
-        m_hostbuf = PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf);
+        m_hostbuf = std::move(hostbuf);
       }
 
       memory_object(memory_object &src)
         : m_valid(true), m_mem(src.m_mem),
-        m_hostbuf(PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(src.m_hostbuf))
+        m_hostbuf(std::move(src.m_hostbuf))
       {
         PYOPENCL_CALL_GUARDED(clRetainMemObject, (m_mem));
       }
@@ -2126,7 +2119,7 @@ namespace pyopencl
   {
     public:
       buffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : memory_object(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
+        : memory_object(mem, retain, std::move(hostbuf))
       { }
 
 #if PYOPENCL_CL_VERSION >= 0x1010
@@ -2232,7 +2225,7 @@ namespace pyopencl
 
     try
     {
-      return new buffer(mem, false, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(retained_buf_obj));
+      return new buffer(mem, false, std::move(retained_buf_obj));
     }
     catch (...)
     {
@@ -2545,7 +2538,7 @@ namespace pyopencl
   {
     public:
       image(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : memory_object(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
+        : memory_object(mem, retain, std::move(hostbuf))
       { }
 
       py::object get_image_info(cl_image_info param_name) const
@@ -2795,7 +2788,7 @@ namespace pyopencl
 
     try
     {
-      return new image(mem, false, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(retained_buf_obj));
+      return new image(mem, false, std::move(retained_buf_obj));
     }
     catch (...)
     {
@@ -2848,7 +2841,7 @@ namespace pyopencl
 
     try
     {
-      return new image(mem, false, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(retained_buf_obj));
+      return new image(mem, false, std::move(retained_buf_obj));
     }
     catch (...)
     {
@@ -4572,7 +4565,7 @@ namespace pyopencl
   {
     public:
       gl_buffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : memory_object(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
+        : memory_object(mem, retain, std::move(hostbuf))
       { }
   };
 
@@ -4583,7 +4576,7 @@ namespace pyopencl
   {
     public:
       gl_renderbuffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : memory_object(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
+        : memory_object(mem, retain, std::move(hostbuf))
       { }
   };
 
@@ -4594,7 +4587,7 @@ namespace pyopencl
   {
     public:
       gl_texture(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : image(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
+        : image(mem, retain, std::move(hostbuf))
       { }
 
       py::object get_gl_texture_info(cl_gl_texture_info param_name)
