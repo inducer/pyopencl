@@ -1301,7 +1301,7 @@ def _add_functionality():
             _cl.MemoryObjectHolder:
             (MemoryObjectHolder.get_info, _cl.mem_info, []),
             Image: (_cl.Image.get_image_info, _cl.image_info, []),
-            Pipe: (_cl.Image.get_pipe_info, _cl.pipe_info, []),
+            Pipe: (_cl.Pipe.get_pipe_info, _cl.pipe_info, []),
             Program: (Program.get_info, _cl.program_info, []),
             Kernel: (Kernel.get_info, _cl.kernel_info, []),
             _cl.Sampler: (Sampler.get_info, _cl.sampler_info, []),
