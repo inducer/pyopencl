@@ -150,6 +150,12 @@ Kernel
         may be used as attributes on instances of this class
         to directly query info attributes.
 
+    .. method:: clone()
+
+        Only available with CL 2.1.
+
+        .. versionadded:: 2020.3
+
     .. method:: get_info(param)
 
         See :class:`kernel_info` for values of *param*.

@@ -4258,6 +4258,28 @@ namespace pyopencl
 
       PYOPENCL_EQUALITY_TESTS(kernel);
 
+#if PYOPENCL_CL_VERSION >= 0x2010
+      kernel *clone()
+      {
+        cl_int status_code;
+
+        PYOPENCL_PRINT_CALL_TRACE("clCloneKernel");
+        cl_kernel result = clCloneKernel(m_kernel, &status_code);
+        if (status_code != CL_SUCCESS)
+          throw pyopencl::error("clCloneKernel", status_code);
+
+        try
+        {
+          return new kernel(result, /* retain */ false);
+        }
+        catch (...)
+        {
+          PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseKernel, (result));
+          throw;
+        }
+      }
+#endif
+
       void set_arg_null(cl_uint arg_index)
       {
         cl_mem m = 0;
