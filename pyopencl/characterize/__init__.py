@@ -285,8 +285,8 @@ def get_simd_group_size(dev, type_size):
     if "nvidia" in lc_vendor or "nvidia" in lc_real_vendor:
         return 32
 
-    if ("advanced micro" in lc_vendor or "ati" in lc_vendor or
-      "advanced micro" in lc_real_vendor or "ati" in lc_real_vendor):
+    if ("advanced micro" in lc_vendor or "ati" in lc_vendor
+      or "advanced micro" in lc_real_vendor or "ati" in lc_real_vendor):
         if dev.type & cl.device_type.GPU:
             # Tomasz Rybak says, in response to reduction misbehaving on the AMD
             # 'Loveland' APU:
