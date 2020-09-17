@@ -282,11 +282,11 @@ def get_simd_group_size(dev, type_size):
 
     lc_plat_vendor = dev.platform.vendor.lower()
     lc_dev_vendor = dev.vendor.lower()
-    if "nvidia" in lc_vendor or "nvidia" in lc_real_vendor:
+    if "nvidia" in lc_plat_vendor or "nvidia" in lc_dev_vendor:
         return 32
 
-    if ("advanced micro" in lc_vendor or "ati" in lc_vendor
-      or "advanced micro" in lc_real_vendor or "ati" in lc_real_vendor):
+    if ("advanced micro" in lc_plat_vendor or "ati" in lc_plat_vendor
+      or "advanced micro" in lc_dev_vendor or "ati" in lc_dev_vendor):
         if dev.type & cl.device_type.GPU:
             # Tomasz Rybak says, in response to reduction misbehaving on the AMD
             # 'Loveland' APU:
