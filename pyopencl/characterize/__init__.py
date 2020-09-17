@@ -280,7 +280,7 @@ def get_simd_group_size(dev, type_size):
     except Exception:
         pass
 
-    lc_vendor = dev.platform.vendor.lower()
+    lc_plat_vendor = dev.platform.vendor.lower()
     lc_dev_vendor = dev.vendor.lower()
     if "nvidia" in lc_vendor or "nvidia" in lc_real_vendor:
         return 32
