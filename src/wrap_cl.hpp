@@ -39,6 +39,9 @@
 // CL 3.0 missing:
 // clCreateBufferWithProperties
 // clCreateImageWithProperties
+// (no wrappers for now: OpenCL 3.0 does not define any optional properties for
+// buffers or images, no implementations to test with.)
+
 
 // {{{ includes
 
