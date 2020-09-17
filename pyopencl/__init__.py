@@ -80,6 +80,8 @@ from pyopencl._cl import (  # noqa: F401
         mem_object_type,
         mem_info,
         image_info,
+        pipe_info,
+        pipe_properties,
         addressing_mode,
         filter_mode,
         sampler_info,
@@ -95,6 +97,7 @@ from pyopencl._cl import (  # noqa: F401
         kernel_arg_access_qualifier,
         kernel_arg_type_qualifier,
         kernel_work_group_info,
+        kernel_sub_group_info,
 
         event_info,
         command_type,
@@ -103,6 +106,11 @@ from pyopencl._cl import (  # noqa: F401
         mem_migration_flags,
         device_partition_property,
         device_affinity_domain,
+        device_atomic_capabilities,
+        device_device_enqueue_capabilities,
+
+        version_bits,
+        khronos_vendor_id,
 
         Error, MemoryError, LogicError, RuntimeError,
 
@@ -149,6 +157,10 @@ from pyopencl._cl import (  # noqa: F401
 
         Image,
         Sampler,
+
+        # This class is available unconditionally, even though CL only
+        # has it on CL2.0 and newer.
+        Pipe,
         )
 
 try:
@@ -234,6 +246,9 @@ BITFIELD_CONSTANT_CLASSES = (
         _cl.device_svm_capabilities,
         _cl.queue_properties,
         _cl.svm_mem_flags,
+        _cl.device_atomic_capabilities,
+        _cl.device_device_enqueue_capabilities,
+        _cl.version_bits,
         )
 
 
@@ -1004,7 +1019,7 @@ def _add_functionality():
     class _ImageInfoGetter:
         def __init__(self, event):
             from warnings import warn
-            warn("Image.image.attr is deprecated. "
+            warn("Image.image.attr is deprecated and will go away in 2021. "
                     "Use Image.attr directly, instead.")
 
             self.event = event
@@ -1287,6 +1302,7 @@ def _add_functionality():
             _cl.MemoryObjectHolder:
             (MemoryObjectHolder.get_info, _cl.mem_info, []),
             Image: (_cl.Image.get_image_info, _cl.image_info, []),
+            Pipe: (_cl.Pipe.get_pipe_info, _cl.pipe_info, []),
             Program: (Program.get_info, _cl.program_info, []),
             Kernel: (Kernel.get_info, _cl.kernel_info, []),
             _cl.Sampler: (Sampler.get_info, _cl.sampler_info, []),

@@ -222,6 +222,36 @@ void pyopencl_expose_part_2(py::module &m)
 
   // }}}
 
+  // {{{ pipe
+
+  {
+    typedef pyopencl::pipe cls;
+    py::class_<cls, memory_object>(m, "Pipe", py::dynamic_attr())
+#if PYOPENCL_CL_VERSION >= 0x2000
+      .def(
+          py::init(
+            [](
+              context const &ctx,
+              cl_mem_flags flags,
+              cl_uint pipe_packet_size,
+              cl_uint pipe_max_packets,
+              py::sequence py_props)
+            {
+              return create_pipe(ctx, flags, pipe_packet_size, pipe_max_packets, py_props);
+            }),
+          py::arg("context"),
+          py::arg("flags"),
+          py::arg("packet_size"),
+          py::arg("max_packets"),
+          py::arg("properties")
+          )
+#endif
+      .DEF_SIMPLE_METHOD(get_pipe_info)
+      ;
+  }
+
+  // }}}
+
   // {{{ memory_map
   {
     typedef memory_map cls;
@@ -401,6 +431,11 @@ void pyopencl_expose_part_2(py::module &m)
           py::arg("devices")=py::none()
           )
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2020
+      .def("set_specialization_constant", &cls::set_specialization_constant,
+          py::arg("spec_id"),
+          py::arg("buffer"))
+#endif
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
@@ -427,6 +462,9 @@ void pyopencl_expose_part_2(py::module &m)
       .def(py::init<const program &, std::string const &>())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
+#if PYOPENCL_CL_VERSION >= 0x2000
+      .DEF_SIMPLE_METHOD(clone)
+#endif
       .def("_set_arg_null", &cls::set_arg_null)
       .def("_set_arg_buf", &cls::set_arg_buf)
 #if PYOPENCL_CL_VERSION >= 0x2000
@@ -440,6 +478,13 @@ void pyopencl_expose_part_2(py::module &m)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
       PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_kernel)
+#if PYOPENCL_CL_VERSION >= 0x1020
+      .def("get_sub_group_info", &cls::get_sub_group_info,
+          py::arg("device"),
+          py::arg("param"),
+          py::arg("input_value")=py::none()
+          )
+#endif
       ;
   }
 

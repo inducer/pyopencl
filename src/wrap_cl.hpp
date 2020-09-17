@@ -30,6 +30,19 @@
 // CL 1.2 undecided:
 // clSetPrintfCallback
 
+// CL 2.0 complete
+
+// CL 2.1 complete
+
+// CL 2.2 complete
+
+// CL 3.0 missing:
+// clCreateBufferWithProperties
+// clCreateImageWithProperties
+// (no wrappers for now: OpenCL 3.0 does not define any optional properties for
+// buffers or images, no implementations to test with.)
+
+
 // {{{ includes
 
 #define CL_USE_DEPRECATED_OPENCL_1_1_APIS
@@ -52,7 +65,7 @@
 #else
 
 // elsewhere ------------------------------------------------------------------
-#define CL_TARGET_OPENCL_VERSION 220
+#define CL_TARGET_OPENCL_VERSION 300
 
 #include <CL/cl.h>
 #include "pyopencl_ext.h"
@@ -91,7 +104,9 @@
 #define PYOPENCL_CL_VERSION PYOPENCL_PRETEND_CL_VERSION
 #else
 
-#if defined(CL_VERSION_2_2)
+#if defined(CL_VERSION_3_0)
+#define PYOPENCL_CL_VERSION 0x3000
+#elif defined(CL_VERSION_2_2)
 #define PYOPENCL_CL_VERSION 0x2020
 #elif defined(CL_VERSION_2_1)
 #define PYOPENCL_CL_VERSION 0x2010
@@ -105,13 +120,6 @@
 #define PYOPENCL_CL_VERSION 0x1000
 #endif
 
-#endif
-
-
-#if (PY_VERSION_HEX >= 0x03000000) or defined(PYPY_VERSION)
-#define PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(s) std::move(s)
-#else
-#define PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(s) (s)
 #endif
 
 
@@ -429,6 +437,7 @@
 namespace pyopencl
 {
   class program;
+  class command_queue;
 
   // {{{ error
   class error : public std::runtime_error
@@ -578,6 +587,20 @@ namespace pyopencl
 #endif
             PYOPENCL_GET_STR_INFO(Platform, m_platform, param_name);
 
+#if PYOPENCL_CL_VERSION >= 0x2010
+          case CL_PLATFORM_HOST_TIMER_RESOLUTION:
+            PYOPENCL_GET_TYPED_INFO(Platform, m_platform, param_name, cl_ulong);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+          case CL_PLATFORM_NUMERIC_VERSION:
+            PYOPENCL_GET_TYPED_INFO(Platform, m_platform, param_name, cl_version);
+          case CL_PLATFORM_EXTENSIONS_WITH_VERSION:
+            {
+              std::vector<cl_name_version> result;
+              PYOPENCL_GET_VEC_INFO(Platform, m_platform, param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_name_version, result);
+            }
+#endif
           default:
             throw error("Platform.get_info", CL_INVALID_VALUE);
         }
@@ -914,6 +937,35 @@ namespace pyopencl
           case CL_DEVICE_MAX_NUM_SUB_GROUPS: DEV_GET_INT_INF(cl_uint);
           case CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS: DEV_GET_INT_INF(cl_bool);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+          case CL_DEVICE_NUMERIC_VERSION: DEV_GET_INT_INF(cl_version);
+          case CL_DEVICE_EXTENSIONS_WITH_VERSION:
+          case CL_DEVICE_ILS_WITH_VERSION:
+          case CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION:
+          case CL_DEVICE_OPENCL_C_ALL_VERSIONS:
+          case CL_DEVICE_OPENCL_C_FEATURES:
+            {
+              std::vector<cl_name_version> result;
+              PYOPENCL_GET_VEC_INFO(Device, m_device, param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_name_version, result);
+            }
+          case CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES: DEV_GET_INT_INF(cl_device_atomic_capabilities);
+          case CL_DEVICE_ATOMIC_FENCE_CAPABILITIES: DEV_GET_INT_INF(cl_device_atomic_capabilities);
+          case CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT: DEV_GET_INT_INF(cl_bool);
+          case CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE: DEV_GET_INT_INF(size_t);
+          case CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT: DEV_GET_INT_INF(cl_bool);
+          case CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT: DEV_GET_INT_INF(cl_bool);
+
+#ifdef CL_DEVICE_DEVICE_ENQUEUE_SUPPORT
+          case CL_DEVICE_DEVICE_ENQUEUE_SUPPORT: DEV_GET_INT_INF(cl_bool);
+#endif
+#ifdef CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES
+          case CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES: DEV_GET_INT_INF(cl_device_device_enqueue_capabilities);
+#endif
+
+          case CL_DEVICE_PIPE_SUPPORT: DEV_GET_INT_INF(cl_bool);
+#endif
+
 #ifdef CL_DEVICE_ME_VERSION_INTEL
           case CL_DEVICE_ME_VERSION_INTEL: DEV_GET_INT_INF(cl_uint);
 #endif
@@ -978,6 +1030,23 @@ namespace pyopencl
       }
 #endif
 
+#if PYOPENCL_CL_VERSION >= 0x2010
+      py::tuple device_and_host_timer() const
+      {
+        cl_ulong device_timestamp, host_timestamp;
+        PYOPENCL_CALL_GUARDED(clGetDeviceAndHostTimer,
+            (m_device, &device_timestamp, &host_timestamp));
+        return py::make_tuple(device_timestamp, host_timestamp);
+      }
+
+      cl_ulong host_timer() const
+      {
+        cl_ulong host_timestamp;
+        PYOPENCL_CALL_GUARDED(clGetHostTimer,
+            (m_device, &host_timestamp));
+        return host_timestamp;
+      }
+#endif
   };
 
 
@@ -1161,6 +1230,10 @@ namespace pyopencl
 
         return major_ver << 12 | minor_ver << 4;
       }
+
+#if PYOPENCL_CL_VERSION >= 0x2010
+      void set_default_device_command_queue(device const &dev, command_queue const &queue);
+#endif
   };
 
 
@@ -1454,6 +1527,24 @@ namespace pyopencl
           case CL_QUEUE_PROPERTIES:
             PYOPENCL_GET_TYPED_INFO(CommandQueue, m_queue, param_name,
                 cl_command_queue_properties);
+#if PYOPENCL_CL_VERSION >= 0x2000
+          case CL_QUEUE_SIZE:
+            PYOPENCL_GET_TYPED_INFO(CommandQueue, m_queue, param_name,
+                cl_uint);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+          case CL_QUEUE_DEVICE_DEFAULT:
+            PYOPENCL_GET_OPAQUE_INFO(
+                CommandQueue, m_queue, param_name, cl_command_queue, command_queue);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+          case CL_QUEUE_PROPERTIES_ARRAY:
+            {
+              std::vector<cl_queue_properties> result;
+              PYOPENCL_GET_VEC_INFO(CommandQueue, m_queue, param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_queue_properties, result);
+            }
+#endif
 
           default:
             throw error("CommandQueue.get_info", CL_INVALID_VALUE);
@@ -1903,12 +1994,12 @@ namespace pyopencl
         if (retain)
           PYOPENCL_CALL_GUARDED(clRetainMemObject, (mem));
 
-        m_hostbuf = PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf);
+        m_hostbuf = std::move(hostbuf);
       }
 
       memory_object(memory_object &src)
         : m_valid(true), m_mem(src.m_mem),
-        m_hostbuf(PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(src.m_hostbuf))
+        m_hostbuf(std::move(src.m_hostbuf))
       {
         PYOPENCL_CALL_GUARDED(clRetainMemObject, (m_mem));
       }
@@ -2046,7 +2137,7 @@ namespace pyopencl
   {
     public:
       buffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : memory_object(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
+        : memory_object(mem, retain, std::move(hostbuf))
       { }
 
 #if PYOPENCL_CL_VERSION >= 0x1010
@@ -2152,7 +2243,7 @@ namespace pyopencl
 
     try
     {
-      return new buffer(mem, false, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(retained_buf_obj));
+      return new buffer(mem, false, std::move(retained_buf_obj));
     }
     catch (...)
     {
@@ -2465,7 +2556,7 @@ namespace pyopencl
   {
     public:
       image(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : memory_object(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
+        : memory_object(mem, retain, std::move(hostbuf))
       { }
 
       py::object get_image_info(cl_image_info param_name) const
@@ -2507,7 +2598,7 @@ namespace pyopencl
 #endif
 
           default:
-            throw error("MemoryObject.get_image_info", CL_INVALID_VALUE);
+            throw error("Image.get_image_info", CL_INVALID_VALUE);
         }
       }
   };
@@ -2715,7 +2806,7 @@ namespace pyopencl
 
     try
     {
-      return new image(mem, false, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(retained_buf_obj));
+      return new image(mem, false, std::move(retained_buf_obj));
     }
     catch (...)
     {
@@ -2768,7 +2859,7 @@ namespace pyopencl
 
     try
     {
-      return new image(mem, false, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(retained_buf_obj));
+      return new image(mem, false, std::move(retained_buf_obj));
     }
     catch (...)
     {
@@ -2981,6 +3072,80 @@ namespace pyopencl
       );
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
+#endif
+
+  // }}}
+
+
+  // {{{ pipe
+
+  class pipe : public memory_object
+  {
+    public:
+      pipe(cl_mem mem, bool retain)
+        : memory_object(mem, retain)
+      { }
+
+      py::object get_pipe_info(cl_pipe_info param_name) const
+      {
+#if PYOPENCL_CL_VERSION >= 0x2000
+        switch (param_name)
+        {
+          case CL_PIPE_PACKET_SIZE:
+          case CL_PIPE_MAX_PACKETS:
+            PYOPENCL_GET_TYPED_INFO(Pipe, data(), param_name, cl_uint);
+
+          default:
+            throw error("Pipe.get_pipe_info", CL_INVALID_VALUE);
+        }
+#else
+        throw error("Pipes not available. PyOpenCL was not compiled against a CL2+ header.",
+            CL_INVALID_VALUE);
+#endif
+      }
+  };
+
+#if PYOPENCL_CL_VERSION >= 0x2000
+  inline
+  pipe *create_pipe(
+      context const &ctx,
+      cl_mem_flags flags,
+      cl_uint pipe_packet_size,
+      cl_uint pipe_max_packets,
+      py::sequence py_props)
+  {
+    PYOPENCL_STACK_CONTAINER(cl_pipe_properties, props, py::len(py_props) + 1);
+    {
+      size_t i = 0;
+      for (auto prop: py_props)
+        props[i++] = py::cast<cl_pipe_properties>(prop);
+      props[i++] = 0;
+    }
+
+    cl_int status_code;
+    PYOPENCL_PRINT_CALL_TRACE("clCreatePipe");
+
+    cl_mem mem = clCreatePipe(
+        ctx.data(),
+        flags,
+        pipe_packet_size,
+        pipe_max_packets,
+        PYOPENCL_STACK_CONTAINER_GET_PTR(props),
+        &status_code);
+
+    if (status_code != CL_SUCCESS)
+      throw pyopencl::error("Pipe", status_code);
+
+    try
+    {
+      return new pipe(mem, false);
+    }
+    catch (...)
+    {
+      PYOPENCL_CALL_GUARDED(clReleaseMemObject, (mem));
+      throw;
+    }
+}
 #endif
 
   // }}}
@@ -3591,6 +3756,23 @@ namespace pyopencl
           case CL_SAMPLER_NORMALIZED_COORDS:
             PYOPENCL_GET_TYPED_INFO(Sampler, m_sampler, param_name,
                 cl_bool);
+#if PYOPENCL_CL_VERSION >= 0x3000
+          case CL_SAMPLER_PROPERTIES:
+            {
+              std::vector<cl_sampler_properties> result;
+              PYOPENCL_GET_VEC_INFO(Sampler, m_sampler, param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_sampler_properties, result);
+            }
+#endif
+
+#ifdef CL_SAMPLER_MIP_FILTER_MODE_KHR
+          case CL_SAMPLER_MIP_FILTER_MODE_KHR:
+            PYOPENCL_GET_TYPED_INFO(Sampler, m_sampler, param_name,
+                cl_filter_mode);
+          case CL_SAMPLER_LOD_MIN_KHR:
+          case CL_SAMPLER_LOD_MAX_KHR:
+            PYOPENCL_GET_TYPED_INFO(Sampler, m_sampler, param_name, float);
+#endif
 
           default:
             throw error("Sampler.get_info", CL_INVALID_VALUE);
@@ -3648,8 +3830,7 @@ namespace pyopencl
             PYOPENCL_GET_OPAQUE_INFO(Program, m_program, param_name,
                 cl_context, context);
           case CL_PROGRAM_NUM_DEVICES:
-            PYOPENCL_GET_TYPED_INFO(Program, m_program, param_name,
-                cl_uint);
+            PYOPENCL_GET_TYPED_INFO(Program, m_program, param_name, cl_uint);
           case CL_PROGRAM_DEVICES:
             {
               std::vector<cl_device_id> result;
@@ -3718,6 +3899,15 @@ namespace pyopencl
                 size_t);
           case CL_PROGRAM_KERNEL_NAMES:
             PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+          case CL_PROGRAM_IL:
+            PYOPENCL_GET_STR_INFO(Program, m_program, param_name);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2020
+          case CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT:
+          case CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT:
+            PYOPENCL_GET_TYPED_INFO(Program, m_program, param_name, cl_bool);
 #endif
 
           default:
@@ -3804,6 +3994,16 @@ namespace pyopencl
              programs.empty() ? nullptr : &programs.front(),
              header_name_ptrs.empty() ? nullptr : &header_name_ptrs.front(),
              0, 0));
+      }
+#endif
+
+#if PYOPENCL_CL_VERSION >= 0x2020
+      void set_specialization_constant(cl_uint spec_id, py::object py_buffer)
+      {
+        py_buffer_wrapper bufwrap;
+        bufwrap.get(py_buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
+        PYOPENCL_CALL_GUARDED(clSetProgramSpecializationConstant,
+            (m_program, spec_id, bufwrap.m_buf.len, bufwrap.m_buf.buf));
       }
 #endif
   };
@@ -4077,6 +4277,28 @@ namespace pyopencl
 
       PYOPENCL_EQUALITY_TESTS(kernel);
 
+#if PYOPENCL_CL_VERSION >= 0x2010
+      kernel *clone()
+      {
+        cl_int status_code;
+
+        PYOPENCL_PRINT_CALL_TRACE("clCloneKernel");
+        cl_kernel result = clCloneKernel(m_kernel, &status_code);
+        if (status_code != CL_SUCCESS)
+          throw pyopencl::error("clCloneKernel", status_code);
+
+        try
+        {
+          return new kernel(result, /* retain */ false);
+        }
+        catch (...)
+        {
+          PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseKernel, (result));
+          throw;
+        }
+      }
+#endif
+
       void set_arg_null(cl_uint arg_index)
       {
         cl_mem m = 0;
@@ -4290,6 +4512,70 @@ namespace pyopencl
         }
       }
 #endif
+
+#if PYOPENCL_CL_VERSION >= 0x2010
+    py::object get_sub_group_info(
+        device const &dev,
+        cl_kernel_sub_group_info param_name,
+        py::object py_input_value)
+    {
+      switch (param_name)
+      {
+        // size_t * -> size_t
+        case CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE:
+        case CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE:
+          {
+            std::vector<size_t> input_value;
+            COPY_PY_LIST(size_t, input_value);
+
+            size_t param_value;
+            PYOPENCL_CALL_GUARDED(clGetKernelSubGroupInfo,
+                (m_kernel, dev.data(), param_name,
+                 input_value.size()*sizeof(input_value.front()),
+                 input_value.empty() ? nullptr : &input_value.front(),
+                 sizeof(param_value), &param_value, 0));
+
+            return py::cast(param_value);
+          }
+
+        // size_t -> size_t[]
+        case CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT:
+          {
+            size_t input_value = py::cast<size_t>(py_input_value);
+
+            std::vector<size_t> result;
+            size_t size;
+            PYOPENCL_CALL_GUARDED(clGetKernelSubGroupInfo,
+                (m_kernel, dev.data(), param_name,
+                 sizeof(input_value), &input_value,
+                 0, nullptr, &size));
+            result.resize(size / sizeof(result.front()));
+            PYOPENCL_CALL_GUARDED(clGetKernelSubGroupInfo,
+                (m_kernel, dev.data(), param_name,
+                 sizeof(input_value), &input_value,
+                 size, result.empty() ? nullptr : &result.front(), 0));
+
+            PYOPENCL_RETURN_VECTOR(size_t, result);
+          }
+
+        // () -> size_t
+        case CL_KERNEL_MAX_NUM_SUB_GROUPS:
+        case CL_KERNEL_COMPILE_NUM_SUB_GROUPS:
+          {
+            size_t param_value;
+            PYOPENCL_CALL_GUARDED(clGetKernelSubGroupInfo,
+                (m_kernel, dev.data(), param_name,
+                 0, nullptr,
+                 sizeof(param_value), &param_value, 0));
+
+            return py::cast(param_value);
+          }
+
+        default:
+          throw error("Kernel.get_sub_group_info", CL_INVALID_VALUE);
+      }
+  }
+#endif
   };
 
 
@@ -4457,7 +4743,7 @@ namespace pyopencl
   {
     public:
       gl_buffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : memory_object(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
+        : memory_object(mem, retain, std::move(hostbuf))
       { }
   };
 
@@ -4468,7 +4754,7 @@ namespace pyopencl
   {
     public:
       gl_renderbuffer(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : memory_object(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
+        : memory_object(mem, retain, std::move(hostbuf))
       { }
   };
 
@@ -4479,7 +4765,7 @@ namespace pyopencl
   {
     public:
       gl_texture(cl_mem mem, bool retain, hostbuf_t hostbuf=hostbuf_t())
-        : image(mem, retain, PYOPENCL_STD_MOVE_IF_NEW_BUF_INTF(hostbuf))
+        : image(mem, retain, std::move(hostbuf))
       { }
 
       py::object get_gl_texture_info(cl_gl_texture_info param_name)
@@ -4695,6 +4981,15 @@ namespace pyopencl
 
   // {{{ deferred implementation bits
 
+#if PYOPENCL_CL_VERSION >= 0x2010
+  inline void context::set_default_device_command_queue(device const &dev, command_queue const &queue)
+  {
+    PYOPENCL_CALL_GUARDED(clSetDefaultDeviceCommandQueue,
+        (m_context, dev.data(), queue.data()));
+  }
+#endif
+
+
   inline program *error::get_program() const
   {
     return new program(m_program, /* retain */ true);
@@ -4778,6 +5073,19 @@ namespace pyopencl
       case CL_MEM_OFFSET:
         PYOPENCL_GET_TYPED_INFO(MemObject, data(), param_name,
             size_t);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2000
+      case CL_MEM_USES_SVM_POINTER:
+        PYOPENCL_GET_TYPED_INFO(MemObject, data(), param_name,
+            cl_bool);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+      case CL_MEM_PROPERTIES:
+            {
+              std::vector<cl_mem_properties> result;
+              PYOPENCL_GET_VEC_INFO(MemObject, data(), param_name, result);
+              PYOPENCL_RETURN_VECTOR(cl_mem_properties, result);
+            }
 #endif
 
       default:

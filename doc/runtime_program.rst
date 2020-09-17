@@ -110,6 +110,12 @@ Program
 
         Returns a list of all :class:`Kernel` objects in the :class:`Program`.
 
+    .. method:: set_specialization_constant(spec_id, buffer)
+
+        Only available with CL 2.2 and newer.
+
+        .. versionadded:: 2020.3
+
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
 
@@ -144,6 +150,12 @@ Kernel
         may be used as attributes on instances of this class
         to directly query info attributes.
 
+    .. method:: clone()
+
+        Only available with CL 2.1.
+
+        .. versionadded:: 2020.3
+
     .. method:: get_info(param)
 
         See :class:`kernel_info` for values of *param*.
@@ -157,6 +169,17 @@ Kernel
         See :class:`kernel_arg_info` for values of *param*.
 
         Only available in OpenCL 1.2 and newer.
+
+    .. method:: get_sub_group_info(self, device, param, input_value=None)
+
+        When the OpenCL spec requests *input_value* to be of type ``size_t``,
+        these may be passed directly as a number. When it requests
+        *input_value* to be of type ``size_t *``, a tuple of integers
+        may be passed.
+
+        Only available in OpenCL 2.1 and newer.
+
+        .. versionadded:: 2020.3
 
     .. method:: set_arg(self, index, arg)
 
