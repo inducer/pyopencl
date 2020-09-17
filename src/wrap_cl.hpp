@@ -32,8 +32,7 @@
 
 // CL 2.0 complete
 
-// CL 2.1 missing:
-// clEnqueueSVMMigrateMem
+// CL 2.1 complete
 
 // CL 2.2 complete
 
