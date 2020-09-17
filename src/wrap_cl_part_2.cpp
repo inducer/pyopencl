@@ -478,6 +478,13 @@ void pyopencl_expose_part_2(py::module &m)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
       PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_kernel)
+#if PYOPENCL_CL_VERSION >= 0x1020
+      .def("get_sub_group_info", &cls::get_sub_group_info,
+          py::arg("device"),
+          py::arg("param"),
+          py::arg("input_value")=py::none()
+          )
+#endif
       ;
   }
 

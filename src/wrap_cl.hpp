@@ -33,7 +33,6 @@
 // CL 2.0 complete
 
 // CL 2.1 missing:
-// clGetKernelSubGroupInfo
 // clEnqueueSVMMigrateMem
 
 // CL 2.2 complete
@@ -4510,6 +4509,70 @@ namespace pyopencl
             throw error("Kernel.get_arg_info", CL_INVALID_VALUE);
         }
       }
+#endif
+
+#if PYOPENCL_CL_VERSION >= 0x2010
+    py::object get_sub_group_info(
+        device const &dev,
+        cl_kernel_sub_group_info param_name,
+        py::object py_input_value)
+    {
+      switch (param_name)
+      {
+        // size_t * -> size_t
+        case CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE:
+        case CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE:
+          {
+            std::vector<size_t> input_value;
+            COPY_PY_LIST(size_t, input_value);
+
+            size_t param_value;
+            PYOPENCL_CALL_GUARDED(clGetKernelSubGroupInfo,
+                (m_kernel, dev.data(), param_name,
+                 input_value.size()*sizeof(input_value.front()),
+                 input_value.empty() ? nullptr : &input_value.front(),
+                 sizeof(param_value), &param_value, 0));
+
+            return py::cast(param_value);
+          }
+
+        // size_t -> size_t[]
+        case CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT:
+          {
+            size_t input_value = py::cast<size_t>(py_input_value);
+
+            std::vector<size_t> result;
+            size_t size;
+            PYOPENCL_CALL_GUARDED(clGetKernelSubGroupInfo,
+                (m_kernel, dev.data(), param_name,
+                 sizeof(input_value), &input_value,
+                 0, nullptr, &size));
+            result.resize(size / sizeof(result.front()));
+            PYOPENCL_CALL_GUARDED(clGetKernelSubGroupInfo,
+                (m_kernel, dev.data(), param_name,
+                 sizeof(input_value), &input_value,
+                 size, result.empty() ? nullptr : &result.front(), 0));
+
+            PYOPENCL_RETURN_VECTOR(size_t, result);
+          }
+
+        // () -> size_t
+        case CL_KERNEL_MAX_NUM_SUB_GROUPS:
+        case CL_KERNEL_COMPILE_NUM_SUB_GROUPS:
+          {
+            size_t param_value;
+            PYOPENCL_CALL_GUARDED(clGetKernelSubGroupInfo,
+                (m_kernel, dev.data(), param_name,
+                 0, nullptr,
+                 sizeof(param_value), &param_value, 0));
+
+            return py::cast(param_value);
+          }
+
+        default:
+          throw error("Kernel.get_sub_group_info", CL_INVALID_VALUE);
+      }
+  }
 #endif
   };
 

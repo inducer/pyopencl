@@ -170,6 +170,17 @@ Kernel
 
         Only available in OpenCL 1.2 and newer.
 
+    .. method:: get_sub_group_info(self, device, param, input_value=None)
+
+        When the OpenCL spec requests *input_value* to be of type ``size_t``,
+        these may be passed directly as a number. When it requests
+        *input_value* to be of type ``size_t *``, a tuple of integers
+        may be passed.
+
+        Only available in OpenCL 2.1 and newer.
+
+        .. versionadded:: 2020.3
+
     .. method:: set_arg(self, index, arg)
 
         *arg* may be
