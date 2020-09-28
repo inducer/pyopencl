@@ -1,8 +1,15 @@
-import setuptools  # noqa
-from setuptools import Extension
 import sys
-from setuptools.command.build_ext import (  # noqa: N812
-        build_ext as BaseBuildExtCommand)
+try:
+    from setuptools import Extension
+    from setuptools.command.build_ext import (  # noqa: N812
+            build_ext as BaseBuildExtCommand)
+
+except ImportError:
+    class Extension:
+        pass
+
+    class BaseBuildExtCommand:
+        pass
 
 
 def count_down_delay(delay):
