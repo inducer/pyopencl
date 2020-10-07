@@ -14,7 +14,7 @@ On Linux or OS X, the following set of instructions should work:
 #.  Install a version of
     `miniforge <https://github.com/conda-forge/miniforge#miniforge3>`_
     or `miniconda <https://conda.io/miniconda.html>`_
-    that fits your system. Both Python 2 and Python 3 work.
+    that fits your system.
     You can install these pieces of software in your user account and
     do not need root/administrator privileges.
 
