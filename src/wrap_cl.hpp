@@ -3086,6 +3086,10 @@ namespace pyopencl
         : memory_object(mem, retain)
       { }
 
+#if PYOPENCL_CL_VERSION < 0x2000
+      typedef void* cl_pipe_info;
+#endif
+
       py::object get_pipe_info(cl_pipe_info param_name) const
       {
 #if PYOPENCL_CL_VERSION >= 0x2000
