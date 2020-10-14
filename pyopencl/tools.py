@@ -282,14 +282,14 @@ def get_pyopencl_fixture_arg_values():
 
     arg_values = []
     for platform, devices in get_test_platforms_and_devices():
-        arg_dict = {"platform": platform}
-
         for device in devices:
-            arg_dict["device"] = device
-            arg_dict["ctx_factory"] = _ContextFactory(device)
-            arg_dict["ctx_getter"] = _ContextFactory(device)
-
-        arg_values.append(arg_dict)
+            arg_dict = {
+                "platform": platform,
+                "device": device,
+                "ctx_factory": _ContextFactory(device),
+                "ctx_getter": _ContextFactory(device)
+            }
+            arg_values.append(arg_dict)
 
     def idfn(val):
         if isinstance(val, cl.Platform):
