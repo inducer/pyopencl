@@ -154,14 +154,25 @@ namespace
         // reported in a deferred manner, it has no way to react
         // (e.g. by freeing unused memory) because it is not part of
         // the call stack.)
-        unsigned zero = 0;
-        PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
-              m_queue.data(),
-              ptr,
-              /* is blocking */ CL_FALSE,
-              0, std::min(s, sizeof(zero)), &zero,
-              0, NULL, NULL
-              ));
+        if (m_queue.get_hex_device_version() < 0x1020)
+        {
+          unsigned zero = 0;
+          PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
+                m_queue.data(),
+                ptr,
+                /* is blocking */ CL_FALSE,
+                0, std::min(s, sizeof(zero)), &zero,
+                0, NULL, NULL
+                ));
+        }
+        else
+        {
+          PYOPENCL_CALL_GUARDED(clEnqueueMigrateMemObjects, (
+                m_queue.data(),
+                1, &ptr, CL_MIGRATE_MEM_OBJECT_CONTENT_UNDEFINED,
+                0, NULL, NULL
+                ));
+        }
 
         // No need to wait for completion here. clWaitForEvents (e.g.)
         // cannot return mem object allocation failures. This implies that
