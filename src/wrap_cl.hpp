@@ -1225,7 +1225,7 @@ namespace pyopencl
         errno = 0;
         int match_count = sscanf(plat_version.c_str(), "OpenCL %d.%d ", &major_ver, &minor_ver);
         if (errno || match_count != 2)
-          throw error("Context._get_hex_version", CL_INVALID_VALUE,
+          throw error("Context._get_hex_platform_version", CL_INVALID_VALUE,
               "Platform version string did not have expected format");
 
         return major_ver << 12 | minor_ver << 4;
@@ -1576,6 +1576,39 @@ namespace pyopencl
       { PYOPENCL_CALL_GUARDED(clFlush, (m_queue)); }
       void finish()
       { PYOPENCL_CALL_GUARDED_THREADED(clFinish, (m_queue)); }
+
+      // not exposed to python
+      int get_hex_device_version() const
+      {
+        cl_device_id dev;
+
+        PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo,
+            (m_queue, CL_QUEUE_DEVICE, sizeof(dev), &dev, nullptr));
+
+        std::string dev_version;
+        {
+          size_t param_value_size;
+          PYOPENCL_CALL_GUARDED(clGetDeviceInfo,
+              (dev, CL_DEVICE_VERSION, 0, 0, &param_value_size));
+
+          std::vector<char> param_value(param_value_size);
+          PYOPENCL_CALL_GUARDED(clGetDeviceInfo,
+              (dev, CL_DEVICE_VERSION, param_value_size,
+               param_value.empty( ) ? nullptr : &param_value.front(), &param_value_size));
+
+          dev_version =
+              param_value.empty( ) ? "" : std::string(&param_value.front(), param_value_size-1);
+        }
+
+        int major_ver, minor_ver;
+        errno = 0;
+        int match_count = sscanf(dev_version.c_str(), "OpenCL %d.%d ", &major_ver, &minor_ver);
+        if (errno || match_count != 2)
+          throw error("CommandQueue._get_hex_device_version", CL_INVALID_VALUE,
+              "Platform version string did not have expected format");
+
+        return major_ver << 12 | minor_ver << 4;
+      }
   };
 
   // }}}
