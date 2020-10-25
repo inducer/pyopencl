@@ -247,15 +247,21 @@ def test_sum(ctx_factory):
                 slice(1000, -3000),
                 slice(1000, None),
                 slice(1000, None, 3),
+                slice(1000, 1000),
                 ]:
             sum_a = np.sum(a[slc])
 
+            if sum_a:
+                ref_divisor = abs(sum_a)
+            else:
+                ref_divisor = 1
+
             if slc.step is None:
                 sum_a_gpu = cl_array.sum(a_gpu[slc]).get()
-                assert abs(sum_a_gpu - sum_a) / abs(sum_a) < 1e-4
+                assert abs(sum_a_gpu - sum_a) / ref_divisor < 1e-4
 
             sum_a_gpu_2 = cl_array.sum(a_gpu, slice=slc).get()
-            assert abs(sum_a_gpu_2 - sum_a) / abs(sum_a) < 1e-4
+            assert abs(sum_a_gpu_2 - sum_a) / ref_divisor < 1e-4
 
 
 def test_sum_without_data(ctx_factory):

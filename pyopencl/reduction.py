@@ -386,10 +386,16 @@ class ReductionKernel:
                 else:
                     allocator = repr_vec.allocator
 
-            if sz <= stage_inf.group_size*SMALL_SEQ_COUNT*MAX_GROUP_COUNT:
+            if sz == 0:
+                result = empty(use_queue, (), self.dtype_out, allocator=allocator)
+                group_count = 1
+                seq_count = 0
+
+            elif sz <= stage_inf.group_size*SMALL_SEQ_COUNT*MAX_GROUP_COUNT:
                 total_group_size = SMALL_SEQ_COUNT*stage_inf.group_size
                 group_count = (sz + total_group_size - 1) // total_group_size
                 seq_count = SMALL_SEQ_COUNT
+
             else:
                 group_count = MAX_GROUP_COUNT
                 macrogroup_size = group_count*stage_inf.group_size
