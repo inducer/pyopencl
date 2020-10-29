@@ -1503,8 +1503,9 @@ class Array:
             import statistics
             try:
                 from mirgecom.profiling import add_nonloopy_profiling_result
-                add_nonloopy_profiling_result("pyopencl.array", int(statistics.mean(times)))
-            except:
+                add_nonloopy_profiling_result("pyopencl.array",
+                    int(statistics.mean(times)))
+            except ImportError:
                 pass
             del self.events[:]
 
