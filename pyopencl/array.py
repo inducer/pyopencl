@@ -1490,7 +1490,6 @@ class Array:
                     self._scalar_comparison(result, self, other, op=">"))
             return result
 
-
     def __del__(self):
         if self.events:
             cl.wait_for_events(self.events)
@@ -1503,8 +1502,8 @@ class Array:
 
             import statistics
             try:
-                from mirgecom.profiling import add_simple_profile_result
-                add_simple_profile_result("pyopencl.array", int(statistics.mean(times)))
+                from mirgecom.profiling import add_nonloopy_profiling_result
+                add_nonloopy_profiling_result("pyopencl.array", int(statistics.mean(times)))
             except:
                 pass
             del self.events[:]
