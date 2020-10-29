@@ -1490,6 +1490,25 @@ class Array:
                     self._scalar_comparison(result, self, other, op=">"))
             return result
 
+
+    def __del__(self):
+        if self.events:
+            cl.wait_for_events(self.events)
+            times = []
+            total = 0
+            for evt in self.events:
+                time = evt.profile.end - evt.profile.start
+                times.append(time)
+                total += time
+
+            import statistics
+            try:
+                from mirgecom.profiling import add_simple_profile_result
+                add_simple_profile_result("pyopencl.array", int(statistics.mean(times)))
+            except:
+                pass
+            del self.events[:]
+
     # }}}
 
     # {{{ complex-valued business
