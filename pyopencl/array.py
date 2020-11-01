@@ -1285,7 +1285,8 @@ class Array:
         )
         on_nvidia = queue.device.vendor.startswith("NVIDIA")
 
-        # circumvent bug with large buffers on NVIDIA (gh-395)
+        # circumvent bug with large buffers on NVIDIA
+        # https://github.com/inducer/pyopencl/issues/395
         if cl_version_gtr_1_2 and not (on_nvidia and self.nbytes >= 2**31):
             self.add_event(
                     cl.enqueue_fill_buffer(queue, self.base_data, np.int8(0),
