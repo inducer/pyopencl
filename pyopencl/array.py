@@ -1279,10 +1279,15 @@ class Array:
         if not self.size:
             return
 
-        if (
-                queue._get_cl_version() >= (1, 2)
-                and cl.get_cl_header_version() >= (1, 2)):
+        cl_version_gtr_1_2 = (
+            queue._get_cl_version() >= (1, 2)
+            and cl.get_cl_header_version() >= (1, 2)
+        )
+        on_nvidia = queue.device.vendor.startswith("NVIDIA")
 
+        # circumvent bug with large buffers on NVIDIA
+        # https://github.com/inducer/pyopencl/issues/395
+        if cl_version_gtr_1_2 and not (on_nvidia and self.nbytes >= 2**31):
             self.add_event(
                     cl.enqueue_fill_buffer(queue, self.base_data, np.int8(0),
                         self.offset, self.nbytes, wait_for=wait_for))

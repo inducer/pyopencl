@@ -205,6 +205,23 @@ def test_vector_fill(ctx_factory):
     a_gpu = cl_array.zeros(queue, 100, dtype=cltypes.float4)
 
 
+def test_zeros_large_array(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+    dev = queue.device
+
+    size = 2**28 + 1
+    if dev.address_bits == 64 and dev.max_mem_alloc_size >= 8 * size:
+        # this shouldn't hang/cause errors
+        # see https://github.com/inducer/pyopencl/issues/395
+        a_gpu = cl_array.zeros(queue, (size,), dtype="float64")
+        # run a couple kernels to ensure no propagated runtime errors
+        a_gpu[...] = 1.
+        a_gpu = 2 * a_gpu - 3
+    else:
+        pass
+
+
 def test_absrealimag(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
