@@ -1500,8 +1500,8 @@ class Array:
                 times.append(time)
                 total += time
 
-            import statistics
             try:
+                import statistics
                 from mirgecom.profiling import add_nonloopy_profiling_result
                 add_nonloopy_profiling_result("pyopencl.array",
                     int(statistics.mean(times)))
