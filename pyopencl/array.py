@@ -1491,7 +1491,7 @@ class Array:
             return result
 
     def __del__(self):
-        if self.events and \
+        if self.events and self.queue and \
               self.queue.properties & cl.command_queue_properties.PROFILING_ENABLE:
             cl.wait_for_events(self.events)
             times = []
