@@ -12,7 +12,7 @@
 .. |std-enqueue-blurb| replace:: Returns a new :class:`pyopencl.Event`. |explain-waitfor|
 
 .. |copy-depr| replace:: **Note:** This function is deprecated as of PyOpenCL 2011.1.
-        Use :func:`enqueue_copy` instead.
+        Use :func:`~pyopencl.enqueue_copy` instead.
 
 .. |glsize| replace:: *global_size* and *local_size* are tuples of identical length, with
         between one and three entries. *global_size* specifies the overall size
