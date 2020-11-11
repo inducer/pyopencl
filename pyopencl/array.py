@@ -801,7 +801,14 @@ class Array:
         return str(self.get())
 
     def __repr__(self):
-        return repr(self.get())
+        result = repr(self.get())
+        if result[:5] == "array":
+            result = "cl.Array" + result[5:]
+        else:
+            from warnings import warn
+            warn("numpy.ndarray.__repr__ was expected to return a string starting "
+                    f"with 'array'. It didn't: '{result[:10]:r}'")
+        return result
 
     def safely_stringify_for_pudb(self):
         return f"cl.Array {self.dtype} {self.shape}"
