@@ -138,6 +138,12 @@ To install pyopencl with oclgrind, an OpenCL debugger do,
 
 #.  ``pip install pyopencl[oclgrind]``
 
+.. note::
+
+    Avoid mixing components installed from Conda Forge and PyPI.
+    For example, installing PyOpenCL from pip followed by OCL-ICD from Conda Forge can
+    redirect the ICD loader, removing access to system-wide ICDs.
+
 
 Installing from source
 ----------------------
