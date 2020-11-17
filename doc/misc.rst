@@ -97,7 +97,7 @@ qualified path names of the shared library providing the OpenCL driver.
     This path (for the currently-active conda environment) can be obtained from the
     environment variable ``CONDA_PREFIX``, i.e.,
 
-    :file:`$CONDA_PREFIX/etc/OpenCL/vendors`.
+    :file:`$CONDA_PREFIX/etc/OpenCL/vendors` (once the Conda environment is activated).
 
 On Linux, if you have other OpenCL drivers installed (such as for your GPU), those will be
 in :file:`/etc/OpenCL/vendors`. You can make them work with PyOpenCL from Conda Forge
