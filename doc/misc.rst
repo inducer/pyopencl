@@ -94,6 +94,10 @@ qualified path names of the shared library providing the OpenCL driver.
 
     Note that you should replace ``ENVIRONMENTNAME`` with the name of your environment,
     shown between parentheses on your command line prompt.
+    This path (for the currently-active conda environment) can be obtained from the
+    environment variable ``CONDA_PREFIX``, i.e.,
+
+    :file:`$CONDA_PREFIX/etc/OpenCL/vendors` (once the Conda environment is activated).
 
 On Linux, if you have other OpenCL drivers installed (such as for your GPU), those will be
 in :file:`/etc/OpenCL/vendors`. You can make them work with PyOpenCL from Conda Forge
@@ -101,7 +105,9 @@ by using the command::
 
     conda install ocl-icd-system
 
-will make sure these system-wide ICDs are also visible  in your conda environment.
+will make sure these system-wide ICDs are also visible in your conda environment.
+As an alternative, one may manually copy ICD files from :file:`/etc/OpenCL/vendors` into,
+e.g., :file:`$CONDA_PREFIX/etc/OpenCL/vendors`.
 
 If you are looking for more information, see `ocl-icd
 <https://github.com/OCL-dev/ocl-icd>`_ and its documentation. Ocl-icd is the
@@ -137,6 +143,12 @@ To install pyopencl with pocl, a CPU based implementation do,
 To install pyopencl with oclgrind, an OpenCL debugger do,
 
 #.  ``pip install pyopencl[oclgrind]``
+
+.. note::
+
+    Avoid mixing components installed from Conda Forge and PyPI.
+    For example, installing PyOpenCL from pip followed by OCL-ICD from Conda Forge can
+    redirect the ICD loader, removing access to system-wide ICDs.
 
 
 Installing from source
