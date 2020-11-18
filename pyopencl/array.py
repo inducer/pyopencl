@@ -1617,6 +1617,15 @@ class Array:
         if size != self.size:
             raise ValueError("total size of new array must be unchanged")
 
+        if self.size == 0:
+            return self._new_with_changes(
+                    data=None, offset=0, shape=shape,
+                    strides=(
+                        _f_contiguous_strides(self.dtype.itemsize, shape)
+                        if order == "F" else
+                        _c_contiguous_strides(self.dtype.itemsize, shape)
+                        ))
+
         # {{{ determine reshaped strides
 
         # copied and translated from
