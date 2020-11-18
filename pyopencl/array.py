@@ -798,9 +798,16 @@ class Array:
         return result
 
     def __str__(self):
+        if self.queue is None:
+            return (f"<cl.Array without queue, call with_queue() to print>")
+
         return str(self.get())
 
     def __repr__(self):
+        if self.queue is None:
+            return (f"<cl.Array at {id(self):x} without queue, "
+                    "call with_queue() to print>")
+
         result = repr(self.get())
         if result[:5] == "array":
             result = "cl.Array" + result[5:]
