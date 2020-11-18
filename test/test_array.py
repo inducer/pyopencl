@@ -1464,7 +1464,7 @@ def test_negative_dim_rejection(ctx_factory):
             cl_array.Array(queue, shape=(-1, right_dim), dtype=np.float)
 
 
-@pytest.mark.parametrize("empty_shape", [0, (), (3, 0, 2)])
+@pytest.mark.parametrize("empty_shape", [0, (), (3, 0, 2), (0, 5), (5, 0)])
 def test_zero_size_array(ctx_factory, empty_shape):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -1475,6 +1475,17 @@ def test_zero_size_array(ctx_factory, empty_shape):
     c = a + b
     c_host = c.get()
     cl_array.to_device(queue, c_host)
+
+    assert c.flags.c_contiguous == c_host.flags.c_contiguous
+    assert c.flags.f_contiguous == c_host.flags.f_contiguous
+
+    for order in "CF":
+        c_flat = c.reshape(-1, order=order)
+        c_host_flat = c_host.reshape(-1, order=order)
+        assert c_flat.shape == c_host_flat.shape
+        assert c_flat.strides == c_host_flat.strides
+        assert c_flat.flags.c_contiguous == c_host_flat.flags.c_contiguous
+        assert c_flat.flags.f_contiguous == c_host_flat.flags.f_contiguous
 
 
 def test_str_without_queue(ctx_factory):
