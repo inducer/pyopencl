@@ -3,7 +3,6 @@ recursive-include pyopencl/cl *.h *.cl
 include src/*.h
 include src/*.hpp
 include src/*.cpp
-include *.h
 include test/*.py
 include test/*.h
 include test/*.spv
@@ -14,16 +13,13 @@ include doc/*.rst
 include doc/Makefile
 include doc/*.py
 include doc/conf.py
-include doc/_static/*.css
-include doc/_templates/*.html
 
-include *.py.in
 include configure.py
 include Makefile.in
 include aksetup_helper.py
 include README_SETUP.txt
-include pyproject.toml
 include README.rst
 include LICENSE
+include pytest.ini
 
 recursive-include contrib *.vim *.py README
