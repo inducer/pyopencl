@@ -1477,6 +1477,15 @@ def test_zero_size_array(ctx_factory, empty_shape):
     cl_array.to_device(queue, c_host)
 
 
+def test_str_without_queue(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = cl_array.zeros(queue, 10, dtype=np.float32).with_queue(None)
+    print(str(a))
+    print(repr(a))
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
