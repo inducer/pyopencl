@@ -56,7 +56,7 @@ def get_config_schema():
         default_libs = []
         default_cxxflags = default_cxxflags + [
                 "-stdlib=libc++", "-mmacosx-version-min=10.7",
-                "-arch', 'i386", "-arch", "x86_64"
+                "-arch', 'i386", "-arch", "x86_64", "-arch", "arm64",
                 ]
 
         from os.path import isdir
