@@ -462,7 +462,7 @@ void pyopencl_expose_part_2(py::module &m)
       .def(py::init<const program &, std::string const &>())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
-#if PYOPENCL_CL_VERSION >= 0x2000
+#if PYOPENCL_CL_VERSION >= 0x2010
       .DEF_SIMPLE_METHOD(clone)
 #endif
       .def("_set_arg_null", &cls::set_arg_null)
