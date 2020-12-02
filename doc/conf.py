@@ -25,6 +25,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.autodoc",
     "sphinx.ext.doctest",
+    "sphinx_copybutton",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -85,23 +86,10 @@ pygments_style = "sphinx"
 # Options for HTML output
 # -----------------------
 
-html_theme = "alabaster"
+html_theme = "furo"
 
 html_theme_options = {
-    "extra_nav_links": {
-        "🚀 Github": "https://github.com/inducer/pyopencl",
-        "💾 Download Releases": "https://pypi.python.org/pypi/pyopencl",
-    }
-}
-
-html_sidebars = {
-    "**": [
-        "about.html",
-        "navigation.html",
-        "relations.html",
-        "searchbox.html",
-    ]
-}
+        }
 
 # The style sheet to use for HTML and HTML Help pages. A file of that name
 # must exist either in Sphinx' static/ path, or in one of the custom paths
