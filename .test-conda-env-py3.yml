@@ -6,8 +6,11 @@ channels:
 dependencies:
 - python=3
 - git
-- numpy
 - conda-forge/label/ocl-icd-dev::ocl-icd=3.0.0.dev0
 - pocl
 - mako
 - pybind11
+- pip
+- pip:
+  - numpy==1.20.0rc1
+  - git+https://github.com/inducer/pytools.git@numpy-1.20-compat
