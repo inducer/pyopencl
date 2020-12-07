@@ -11,3 +11,6 @@ dependencies:
 - pocl
 - mako
 - pybind11
+- pip
+- pip:
+  - git+https://github.com/inducer/pytools.git@numpy-1.20-compat
