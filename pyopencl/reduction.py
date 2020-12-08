@@ -156,7 +156,6 @@ def _get_reduction_source(
     # }}}
 
     from mako.template import Template
-    from pytools import all
     from pyopencl.characterize import has_double_support
 
     arguments = ", ".join(arg.declarator() for arg in parsed_args)
