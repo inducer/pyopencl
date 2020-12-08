@@ -911,7 +911,6 @@ class ListOfListsBuilder:
                 devices=self.devices)
 
     def do_not_vectorize(self):
-        from pytools import any
         return (self.complex_kernel
                 and any(dev.type & cl.device_type.CPU
                     for dev in self.context.devices))

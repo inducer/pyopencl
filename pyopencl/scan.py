@@ -1079,7 +1079,6 @@ class _GenericScanKernelBase:
 
         # {{{ set up shared code dict
 
-        from pytools import all
         from pyopencl.characterize import has_double_support
 
         self.code_variables = dict(
@@ -1258,7 +1257,6 @@ class GenericScanKernel(_GenericScanKernelBase):
                     solutions.append((wg_size*k_group_size, k_group_size, wg_size))
 
         if is_gpu:
-            from pytools import any
             for wg_size_floor in [256, 192, 128]:
                 have_sol_above_floor = any(wg_size >= wg_size_floor
                         for _, _, wg_size in solutions)

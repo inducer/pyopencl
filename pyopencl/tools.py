@@ -657,7 +657,6 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     size = int(size_and_offsets[0])
 
-    from pytools import any
     offsets = size_and_offsets[1:]
     if any(ofs >= size for ofs in offsets):
         # offsets not plausible
