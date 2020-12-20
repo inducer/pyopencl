@@ -20,8 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import six
-from six.moves import intern
+from sys import intern
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
@@ -304,14 +303,9 @@ def _find_pyopencl_include_path():
 def _split_options_if_necessary(options):
     if isinstance(options, str):
         import shlex
-        if six.PY2:
-            # shlex.split takes bytes (py2 str) on py2
-            if isinstance(options, str):
-                options = options.encode("utf-8")
-        else:
-            # shlex.split takes unicode (py3 str) on py3
-            if isinstance(options, bytes):
-                options = options.decode("utf-8")
+        # shlex.split takes unicode (py3 str) on py3
+        if isinstance(options, bytes):
+            options = options.decode("utf-8")
 
         options = shlex.split(options)
 

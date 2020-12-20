@@ -111,7 +111,7 @@ def splay(queue, n, kernel_specific_max_wg_size=None):
     max_work_items = _builtin_min(128, dev.max_work_group_size)
 
     if kernel_specific_max_wg_size is not None:
-        from six.moves.builtins import min
+        from builtins import min
         max_work_items = min(max_work_items, kernel_specific_max_wg_size)
 
     min_work_items = _builtin_min(32, max_work_items)

@@ -107,11 +107,7 @@ calc_fractal = calc_fractal_opencl
 # calc_fractal = calc_fractal_numpy
 
 if __name__ == '__main__':
-    try:
-        import six.moves.tkinter as tk
-    except ImportError:
-        # Python 3
-        import tkinter as tk
+    import tkinter as tk
     from PIL import Image, ImageTk
 
     class Mandelbrot:

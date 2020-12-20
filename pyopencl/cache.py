@@ -268,7 +268,7 @@ def retrieve_from_cache(cache_dir, cache_key):
             # {{{ load info file
 
             try:
-                from six.moves.cPickle import load
+                from pickle import load
 
                 try:
                     info_file = open(info_path, "rb")
@@ -445,7 +445,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
                     outf.write(binary)
                     outf.close()
 
-                    from six.moves.cPickle import dump
+                    from pickle import dump
                     info_file = open(info_path, "wb")
                     dump(_SourceInfo(
                         dependencies=get_dependencies(src, include_path),
