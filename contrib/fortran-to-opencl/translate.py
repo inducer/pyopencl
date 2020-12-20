@@ -1,5 +1,3 @@
-import six
-
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -29,6 +27,7 @@ from pymbolic.parser import Parser as ExpressionParserBase
 from pymbolic.mapper import CombineMapper
 import pymbolic.primitives as p
 from pymbolic.mapper.c_code import CCodeMapper as CCodeMapperBase
+from sys import intern
 
 from warnings import warn
 
@@ -340,7 +339,7 @@ class ComplexCCodeMapper(CCodeMapperBase):
 
     def map_sum(self, expr, enclosing_prec):
         tgt_dtype = self.infer_type(expr)
-        is_complex = tgt_dtype.kind == 'c'
+        is_complex = tgt_dtype.kind == "c"
 
         if not is_complex:
             return CCodeMapperBase.map_sum(self, expr, enclosing_prec)
@@ -348,9 +347,9 @@ class ComplexCCodeMapper(CCodeMapperBase):
             tgt_name = complex_type_name(tgt_dtype)
 
             reals = [child for child in expr.children
-                    if 'c' != self.infer_type(child).kind]
+                    if "c" != self.infer_type(child).kind]
             complexes = [child for child in expr.children
-                    if 'c' == self.infer_type(child).kind]
+                    if "c" == self.infer_type(child).kind]
 
             from pymbolic.mapper.stringifier import PREC_SUM, PREC_NONE
             real_sum = self.join_rec(" + ", reals, PREC_SUM)
@@ -376,7 +375,7 @@ class ComplexCCodeMapper(CCodeMapperBase):
 
     def map_product(self, expr, enclosing_prec):
         tgt_dtype = self.infer_type(expr)
-        is_complex = 'c' == tgt_dtype.kind
+        is_complex = "c" == tgt_dtype.kind
 
         if not is_complex:
             return CCodeMapperBase.map_product(self, expr, enclosing_prec)
@@ -384,9 +383,9 @@ class ComplexCCodeMapper(CCodeMapperBase):
             tgt_name = complex_type_name(tgt_dtype)
 
             reals = [child for child in expr.children
-                    if 'c' != self.infer_type(child).kind]
+                    if "c" != self.infer_type(child).kind]
             complexes = [child for child in expr.children
-                    if 'c' == self.infer_type(child).kind]
+                    if "c" == self.infer_type(child).kind]
 
             from pymbolic.mapper.stringifier import PREC_PRODUCT, PREC_NONE
             real_prd = self.join_rec("*", reals, PREC_PRODUCT)
@@ -411,8 +410,8 @@ class ComplexCCodeMapper(CCodeMapperBase):
 
     def map_quotient(self, expr, enclosing_prec):
         from pymbolic.mapper.stringifier import PREC_NONE
-        n_complex = 'c' == self.infer_type(expr.numerator).kind
-        d_complex = 'c' == self.infer_type(expr.denominator).kind
+        n_complex = "c" == self.infer_type(expr.numerator).kind
+        d_complex = "c" == self.infer_type(expr.denominator).kind
 
         tgt_dtype = self.infer_type(expr)
 
@@ -436,7 +435,7 @@ class ComplexCCodeMapper(CCodeMapperBase):
 
     def map_remainder(self, expr, enclosing_prec):
         tgt_dtype = self.infer_type(expr)
-        if 'c' == tgt_dtype.kind:
+        if "c" == tgt_dtype.kind:
             raise RuntimeError("complex remainder not defined")
 
         return CCodeMapperBase.map_remainder(self, expr, enclosing_prec)
@@ -445,15 +444,15 @@ class ComplexCCodeMapper(CCodeMapperBase):
         from pymbolic.mapper.stringifier import PREC_NONE
 
         tgt_dtype = self.infer_type(expr)
-        if 'c' == tgt_dtype.kind:
+        if "c" == tgt_dtype.kind:
             if expr.exponent in [2, 3, 4]:
                 value = expr.base
                 for i in range(expr.exponent-1):
                     value = value * expr.base
                 return self.rec(value, enclosing_prec)
             else:
-                b_complex = 'c' == self.infer_type(expr.base).kind
-                e_complex = 'c' == self.infer_type(expr.exponent).kind
+                b_complex = "c" == self.infer_type(expr.base).kind
+                e_complex = "c" == self.infer_type(expr.exponent).kind
 
                 if b_complex and not e_complex:
                     return "{}_powr({}, {})".format(
@@ -481,7 +480,7 @@ class CCodeMapper(ComplexCCodeMapper):
 
     def map_subscript(self, expr, enclosing_prec):
         idx_dtype = self.infer_type(expr.index)
-        if not 'i' == idx_dtype.kind or 'u' == idx_dtype.kind:
+        if not "i" == idx_dtype.kind or "u" == idx_dtype.kind:
             ind_prefix = "(int) "
         else:
             ind_prefix = ""
@@ -505,10 +504,10 @@ class CCodeMapper(ComplexCCodeMapper):
         arg_dtypes = [self.infer_type(par) for par in expr.parameters]
 
         name = expr.function.name
-        if 'f' == tgt_dtype.kind and name == "abs":
+        if "f" == tgt_dtype.kind and name == "abs":
             name = "fabs"
 
-        elif 'c' == tgt_dtype.kind:
+        elif "c" == tgt_dtype.kind:
             if name in ["conjg", "dconjg"]:
                 name = "conj"
 
@@ -532,7 +531,7 @@ class CCodeMapper(ComplexCCodeMapper):
                     complex_type_name(arg_dtype),
                     name)
 
-        elif 'c' == tgt_dtype.kind and name == "abs":
+        elif "c" == tgt_dtype.kind and name == "abs":
             arg_dtype, = arg_dtypes
 
             name = "%s_abs" % (
@@ -712,7 +711,7 @@ class ArgumentAnalayzer(FTreeWalkerBase):
         FTreeWalkerBase.__init__(self)
 
         # map (func, arg_nr) to
-        # 'w' for 'needs pointer'
+        # "w" for "needs pointer"
         # [] for no obstacle to de-pointerification known
         # [(func_name, arg_nr), ...] # depends on how this arg is used
 
@@ -945,12 +944,12 @@ class F2CLTranslator(FTreeWalkerBase):
 
             if shape is not None:
                 dim_stmt = cgen.Statement(
-                    "dimension \"fortran\" {}[{}]".format(
+                    'dimension \"fortran\" {}[{}]'.format(
                         scope.translate_var_name(name),
                         ", ".join(gen_shape(s) for s in shape)
                         ))
 
-                # cannot omit 'dimension' decl even for rank-1 args:
+                # cannot omit "dimension" decl even for rank-1 args:
                 result.append(dim_stmt)
 
             if name in scope.data:
@@ -1088,7 +1087,7 @@ class F2CLTranslator(FTreeWalkerBase):
 
             ("integer", ""): np.int32,
             ("integer", "4"): np.int32,
-            ("complex", "8"): np.int64,
+            ("integer", "8"): np.int64,
             }
 
     def dtype_from_stmt(self, stmt):
@@ -1182,11 +1181,11 @@ class F2CLTranslator(FTreeWalkerBase):
         rhs_dtype = infer_type(rhs)
 
         # check for silent truncation of complex
-        if lhs_dtype.kind != 'c' and rhs_dtype.kind == 'c':
+        if lhs_dtype.kind != "c" and rhs_dtype.kind == "c":
             from pymbolic import var
             rhs = var("real")(rhs)
         # check for silent widening of real
-        if lhs_dtype.kind == 'c' and rhs_dtype.kind != 'c':
+        if lhs_dtype.kind == "c" and rhs_dtype.kind != "c":
             from pymbolic import var
             rhs = var("fromreal")(rhs)
 
@@ -1414,9 +1413,9 @@ if __name__ == "__main__":
     import logging
     console = logging.StreamHandler()
     console.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    formatter = logging.Formatter("%(name)-12s: %(levelname)-8s %(message)s")
     console.setFormatter(formatter)
-    logging.getLogger('fparser').addHandler(console)
+    logging.getLogger("fparser").addHandler(console)
 
     from cgen.opencl import CLConstant
 
