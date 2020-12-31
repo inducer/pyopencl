@@ -764,8 +764,7 @@ def rand(queue, shape, dtype, luxury=None, a=0, b=1):
     from pyopencl.array import Array
     gen = _get_generator(queue.context)
     result = Array(queue, shape, dtype)
-    result.add_event(
-            gen.fill_uniform(result, a=a, b=b))
+    gen.fill_uniform(result, a=a, b=b)
     return result
 
 
