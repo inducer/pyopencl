@@ -114,6 +114,10 @@ class RanluxGenerator:
             Added default value for `num_work_items`.
         """
 
+        from warnings import warn
+        warn("Ranlux random number generation is deprecated and will go away "
+                "in 2022.", DeprecationWarning, stacklevel=2)
+
         if luxury is None:
             luxury = 4
 
