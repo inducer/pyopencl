@@ -337,7 +337,7 @@ class RanluxGenerator:
         evt = knl(queue,
                 (self.num_work_items,), None,
                 self.state.data, ary.data, ary.size*size_multiplier,
-                b-a, a, wait_for=ary.event)
+                b-a, a, wait_for=ary.events)
         ary.add_event(evt)
         self.state.add_event(evt)
         return ary
