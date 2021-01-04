@@ -1,21 +1,3 @@
-# PyOpenCL documentation build configuration file, created by
-# sphinx-quickstart on Fri Jun 13 00:51:19 2008.
-#
-# This file is execfile()d with the current directory set to its containing dir.
-#
-# The contents of this file are pickled, so don't put values in the namespace
-# that aren't pickleable (module imports are okay, they're removed automatically).
-#
-# All configuration values have a default value; values that are commented out
-# serve to show the default value.
-
-# import sys, os
-
-# If your extensions are in another directory, add it here. If the directory
-# is relative to the documentation root, use os.path.abspath to make it
-# absolute, like shown here.
-# sys.path.append(os.path.abspath('some/directory'))
-
 # General configuration
 # ---------------------
 
@@ -142,43 +124,11 @@ html_copy_source = False
 htmlhelp_basename = "PyOpenClDoc"
 
 
-# Options for LaTeX output
-# ------------------------
-
-# The paper size ('letter' or 'a4').
-# latex_paper_size = 'letter'
-
-# The font size ('10pt', '11pt' or '12pt').
-# latex_font_size = '10pt'
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title, author, document class [howto/manual]).
-latex_documents = [
-    ("index", "pyopencl.tex", "PyOpenCL Documentation", "Andreas Kloeckner",
-        "manual"),
-]
-
-# The name of an image file (relative to this directory) to place at the top of
-# the title page.
-# latex_logo = None
-
-# For "manual" documents, if this is true, then toplevel headings are parts,
-# not chapters.
-# latex_use_parts = False
-
-# Additional stuff for the LaTeX preamble.
-# latex_preamble = ''
-
-# Documents to append as an appendix to all manuals.
-# latex_appendices = []
-
-# If false, no module index is generated.
-# latex_use_modindex = True
-
 intersphinx_mapping = {
     "https://docs.python.org/dev": None,
     "https://numpy.org/doc/stable/": None,
     "https://docs.makotemplates.org/en/latest/": None,
 }
 
-autoclass_content = "both"
+autoclass_content = "class"
+autodoc_typehints = "description"
