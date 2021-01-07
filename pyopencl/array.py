@@ -139,6 +139,9 @@ def splay(queue, n, kernel_specific_max_wg_size=None):
     return (group_count*work_items_per_group,), (work_items_per_group,)
 
 
+ARRAY_KERNEL_EXEC_HOOK = None
+
+
 def elwise_kernel_runner(kernel_getter):
     """Take a kernel getter of the same signature as the kernel
     and return a function that invokes that kernel.
@@ -193,7 +196,11 @@ def elwise_kernel_runner(kernel_getter):
                 actual_args.append(arg)
         actual_args.append(repr_ary.size)
 
-        return knl(queue, gs, ls, *actual_args, wait_for=wait_for)
+        if ARRAY_KERNEL_EXEC_HOOK is not None:
+            return ARRAY_KERNEL_EXEC_HOOK(
+                    knl, queue, gs, ls, *actual_args, wait_for=wait_for)
+        else:
+            return knl(queue, gs, ls, *actual_args, wait_for=wait_for)
 
     try:
         from functools import update_wrapper
