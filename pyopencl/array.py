@@ -139,6 +139,7 @@ def splay(queue, n, kernel_specific_max_wg_size=None):
     return (group_count*work_items_per_group,), (work_items_per_group,)
 
 
+# deliberately undocumented for now
 ARRAY_KERNEL_EXEC_HOOK = None
 
 
