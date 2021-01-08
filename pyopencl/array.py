@@ -197,7 +197,7 @@ def elwise_kernel_runner(kernel_getter):
         actual_args.append(repr_ary.size)
 
         if ARRAY_KERNEL_EXEC_HOOK is not None:
-            return ARRAY_KERNEL_EXEC_HOOK(
+            return ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
                     knl, queue, gs, ls, *actual_args, wait_for=wait_for)
         else:
             return knl(queue, gs, ls, *actual_args, wait_for=wait_for)
