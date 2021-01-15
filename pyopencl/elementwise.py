@@ -307,13 +307,13 @@ class ElementwiseKernel:
 
             invocation_args.append(step)
 
-            from pyopencl.array import splay
-            gs, ls = splay(queue,
+            from pyopencl.array import _splay
+            gs, ls = _splay(queue,
                     abs(range_.stop - start)//step,
                     max_wg_size)
         else:
             invocation_args.append(repr_vec.size)
-            gs, ls = repr_vec.get_sizes(queue, max_wg_size)
+            gs, ls = repr_vec._get_sizes(queue, max_wg_size)
 
         if capture_as is not None:
             kernel.set_args(*invocation_args)

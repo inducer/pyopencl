@@ -662,8 +662,8 @@ class Random123GeneratorBase:
                 scale, shift]
 
         n = ary.size
-        from pyopencl.array import splay
-        gsize, lsize = splay(queue, ary.size)
+        from pyopencl.array import _splay
+        gsize, lsize = _splay(queue, ary.size)
 
         evt = knl(queue, gsize, lsize, *args)
         ary.add_event(evt)
