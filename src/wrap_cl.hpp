@@ -4642,7 +4642,7 @@ namespace pyopencl
     return result;
   }
 
-
+#define MAX_WS_DIM_COUNT 10
 
   inline
   event *enqueue_nd_range_kernel(
@@ -4659,11 +4659,14 @@ namespace pyopencl
 
     cl_uint work_dim = len(py_global_work_size);
 
-    std::vector<size_t> global_work_size;
-    COPY_PY_LIST(size_t, global_work_size);
+    std::array<size_t, MAX_WS_DIM_COUNT> global_work_size;
+    unsigned gws_index = 0;
+    COPY_PY_ARRAY("enqueue_nd_range_kernel", size_t, global_work_size, gws_index);
 
-    size_t *local_work_size_ptr = 0;
-    std::vector<size_t> local_work_size;
+    std::array<size_t, MAX_WS_DIM_COUNT> local_work_size;
+    unsigned lws_index = 0;
+    size_t *local_work_size_ptr = nullptr;
+
     if (py_local_work_size.ptr() != Py_None)
     {
       if (g_times_l)
@@ -4673,31 +4676,32 @@ namespace pyopencl
           throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
               "global/local work sizes have differing dimensions");
 
-      COPY_PY_LIST(size_t, local_work_size);
+      COPY_PY_ARRAY("enqueue_nd_range_kernel", size_t, local_work_size, lws_index);
 
-      while (local_work_size.size() < work_dim)
-        local_work_size.push_back(1);
-      while (global_work_size.size() < work_dim)
-        global_work_size.push_back(1);
+      while (lws_index < work_dim)
+        local_work_size[lws_index++] = 1;
+      while (gws_index < work_dim)
+        global_work_size[gws_index++] = 1;
 
-      local_work_size_ptr = local_work_size.empty( ) ? nullptr : &local_work_size.front();
+      local_work_size_ptr = &local_work_size.front();
     }
 
-    if (g_times_l && local_work_size_ptr)
+    if (g_times_l && lws_index)
     {
       for (cl_uint work_axis = 0; work_axis < work_dim; ++work_axis)
         global_work_size[work_axis] *= local_work_size[work_axis];
     }
 
-    size_t *global_work_offset_ptr = 0;
-    std::vector<size_t> global_work_offset;
+    size_t *global_work_offset_ptr = nullptr;
+    std::array<size_t, MAX_WS_DIM_COUNT> global_work_offset;
+    unsigned gwo_index = 0;
     if (py_global_work_offset.ptr() != Py_None)
     {
       if (work_dim != unsigned(len(py_global_work_offset)))
         throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
             "global work size and offset have differing dimensions");
 
-      COPY_PY_LIST(size_t, global_work_offset);
+      COPY_PY_ARRAY("enqueue_nd_range_kernel", size_t, global_work_offset, gwo_index);
 
       if (g_times_l && local_work_size_ptr)
       {
@@ -4705,7 +4709,7 @@ namespace pyopencl
           global_work_offset[work_axis] *= local_work_size[work_axis];
       }
 
-      global_work_offset_ptr = global_work_offset.empty( ) ? nullptr :  &global_work_offset.front();
+      global_work_offset_ptr = &global_work_offset.front();
     }
 
     if (allow_empty_ndrange)
@@ -4742,7 +4746,7 @@ namespace pyopencl
                 knl.data(),
                 work_dim,
                 global_work_offset_ptr,
-                global_work_size.empty( ) ? nullptr : &global_work_size.front(),
+                &global_work_size.front(),
                 local_work_size_ptr,
                 PYOPENCL_WAITLIST_ARGS, &evt
                 ));

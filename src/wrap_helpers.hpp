@@ -71,6 +71,18 @@ namespace py = pybind11;
       NAME.push_back(it.cast<TYPE>()); \
   }
 
+#define COPY_PY_ARRAY(FUNC_NAME, TYPE, NAME, COUNTER) \
+  { \
+    COUNTER = 0; \
+    for (auto it: py_##NAME) \
+    { \
+      if (COUNTER == NAME.size()) \
+        throw error(FUNC_NAME, \
+            CL_INVALID_VALUE, "too many entries in " #NAME " argument"); \
+      NAME[COUNTER++] = it.cast<TYPE>(); \
+    } \
+  }
+
 #define COPY_PY_COORD_TRIPLE(NAME) \
   size_t NAME[3] = {0, 0, 0}; \
   { \
