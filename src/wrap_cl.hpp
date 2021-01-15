@@ -4343,6 +4343,13 @@ namespace pyopencl
               sizeof(cl_mem), &m));
       }
 
+      template <typename T>
+      void set_arg_pod(cl_uint arg_index, T pod_value)
+      {
+        PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index,
+              sizeof(T), &pod_value));
+      }
+
       void set_arg_mem(cl_uint arg_index, memory_object_holder &moh)
       {
         cl_mem m = moh.data();

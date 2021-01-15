@@ -467,6 +467,13 @@ void pyopencl_expose_part_2(py::module &m)
 #endif
       .def("_set_arg_null", &cls::set_arg_null)
       .def("_set_arg_buf", &cls::set_arg_buf)
+      .def("_set_arg_mem", &cls::set_arg_mem)
+      .def("_set_arg_i32", &cls::set_arg_pod<int32_t>)
+      .def("_set_arg_i64", &cls::set_arg_pod<int64_t>)
+      .def("_set_arg_u32", &cls::set_arg_pod<uint32_t>)
+      .def("_set_arg_u64", &cls::set_arg_pod<uint64_t>)
+      .def("_set_arg_f32", &cls::set_arg_pod<float>)
+      .def("_set_arg_f64", &cls::set_arg_pod<double>)
 #if PYOPENCL_CL_VERSION >= 0x2000
       .def("_set_arg_svm", &cls::set_arg_svm)
 #endif
