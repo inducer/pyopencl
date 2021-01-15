@@ -103,19 +103,18 @@ class VecLookupWarner:
 
 vec = VecLookupWarner()
 
+
 # {{{ helper functionality
 
-
-def splay(queue, n, kernel_specific_max_wg_size=None):
-    dev = queue.device
-    max_work_items = _builtin_min(128, dev.max_work_group_size)
+def _splay(device, n, kernel_specific_max_wg_size=None):
+    max_work_items = _builtin_min(128, device.max_work_group_size)
 
     if kernel_specific_max_wg_size is not None:
         from builtins import min
         max_work_items = min(max_work_items, kernel_specific_max_wg_size)
 
     min_work_items = _builtin_min(32, max_work_items)
-    max_groups = dev.max_compute_units * 4 * 8
+    max_groups = device.max_compute_units * 4 * 8
     # 4 to overfill the device
     # 8 is an Nvidia constant--that's how many
     # groups fit onto one compute device
@@ -163,7 +162,7 @@ def elwise_kernel_runner(kernel_getter):
 
         knl = kernel_getter(*args, **kwargs)
 
-        gs, ls = repr_ary.get_sizes(queue,
+        gs, ls = repr_ary._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
@@ -239,6 +238,9 @@ class ArrayHasOffsetError(ValueError):
 
 class _copy_queue:  # noqa
     pass
+
+
+_ARRAY_GET_SIZES_CACHE = {}
 
 
 class Array:
@@ -604,12 +606,17 @@ class Array:
         return self._new_with_changes(self.base_data, self.offset,
                 queue=queue)
 
-    #@memoize_method FIXME: reenable
-    def get_sizes(self, queue, kernel_specific_max_wg_size=None):
+    def _get_sizes(self, queue, kernel_specific_max_wg_size=None):
         if not self.flags.forc:
             raise NotImplementedError("cannot operate on non-contiguous array")
-        return splay(queue, self.size,
-                kernel_specific_max_wg_size=kernel_specific_max_wg_size)
+        cache_key = (queue.device.int_ptr, self.size, kernel_specific_max_wg_size)
+        try:
+            return _ARRAY_GET_SIZES_CACHE[cache_key]
+        except KeyError:
+            sizes = _splay(queue.device, self.size,
+                    kernel_specific_max_wg_size=kernel_specific_max_wg_size)
+            _ARRAY_GET_SIZES_CACHE[cache_key] = sizes
+            return sizes
 
     def set(self, ary, queue=None, async_=None, **kwargs):
         """Transfer the contents the :class:`numpy.ndarray` object *ary*
@@ -2289,7 +2296,7 @@ def multi_take(arrays, indices, out=None, queue=None):
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = indices.get_sizes(queue,
+        gs, ls = indices._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
@@ -2367,7 +2374,7 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = src_indices.get_sizes(queue,
+        gs, ls = src_indices._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
@@ -2450,7 +2457,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = dest_indices.get_sizes(queue,
+        gs, ls = dest_indices._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
