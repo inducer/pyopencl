@@ -308,7 +308,7 @@ class ElementwiseKernel:
             invocation_args.append(step)
 
             from pyopencl.array import _splay
-            gs, ls = _splay(queue,
+            gs, ls = _splay(queue.device,
                     abs(range_.stop - start)//step,
                     max_wg_size)
         else:
