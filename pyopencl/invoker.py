@@ -293,10 +293,11 @@ def _generate_enqueue_and_set_args_module(function_name,
     with Indentation(gen):
         gen.extend(body)
 
+        # Using positional args here because pybind is slow with keyword args
         gen("""
             return _cl.enqueue_nd_range_kernel(queue, self, global_size, local_size,
-                    global_offset, wait_for, g_times_l=g_times_l,
-                    allow_empty_ndrange=allow_empty_ndrange)
+                    global_offset, wait_for, g_times_l,
+                    allow_empty_ndrange)
             """)
 
     # }}}
@@ -316,7 +317,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v20",
+        "pyopencl-invoker-cache-v21",
         key_builder=_NumpyTypesKeyBuilder())
 
 
