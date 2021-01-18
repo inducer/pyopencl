@@ -4371,7 +4371,7 @@ namespace pyopencl
             (m_kernel, arg_index, sizeof(cl_command_queue), &q));
       }
 
-      void set_arg_buf(cl_uint arg_index, py::object py_buffer)
+      void set_arg_buf(cl_uint arg_index, py::handle py_buffer)
       {
         const void *buf;
         PYOPENCL_BUFFER_SIZE_T len;
@@ -4404,7 +4404,7 @@ namespace pyopencl
       }
 #endif
 
-      void set_arg(cl_uint arg_index, py::object arg)
+      void set_arg(cl_uint arg_index, py::handle arg)
       {
         if (arg.ptr() == Py_None)
         {
@@ -4642,10 +4642,10 @@ namespace pyopencl
   event *enqueue_nd_range_kernel(
       command_queue &cq,
       kernel &knl,
-      py::object py_global_work_size,
-      py::object py_local_work_size,
-      py::object py_global_work_offset,
-      py::object py_wait_for,
+      py::handle py_global_work_size,
+      py::handle py_local_work_size,
+      py::handle py_global_work_offset,
+      py::handle py_wait_for,
       bool g_times_l,
       bool allow_empty_ndrange)
   {
