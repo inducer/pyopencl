@@ -51,26 +51,6 @@ del _size_t_char
 # }}}
 
 
-# {{{ individual arg handling
-
-def generate_buffer_arg_setter(gen, arg_idx, buf_var):
-    if _PYPY:
-        # https://github.com/numpy/numpy/issues/5381
-        gen(f"if isinstance({buf_var}, np.generic):")
-        with Indentation(gen):
-            if _PYPY:
-                gen("{buf_var} = np.asarray({buf_var})".format(buf_var=buf_var))
-            else:
-                gen("{buf_var} = np.getbuffer({buf_var})".format(buf_var=buf_var))
-
-    gen("""
-        self._set_arg_buf({arg_idx}, {buf_var})
-        """
-        .format(arg_idx=arg_idx, buf_var=buf_var))
-
-# }}}
-
-
 # {{{ generic arg handling body
 
 def generate_generic_arg_handling_body(num_args):
