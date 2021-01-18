@@ -33,7 +33,6 @@ from functools import reduce
 import numpy as np
 import pyopencl.elementwise as elementwise
 import pyopencl as cl
-from pytools import memoize_method
 from pyopencl.compyte.array import (
         as_strided as _as_strided,
         f_contiguous_strides as _f_contiguous_strides,
@@ -431,7 +430,7 @@ class Array:
     __array_priority__ = 100
 
     def __init__(self, cq, shape, dtype, order="C", allocator=None,
-            data=None, offset=0, strides=None, events=None):
+            data=None, offset=0, strides=None, events=None, _flags=None):
         # {{{ backward compatibility
 
         if isinstance(cq, cl.CommandQueue):
@@ -556,6 +555,7 @@ class Array:
 
         self.offset = offset
         self.context = context
+        self._flags = _flags
 
     @property
     def ndim(self):
@@ -569,9 +569,11 @@ class Array:
             return self.base_data
 
     @property
-    @memoize_method
     def flags(self):
-        return _ArrayFlags(self)
+        f = self._flags
+        if f is None:
+            self._flags = f = _ArrayFlags(self)
+        return f
 
     def _new_with_changes(self, data, offset, shape=None, dtype=None,
             strides=None, queue=_copy_queue, allocator=None):
@@ -977,19 +979,21 @@ class Array:
 
     def _new_like_me(self, dtype=None, queue=None):
         strides = None
+        flags = None
         if dtype is None:
             dtype = self.dtype
 
         if dtype == self.dtype:
             strides = self.strides
+            flags = self.flags
 
         queue = queue or self.queue
         if queue is not None:
             return self.__class__(queue, self.shape, dtype,
-                    allocator=self.allocator, strides=strides)
+                    allocator=self.allocator, strides=strides, _flags=flags)
         else:
             return self.__class__(self.context, self.shape, dtype,
-                    strides=strides, allocator=self.allocator)
+                    strides=strides, allocator=self.allocator, _flags=flags)
 
     @staticmethod
     @elwise_kernel_runner
