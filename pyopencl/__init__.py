@@ -865,13 +865,14 @@ def _add_functionality():
         KernelWithCustomEnqueue.set_args = set_args
 
     def kernel_get_work_group_info(self, param, device):
+        cache_key = (param, device.int_ptr)
         try:
-            return self._wg_info_cache[param, device]
+            return self._wg_info_cache[cache_key]
         except KeyError:
             pass
 
         result = kernel_old_get_work_group_info(self, param, device)
-        self._wg_info_cache[param, device] = result
+        self._wg_info_cache[cache_key] = result
         return result
 
     def kernel_set_args(self, *args, **kwargs):
