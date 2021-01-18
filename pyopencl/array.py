@@ -475,6 +475,9 @@ class Array:
             size = 1
             for dim in shape:
                 size *= dim
+                if dim < 0:
+                    raise ValueError("negative dimensions are not allowed")
+
         except TypeError:
             admissible_types = (int, np.integer)
 
@@ -482,10 +485,9 @@ class Array:
                 raise TypeError("shape must either be iterable or "
                         "castable to an integer")
             size = shape
+            if shape < 0:
+                raise ValueError("negative dimensions are not allowed")
             shape = (shape,)
-
-        if any(dim < 0 for dim in shape):
-            raise ValueError("negative dimensions are not allowed")
 
         if isinstance(size, np.integer):
             size = size.item()
