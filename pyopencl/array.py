@@ -69,19 +69,6 @@ def _get_truedivide_dtype(obj1, obj2, queue):
     return result
 
 
-# Work around PyPy not currently supporting the object dtype.
-# (Yes, it doesn't even support checking!)
-# (as of May 27, 2014 on PyPy 2.3)
-try:
-    np.dtype(object)
-
-    def _dtype_is_object(t):
-        return t == object
-except Exception:
-    def _dtype_is_object(t):
-        return False
-
-
 class InconsistentOpenCLQueueWarning(UserWarning):
     pass
 
@@ -499,9 +486,8 @@ class Array:
 
         # }}}
 
-        if _dtype_is_object(dtype):
-            raise TypeError("object arrays on the compute device are not allowed")
-
+        assert dtype != np.object, \
+                "object arrays on the compute device are not allowed"
         assert isinstance(shape, tuple)
         assert isinstance(strides, tuple)
 
@@ -2080,7 +2066,7 @@ def to_device(queue, ary, allocator=None, async_=None,
 
     # }}}
 
-    if _dtype_is_object(ary.dtype):
+    if ary.dtype == np.object:
         raise RuntimeError("to_device does not work on object arrays.")
 
     if array_queue is _same_as_transfer:
