@@ -847,7 +847,7 @@ def _add_functionality():
         # }}}
 
         from pyopencl.invoker import generate_enqueue_and_set_args
-        enqueue, set_args = \
+        enqueue, my_set_args = \
                 generate_enqueue_and_set_args(
                         self.function_name,
                         len(scalar_arg_dtypes), self.num_args,
@@ -858,11 +858,10 @@ def _add_functionality():
         # Make ourselves a kernel-specific class, so that we're able to override
         # __call__. Inspired by https://stackoverflow.com/a/38541437
         class KernelWithCustomEnqueue(type(self)):
-            pass
+            __call__ = enqueue
+            set_args = my_set_args
 
         self.__class__ = KernelWithCustomEnqueue
-        KernelWithCustomEnqueue.__call__ = enqueue
-        KernelWithCustomEnqueue.set_args = set_args
 
     def kernel_get_work_group_info(self, param, device):
         cache_key = (param, device.int_ptr)
