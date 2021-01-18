@@ -198,15 +198,6 @@ class DefaultAllocator(cl.tools.DeferredAllocator):
                 DeprecationWarning, 2)
         cl.tools.DeferredAllocator.__init__(self, *args, **kwargs)
 
-
-def _make_strides(itemsize, shape, order):
-    if order in "fF":
-        return _f_contiguous_strides(itemsize, shape)
-    elif order in "cC":
-        return _c_contiguous_strides(itemsize, shape)
-    else:
-        raise ValueError("invalid order: %s" % order)
-
 # }}}
 
 
@@ -476,7 +467,19 @@ class Array:
             size = size.item()
 
         if strides is None:
-            strides = _make_strides(dtype.itemsize, shape, order)
+            if order in "cC":
+                # inlined from compyte.array.c_contiguous_strides
+                if shape:
+                    strides = [dtype.itemsize]
+                    for s in shape[:0:-1]:
+                        strides.append(strides[-1]*s)
+                    strides = tuple(strides[::-1])
+                else:
+                    strides = ()
+            elif order in "fF":
+                strides = _f_contiguous_strides(dtype.itemsize, shape)
+            else:
+                raise ValueError("invalid order: %s" % order)
 
         else:
             # FIXME: We should possibly perform some plausibility
