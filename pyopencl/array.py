@@ -45,9 +45,33 @@ from pyopencl.characterize import has_double_support
 from pyopencl import cltypes
 
 
+_COMMON_DTYPE_CACHE = {}
+
+
 def _get_common_dtype(obj1, obj2, queue):
-    return _get_common_dtype_base(obj1, obj2,
-                                  has_double_support(queue.device))
+    dsupport = has_double_support(queue.device)
+    cache_key = None
+    o1_dtype = obj1.dtype
+    try:
+        cache_key = (o1_dtype, obj2.dtype, dsupport)
+        return _COMMON_DTYPE_CACHE[cache_key]
+    except KeyError:
+        pass
+    except AttributeError:
+        # obj2 doesn't have a dtype
+        try:
+            cache_key = (o1_dtype, type(obj2), dsupport)
+            return _COMMON_DTYPE_CACHE[cache_key]
+        except KeyError:
+            pass
+
+    result = _get_common_dtype_base(obj1, obj2, dsupport)
+
+    # we succeeded in constructing the cache key
+    if cache_key is not None:
+        _COMMON_DTYPE_CACHE[cache_key] = result
+
+    return result
 
 
 def _get_truedivide_dtype(obj1, obj2, queue):
