@@ -32,6 +32,7 @@ from sys import intern
 # Do not add a pyopencl import here: This will add an import cycle.
 
 import numpy as np
+from decorator import decorator
 from pytools import memoize, memoize_method
 from pyopencl._cl import bitlog2  # noqa: F401
 from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
@@ -72,7 +73,8 @@ from pyopencl._cl import (  # noqa
 _first_arg_dependent_caches = []
 
 
-def first_arg_dependent_memoize(func):
+@decorator
+def first_arg_dependent_memoize(func, cl_object, *args):
     """Provides memoization for a function. Typically used to cache
     things that get created inside a :class:`pyopencl.Context`, e.g. programs
     and kernels. Assumes that the first argument of the decorated function is
@@ -82,26 +84,21 @@ def first_arg_dependent_memoize(func):
 
     .. versionadded:: 2011.2
     """
-    def first_arg_memoized_wrapper(cl_object, *args):
-        try:
-            ctx_dict = func._pyopencl_first_arg_dep_memoize_dic
-        except AttributeError:
-            # FIXME: This may keep contexts alive longer than desired.
-            # But I guess since the memory in them is freed, who cares.
-            ctx_dict = func._pyopencl_first_arg_dep_memoize_dic = {}
-            _first_arg_dependent_caches.append(ctx_dict)
+    try:
+        ctx_dict = func._pyopencl_first_arg_dep_memoize_dic
+    except AttributeError:
+        # FIXME: This may keep contexts alive longer than desired.
+        # But I guess since the memory in them is freed, who cares.
+        ctx_dict = func._pyopencl_first_arg_dep_memoize_dic = {}
+        _first_arg_dependent_caches.append(ctx_dict)
 
-        try:
-            return ctx_dict[cl_object][args]
-        except KeyError:
-            arg_dict = ctx_dict.setdefault(cl_object, {})
-            result = func(cl_object, *args)
-            arg_dict[args] = result
-            return result
-
-    from functools import update_wrapper
-    update_wrapper(first_arg_memoized_wrapper, func)
-    return first_arg_memoized_wrapper
+    try:
+        return ctx_dict[cl_object][args]
+    except KeyError:
+        arg_dict = ctx_dict.setdefault(cl_object, {})
+        result = func(cl_object, *args)
+        arg_dict[args] = result
+        return result
 
 
 context_dependent_memoize = first_arg_dependent_memoize
