@@ -96,7 +96,8 @@ def generate_generic_arg_handling_body(num_args):
 
 def generate_specific_arg_handling_body(function_name,
         num_cl_args, scalar_arg_dtypes,
-        work_around_arg_count_bug, warn_about_arg_count_bug):
+        work_around_arg_count_bug, warn_about_arg_count_bug,
+        include_debug_helpers):
 
     assert work_around_arg_count_bug is not None
     assert warn_about_arg_count_bug is not None
@@ -113,7 +114,8 @@ def generate_specific_arg_handling_body(function_name,
     for arg_idx, arg_dtype in enumerate(scalar_arg_dtypes):
         gen(f"# process argument {arg_idx}")
         gen("")
-        gen(f"current_arg = {arg_idx}")
+        if include_debug_helpers:
+            gen(f"current_arg = {arg_idx}")
         arg_var = "arg%d" % arg_idx
 
         if arg_dtype is None:
@@ -151,7 +153,8 @@ def generate_specific_arg_handling_body(function_name,
                         .format(arg_char=arg_char, arg_var=arg_var))
                 gen(f"self._set_arg_buf({cl_arg_idx}, buf)")
                 cl_arg_idx += 1
-                gen("current_arg = current_arg + 1000")
+                if include_debug_helpers:
+                    gen("current_arg = current_arg + 1000")
                 gen(
                         "buf = pack('{arg_char}', {arg_var}.imag)"
                         .format(arg_char=arg_char, arg_var=arg_var))
@@ -247,7 +250,8 @@ def wrap_in_error_handler(body, arg_names):
 def _generate_enqueue_and_set_args_module(function_name,
         num_passed_args, num_cl_args,
         scalar_arg_dtypes,
-        work_around_arg_count_bug, warn_about_arg_count_bug):
+        work_around_arg_count_bug, warn_about_arg_count_bug,
+        include_debug_helpers):
 
     from pytools.py_codegen import PythonCodeGenerator, Indentation
 
@@ -259,9 +263,11 @@ def _generate_enqueue_and_set_args_module(function_name,
         body = generate_specific_arg_handling_body(
                 function_name, num_cl_args, scalar_arg_dtypes,
                 warn_about_arg_count_bug=warn_about_arg_count_bug,
-                work_around_arg_count_bug=work_around_arg_count_bug)
+                work_around_arg_count_bug=work_around_arg_count_bug,
+                include_debug_helpers=include_debug_helpers)
 
-    body = wrap_in_error_handler(body, arg_names)
+    if include_debug_helpers:
+        body = wrap_in_error_handler(body, arg_names)
 
     gen = PythonCodeGenerator()
 
@@ -310,7 +316,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v17",
+        "pyopencl-invoker-cache-v20",
         key_builder=_NumpyTypesKeyBuilder())
 
 
@@ -321,7 +327,8 @@ def generate_enqueue_and_set_args(function_name,
 
     cache_key = (function_name, num_passed_args, num_cl_args,
             scalar_arg_dtypes,
-            work_around_arg_count_bug, warn_about_arg_count_bug)
+            work_around_arg_count_bug, warn_about_arg_count_bug,
+            not sys.flags.optimize)
 
     from_cache = False
 
