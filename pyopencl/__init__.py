@@ -857,12 +857,12 @@ def _add_functionality():
 
         # Make ourselves a kernel-specific class, so that we're able to override
         # __call__. Inspired by https://stackoverflow.com/a/38541437
-        class KernelWithOverriddenCall(type(self)):
+        class KernelWithCustomEnqueue(type(self)):
             pass
 
-        self.__class__ = KernelWithOverriddenCall
-        KernelWithOverriddenCall.__call__ = enqueue
-        KernelWithOverriddenCall.set_args = set_args
+        self.__class__ = KernelWithCustomEnqueue
+        KernelWithCustomEnqueue.__call__ = enqueue
+        KernelWithCustomEnqueue.set_args = set_args
 
     def kernel_get_work_group_info(self, param, device):
         try:
