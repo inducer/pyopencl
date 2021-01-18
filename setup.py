@@ -247,7 +247,6 @@ def main():
             install_requires=[
                 "numpy",
                 "pytools>=2017.6",
-                "decorator>=3.2.0",
                 "appdirs>=1.4.0",
                 # "Mako>=0.3.6",
                 ],
