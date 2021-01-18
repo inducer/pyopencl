@@ -470,6 +470,20 @@ void pyopencl_expose_part_2(py::module &m)
 #if PYOPENCL_CL_VERSION >= 0x2000
       .def("_set_arg_svm", &cls::set_arg_svm)
 #endif
+      .def("_set_arg_multi",
+          [](cls &knl, py::tuple indices, py::tuple args)
+          {
+            cls::set_arg_multi(
+                [&](cl_uint i, py::handle arg) { knl.set_arg(i, arg); },
+                indices, args);
+          })
+      .def("_set_arg_buf_multi",
+          [](cls &knl, py::tuple indices, py::tuple args)
+          {
+            cls::set_arg_multi(
+                [&](cl_uint i, py::handle arg) { knl.set_arg_buf(i, arg); },
+                indices, args);
+          })
       .DEF_SIMPLE_METHOD(set_arg)
 #if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(get_arg_info)

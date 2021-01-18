@@ -86,6 +86,7 @@
 
 #endif
 
+#include <functional>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -4451,6 +4452,59 @@ namespace pyopencl
 
         set_arg_buf(arg_index, arg);
       }
+
+      static
+      void set_arg_multi(
+          std::function<void(cl_uint, py::handle)> set_arg_func,
+          py::tuple indices,
+          py::tuple args)
+      {
+        // This is an internal interface used by generated invokers.
+        // We can save a tiny bit of time by not checking their work.
+        /*
+        if (indices.size() != args.size())
+            throw error("Kernel.set_arg_multi", CL_INVALID_VALUE,
+                "indices and args arguments do not have the same length");
+        */
+
+        cl_uint arg_index;
+        py::handle arg_value;
+
+        auto indices_it = indices.begin(), args_it = args.begin(),
+          indices_end = indices.end();
+        try
+        {
+          while (indices_it != indices_end)
+          {
+            arg_index = py::cast<cl_uint>(*indices_it++);
+            arg_value = *args_it++;
+            set_arg_func(arg_index, arg_value);
+          }
+        }
+        catch (error &err)
+        {
+          std::string msg(
+              std::string("when processing arg#") + std::to_string(arg_index+1)
+              + std::string(" (1-based): ") + std::string(err.what()));
+
+          auto mod_cl_ary(py::module::import("pyopencl.array"));
+          auto cls_array(mod_cl_ary.attr("Array"));
+          if (arg_value.ptr() && py::isinstance(arg_value, cls_array))
+            msg.append(
+                " (perhaps you meant to pass 'array.data' instead of the array itself?)");
+
+          throw error(err.routine().c_str(), err.code(), msg.c_str());
+        }
+        catch (std::exception &err)
+        {
+          std::string msg(
+              std::string("when processing arg#") + std::to_string(arg_index+1)
+              + std::string(" (1-based): ") + std::string(err.what()));
+
+          throw std::runtime_error(msg.c_str());
+        }
+      }
+
 
       py::object get_info(cl_kernel_info param_name) const
       {
