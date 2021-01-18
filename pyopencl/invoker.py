@@ -81,10 +81,10 @@ def generate_generic_arg_handler(gen, arg_idx, arg_var):
     from pytools.py_codegen import Indentation
 
     gen("""
-        if {arg_var} is None:
-            self._set_arg_null({arg_idx})
-        elif isinstance({arg_var}, _KERNEL_ARG_CLASSES):
+        if isinstance({arg_var}, _KERNEL_ARG_CLASSES):
             self.set_arg({arg_idx}, {arg_var})
+        elif {arg_var} is None:
+            self._set_arg_null({arg_idx})
         """
         .format(arg_idx=arg_idx, arg_var=arg_var))
 
@@ -341,7 +341,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v7",
+        "pyopencl-invoker-cache-v11",
         key_builder=_NumpyTypesKeyBuilder())
 
 
