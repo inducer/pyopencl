@@ -59,8 +59,13 @@ def _get_common_dtype(obj1, obj2, queue):
     except AttributeError:
         # obj2 doesn't have a dtype
         try:
-            cache_key = (o1_dtype, type(obj2), dsupport)
-            return _COMMON_DTYPE_CACHE[cache_key]
+            tobj2 = type(obj2)
+            cache_key = (o1_dtype, tobj2, dsupport)
+
+            # Integers are weird, sized, and signed. Don't pretend that 'int'
+            # is enough information to decide what should happen.
+            if tobj2 != int:
+                return _COMMON_DTYPE_CACHE[cache_key]
         except KeyError:
             pass
 
