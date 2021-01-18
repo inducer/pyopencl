@@ -28,7 +28,7 @@ import numpy as np
 from warnings import warn
 import pyopencl._cl as _cl
 from pytools.persistent_dict import WriteOncePersistentDict
-from pytools.py_codegen import Indentation
+from pytools.py_codegen import Indentation, PythonCodeGenerator
 from pyopencl.tools import _NumpyTypesKeyBuilder
 
 _PYPY = "__pypy__" in sys.builtin_module_names
@@ -54,7 +54,6 @@ del _size_t_char
 # {{{ generic arg handling body
 
 def generate_generic_arg_handling_body(num_args):
-    from pytools.py_codegen import PythonCodeGenerator
     gen = PythonCodeGenerator()
 
     if num_args == 0:
@@ -85,7 +84,6 @@ def generate_specific_arg_handling_body(function_name,
     fp_arg_count = 0
     cl_arg_idx = 0
 
-    from pytools.py_codegen import PythonCodeGenerator
     gen = PythonCodeGenerator()
 
     if not scalar_arg_dtypes:
@@ -189,8 +187,6 @@ def generate_specific_arg_handling_body(function_name,
 # {{{ error handler
 
 def wrap_in_error_handler(body, arg_names):
-    from pytools.py_codegen import PythonCodeGenerator, Indentation
-
     err_gen = PythonCodeGenerator()
 
     def gen_error_handler():
@@ -232,8 +228,6 @@ def _generate_enqueue_and_set_args_module(function_name,
         scalar_arg_dtypes,
         work_around_arg_count_bug, warn_about_arg_count_bug,
         include_debug_helpers):
-
-    from pytools.py_codegen import PythonCodeGenerator, Indentation
 
     arg_names = ["arg%d" % i for i in range(num_passed_args)]
 
