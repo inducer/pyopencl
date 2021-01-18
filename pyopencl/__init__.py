@@ -862,7 +862,7 @@ def _add_functionality():
 
         self.__class__ = KernelWithOverriddenCall
         KernelWithOverriddenCall.__call__ = enqueue
-        KernelWithOverriddenCall._set_args = set_args
+        KernelWithOverriddenCall.set_args = set_args
 
     def kernel_get_work_group_info(self, param, device):
         try:
