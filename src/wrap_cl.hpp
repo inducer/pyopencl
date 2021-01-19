@@ -4456,8 +4456,7 @@ namespace pyopencl
       static
       void set_arg_multi(
           std::function<void(cl_uint, py::handle)> set_arg_func,
-          py::tuple indices,
-          py::tuple args)
+          py::tuple args_and_indices)
       {
         // This is an internal interface used by generated invokers.
         // We can save a tiny bit of time by not checking their work.
@@ -4470,14 +4469,13 @@ namespace pyopencl
         cl_uint arg_index;
         py::handle arg_value;
 
-        auto indices_it = indices.begin(), args_it = args.begin(),
-          indices_end = indices.end();
+        auto it = args_and_indices.begin(), end = args_and_indices.end();
         try
         {
-          while (indices_it != indices_end)
+          while (it != end)
           {
-            arg_index = py::cast<cl_uint>(*indices_it++);
-            arg_value = *args_it++;
+            arg_index = py::cast<cl_uint>(*it++);
+            arg_value = *it++;
             set_arg_func(arg_index, arg_value);
           }
         }

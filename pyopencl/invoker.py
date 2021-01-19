@@ -59,12 +59,13 @@ def generate_generic_arg_handling_body(num_args):
     if num_args == 0:
         gen("pass")
     else:
-        gen_arg_indices = list(range(num_args))
-        gen_args = [f"arg{i}" for i in gen_arg_indices]
+        gen_indices_and_args = []
+        for i in range(num_args):
+            gen_indices_and_args.append(i)
+            gen_indices_and_args.append(f"arg{i}")
 
         gen(f"self._set_arg_multi("
-                f"({', '.join(str(i) for i in gen_arg_indices)},), "
-                f"({', '.join(gen_args)},)"
+                f"({', '.join(str(i) for i in gen_indices_and_args)},), "
                 ")")
 
     return gen
@@ -89,17 +90,15 @@ def generate_specific_arg_handling_body(function_name,
     if not scalar_arg_dtypes:
         gen("pass")
 
-    gen_arg_indices = []
-    gen_args = []
-    buf_arg_indices = []
-    buf_args = []
+    gen_indices_and_args = []
+    buf_args_indices = []
 
     for arg_idx, arg_dtype in enumerate(scalar_arg_dtypes):
         arg_var = "arg%d" % arg_idx
 
         if arg_dtype is None:
-            gen_arg_indices.append(cl_arg_idx)
-            gen_args.append(arg_var)
+            gen_indices_and_args.append(cl_arg_idx)
+            gen_indices_and_args.append(arg_var)
             cl_arg_idx += 1
             gen("")
             continue
@@ -107,8 +106,8 @@ def generate_specific_arg_handling_body(function_name,
         arg_dtype = np.dtype(arg_dtype)
 
         if arg_dtype.char == "V":
-            gen_arg_indices.append(cl_arg_idx)
-            gen_args.append(arg_var)
+            gen_indices_and_args.append(cl_arg_idx)
+            gen_indices_and_args.append(arg_var)
             cl_arg_idx += 1
 
         elif arg_dtype.kind == "c":
@@ -129,11 +128,11 @@ def generate_specific_arg_handling_body(function_name,
             if (work_around_arg_count_bug == "pocl"
                     and arg_dtype == np.complex128
                     and fp_arg_count + 2 <= 8):
-                buf_arg_indices.append(cl_arg_idx)
-                buf_args.append(f"pack('{arg_char}', {arg_var}.real)")
+                buf_args_indices.append(cl_arg_idx)
+                buf_args_indices.append(f"pack('{arg_char}', {arg_var}.real)")
                 cl_arg_idx += 1
-                buf_arg_indices.append(cl_arg_idx)
-                buf_args.append(f"pack('{arg_char}', {arg_var}.imag)")
+                buf_args_indices.append(cl_arg_idx)
+                buf_args_indices.append(f"pack('{arg_char}', {arg_var}.imag)")
                 cl_arg_idx += 1
 
             elif (work_around_arg_count_bug == "apple"
@@ -145,8 +144,8 @@ def generate_specific_arg_handling_body(function_name,
                         "Cannot pass complex numbers to kernels.")
 
             else:
-                buf_arg_indices.append(cl_arg_idx)
-                buf_args.append(
+                buf_args_indices.append(cl_arg_idx)
+                buf_args_indices.append(
                     f"pack('{arg_char}{arg_char}', {arg_var}.real, {arg_var}.imag)")
                 cl_arg_idx += 1
 
@@ -158,21 +157,20 @@ def generate_specific_arg_handling_body(function_name,
 
             arg_char = arg_dtype.char
             arg_char = _type_char_map.get(arg_char, arg_char)
-            buf_arg_indices.append(cl_arg_idx)
-            buf_args.append(f"pack('{arg_char}', {arg_var})")
+            buf_args_indices.append(cl_arg_idx)
+            buf_args_indices.append(f"pack('{arg_char}', {arg_var})")
             cl_arg_idx += 1
 
         gen("")
 
-    for arg_kind, indices, args in [
-            ("", gen_arg_indices, gen_args),
-            ("_buf", buf_arg_indices, buf_args)
+    for arg_kind, args_and_indices in [
+            ("", gen_indices_and_args),
+            ("_buf", buf_args_indices)
             ]:
-        assert len(indices) == len(args)
-        if indices:
+        assert len(args_and_indices) % 2 == 0
+        if args_and_indices:
             gen(f"self._set_arg{arg_kind}_multi("
-                    f"({', '.join(str(i) for i in indices)},), "
-                    f"({', '.join(args)},)"
+                    f"({', '.join(str(i) for i in args_and_indices)},), "
                     ")")
 
     if cl_arg_idx != num_cl_args:
@@ -249,7 +247,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v29",
+        "pyopencl-invoker-cache-v30",
         key_builder=_NumpyTypesKeyBuilder())
 
 
