@@ -147,7 +147,7 @@ def elwise_kernel_runner(kernel_getter):
     """Take a kernel getter of the same signature as the kernel
     and return a function that invokes that kernel.
 
-    Assumes that the zeroth entry in *args* is an :class:`Array`.
+    Assumes that the zeroth entry in *args* is a :class:`Array`.
     """
 
     def kernel_runner(*args, **kwargs):
@@ -174,9 +174,16 @@ def elwise_kernel_runner(kernel_getter):
 
         assert isinstance(repr_ary, Array)
 
+        # Used for ARRAY_KERNEL_EXEC_HOOK
+        nbytes = 0
+        nops = 0
+
         actual_args = []
         for arg in args:
             if isinstance(arg, Array):
+                nops += 1
+                nbytes += arg.size * arg.dtype.itemsize
+
                 if not arg.flags.forc:
                     raise RuntimeError("only contiguous arrays may "
                             "be used as arguments to this operation")
@@ -199,7 +206,8 @@ def elwise_kernel_runner(kernel_getter):
 
         if ARRAY_KERNEL_EXEC_HOOK is not None:
             return ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
-                    knl, queue, gs, ls, *actual_args, wait_for=wait_for)
+                    knl, queue, gs, ls, *actual_args, wait_for=wait_for,
+                    dtype=repr_ary.dtype, nops=nops, nbytes=nbytes)
         else:
             return knl(queue, gs, ls, *actual_args, wait_for=wait_for)
 
