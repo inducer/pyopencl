@@ -181,8 +181,9 @@ def elwise_kernel_runner(kernel_getter):
         actual_args = []
         for arg in args:
             if isinstance(arg, Array):
-                nops += 1
-                nbytes += arg.size * arg.dtype.itemsize
+                if ARRAY_KERNEL_EXEC_HOOK is not None:
+                    nops += 1
+                    nbytes += arg.size * arg.dtype.itemsize
 
                 if not arg.flags.forc:
                     raise RuntimeError("only contiguous arrays may "
