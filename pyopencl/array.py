@@ -147,7 +147,7 @@ def elwise_kernel_runner(kernel_getter):
     """Take a kernel getter of the same signature as the kernel
     and return a function that invokes that kernel.
 
-    Assumes that the zeroth entry in *args* is a :class:`Array`.
+    Assumes that the zeroth entry in *args* is an :class:`Array`.
     """
 
     def kernel_runner(*args, **kwargs):
