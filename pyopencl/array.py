@@ -174,15 +174,16 @@ def elwise_kernel_runner(kernel_getter):
 
         assert isinstance(repr_ary, Array)
 
-        # Used for ARRAY_KERNEL_EXEC_HOOK
-        nbytes = 0
-        nops = 0
+        if ARRAY_KERNEL_EXEC_HOOK is not None:
+            nbytes = 0
+            nops = 0
 
         actual_args = []
         for arg in args:
             if isinstance(arg, Array):
                 if ARRAY_KERNEL_EXEC_HOOK is not None:
-                    nops += 1
+                    import builtins
+                    nops += builtins.max(arg.size, 1)
                     nbytes += arg.size * arg.dtype.itemsize
 
                 if not arg.flags.forc:
