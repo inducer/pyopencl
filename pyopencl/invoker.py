@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import sys
 import numpy as np
 
 from warnings import warn
@@ -30,9 +29,6 @@ import pyopencl._cl as _cl
 from pytools.persistent_dict import WriteOncePersistentDict
 from pytools.py_codegen import Indentation, PythonCodeGenerator
 from pyopencl.tools import _NumpyTypesKeyBuilder
-
-_PYPY = "__pypy__" in sys.builtin_module_names
-
 
 # {{{ arg packing helpers
 
@@ -75,6 +71,9 @@ def generate_generic_arg_handling_body(num_args):
 
 # {{{ specific arg handling body
 
+BUF_PACK_TYPECHARS = ["c", "b", "B", "h", "H", "i", "I", "l", "L", "f", "d"]
+
+
 def generate_specific_arg_handling_body(function_name,
         num_cl_args, scalar_arg_dtypes,
         work_around_arg_count_bug, warn_about_arg_count_bug):
@@ -91,7 +90,17 @@ def generate_specific_arg_handling_body(function_name,
         gen("pass")
 
     gen_indices_and_args = []
-    buf_args_indices = []
+    buf_indices_and_args = []
+    buf_pack_indices_and_args = []
+
+    def add_buf_arg(arg_idx, typechar, expr_str):
+        if typechar in BUF_PACK_TYPECHARS:
+            buf_pack_indices_and_args.append(cl_arg_idx)
+            buf_pack_indices_and_args.append(repr(typechar.encode()))
+            buf_pack_indices_and_args.append(expr_str)
+        else:
+            buf_indices_and_args.append(cl_arg_idx)
+            buf_indices_and_args.append(f"pack('{typechar}', {expr_str})")
 
     for arg_idx, arg_dtype in enumerate(scalar_arg_dtypes):
         arg_var = "arg%d" % arg_idx
@@ -106,8 +115,8 @@ def generate_specific_arg_handling_body(function_name,
         arg_dtype = np.dtype(arg_dtype)
 
         if arg_dtype.char == "V":
-            gen_indices_and_args.append(cl_arg_idx)
-            gen_indices_and_args.append(arg_var)
+            buf_indices_and_args.append(cl_arg_idx)
+            buf_indices_and_args.append(arg_var)
             cl_arg_idx += 1
 
         elif arg_dtype.kind == "c":
@@ -128,11 +137,9 @@ def generate_specific_arg_handling_body(function_name,
             if (work_around_arg_count_bug == "pocl"
                     and arg_dtype == np.complex128
                     and fp_arg_count + 2 <= 8):
-                buf_args_indices.append(cl_arg_idx)
-                buf_args_indices.append(f"pack('{arg_char}', {arg_var}.real)")
+                add_buf_arg(cl_arg_idx, arg_char, f"{arg_var}.real")
                 cl_arg_idx += 1
-                buf_args_indices.append(cl_arg_idx)
-                buf_args_indices.append(f"pack('{arg_char}', {arg_var}.imag)")
+                add_buf_arg(cl_arg_idx, arg_char, f"{arg_var}.imag")
                 cl_arg_idx += 1
 
             elif (work_around_arg_count_bug == "apple"
@@ -144,8 +151,8 @@ def generate_specific_arg_handling_body(function_name,
                         "Cannot pass complex numbers to kernels.")
 
             else:
-                buf_args_indices.append(cl_arg_idx)
-                buf_args_indices.append(
+                buf_indices_and_args.append(cl_arg_idx)
+                buf_indices_and_args.append(
                     f"pack('{arg_char}{arg_char}', {arg_var}.real, {arg_var}.imag)")
                 cl_arg_idx += 1
 
@@ -157,15 +164,15 @@ def generate_specific_arg_handling_body(function_name,
 
             arg_char = arg_dtype.char
             arg_char = _type_char_map.get(arg_char, arg_char)
-            buf_args_indices.append(cl_arg_idx)
-            buf_args_indices.append(f"pack('{arg_char}', {arg_var})")
+            add_buf_arg(cl_arg_idx, arg_char, arg_var)
             cl_arg_idx += 1
 
         gen("")
 
-    for arg_kind, args_and_indices in [
-            ("", gen_indices_and_args),
-            ("_buf", buf_args_indices)
+    for arg_kind, args_and_indices, entry_length in [
+            ("", gen_indices_and_args, 2),
+            ("_buf", buf_indices_and_args, 2),
+            ("_buf_pack", buf_pack_indices_and_args, 3),
             ]:
         assert len(args_and_indices) % 2 == 0
         if args_and_indices:
@@ -247,7 +254,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v30",
+        "pyopencl-invoker-cache-v34",
         key_builder=_NumpyTypesKeyBuilder())
 
 

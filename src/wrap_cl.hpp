@@ -4372,6 +4372,40 @@ namespace pyopencl
             (m_kernel, arg_index, sizeof(cl_command_queue), &q));
       }
 
+      void set_arg_buf_pack(cl_uint arg_index, py::handle py_typechar, py::handle obj)
+      {
+#define PYOPENCL_KERNEL_PACK_AND_SET_ARG(TYPECH_VAL, TYPE) \
+        case TYPECH_VAL: \
+          { \
+            TYPE val = py::cast<TYPE>(obj); \
+            PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index, sizeof(val), &val)); \
+            break; \
+          }
+
+        /* This is an internal interface that assumes it gets fed well-formed
+         * data.  No meaningful error checking is being performed on
+         * py_typechar, on purpose.
+         */
+        switch (*PyBytes_AS_STRING(py_typechar.ptr()))
+        {
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('c', char)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('b', signed char)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('B', unsigned char)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('h', short)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('H', unsigned short)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('i', int)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('I', unsigned int)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('l', long)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('L', unsigned long)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('f', float)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('d', double)
+          default:
+            throw error("Kernel.set_arg_buf_pack", CL_INVALID_VALUE,
+                "invalid type char");
+        }
+#undef PYOPENCL_KERNEL_PACK_AND_SET_ARG
+      }
+
       void set_arg_buf(cl_uint arg_index, py::handle py_buffer)
       {
         const void *buf;
@@ -4452,57 +4486,6 @@ namespace pyopencl
 
         set_arg_buf(arg_index, arg);
       }
-
-      static
-      void set_arg_multi(
-          std::function<void(cl_uint, py::handle)> set_arg_func,
-          py::tuple args_and_indices)
-      {
-        // This is an internal interface used by generated invokers.
-        // We can save a tiny bit of time by not checking their work.
-        /*
-        if (indices.size() != args.size())
-            throw error("Kernel.set_arg_multi", CL_INVALID_VALUE,
-                "indices and args arguments do not have the same length");
-        */
-
-        cl_uint arg_index;
-        py::handle arg_value;
-
-        auto it = args_and_indices.begin(), end = args_and_indices.end();
-        try
-        {
-          while (it != end)
-          {
-            arg_index = py::cast<cl_uint>(*it++);
-            arg_value = *it++;
-            set_arg_func(arg_index, arg_value);
-          }
-        }
-        catch (error &err)
-        {
-          std::string msg(
-              std::string("when processing arg#") + std::to_string(arg_index+1)
-              + std::string(" (1-based): ") + std::string(err.what()));
-
-          auto mod_cl_ary(py::module::import("pyopencl.array"));
-          auto cls_array(mod_cl_ary.attr("Array"));
-          if (arg_value.ptr() && py::isinstance(arg_value, cls_array))
-            msg.append(
-                " (perhaps you meant to pass 'array.data' instead of the array itself?)");
-
-          throw error(err.routine().c_str(), err.code(), msg.c_str());
-        }
-        catch (std::exception &err)
-        {
-          std::string msg(
-              std::string("when processing arg#") + std::to_string(arg_index+1)
-              + std::string(" (1-based): ") + std::string(err.what()));
-
-          throw std::runtime_error(msg.c_str());
-        }
-      }
-
 
       py::object get_info(cl_kernel_info param_name) const
       {
@@ -4667,6 +4650,85 @@ namespace pyopencl
   }
 #endif
   };
+
+#define PYOPENCL_KERNEL_SET_ARG_MULTI_ERROR_HANDLER \
+    catch (error &err) \
+    { \
+      std::string msg( \
+          std::string("when processing arg#") + std::to_string(arg_index+1) \
+          + std::string(" (1-based): ") + std::string(err.what())); \
+      auto mod_cl_ary(py::module::import("pyopencl.array")); \
+      auto cls_array(mod_cl_ary.attr("Array")); \
+      if (arg_value.ptr() && py::isinstance(arg_value, cls_array)) \
+        msg.append( \
+            " (perhaps you meant to pass 'array.data' instead of the array itself?)"); \
+      throw error(err.routine().c_str(), err.code(), msg.c_str()); \
+    } \
+    catch (std::exception &err) \
+    { \
+      std::string msg( \
+          std::string("when processing arg#") + std::to_string(arg_index+1) \
+          + std::string(" (1-based): ") + std::string(err.what())); \
+      throw std::runtime_error(msg.c_str()); \
+    }
+
+  inline
+  void set_arg_multi(
+      std::function<void(cl_uint, py::handle)> set_arg_func,
+      py::tuple args_and_indices)
+  {
+    cl_uint arg_index;
+    py::handle arg_value;
+
+    auto it = args_and_indices.begin(), end = args_and_indices.end();
+    try
+    {
+      /* This is an internal interface that assumes it gets fed well-formed
+       * data.  No meaningful error checking is being performed on
+       * off-interval exhaustion of the iterator, on purpose.
+       */
+      while (it != end)
+      {
+        // special value in case integer cast fails
+        arg_index = 9999 - 1;
+
+        arg_index = py::cast<cl_uint>(*it++);
+        arg_value = *it++;
+        set_arg_func(arg_index, arg_value);
+      }
+    }
+    PYOPENCL_KERNEL_SET_ARG_MULTI_ERROR_HANDLER
+  }
+
+
+  inline
+  void set_arg_multi(
+      std::function<void(cl_uint, py::handle, py::handle)> set_arg_func,
+      py::tuple args_and_indices)
+  {
+    cl_uint arg_index;
+    py::handle arg_descr, arg_value;
+
+    auto it = args_and_indices.begin(), end = args_and_indices.end();
+    try
+    {
+      /* This is an internal interface that assumes it gets fed well-formed
+       * data.  No meaningful error checking is being performed on
+       * off-interval exhaustion of the iterator, on purpose.
+       */
+      while (it != end)
+      {
+        // special value in case integer cast fails
+        arg_index = 9999 - 1;
+
+        arg_index = py::cast<cl_uint>(*it++);
+        arg_descr = *it++;
+        arg_value = *it++;
+        set_arg_func(arg_index, arg_descr, arg_value);
+      }
+    }
+    PYOPENCL_KERNEL_SET_ARG_MULTI_ERROR_HANDLER
+  }
 
 
   inline
