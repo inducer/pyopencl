@@ -95,11 +95,11 @@ def generate_specific_arg_handling_body(function_name,
 
     def add_buf_arg(arg_idx, typechar, expr_str):
         if typechar in BUF_PACK_TYPECHARS:
-            buf_pack_indices_and_args.append(cl_arg_idx)
+            buf_pack_indices_and_args.append(arg_idx)
             buf_pack_indices_and_args.append(repr(typechar.encode()))
             buf_pack_indices_and_args.append(expr_str)
         else:
-            buf_indices_and_args.append(cl_arg_idx)
+            buf_indices_and_args.append(arg_idx)
             buf_indices_and_args.append(f"pack('{typechar}', {expr_str})")
 
     for arg_idx, arg_dtype in enumerate(scalar_arg_dtypes):
