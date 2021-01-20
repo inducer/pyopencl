@@ -28,7 +28,8 @@ from warnings import warn
 import pyopencl._cl as _cl
 from pytools.persistent_dict import WriteOncePersistentDict
 from pytools.py_codegen import Indentation, PythonCodeGenerator
-from pyopencl.tools import _NumpyTypesKeyBuilder
+from pyopencl.tools import _NumpyTypesKeyBuilder, VectorArg
+
 
 # {{{ arg packing helpers
 
@@ -75,8 +76,9 @@ BUF_PACK_TYPECHARS = ["c", "b", "B", "h", "H", "i", "I", "l", "L", "f", "d"]
 
 
 def generate_specific_arg_handling_body(function_name,
-        num_cl_args, scalar_arg_dtypes,
-        work_around_arg_count_bug, warn_about_arg_count_bug):
+        num_cl_args, arg_types,
+        work_around_arg_count_bug, warn_about_arg_count_bug,
+        in_enqueue):
 
     assert work_around_arg_count_bug is not None
     assert warn_about_arg_count_bug is not None
@@ -86,7 +88,7 @@ def generate_specific_arg_handling_body(function_name,
 
     gen = PythonCodeGenerator()
 
-    if not scalar_arg_dtypes:
+    if not arg_types:
         gen("pass")
 
     gen_indices_and_args = []
@@ -102,17 +104,53 @@ def generate_specific_arg_handling_body(function_name,
             buf_indices_and_args.append(arg_idx)
             buf_indices_and_args.append(f"pack('{typechar}', {expr_str})")
 
-    for arg_idx, arg_dtype in enumerate(scalar_arg_dtypes):
+    if in_enqueue and arg_types is not None and \
+            any(isinstance(arg_type, VectorArg) for arg_type in arg_types):
+        # We're about to modify wait_for, make sure it's a copy.
+        gen("""
+            if wait_for is None:
+                wait_for = []
+            else:
+                wait_for = list(wait_for)
+            """)
+        gen("")
+
+    for arg_idx, arg_type in enumerate(arg_types):
         arg_var = "arg%d" % arg_idx
 
-        if arg_dtype is None:
+        if arg_type is None:
             gen_indices_and_args.append(cl_arg_idx)
             gen_indices_and_args.append(arg_var)
             cl_arg_idx += 1
             gen("")
             continue
 
-        arg_dtype = np.dtype(arg_dtype)
+        elif isinstance(arg_type, VectorArg):
+            gen(f"if not {arg_var}.flags.forc:")
+            with Indentation(gen):
+                gen("raise RuntimeError('only contiguous arrays may '")
+                gen("   'be used as arguments to this operation')")
+                gen("")
+
+            if in_enqueue:
+                gen(f"assert {arg_var}.queue is None or {arg_var}.queue == queue, "
+                    "'queues for all arrays must match the queue supplied "
+                    "to enqueue'")
+
+            gen_indices_and_args.append(cl_arg_idx)
+            gen_indices_and_args.append(f"{arg_var}.base_data")
+            cl_arg_idx += 1
+
+            if arg_type.with_offset:
+                add_buf_arg(cl_arg_idx, np.dtype(np.int64).char, f"{arg_var}.offset")
+                cl_arg_idx += 1
+
+            if in_enqueue:
+                gen(f"wait_for.extend({arg_var}.events)")
+
+            continue
+
+        arg_dtype = np.dtype(arg_type)
 
         if arg_dtype.char == "V":
             buf_indices_and_args.append(cl_arg_idx)
@@ -193,18 +231,20 @@ def generate_specific_arg_handling_body(function_name,
 
 def _generate_enqueue_and_set_args_module(function_name,
         num_passed_args, num_cl_args,
-        scalar_arg_dtypes,
+        arg_types,
         work_around_arg_count_bug, warn_about_arg_count_bug):
 
     arg_names = ["arg%d" % i for i in range(num_passed_args)]
 
-    if scalar_arg_dtypes is None:
-        body = generate_generic_arg_handling_body(num_passed_args)
-    else:
-        body = generate_specific_arg_handling_body(
-                function_name, num_cl_args, scalar_arg_dtypes,
-                warn_about_arg_count_bug=warn_about_arg_count_bug,
-                work_around_arg_count_bug=work_around_arg_count_bug)
+    def gen_arg_setting(in_enqueue):
+        if arg_types is None:
+            return generate_generic_arg_handling_body(num_passed_args)
+        else:
+            return generate_specific_arg_handling_body(
+                    function_name, num_cl_args, arg_types,
+                    warn_about_arg_count_bug=warn_about_arg_count_bug,
+                    work_around_arg_count_bug=work_around_arg_count_bug,
+                    in_enqueue=in_enqueue)
 
     gen = PythonCodeGenerator()
 
@@ -228,7 +268,7 @@ def _generate_enqueue_and_set_args_module(function_name,
                         "wait_for=None"])))
 
     with Indentation(gen):
-        gen.extend(body)
+        gen.extend(gen_arg_setting(in_enqueue=True))
 
         # Using positional args here because pybind is slow with keyword args
         gen("""
@@ -246,7 +286,7 @@ def _generate_enqueue_and_set_args_module(function_name,
             % (", ".join(["self"] + arg_names)))
 
     with Indentation(gen):
-        gen.extend(body)
+        gen.extend(gen_arg_setting(in_enqueue=False))
 
     # }}}
 
@@ -254,17 +294,17 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v34",
+        "pyopencl-invoker-cache-v38",
         key_builder=_NumpyTypesKeyBuilder())
 
 
 def generate_enqueue_and_set_args(function_name,
         num_passed_args, num_cl_args,
-        scalar_arg_dtypes,
+        arg_types,
         work_around_arg_count_bug, warn_about_arg_count_bug):
 
     cache_key = (function_name, num_passed_args, num_cl_args,
-            scalar_arg_dtypes,
+            arg_types,
             work_around_arg_count_bug, warn_about_arg_count_bug)
 
     from_cache = False

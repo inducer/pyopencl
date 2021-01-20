@@ -411,6 +411,20 @@ def parse_arg_list(arguments, with_offset=False):
     return [parse_single_arg(arg) for arg in arguments]
 
 
+def get_arg_list_arg_types(arg_types):
+    result = []
+
+    for arg_type in arg_types:
+        if isinstance(arg_type, ScalarArg):
+            result.append(arg_type.dtype)
+        elif isinstance(arg_type, VectorArg):
+            result.append(arg_type)
+        else:
+            raise RuntimeError("arg type not understood: %s" % type(arg_type))
+
+    return tuple(result)
+
+
 def get_arg_list_scalar_arg_dtypes(arg_types):
     result = []
 

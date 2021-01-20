@@ -156,10 +156,10 @@ def get_elwise_kernel_and_types(context, arguments, operation,
         name=name, options=options, preamble=preamble,
         use_range=use_range, loop_prep=loop_prep, **kwargs)
 
-    from pyopencl.tools import get_arg_list_scalar_arg_dtypes
+    from pyopencl.tools import get_arg_list_arg_types
 
     kernel = getattr(prg, name)
-    kernel.set_scalar_arg_dtypes(get_arg_list_scalar_arg_dtypes(parsed_args))
+    kernel.set_scalar_arg_dtypes(get_arg_list_arg_types(parsed_args))
 
     return kernel, parsed_args
 
@@ -260,17 +260,10 @@ class ElementwiseKernel:
         invocation_args = []
         for arg, arg_descr in zip(args, arg_descrs):
             if isinstance(arg_descr, VectorArg):
-                if not arg.flags.forc:
-                    raise RuntimeError("ElementwiseKernel cannot "
-                            "deal with non-contiguous arrays")
-
                 if repr_vec is None:
                     repr_vec = arg
 
-                invocation_args.append(arg.base_data)
-                if arg_descr.with_offset:
-                    invocation_args.append(arg.offset)
-                wait_for.extend(arg.events)
+                invocation_args.append(arg)
             else:
                 invocation_args.append(arg)
 
@@ -317,13 +310,11 @@ class ElementwiseKernel:
 
         if capture_as is not None:
             kernel.set_args(*invocation_args)
-            kernel.capture_call(
+            return kernel.capture_call(
                     capture_as, queue,
                     gs, ls, *invocation_args, wait_for=wait_for)
 
-        kernel.set_args(*invocation_args)
-        return cl.enqueue_nd_range_kernel(queue, kernel,
-                gs, ls, wait_for=wait_for)
+        return kernel(queue, gs, ls, *invocation_args, wait_for=wait_for)
 
 # }}}
 

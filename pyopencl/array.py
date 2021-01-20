@@ -169,12 +169,6 @@ def elwise_kernel_runner(kernel_getter):
 
         wait_for = kwargs.pop("wait_for", None)
 
-        # wait_for must be a copy, because we modify it in-place below
-        if wait_for is None:
-            wait_for = []
-        else:
-            wait_for = list(wait_for)
-
         knl = kernel_getter(*args, **kwargs)
 
         gs, ls = repr_ary._get_sizes(queue,
@@ -183,31 +177,9 @@ def elwise_kernel_runner(kernel_getter):
                     queue.device))
 
         assert isinstance(repr_ary, Array)
+        args = args + (repr_ary.size,)
 
-        actual_args = []
-        for arg in args:
-            if isinstance(arg, Array):
-                if not arg.flags.forc:
-                    raise RuntimeError("only contiguous arrays may "
-                            "be used as arguments to this operation")
-                actual_args.append(arg.base_data)
-                actual_args.append(arg.offset)
-                wait_for.extend(arg.events)
-
-                if (implicit_queue
-                        and arg.queue is not None
-                        and arg.queue != queue):
-                    from warnings import warn
-
-                    warn("Implicit queue in elementwise operation does not match "
-                            "queue of a provided argument. This will become an "
-                            "error in 2021.",
-                            type=InconsistentOpenCLQueueWarning)
-            else:
-                actual_args.append(arg)
-        actual_args.append(repr_ary.size)
-
-        return knl(queue, gs, ls, *actual_args, wait_for=wait_for)
+        return knl(queue, gs, ls, *args, wait_for=wait_for)
 
     try:
         from functools import update_wrapper
@@ -2403,19 +2375,13 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
-        from pytools import flatten
         wait_for_this = (dest_indices.events + src_indices.events
             + _builtin_sum((i.events for i in arrays[chunk_slice]), [])
             + _builtin_sum((o.events for o in out[chunk_slice]), []))
         evt = knl(queue, gs, ls,
-                *([o.data for o in out[chunk_slice]]
-                    + [dest_indices.base_data,
-                        dest_indices.offset,
-                        src_indices.base_data,
-                        src_indices.offset]
-                    + list(flatten(
-                        (i.base_data, i.offset)
-                        for i in arrays[chunk_slice]))
+                *([o for o in out[chunk_slice]]
+                    + [dest_indices, src_indices]
+                    + [i for i in arrays[chunk_slice]]
                     + src_offsets_list[chunk_slice]
                     + [src_indices.size]), wait_for=wait_for_this)
         for o in out[chunk_slice]:
@@ -2486,22 +2452,15 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
-        from pytools import flatten
         wait_for_this = (wait_for
             + _builtin_sum((i.events for i in arrays[chunk_slice]), [])
             + _builtin_sum((o.events for o in out[chunk_slice]), []))
         evt = knl(queue, gs, ls,
                 *(
-                    list(flatten(
-                        (o.base_data, o.offset)
-                        for o in out[chunk_slice]))
-                    + [dest_indices.base_data, dest_indices.offset]
-                    + list(flatten(
-                        (i.base_data, i.offset)
-                        for i in arrays[chunk_slice]))
-                    + [use_fill_cla.base_data, use_fill_cla.offset]
-                    + [array_lengths_cla.base_data, array_lengths_cla.offset]
-                    + [dest_indices.size]),
+                    [o for o in out[chunk_slice]]
+                    + [dest_indices]
+                    + [i for i in arrays[chunk_slice]]
+                    + [use_fill_cla, array_lengths_cla, dest_indices.size]),
                 wait_for=wait_for_this)
 
         for o in out[chunk_slice]:
