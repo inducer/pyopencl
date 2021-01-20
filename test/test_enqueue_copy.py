@@ -48,8 +48,14 @@ def test_enqueue_copy_rect_2d(ctx_factory, honor_skip=True):
         # https://github.com/pocl/pocl/issues/353
         pytest.skip("POCL's rectangular copies crash")
 
+    device = queue.device
+    if device.platform.vendor == "The pocl project" \
+            and device.type & cl.device_type.GPU:
+        pytest.xfail("rect copies fail on POCL + Nvidia,"
+                "at least the K40, as of pocl 1.6, 2021-01-20")
+
     if honor_skip and queue.device.platform.name == "Apple":
-        pytest.skip("Apple's CL implementation crashes on this.")
+        pytest.xfail("Apple's CL implementation crashes on this.")
 
     ary_in_shp = 256, 128  # Entire array shape from which sub-array copied to device
     sub_ary_shp = 128, 96  # Sub-array shape to be copied to device
@@ -137,6 +143,12 @@ def test_enqueue_copy_rect_3d(ctx_factory, honor_skip=True):
             and get_pocl_version(ctx.devices[0].platform) <= (0, 13)):
         # https://github.com/pocl/pocl/issues/353
         pytest.skip("POCL's rectangular copies crash")
+
+    device = queue.device
+    if device.platform.vendor == "The pocl project" \
+            and device.type & cl.device_type.GPU:
+        pytest.xfail("rect copies fail on POCL + Nvidia,"
+                "at least the K40, as of pocl 1.6, 2021-01-20")
 
     if honor_skip and queue.device.platform.name == "Apple":
         pytest.skip("Apple's CL implementation crashes on this.")
