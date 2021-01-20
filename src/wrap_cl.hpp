@@ -4374,6 +4374,13 @@ namespace pyopencl
 
       void set_arg_buf_pack(cl_uint arg_index, py::handle py_typechar, py::handle obj)
       {
+        std::string typechar_str(py::cast<std::string>(py_typechar));
+        if (typechar_str.size() != 1)
+          throw error("Kernel.set_arg_buf_pack", CL_INVALID_VALUE,
+              "type char argument must have exactly one character");
+
+        char typechar = typechar_str[0];
+
 #define PYOPENCL_KERNEL_PACK_AND_SET_ARG(TYPECH_VAL, TYPE) \
         case TYPECH_VAL: \
           { \
@@ -4381,12 +4388,7 @@ namespace pyopencl
             PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index, sizeof(val), &val)); \
             break; \
           }
-
-        /* This is an internal interface that assumes it gets fed well-formed
-         * data.  No meaningful error checking is being performed on
-         * py_typechar, on purpose.
-         */
-        switch (*PyBytes_AS_STRING(py_typechar.ptr()))
+        switch (typechar)
         {
           PYOPENCL_KERNEL_PACK_AND_SET_ARG('c', char)
           PYOPENCL_KERNEL_PACK_AND_SET_ARG('b', signed char)
