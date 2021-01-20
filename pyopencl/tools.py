@@ -339,6 +339,12 @@ class DtypedArgument(Argument):
                 and self.dtype == other.dtype
                 and self.name == other.name)
 
+    def __hash__(self):
+        return (
+                hash(type(self))
+                ^ hash(self.dtype)
+                ^ hash(self.name))
+
 
 class VectorArg(DtypedArgument):
     def __init__(self, dtype, name, with_offset=False):
@@ -359,6 +365,9 @@ class VectorArg(DtypedArgument):
         return (super().__eq__(other)
                 and self.with_offset == other.with_offset)
 
+    def __hash__(self):
+        return super.__hash__() ^ hash(self.with_offset)
+
 
 class ScalarArg(DtypedArgument):
     def declarator(self):
@@ -372,6 +381,17 @@ class OtherArg(Argument):
 
     def declarator(self):
         return self.decl
+
+    def __eq__(self, other):
+        return (type(self) == type(other)
+                and self.decl == other.decl
+                and self.name == other.name)
+
+    def __hash__(self):
+        return (
+                hash(type(self))
+                ^ hash(self.decl)
+                ^ hash(self.name))
 
 
 def parse_c_arg(c_arg, with_offset=False):
