@@ -22,6 +22,7 @@ prg = cl.Program(ctx, """
     }
     """).build()
 
-prg.sum(queue, a.shape, None, a_dev.data, b_dev.data, dest_dev.data)
+knl = prg.sum  # Use this Kernel object for repeated calls
+knl(queue, a.shape, None, a_dev.data, b_dev.data, dest_dev.data)
 
 print(la.norm((dest_dev - (a_dev+b_dev)).get()))
