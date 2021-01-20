@@ -310,7 +310,7 @@ class ElementwiseKernel:
 
         if capture_as is not None:
             kernel.set_args(*invocation_args)
-            return kernel.capture_call(
+            kernel.capture_call(
                     capture_as, queue,
                     gs, ls, *invocation_args, wait_for=wait_for)
 
