@@ -153,6 +153,10 @@ def _splay(device, n, kernel_specific_max_wg_size=None):
     return (group_count*work_items_per_group,), (work_items_per_group,)
 
 
+# deliberately undocumented for now
+ARRAY_KERNEL_EXEC_HOOK = None
+
+
 def elwise_kernel_runner(kernel_getter):
     """Take a kernel getter of the same signature as the kernel
     and return a function that invokes that kernel.
@@ -179,7 +183,11 @@ def elwise_kernel_runner(kernel_getter):
         assert isinstance(repr_ary, Array)
         args = args + (repr_ary.size,)
 
-        return knl(queue, gs, ls, *args, wait_for=wait_for)
+        if ARRAY_KERNEL_EXEC_HOOK is not None:
+            return ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
+                    knl, queue, gs, ls, *args, wait_for=wait_for)
+        else:
+            return knl(queue, gs, ls, *args, wait_for=wait_for)
 
     try:
         from functools import update_wrapper
