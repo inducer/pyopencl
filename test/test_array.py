@@ -1350,6 +1350,12 @@ def test_get_async(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
+    device = queue.device
+    if device.platform.vendor == "The pocl project" \
+            and device.type & cl.device_type.GPU:
+        pytest.xfail("the async get test fails on POCL + Nvidia,"
+                "at least the K40, as of pocl 1.6, 2021-01-20")
+
     a = np.random.rand(10**6).astype(np.dtype("float32"))
     a_gpu = cl_array.to_device(queue, a)
     b = a + a**5 + 1
