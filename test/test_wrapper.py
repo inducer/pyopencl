@@ -46,10 +46,17 @@ else:
     faulthandler.enable()
 
 
-def _skip_if_pocl(plat, up_to_version, msg="unsupported by pocl"):
+def _xfail_if_pocl(plat, up_to_version, msg="unsupported by pocl"):
     if plat.vendor == "The pocl project":
         if up_to_version is None or get_pocl_version(plat) <= up_to_version:
-            pytest.skip(msg)
+            pytest.xfail(msg)
+
+
+def _xfail_if_pocl_gpu(device, what):
+    if device.platform.vendor == "The pocl project" \
+            and device.type & cl.device_type.GPU:
+        pytest.xfail(f"POCL's {what} support don't work right on Nvidia GPUs, "
+                "at least the Titan V, as of pocl 1.6, 2021-01-20")
 
 
 def test_get_info(ctx_factory):
@@ -382,7 +389,7 @@ def test_image_2d(ctx_factory):
     if "Intel" in device.vendor and "31360.31426" in device.version:
         from pytest import skip
         skip("images crashy on %s" % device)
-    _skip_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
+    _xfail_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
 
     prg = cl.Program(context, """
         __kernel void copy_image(
@@ -454,7 +461,7 @@ def test_image_3d(ctx_factory):
     if device.platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("images crashy on %s" % device)
-    _skip_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
+    _xfail_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
 
     prg = cl.Program(context, """
         __kernel void copy_image_plane(
@@ -676,7 +683,7 @@ def test_can_build_and_run_binary(ctx_factory):
 def test_enqueue_barrier_marker(ctx_factory):
     ctx = ctx_factory()
     # Still relevant on pocl 1.0RC1.
-    _skip_if_pocl(
+    _xfail_if_pocl(
             ctx.devices[0].platform, (1, 0), "pocl crashes on enqueue_barrier")
 
     queue = cl.CommandQueue(ctx)
@@ -704,7 +711,7 @@ def test_unload_compiler(platform):
             or cl.get_cl_header_version() < (1, 2)):
         from pytest import skip
         skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
-    _skip_if_pocl(platform, (0, 13), "pocl does not support unloading compiler")
+    _xfail_if_pocl(platform, (0, 13), "pocl does not support unloading compiler")
     if platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("Intel proprietary driver does not support unloading compiler")
@@ -745,7 +752,7 @@ def test_user_event(ctx_factory):
         skip("UserEvent is only available in OpenCL 1.1")
 
     # https://github.com/pocl/pocl/issues/201
-    _skip_if_pocl(ctx.devices[0].platform, (0, 13),
+    _xfail_if_pocl(ctx.devices[0].platform, (0, 13),
             "pocl's user events don't work right")
 
     status = {}
@@ -842,6 +849,8 @@ def test_event_set_callback(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
+    _xfail_if_pocl_gpu(queue.device, "event callbacks")
+
     if ctx._get_cl_version() < (1, 1):
         pytest.skip("OpenCL 1.1 or newer required for set_callback")
 
@@ -895,6 +904,8 @@ def test_event_set_callback(ctx_factory):
 def test_global_offset(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+
+    _xfail_if_pocl_gpu(queue.device, "global offset")
 
     prg = cl.Program(context, """
         __kernel void mult(__global float *a)
@@ -981,6 +992,8 @@ def test_coarse_grain_svm(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
+    _xfail_if_pocl_gpu(queue.device, "SVM")
+
     dev = ctx.devices[0]
 
     from pyopencl.characterize import has_coarse_grain_buffer_svm
@@ -1061,6 +1074,8 @@ def test_fine_grain_svm(ctx_factory):
 
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
+
+    _xfail_if_pocl_gpu(queue.device, "GPU SVM")
 
     from pyopencl.characterize import has_fine_grain_buffer_svm
     from pytest import skip
@@ -1147,6 +1162,8 @@ def test_compile_link(ctx_factory):
 def test_copy_buffer_rect(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
+
+    _xfail_if_pocl_gpu(queue.device, "rectangular copies")
 
     arr1 = cl_array.zeros(queue, (2, 3), "f")
     arr2 = cl_array.zeros(queue, (4, 5), "f")
