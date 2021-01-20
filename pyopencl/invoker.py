@@ -174,7 +174,7 @@ def generate_specific_arg_handling_body(function_name,
             ("_buf", buf_indices_and_args, 2),
             ("_buf_pack", buf_pack_indices_and_args, 3),
             ]:
-        assert len(args_and_indices) % 2 == 0
+        assert len(args_and_indices) % entry_length == 0
         if args_and_indices:
             gen(f"self._set_arg{arg_kind}_multi("
                     f"({', '.join(str(i) for i in args_and_indices)},), "
