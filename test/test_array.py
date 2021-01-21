@@ -715,6 +715,13 @@ def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
+    device = queue.device
+    if device.platform.vendor == "The pocl project" \
+            and device.type & cl.device_type.GPU \
+            and rng_class is RanluxGenerator:
+        pytest.xfail("ranlux test fails on POCL + Nvidia,"
+                "at least the Titan V, as of pocl 1.6, 2021-01-20")
+
     if has_double_support(context.devices[0]):
         dtypes = [np.float32, np.float64]
     else:
@@ -766,6 +773,12 @@ def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False
 def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+
+    if queue.device.platform.vendor == "The pocl project" \
+            and queue.device.type & cl.device_type.GPU \
+            and rng_class is RanluxGenerator:
+        pytest.xfail("ranlux test fails on POCL + Nvidia,"
+                "at least the Titan V, as of pocl 1.6, 2021-01-20")
 
     if rng_class is RanluxGenerator:
         gen = rng_class(queue, 5120)
@@ -1349,6 +1362,12 @@ def test_multi_put(ctx_factory):
 def test_get_async(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+
+    device = queue.device
+    if device.platform.vendor == "The pocl project" \
+            and device.type & cl.device_type.GPU:
+        pytest.xfail("the async get test fails on POCL + Nvidia,"
+                "at least the K40, as of pocl 1.6, 2021-01-20")
 
     a = np.random.rand(10**6).astype(np.dtype("float32"))
     a_gpu = cl_array.to_device(queue, a)

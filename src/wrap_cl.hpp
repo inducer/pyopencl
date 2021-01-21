@@ -86,6 +86,7 @@
 
 #endif
 
+#include <functional>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -389,14 +390,15 @@
     \
     if (py_wait_for.ptr() != Py_None) \
     { \
-      event_wait_list.resize(len(py_wait_for)); \
       for (py::handle evt: py_wait_for) \
-        event_wait_list[num_events_in_wait_list++] = \
-          evt.cast<const event &>().data(); \
+      { \
+        event_wait_list.push_back(evt.cast<const event &>().data()); \
+        ++num_events_in_wait_list; \
+      } \
     }
 
 #define PYOPENCL_WAITLIST_ARGS \
-    num_events_in_wait_list, event_wait_list.empty( ) ? nullptr : &event_wait_list.front()
+    num_events_in_wait_list, (num_events_in_wait_list == 0) ? nullptr : &event_wait_list.front()
 
 #define PYOPENCL_RETURN_NEW_NANNY_EVENT(evt, obj) \
     try \
@@ -4370,7 +4372,43 @@ namespace pyopencl
             (m_kernel, arg_index, sizeof(cl_command_queue), &q));
       }
 
-      void set_arg_buf(cl_uint arg_index, py::object py_buffer)
+      void set_arg_buf_pack(cl_uint arg_index, py::handle py_typechar, py::handle obj)
+      {
+        std::string typechar_str(py::cast<std::string>(py_typechar));
+        if (typechar_str.size() != 1)
+          throw error("Kernel.set_arg_buf_pack", CL_INVALID_VALUE,
+              "type char argument must have exactly one character");
+
+        char typechar = typechar_str[0];
+
+#define PYOPENCL_KERNEL_PACK_AND_SET_ARG(TYPECH_VAL, TYPE) \
+        case TYPECH_VAL: \
+          { \
+            TYPE val = py::cast<TYPE>(obj); \
+            PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index, sizeof(val), &val)); \
+            break; \
+          }
+        switch (typechar)
+        {
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('c', char)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('b', signed char)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('B', unsigned char)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('h', short)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('H', unsigned short)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('i', int)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('I', unsigned int)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('l', long)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('L', unsigned long)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('f', float)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('d', double)
+          default:
+            throw error("Kernel.set_arg_buf_pack", CL_INVALID_VALUE,
+                "invalid type char");
+        }
+#undef PYOPENCL_KERNEL_PACK_AND_SET_ARG
+      }
+
+      void set_arg_buf(cl_uint arg_index, py::handle py_buffer)
       {
         const void *buf;
         PYOPENCL_BUFFER_SIZE_T len;
@@ -4403,7 +4441,7 @@ namespace pyopencl
       }
 #endif
 
-      void set_arg(cl_uint arg_index, py::object arg)
+      void set_arg(cl_uint arg_index, py::handle arg)
       {
         if (arg.ptr() == Py_None)
         {
@@ -4615,6 +4653,85 @@ namespace pyopencl
 #endif
   };
 
+#define PYOPENCL_KERNEL_SET_ARG_MULTI_ERROR_HANDLER \
+    catch (error &err) \
+    { \
+      std::string msg( \
+          std::string("when processing arg#") + std::to_string(arg_index+1) \
+          + std::string(" (1-based): ") + std::string(err.what())); \
+      auto mod_cl_ary(py::module::import("pyopencl.array")); \
+      auto cls_array(mod_cl_ary.attr("Array")); \
+      if (arg_value.ptr() && py::isinstance(arg_value, cls_array)) \
+        msg.append( \
+            " (perhaps you meant to pass 'array.data' instead of the array itself?)"); \
+      throw error(err.routine().c_str(), err.code(), msg.c_str()); \
+    } \
+    catch (std::exception &err) \
+    { \
+      std::string msg( \
+          std::string("when processing arg#") + std::to_string(arg_index+1) \
+          + std::string(" (1-based): ") + std::string(err.what())); \
+      throw std::runtime_error(msg.c_str()); \
+    }
+
+  inline
+  void set_arg_multi(
+      std::function<void(cl_uint, py::handle)> set_arg_func,
+      py::tuple args_and_indices)
+  {
+    cl_uint arg_index;
+    py::handle arg_value;
+
+    auto it = args_and_indices.begin(), end = args_and_indices.end();
+    try
+    {
+      /* This is an internal interface that assumes it gets fed well-formed
+       * data.  No meaningful error checking is being performed on
+       * off-interval exhaustion of the iterator, on purpose.
+       */
+      while (it != end)
+      {
+        // special value in case integer cast fails
+        arg_index = 9999 - 1;
+
+        arg_index = py::cast<cl_uint>(*it++);
+        arg_value = *it++;
+        set_arg_func(arg_index, arg_value);
+      }
+    }
+    PYOPENCL_KERNEL_SET_ARG_MULTI_ERROR_HANDLER
+  }
+
+
+  inline
+  void set_arg_multi(
+      std::function<void(cl_uint, py::handle, py::handle)> set_arg_func,
+      py::tuple args_and_indices)
+  {
+    cl_uint arg_index;
+    py::handle arg_descr, arg_value;
+
+    auto it = args_and_indices.begin(), end = args_and_indices.end();
+    try
+    {
+      /* This is an internal interface that assumes it gets fed well-formed
+       * data.  No meaningful error checking is being performed on
+       * off-interval exhaustion of the iterator, on purpose.
+       */
+      while (it != end)
+      {
+        // special value in case integer cast fails
+        arg_index = 9999 - 1;
+
+        arg_index = py::cast<cl_uint>(*it++);
+        arg_descr = *it++;
+        arg_value = *it++;
+        set_arg_func(arg_index, arg_descr, arg_value);
+      }
+    }
+    PYOPENCL_KERNEL_SET_ARG_MULTI_ERROR_HANDLER
+  }
+
 
   inline
   py::list create_kernels_in_program(program &pgm)
@@ -4635,62 +4752,65 @@ namespace pyopencl
     return result;
   }
 
-
+#define MAX_WS_DIM_COUNT 10
 
   inline
   event *enqueue_nd_range_kernel(
       command_queue &cq,
       kernel &knl,
-      py::object py_global_work_size,
-      py::object py_local_work_size,
-      py::object py_global_work_offset,
-      py::object py_wait_for,
+      py::handle py_global_work_size,
+      py::handle py_local_work_size,
+      py::handle py_global_work_offset,
+      py::handle py_wait_for,
       bool g_times_l,
       bool allow_empty_ndrange)
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
-    cl_uint work_dim = len(py_global_work_size);
+    std::array<size_t, MAX_WS_DIM_COUNT> global_work_size;
+    unsigned gws_size = 0;
+    COPY_PY_ARRAY("enqueue_nd_range_kernel", size_t, global_work_size, gws_size);
+    cl_uint work_dim = gws_size;
 
-    std::vector<size_t> global_work_size;
-    COPY_PY_LIST(size_t, global_work_size);
+    std::array<size_t, MAX_WS_DIM_COUNT> local_work_size;
+    unsigned lws_size = 0;
+    size_t *local_work_size_ptr = nullptr;
 
-    size_t *local_work_size_ptr = 0;
-    std::vector<size_t> local_work_size;
     if (py_local_work_size.ptr() != Py_None)
     {
+      COPY_PY_ARRAY("enqueue_nd_range_kernel", size_t, local_work_size, lws_size);
+
       if (g_times_l)
-        work_dim = std::max(work_dim, unsigned(len(py_local_work_size)));
+        work_dim = std::max(work_dim, lws_size);
       else
-        if (work_dim != unsigned(len(py_local_work_size)))
+        if (work_dim != lws_size)
           throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
               "global/local work sizes have differing dimensions");
 
-      COPY_PY_LIST(size_t, local_work_size);
+      while (lws_size < work_dim)
+        local_work_size[lws_size++] = 1;
+      while (gws_size < work_dim)
+        global_work_size[gws_size++] = 1;
 
-      while (local_work_size.size() < work_dim)
-        local_work_size.push_back(1);
-      while (global_work_size.size() < work_dim)
-        global_work_size.push_back(1);
-
-      local_work_size_ptr = local_work_size.empty( ) ? nullptr : &local_work_size.front();
+      local_work_size_ptr = &local_work_size.front();
     }
 
-    if (g_times_l && local_work_size_ptr)
+    if (g_times_l && lws_size)
     {
       for (cl_uint work_axis = 0; work_axis < work_dim; ++work_axis)
         global_work_size[work_axis] *= local_work_size[work_axis];
     }
 
-    size_t *global_work_offset_ptr = 0;
-    std::vector<size_t> global_work_offset;
+    size_t *global_work_offset_ptr = nullptr;
+    std::array<size_t, MAX_WS_DIM_COUNT> global_work_offset;
     if (py_global_work_offset.ptr() != Py_None)
     {
-      if (work_dim != unsigned(len(py_global_work_offset)))
+      unsigned gwo_size = 0;
+      COPY_PY_ARRAY("enqueue_nd_range_kernel", size_t, global_work_offset, gwo_size);
+
+      if (work_dim != gwo_size)
         throw error("enqueue_nd_range_kernel", CL_INVALID_VALUE,
             "global work size and offset have differing dimensions");
-
-      COPY_PY_LIST(size_t, global_work_offset);
 
       if (g_times_l && local_work_size_ptr)
       {
@@ -4698,7 +4818,7 @@ namespace pyopencl
           global_work_offset[work_axis] *= local_work_size[work_axis];
       }
 
-      global_work_offset_ptr = global_work_offset.empty( ) ? nullptr :  &global_work_offset.front();
+      global_work_offset_ptr = &global_work_offset.front();
     }
 
     if (allow_empty_ndrange)
@@ -4735,7 +4855,7 @@ namespace pyopencl
                 knl.data(),
                 work_dim,
                 global_work_offset_ptr,
-                global_work_size.empty( ) ? nullptr : &global_work_size.front(),
+                &global_work_size.front(),
                 local_work_size_ptr,
                 PYOPENCL_WAITLIST_ARGS, &evt
                 ));

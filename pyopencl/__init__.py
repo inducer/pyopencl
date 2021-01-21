@@ -819,8 +819,8 @@ def _add_functionality():
         self._wg_info_cache = {}
         return self
 
-    def kernel_set_scalar_arg_dtypes(self, scalar_arg_dtypes):
-        self._scalar_arg_dtypes = tuple(scalar_arg_dtypes)
+    def kernel_set_arg_types(self, arg_types):
+        arg_types = tuple(arg_types)
 
         # {{{ arg counting bug handling
 
@@ -847,21 +847,31 @@ def _add_functionality():
         # }}}
 
         from pyopencl.invoker import generate_enqueue_and_set_args
-        self._enqueue, self._set_args = generate_enqueue_and_set_args(
-                self.function_name,
-                len(scalar_arg_dtypes), self.num_args,
-                self._scalar_arg_dtypes,
-                warn_about_arg_count_bug=warn_about_arg_count_bug,
-                work_around_arg_count_bug=work_around_arg_count_bug)
+        enqueue, my_set_args = \
+                generate_enqueue_and_set_args(
+                        self.function_name,
+                        len(arg_types), self.num_args,
+                        arg_types,
+                        warn_about_arg_count_bug=warn_about_arg_count_bug,
+                        work_around_arg_count_bug=work_around_arg_count_bug)
+
+        # Make ourselves a kernel-specific class, so that we're able to override
+        # __call__. Inspired by https://stackoverflow.com/a/38541437
+        class KernelWithCustomEnqueue(type(self)):
+            __call__ = enqueue
+            set_args = my_set_args
+
+        self.__class__ = KernelWithCustomEnqueue
 
     def kernel_get_work_group_info(self, param, device):
+        cache_key = (param, device.int_ptr)
         try:
-            return self._wg_info_cache[param, device]
+            return self._wg_info_cache[cache_key]
         except KeyError:
             pass
 
         result = kernel_old_get_work_group_info(self, param, device)
-        self._wg_info_cache[param, device] = result
+        self._wg_info_cache[cache_key] = result
         return result
 
     def kernel_set_args(self, *args, **kwargs):
@@ -871,6 +881,9 @@ def _add_functionality():
     def kernel_call(self, queue, global_size, local_size, *args, **kwargs):
         # __call__ can't be overridden directly, so we need this
         # trampoline hack.
+
+        # Note: This is only used for the generic __call__, before
+        # kernel_set_scalar_arg_dtypes is called.
         return self._enqueue(self, queue, global_size, local_size, *args, **kwargs)
 
     def kernel_capture_call(self, filename, queue, global_size, local_size,
@@ -890,7 +903,11 @@ def _add_functionality():
     Kernel.__init__ = kernel_init
     Kernel._setup = kernel__setup
     Kernel.get_work_group_info = kernel_get_work_group_info
-    Kernel.set_scalar_arg_dtypes = kernel_set_scalar_arg_dtypes
+
+    # FIXME: Possibly deprecate this version
+    Kernel.set_scalar_arg_dtypes = kernel_set_arg_types
+    Kernel.set_arg_types = kernel_set_arg_types
+
     Kernel.set_args = kernel_set_args
     Kernel.__call__ = kernel_call
     Kernel.capture_call = kernel_capture_call

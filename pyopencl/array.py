@@ -33,7 +33,6 @@ from functools import reduce
 import numpy as np
 import pyopencl.elementwise as elementwise
 import pyopencl as cl
-from pytools import memoize_method
 from pyopencl.compyte.array import (
         as_strided as _as_strided,
         f_contiguous_strides as _f_contiguous_strides,
@@ -45,9 +44,38 @@ from pyopencl.characterize import has_double_support
 from pyopencl import cltypes
 
 
+_COMMON_DTYPE_CACHE = {}
+
+
 def _get_common_dtype(obj1, obj2, queue):
-    return _get_common_dtype_base(obj1, obj2,
-                                  has_double_support(queue.device))
+    dsupport = has_double_support(queue.device)
+    cache_key = None
+    o1_dtype = obj1.dtype
+    try:
+        cache_key = (o1_dtype, obj2.dtype, dsupport)
+        return _COMMON_DTYPE_CACHE[cache_key]
+    except KeyError:
+        pass
+    except AttributeError:
+        # obj2 doesn't have a dtype
+        try:
+            tobj2 = type(obj2)
+            cache_key = (o1_dtype, tobj2, dsupport)
+
+            # Integers are weird, sized, and signed. Don't pretend that 'int'
+            # is enough information to decide what should happen.
+            if tobj2 != int:
+                return _COMMON_DTYPE_CACHE[cache_key]
+        except KeyError:
+            pass
+
+    result = _get_common_dtype_base(obj1, obj2, dsupport)
+
+    # we succeeded in constructing the cache key
+    if cache_key is not None:
+        _COMMON_DTYPE_CACHE[cache_key] = result
+
+    return result
 
 
 def _get_truedivide_dtype(obj1, obj2, queue):
@@ -67,19 +95,6 @@ def _get_truedivide_dtype(obj1, obj2, queue):
             result = np.dtype(np.complex64)
 
     return result
-
-
-# Work around PyPy not currently supporting the object dtype.
-# (Yes, it doesn't even support checking!)
-# (as of May 27, 2014 on PyPy 2.3)
-try:
-    np.dtype(object)
-
-    def _dtype_is_object(t):
-        return t == object
-except Exception:
-    def _dtype_is_object(t):
-        return False
 
 
 class InconsistentOpenCLQueueWarning(UserWarning):
@@ -103,19 +118,18 @@ class VecLookupWarner:
 
 vec = VecLookupWarner()
 
+
 # {{{ helper functionality
 
-
-def splay(queue, n, kernel_specific_max_wg_size=None):
-    dev = queue.device
-    max_work_items = _builtin_min(128, dev.max_work_group_size)
+def _splay(device, n, kernel_specific_max_wg_size=None):
+    max_work_items = _builtin_min(128, device.max_work_group_size)
 
     if kernel_specific_max_wg_size is not None:
         from builtins import min
         max_work_items = min(max_work_items, kernel_specific_max_wg_size)
 
     min_work_items = _builtin_min(32, max_work_items)
-    max_groups = dev.max_compute_units * 4 * 8
+    max_groups = device.max_compute_units * 4 * 8
     # 4 to overfill the device
     # 8 is an Nvidia constant--that's how many
     # groups fit onto one compute device
@@ -159,49 +173,21 @@ def elwise_kernel_runner(kernel_getter):
 
         wait_for = kwargs.pop("wait_for", None)
 
-        # wait_for must be a copy, because we modify it in-place below
-        if wait_for is None:
-            wait_for = []
-        else:
-            wait_for = list(wait_for)
-
         knl = kernel_getter(*args, **kwargs)
 
-        gs, ls = repr_ary.get_sizes(queue,
+        gs, ls = repr_ary._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
         assert isinstance(repr_ary, Array)
-
-        actual_args = []
-        for arg in args:
-            if isinstance(arg, Array):
-                if not arg.flags.forc:
-                    raise RuntimeError("only contiguous arrays may "
-                            "be used as arguments to this operation")
-                actual_args.append(arg.base_data)
-                actual_args.append(arg.offset)
-                wait_for.extend(arg.events)
-
-                if (implicit_queue
-                        and arg.queue is not None
-                        and arg.queue != queue):
-                    from warnings import warn
-
-                    warn("Implicit queue in elementwise operation does not match "
-                            "queue of a provided argument. This will become an "
-                            "error in 2021.",
-                            type=InconsistentOpenCLQueueWarning)
-            else:
-                actual_args.append(arg)
-        actual_args.append(repr_ary.size)
+        args = args + (repr_ary.size,)
 
         if ARRAY_KERNEL_EXEC_HOOK is not None:
             return ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
-                    knl, queue, gs, ls, *actual_args, wait_for=wait_for)
+                    knl, queue, gs, ls, *args, wait_for=wait_for)
         else:
-            return knl(queue, gs, ls, *actual_args, wait_for=wait_for)
+            return knl(queue, gs, ls, *args, wait_for=wait_for)
 
     try:
         from functools import update_wrapper
@@ -219,15 +205,6 @@ class DefaultAllocator(cl.tools.DeferredAllocator):
                 "versions of PyOpenCL.",
                 DeprecationWarning, 2)
         cl.tools.DeferredAllocator.__init__(self, *args, **kwargs)
-
-
-def _make_strides(itemsize, shape, order):
-    if order in "fF":
-        return _f_contiguous_strides(itemsize, shape)
-    elif order in "cC":
-        return _c_contiguous_strides(itemsize, shape)
-    else:
-        raise ValueError("invalid order: %s" % order)
 
 # }}}
 
@@ -247,6 +224,9 @@ class ArrayHasOffsetError(ValueError):
 
 class _copy_queue:  # noqa
     pass
+
+
+_ARRAY_GET_SIZES_CACHE = {}
 
 
 class Array:
@@ -435,7 +415,7 @@ class Array:
     __array_priority__ = 100
 
     def __init__(self, cq, shape, dtype, order="C", allocator=None,
-            data=None, offset=0, strides=None, events=None):
+            data=None, offset=0, strides=None, events=None, _flags=None):
         # {{{ backward compatibility
 
         if isinstance(cq, cl.CommandQueue):
@@ -479,6 +459,9 @@ class Array:
             size = 1
             for dim in shape:
                 size *= dim
+                if dim < 0:
+                    raise ValueError("negative dimensions are not allowed")
+
         except TypeError:
             admissible_types = (int, np.integer)
 
@@ -486,16 +469,27 @@ class Array:
                 raise TypeError("shape must either be iterable or "
                         "castable to an integer")
             size = shape
+            if shape < 0:
+                raise ValueError("negative dimensions are not allowed")
             shape = (shape,)
-
-        if any(dim < 0 for dim in shape):
-            raise ValueError("negative dimensions are not allowed")
 
         if isinstance(size, np.integer):
             size = size.item()
 
         if strides is None:
-            strides = _make_strides(dtype.itemsize, shape, order)
+            if order in "cC":
+                # inlined from compyte.array.c_contiguous_strides
+                if shape:
+                    strides = [dtype.itemsize]
+                    for s in shape[:0:-1]:
+                        strides.append(strides[-1]*s)
+                    strides = tuple(strides[::-1])
+                else:
+                    strides = ()
+            elif order in "fF":
+                strides = _f_contiguous_strides(dtype.itemsize, shape)
+            else:
+                raise ValueError("invalid order: %s" % order)
 
         else:
             # FIXME: We should possibly perform some plausibility
@@ -505,9 +499,8 @@ class Array:
 
         # }}}
 
-        if _dtype_is_object(dtype):
-            raise TypeError("object arrays on the compute device are not allowed")
-
+        assert dtype != np.object, \
+                "object arrays on the compute device are not allowed"
         assert isinstance(shape, tuple)
         assert isinstance(strides, tuple)
 
@@ -547,6 +540,7 @@ class Array:
 
         self.offset = offset
         self.context = context
+        self._flags = _flags
 
     @property
     def ndim(self):
@@ -560,9 +554,11 @@ class Array:
             return self.base_data
 
     @property
-    @memoize_method
     def flags(self):
-        return _ArrayFlags(self)
+        f = self._flags
+        if f is None:
+            self._flags = f = _ArrayFlags(self)
+        return f
 
     def _new_with_changes(self, data, offset, shape=None, dtype=None,
             strides=None, queue=_copy_queue, allocator=None):
@@ -612,12 +608,17 @@ class Array:
         return self._new_with_changes(self.base_data, self.offset,
                 queue=queue)
 
-    #@memoize_method FIXME: reenable
-    def get_sizes(self, queue, kernel_specific_max_wg_size=None):
+    def _get_sizes(self, queue, kernel_specific_max_wg_size=None):
         if not self.flags.forc:
             raise NotImplementedError("cannot operate on non-contiguous array")
-        return splay(queue, self.size,
-                kernel_specific_max_wg_size=kernel_specific_max_wg_size)
+        cache_key = (queue.device.int_ptr, self.size, kernel_specific_max_wg_size)
+        try:
+            return _ARRAY_GET_SIZES_CACHE[cache_key]
+        except KeyError:
+            sizes = _splay(queue.device, self.size,
+                    kernel_specific_max_wg_size=kernel_specific_max_wg_size)
+            _ARRAY_GET_SIZES_CACHE[cache_key] = sizes
+            return sizes
 
     def set(self, ary, queue=None, async_=None, **kwargs):
         """Transfer the contents the :class:`numpy.ndarray` object *ary*
@@ -963,19 +964,21 @@ class Array:
 
     def _new_like_me(self, dtype=None, queue=None):
         strides = None
+        flags = None
         if dtype is None:
             dtype = self.dtype
 
         if dtype == self.dtype:
             strides = self.strides
+            flags = self.flags
 
         queue = queue or self.queue
         if queue is not None:
             return self.__class__(queue, self.shape, dtype,
-                    allocator=self.allocator, strides=strides)
+                    allocator=self.allocator, strides=strides, _flags=flags)
         else:
             return self.__class__(self.context, self.shape, dtype,
-                    strides=strides, allocator=self.allocator)
+                    strides=strides, allocator=self.allocator, _flags=flags)
 
     @staticmethod
     @elwise_kernel_runner
@@ -2081,7 +2084,7 @@ def to_device(queue, ary, allocator=None, async_=None,
 
     # }}}
 
-    if _dtype_is_object(ary.dtype):
+    if ary.dtype == np.object:
         raise RuntimeError("to_device does not work on object arrays.")
 
     if array_queue is _same_as_transfer:
@@ -2297,7 +2300,7 @@ def multi_take(arrays, indices, out=None, queue=None):
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = indices.get_sizes(queue,
+        gs, ls = indices._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
@@ -2375,24 +2378,18 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = src_indices.get_sizes(queue,
+        gs, ls = src_indices._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
-        from pytools import flatten
         wait_for_this = (dest_indices.events + src_indices.events
             + _builtin_sum((i.events for i in arrays[chunk_slice]), [])
             + _builtin_sum((o.events for o in out[chunk_slice]), []))
         evt = knl(queue, gs, ls,
-                *([o.data for o in out[chunk_slice]]
-                    + [dest_indices.base_data,
-                        dest_indices.offset,
-                        src_indices.base_data,
-                        src_indices.offset]
-                    + list(flatten(
-                        (i.base_data, i.offset)
-                        for i in arrays[chunk_slice]))
+                *([o for o in out[chunk_slice]]
+                    + [dest_indices, src_indices]
+                    + [i for i in arrays[chunk_slice]]
                     + src_offsets_list[chunk_slice]
                     + [src_indices.size]), wait_for=wait_for_this)
         for o in out[chunk_slice]:
@@ -2458,27 +2455,20 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = dest_indices.get_sizes(queue,
+        gs, ls = dest_indices._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
-        from pytools import flatten
         wait_for_this = (wait_for
             + _builtin_sum((i.events for i in arrays[chunk_slice]), [])
             + _builtin_sum((o.events for o in out[chunk_slice]), []))
         evt = knl(queue, gs, ls,
                 *(
-                    list(flatten(
-                        (o.base_data, o.offset)
-                        for o in out[chunk_slice]))
-                    + [dest_indices.base_data, dest_indices.offset]
-                    + list(flatten(
-                        (i.base_data, i.offset)
-                        for i in arrays[chunk_slice]))
-                    + [use_fill_cla.base_data, use_fill_cla.offset]
-                    + [array_lengths_cla.base_data, array_lengths_cla.offset]
-                    + [dest_indices.size]),
+                    [o for o in out[chunk_slice]]
+                    + [dest_indices]
+                    + [i for i in arrays[chunk_slice]]
+                    + [use_fill_cla, array_lengths_cla, dest_indices.size]),
                 wait_for=wait_for_this)
 
         for o in out[chunk_slice]:

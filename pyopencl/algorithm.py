@@ -1188,8 +1188,8 @@ class ListOfListsBuilder:
             gsize = (4*queue.device.max_compute_units,)
             lsize = (1,)
         else:
-            from pyopencl.array import splay
-            gsize, lsize = splay(queue, n_objects)
+            from pyopencl.array import _splay
+            gsize, lsize = _splay(queue.device, n_objects)
 
         count_event = count_kernel(queue, gsize, lsize,
                 *(tuple(count_list_args) + data_args + (n_objects,)),

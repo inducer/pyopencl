@@ -1087,6 +1087,12 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
     ctx = cl.create_some_context()
     queue = cl.CommandQueue(ctx)
 
+    device = queue.device
+    if device.platform.vendor == "The pocl project" \
+            and device.type & cl.device_type.GPU:
+        pytest.xfail("bitonic argsort fails on POCL + Nvidia,"
+                "at least the K40, as of pocl 1.6, 2021-01-20")
+
     dev = ctx.devices[0]
     if (dev.platform.name == "Portable Computing Language"
             and sys.platform == "darwin"):
