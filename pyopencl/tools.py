@@ -366,7 +366,7 @@ class VectorArg(DtypedArgument):
                 and self.with_offset == other.with_offset)
 
     def __hash__(self):
-        return super.__hash__() ^ hash(self.with_offset)
+        return super().__hash__() ^ hash(self.with_offset)
 
 
 class ScalarArg(DtypedArgument):
