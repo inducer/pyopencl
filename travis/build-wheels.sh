@@ -92,13 +92,13 @@ fi
 /opt/python/cp39-cp39/bin/pip install twine
 for WHEEL in /io/wheelhouse/pyopencl*.whl; do
     # dev
-    # /opt/python/cp39-cp39/bin/pip upload \
+    # /opt/python/cp39-cp39/bin/twine upload \
     #     --skip-existing \
     #     --repository-url https://test.pypi.org/legacy/ \
     #     -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
     #     "${WHEEL}"
     # prod
-    /opt/python/cp39-cp39/bin/pip upload \
+    /opt/python/cp39-cp39/bin/twine upload \
         --skip-existing \
         -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
         "${WHEEL}"
