@@ -81,24 +81,24 @@ done
 
 # Bundle license files
 
-/opt/python/cp37-cp37m/bin/pip install delocate
-/opt/python/cp37-cp37m/bin/python /io/travis/fix-wheel.py /deps/ocl-icd/COPYING
+/opt/python/cp39-cp39/bin/pip install delocate
+/opt/python/cp39-cp39/bin/python /io/travis/fix-wheel.py /deps/ocl-icd/COPYING
 
 if [[ "${TWINE_USERNAME}" == "" ]]; then
     echo "TWINE_USERNAME not set. Skipping uploading wheels"
     exit 0
 fi
 
-/opt/python/cp37-cp37m/bin/pip install twine
+/opt/python/cp39-cp39/bin/pip install twine
 for WHEEL in /io/wheelhouse/pyopencl*.whl; do
     # dev
-    # /opt/python/cp37-cp37m/bin/twine upload \
+    # /opt/python/cp39-cp39/bin/pip upload \
     #     --skip-existing \
     #     --repository-url https://test.pypi.org/legacy/ \
     #     -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
     #     "${WHEEL}"
     # prod
-    /opt/python/cp37-cp37m/bin/twine upload \
+    /opt/python/cp39-cp39/bin/pip upload \
         --skip-existing \
         -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
         "${WHEEL}"
