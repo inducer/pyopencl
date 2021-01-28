@@ -31,7 +31,7 @@ function stop_spinner {
     >&2 echo "Building libraries finished."
 }
 
-start_spinner
+#start_spinner
 
 yum install -y git yum openssl-devel
 curl -L -O http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz
@@ -104,4 +104,4 @@ for WHEEL in /io/wheelhouse/pyopencl*.whl; do
         "${WHEEL}"
 done
 
-stop_spinner
+#stop_spinner
