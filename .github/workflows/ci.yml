@@ -113,7 +113,7 @@ jobs:
                 ls -la
 
                 # Only perform upload for tag builds, otherwise usnet TWINE_USERNAME to prevent
-                # if ! [[ $GITHUB_REF == v20* ]]; then unset TWINE_USERNAME; fi
+                if ! [[ $GITHUB_REF == v20* ]]; then unset TWINE_USERNAME; fi
 
                 if [[ $DOCKER_IMAGE == *i686* ]]; then
                     PRE_CMD=linux32
