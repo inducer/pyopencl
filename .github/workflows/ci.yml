@@ -3,6 +3,8 @@ on:
     push:
         branches:
         - master
+        tags:
+        - v*
     pull_request:
     schedule:
         - cron:  '17 3 * * 0'
@@ -87,5 +89,37 @@ jobs:
                 ./configure.py --cl-use-shipped-ext
                 build_py_project_in_conda_env
                 build_docs
+
+    wheels:
+        name: Build and upload wheels
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                DOCKER_IMAGE:
+                - quay.io/pypa/manylinux2014_x86_64
+                - quay.io/pypa/manylinux2014_i686
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            env:
+                TWINE_USERNAME: __token__
+                TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+                DOCKER_IMAGE: ${{ matrix.DOCKER_IMAGE }}
+
+            run: |
+                pwd
+                ls -la
+
+                # Only perform upload for tag builds, otherwise usnet TWINE_USERNAME to prevent
+                # if ! [[ $GITHUB_REF == v20* ]]; then unset TWINE_USERNAME; fi
+
+                if ! [[ $DOCKER_IMAGE == *i686* ]]; then
+                    PRE_CMD=linux32
+                else
+                    PRE_CMD=""
+                fi
+
+                docker run --rm -v `pwd`:/io -e TWINE_USERNAME -e TWINE_PASSWORD $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
+                ls wheelhouse/
 
 # vim: sw=4
