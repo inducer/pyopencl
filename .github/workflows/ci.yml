@@ -97,7 +97,9 @@ jobs:
             matrix:
                 DOCKER_IMAGE:
                 - quay.io/pypa/manylinux2014_x86_64
-                - quay.io/pypa/manylinux2014_i686
+                # Disable i686 builds for now: no binary wheels for cryptography,
+                # source build fails, e.g. https://github.com/inducer/pyopencl/pull/421/checks?check_run_id=1781071632
+                # - quay.io/pypa/manylinux2014_i686
         steps:
         -   uses: actions/checkout@v2
         -   name: "Main Script"
