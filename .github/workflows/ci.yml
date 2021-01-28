@@ -112,8 +112,13 @@ jobs:
                 pwd
                 ls -la
 
-                # Only perform upload for tag builds, otherwise usnet TWINE_USERNAME to prevent
-                if ! [[ $GITHUB_REF == v20* ]]; then unset TWINE_USERNAME; fi
+                # Only perform upload for tag builds, otherwise unset TWINE_USERNAME to prevent
+                echo "GITHUB_REF is '$GITHUB_REF'"
+                echo "TWINE_USERNAME is '$TWINE_USERNAME'"
+                if ! [[ $GITHUB_REF == v20* ]]; then
+                    echo "Not a tag build, GITHUB_REF is '$GITHUB_REF'. Unsetting TWINE_USERNAME"
+                    unset TWINE_USERNAME
+                fi
 
                 if [[ $DOCKER_IMAGE == *i686* ]]; then
                     PRE_CMD=linux32
