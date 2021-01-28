@@ -113,9 +113,7 @@ jobs:
                 ls -la
 
                 # Only perform upload for tag builds, otherwise unset TWINE_USERNAME to prevent
-                echo "GITHUB_REF is '$GITHUB_REF'"
-                echo "TWINE_USERNAME is '$TWINE_USERNAME'"
-                if ! [[ $GITHUB_REF == v20* ]]; then
+                if ! [[ $GITHUB_REF == refs/tags* ]]; then
                     echo "Not a tag build, GITHUB_REF is '$GITHUB_REF'. Unsetting TWINE_USERNAME"
                     unset TWINE_USERNAME
                 fi
