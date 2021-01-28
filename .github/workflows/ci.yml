@@ -119,7 +119,7 @@ jobs:
                     PRE_CMD=""
                 fi
 
-                docker run --rm -v `pwd`:/io -e TWINE_USERNAME -e TWINE_PASSWORD $DOCKER_IMAGE $PRE_CMD /io/travis/build-wheels.sh
+                docker run --rm -v `pwd`:/io -e TWINE_USERNAME -e TWINE_PASSWORD $DOCKER_IMAGE $PRE_CMD /io/scripts/build-wheels.sh
                 ls wheelhouse/
 
 # vim: sw=4
