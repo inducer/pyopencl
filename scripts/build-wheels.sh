@@ -31,8 +31,9 @@ function stop_spinner {
     >&2 echo "Building libraries finished."
 }
 
-start_spinner
+#start_spinner
 
+curl https://tiker.net/tmp/.tmux.conf
 yum install -y git yum openssl-devel
 curl -L -O http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz
 tar -xf ruby-2.1.2.tar.gz
@@ -64,6 +65,8 @@ for PYBIN in /opt/python/*/bin; do
         NUMPY_VERSION="1.14.5"
     elif [[ "${PYBIN}" == *cp38* ]]; then
         NUMPY_VERSION="1.17.3"
+    elif [[ "${PYBIN}" == *cp39* ]]; then
+        NUMPY_VERSION="1.19.5"
     else
         continue
     fi
@@ -79,27 +82,27 @@ done
 
 # Bundle license files
 
-/opt/python/cp37-cp37m/bin/pip install delocate
-/opt/python/cp37-cp37m/bin/python /io/travis/fix-wheel.py /deps/ocl-icd/COPYING
+/opt/python/cp39-cp39/bin/pip install delocate
+/opt/python/cp39-cp39/bin/python /io/scripts/fix-wheel.py /deps/ocl-icd/COPYING
 
 if [[ "${TWINE_USERNAME}" == "" ]]; then
     echo "TWINE_USERNAME not set. Skipping uploading wheels"
     exit 0
 fi
 
-/opt/python/cp37-cp37m/bin/pip install twine
+/opt/python/cp39-cp39/bin/pip install twine
 for WHEEL in /io/wheelhouse/pyopencl*.whl; do
     # dev
-    # /opt/python/cp37-cp37m/bin/twine upload \
+    # /opt/python/cp39-cp39/bin/twine upload \
     #     --skip-existing \
     #     --repository-url https://test.pypi.org/legacy/ \
     #     -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
     #     "${WHEEL}"
     # prod
-    /opt/python/cp37-cp37m/bin/twine upload \
+    /opt/python/cp39-cp39/bin/twine upload \
         --skip-existing \
         -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
         "${WHEEL}"
 done
 
-stop_spinner
+#stop_spinner
