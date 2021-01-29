@@ -811,6 +811,10 @@ namespace pyopencl
           case CL_DEVICE_PCI_SLOT_ID_NV:
             DEV_GET_INT_INF(cl_uint);
 #endif
+#ifdef CL_DEVICE_PCI_DOMAIN_ID_NV
+          case CL_DEVICE_PCI_DOMAIN_ID_NV:
+            DEV_GET_INT_INF(cl_uint);
+#endif
 #ifdef CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD
           case CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD: DEV_GET_INT_INF(cl_bool);
 #endif
