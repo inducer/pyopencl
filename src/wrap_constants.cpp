@@ -378,6 +378,9 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef CL_DEVICE_PCI_SLOT_ID_NV
     ADD_ATTR(DEVICE_, PCI_SLOT_ID_NV);
 #endif
+#ifdef CL_DEVICE_PCI_SLOT_ID_NV
+    ADD_ATTR(DEVICE_, PCI_DOMAIN_ID_NV);
+#endif
 #endif
 
 // {{{ cl_amd_device_attribute_query

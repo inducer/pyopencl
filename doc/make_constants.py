@@ -112,6 +112,7 @@ const_ext_lookup = {
             "ATTRIBUTE_ASYNC_ENGINE_COUNT_NV": nv_devattr,
             "PCI_BUS_ID_NV": nv_devattr,
             "PCI_SLOT_ID_NV": nv_devattr,
+            "PCI_DOMAIN_ID_NV": nv_devattr,
 
             "DOUBLE_FP_CONFIG":
             ("cl_khr_fp64", "2011.1"),
