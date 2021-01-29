@@ -49,6 +49,7 @@
 #define CL_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT_NV	0x4007
 #define CL_DEVICE_PCI_BUS_ID_NV				0x4008
 #define CL_DEVICE_PCI_SLOT_ID_NV			0x4009
+/* https://github.com/pocl/pocl/pull/910 */
 #define CL_DEVICE_PCI_DOMAIN_ID_NV          0x4010
 
 /* cl_ext_atomic_counters_{32,64} */

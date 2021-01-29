@@ -50,6 +50,7 @@ typedef union
 #endif
 
 #ifndef CL_DEVICE_PCI_DOMAIN_ID_NV
+/* https://github.com/pocl/pocl/pull/910 */
 #define CL_DEVICE_PCI_DOMAIN_ID_NV                      0x4010
 #endif
 
