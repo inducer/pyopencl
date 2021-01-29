@@ -111,7 +111,7 @@ const_ext_lookup = {
             "INTEGRATED_MEMORY_NV": nv_devattr,
             "ATTRIBUTE_ASYNC_ENGINE_COUNT_NV": nv_devattr,
             "PCI_BUS_ID_NV": nv_devattr,
-            "PCI_BUS_SLOT_NV": nv_devattr,
+            "PCI_SLOT_ID_NV": nv_devattr,
             "PCI_DOMAIN_ID_NV": nv_devattr,
 
             "DOUBLE_FP_CONFIG":
