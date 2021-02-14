@@ -127,4 +127,35 @@ jobs:
                 docker run --rm -v `pwd`:/io -e TWINE_USERNAME -e TWINE_PASSWORD $DOCKER_IMAGE $PRE_CMD /io/scripts/build-wheels.sh
                 ls wheelhouse/
 
+    downstream_tests:
+        strategy:
+            matrix:
+                downstream_project: [loopy, boxtree, meshmode]
+        name: Tests for downstream project ${{ matrix.downstream_project }}
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            env:
+                DOWNSTREAM_PROJECT: ${{ matrix.downstream_project }}
+            run: |
+                git clone "https://github.com/inducer/$DOWNSTREAM_PROJECT.git"
+
+                cd "$DOWNSTREAM_PROJECT"
+                echo "*** $DOWNSTREAM_PROJECT version: $(git rev-parse --short HEAD)"
+
+                sed -i "/egg=pyopencl/ c git+file://$(readlink -f ..)#egg=pyopencl" requirements.txt
+
+                export CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                sed -i 's/pyopencl/ocl-icd/' "$CONDA_ENVIRONMENT"
+
+                # Avoid slow or complicated tests in downstream projects
+                export PYTEST_ADDOPTS="-k 'not (slowtest or octave or mpi)'"
+
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+                . ./ci-support.sh
+
+                build_py_project_in_conda_env
+                test_py_project
+
 # vim: sw=4
