@@ -139,6 +139,15 @@ jobs:
             env:
                 DOWNSTREAM_PROJECT: ${{ matrix.downstream_project }}
             run: |
+                # {{{ configure pyopencl so it finds its headers
+
+                TEST_ENV_ROOT="$(pwd)/$DOWNSTREAM_PROJECT/.miniforge3/envs/testing"
+                ./configure.py --cl-inc-dir="$TEST_ENV_ROOT/include" --cl-lib-dir="$TEST_ENV_ROOT/lib"
+                git add siteconf.py
+                git commit -a -m "Fake commit to add aksetup.py"
+
+                # }}}
+
                 git clone "https://github.com/inducer/$DOWNSTREAM_PROJECT.git"
 
                 cd "$DOWNSTREAM_PROJECT"
