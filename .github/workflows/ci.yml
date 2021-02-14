@@ -144,6 +144,9 @@ jobs:
                 TEST_ENV_ROOT="$(pwd)/$DOWNSTREAM_PROJECT/.miniforge3/envs/testing"
                 ./configure.py --cl-inc-dir="$TEST_ENV_ROOT/include" --cl-lib-dir="$TEST_ENV_ROOT/lib"
                 git add -f siteconf.py
+
+                git config --global user.email "inform@tiker.net"
+                git config --global user.name "Github CI runner"
                 git commit -a -m "Fake commit to add aksetup.py"
 
                 # }}}
