@@ -499,7 +499,7 @@ class Array:
 
         # }}}
 
-        assert dtype != np.object, \
+        assert dtype != object, \
                 "object arrays on the compute device are not allowed"
         assert isinstance(shape, tuple)
         assert isinstance(strides, tuple)
@@ -2084,7 +2084,7 @@ def to_device(queue, ary, allocator=None, async_=None,
 
     # }}}
 
-    if ary.dtype == np.object:
+    if ary.dtype == object:
         raise RuntimeError("to_device does not work on object arrays.")
 
     if array_queue is _same_as_transfer:
