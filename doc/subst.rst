@@ -12,7 +12,7 @@
 .. |std-enqueue-blurb| replace:: Returns a new :class:`pyopencl.Event`. |explain-waitfor|
 
 .. |copy-depr| replace:: **Note:** This function is deprecated as of PyOpenCL 2011.1.
-        Use :func:`enqueue_copy` instead.
+        Use :func:`~pyopencl.enqueue_copy` instead.
 
 .. |glsize| replace:: *global_size* and *local_size* are tuples of identical length, with
         between one and three entries. *global_size* specifies the overall size
@@ -25,3 +25,12 @@
         local size. (which makes the behavior more like Nvidia CUDA) In this case,
         *global_size* and *local_size* also do not have to have the same number
         of entries.
+
+.. |empty-nd-range| replace:: *allow_empty_ndrange* is a :class:`bool` indicating
+        how an empty NDRange is to be treated, where "empty" means that one or more
+        entries of *global_size* or *local_size* are zero. OpenCL itself does not
+        allow enqueueing kernels over empty NDRanges. Setting this flag to *True*
+        enqueues a marker with a wait list (``clEnqueueMarkerWithWaitList``)
+        to obtain the synchronization effects that would have resulted from
+        the kernel enqueue.
+        Setting *allow_empty_ndrange* to *True* requires OpenCL 1.2 or newer.

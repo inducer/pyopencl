@@ -1,5 +1,3 @@
-from __future__ import absolute_import, print_function
-
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -32,7 +30,10 @@ cl_11 = ("CL_1.1", "0.92")
 cl_12 = ("CL_1.2", "2011.2")
 cl_12_2015 = ("CL_1.2", "2015.2")
 cl_20 = ("CL_2.0", "2015.2")
+cl_21_late = ("CL_2.1", "2020.3")
 cl_21 = ("CL_2.1", "2016.2")
+cl_22 = ("CL_2.1", "2020.3")
+cl_30 = ("CL_3.0", "2020.3")
 amd_devattr = ("cl_amd_device_attribute_query", "2013.2")
 qcom_hp_devattr = ("cl_qcom_ext_host_ptr", "2016.2")
 intel_me_devattr = ("cl_intel_advanced_motion_estimation", "2016.2")
@@ -60,6 +61,7 @@ def get_extra_lines(tup):
         yield "    .. versionadded:: %s" % pyopencl_ver
         yield ""
 
+
 const_ext_lookup = {
         cl.status_code: {
             "PLATFORM_NOT_FOUND_KHR": ("cl_khr_icd", "2011.1"),
@@ -82,6 +84,9 @@ const_ext_lookup = {
 
             "INVALID_PIPE_SIZE": cl_20,
             "INVALID_DEVICE_QUEUE": cl_20,
+
+            "INVALID_SPEC_ID": cl_22,
+            "MAX_SIZE_RESTRICTION_EXCEEDED": cl_22,
 
             },
 
@@ -106,7 +111,8 @@ const_ext_lookup = {
             "INTEGRATED_MEMORY_NV": nv_devattr,
             "ATTRIBUTE_ASYNC_ENGINE_COUNT_NV": nv_devattr,
             "PCI_BUS_ID_NV": nv_devattr,
-            "PCI_BUS_SLOT_NV": nv_devattr,
+            "PCI_SLOT_ID_NV": nv_devattr,
+            "PCI_DOMAIN_ID_NV": nv_devattr,
 
             "DOUBLE_FP_CONFIG":
             ("cl_khr_fp64", "2011.1"),
@@ -186,6 +192,25 @@ const_ext_lookup = {
             "IL_VERSION": cl_21,
             "MAX_NUM_SUB_GROUPS": cl_21,
             "SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS": cl_21,
+
+            "NUMERIC_VERSION": cl_30,
+            "EXTENSIONS_WITH_VERSION": cl_30,
+            "ILS_WITH_VERSION": cl_30,
+            "BUILT_IN_KERNELS_WITH_VERSION": cl_30,
+            "ATOMIC_MEMORY_CAPABILITIES": cl_30,
+            "ATOMIC_FENCE_CAPABILITIES": cl_30,
+            "NON_UNIFORM_WORK_GROUP_SUPPORT": cl_30,
+            "OPENCL_C_ALL_VERSIONS": cl_30,
+            "PREFERRED_WORK_GROUP_SIZE_MULTIPLE": cl_30,
+            "WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT": cl_30,
+            "GENERIC_ADDRESS_SPACE_SUPPORT": cl_30,
+            "OPENCL_C_FEATURES": cl_30,
+            "DEVICE_ENQUEUE_CAPABILITIES": cl_30,
+            "PIPE_SUPPORT": cl_30,
+            },
+
+        cl.device_topology_type_amd: {
+            "PCIE": amd_devattr,
             },
 
         cl.mem_object_type: {
@@ -227,6 +252,11 @@ const_ext_lookup = {
             "INTEROP_USER_SYNC": cl_12,
             },
 
+        cl.channel_type: {
+            "UNORM_INT24": ("CL_1.2", "2020.3"),
+            "UNORM_INT_101010_2": ("CL_2.1", "2020.3"),
+            },
+
         cl.channel_order: {
             "Rx": cl_11,
             "RGx": cl_11,
@@ -245,14 +275,26 @@ const_ext_lookup = {
             "GLOBAL_WORK_SIZE": cl_12,
             },
 
+        cl.kernel_sub_group_info: {
+            "MAX_SUB_GROUP_SIZE_FOR_NDRANGE": cl_21_late,
+            "SUB_GROUP_COUNT_FOR_NDRANGE": cl_21_late,
+            "LOCAL_SIZE_FOR_SUB_GROUP_COUNT": cl_21_late,
+            "MAX_NUM_SUB_GROUPS": cl_21_late,
+            "COMPILE_NUM_SUB_GROUPS": cl_21_late,
+            },
+
         cl.addressing_mode: {
             "MIRRORED_REPEAT": cl_11,
             },
 
         cl.sampler_info: {
-            "MIP_FILTER_MODE": cl_20,
-            "LOD_MIN": cl_20,
-            "LOD_MAX": cl_20,
+            "MIP_FILTER_MODE": ("(deprecated)", "2015.2"),
+            "LOD_MIN": ("(deprecated)", "2015.2"),
+            "LOD_MAX": ("(deprecated)", "2015.2"),
+            "MIP_FILTER_MODE_KHR": ("cl_khr_mipmap_image", "2020.3"),
+            "LOD_MIN_KHR": ("cl_khr_mipmap_image", "2020.3"),
+            "LOD_MAX_KHR": ("cl_khr_mipmap_image", "2020.3"),
+            "PROPERTIES": cl_30,
             },
 
         cl.event_info: {
@@ -273,6 +315,17 @@ const_ext_lookup = {
             "NUM_SAMPLES": cl_12,
             },
 
+        cl.pipe_info: {
+            "PACKET_SIZE": ("CL_2.0", "2020.3"),
+            "MAX_PACKETS": ("CL_2.0", "2020.3"),
+            "PROPERTIES": cl_30,
+            },
+
+        cl.pipe_properties: {
+            "PACKET_SIZE": ("CL_2.0", "2020.3"),
+            "MAX_PACKETS": ("CL_2.0", "2020.3"),
+            },
+
         cl.map_flags: {
             "WRITE_INVALIDATE_REGION": cl_12,
             },
@@ -280,6 +333,9 @@ const_ext_lookup = {
         cl.program_info: {
             "NUM_KERNELS": cl_12,
             "KERNEL_NAMES": cl_12,
+            "PROGRAM_IL": cl_21_late,
+            "SCOPE_GLOBAL_CTORS_PRESENT": cl_22,
+            "SCOPE_GLOBAL_DTORS_PRESENT": cl_22,
             },
 
         cl.program_build_info: {
@@ -345,6 +401,7 @@ const_ext_lookup = {
             "SVM_MEMFILL": cl_20,
             "SVM_MAP": cl_20,
             "SVM_UNMAP": cl_20,
+            "SVM_MIGRATE_MEM": cl_30,
             },
 
         cl.command_queue_info: {
@@ -398,6 +455,21 @@ const_ext_lookup = {
             "NEXT_PARITIONNABLE": cl_12,
             },
 
+        cl.device_atomic_capabilities: {
+            "ORDER_RELAXED": cl_30,
+            "ORDER_ACQ_REL": cl_30,
+            "ORDER_SEQ_CST": cl_30,
+            "SCOPE_WORK_ITEM": cl_30,
+            "SCOPE_WORK_GROUP": cl_30,
+            "SCOPE_DEVICE": cl_30,
+            "SCOPE_ALL_DEVICES": cl_30,
+            },
+
+        cl.device_device_enqueue_capabilities: {
+            "SUPPORTED": cl_30,
+            "REPLACEABLE_DEFAULT": cl_30,
+            },
+
         cl.profiling_info: {
             "COMPLETE": cl_20,
             },
@@ -407,6 +479,18 @@ const_ext_lookup = {
             "CONTENT_UNDEFINED": cl_12,
             },
 
+        cl.version_bits: {
+            "MAJOR_BITS": cl_30,
+            "MINOR_BITS": cl_30,
+            "PATCH_BITS": cl_30,
+            "MAJOR_MASK": cl_30,
+            "MINOR_MASK": cl_30,
+            "PATCH_MASK": cl_30,
+            },
+
+        cl.khronos_vendor_id: {
+            "CODEPLAY": cl_30,
+            },
         }
 try:
     gl_ci = cl.gl_context_info
@@ -435,8 +519,8 @@ def doc_class(cls):
         print()
 
     if cls in cls_ext_lookup:
-        for l in get_extra_lines(cls_ext_lookup[cls]):
-            print(l)
+        for ln in get_extra_lines(cls_ext_lookup[cls]):
+            print(ln)
 
     cls_const_ext = const_ext_lookup.get(cls, {})
     for name in sorted(dir(cls)):
@@ -444,8 +528,8 @@ def doc_class(cls):
             print("    .. attribute :: %s" % name)
 
             if name in cls_const_ext:
-                for l in get_extra_lines(cls_const_ext[name]):
-                    print("    "+l)
+                for ln in get_extra_lines(cls_const_ext[name]):
+                    print("    "+ln)
 
     print("    .. method :: to_string(value)")
     print()

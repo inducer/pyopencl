@@ -8,6 +8,21 @@ OpenCL Runtime: Programs and Kernels
 Program
 -------
 
+.. envvar:: PYOPENCL_NO_CACHE
+
+    By setting the environment variable :envvar:`PYOPENCL_NO_CACHE` to any
+    non-empty value, this caching is suppressed.
+
+    .. versionadded:: 2013.1
+
+.. envvar:: PYOPENCL_BUILD_OPTIONS
+
+    Any options found in the environment variable
+    :envvar:`PYOPENCL_BUILD_OPTIONS` will be appended to *options*
+    in :meth:`Program.build`.
+
+    .. versionadded:: 2013.1
+
 .. class:: Program(context, src)
            Program(context, devices, binaries)
 
@@ -47,17 +62,13 @@ Program
         If passed *cache_dir* is None and context was created with None cache_dir:
         built binaries will be cached in an on-disk cache called
         :file:`pyopencl-compiler-cache-vN-uidNAME-pyVERSION` in the directory
-        returned by :func:`tempfile.gettempdir`.  By setting the environment
-        variable :envvar:`PYOPENCL_NO_CACHE` to any non-empty value, this
-        caching is suppressed.  Any options found in the environment variable
-        :envvar:`PYOPENCL_BUILD_OPTIONS` will be appended to *options*.
+        returned by :func:`tempfile.gettempdir`.
+
+        See also :envvar:`PYOPENCL_NO_CACHE`, :envvar:`PYOPENCL_BUILD_OPTIONS`.
 
         .. versionchanged:: 2011.1
-            *options* may now also be a :class:`list` of :class:`str`.
 
-        .. versionchanged:: 2013.1
-            Added :envvar:`PYOPENCL_NO_CACHE`.
-            Added :envvar:`PYOPENCL_BUILD_OPTIONS`.
+            *options* may now also be a :class:`list` of :class:`str`.
 
     .. method:: compile(self, options=[], devices=None, headers=[])
 
@@ -99,6 +110,12 @@ Program
 
         Returns a list of all :class:`Kernel` objects in the :class:`Program`.
 
+    .. method:: set_specialization_constant(spec_id, buffer)
+
+        Only available with CL 2.2 and newer.
+
+        .. versionadded:: 2020.3
+
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
 
@@ -133,6 +150,12 @@ Kernel
         may be used as attributes on instances of this class
         to directly query info attributes.
 
+    .. method:: clone()
+
+        Only available with CL 2.1.
+
+        .. versionadded:: 2020.3
+
     .. method:: get_info(param)
 
         See :class:`kernel_info` for values of *param*.
@@ -146,6 +169,17 @@ Kernel
         See :class:`kernel_arg_info` for values of *param*.
 
         Only available in OpenCL 1.2 and newer.
+
+    .. method:: get_sub_group_info(self, device, param, input_value=None)
+
+        When the OpenCL spec requests *input_value* to be of type ``size_t``,
+        these may be passed directly as a number. When it requests
+        *input_value* to be of type ``size_t *``, a tuple of integers
+        may be passed.
+
+        Only available in OpenCL 2.1 and newer.
+
+        .. versionadded:: 2020.3
 
     .. method:: set_arg(self, index, arg)
 
@@ -205,14 +239,17 @@ Kernel
                prg.kernel(queue, n_globals, None, args)
 
 
-    .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
+    .. method:: __call__(queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False, allow_empty_ndrange=False)
 
         Use :func:`enqueue_nd_range_kernel` to enqueue a kernel execution, after using
         :meth:`set_args` to set each argument in turn. See the documentation for
         :meth:`set_arg` to see what argument types are allowed.
-        |std-enqueue-blurb|
 
         |glsize|
+
+        |empty-nd-range|
+
+        |std-enqueue-blurb|
 
         .. note::
 
@@ -228,6 +265,7 @@ Kernel
             <http://lists.tiker.net/pipermail/pyopencl/2012-October/001311.html>`_.
 
         .. versionchanged:: 0.92
+
             *local_size* was promoted to third positional argument from being a
             keyword argument. The old keyword argument usage will continue to
             be accepted with a warning throughout the 0.92 release cycle.
@@ -239,7 +277,12 @@ Kernel
             it from working.
 
         .. versionchanged:: 2011.1
+
             Added the *g_times_l* keyword arg.
+
+        .. versionchanged:: 2020.2
+
+            Added the *allow_empty_ndrange* keyword argument.
 
     .. method:: capture_call(filename, queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
 
@@ -278,16 +321,18 @@ Kernel
 
         The size of local buffer in bytes to be provided.
 
-.. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False)
-
-    |std-enqueue-blurb|
+.. function:: enqueue_nd_range_kernel(queue, kernel, global_work_size, local_work_size, global_work_offset=None, wait_for=None, g_times_l=False, allow_empty_ndrange=False)
 
     |glsize|
 
-    .. versionchanged:: 2011.1
-        Added the *g_times_l* keyword arg.
-
-
-.. function:: enqueue_task(queue, kernel, wait_for=None)
+    |empty-nd-range|
 
     |std-enqueue-blurb|
+
+    .. versionchanged:: 2011.1
+
+        Added the *g_times_l* keyword arg.
+
+    .. versionchanged:: 2020.2
+
+        Added the *allow_empty_ndrange* keyword argument.

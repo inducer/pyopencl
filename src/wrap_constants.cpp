@@ -40,6 +40,7 @@ namespace
   class platform_info { };
   class device_type { };
   class device_info { };
+  class device_topology_type_amd { };
   class device_fp_config { };
   class device_mem_cache_type { };
   class device_local_mem_type { };
@@ -58,9 +59,12 @@ namespace
   class mem_object_type { };
   class mem_info { };
   class image_info { };
+  class pipe_info { };
+  class pipe_properties { };
   class addressing_mode { };
   class filter_mode { };
   class sampler_info { };
+  class sampler_properties { };
   class map_flags { };
   class program_info { };
   class program_build_info { };
@@ -72,6 +76,7 @@ namespace
   class kernel_arg_access_qualifier { };
   class kernel_arg_type_qualifier { };
   class kernel_work_group_info { };
+  class kernel_sub_group_info { };
   class event_info { };
   class command_type { };
   class command_execution_status { };
@@ -81,6 +86,11 @@ namespace
 
   class device_partition_property { };
   class device_affinity_domain { };
+  class device_atomic_capabilities { };
+  class device_device_enqueue_capabilities { };
+
+  class version_bits { };
+  class khronos_vendor_id { };
 
   class gl_object_type { };
   class gl_texture_info { };
@@ -233,6 +243,11 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(, INVALID_DEVICE_QUEUE);
 #endif
 
+#if PYOPENCL_CL_VERSION >= 0x2020
+    ADD_ATTR(, INVALID_SPEC_ID);
+    ADD_ATTR(, MAX_SIZE_RESTRICTION_EXCEEDED);
+#endif
+
 #if defined(cl_ext_device_fission) && defined(PYOPENCL_USE_DEVICE_FISSION)
     ADD_ATTR(, DEVICE_PARTITION_FAILED_EXT);
     ADD_ATTR(, INVALID_PARTITION_COUNT_EXT);
@@ -248,6 +263,13 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(PLATFORM_, VENDOR);
 #if !(defined(CL_PLATFORM_NVIDIA) && CL_PLATFORM_NVIDIA == 0x3001)
     ADD_ATTR(PLATFORM_, EXTENSIONS);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR(PLATFORM_, HOST_TIMER_RESOLUTION);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(PLATFORM_, NUMERIC_VERSION);
+    ADD_ATTR(PLATFORM_, EXTENSIONS_WITH_VERSION);
 #endif
   }
 
@@ -356,7 +378,11 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef CL_DEVICE_PCI_SLOT_ID_NV
     ADD_ATTR(DEVICE_, PCI_SLOT_ID_NV);
 #endif
+#ifdef CL_DEVICE_PCI_SLOT_ID_NV
+    ADD_ATTR(DEVICE_, PCI_DOMAIN_ID_NV);
 #endif
+#endif
+
 // {{{ cl_amd_device_attribute_query
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
     ADD_ATTR(DEVICE_, PROFILING_TIMER_OFFSET_AMD);
@@ -397,7 +423,6 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef CL_DEVICE_LOCAL_MEM_BANKS_AMD
     ADD_ATTR(DEVICE_, LOCAL_MEM_BANKS_AMD);
 #endif
-// }}}
 #ifdef CL_DEVICE_THREAD_TRACE_SUPPORTED_AMD
     ADD_ATTR(DEVICE_, THREAD_TRACE_SUPPORTED_AMD);
 #endif
@@ -410,6 +435,19 @@ void pyopencl_expose_constants(py::module &m)
 #ifdef CL_DEVICE_AVAILABLE_ASYNC_QUEUES_AMD
     ADD_ATTR(DEVICE_, AVAILABLE_ASYNC_QUEUES_AMD);
 #endif
+#ifdef CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_AMD
+    ADD_ATTR(DEVICE_, PREFERRED_WORK_GROUP_SIZE_AMD);
+#endif
+#ifdef CL_DEVICE_MAX_WORK_GROUP_SIZE_AMD
+    ADD_ATTR(DEVICE_, MAX_WORK_GROUP_SIZE_AMD);
+#endif
+#ifdef CL_DEVICE_PREFERRED_CONSTANT_BUFFER_SIZE_AMD
+    ADD_ATTR(DEVICE_, PREFERRED_CONSTANT_BUFFER_SIZE_AMD);
+#endif
+#ifdef CL_DEVICE_PCIE_ID_AMD
+    ADD_ATTR(DEVICE_, PCIE_ID_AMD);
+#endif
+// }}}
 
 #ifdef CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT
     ADD_ATTR(DEVICE_, MAX_ATOMIC_COUNTERS_EXT);
@@ -454,6 +492,27 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(DEVICE_, MAX_NUM_SUB_GROUPS);
     ADD_ATTR(DEVICE_, SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(DEVICE_, NUMERIC_VERSION);
+    ADD_ATTR(DEVICE_, EXTENSIONS_WITH_VERSION);
+    ADD_ATTR(DEVICE_, ILS_WITH_VERSION);
+    ADD_ATTR(DEVICE_, BUILT_IN_KERNELS_WITH_VERSION);
+    ADD_ATTR(DEVICE_, ATOMIC_MEMORY_CAPABILITIES);
+    ADD_ATTR(DEVICE_, ATOMIC_FENCE_CAPABILITIES);
+    ADD_ATTR(DEVICE_, NON_UNIFORM_WORK_GROUP_SUPPORT);
+    ADD_ATTR(DEVICE_, OPENCL_C_ALL_VERSIONS);
+    ADD_ATTR(DEVICE_, PREFERRED_WORK_GROUP_SIZE_MULTIPLE);
+    ADD_ATTR(DEVICE_, WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT);
+    ADD_ATTR(DEVICE_, GENERIC_ADDRESS_SPACE_SUPPORT);
+    ADD_ATTR(DEVICE_, OPENCL_C_FEATURES);
+#ifdef CL_DEVICE_DEVICE_ENQUEUE_SUPPORT
+    // some busted headers shipped by Debian have this
+    cls.attr("DEVICE_ENQUEUE_CAPABILITIES") = CL_DEVICE_DEVICE_ENQUEUE_SUPPORT;
+#else
+    ADD_ATTR(DEVICE_, DEVICE_ENQUEUE_CAPABILITIES);
+#endif
+    ADD_ATTR(DEVICE_, PIPE_SUPPORT);
+#endif
     /* cl_intel_advanced_motion_estimation */
 #ifdef CL_DEVICE_ME_VERSION_INTEL
     ADD_ATTR(DEVICE_, ME_VERSION_INTEL);
@@ -483,6 +542,13 @@ void pyopencl_expose_constants(py::module &m)
 #endif
 #ifdef CL_DEVICE_NUM_SIMULTANEOUS_INTEROPS_INTEL
     ADD_ATTR(DEVICE_, NUM_SIMULTANEOUS_INTEROPS_INTEL);
+#endif
+  }
+
+  {
+    py::class_<device_topology_type_amd> cls(m, "device_topology_type_amd");
+#ifdef CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD
+    cls.attr("PCIE") = CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD;
 #endif
   }
 
@@ -594,6 +660,9 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(QUEUE_, DEVICE);
     ADD_ATTR(QUEUE_, REFERENCE_COUNT);
     ADD_ATTR(QUEUE_, PROPERTIES);
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(QUEUE_, PROPERTIES_ARRAY);
+#endif
   }
 
   {
@@ -601,6 +670,9 @@ void pyopencl_expose_constants(py::module &m)
 #if PYOPENCL_CL_VERSION >= 0x2000
     ADD_ATTR(QUEUE_, PROPERTIES);
     ADD_ATTR(QUEUE_, SIZE);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR(QUEUE_, DEVICE_DEFAULT);
 #endif
   }
 
@@ -678,6 +750,12 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR( , UNSIGNED_INT32);
     ADD_ATTR( , HALF_FLOAT);
     ADD_ATTR( , FLOAT);
+#if PYOPENCL_CL_VERSION >= 0x1020
+    ADD_ATTR( , UNORM_INT24);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR( , UNORM_INT_101010_2);
+#endif
   }
 
   {
@@ -712,6 +790,9 @@ void pyopencl_expose_constants(py::module &m)
 #if PYOPENCL_CL_VERSION >= 0x2000
     ADD_ATTR(MEM_, USES_SVM_POINTER);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(MEM_, PROPERTIES);
+#endif
   }
 
   {
@@ -731,6 +812,24 @@ void pyopencl_expose_constants(py::module &m)
 #endif
   }
 
+  {
+    py::class_<pipe_info> cls(m, "pipe_info");
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(PIPE_, PACKET_SIZE);
+    ADD_ATTR(PIPE_, MAX_PACKETS);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(PIPE_, PROPERTIES);
+#endif
+  }
+
+  {
+    py::class_<pipe_properties> cls(m, "pipe_properties");
+#if PYOPENCL_CL_VERSION >= 0x2000
+    ADD_ATTR(PIPE_, PACKET_SIZE);
+    ADD_ATTR(PIPE_, MAX_PACKETS);
+#endif
+  }
   {
     py::class_<addressing_mode> cls(m, "addressing_mode");
     ADD_ATTR(ADDRESS_, NONE);
@@ -760,6 +859,23 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(SAMPLER_, LOD_MIN);
     ADD_ATTR(SAMPLER_, LOD_MAX);
 #endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(SAMPLER_, PROPERTIES);
+#endif
+// {{{ cl_khr_mipmap_image
+#ifdef CL_SAMPLER_MIP_FILTER_MODE_KHR
+    ADD_ATTR(SAMPLER_, MIP_FILTER_MODE_KHR);
+    ADD_ATTR(SAMPLER_, LOD_MIN_KHR);
+    ADD_ATTR(SAMPLER_, LOD_MAX_KHR);
+#endif
+// }}}
+  }
+
+  {
+    py::class_<sampler_properties> cls(m, "sampler_properties");
+    ADD_ATTR(SAMPLER_, NORMALIZED_COORDS);
+    ADD_ATTR(SAMPLER_, ADDRESSING_MODE);
+    ADD_ATTR(SAMPLER_, FILTER_MODE);
   }
 
   {
@@ -783,6 +899,13 @@ void pyopencl_expose_constants(py::module &m)
 #if PYOPENCL_CL_VERSION >= 0x1020
     ADD_ATTR(PROGRAM_, NUM_KERNELS);
     ADD_ATTR(PROGRAM_, KERNEL_NAMES);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR(PROGRAM_, IL);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x2020
+    ADD_ATTR(PROGRAM_, SCOPE_GLOBAL_CTORS_PRESENT);
+    ADD_ATTR(PROGRAM_, SCOPE_GLOBAL_DTORS_PRESENT);
 #endif
   }
 
@@ -883,6 +1006,17 @@ void pyopencl_expose_constants(py::module &m)
   }
 
   {
+    py::class_<kernel_sub_group_info> cls(m, "kernel_sub_group_info");
+#if PYOPENCL_CL_VERSION >= 0x2010
+    ADD_ATTR(KERNEL_, MAX_SUB_GROUP_SIZE_FOR_NDRANGE);
+    ADD_ATTR(KERNEL_, SUB_GROUP_COUNT_FOR_NDRANGE);
+    ADD_ATTR(KERNEL_, LOCAL_SIZE_FOR_SUB_GROUP_COUNT);
+    ADD_ATTR(KERNEL_, MAX_NUM_SUB_GROUPS);
+    ADD_ATTR(KERNEL_, COMPILE_NUM_SUB_GROUPS);
+#endif
+  }
+
+  {
     py::class_<event_info> cls(m, "event_info");
     ADD_ATTR(EVENT_, COMMAND_QUEUE);
     ADD_ATTR(EVENT_, COMMAND_TYPE);
@@ -930,6 +1064,9 @@ void pyopencl_expose_constants(py::module &m)
     ADD_ATTR(COMMAND_, SVM_MEMFILL);
     ADD_ATTR(COMMAND_, SVM_MAP);
     ADD_ATTR(COMMAND_, SVM_UNMAP);
+#endif
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(COMMAND_, SVM_MIGRATE_MEM);
 #endif
   }
 
@@ -993,6 +1130,47 @@ void pyopencl_expose_constants(py::module &m)
 #endif
   }
 
+  {
+    py::class_<device_atomic_capabilities> cls(m, "device_atomic_capabilities");
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(DEVICE_ATOMIC_, ORDER_RELAXED);
+    ADD_ATTR(DEVICE_ATOMIC_, ORDER_ACQ_REL);
+    ADD_ATTR(DEVICE_ATOMIC_, ORDER_SEQ_CST);
+    ADD_ATTR(DEVICE_ATOMIC_, SCOPE_WORK_ITEM);
+    ADD_ATTR(DEVICE_ATOMIC_, SCOPE_WORK_GROUP);
+    ADD_ATTR(DEVICE_ATOMIC_, SCOPE_DEVICE);
+    ADD_ATTR(DEVICE_ATOMIC_, SCOPE_ALL_DEVICES);
+#endif
+  }
+  {
+    py::class_<device_device_enqueue_capabilities> cls(m, "device_device_enqueue_capabilities");
+#if (PYOPENCL_CL_VERSION >= 0x3000) && defined(CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES)
+    ADD_ATTR(DEVICE_QUEUE_, SUPPORTED);
+    ADD_ATTR(DEVICE_QUEUE_, REPLACEABLE_DEFAULT);
+#endif
+  }
+
+  {
+    py::class_<version_bits> cls(m, "version_bits");
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(VERSION_, MAJOR_BITS);
+    ADD_ATTR(VERSION_, MINOR_BITS);
+    ADD_ATTR(VERSION_, PATCH_BITS);
+
+    ADD_ATTR(VERSION_, MAJOR_MASK);
+    ADD_ATTR(VERSION_, MINOR_MASK);
+    ADD_ATTR(VERSION_, PATCH_MASK);
+#endif
+  }
+
+  {
+    py::class_<khronos_vendor_id> cls(m, "khronos_vendor_id");
+#if PYOPENCL_CL_VERSION >= 0x3000
+    ADD_ATTR(KHRONOS_VENDOR_ID_, CODEPLAY);
+#endif
+  }
+
+
 #ifdef HAVE_GL
   {
     py::class_<gl_object_type> cls(m, "gl_object_type");
@@ -1010,6 +1188,80 @@ void pyopencl_expose_constants(py::module &m)
 #endif
 
   // }}}
+
+  // {{{ cl_name_version
+#if PYOPENCL_CL_VERSION >= 0x3000
+  {
+    typedef cl_name_version cls;
+    py::class_<cls>(m, "NameVersion")
+      .def(py::init(
+            [](cl_version version, const char* name)
+            {
+              cl_name_version result;
+              result.version = version;
+              result.name[0] = '\0';
+              // https://stackoverflow.com/a/1258577
+              strncat(result.name, name, CL_NAME_VERSION_MAX_NAME_SIZE-1);
+              return result;
+            }),
+          py::arg("version")=0,
+          py::arg("name")=0)
+
+      .def_property("version",
+          [](cls &t) { return t.version; },
+          [](cls &t, cl_version val) { t.version = val; })
+      .def_property("name",
+          [](cls &t) { return t.name; },
+          [](cls &t, const char *name)
+          {
+              t.name[0] = '\0';
+              // https://stackoverflow.com/a/1258577
+              strncat(t.name, name, CL_NAME_VERSION_MAX_NAME_SIZE-1);
+          })
+      ;
+  }
+#endif
+  // }}}
+
+  // {{{ CL_DEVICE_TOPOLOGY_AMD
+
+#ifdef CL_DEVICE_TOPOLOGY_AMD
+  {
+    typedef cl_device_topology_amd cls;
+    py::class_<cls>(m, "DeviceTopologyAmd")
+      .def(py::init(
+            [](cl_char bus, cl_char device, cl_char function)
+            {
+              cl_device_topology_amd result;
+              result.pcie.type = CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD;
+              result.pcie.bus = bus;
+              result.pcie.device = device;
+              result.pcie.function = function;
+              return result;
+            }),
+          py::arg("bus")=0,
+          py::arg("device")=0,
+          py::arg("function")=0)
+
+      .def_property("type",
+          [](cls &t) { return t.pcie.type; },
+          [](cls &t, cl_uint val) { t.pcie.type = val; })
+
+      .def_property("bus",
+          [](cls &t) { return t.pcie.bus; },
+          [](cls &t, cl_char val) { t.pcie.bus = val; })
+      .def_property("device",
+          [](cls &t) { return t.pcie.device; },
+          [](cls &t, cl_char val) { t.pcie.device = val; })
+      .def_property("function",
+          [](cls &t) { return t.pcie.function; },
+          [](cls &t, cl_char val) { t.pcie.function = val; })
+      ;
+  }
+#endif
+
+  // }}}
+
 }
 
 

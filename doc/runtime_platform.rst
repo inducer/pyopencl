@@ -45,6 +45,8 @@ Device
 
 .. class:: Device
 
+    Two instances of this class may be compared using *=="* and *"!="*.
+
     .. attribute:: info
 
         Lower case versions of the :class:`device_info` constants
@@ -57,6 +59,18 @@ Device
 
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
+
+    .. attribute :: hashable_model_and_version_identifier
+
+        An unspecified data type that can be used to (as precisely as possible,
+        given identifying information available in OpenCL) identify a given
+        model and software stack version of a compute device. Note that this
+        identifier does not differentiate between different instances of the
+        same device installed in a single host.
+
+        The returned data type is hashable.
+
+        .. versionadded:: 2020.1
 
     .. method:: create_sub_devices(properties)
 
@@ -76,7 +90,19 @@ Device
 
         .. versionadded:: 2011.2
 
-    Two instances of this class may be compared using *=="* and *"!="*.
+    .. method:: device_and_host_timer
+
+        :returns: a tuple ``(device_timestamp, host_timestamp)``.
+
+        Only available with CL 2.0.
+
+        .. versionadded:: 2020.3
+
+    .. method:: host_timer
+
+        Only available with CL 2.0.
+
+        .. versionadded:: 2020.3
 
 Context
 -------
@@ -123,12 +149,12 @@ Context
     .. note::
 
         For
-        :attr:`context_properties.CL_GL_CONTEXT_KHR`,
-        :attr:`context_properties.CL_EGL_DISPLAY_KHR`,
-        :attr:`context_properties.CL_GLX_DISPLAY_KHR`,
-        :attr:`context_properties.CL_WGL_HDC_KHR`, and
-        :attr:`context_properties.CL_CGL_SHAREGROUP_KHR`
-        :attr:`context_properties.CL_CGL_SHAREGROUP_APPLE`
+        ``context_properties.CL_GL_CONTEXT_KHR``,
+        ``context_properties.CL_EGL_DISPLAY_KHR``,
+        ``context_properties.CL_GLX_DISPLAY_KHR``,
+        ``context_properties.CL_WGL_HDC_KHR``, and
+        ``context_properties.CL_CGL_SHAREGROUP_KHR``
+        ``context_properties.CL_CGL_SHAREGROUP_APPLE``
         the value in the key-value pair is a PyOpenGL context or display
         instance.
 
@@ -147,6 +173,8 @@ Context
 
     .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
+
+    .. method:: set_default_device_command_queue(dev, queue)
 
     |comparable|
 

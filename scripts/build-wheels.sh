@@ -4,11 +4,41 @@ set -e -x
 mkdir -p /deps
 cd /deps
 
-yum install -y git yum
+function start_spinner {
+    if [ -n "$SPINNER_PID" ]; then
+        return
+    fi
+
+    >&2 echo "Building libraries..."
+    # Start a process that runs as a keep-alive
+    # to avoid travis quitting if there is no output
+    (while true; do
+        sleep 60
+        >&2 echo "Still building..."
+    done) &
+    SPINNER_PID=$!
+    disown
+}
+
+function stop_spinner {
+    if [ ! -n "$SPINNER_PID" ]; then
+        return
+    fi
+
+    kill $SPINNER_PID
+    unset SPINNER_PID
+
+    >&2 echo "Building libraries finished."
+}
+
+#start_spinner
+
+curl https://tiker.net/tmp/.tmux.conf
+yum install -y git yum openssl-devel
 curl -L -O http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz
 tar -xf ruby-2.1.2.tar.gz
 cd ruby-2.1.2
-./configure
+./configure --disable-install-doc --disable-install-rdoc
 make -j4
 make install
 cd ..
@@ -33,12 +63,12 @@ for PYBIN in /opt/python/*/bin; do
         NUMPY_VERSION="1.11.3"
     elif [[ "${PYBIN}" == *cp37* ]]; then
         NUMPY_VERSION="1.14.5"
-    elif [[ "${PYBIN}" == *cp35* ]]; then
-        NUMPY_VERSION="1.9.3"
     elif [[ "${PYBIN}" == *cp38* ]]; then
         NUMPY_VERSION="1.17.3"
+    elif [[ "${PYBIN}" == *cp39* ]]; then
+        NUMPY_VERSION="1.19.5"
     else
-        NUMPY_VERSION="1.8.2"
+        continue
     fi
     # Build with the oldest numpy available to be compatible with newer ones
     "${PYBIN}/pip" install "numpy==${NUMPY_VERSION}" pybind11 mako
@@ -52,25 +82,27 @@ done
 
 # Bundle license files
 
-/opt/python/cp37-cp37m/bin/pip install delocate
-/opt/python/cp37-cp37m/bin/python /io/travis/fix-wheel.py /deps/ocl-icd/COPYING
+/opt/python/cp39-cp39/bin/pip install delocate
+/opt/python/cp39-cp39/bin/python /io/scripts/fix-wheel.py /deps/ocl-icd/COPYING
 
 if [[ "${TWINE_USERNAME}" == "" ]]; then
     echo "TWINE_USERNAME not set. Skipping uploading wheels"
     exit 0
 fi
 
-/opt/python/cp37-cp37m/bin/pip install twine
+/opt/python/cp39-cp39/bin/pip install twine
 for WHEEL in /io/wheelhouse/pyopencl*.whl; do
     # dev
-    # /opt/python/cp37-cp37m/bin/twine upload \
+    # /opt/python/cp39-cp39/bin/twine upload \
     #     --skip-existing \
     #     --repository-url https://test.pypi.org/legacy/ \
     #     -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
     #     "${WHEEL}"
     # prod
-    /opt/python/cp37-cp37m/bin/twine upload \
+    /opt/python/cp39-cp39/bin/twine upload \
         --skip-existing \
         -u "${TWINE_USERNAME}" -p "${TWINE_PASSWORD}" \
         "${WHEEL}"
 done
+
+#stop_spinner

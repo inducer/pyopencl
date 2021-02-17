@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -22,7 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from six.moves import range
+# avoid spurious: pytest.mark.parametrize is not callable
+# pylint: disable=not-callable
+
 
 import numpy as np
 import numpy.linalg as la
@@ -33,7 +33,8 @@ import pyopencl.array as cl_array
 import pyopencl.cltypes as cltypes
 import pyopencl.clrandom
 from pyopencl.tools import (  # noqa
-        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
+        pytest_generate_tests_for_pyopencl as pytest_generate_tests,
+        ImmediateAllocator, DeferredAllocator)
 from pyopencl.characterize import get_pocl_version
 
 # Are CL implementations crashy? You be the judge. :)
@@ -45,16 +46,26 @@ else:
     faulthandler.enable()
 
 
-def _skip_if_pocl(plat, up_to_version, msg='unsupported by pocl'):
+def _xfail_if_pocl(plat, up_to_version, msg="unsupported by pocl"):
     if plat.vendor == "The pocl project":
         if up_to_version is None or get_pocl_version(plat) <= up_to_version:
-            pytest.skip(msg)
+            pytest.xfail(msg)
+
+
+def _xfail_if_pocl_gpu(device, what):
+    if device.platform.vendor == "The pocl project" \
+            and device.type & cl.device_type.GPU:
+        pytest.xfail(f"POCL's {what} support don't work right on Nvidia GPUs, "
+                "at least the Titan V, as of pocl 1.6, 2021-01-20")
 
 
 def test_get_info(ctx_factory):
     ctx = ctx_factory()
     device, = ctx.devices
     platform = device.platform
+
+    device.persistent_unique_id
+    device.hashable_model_and_version_identifier
 
     failure_count = [0]
 
@@ -378,7 +389,7 @@ def test_image_2d(ctx_factory):
     if "Intel" in device.vendor and "31360.31426" in device.version:
         from pytest import skip
         skip("images crashy on %s" % device)
-    _skip_if_pocl(device.platform, None, 'pocl does not support CL_ADDRESS_CLAMP')
+    _xfail_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
 
     prg = cl.Program(context, """
         __kernel void copy_image(
@@ -450,7 +461,7 @@ def test_image_3d(ctx_factory):
     if device.platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("images crashy on %s" % device)
-    _skip_if_pocl(device.platform, None, 'pocl does not support CL_ADDRESS_CLAMP')
+    _xfail_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
 
     prg = cl.Program(context, """
         __kernel void copy_image_plane(
@@ -570,6 +581,23 @@ def test_mempool_2(ctx_factory):
         assert asize < asize*(1+1/8)
 
 
+@pytest.mark.parametrize("allocator_cls", [ImmediateAllocator, DeferredAllocator])
+def test_allocator(ctx_factory, allocator_cls):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    if allocator_cls is DeferredAllocator:
+        allocator = allocator_cls(context)
+    else:
+        allocator = allocator_cls(queue)
+
+    mem = allocator(15)
+    mem2 = allocator(0)
+
+    assert mem is not None
+    assert mem2 is None
+
+
 def test_vector_args(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -655,8 +683,8 @@ def test_can_build_and_run_binary(ctx_factory):
 def test_enqueue_barrier_marker(ctx_factory):
     ctx = ctx_factory()
     # Still relevant on pocl 1.0RC1.
-    _skip_if_pocl(
-            ctx.devices[0].platform, (1, 0), 'pocl crashes on enqueue_barrier')
+    _xfail_if_pocl(
+            ctx.devices[0].platform, (1, 0), "pocl crashes on enqueue_barrier")
 
     queue = cl.CommandQueue(ctx)
 
@@ -683,7 +711,7 @@ def test_unload_compiler(platform):
             or cl.get_cl_header_version() < (1, 2)):
         from pytest import skip
         skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
-    _skip_if_pocl(platform, (0, 13), 'pocl does not support unloading compiler')
+    _xfail_if_pocl(platform, (0, 13), "pocl does not support unloading compiler")
     if platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("Intel proprietary driver does not support unloading compiler")
@@ -710,7 +738,7 @@ def test_platform_get_devices(ctx_factory):
         devs = platform.get_devices(dev_type)
         if dev_type in (cl.device_type.DEFAULT,
                         cl.device_type.ALL,
-                        getattr(cl.device_type, 'CUSTOM', None)):
+                        getattr(cl.device_type, "CUSTOM", None)):
             continue
         for dev in devs:
             assert dev.type & dev_type == dev_type
@@ -724,7 +752,7 @@ def test_user_event(ctx_factory):
         skip("UserEvent is only available in OpenCL 1.1")
 
     # https://github.com/pocl/pocl/issues/201
-    _skip_if_pocl(ctx.devices[0].platform, (0, 13),
+    _xfail_if_pocl(ctx.devices[0].platform, (0, 13),
             "pocl's user events don't work right")
 
     status = {}
@@ -743,22 +771,22 @@ def test_user_event(ctx_factory):
     Thread(target=event_waiter1, args=(evt, 1)).start()
     sleep(.05)
     if status.get(1, False):
-        raise RuntimeError('UserEvent triggered before set_status')
+        raise RuntimeError("UserEvent triggered before set_status")
     evt.set_status(cl.command_execution_status.COMPLETE)
     sleep(.05)
     if not status.get(1, False):
-        raise RuntimeError('UserEvent.wait timeout')
+        raise RuntimeError("UserEvent.wait timeout")
     assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
     evt = cl.UserEvent(ctx)
     Thread(target=event_waiter2, args=(evt, 2)).start()
     sleep(.05)
     if status.get(2, False):
-        raise RuntimeError('UserEvent triggered before set_status')
+        raise RuntimeError("UserEvent triggered before set_status")
     evt.set_status(cl.command_execution_status.COMPLETE)
     sleep(.05)
     if not status.get(2, False):
-        raise RuntimeError('cl.wait_for_events timeout on UserEvent')
+        raise RuntimeError("cl.wait_for_events timeout on UserEvent")
     assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
 
@@ -774,8 +802,8 @@ def test_buffer_get_host_array(ctx_factory):
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.USE_HOST_PTR, hostbuf=host_buf)
     host_buf2 = buf.get_host_array(25, np.float32)
     assert (host_buf == host_buf2).all()
-    assert (host_buf.__array_interface__['data'][0]
-            == host_buf.__array_interface__['data'][0])
+    assert (host_buf.__array_interface__["data"][0]
+            == host_buf.__array_interface__["data"][0])
     assert host_buf2.base is buf
 
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.ALLOC_HOST_PTR, size=100)
@@ -820,6 +848,8 @@ def test_event_set_callback(ctx_factory):
 
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
+
+    _xfail_if_pocl_gpu(queue.device, "event callbacks")
 
     if ctx._get_cl_version() < (1, 1):
         pytest.skip("OpenCL 1.1 or newer required for set_callback")
@@ -874,6 +904,8 @@ def test_event_set_callback(ctx_factory):
 def test_global_offset(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+
+    _xfail_if_pocl_gpu(queue.device, "global offset")
 
     prg = cl.Program(context, """
         __kernel void mult(__global float *a)
@@ -955,10 +987,12 @@ def test_spirv(ctx_factory):
 
 def test_coarse_grain_svm(ctx_factory):
     import sys
-    is_pypy = '__pypy__' in sys.builtin_module_names
+    is_pypy = "__pypy__" in sys.builtin_module_names
 
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
+
+    _xfail_if_pocl_gpu(queue.device, "SVM")
 
     dev = ctx.devices[0]
 
@@ -1009,13 +1043,39 @@ def test_coarse_grain_svm(ctx_factory):
         cl.enqueue_copy(queue, new_ary, svm_ary)
         assert np.array_equal(orig_ary*2, new_ary)
 
+    # {{{ https://github.com/inducer/pyopencl/issues/372
+
+    buf_arr = cl.svm_empty(ctx, cl.svm_mem_flags.READ_ONLY, 10, np.int32)
+    out_arr = cl.svm_empty(ctx, cl.svm_mem_flags.READ_WRITE, 10, np.int32)
+
+    svm_buf_arr = cl.SVM(buf_arr)
+    svm_out_arr = cl.SVM(out_arr)
+    with svm_buf_arr.map_rw(queue) as ary:
+        ary.fill(17)
+
+    prg_ro = cl.Program(ctx, r"""
+        __kernel void twice_ro(__global int *out_g, __global int *in_g)
+        {
+          out_g[get_global_id(0)] = 2*in_g[get_global_id(0)];
+        }
+        """).build()
+
+    prg_ro.twice_ro(queue, buf_arr.shape, None, svm_out_arr, svm_buf_arr)
+
+    with svm_out_arr.map_ro(queue) as ary:
+        print(ary)
+
+    # }}}
+
 
 def test_fine_grain_svm(ctx_factory):
     import sys
-    is_pypy = '__pypy__' in sys.builtin_module_names
+    is_pypy = "__pypy__" in sys.builtin_module_names
 
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
+
+    _xfail_if_pocl_gpu(queue.device, "GPU SVM")
 
     from pyopencl.characterize import has_fine_grain_buffer_svm
     from pytest import skip
@@ -1103,6 +1163,8 @@ def test_copy_buffer_rect(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
+    _xfail_if_pocl_gpu(queue.device, "rectangular copies")
+
     arr1 = cl_array.zeros(queue, (2, 3), "f")
     arr2 = cl_array.zeros(queue, (4, 5), "f")
     arr1.fill(1)
@@ -1137,6 +1199,26 @@ def test_threaded_nanny_events(ctx_factory):
 
     t1.join()
     t2.join()
+
+
+@pytest.mark.parametrize("empty_shape", [(0,), (3, 0, 2)])
+def test_empty_ndrange(ctx_factory, empty_shape):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    if ctx._get_cl_version() < (1, 2) or cl.get_cl_header_version() < (1, 2):
+        pytest.skip("OpenCL 1.2 required for empty NDRange suuport")
+
+    a = cl_array.zeros(queue, empty_shape, dtype=np.float32)
+
+    prg = cl.Program(ctx, """
+        __kernel void add_two(__global float *a_g)
+        {
+          a_g[get_global_id(0)] += 2;
+        }
+        """).build()
+
+    prg.add_two(queue, a.shape, None, a.data, allow_empty_ndrange=True)
 
 
 if __name__ == "__main__":

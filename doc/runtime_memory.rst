@@ -191,7 +191,7 @@ Image
     See :class:`mem_flags` for possible values of *flags*
     and :class:`mem_object_type` for possible values of *image_type*.
 
-.. class:: Image(context, flags, format, shape=None, pitches=None, hostbuf=None, is_array=False, buffer=None):
+.. class:: Image(context, flags, format, shape=None, pitches=None, hostbuf=None, is_array=False, buffer=None)
 
     See :class:`mem_flags` for values of *flags*.
     *shape* is a 2- or 3-tuple. *format* is an instance of :class:`ImageFormat`.
@@ -206,7 +206,7 @@ Image
 
     .. note::
 
-        If you want to load images from :mod:`numpy.ndarray` instances or read images
+        If you want to load images from :class:`numpy.ndarray` instances or read images
         back into them, be aware that OpenCL images expect the *x* dimension to vary
         fastest, whereas in the default (C) order of :mod:`numpy` arrays, the last index
         varies fastest. If your array is arranged in the wrong order in memory,
@@ -344,7 +344,6 @@ Samplers
 
 .. class:: Sampler
 
-
     .. method:: __init__(context, normalized_coords, addressing_mode, filter_mode)
 
         *normalized_coords* is a :class:`bool` indicating whether
@@ -353,7 +352,7 @@ Samplers
         See :class:`addressing_mode` and :class:`filter_mode` for possible
         argument values.
 
-    .. method:: __init__(context, properties)
+        Also supports an alternate signature ``(context, properties)``.
 
         :arg properties: a sequence
             of keys and values from :class:`sampler_properties` as accepted
@@ -361,9 +360,11 @@ Samplers
             spec for details). The trailing *0* is added automatically
             and does not need to be included.
 
-        Requires OpenCL 2 or newer.
+        This signature Requires OpenCL 2 or newer.
 
-        .. versionadded:: 2018.2
+        .. versionchanged:: 2018.2
+
+            The properties-based signature was added.
 
     .. attribute:: info
 
@@ -379,4 +380,24 @@ Samplers
     .. autoattribute:: int_ptr
 
     |comparable|
+
+Pipes
+-----
+
+.. class:: Pipe(context, flags, packet_size, max_packets, properties)
+
+    See :class:`mem_flags` for values of *flags*.
+
+    :arg properties: a sequence
+        of keys and values from :class:`pipe_properties` as accepted
+        by :c:func:`clCreatePipe`. The trailing *0* is added automatically
+        and does not need to be included.
+
+    This function Requires OpenCL 2 or newer.
+
+    .. versionadded:: 2020.3
+
+    .. method:: get_pipe_info(param)
+
+        See :class:`pipe_info` for values of *param*.
 

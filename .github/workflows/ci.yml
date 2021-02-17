@@ -1,0 +1,173 @@
+name: CI
+on:
+    push:
+        branches:
+        - master
+        tags:
+        - v*
+    pull_request:
+    schedule:
+        - cron:  '17 3 * * 0'
+
+jobs:
+    flake8:
+        name: Flake8
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -
+            uses: actions/setup-python@v1
+            with:
+                python-version: '3.x'
+        -   name: "Main Script"
+            run: |
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
+                . ./prepare-and-run-flake8.sh "$(basename $GITHUB_REPOSITORY)" ./test
+
+    pylint:
+        name: Pylint
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                echo "- matplotlib" >> $CONDA_ENVIRONMENT
+                echo "- pyopengl" >> $CONDA_ENVIRONMENT
+                echo "- ipython" >> $CONDA_ENVIRONMENT
+                echo "-------------------------------------------"
+                cat $CONDA_ENVIRONMENT
+                echo "-------------------------------------------"
+                USE_CONDA_BUILD=1
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
+
+                # Pylint won't find the Cython bits without this
+                PROJECT_INSTALL_FLAGS="--editable"
+
+                . ./prepare-and-run-pylint.sh "$(basename $GITHUB_REPOSITORY)" test/test_*.py
+
+    pytest:
+        name: Pytest Linux
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
+                ./configure.py --cl-use-shipped-ext
+                . ./build-and-test-py-project-within-miniconda.sh
+
+    pytest_mac:
+        name: Pytest Mac
+        runs-on: macos-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                export CC=gcc
+                CONDA_ENVIRONMENT=.test-conda-env.yml
+                grep -v ocl-icd .test-conda-env-py3.yml > $CONDA_ENVIRONMENT
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
+                ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
+                . ./build-and-test-py-project-within-miniconda.sh
+
+    docs:
+        name: Documentation
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -
+            uses: actions/setup-python@v1
+            with:
+                python-version: '3.x'
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+                . ci-support.sh
+                ./configure.py --cl-use-shipped-ext
+                build_py_project_in_conda_env
+                build_docs
+
+    wheels:
+        name: Build and upload wheels
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                DOCKER_IMAGE:
+                - quay.io/pypa/manylinux2014_x86_64
+                # Disable i686 builds for now: no binary wheels for cryptography,
+                # source build fails, e.g. https://github.com/inducer/pyopencl/pull/421/checks?check_run_id=1781071632
+                # - quay.io/pypa/manylinux2014_i686
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            env:
+                TWINE_USERNAME: __token__
+                TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+                DOCKER_IMAGE: ${{ matrix.DOCKER_IMAGE }}
+
+            run: |
+                pwd
+                ls -la
+
+                # Only perform upload for tag builds, otherwise unset TWINE_USERNAME to prevent
+                if ! [[ $GITHUB_REF == refs/tags* ]]; then
+                    echo "Not a tag build, GITHUB_REF is '$GITHUB_REF'. Unsetting TWINE_USERNAME"
+                    unset TWINE_USERNAME
+                fi
+
+                if [[ $DOCKER_IMAGE == *i686* ]]; then
+                    PRE_CMD=linux32
+                else
+                    PRE_CMD=""
+                fi
+
+                docker run --rm -v `pwd`:/io -e TWINE_USERNAME -e TWINE_PASSWORD $DOCKER_IMAGE $PRE_CMD /io/scripts/build-wheels.sh
+                ls wheelhouse/
+
+    downstream_tests:
+        strategy:
+            matrix:
+                downstream_project: [loopy, boxtree, meshmode]
+        name: Tests for downstream project ${{ matrix.downstream_project }}
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            env:
+                DOWNSTREAM_PROJECT: ${{ matrix.downstream_project }}
+            run: |
+                # {{{ configure pyopencl so it finds its headers
+
+                TEST_ENV_ROOT="$(pwd)/$DOWNSTREAM_PROJECT/.miniforge3/envs/testing"
+                ./configure.py --cl-inc-dir="$TEST_ENV_ROOT/include" --cl-lib-dir="$TEST_ENV_ROOT/lib"
+                git add -f siteconf.py
+
+                git config --global user.email "inform@tiker.net"
+                git config --global user.name "Github CI runner"
+                git commit -a -m "Fake commit to add aksetup.py"
+
+                # }}}
+
+                git clone "https://github.com/inducer/$DOWNSTREAM_PROJECT.git"
+
+                cd "$DOWNSTREAM_PROJECT"
+                echo "*** $DOWNSTREAM_PROJECT version: $(git rev-parse --short HEAD)"
+
+                sed -i "/egg=pyopencl/ c git+file://$(readlink -f ..)#egg=pyopencl" requirements.txt
+
+                export CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                sed -i 's/pyopencl/ocl-icd/' "$CONDA_ENVIRONMENT"
+
+                # Avoid slow or complicated tests in downstream projects
+                export PYTEST_ADDOPTS="-k 'not (slowtest or octave or mpi)'"
+
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+                . ./ci-support.sh
+
+                build_py_project_in_conda_env
+                test_py_project
+
+# vim: sw=4

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -22,7 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from six.moves import range
+# avoid spurious: pytest.mark.parametrize is not callable
+# avoid spurious: Module 'scipy.special' has no 'jn' member; maybe 'jv'
+# pylint: disable=not-callable,no-member
+
 
 import math
 import numpy as np
@@ -341,7 +342,7 @@ def test_complex_bessel(ctx_factory, ref_src):
     if ref_src == "pyfmmlib":
         pyfmmlib = pytest.importorskip("pyfmmlib")
 
-        jv_ref = np.zeros(len(z), 'complex')
+        jv_ref = np.zeros(len(z), "complex")
 
         vin = v+1
 
@@ -453,7 +454,7 @@ def test_outoforderqueue_clmath(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype('float32'))
+    a = np.random.rand(10**6).astype(np.dtype("float32"))
     a_gpu = cl_array.to_device(queue, a)
     # testing that clmath functions wait for and create events
     b_gpu = clmath.fabs(clmath.sin(a_gpu * 5))

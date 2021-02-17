@@ -222,6 +222,36 @@ void pyopencl_expose_part_2(py::module &m)
 
   // }}}
 
+  // {{{ pipe
+
+  {
+    typedef pyopencl::pipe cls;
+    py::class_<cls, memory_object>(m, "Pipe", py::dynamic_attr())
+#if PYOPENCL_CL_VERSION >= 0x2000
+      .def(
+          py::init(
+            [](
+              context const &ctx,
+              cl_mem_flags flags,
+              cl_uint pipe_packet_size,
+              cl_uint pipe_max_packets,
+              py::sequence py_props)
+            {
+              return create_pipe(ctx, flags, pipe_packet_size, pipe_max_packets, py_props);
+            }),
+          py::arg("context"),
+          py::arg("flags"),
+          py::arg("packet_size"),
+          py::arg("max_packets"),
+          py::arg("properties")
+          )
+#endif
+      .DEF_SIMPLE_METHOD(get_pipe_info)
+      ;
+  }
+
+  // }}}
+
   // {{{ memory_map
   {
     typedef memory_map cls;
@@ -401,6 +431,11 @@ void pyopencl_expose_part_2(py::module &m)
           py::arg("devices")=py::none()
           )
 #endif
+#if PYOPENCL_CL_VERSION >= 0x2020
+      .def("set_specialization_constant", &cls::set_specialization_constant,
+          py::arg("spec_id"),
+          py::arg("buffer"))
+#endif
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
@@ -427,11 +462,36 @@ void pyopencl_expose_part_2(py::module &m)
       .def(py::init<const program &, std::string const &>())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
+#if PYOPENCL_CL_VERSION >= 0x2010
+      .DEF_SIMPLE_METHOD(clone)
+#endif
       .def("_set_arg_null", &cls::set_arg_null)
       .def("_set_arg_buf", &cls::set_arg_buf)
 #if PYOPENCL_CL_VERSION >= 0x2000
       .def("_set_arg_svm", &cls::set_arg_svm)
 #endif
+      .def("_set_arg_multi",
+          [](cls &knl, py::tuple indices_and_args)
+          {
+            set_arg_multi(
+                [&](cl_uint i, py::handle arg) { knl.set_arg(i, arg); },
+                indices_and_args);
+          })
+      .def("_set_arg_buf_multi",
+          [](cls &knl, py::tuple indices_and_args)
+          {
+            set_arg_multi(
+                [&](cl_uint i, py::handle arg) { knl.set_arg_buf(i, arg); },
+                indices_and_args);
+          })
+      .def("_set_arg_buf_pack_multi",
+          [](cls &knl, py::tuple indices_chars_and_args)
+          {
+            set_arg_multi(
+                [&](cl_uint i, py::handle typechar, py::handle arg)
+                { knl.set_arg_buf_pack(i, typechar, arg); },
+                indices_chars_and_args);
+          })
       .DEF_SIMPLE_METHOD(set_arg)
 #if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(get_arg_info)
@@ -440,6 +500,13 @@ void pyopencl_expose_part_2(py::module &m)
       .def(py::self != py::self)
       .def("__hash__", &cls::hash)
       PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_kernel)
+#if PYOPENCL_CL_VERSION >= 0x2010
+      .def("get_sub_group_info", &cls::get_sub_group_info,
+          py::arg("device"),
+          py::arg("param"),
+          py::arg("input_value")=py::none()
+          )
+#endif
       ;
   }
 
@@ -461,7 +528,8 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("local_work_size"),
       py::arg("global_work_offset")=py::none(),
       py::arg("wait_for")=py::none(),
-      py::arg("g_times_l")=false
+      py::arg("g_times_l")=false,
+      py::arg("allow_empty_ndrange")=false
       );
 
   // TODO: clEnqueueNativeKernel
@@ -551,41 +619,6 @@ void pyopencl_expose_part_2(py::module &m)
 #endif
   // }}}
 
-  // {{{ CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD
-
-  {
-    typedef cl_device_topology_amd cls;
-    py::class_<cls>(m, "DeviceTopologyAmd")
-      .def(py::init(
-            [](cl_char bus, cl_char device, cl_char function)
-            {
-              cl_device_topology_amd result;
-              result.pcie.bus = bus;
-              result.pcie.device = device;
-              result.pcie.function = function;
-              return result;
-            }),
-          py::arg("bus")=0,
-          py::arg("device")=0,
-          py::arg("function")=0)
-
-      .def_property("type",
-          [](cls &t) { return t.pcie.type; },
-          [](cls &t, cl_uint val) { t.pcie.type = val; })
-
-      .def_property("bus",
-          [](cls &t) { return t.pcie.bus; },
-          [](cls &t, cl_char val) { t.pcie.bus = val; })
-      .def_property("device",
-          [](cls &t) { return t.pcie.device; },
-          [](cls &t, cl_char val) { t.pcie.device = val; })
-      .def_property("function",
-          [](cls &t) { return t.pcie.function; },
-          [](cls &t, cl_char val) { t.pcie.function = val; })
-      ;
-  }
-
-  // }}}
 }
 
 

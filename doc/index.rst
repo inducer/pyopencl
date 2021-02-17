@@ -88,7 +88,7 @@ Software that works with or enhances PyOpenCL
   :class:`pyopencl.array.Array` instances.
 
 * Robbert Harms and Alard Roebroeck's `MOT
-  <https://github.com/cbclab/MOT>`_ offers a variety of GPU-enabled non-linear optimization algorithms 
+  <https://github.com/cbclab/MOT>`_ offers a variety of GPU-enabled non-linear optimization algorithms
   and MCMC sampling routines for parallel optimization and sampling of multiple problems.
 
 If you know of a piece of software you feel that should be on this list, please
@@ -113,6 +113,8 @@ Contents
     howto
     tools
     misc
+    🚀 Github <https://github.com/inducer/pyopencl>
+    💾 Download Releases <https://pypi.org/project/pyopencl>
 
 Note that this guide does not explain OpenCL programming and technology. Please
 refer to the official `Khronos OpenCL documentation <http://khronos.org/opencl>`_
