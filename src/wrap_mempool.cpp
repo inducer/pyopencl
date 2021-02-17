@@ -270,6 +270,8 @@ namespace
     wrapper
       .def_property_readonly("held_blocks", &cls::held_blocks)
       .def_property_readonly("active_blocks", &cls::active_blocks)
+      .def_property_readonly("managed_bytes", &cls::managed_bytes)
+      .def_property_readonly("active_bytes", &cls::active_bytes)
       .DEF_SIMPLE_METHOD(bin_number)
       .DEF_SIMPLE_METHOD(alloc_size)
       .DEF_SIMPLE_METHOD(free_held)
