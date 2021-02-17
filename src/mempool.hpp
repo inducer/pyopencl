@@ -306,16 +306,16 @@ namespace PYGPU_PACKAGE
         free_held();
       }
 
-      size_type active_blocks()
+      size_type active_blocks() const
       { return m_active_blocks; }
 
-      size_type held_blocks()
+      size_type held_blocks() const
       { return m_held_blocks; }
 
-      size_type managed_bytes()
+      size_type managed_bytes() const
       { return m_managed_bytes; }
 
-      size_type active_bytes()
+      size_type active_bytes() const
       { return m_active_bytes; }
 
       bool try_to_free_memory()
