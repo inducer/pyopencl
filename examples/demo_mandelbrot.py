@@ -175,5 +175,7 @@ if __name__ == "__main__":
         test.create_image()
     else:
         from PIL import ImageTk
-
-        test.run_tk()
+        try:
+            test.run_tk()
+        except tk.TclError:
+            test.create_image()
