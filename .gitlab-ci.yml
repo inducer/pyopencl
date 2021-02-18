@@ -229,7 +229,7 @@ Examples:
     EXTRA_INSTALL="pillow cgen"
     build_py_project_in_venv
     (cd examples; rm -f gl_*)
-    run_examples
+    run_examples --no-require-main
   except:
   - tags
   tags:
