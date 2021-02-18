@@ -29,7 +29,7 @@ except:
     raise
 
 prg.demo(queue, (500,), None, demo_buf)
-cl.enqueue_read_buffer(queue, demo_buf, demo_r).wait()
+cl.enqueue_copy(queue, demo_r, demo_buf).wait()
 
 for res in demo_r:
     print(res)
