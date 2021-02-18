@@ -100,7 +100,7 @@ jobs:
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
                 . ci-support.sh
-                EXTRA_INSTALL="pillow cgen mako"
+                EXTRA_INSTALL="pillow cgen mako imageio"
                 build_py_project_in_conda_env
                 (cd examples; rm -f gl_*)
                 run_examples --no-require-main
