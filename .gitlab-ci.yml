@@ -226,7 +226,7 @@ Examples:
   script: |
     curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
     . ci-support.sh
-    EXTRA_INSTALL="pillow cgen"
+    EXTRA_INSTALL="pillow cgen mako"
     build_py_project_in_venv
     (cd examples; rm -f gl_*)
     run_examples --no-require-main
