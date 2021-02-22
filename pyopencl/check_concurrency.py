@@ -59,7 +59,7 @@ def print_menu(ops):
     m = {"count": 1}
 
     def print_option(text):
-        print('    [%2d] %s' % (m["count"], text))
+        print("    [%2d] %s" % (m["count"], text))
         m["count"] += 1
 
     print("Choose action:")
@@ -75,14 +75,14 @@ def print_menu(ops):
 
 
 def print_op(op, knl):
-    print('Argument:    %s' % op.arg_name)
-    print('Kernel:      %s' % op.kernel_name)
+    print("Argument:    %s" % op.arg_name)
+    print("Kernel:      %s" % op.kernel_name)
     if knl is not None:
         args = CURRENT_BUF_ARGS.get(knl)
         args = [x.name for x in args.values()]
         print("Arguments:   %s" % args)
-    print('Event:       %s' % op.event)
-    print('Queue:       %s (dead %s)' % (op.queue, op.queue() is None))
+    print("Event:       %s" % op.event)
+    print("Queue:       %s (dead %s)" % (op.queue, op.queue() is None))
 
 
 def show_traceback_menu(kernel, arg, current_op, ops):
@@ -137,7 +137,7 @@ def show_traceback_menu(kernel, arg, current_op, ops):
 
 def wrapper_add_local_imports(cc, gen):
     """Wraps :func:`pyopencl.invoker.add_local_imports`"""
-    cc.func('add_local_imports')(gen)
+    cc.func("add_local_imports")(gen)
 
     # NOTE: need to import pyopencl to be able to wrap it in generated code
     gen("import pyopencl as _cl")
@@ -147,7 +147,7 @@ def wrapper_add_local_imports(cc, gen):
 def wrapper_set_arg(cc, kernel, index, obj):
     """Wraps :meth:`pyopencl.Kernel.set_arg`"""
 
-    logger.debug('set_arg: %s %s', kernel.function_name, index)
+    logger.debug("set_arg: %s %s", kernel.function_name, index)
     if isinstance(obj, cl.Buffer):
         arg_dict = CURRENT_BUF_ARGS.setdefault(kernel, {})
 
@@ -163,7 +163,7 @@ def wrapper_set_arg(cc, kernel, index, obj):
                 buf=weakref.ref(obj),
                 )
 
-    return cc.func('set_arg')(kernel, index, obj)
+    return cc.func("set_arg")(kernel, index, obj)
 
 
 def wrapper_wait_for_events(cc, wait_for):
@@ -182,7 +182,7 @@ def wrapper_finish(cc, queue):
     if queue in QUEUE_TO_EVENTS:
         QUEUE_TO_EVENTS[queue].clear()
 
-    return cc.func('finish')(queue)
+    return cc.func("finish")(queue)
 
 
 def wrapper_enqueue_nd_range_kernel(cc,
@@ -190,8 +190,8 @@ def wrapper_enqueue_nd_range_kernel(cc,
         global_offset=None, wait_for=None, g_times_l=None):
     """Wraps :func:`pyopencl.enqueue_nd_range_kernel`"""
 
-    logger.debug('enqueue_nd_range_kernel: %s', kernel.function_name)
-    evt = cc.func('enqueue_nd_range_kernel')(queue, kernel,
+    logger.debug("enqueue_nd_range_kernel: %s", kernel.function_name)
+    evt = cc.func("enqueue_nd_range_kernel")(queue, kernel,
             global_size, local_size, global_offset, wait_for, g_times_l)
     QUEUE_TO_EVENTS.setdefault(queue, set()).add(evt)
 
@@ -261,7 +261,7 @@ def with_concurrency_check(func):
         with ConcurrencyCheck(show_traceback=False):
             return func(*args, **kwargs)
 
-    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    formatter = logging.Formatter("%(name)-12s: %(levelname)-8s %(message)s")
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
 
@@ -304,7 +304,7 @@ class ConcurrencyCheck(object):
 
         self._overwritten_attrs = {}
         if self._entered:
-            raise RuntimeError('cannot nest `ConcurrencyCheck`s')
+            raise RuntimeError("cannot nest `ConcurrencyCheck`s")
 
     def func(self, attr):
         return self._overwritten_attrs[attr].func
@@ -318,20 +318,20 @@ class ConcurrencyCheck(object):
             self._overwritten_attrs[attr] = p
 
         # allow monkeypatching in generated code
-        monkeypatch(cl.invoker, 'add_local_imports')
+        monkeypatch(cl.invoker, "add_local_imports")
         # fix version to avoid handling enqueue_fill_buffer
         # in pyopencl.array.Array._zero_fill::1223
-        monkeypatch(cl, 'get_cl_header_version', wrapper=lambda: (1, 1))
+        monkeypatch(cl, "get_cl_header_version", wrapper=lambda: (1, 1))
 
         # catch kernel argument buffers
-        monkeypatch(cl.Kernel, 'set_arg')
+        monkeypatch(cl.Kernel, "set_arg")
         # catch events
-        monkeypatch(cl.Event, '__hash__',
+        monkeypatch(cl.Event, "__hash__",
                 wrapper=lambda x: x.int_ptr)
-        monkeypatch(cl, 'wait_for_events')
-        monkeypatch(cl.CommandQueue, 'finish')
+        monkeypatch(cl, "wait_for_events")
+        monkeypatch(cl.CommandQueue, "finish")
         # catch kernel calls to check concurrency
-        monkeypatch(cl, 'enqueue_nd_range_kernel')
+        monkeypatch(cl, "enqueue_nd_range_kernel")
 
         return self
 
