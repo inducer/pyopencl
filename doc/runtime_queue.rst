@@ -78,14 +78,9 @@ Event
         may be used as attributes on instances of this class
         to directly query info attributes.
 
-    .. attribute:: profile.info
+    .. attribute:: profile
 
-        Lower case versions of the :class:`profiling_info` constants
-        may be used as attributes on the attribute `profile` of this
-        class to directly query profiling info.
-
-        For example, you may use *evt.profile.end* instead of
-        *evt.get_profiling_info(pyopencl.profiling_info.END)*.
+        An instance of :class:`ProfilingInfoGetter`.
 
     .. method:: get_info(param)
 
@@ -113,6 +108,17 @@ Event
         .. versionadded:: 2015.2
 
     |comparable|
+
+.. class:: ProfilingInfoGetter
+
+   .. attribute:: info
+
+        Lower case versions of the :class:`profiling_info` constants
+        may be used as attributes on the attribute `profile` of this
+        class to directly query profiling info.
+
+        For example, you may use *evt.profile.end* instead of
+        *evt.get_profiling_info(pyopencl.profiling_info.END)*.
 
 Event Subclasses
 ----------------

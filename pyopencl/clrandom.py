@@ -1,6 +1,3 @@
-# encoding: utf8
-from __future__ import division, absolute_import
-
 __copyright__ = "Copyright (C) 2009-16 Andreas Kloeckner"
 
 __license__ = """
@@ -26,7 +23,7 @@ THE SOFTWARE.
 
 # {{{ documentation
 
-__doc__ = u"""
+__doc__ = """
 PyOpenCL now includes and uses some of the `Random123 random number generators
 <https://www.deshawresearch.com/resources_random123.html>`_ by D.E. Shaw
 Research.  In addition to being usable through the convenience functions above,
@@ -72,7 +69,7 @@ import numpy as np
 
 # {{{ RanluxGenerator (deprecated)
 
-class RanluxGenerator(object):
+class RanluxGenerator:
     """
     .. warning::
 
@@ -116,6 +113,10 @@ class RanluxGenerator(object):
         .. versionchanged:: 2013.1
             Added default value for `num_work_items`.
         """
+
+        from warnings import warn
+        warn("Ranlux random number generation is deprecated and will go away "
+                "in 2022.", DeprecationWarning, stacklevel=2)
 
         if luxury is None:
             luxury = 4
@@ -333,10 +334,13 @@ class RanluxGenerator(object):
             queue = ary.queue
 
         knl, size_multiplier = self.get_gen_kernel(ary.dtype, "uniform")
-        return knl(queue,
+        evt = knl(queue,
                 (self.num_work_items,), None,
                 self.state.data, ary.data, ary.size*size_multiplier,
-                b-a, a)
+                b-a, a, wait_for=ary.events)
+        ary.add_event(evt)
+        self.state.add_event(evt)
+        return ary
 
     def uniform(self, *args, **kwargs):
         """Make a new empty array, apply :meth:`fill_uniform` to it.
@@ -345,9 +349,7 @@ class RanluxGenerator(object):
         b = kwargs.pop("b", 1)
 
         result = cl_array.empty(*args, **kwargs)
-
-        result.add_event(
-                self.fill_uniform(result, queue=result.queue, a=a, b=b))
+        self.fill_uniform(result, queue=result.queue, a=a, b=b)
         return result
 
     def fill_normal(self, ary, mu=0, sigma=1, queue=None):
@@ -363,9 +365,13 @@ class RanluxGenerator(object):
             queue = ary.queue
 
         knl, size_multiplier = self.get_gen_kernel(ary.dtype, "normal")
-        return knl(queue,
+        evt = knl(queue,
                 (self.num_work_items,), self.wg_size,
-                self.state.data, ary.data, ary.size*size_multiplier, sigma, mu)
+                self.state.data, ary.data, ary.size*size_multiplier, sigma, mu,
+                wait_for=ary.events)
+        ary.add_event(evt)
+        self.state.add_event(evt)
+        return evt
 
     def normal(self, *args, **kwargs):
         """Make a new empty array, apply :meth:`fill_normal` to it.
@@ -374,29 +380,27 @@ class RanluxGenerator(object):
         sigma = kwargs.pop("sigma", 1)
 
         result = cl_array.empty(*args, **kwargs)
-
-        result.add_event(
-                self.fill_normal(result, queue=result.queue, mu=mu, sigma=sigma))
+        self.fill_normal(result, queue=result.queue, mu=mu, sigma=sigma)
         return result
 
     @memoize_method
     def get_sync_kernel(self):
         src = """//CL//
-            %(defines)s
+            {defines}
 
             #include <pyopencl-ranluxcl.cl>
 
             kernel void sync(
                 global ranluxcl_state_t *ranluxcltab)
-            {
+            {{
               ranluxcl_state_t ranluxclstate;
               ranluxcl_download_seed(&ranluxclstate, ranluxcltab);
               ranluxcl_synchronize(&ranluxclstate);
               ranluxcl_upload_seed(&ranluxclstate, ranluxcltab);
-            }
-            """ % {
-                "defines": self.generate_settings_defines(),
-                }
+            }}
+            """.format(
+                defines=self.generate_settings_defines(),
+                )
         prg = cl.Program(self.context, src).build()
         return prg.sync
 
@@ -414,7 +418,7 @@ class RanluxGenerator(object):
 
 # {{{ Random123 generators
 
-class Random123GeneratorBase(object):
+class Random123GeneratorBase:
     """
     .. versionadded:: 2016.2
 
@@ -535,9 +539,9 @@ class Random123GeneratorBase(object):
                     "unsupported RNG distribution/data type combination '%s/%s'"
                     % rng_key)
 
-        kernel_name = "rng_gen_%s_%s" % (self.generator_name, distribution)
+        kernel_name = f"rng_gen_{self.generator_name}_{distribution}"
         src = """//CL//
-            #include <%(header_name)s>
+            #include <{header_name}>
 
             #ifndef M_PI
             #ifdef M_PI_F
@@ -547,29 +551,29 @@ class Random123GeneratorBase(object):
             #endif
             #endif
 
-            typedef %(output_t)s output_t;
-            typedef %(output_t)s4 output_vec_t;
-            typedef %(gen_name)s_ctr_t ctr_t;
-            typedef %(gen_name)s_key_t key_t;
+            typedef {output_t} output_t;
+            typedef {output_t}4 output_vec_t;
+            typedef {gen_name}_ctr_t ctr_t;
+            typedef {gen_name}_key_t key_t;
 
             uint4 gen_bits(key_t *key, ctr_t *ctr)
-            {
-                union {
+            {{
+                union {{
                     ctr_t ctr_el;
                     uint4 vec_el;
-                } u;
+                }} u;
 
-                u.ctr_el = %(gen_name)s(*ctr, *key);
+                u.ctr_el = {gen_name}(*ctr, *key);
                 if (++ctr->v[0] == 0)
                     if (++ctr->v[1] == 0)
                         ++ctr->v[2];
 
                 return u.vec_el;
-            }
+            }}
 
-            #if %(include_box_muller)s
+            #if {include_box_muller}
             output_vec_t box_muller(output_vec_t x)
-            {
+            {{
                 #define BOX_MULLER(I, COMPA, COMPB) \
                     output_t r##I = sqrt(-2*log(x.COMPA)); \
                     output_t c##I; \
@@ -578,14 +582,14 @@ class Random123GeneratorBase(object):
                 BOX_MULLER(0, x, y);
                 BOX_MULLER(1, z, w);
                 return (output_vec_t) (r0*c0, r0*s0, r1*c1, r1*s1);
-            }
+            }}
             #endif
 
-            #define GET_RANDOM_NUM(gen) %(rng_expr)s
+            #define GET_RANDOM_NUM(gen) {rng_expr}
 
-            kernel void %(kernel_name)s(
+            kernel void {kernel_name}(
                 int k1,
-                #if %(key_length)s > 2
+                #if {key_length} > 2
                 int k2, int k3,
                 #endif
                 int c0, int c1, int c2, int c3,
@@ -593,23 +597,23 @@ class Random123GeneratorBase(object):
                 long out_size,
                 output_t scale,
                 output_t shift)
-            {
-                #if %(key_length)s == 2
-                key_t k = {{get_global_id(0), k1}};
+            {{
+                #if {key_length} == 2
+                key_t k = {{{{get_global_id(0), k1}}}};
                 #else
-                key_t k = {{get_global_id(0), k1, k2, k3}};
+                key_t k = {{{{get_global_id(0), k1, k2, k3}}}};
                 #endif
 
-                ctr_t c = {{c0, c1, c2, c3}};
+                ctr_t c = {{{{c0, c1, c2, c3}}}};
 
                 // output bulk
                 unsigned long idx = get_global_id(0)*4;
                 while (idx + 4 < out_size)
-                {
+                {{
                     output_vec_t ran = GET_RANDOM_NUM(gen_bits(&k, &c));
                     vstore4(ran, 0, &output[idx]);
                     idx += 4*get_global_size(0);
-                }
+                }}
 
                 // output tail
                 output_vec_t tail_ran = GET_RANDOM_NUM(gen_bits(&k, &c));
@@ -621,16 +625,16 @@ class Random123GeneratorBase(object):
                   output[idx+2] = tail_ran.z;
                 if (idx+3 < out_size)
                   output[idx+3] = tail_ran.w;
-            }
-            """ % {
-                "kernel_name": kernel_name,
-                "gen_name": self.generator_name,
-                "header_name": self.header_name,
-                "output_t": c_type,
-                "key_length": self.key_length,
-                "include_box_muller": int(distribution == "normal"),
-                "rng_expr": rng_expr
-                }
+            }}
+            """.format(
+                kernel_name=kernel_name,
+                gen_name=self.generator_name,
+                header_name=self.header_name,
+                output_t=c_type,
+                key_length=self.key_length,
+                include_box_muller=int(distribution == "normal"),
+                rng_expr=rng_expr
+                )
 
         prg = cl.Program(self.context, src).build()
         knl = getattr(prg, kernel_name)
@@ -658,10 +662,11 @@ class Random123GeneratorBase(object):
                 scale, shift]
 
         n = ary.size
-        from pyopencl.array import splay
-        gsize, lsize = splay(queue, ary.size)
+        from pyopencl.array import _splay
+        gsize, lsize = _splay(queue.device, ary.size)
 
         evt = knl(queue, gsize, lsize, *args)
+        ary.add_event(evt)
 
         self.counter[0] += n * counter_multiplier
         c1_incr, self.counter[0] = divmod(self.counter[0], self.counter_max)
@@ -683,9 +688,7 @@ class Random123GeneratorBase(object):
         b = kwargs.pop("b", 1)
 
         result = cl_array.empty(*args, **kwargs)
-
-        result.add_event(
-                self.fill_uniform(result, queue=result.queue, a=a, b=b))
+        self.fill_uniform(result, queue=result.queue, a=a, b=b)
         return result
 
     def fill_normal(self, ary, mu=0, sigma=1, queue=None):
@@ -702,9 +705,7 @@ class Random123GeneratorBase(object):
         sigma = kwargs.pop("sigma", 1)
 
         result = cl_array.empty(*args, **kwargs)
-
-        result.add_event(
-                self.fill_normal(result, queue=result.queue, mu=mu, sigma=sigma))
+        self.fill_normal(result, queue=result.queue, mu=mu, sigma=sigma)
         return result
 
 
@@ -763,8 +764,7 @@ def rand(queue, shape, dtype, luxury=None, a=0, b=1):
     from pyopencl.array import Array
     gen = _get_generator(queue.context)
     result = Array(queue, shape, dtype)
-    result.add_event(
-            gen.fill_uniform(result, a=a, b=b))
+    gen.fill_uniform(result, a=a, b=b)
     return result
 
 

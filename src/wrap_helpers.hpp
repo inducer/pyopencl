@@ -71,6 +71,18 @@ namespace py = pybind11;
       NAME.push_back(it.cast<TYPE>()); \
   }
 
+#define COPY_PY_ARRAY(FUNC_NAME, TYPE, NAME, COUNTER) \
+  { \
+    COUNTER = 0; \
+    for (auto it: py_##NAME) \
+    { \
+      if (COUNTER == NAME.size()) \
+        throw error(FUNC_NAME, \
+            CL_INVALID_VALUE, "too many entries in " #NAME " argument"); \
+      NAME[COUNTER++] = it.cast<TYPE>(); \
+    } \
+  }
+
 #define COPY_PY_COORD_TRIPLE(NAME) \
   size_t NAME[3] = {0, 0, 0}; \
   { \
@@ -173,7 +185,7 @@ namespace
       py::arg("retain")=true, \
       "(static method) Return a new Python object referencing the C-level " \
       ":c:type:`" #CL_TYPENAME "` object at the location pointed to " \
-      "by *int_ptr_value*. The relevant :c:func:`clRetain*` function " \
+      "by *int_ptr_value*. The relevant ``clRetain*`` function " \
       "will be called if *retain* is True." \
       "If the previous owner of the object will *not* release the reference, " \
       "*retain* should be set to *False*, to effectively transfer ownership to " \

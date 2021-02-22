@@ -1,6 +1,5 @@
 """PyOpenCL compiler cache."""
 
-from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2011 Andreas Kloeckner"
 
@@ -24,8 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import six
-from six.moves import zip
 import pyopencl._cl as _cl
 import re
 import sys
@@ -36,13 +33,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-try:
-    import hashlib
-    new_hash = hashlib.md5
-except ImportError:
-    # for Python << 2.5
-    import md5
-    new_hash = md5.new
+import hashlib
+new_hash = hashlib.md5
 
 
 def _erase_dir(dir):
@@ -54,7 +46,7 @@ def _erase_dir(dir):
 
 
 def update_checksum(checksum, obj):
-    if isinstance(obj, six.text_type):
+    if isinstance(obj, str):
         checksum.update(obj.encode("utf8"))
     else:
         checksum.update(obj)
@@ -62,7 +54,7 @@ def update_checksum(checksum, obj):
 
 # {{{ cleanup
 
-class CleanupBase(object):
+class CleanupBase:
     pass
 
 
@@ -173,8 +165,8 @@ def get_dependencies(src, include_path):
 
                 if included_file_name not in result:
                     try:
-                        src_file = open(included_file_name, "rt")
-                    except IOError:
+                        src_file = open(included_file_name)
+                    except OSError:
                         continue
 
                     try:
@@ -203,7 +195,7 @@ def get_dependencies(src, include_path):
 
     _inner(src)
 
-    result = list((name,) + vals for name, vals in six.iteritems(result))
+    result = list((name,) + vals for name, vals in result.items())
     result.sort()
 
     return result
@@ -276,11 +268,11 @@ def retrieve_from_cache(cache_dir, cache_key):
             # {{{ load info file
 
             try:
-                from six.moves.cPickle import load
+                from pickle import load
 
                 try:
                     info_file = open(info_path, "rb")
-                except IOError:
+                except OSError:
                     raise _InvalidInfoFile()
 
                 try:
@@ -335,8 +327,8 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
     if cache_dir is None:
         import appdirs
         cache_dir = join(appdirs.user_cache_dir("pyopencl", "pyopencl"),
-                "pyopencl-compiler-cache-v2-py%s" % (
-                    ".".join(str(i) for i in sys.version_info),))
+                "pyopencl-compiler-cache-v2-py{}".format(
+                    ".".join(str(i) for i in sys.version_info)))
 
     # {{{ ensure cache directory exists
 
@@ -374,7 +366,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
             logs.append(log)
 
     message = (75*"="+"\n").join(
-            "Build on %s succeeded, but said:\n\n%s" % (dev, log)
+            f"Build on {dev} succeeded, but said:\n\n{log}"
             for dev, log in zip(devices, logs)
             if log is not None and log.strip())
 
@@ -453,7 +445,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
                     outf.write(binary)
                     outf.close()
 
-                    from six.moves.cPickle import dump
+                    from pickle import dump
                     info_file = open(info_path, "wb")
                     dump(_SourceInfo(
                         dependencies=get_dependencies(src, include_path),
@@ -474,28 +466,36 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
 def create_built_program_from_source_cached(ctx, src, options_bytes, devices=None,
         cache_dir=None, include_path=None):
     try:
+        was_cached = False
+        already_built = False
         if cache_dir is not False:
             prg, already_built, was_cached = \
                     _create_built_program_from_source_cached(
                             ctx, src, options_bytes, devices, cache_dir,
                             include_path=include_path)
+            if was_cached and not already_built:
+                prg.build(options_bytes, devices)
+                already_built = True
         else:
             prg = _cl._Program(ctx, src)
-            was_cached = False
-            already_built = False
 
     except Exception as e:
         from pyopencl import Error
-        if (isinstance(e, Error)
-                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE):  # noqa pylint:disable=no-member
-            # no need to try again
+        build_program_failure = (isinstance(e, Error)
+                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE)  # noqa pylint:disable=no-member
+
+        # Mac error on intel CPU driver: can't build from cached version.
+        # If we get a build_program_failure from the cached version then
+        # build from source instead, otherwise report the failure.
+        if build_program_failure and not was_cached:
             raise
 
-        from warnings import warn
-        from traceback import format_exc
-        warn("PyOpenCL compiler caching failed with an exception:\n"
-                "[begin exception]\n%s[end exception]"
-                % format_exc())
+        if not build_program_failure:
+            from warnings import warn
+            from traceback import format_exc
+            warn("PyOpenCL compiler caching failed with an exception:\n"
+                    "[begin exception]\n%s[end exception]"
+                    % format_exc())
 
         prg = _cl._Program(ctx, src)
         was_cached = False

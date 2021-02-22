@@ -4,14 +4,12 @@ PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
 .. image:: https://gitlab.tiker.net/inducer/pyopencl/badges/master/pipeline.svg
     :alt: Gitlab Build Status
     :target: https://gitlab.tiker.net/inducer/pyopencl/commits/master
-.. image:: https://dev.azure.com/ak-spam/inducer/_apis/build/status/inducer.pyopencl?branchName=master
-    :alt: Azure Build Status
-    :target: https://dev.azure.com/ak-spam/inducer/_build/latest?definitionId=5&branchName=master
+.. image:: https://github.com/inducer/pyopencl/workflows/CI/badge.svg?branch=master&event=push
+    :alt: Github Build Status
+    :target: https://github.com/inducer/pyopencl/actions?query=branch%3Amaster+workflow%3ACI+event%3Apush
 .. image:: https://badge.fury.io/py/pyopencl.png
     :alt: Python Package Index Release Page
     :target: https://pypi.org/project/pyopencl/
-
-(Also: `Travis CI <https://travis-ci.org/inducer/pyopencl/builds>`_ to build binary wheels for releases, see `#264 <https://github.com/inducer/pyopencl/pull/264>`_)
 
 PyOpenCL lets you access GPUs and other massively parallel compute
 devices from Python. It tries to offer computing goodness in the
@@ -24,7 +22,7 @@ spirit of its sister project `PyCUDA <https://mathema.tician.de/software/pycuda>
   crash-free code.
 
 * Completeness. PyOpenCL puts the full power of OpenCL's API at
-  your disposal, if you wish.  Every obscure `get_info()` query and 
+  your disposal, if you wish.  Every obscure `get_info()` query and
   all CL calls are accessible.
 
 * Automatic Error Checking. All CL errors are automatically
@@ -36,11 +34,11 @@ spirit of its sister project `PyCUDA <https://mathema.tician.de/software/pycuda>
 * Helpful and complete `Documentation <https://documen.tician.de/pyopencl>`__
   as well as a `Wiki <https://wiki.tiker.net/PyOpenCL>`_.
 
-* Liberal license. PyOpenCL is open-source under the 
+* Liberal license. PyOpenCL is open-source under the
   `MIT license <https://en.wikipedia.org/wiki/MIT_License>`_
   and free for commercial, academic, and private use.
 
-* Broad support. PyOpenCL was tested and works with Apple's, AMD's, and Nvidia's 
+* Broad support. PyOpenCL was tested and works with Apple's, AMD's, and Nvidia's
   CL implementations.
 
 Simple 4-step `install instructions <https://documen.tician.de/pyopencl/misc.html#installation>`_

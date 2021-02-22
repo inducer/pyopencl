@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-from __future__ import division, absolute_import, print_function
-
 __copyright__ = "Copyright (C) 2009-15 Andreas Kloeckner"
 
 __license__ = """
@@ -24,10 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import six
-from six.moves import input, intern
+from sys import intern
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
+
+# must import, otherwise dtype registry will not be fully populated
+import pyopencl.cltypes  # noqa: F401
 
 import logging
 logger = logging.getLogger(__name__)
@@ -50,16 +48,16 @@ import numpy as np
 
 import sys
 
-_PYPY = '__pypy__' in sys.builtin_module_names
-_CPY2 = not _PYPY and sys.version_info < (3,)
+_PYPY = "__pypy__" in sys.builtin_module_names
 
-from pyopencl._cl import (  # noqa
+from pyopencl._cl import (  # noqa: F401
         get_cl_header_version,
         program_kind,
         status_code,
         platform_info,
         device_type,
         device_info,
+        device_topology_type_amd,
         device_fp_config,
         device_mem_cache_type,
         device_local_mem_type,
@@ -81,9 +79,12 @@ from pyopencl._cl import (  # noqa
         mem_object_type,
         mem_info,
         image_info,
+        pipe_info,
+        pipe_properties,
         addressing_mode,
         filter_mode,
         sampler_info,
+        sampler_properties,
         map_flags,
         program_info,
         program_build_info,
@@ -95,6 +96,7 @@ from pyopencl._cl import (  # noqa
         kernel_arg_access_qualifier,
         kernel_arg_type_qualifier,
         kernel_work_group_info,
+        kernel_sub_group_info,
 
         event_info,
         command_type,
@@ -103,6 +105,11 @@ from pyopencl._cl import (  # noqa
         mem_migration_flags,
         device_partition_property,
         device_affinity_domain,
+        device_atomic_capabilities,
+        device_device_enqueue_capabilities,
+
+        version_bits,
+        khronos_vendor_id,
 
         Error, MemoryError, LogicError, RuntimeError,
 
@@ -149,8 +156,16 @@ from pyopencl._cl import (  # noqa
 
         Image,
         Sampler,
-        DeviceTopologyAmd,
+
+        # This class is available unconditionally, even though CL only
+        # has it on CL2.0 and newer.
+        Pipe,
         )
+
+try:
+    from pyopencl._cl import DeviceTopologyAmd  # noqa: F401
+except ImportError:
+    pass
 
 if not _PYPY:
     # FIXME: Add back to default set when pypy support catches up
@@ -161,7 +176,7 @@ if not _PYPY:
 
 if get_cl_header_version() >= (1, 1):
     from pyopencl._cl import (  # noqa
-          UserEvent,
+        UserEvent,
         )
 if get_cl_header_version() >= (1, 2):
     from pyopencl._cl import (  # noqa
@@ -217,6 +232,24 @@ CONSTANT_CLASSES = tuple(
         if _inspect.isclass(getattr(_cl, name))
         and name[0].islower() and name not in ["zip", "map", "range"])
 
+BITFIELD_CONSTANT_CLASSES = (
+        _cl.device_type,
+        _cl.device_fp_config,
+        _cl.device_exec_capabilities,
+        _cl.command_queue_properties,
+        _cl.mem_flags,
+        _cl.map_flags,
+        _cl.kernel_arg_type_qualifier,
+        _cl.device_affinity_domain,
+        _cl.mem_migration_flags,
+        _cl.device_svm_capabilities,
+        _cl.queue_properties,
+        _cl.svm_mem_flags,
+        _cl.device_atomic_capabilities,
+        _cl.device_device_enqueue_capabilities,
+        _cl.version_bits,
+        )
+
 
 # {{{ diagnostics
 
@@ -240,27 +273,24 @@ def compiler_output(text):
 # {{{ find pyopencl shipped source code
 
 def _find_pyopencl_include_path():
-    from pkg_resources import Requirement, resource_filename, DistributionNotFound
+    from os.path import join, abspath, dirname, exists
     try:
+        # Try to find the include path in the same directory as this file
+        include_path = join(abspath(dirname(__file__)), "cl")
+        if not exists(include_path):
+            raise OSError("unable to find pyopencl include path")
+    except Exception:
         # Try to find the resource with pkg_resources (the recommended
-        # setuptools approach)
+        # setuptools approach). This is very slow.
+        from pkg_resources import Requirement, resource_filename
         include_path = resource_filename(
                 Requirement.parse("pyopencl"), "pyopencl/cl")
-    except DistributionNotFound:
-        # If pkg_resources can't find it (e.g. if the module is part of a
-        # frozen application), try to find the include path in the same
-        # directory as this file
-        from os.path import join, abspath, dirname, exists
-
-        include_path = join(abspath(dirname(__file__)), "cl")
-        # If that doesn't exist, just re-raise the exception caught from
-        # resource_filename.
         if not exists(include_path):
-            raise
+            raise OSError("unable to find pyopencl include path")
 
     # Quote the path if it contains a space and is not quoted already.
     # See https://github.com/inducer/pyopencl/issues/250 for discussion.
-    if ' ' in include_path and not include_path.startswith('"'):
+    if " " in include_path and not include_path.startswith('"'):
         return '"' + include_path + '"'
     else:
         return include_path
@@ -271,16 +301,11 @@ def _find_pyopencl_include_path():
 # {{{ build option munging
 
 def _split_options_if_necessary(options):
-    if isinstance(options, six.string_types):
+    if isinstance(options, str):
         import shlex
-        if six.PY2:
-            # shlex.split takes bytes (py2 str) on py2
-            if isinstance(options, six.text_type):
-                options = options.encode("utf-8")
-        else:
-            # shlex.split takes unicode (py3 str) on py3
-            if isinstance(options, six.binary_type):
-                options = options.decode("utf-8")
+        # shlex.split takes unicode (py3 str) on py3
+        if isinstance(options, bytes):
+            options = options.decode("utf-8")
 
         options = shlex.split(options)
 
@@ -317,7 +342,7 @@ def _find_include_path(options):
 
 def _options_to_bytestring(options):
     def encode_if_necessary(s):
-        if isinstance(s, six.text_type):
+        if isinstance(s, str):
             return s.encode("utf-8")
         else:
             return s
@@ -361,11 +386,12 @@ def enable_debugging(platform_or_context):
                 % platform.name)
 
 
-class Program(object):
+class Program:
     def __init__(self, arg1, arg2=None, arg3=None):
         if arg2 is None:
             # 1-argument form: program
             self._prg = arg1
+            self._context = self._prg.get_info(program_info.CONTEXT)
 
         elif arg3 is None:
             # 2-argument form: context, source
@@ -379,7 +405,7 @@ class Program(object):
                 return
 
             import sys
-            if isinstance(source, six.text_type) and sys.version_info < (3,):
+            if isinstance(source, str) and sys.version_info < (3,):
                 from warnings import warn
                 warn("Received OpenCL source code in Unicode, "
                      "should be ASCII string. Attempting conversion.",
@@ -407,7 +433,6 @@ class Program(object):
                     stacklevel=3)
 
             self._prg = _cl._Program(self._context, self._source)
-            del self._context
             return self._prg
 
     def get_info(self, arg):
@@ -476,7 +501,7 @@ class Program(object):
                 self._context, options)
 
         if cache_dir is None:
-            cache_dir = getattr(self._context, 'cache_dir', None)
+            cache_dir = getattr(self._context, "cache_dir", None)
 
         import os
         build_descr = None
@@ -608,7 +633,7 @@ def _add_functionality():
     # {{{ Platform
 
     def platform_repr(self):
-        return "<pyopencl.Platform '%s' at 0x%x>" % (self.name, self.int_ptr)
+        return f"<pyopencl.Platform '{self.name}' at 0x{self.int_ptr:x}>"
 
     Platform.__repr__ = platform_repr
     Platform._get_cl_version = generic_get_cl_version
@@ -618,16 +643,25 @@ def _add_functionality():
     # {{{ Device
 
     def device_repr(self):
-        return "<pyopencl.Device '%s' on '%s' at 0x%x>" % (
+        return "<pyopencl.Device '{}' on '{}' at 0x{:x}>".format(
                 self.name.strip(), self.platform.name.strip(), self.int_ptr)
 
+    def device_hashable_model_and_version_identifier(self):
+        return ("v1", self.vendor, self.vendor_id, self.name, self.version)
+
     def device_persistent_unique_id(self):
-        return (self.vendor, self.vendor_id, self.name, self.version)
+        from warnings import warn
+        warn("Device.persistent_unique_id is deprecated. "
+                "Use Device.hashable_model_and_version_identifier instead.",
+                DeprecationWarning, stacklevel=2)
+        return device_hashable_model_and_version_identifier(self)
 
     Device.__repr__ = device_repr
 
     # undocumented for now:
     Device._get_cl_version = generic_get_cl_version
+    Device.hashable_model_and_version_identifier = property(
+            device_hashable_model_and_version_identifier)
     Device.persistent_unique_id = property(device_persistent_unique_id)
 
     # }}}
@@ -648,7 +682,7 @@ def _add_functionality():
         context_old_init(self, devices, properties, dev_type)
 
     def context_repr(self):
-        return "<pyopencl.Context at 0x%x on %s>" % (self.int_ptr,
+        return "<pyopencl.Context at 0x{:x} on {}>".format(self.int_ptr,
                 ", ".join(repr(dev) for dev in self.devices))
 
     def context_get_cl_version(self):
@@ -669,7 +703,7 @@ def _add_functionality():
         self.finish()
 
     def command_queue_get_cl_version(self):
-        return self.context._get_cl_version()
+        return self.device._get_cl_version()
 
     CommandQueue.__enter__ = command_queue_enter
     CommandQueue.__exit__ = command_queue_exit
@@ -697,7 +731,7 @@ def _add_functionality():
             self._build(options=options_bytes, devices=devices)
         except Error as e:
             msg = str(e) + "\n\n" + (75*"="+"\n").join(
-                    "Build on %s:\n\n%s" % (dev, log)
+                    f"Build on {dev}:\n\n{log}"
                     for dev, log in self._get_build_logs())
             code = e.code
             routine = e.routine
@@ -714,7 +748,7 @@ def _add_functionality():
             raise err
 
         message = (75*"="+"\n").join(
-                "Build on %s succeeded, but said:\n\n%s" % (dev, log)
+                f"Build on {dev} succeeded, but said:\n\n{log}"
                 for dev, log in self._get_build_logs()
                 if log is not None and log.strip())
 
@@ -785,8 +819,8 @@ def _add_functionality():
         self._wg_info_cache = {}
         return self
 
-    def kernel_set_scalar_arg_dtypes(self, scalar_arg_dtypes):
-        self._scalar_arg_dtypes = tuple(scalar_arg_dtypes)
+    def kernel_set_arg_types(self, arg_types):
+        arg_types = tuple(arg_types)
 
         # {{{ arg counting bug handling
 
@@ -813,21 +847,31 @@ def _add_functionality():
         # }}}
 
         from pyopencl.invoker import generate_enqueue_and_set_args
-        self._enqueue, self._set_args = generate_enqueue_and_set_args(
-                self.function_name,
-                len(scalar_arg_dtypes), self.num_args,
-                self._scalar_arg_dtypes,
-                warn_about_arg_count_bug=warn_about_arg_count_bug,
-                work_around_arg_count_bug=work_around_arg_count_bug)
+        enqueue, my_set_args = \
+                generate_enqueue_and_set_args(
+                        self.function_name,
+                        len(arg_types), self.num_args,
+                        arg_types,
+                        warn_about_arg_count_bug=warn_about_arg_count_bug,
+                        work_around_arg_count_bug=work_around_arg_count_bug)
+
+        # Make ourselves a kernel-specific class, so that we're able to override
+        # __call__. Inspired by https://stackoverflow.com/a/38541437
+        class KernelWithCustomEnqueue(type(self)):
+            __call__ = enqueue
+            set_args = my_set_args
+
+        self.__class__ = KernelWithCustomEnqueue
 
     def kernel_get_work_group_info(self, param, device):
+        cache_key = (param, device.int_ptr)
         try:
-            return self._wg_info_cache[param, device]
+            return self._wg_info_cache[cache_key]
         except KeyError:
             pass
 
         result = kernel_old_get_work_group_info(self, param, device)
-        self._wg_info_cache[param, device] = result
+        self._wg_info_cache[cache_key] = result
         return result
 
     def kernel_set_args(self, *args, **kwargs):
@@ -837,6 +881,9 @@ def _add_functionality():
     def kernel_call(self, queue, global_size, local_size, *args, **kwargs):
         # __call__ can't be overridden directly, so we need this
         # trampoline hack.
+
+        # Note: This is only used for the generic __call__, before
+        # kernel_set_scalar_arg_dtypes is called.
         return self._enqueue(self, queue, global_size, local_size, *args, **kwargs)
 
     def kernel_capture_call(self, filename, queue, global_size, local_size,
@@ -856,7 +903,11 @@ def _add_functionality():
     Kernel.__init__ = kernel_init
     Kernel._setup = kernel__setup
     Kernel.get_work_group_info = kernel_get_work_group_info
-    Kernel.set_scalar_arg_dtypes = kernel_set_scalar_arg_dtypes
+
+    # FIXME: Possibly deprecate this version
+    Kernel.set_scalar_arg_dtypes = kernel_set_arg_types
+    Kernel.set_arg_types = kernel_set_arg_types
+
     Kernel.set_args = kernel_set_args
     Kernel.__call__ = kernel_call
     Kernel.capture_call = kernel_capture_call
@@ -867,7 +918,7 @@ def _add_functionality():
     # {{{ ImageFormat
 
     def image_format_repr(self):
-        return "ImageFormat(%s, %s)" % (
+        return "ImageFormat({}, {})".format(
                 channel_order.to_string(self.channel_order,
                     "<unknown channel order 0x%x>"),
                 channel_type.to_string(self.channel_data_type,
@@ -979,7 +1030,7 @@ def _add_functionality():
     class _ImageInfoGetter:
         def __init__(self, event):
             from warnings import warn
-            warn("Image.image.attr is deprecated. "
+            warn("Image.image.attr is deprecated and will go away in 2021. "
                     "Use Image.attr directly, instead.")
 
             self.event = event
@@ -1022,7 +1073,7 @@ def _add_functionality():
                         val.code(), "<unknown error %d>")
             routine = val.routine()
             if routine:
-                result = "%s failed: %s" % (routine, result)
+                result = f"{routine} failed: {result}"
             what = val.what()
             if what:
                 if result:
@@ -1094,10 +1145,8 @@ def _add_functionality():
         """
         svmallocation_old_init(self, ctx, size, alignment, flags)
 
-        read_write = (
-                flags & mem_flags.WRITE_ONLY != 0
-                or flags & mem_flags.READ_WRITE != 0)
-
+        # mem_flags.READ_ONLY applies to kernels, not the host
+        read_write = True
         _interface["data"] = (
                 int(self._ptr_as_int()), not read_write)
 
@@ -1111,8 +1160,9 @@ def _add_functionality():
     # {{{ SVM
 
     if get_cl_header_version() >= (2, 0):
-        SVM.__doc__ = """Tags an object exhibiting the Python buffer interface (such as a
-            :class:`numpy.ndarray`) as referring to shared virtual memory.
+        SVM.__doc__ = """Tags an object exhibiting the Python buffer interface
+            (such as a :class:`numpy.ndarray`) as referring to shared virtual
+            memory.
 
             Depending on the features of the OpenCL implementation, the following
             types of objects may be passed to/wrapped in this type:
@@ -1167,7 +1217,7 @@ def _add_functionality():
                 This object merely serves as a 'tag' that changes the behavior
                 of functions to which it is passed. It has no special management
                 relationship to the memory it tags. For example, it is permissible
-                to grab a :mod:`numpy.array` out of :attr:`SVM.mem` of one
+                to grab a :class:`numpy.ndarray` out of :attr:`SVM.mem` of one
                 :class:`SVM` instance and use the array to construct another.
                 Neither of the tags need to be kept alive.
 
@@ -1263,15 +1313,28 @@ def _add_functionality():
             _cl.MemoryObjectHolder:
             (MemoryObjectHolder.get_info, _cl.mem_info, []),
             Image: (_cl.Image.get_image_info, _cl.image_info, []),
+            Pipe: (_cl.Pipe.get_pipe_info, _cl.pipe_info, []),
             Program: (Program.get_info, _cl.program_info, []),
             Kernel: (Kernel.get_info, _cl.kernel_info, []),
             _cl.Sampler: (Sampler.get_info, _cl.sampler_info, []),
             }
 
     def to_string(cls, value, default_format=None):
-        for name in dir(cls):
-            if (not name.startswith("_") and getattr(cls, name) == value):
-                return name
+        if cls._is_bitfield:
+            names = []
+            for name in dir(cls):
+                attr = getattr(cls, name)
+                if not isinstance(attr, int):
+                    continue
+                if attr == value or attr & value:
+                    names.append(name)
+            if names:
+                return " | ".join(names)
+        else:
+            for name in dir(cls):
+                if (not name.startswith("_")
+                        and getattr(cls, name) == value):
+                    return name
 
         if default_format is None:
             raise ValueError("a name for value %d was not found in %s"
@@ -1280,6 +1343,7 @@ def _add_functionality():
             return default_format % value
 
     for cls in CONSTANT_CLASSES:
+        cls._is_bitfield = cls in BITFIELD_CONSTANT_CLASSES
         cls.to_string = classmethod(to_string)
 
     # {{{ get_info attributes -------------------------------------------------
@@ -1304,8 +1368,8 @@ def _add_functionality():
         return property(result)
 
     for cls, (info_method, info_class, cacheable_attrs) \
-            in six.iteritems(cls_to_info_cls):
-        for info_name, info_value in six.iteritems(info_class.__dict__):
+            in cls_to_info_cls.items():
+        for info_name, info_value in info_class.__dict__.items():
             if info_name == "to_string" or info_name.startswith("_"):
                 continue
 
@@ -1374,7 +1438,7 @@ def create_some_context(interactive=None, answers=None):
         if answers:
             return str(answers.pop(0))
         elif not interactive:
-            return ''
+            return ""
         else:
             user_input = input(prompt)
             user_inputs.append(user_input)
@@ -1472,7 +1536,7 @@ _csc = create_some_context
 
 # {{{ SVMMap
 
-class SVMMap(object):
+class SVMMap:
     """
     .. attribute:: event
 
@@ -1529,9 +1593,16 @@ def enqueue_copy(queue, dest, src, **kwargs):
     :arg wait_for: (optional, default empty)
     :arg is_blocking: Wait for completion. Defaults to *True*.
       (Available on any copy involving host memory)
-
     :return: A :class:`NannyEvent` if the transfer involved a
         host-side buffer, otherwise an :class:`Event`.
+
+    .. note::
+
+        Be aware that the deletion of the :class:`NannyEvent` that is
+        returned by the function if the transfer involved a host-side buffer
+        will block until the transfer is complete, so be sure to keep a
+        reference to this :class:`Event` until the
+        transfer has completed.
 
     .. note::
 
@@ -1770,9 +1841,9 @@ def image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False):
     dtype = ary.dtype
     if num_channels is None:
 
-        from pyopencl.array import vec
         try:
-            dtype, num_channels = vec.type_to_scalar_and_count[dtype]
+            dtype, num_channels = \
+                    pyopencl.cltypes.vec_type_to_scalar_and_count[dtype]
         except KeyError:
             # It must be a scalar type then.
             num_channels = 1
@@ -1925,11 +1996,7 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
         for dim in shape:
             s *= dim
     except TypeError:
-        import sys
-        if sys.version_info >= (3,):
-            admissible_types = (int, np.integer)
-        else:
-            admissible_types = (np.integer,) + six.integer_types
+        admissible_types = (int, np.integer)
 
         if not isinstance(shape, admissible_types):
             raise TypeError("shape must either be iterable or "

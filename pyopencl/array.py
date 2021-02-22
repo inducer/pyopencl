@@ -2,7 +2,6 @@
 
 # pylint:disable=unexpected-keyword-arg  # for @elwise_kernel_runner
 
-from __future__ import division, absolute_import
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -29,13 +28,11 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-import six
-from six.moves import range, reduce
+from functools import reduce
 
 import numpy as np
 import pyopencl.elementwise as elementwise
 import pyopencl as cl
-from pytools import memoize_method
 from pyopencl.compyte.array import (
         as_strided as _as_strided,
         f_contiguous_strides as _f_contiguous_strides,
@@ -47,25 +44,64 @@ from pyopencl.characterize import has_double_support
 from pyopencl import cltypes
 
 
+_COMMON_DTYPE_CACHE = {}
+
+
 def _get_common_dtype(obj1, obj2, queue):
-    return _get_common_dtype_base(obj1, obj2,
-                                  has_double_support(queue.device))
+    dsupport = has_double_support(queue.device)
+    cache_key = None
+    o1_dtype = obj1.dtype
+    try:
+        cache_key = (o1_dtype, obj2.dtype, dsupport)
+        return _COMMON_DTYPE_CACHE[cache_key]
+    except KeyError:
+        pass
+    except AttributeError:
+        # obj2 doesn't have a dtype
+        try:
+            tobj2 = type(obj2)
+            cache_key = (o1_dtype, tobj2, dsupport)
+
+            # Integers are weird, sized, and signed. Don't pretend that 'int'
+            # is enough information to decide what should happen.
+            if tobj2 != int:
+                return _COMMON_DTYPE_CACHE[cache_key]
+        except KeyError:
+            pass
+
+    result = _get_common_dtype_base(obj1, obj2, dsupport)
+
+    # we succeeded in constructing the cache key
+    if cache_key is not None:
+        _COMMON_DTYPE_CACHE[cache_key] = result
+
+    return result
 
 
-# Work around PyPy not currently supporting the object dtype.
-# (Yes, it doesn't even support checking!)
-# (as of May 27, 2014 on PyPy 2.3)
-try:
-    np.dtype(object)
+def _get_truedivide_dtype(obj1, obj2, queue):
+    # the dtype of the division result obj1 / obj2
 
-    def _dtype_is_object(t):
-        return t == object
-except Exception:
-    def _dtype_is_object(t):
-        return False
+    allow_double = has_double_support(queue.device)
+
+    x1 = obj1 if np.isscalar(obj1) else np.ones(1, obj1.dtype)
+    x2 = obj2 if np.isscalar(obj2) else np.ones(1, obj2.dtype)
+
+    result = (x1/x2).dtype
+
+    if not allow_double:
+        if result == np.float64:
+            result = np.dtype(np.float32)
+        elif result == np.complex128:
+            result = np.dtype(np.complex64)
+
+    return result
 
 
-class VecLookupWarner(object):
+class InconsistentOpenCLQueueWarning(UserWarning):
+    pass
+
+
+class VecLookupWarner:
     def __getattr__(self, name):
         from warnings import warn
         warn("pyopencl.array.vec is deprecated. "
@@ -82,19 +118,18 @@ class VecLookupWarner(object):
 
 vec = VecLookupWarner()
 
+
 # {{{ helper functionality
 
-
-def splay(queue, n, kernel_specific_max_wg_size=None):
-    dev = queue.device
-    max_work_items = _builtin_min(128, dev.max_work_group_size)
+def _splay(device, n, kernel_specific_max_wg_size=None):
+    max_work_items = _builtin_min(128, device.max_work_group_size)
 
     if kernel_specific_max_wg_size is not None:
-        from six.moves.builtins import min
+        from builtins import min
         max_work_items = min(max_work_items, kernel_specific_max_wg_size)
 
     min_work_items = _builtin_min(32, max_work_items)
-    max_groups = dev.max_compute_units * 4 * 8
+    max_groups = device.max_compute_units * 4 * 8
     # 4 to overfill the device
     # 8 is an Nvidia constant--that's how many
     # groups fit onto one compute device
@@ -118,6 +153,10 @@ def splay(queue, n, kernel_specific_max_wg_size=None):
     return (group_count*work_items_per_group,), (work_items_per_group,)
 
 
+# deliberately undocumented for now
+ARRAY_KERNEL_EXEC_HOOK = None
+
+
 def elwise_kernel_runner(kernel_getter):
     """Take a kernel getter of the same signature as the kernel
     and return a function that invokes that kernel.
@@ -127,38 +166,28 @@ def elwise_kernel_runner(kernel_getter):
 
     def kernel_runner(*args, **kwargs):
         repr_ary = args[0]
-        queue = kwargs.pop("queue", None) or repr_ary.queue
-        wait_for = kwargs.pop("wait_for", None)
+        queue = kwargs.pop("queue", None)
+        implicit_queue = queue is None
+        if implicit_queue:
+            queue = repr_ary.queue
 
-        # wait_for must be a copy, because we modify it in-place below
-        if wait_for is None:
-            wait_for = []
-        else:
-            wait_for = list(wait_for)
+        wait_for = kwargs.pop("wait_for", None)
 
         knl = kernel_getter(*args, **kwargs)
 
-        gs, ls = repr_ary.get_sizes(queue,
+        gs, ls = repr_ary._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
         assert isinstance(repr_ary, Array)
+        args = args + (repr_ary.size,)
 
-        actual_args = []
-        for arg in args:
-            if isinstance(arg, Array):
-                if not arg.flags.forc:
-                    raise RuntimeError("only contiguous arrays may "
-                            "be used as arguments to this operation")
-                actual_args.append(arg.base_data)
-                actual_args.append(arg.offset)
-                wait_for.extend(arg.events)
-            else:
-                actual_args.append(arg)
-        actual_args.append(repr_ary.size)
-
-        return knl(queue, gs, ls, *actual_args, **dict(wait_for=wait_for))
+        if ARRAY_KERNEL_EXEC_HOOK is not None:
+            return ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
+                    knl, queue, gs, ls, *args, wait_for=wait_for)
+        else:
+            return knl(queue, gs, ls, *args, wait_for=wait_for)
 
     try:
         from functools import update_wrapper
@@ -176,15 +205,6 @@ class DefaultAllocator(cl.tools.DeferredAllocator):
                 "versions of PyOpenCL.",
                 DeprecationWarning, 2)
         cl.tools.DeferredAllocator.__init__(self, *args, **kwargs)
-
-
-def _make_strides(itemsize, shape, order):
-    if order in "fF":
-        return _f_contiguous_strides(itemsize, shape)
-    elif order in "cC":
-        return _c_contiguous_strides(itemsize, shape)
-    else:
-        raise ValueError("invalid order: %s" % order)
 
 # }}}
 
@@ -206,18 +226,21 @@ class _copy_queue:  # noqa
     pass
 
 
-class Array(object):
+_ARRAY_GET_SIZES_CACHE = {}
+
+
+class Array:
     """A :class:`numpy.ndarray` work-alike that stores its data and performs
     its computations on the compute device.  *shape* and *dtype* work exactly
     as in :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
     broadcasting of scalars. (e.g. `array+5`)
 
-    *cq* must be a :class:`pyopencl.CommandQueue` or a :class:`pyopencl.Context`.
+    *cq* must be a :class:`~pyopencl.CommandQueue` or a :class:`~pyopencl.Context`.
 
     If it is a queue, *cq* specifies the queue in which the array carries out
     its computations by default. If a default queue (and thereby overloaded
     operators and many other niceties) are not desired, pass a
-    :class:`Context`.
+    :class:`~pyopencl.Context`.
 
     *allocator* may be `None` or a callable that, upon being called with an
     argument of the number of bytes to be allocated, returns an
@@ -341,6 +364,7 @@ class Array(object):
     .. autoattribute :: real
     .. autoattribute :: imag
     .. automethod :: conj
+    .. automethod :: conjugate
 
     .. automethod :: __getitem__
     .. automethod :: __setitem__
@@ -391,7 +415,7 @@ class Array(object):
     __array_priority__ = 100
 
     def __init__(self, cq, shape, dtype, order="C", allocator=None,
-            data=None, offset=0, strides=None, events=None):
+            data=None, offset=0, strides=None, events=None, _flags=None):
         # {{{ backward compatibility
 
         if isinstance(cq, cl.CommandQueue):
@@ -435,24 +459,37 @@ class Array(object):
             size = 1
             for dim in shape:
                 size *= dim
+                if dim < 0:
+                    raise ValueError("negative dimensions are not allowed")
+
         except TypeError:
-            import sys
-            if sys.version_info >= (3,):
-                admissible_types = (int, np.integer)
-            else:
-                admissible_types = (np.integer,) + six.integer_types
+            admissible_types = (int, np.integer)
 
             if not isinstance(shape, admissible_types):
                 raise TypeError("shape must either be iterable or "
                         "castable to an integer")
             size = shape
+            if shape < 0:
+                raise ValueError("negative dimensions are not allowed")
             shape = (shape,)
 
         if isinstance(size, np.integer):
             size = size.item()
 
         if strides is None:
-            strides = _make_strides(dtype.itemsize, shape, order)
+            if order in "cC":
+                # inlined from compyte.array.c_contiguous_strides
+                if shape:
+                    strides = [dtype.itemsize]
+                    for s in shape[:0:-1]:
+                        strides.append(strides[-1]*s)
+                    strides = tuple(strides[::-1])
+                else:
+                    strides = ()
+            elif order in "fF":
+                strides = _f_contiguous_strides(dtype.itemsize, shape)
+            else:
+                raise ValueError("invalid order: %s" % order)
 
         else:
             # FIXME: We should possibly perform some plausibility
@@ -462,9 +499,8 @@ class Array(object):
 
         # }}}
 
-        if _dtype_is_object(dtype):
-            raise TypeError("object arrays on the compute device are not allowed")
-
+        assert dtype != object, \
+                "object arrays on the compute device are not allowed"
         assert isinstance(shape, tuple)
         assert isinstance(strides, tuple)
 
@@ -483,28 +519,28 @@ class Array(object):
         self.allocator = allocator
 
         if data is None:
-            if alloc_nbytes <= 0:
-                if alloc_nbytes == 0:
-                    # Work around CL not allowing zero-sized buffers.
-                    alloc_nbytes = 1
+            if alloc_nbytes < 0:
+                raise ValueError("cannot allocate CL buffer with "
+                        "negative size")
 
-                else:
-                    raise ValueError("cannot allocate CL buffer with "
-                            "negative size")
+            elif alloc_nbytes == 0:
+                self.base_data = None
 
-            if allocator is None:
-                if context is None and queue is not None:
-                    context = queue.context
-
-                self.base_data = cl.Buffer(
-                        context, cl.mem_flags.READ_WRITE, alloc_nbytes)
             else:
-                self.base_data = self.allocator(alloc_nbytes)
+                if allocator is None:
+                    if context is None and queue is not None:
+                        context = queue.context
+
+                    self.base_data = cl.Buffer(
+                            context, cl.mem_flags.READ_WRITE, alloc_nbytes)
+                else:
+                    self.base_data = self.allocator(alloc_nbytes)
         else:
             self.base_data = data
 
         self.offset = offset
         self.context = context
+        self._flags = _flags
 
     @property
     def ndim(self):
@@ -518,9 +554,11 @@ class Array(object):
             return self.base_data
 
     @property
-    @memoize_method
     def flags(self):
-        return _ArrayFlags(self)
+        f = self._flags
+        if f is None:
+            self._flags = f = _ArrayFlags(self)
+        return f
 
     def _new_with_changes(self, data, offset, shape=None, dtype=None,
             strides=None, queue=_copy_queue, allocator=None):
@@ -570,12 +608,17 @@ class Array(object):
         return self._new_with_changes(self.base_data, self.offset,
                 queue=queue)
 
-    #@memoize_method FIXME: reenable
-    def get_sizes(self, queue, kernel_specific_max_wg_size=None):
+    def _get_sizes(self, queue, kernel_specific_max_wg_size=None):
         if not self.flags.forc:
             raise NotImplementedError("cannot operate on non-contiguous array")
-        return splay(queue, self.size,
-                kernel_specific_max_wg_size=kernel_specific_max_wg_size)
+        cache_key = (queue.device.int_ptr, self.size, kernel_specific_max_wg_size)
+        try:
+            return _ARRAY_GET_SIZES_CACHE[cache_key]
+        except KeyError:
+            sizes = _splay(queue.device, self.size,
+                    kernel_specific_max_wg_size=kernel_specific_max_wg_size)
+            _ARRAY_GET_SIZES_CACHE[cache_key] = sizes
+            return sizes
 
     def set(self, ary, queue=None, async_=None, **kwargs):
         """Transfer the contents the :class:`numpy.ndarray` object *ary*
@@ -688,7 +731,7 @@ class Array(object):
 
     def get(self, queue=None, ary=None, async_=None, **kwargs):
         """Transfer the contents of *self* into *ary* or a newly allocated
-        :mod:`numpy.ndarray`. If *ary* is given, it must have the same
+        :class:`numpy.ndarray`. If *ary* is given, it must have the same
         shape and dtype.
 
         .. versionchanged:: 2019.1.2
@@ -736,7 +779,7 @@ class Array(object):
 
     def copy(self, queue=_copy_queue):
         """
-        :arg queue: The :class:`CommandQueue` for the returned array.
+        :arg queue: The :class:`~pyopencl.CommandQueue` for the returned array.
 
         .. versionchanged:: 2017.1.2
             Updates the queue of the returned array.
@@ -764,13 +807,29 @@ class Array(object):
         return result
 
     def __str__(self):
+        if self.queue is None:
+            return (f"<cl.Array {self.shape} of {self.dtype} "
+                    "without queue, call with_queue()>")
+
         return str(self.get())
 
     def __repr__(self):
-        return repr(self.get())
+        if self.queue is None:
+            return (f"<cl.Array {self.shape} of {self.dtype} "
+                    f"at {id(self):x} without queue, "
+                    "call with_queue()>")
+
+        result = repr(self.get())
+        if result[:5] == "array":
+            result = "cl.Array" + result[5:]
+        else:
+            from warnings import warn
+            warn("numpy.ndarray.__repr__ was expected to return a string starting "
+                    f"with 'array'. It didn't: '{result[:10]:r}'")
+        return result
 
     def safely_stringify_for_pudb(self):
-        return "cl.Array %s %s" % (self.dtype, self.shape)
+        return f"cl.Array {self.dtype} {self.shape}"
 
     def __hash__(self):
         raise TypeError("pyopencl arrays are not hashable.")
@@ -905,19 +964,21 @@ class Array(object):
 
     def _new_like_me(self, dtype=None, queue=None):
         strides = None
+        flags = None
         if dtype is None:
             dtype = self.dtype
 
         if dtype == self.dtype:
             strides = self.strides
+            flags = self.flags
 
         queue = queue or self.queue
         if queue is not None:
             return self.__class__(queue, self.shape, dtype,
-                    allocator=self.allocator, strides=strides)
+                    allocator=self.allocator, strides=strides, _flags=flags)
         else:
             return self.__class__(self.context, self.shape, dtype,
-                    strides=strides, allocator=self.allocator)
+                    strides=strides, allocator=self.allocator, _flags=flags)
 
     @staticmethod
     @elwise_kernel_runner
@@ -992,7 +1053,7 @@ class Array(object):
             result.add_event(
                     self._axpbyz(result,
                         self.dtype.type(1), self,
-                        other.dtype.type(-1), other))
+                        result.dtype.type(-1), other))
 
             return result
         else:
@@ -1015,7 +1076,7 @@ class Array(object):
         # other must be a scalar
         result = self._new_like_me(common_dtype)
         result.add_event(
-                self._axpbz(result, self.dtype.type(-1), self,
+                self._axpbz(result, result.dtype.type(-1), self,
                     common_dtype.type(other)))
         return result
 
@@ -1083,20 +1144,20 @@ class Array(object):
     def __div__(self, other):
         """Divides an array by an array or a scalar, i.e. ``self / other``.
         """
+        common_dtype = _get_truedivide_dtype(self, other, self.queue)
         if isinstance(other, Array):
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
+            result = self._new_like_me(common_dtype)
             result.add_event(self._div(result, self, other))
         else:
             if other == 1:
                 return self.copy()
             else:
                 # create a new array for the result
-                common_dtype = _get_common_dtype(self, other, self.queue)
                 result = self._new_like_me(common_dtype)
                 result.add_event(
                         self._axpbz(result,
-                            common_dtype.type(1/other), self, self.dtype.type(0)))
+                                    np.true_divide(common_dtype.type(1), other),
+                                    self, self.dtype.type(0)))
 
         return result
 
@@ -1105,14 +1166,13 @@ class Array(object):
     def __rdiv__(self, other):
         """Divides an array by a scalar or an array, i.e. ``other / self``.
         """
+        common_dtype = _get_truedivide_dtype(self, other, self.queue)
 
         if isinstance(other, Array):
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
+            result = self._new_like_me(common_dtype)
             result.add_event(other._div(result, self))
         else:
             # create a new array for the result
-            common_dtype = _get_common_dtype(self, other, self.queue)
             result = self._new_like_me(common_dtype)
             result.add_event(
                     self._rdiv_scalar(result, self, common_dtype.type(other)))
@@ -1120,6 +1180,26 @@ class Array(object):
         return result
 
     __rtruediv__ = __rdiv__
+
+    def __itruediv__(self, other):
+        # raise an error if the result cannot be cast to self
+        common_dtype = _get_truedivide_dtype(self, other, self.queue)
+        if not np.can_cast(common_dtype, self.dtype.type):
+            raise TypeError("Cannot cast {!r} to {!r}"
+                            .format(self.dtype, common_dtype))
+
+        if isinstance(other, Array):
+            self.add_event(
+                self._div(self, self, other))
+        else:
+            if other == 1:
+                return self
+            else:
+                self.add_event(
+                    self._axpbz(self, common_dtype.type(np.true_divide(1, other)),
+                                self, self.dtype.type(0)))
+
+        return self
 
     def __and__(self, other):
         common_dtype = _get_common_dtype(self, other, self.queue)
@@ -1223,10 +1303,18 @@ class Array(object):
     def _zero_fill(self, queue=None, wait_for=None):
         queue = queue or self.queue
 
-        if (
-                queue._get_cl_version() >= (1, 2)
-                and cl.get_cl_header_version() >= (1, 2)):
+        if not self.size:
+            return
 
+        cl_version_gtr_1_2 = (
+            queue._get_cl_version() >= (1, 2)
+            and cl.get_cl_header_version() >= (1, 2)
+        )
+        on_nvidia = queue.device.vendor.startswith("NVIDIA")
+
+        # circumvent bug with large buffers on NVIDIA
+        # https://github.com/inducer/pyopencl/issues/395
+        if cl_version_gtr_1_2 and not (on_nvidia and self.nbytes >= 2**31):
             self.add_event(
                     cl.enqueue_fill_buffer(queue, self.base_data, np.int8(0),
                         self.offset, self.nbytes, wait_for=wait_for))
@@ -1467,6 +1555,8 @@ class Array(object):
         else:
             return self
 
+    conjugate = conj
+
     # }}}
 
     # {{{ event management
@@ -1537,6 +1627,15 @@ class Array(object):
         size = reduce(operator.mul, shape, 1)
         if size != self.size:
             raise ValueError("total size of new array must be unchanged")
+
+        if self.size == 0:
+            return self._new_with_changes(
+                    data=None, offset=0, shape=shape,
+                    strides=(
+                        _f_contiguous_strides(self.dtype.itemsize, shape)
+                        if order == "F" else
+                        _c_contiguous_strides(self.dtype.itemsize, shape)
+                        ))
 
         # {{{ determine reshaped strides
 
@@ -1941,7 +2040,7 @@ def as_strided(ary, shape=None, strides=None):
             data=ary.data, strides=strides)
 
 
-class _same_as_transfer(object):  # noqa
+class _same_as_transfer:  # noqa
     pass
 
 
@@ -1950,7 +2049,7 @@ def to_device(queue, ary, allocator=None, async_=None,
     """Return a :class:`Array` that is an exact copy of the
     :class:`numpy.ndarray` instance *ary*.
 
-    :arg array_queue: The :class:`CommandQueue` which will
+    :arg array_queue: The :class:`~pyopencl.CommandQueue` which will
         be stored in the resulting array. Useful
         to make sure there is no implicit queue associated
         with the array by passing *None*.
@@ -1985,7 +2084,7 @@ def to_device(queue, ary, allocator=None, async_=None,
 
     # }}}
 
-    if _dtype_is_object(ary.dtype):
+    if ary.dtype == object:
         raise RuntimeError("to_device does not work on object arrays.")
 
     if array_queue is _same_as_transfer:
@@ -2099,7 +2198,7 @@ def arange(queue, *args, **kwargs):
         raise ValueError("too many arguments")
 
     admissible_names = ["start", "stop", "step", "dtype", "allocator"]
-    for k, v in six.iteritems(kwargs):
+    for k, v in kwargs.items():
         if k in admissible_names:
             if getattr(inf, k) is None:
                 setattr(inf, k, v)
@@ -2201,7 +2300,7 @@ def multi_take(arrays, indices, out=None, queue=None):
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = indices.get_sizes(queue,
+        gs, ls = indices._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
@@ -2279,24 +2378,18 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = src_indices.get_sizes(queue,
+        gs, ls = src_indices._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
-        from pytools import flatten
         wait_for_this = (dest_indices.events + src_indices.events
             + _builtin_sum((i.events for i in arrays[chunk_slice]), [])
             + _builtin_sum((o.events for o in out[chunk_slice]), []))
         evt = knl(queue, gs, ls,
-                *([o.data for o in out[chunk_slice]]
-                    + [dest_indices.base_data,
-                        dest_indices.offset,
-                        src_indices.base_data,
-                        src_indices.offset]
-                    + list(flatten(
-                        (i.base_data, i.offset)
-                        for i in arrays[chunk_slice]))
+                *([o for o in out[chunk_slice]]
+                    + [dest_indices, src_indices]
+                    + [i for i in arrays[chunk_slice]]
                     + src_offsets_list[chunk_slice]
                     + [src_indices.size]), wait_for=wait_for_this)
         for o in out[chunk_slice]:
@@ -2362,28 +2455,21 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
         if start_i + chunk_size > vec_count:
             knl = make_func_for_chunk_size(vec_count-start_i)
 
-        gs, ls = dest_indices.get_sizes(queue,
+        gs, ls = dest_indices._get_sizes(queue,
                 knl.get_work_group_info(
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
-        from pytools import flatten
         wait_for_this = (wait_for
             + _builtin_sum((i.events for i in arrays[chunk_slice]), [])
             + _builtin_sum((o.events for o in out[chunk_slice]), []))
         evt = knl(queue, gs, ls,
                 *(
-                    list(flatten(
-                        (o.base_data, o.offset)
-                        for o in out[chunk_slice]))
-                    + [dest_indices.base_data, dest_indices.offset]
-                    + list(flatten(
-                        (i.base_data, i.offset)
-                        for i in arrays[chunk_slice]))
-                    + [use_fill_cla.base_data, use_fill_cla.offset]
-                    + [array_lengths_cla.base_data, array_lengths_cla.offset]
-                    + [dest_indices.size]),
-                **dict(wait_for=wait_for_this))
+                    [o for o in out[chunk_slice]]
+                    + [dest_indices]
+                    + [i for i in arrays[chunk_slice]]
+                    + [use_fill_cla, array_lengths_cla, dest_indices.size]),
+                wait_for=wait_for_this)
 
         for o in out[chunk_slice]:
             o.add_event(evt)

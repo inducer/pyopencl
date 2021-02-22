@@ -1,7 +1,5 @@
-from __future__ import division, absolute_import, print_function
 import pyopencl as cl
 import pyopencl.characterize.performance as perf
-from six.moves import range
 
 
 def main():
@@ -9,7 +7,7 @@ def main():
 
     prof_overhead, latency = perf.get_profiling_overhead(ctx)
     print("command latency: %g s" % latency)
-    print("profiling overhead: %g s -> %.1f %%" % (
+    print("profiling overhead: {:g} s -> {:.1f} %".format(
             prof_overhead, 100*prof_overhead/latency))
     queue = cl.CommandQueue(
             ctx, properties=cl.command_queue_properties.PROFILING_ENABLE)

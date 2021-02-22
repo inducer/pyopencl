@@ -83,10 +83,18 @@ namespace PYGPU_PACKAGE
 
       // A held block is one that's been released by the application, but that
       // we are keeping around to dish out again.
-      unsigned m_held_blocks;
+      size_type m_held_blocks;
 
       // An active block is one that is in use by the application.
-      unsigned m_active_blocks;
+      size_type m_active_blocks;
+
+      // "Managed" memory is "active" and "held" memory.
+      size_type m_managed_bytes;
+
+      // "Active" bytes are bytes under the control of the application.
+      // This may be smaller than the actual allocated size reflected
+      // in m_managed_bytes.
+      size_type m_active_bytes;
 
       bool m_stop_holding;
       int m_trace;
@@ -96,7 +104,9 @@ namespace PYGPU_PACKAGE
     public:
       memory_pool(Allocator const &alloc=Allocator(), unsigned leading_bits_in_bin_id=4)
         : m_allocator(alloc.copy()),
-        m_held_blocks(0), m_active_blocks(0), m_stop_holding(false),
+        m_held_blocks(0), m_active_blocks(0),
+        m_managed_bytes(0), m_active_bytes(0),
+        m_stop_holding(false),
         m_trace(false), m_leading_bits_in_bin_id(leading_bits_in_bin_id)
       {
         if (m_allocator->is_deferred())
@@ -210,7 +220,7 @@ namespace PYGPU_PACKAGE
         if (m_trace)
           std::cout << "[pool] allocation of size " << size << " required new memory" << std::endl;
 
-        try { return get_from_allocator(alloc_sz); }
+        try { return get_from_allocator(alloc_sz, size); }
         catch (PYGPU_PACKAGE::error &e)
         {
           if (!e.is_out_of_memory())
@@ -229,7 +239,7 @@ namespace PYGPU_PACKAGE
 
         while (try_to_free_memory())
         {
-          try { return get_from_allocator(alloc_sz); }
+          try { return get_from_allocator(alloc_sz, size); }
           catch (PYGPU_PACKAGE::error &e)
           {
             if (!e.is_out_of_memory())
@@ -251,6 +261,7 @@ namespace PYGPU_PACKAGE
       void free(pointer_type p, size_type size)
       {
         --m_active_blocks;
+        m_active_bytes -= size;
         bin_nr_t bin_nr = bin_number(size);
 
         if (!m_stop_holding)
@@ -264,7 +275,10 @@ namespace PYGPU_PACKAGE
               << " entries" << std::endl;
         }
         else
+        {
           m_allocator->free(p);
+          m_managed_bytes -= alloc_size(bin_nr);
+        }
       }
 
       void free_held()
@@ -276,6 +290,7 @@ namespace PYGPU_PACKAGE
           while (bin.size())
           {
             m_allocator->free(bin.back());
+            m_managed_bytes -= alloc_size(bin_pair.first);
             bin.pop_back();
 
             dec_held_blocks();
@@ -291,11 +306,17 @@ namespace PYGPU_PACKAGE
         free_held();
       }
 
-      unsigned active_blocks()
+      size_type active_blocks() const
       { return m_active_blocks; }
 
-      unsigned held_blocks()
+      size_type held_blocks() const
       { return m_held_blocks; }
+
+      size_type managed_bytes() const
+      { return m_managed_bytes; }
+
+      size_type active_bytes() const
+      { return m_active_bytes; }
 
       bool try_to_free_memory()
       {
@@ -307,6 +328,7 @@ namespace PYGPU_PACKAGE
           if (bin.size())
           {
             m_allocator->free(bin.back());
+            m_managed_bytes -= alloc_size(bin_pair.first);
             bin.pop_back();
 
             dec_held_blocks();
@@ -319,10 +341,12 @@ namespace PYGPU_PACKAGE
       }
 
     private:
-      pointer_type get_from_allocator(size_type alloc_sz)
+      pointer_type get_from_allocator(size_type alloc_sz, size_type size)
       {
         pointer_type result = m_allocator->allocate(alloc_sz);
         ++m_active_blocks;
+        m_managed_bytes += alloc_sz;
+        m_active_bytes += size;
 
         return result;
       }
@@ -334,6 +358,7 @@ namespace PYGPU_PACKAGE
 
         dec_held_blocks();
         ++m_active_blocks;
+        m_active_bytes += size;
 
         return result;
       }

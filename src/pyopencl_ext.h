@@ -49,6 +49,10 @@ typedef union
 #define CL_DEVICE_PCI_SLOT_ID_NV                        0x4009
 #endif
 
+#ifndef CL_DEVICE_PCI_DOMAIN_ID_NV
+#define CL_DEVICE_PCI_DOMAIN_ID_NV                      0x400A
+#endif
+
 /* }}} */
 
 #endif

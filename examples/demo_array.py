@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 import pyopencl as cl
 import pyopencl.array as cl_array
 import numpy
@@ -24,6 +22,7 @@ prg = cl.Program(ctx, """
     }
     """).build()
 
-prg.sum(queue, a.shape, None, a_dev.data, b_dev.data, dest_dev.data)
+knl = prg.sum  # Use this Kernel object for repeated calls
+knl(queue, a.shape, None, a_dev.data, b_dev.data, dest_dev.data)
 
 print(la.norm((dest_dev - (a_dev+b_dev)).get()))

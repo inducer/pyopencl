@@ -1,8 +1,5 @@
 """Computation of reductions on vectors."""
 
-from __future__ import division
-from __future__ import absolute_import
-from six.moves import zip
 
 __copyright__ = "Copyright (C) 2010 Andreas Kloeckner"
 
@@ -159,7 +156,6 @@ def _get_reduction_source(
     # }}}
 
     from mako.template import Template
-    from pytools import all
     from pyopencl.characterize import has_double_support
 
     arguments = ", ".join(arg.declarator() for arg in parsed_args)
@@ -304,6 +300,12 @@ class ReductionKernel:
         return_event = kwargs.pop("return_event", False)
         out = kwargs.pop("out", None)
 
+        if wait_for is None:
+            wait_for = []
+        else:
+            # We'll be modifying it below.
+            wait_for = list(wait_for)
+
         range_ = kwargs.pop("range", None)
         slice_ = kwargs.pop("slice", None)
 
@@ -327,6 +329,7 @@ class ReductionKernel:
                     invocation_args.append(arg.base_data)
                     if arg_tp.with_offset:
                         invocation_args.append(arg.offset)
+                    wait_for.extend(arg.events)
                 else:
                     invocation_args.append(arg)
 
@@ -382,10 +385,16 @@ class ReductionKernel:
                 else:
                     allocator = repr_vec.allocator
 
-            if sz <= stage_inf.group_size*SMALL_SEQ_COUNT*MAX_GROUP_COUNT:
+            if sz == 0:
+                result = empty(use_queue, (), self.dtype_out, allocator=allocator)
+                group_count = 1
+                seq_count = 0
+
+            elif sz <= stage_inf.group_size*SMALL_SEQ_COUNT*MAX_GROUP_COUNT:
                 total_group_size = SMALL_SEQ_COUNT*stage_inf.group_size
                 group_count = (sz + total_group_size - 1) // total_group_size
                 seq_count = SMALL_SEQ_COUNT
+
             else:
                 group_count = MAX_GROUP_COUNT
                 macrogroup_size = group_count*stage_inf.group_size
@@ -410,8 +419,10 @@ class ReductionKernel:
                     (stage_inf.group_size,),
                     *([result.base_data, result.offset]
                         + invocation_args + size_args),
-                    **dict(wait_for=wait_for))
+                    wait_for=wait_for)
             wait_for = [last_evt]
+
+            result.add_event(last_evt)
 
             if group_count == 1:
                 if return_event:
@@ -528,22 +539,22 @@ def _get_dot_expr(dtype_out, dtype_a, dtype_b, conjugate_first,
     b = "b[%s]" % index_expr
 
     if a_is_complex and (dtype_a != dtype_out):
-        a = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), a)
+        a = "{}_cast({})".format(complex_dtype_to_name(dtype_out), a)
     if b_is_complex and (dtype_b != dtype_out):
-        b = "%s_cast(%s)" % (complex_dtype_to_name(dtype_out), b)
+        b = "{}_cast({})".format(complex_dtype_to_name(dtype_out), b)
 
     if a_is_complex and conjugate_first and a_is_complex:
-        a = "%s_conj(%s)" % (
+        a = "{}_conj({})".format(
                 complex_dtype_to_name(dtype_out), a)
 
     if a_is_complex and not b_is_complex:
-        map_expr = "%s_mulr(%s, %s)" % (complex_dtype_to_name(dtype_out), a, b)
+        map_expr = "{}_mulr({}, {})".format(complex_dtype_to_name(dtype_out), a, b)
     elif not a_is_complex and b_is_complex:
-        map_expr = "%s_rmul(%s, %s)" % (complex_dtype_to_name(dtype_out), a, b)
+        map_expr = "{}_rmul({}, {})".format(complex_dtype_to_name(dtype_out), a, b)
     elif a_is_complex and b_is_complex:
-        map_expr = "%s_mul(%s, %s)" % (complex_dtype_to_name(dtype_out), a, b)
+        map_expr = "{}_mul({}, {})".format(complex_dtype_to_name(dtype_out), a, b)
     else:
-        map_expr = "%s*%s" % (a, b)
+        map_expr = f"{a}*{b}"
 
     return map_expr, dtype_out, dtype_b
 
@@ -625,10 +636,10 @@ def get_minmax_kernel(ctx, what, dtype):
 
     return ReductionKernel(ctx, dtype,
             neutral=get_minmax_neutral(what, dtype),
-            reduce_expr="%(reduce_expr)s" % {"reduce_expr": reduce_expr},
-            arguments="const %(tp)s *in" % {
-                "tp": dtype_to_ctype(dtype),
-                }, preamble="#define MY_INFINITY (1./0)")
+            reduce_expr=f"{reduce_expr}",
+            arguments="const {tp} *in".format(
+                tp=dtype_to_ctype(dtype),
+                ), preamble="#define MY_INFINITY (1./0)")
 
 
 @context_dependent_memoize
@@ -642,7 +653,7 @@ def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
 
     return ReductionKernel(ctx, dtype,
             neutral=get_minmax_neutral(what, dtype),
-            reduce_expr="%(reduce_expr)s" % {"reduce_expr": reduce_expr},
+            reduce_expr=f"{reduce_expr}",
             map_expr="in[lookup_tbl[i]]",
             arguments=(
                 "const %(tp_lut)s *lookup_tbl, "

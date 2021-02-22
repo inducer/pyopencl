@@ -104,6 +104,9 @@ namespace
 
       pointer_type allocate(size_type s)
       {
+        if (s == 0)
+          return nullptr;
+
         return pyopencl::create_buffer(m_context->data(), m_flags, s, 0);
       }
   };
@@ -137,6 +140,9 @@ namespace
 
       pointer_type allocate(size_type s)
       {
+        if (s == 0)
+          return nullptr;
+
         pointer_type ptr =  pyopencl::create_buffer(
             m_context->data(), m_flags, s, 0);
 
@@ -144,15 +150,29 @@ namespace
         // This looks (and is) expensive. But immediate allocators
         // have their main use in memory pools, whose basic assumption
         // is that allocation is too expensive anyway--but they rely
-        // on exact 'out-of-memory' information.
-        unsigned zero = 0;
-        PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
-              m_queue.data(),
-              ptr,
-              /* is blocking */ CL_FALSE,
-              0, std::min(s, sizeof(zero)), &zero,
-              0, NULL, NULL
-              ));
+        // on 'out-of-memory' being reported on allocation. (If it is
+        // reported in a deferred manner, it has no way to react
+        // (e.g. by freeing unused memory) because it is not part of
+        // the call stack.)
+        if (m_queue.get_hex_device_version() < 0x1020)
+        {
+          unsigned zero = 0;
+          PYOPENCL_CALL_GUARDED(clEnqueueWriteBuffer, (
+                m_queue.data(),
+                ptr,
+                /* is blocking */ CL_FALSE,
+                0, std::min(s, sizeof(zero)), &zero,
+                0, NULL, NULL
+                ));
+        }
+        else
+        {
+          PYOPENCL_CALL_GUARDED(clEnqueueMigrateMemObjects, (
+                m_queue.data(),
+                1, &ptr, CL_MIGRATE_MEM_OBJECT_CONTENT_UNDEFINED,
+                0, NULL, NULL
+                ));
+        }
 
         // No need to wait for completion here. clWaitForEvents (e.g.)
         // cannot return mem object allocation failures. This implies that
@@ -186,6 +206,15 @@ namespace
       }
 
       alloc.try_release_blocks();
+    }
+
+    if (!mem)
+    {
+      if (size == 0)
+        return nullptr;
+      else
+        throw pyopencl::error("Allocator", CL_INVALID_VALUE,
+            "allocator succeeded but returned NULL cl_mem");
     }
 
     try
@@ -241,6 +270,8 @@ namespace
     wrapper
       .def_property_readonly("held_blocks", &cls::held_blocks)
       .def_property_readonly("active_blocks", &cls::active_blocks)
+      .def_property_readonly("managed_bytes", &cls::managed_bytes)
+      .def_property_readonly("active_bytes", &cls::active_bytes)
       .DEF_SIMPLE_METHOD(bin_number)
       .DEF_SIMPLE_METHOD(alloc_size)
       .DEF_SIMPLE_METHOD(free_held)
@@ -275,7 +306,8 @@ void pyopencl_expose_mempool(py::module &m)
           std::shared_ptr<pyopencl::context> const &>())
       .def(py::init<
           std::shared_ptr<pyopencl::context> const &,
-          cl_mem_flags>())
+          cl_mem_flags>(),
+          py::arg("queue"), py::arg("mem_flags"))
       ;
   }
 
@@ -285,7 +317,8 @@ void pyopencl_expose_mempool(py::module &m)
         m, "_tools_ImmediateAllocator");
     wrapper
       .def(py::init<pyopencl::command_queue &>())
-      .def(py::init<pyopencl::command_queue &, cl_mem_flags>())
+      .def(py::init<pyopencl::command_queue &, cl_mem_flags>(),
+          py::arg("queue"), py::arg("mem_flags"))
       ;
   }
 

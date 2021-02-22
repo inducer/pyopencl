@@ -43,11 +43,7 @@ extern void pyopencl_expose_mempool(py::module &m);
 
 static bool import_numpy_helper()
 {
-#ifdef PYPY_VERSION
-      import_array();
-#else
-      import_array1(false);
-#endif
+  import_array1(false);
   return true;
 }
 

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-from __future__ import print_function
 # I found this example for PyCuda here:
 # http://wiki.tiker.net/PyCuda/Examples/Mandelbrot
 #
@@ -24,7 +22,8 @@ import time
 import numpy as np
 
 import pyopencl as cl
-from six.moves import range
+
+from PIL import Image
 
 # You can choose a calculation routine below (calc_fractal), uncomment
 # one of the three lines to test the three variations
@@ -45,7 +44,9 @@ def calc_fractal_opencl(q, maxiter):
     q_opencl = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=q)
     output_opencl = cl.Buffer(ctx, mf.WRITE_ONLY, output.nbytes)
 
-    prg = cl.Program(ctx, """
+    prg = cl.Program(
+        ctx,
+        """
     #pragma OPENCL EXTENSION cl_khr_byte_addressable_store : enable
     __kernel void mandelbrot(__global float2 *q,
                      __global ushort *output, ushort const maxiter)
@@ -65,10 +66,12 @@ def calc_fractal_opencl(q, maxiter):
                  output[gid] = curiter;
         }
     }
-    """).build()
+    """,
+    ).build()
 
-    prg.mandelbrot(queue, output.shape, None, q_opencl,
-                   output_opencl, np.uint16(maxiter))
+    prg.mandelbrot(
+        queue, output.shape, None, q_opencl, output_opencl, np.uint16(maxiter)
+    )
 
     cl.enqueue_copy(queue, output, output_opencl).wait()
 
@@ -80,10 +83,15 @@ def calc_fractal_serial(q, maxiter):
     # note that, unlike the other two implementations,
     # the number of iterations per point is NOT constant
     z = np.zeros(q.shape, complex)
-    output = np.resize(np.array(0,), q.shape)
+    output = np.resize(
+        np.array(
+            0,
+        ),
+        q.shape,
+    )
     for i in range(len(q)):
         for iter in range(maxiter):
-            z[i] = z[i]*z[i] + q[i]
+            z[i] = z[i] * z[i] + q[i]
             if abs(z[i]) > 2.0:
                 output[i] = iter
                 break
@@ -93,71 +101,81 @@ def calc_fractal_serial(q, maxiter):
 def calc_fractal_numpy(q, maxiter):
     # calculate z using numpy, this is the original
     # routine from vegaseat's URL
-    output = np.resize(np.array(0,), q.shape)
+    output = np.resize(
+        np.array(
+            0,
+        ),
+        q.shape,
+    )
     z = np.zeros(q.shape, np.complex64)
 
     for it in range(maxiter):
-        z = z*z + q
+        z = z * z + q
         done = np.greater(abs(z), 2.0)
-        q = np.where(done, 0+0j, q)
-        z = np.where(done, 0+0j, z)
+        q = np.where(done, 0 + 0j, q)
+        z = np.where(done, 0 + 0j, z)
         output = np.where(done, it, output)
     return output
+
 
 # choose your calculation routine here by uncommenting one of the options
 calc_fractal = calc_fractal_opencl
 # calc_fractal = calc_fractal_serial
 # calc_fractal = calc_fractal_numpy
 
-if __name__ == '__main__':
-    try:
-        import six.moves.tkinter as tk
-    except ImportError:
-        # Python 3
-        import tkinter as tk
-    from PIL import Image, ImageTk
 
-    class Mandelbrot(object):
-        def __init__(self):
-            # create window
-            self.root = tk.Tk()
-            self.root.title("Mandelbrot Set")
-            self.create_image()
-            self.create_label()
-            # start event loop
-            self.root.mainloop()
+class Mandelbrot:
+    def draw(self, x1, x2, y1, y2, maxiter=30):
+        # draw the Mandelbrot set, from numpy example
+        xx = np.arange(x1, x2, (x2 - x1) / w)
+        yy = np.arange(y2, y1, (y1 - y2) / h) * 1j
+        q = np.ravel(xx + yy[:, np.newaxis]).astype(np.complex64)
 
-        def draw(self, x1, x2, y1, y2, maxiter=30):
-            # draw the Mandelbrot set, from numpy example
-            xx = np.arange(x1, x2, (x2-x1)/w)
-            yy = np.arange(y2, y1, (y1-y2)/h) * 1j
-            q = np.ravel(xx+yy[:, np.newaxis]).astype(np.complex64)
+        start_main = time.time()
+        output = calc_fractal(q, maxiter)
+        end_main = time.time()
 
-            start_main = time.time()
-            output = calc_fractal(q, maxiter)
-            end_main = time.time()
+        secs = end_main - start_main
+        print("Main took", secs)
 
-            secs = end_main - start_main
-            print("Main took", secs)
+        self.mandel = (output.reshape((h, w)) / float(output.max()) * 255.0).astype(
+            np.uint8
+        )
 
-            self.mandel = (output.reshape((h, w)) /
-                           float(output.max()) * 255.).astype(np.uint8)
+    def create_image(self):
+        """ "
+        create the image from the draw() string
+        """
+        # you can experiment with these x and y ranges
+        self.draw(-2.13, 0.77, -1.3, 1.3)
+        self.im = Image.fromarray(self.mandel)
+        self.im.putpalette([i for rgb in ((j, 0, 0) for j in range(255))
+            for i in rgb])
 
-        def create_image(self):
-            """"
-            create the image from the draw() string
-            """
-            # you can experiment with these x and y ranges
-            self.draw(-2.13, 0.77, -1.3, 1.3)
-            self.im = Image.fromarray(self.mandel)
-            self.im.putpalette([i for rgb in ((j, 0, 0) for j in range(255))
-                                for i in rgb])
+    def create_label(self):
+        # put the image on a label widget
+        self.image = ImageTk.PhotoImage(self.im)
+        self.label = tk.Label(self.root, image=self.image)
+        self.label.pack()
 
-        def create_label(self):
-            # put the image on a label widget
-            self.image = ImageTk.PhotoImage(self.im)
-            self.label = tk.Label(self.root, image=self.image)
-            self.label.pack()
+    def run_tk(self):
+        self.root = tk.Tk()
+        self.root.title("Mandelbrot Set")
+        self.create_image()
+        self.create_label()
+        # start event loop
+        self.root.mainloop()
 
-    # test the class
+
+if __name__ == "__main__":
     test = Mandelbrot()
+    try:
+        import tkinter as tk
+    except ModuleNotFoundError:
+        test.create_image()
+    else:
+        from PIL import ImageTk
+        try:
+            test.run_tk()
+        except tk.TclError:
+            test.create_image()

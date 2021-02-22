@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-from __future__ import division, with_statement, absolute_import, print_function
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -23,11 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+# avoid spurious: pytest.mark.parametrize is not callable
+# pylint: disable=not-callable
+
 import numpy as np
 import numpy.linalg as la
 import sys
 
-from six.moves import range
 import pytest
 
 import pyopencl as cl
@@ -154,7 +155,7 @@ def test_mix_complex(ctx_factory):
                         # served a Python complex that is really a
                         # smaller numpy complex.
 
-                        print("HOST_DTYPE: %s DEV_DTYPE: %s" % (
+                        print("HOST_DTYPE: {} DEV_DTYPE: {}".format(
                                 host_result.dtype, dev_result.dtype))
 
                         dev_result = dev_result.astype(host_result.dtype)
@@ -202,6 +203,23 @@ def test_vector_fill(ctx_factory):
     assert a.dtype == cltypes.float4
 
     a_gpu = cl_array.zeros(queue, 100, dtype=cltypes.float4)
+
+
+def test_zeros_large_array(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+    dev = queue.device
+
+    size = 2**28 + 1
+    if dev.address_bits == 64 and dev.max_mem_alloc_size >= 8 * size:
+        # this shouldn't hang/cause errors
+        # see https://github.com/inducer/pyopencl/issues/395
+        a_gpu = cl_array.zeros(queue, (size,), dtype="float64")
+        # run a couple kernels to ensure no propagated runtime errors
+        a_gpu[...] = 1.
+        a_gpu = 2 * a_gpu - 3
+    else:
+        pass
 
 
 def test_absrealimag(ctx_factory):
@@ -425,12 +443,20 @@ def test_addition_scalar(ctx_factory):
     assert (7 + a == a_added).all()
 
 
-def test_substract_array(ctx_factory):
+@pytest.mark.parametrize(("dtype_a", "dtype_b"),
+        [
+            (np.float32, np.float32),
+            (np.float32, np.int32),
+            (np.int32, np.int32),
+            (np.int64, np.int32),
+            (np.int64, np.uint32),
+            ])
+def test_subtract_array(ctx_factory, dtype_a, dtype_b):
     """Test the substraction of two arrays."""
     #test data
-    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
+    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(dtype_a)
     b = np.array([10, 20, 30, 40, 50,
-                  60, 70, 80, 90, 100]).astype(np.float32)
+                  60, 70, 80, 90, 100]).astype(dtype_b)
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -470,14 +496,32 @@ def test_divide_scalar(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
-    a_gpu = cl_array.to_device(queue, a)
+    if queue.device.platform.name == "Apple":
+        pytest.xfail("Apple CL compiler crashes on this.")
 
-    result = (a_gpu / 2).get()
-    assert (a / 2 == result).all()
+    dtypes = (np.uint8, np.uint16, np.uint32,
+                  np.int8, np.int16, np.int32,
+                  np.float32, np.complex64)
+    from pyopencl.characterize import has_double_support
+    if has_double_support(queue.device):
+        dtypes = dtypes + (np.float64, np.complex128)
 
-    result = (2 / a_gpu).get()
-    assert (np.abs(2 / a - result) < 1e-5).all()
+    from itertools import product
+
+    for dtype_a, dtype_s in product(dtypes, repeat=2):
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype_a)
+        s = dtype_s(40)
+        a_gpu = cl_array.to_device(queue, a)
+
+        b = a / s
+        b_gpu = a_gpu / s
+        assert (np.abs(b_gpu.get() - b) < 1e-3).all()
+        assert b_gpu.dtype is b.dtype
+
+        c = s / a
+        c_gpu = s / a_gpu
+        assert (np.abs(c_gpu.get() - c) < 1e-3).all()
+        assert c_gpu.dtype is c.dtype
 
 
 def test_divide_array(ctx_factory):
@@ -486,18 +530,103 @@ def test_divide_array(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    #test data
-    a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(np.float32)
-    b = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10]).astype(np.float32)
+    dtypes = (np.float32, np.complex64)
+    from pyopencl.characterize import has_double_support
+    if has_double_support(queue.device):
+        dtypes = dtypes + (np.float64, np.complex128)
 
-    a_gpu = cl_array.to_device(queue, a)
-    b_gpu = cl_array.to_device(queue, b)
+    from itertools import product
 
-    a_divide = (a_gpu / b_gpu).get()
-    assert (np.abs(a / b - a_divide) < 1e-3).all()
+    for dtype_a, dtype_b in product(dtypes, repeat=2):
 
-    a_divide = (b_gpu / a_gpu).get()
-    assert (np.abs(b / a - a_divide) < 1e-3).all()
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype_a)
+        b = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10]).astype(dtype_b)
+
+        a_gpu = cl_array.to_device(queue, a)
+        b_gpu = cl_array.to_device(queue, b)
+        c = a / b
+        c_gpu = (a_gpu / b_gpu)
+        assert (np.abs(c_gpu.get() - c) < 1e-3).all()
+        assert c_gpu.dtype is c.dtype
+
+        d = b / a
+        d_gpu = (b_gpu / a_gpu)
+        assert (np.abs(d_gpu.get() - d) < 1e-3).all()
+        assert d_gpu.dtype is d.dtype
+
+
+def test_divide_inplace_scalar(ctx_factory):
+    """Test inplace division of arrays and a scalar."""
+
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    if queue.device.platform.name == "Apple":
+        pytest.xfail("Apple CL compiler crashes on this.")
+
+    dtypes = (np.uint8, np.uint16, np.uint32,
+                  np.int8, np.int16, np.int32,
+                  np.float32, np.complex64)
+    from pyopencl.characterize import has_double_support
+    if has_double_support(queue.device):
+        dtypes = dtypes + (np.float64, np.complex128)
+
+    from itertools import product
+
+    for dtype_a, dtype_s in product(dtypes, repeat=2):
+
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype_a)
+        s = dtype_s(40)
+        a_gpu = cl_array.to_device(queue, a)
+
+        # ensure the same behavior as inplace numpy.ndarray division
+        try:
+            a /= s
+        except TypeError:
+            with np.testing.assert_raises(TypeError):
+                a_gpu /= s
+        else:
+            a_gpu /= s
+            assert (np.abs(a_gpu.get() - a) < 1e-3).all()
+            assert a_gpu.dtype is a.dtype
+
+
+def test_divide_inplace_array(ctx_factory):
+    """Test inplace division of arrays."""
+
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    dtypes = (np.uint8, np.uint16, np.uint32,
+                  np.int8, np.int16, np.int32,
+                  np.float32, np.complex64)
+    from pyopencl.characterize import has_double_support
+    if has_double_support(queue.device):
+        dtypes = dtypes + (np.float64, np.complex128)
+
+    from itertools import product
+
+    for dtype_a, dtype_b in product(dtypes, repeat=2):
+        print(dtype_a, dtype_b)
+        a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype_a)
+        b = np.array([10, 10, 10, 10, 10, 10, 10, 10, 10, 10]).astype(dtype_b)
+
+        a_gpu = cl_array.to_device(queue, a)
+        b_gpu = cl_array.to_device(queue, b)
+
+        # ensure the same behavior as inplace numpy.ndarray division
+        try:
+            a_gpu /= b_gpu
+        except TypeError:
+            # pass for now, as numpy casts differently for in-place and out-place
+            # true_divide
+            pass
+            # with np.testing.assert_raises(TypeError):
+            #     a /= b
+        else:
+            a /= b
+            assert (np.abs(a_gpu.get() - a) < 1e-3).all()
+            assert a_gpu.dtype is a.dtype
 
 
 def test_bitwise(ctx_factory):
@@ -530,8 +659,8 @@ def test_bitwise(ctx_factory):
 
         a = a_dev.get()
         b = b_dev.get()
-        s = int((clrand(queue, (), a=int32_min, b=1+int32_max, dtype=np.int64)
-                 .astype(b_dtype).get()))
+        s = int(clrand(queue, (), a=int32_min, b=1+int32_max, dtype=np.int64)
+                 .astype(b_dtype).get())
 
         import operator as o
 
@@ -586,6 +715,13 @@ def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
+    device = queue.device
+    if device.platform.vendor == "The pocl project" \
+            and device.type & cl.device_type.GPU \
+            and rng_class is RanluxGenerator:
+        pytest.xfail("ranlux test fails on POCL + Nvidia,"
+                "at least the Titan V, as of pocl 1.6, 2021-01-20")
+
     if has_double_support(context.devices[0]):
         dtypes = [np.float32, np.float64]
     else:
@@ -637,6 +773,12 @@ def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False
 def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+
+    if queue.device.platform.vendor == "The pocl project" \
+            and queue.device.type & cl.device_type.GPU \
+            and rng_class is RanluxGenerator:
+        pytest.xfail("ranlux test fails on POCL + Nvidia,"
+                "at least the Titan V, as of pocl 1.6, 2021-01-20")
 
     if rng_class is RanluxGenerator:
         gen = rng_class(queue, 5120)
@@ -712,7 +854,7 @@ def test_nan_arithmetic(ctx_factory):
         a = np.random.randn(*shape).astype(np.float32)
         from random import randrange
         for i in range(size // 10):
-            a[randrange(0, size)] = float('nan')
+            a[randrange(0, size)] = float("nan")
         return a
 
     size = 1 << 20
@@ -771,7 +913,7 @@ def test_diff(ctx_factory):
     a = a_dev.get()
 
     err = la.norm(
-            (cl.array.diff(a_dev).get() - np.diff(a)))
+            cl.array.diff(a_dev).get() - np.diff(a))
     assert err < 1e-4
 
 
@@ -1055,7 +1197,7 @@ def test_reshape(ctx_factory):
     # using -1 as unknown dimension
     assert a_dev.reshape(-1, 32).shape == (4, 32)
     assert a_dev.reshape((32, -1)).shape == (32, 4)
-    assert a_dev.reshape(((8, -1, 4))).shape == (8, 4, 4)
+    assert a_dev.reshape((8, -1, 4)).shape == (8, 4, 4)
 
     import pytest
     with pytest.raises(ValueError):
@@ -1221,7 +1363,13 @@ def test_get_async(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    a = np.random.rand(10**6).astype(np.dtype('float32'))
+    device = queue.device
+    if device.platform.vendor == "The pocl project" \
+            and device.type & cl.device_type.GPU:
+        pytest.xfail("the async get test fails on POCL + Nvidia,"
+                "at least the K40, as of pocl 1.6, 2021-01-20")
+
+    a = np.random.rand(10**6).astype(np.dtype("float32"))
     a_gpu = cl_array.to_device(queue, a)
     b = a + a**5 + 1
     b_gpu = a_gpu + a_gpu**5 + 1
@@ -1250,7 +1398,7 @@ def test_outoforderqueue_get(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype('float32'))
+    a = np.random.rand(10**6).astype(np.dtype("float32"))
     a_gpu = cl_array.to_device(queue, a)
     b_gpu = a_gpu + a_gpu**5 + 1
     b1 = b_gpu.get()  # testing that this waits for events
@@ -1265,7 +1413,7 @@ def test_outoforderqueue_copy(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype('float32'))
+    a = np.random.rand(10**6).astype(np.dtype("float32"))
     a_gpu = cl_array.to_device(queue, a)
     c_gpu = a_gpu**2 - 7
     b_gpu = c_gpu.copy()  # testing that this waits for and creates events
@@ -1283,8 +1431,8 @@ def test_outoforderqueue_indexing(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype('float32'))
-    i = (8e5 + 1e5 * np.random.rand(10**5)).astype(np.dtype('int32'))
+    a = np.random.rand(10**6).astype(np.dtype("float32"))
+    i = (8e5 + 1e5 * np.random.rand(10**5)).astype(np.dtype("int32"))
     a_gpu = cl_array.to_device(queue, a)
     i_gpu = cl_array.to_device(queue, i)
     c_gpu = (a_gpu**2)[i_gpu - 10000]
@@ -1307,7 +1455,7 @@ def test_outoforderqueue_reductions(ctx_factory):
     except Exception:
         pytest.skip("out-of-order queue not available")
     # 0/1 values to avoid accumulated rounding error
-    a = (np.random.rand(10**6) > 0.5).astype(np.dtype('float32'))
+    a = (np.random.rand(10**6) > 0.5).astype(np.dtype("float32"))
     a[800000] = 10  # all<5 looks true until near the end
     a_gpu = cl_array.to_device(queue, a)
     b1 = cl_array.sum(a_gpu).get()
@@ -1316,9 +1464,59 @@ def test_outoforderqueue_reductions(ctx_factory):
     assert b1 == a.sum() and b2 == a.dot(3 - a) and b3 == 0
 
 
+def test_negative_dim_rejection(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    with pytest.raises(ValueError):
+        cl_array.Array(queue, shape=-10, dtype=np.float64)
+
+    with pytest.raises(ValueError):
+        cl_array.Array(queue, shape=(-10,), dtype=np.float64)
+
+    for left_dim in (-1, 0, 1):
+        with pytest.raises(ValueError):
+            cl_array.Array(queue, shape=(left_dim, -1), dtype=np.float64)
+
+    for right_dim in (-1, 0, 1):
+        with pytest.raises(ValueError):
+            cl_array.Array(queue, shape=(-1, right_dim), dtype=np.float64)
+
+
+@pytest.mark.parametrize("empty_shape", [0, (), (3, 0, 2), (0, 5), (5, 0)])
+def test_zero_size_array(ctx_factory, empty_shape):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = cl_array.zeros(queue, empty_shape, dtype=np.float32)
+    b = cl_array.zeros(queue, empty_shape, dtype=np.float32)
+    b.fill(1)
+    c = a + b
+    c_host = c.get()
+    cl_array.to_device(queue, c_host)
+
+    assert c.flags.c_contiguous == c_host.flags.c_contiguous
+    assert c.flags.f_contiguous == c_host.flags.f_contiguous
+
+    for order in "CF":
+        c_flat = c.reshape(-1, order=order)
+        c_host_flat = c_host.reshape(-1, order=order)
+        assert c_flat.shape == c_host_flat.shape
+        assert c_flat.strides == c_host_flat.strides
+        assert c_flat.flags.c_contiguous == c_host_flat.flags.c_contiguous
+        assert c_flat.flags.f_contiguous == c_host_flat.flags.f_contiguous
+
+
+def test_str_without_queue(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = cl_array.zeros(queue, 10, dtype=np.float32).with_queue(None)
+    print(str(a))
+    print(repr(a))
+
+
 if __name__ == "__main__":
-    # make sure that import failures get reported, instead of skipping the
-    # tests.
     if len(sys.argv) > 1:
         exec(sys.argv[1])
     else:
