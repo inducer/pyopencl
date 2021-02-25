@@ -1104,6 +1104,8 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
             and dtype == np.float64
             and get_pocl_version(dev.platform) < (1, 0)):
         pytest.xfail("Double precision bitonic sort doesn't work on POCL < 1.0")
+    if (dev.platform.name == "Intel(R) OpenCL" and size == 0):
+        pytest.xfail("size-0 arange fails on Intel CL")
 
     if dtype == np.float64 and not has_double_support(dev):
         from pytest import skip
