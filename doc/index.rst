@@ -39,7 +39,7 @@ Tutorials
 =========
 
 * Gaston Hillar's `two-part article series
-  <http://www.drdobbs.com/open-source/easy-opencl-with-python/240162614>`_
+  <http://web.archive.org/web/20190707171427/www.drdobbs.com/open-source/easy-opencl-with-python/240162614>`_
   in Dr. Dobb's Journal provides a friendly introduction to PyOpenCL.
 * `Simon McIntosh-Smith <http://www.cs.bris.ac.uk/~simonm/>`_
   and `Tom Deakin <http://www.tomdeakin.com/>`_'s course

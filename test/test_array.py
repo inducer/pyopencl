@@ -1469,18 +1469,18 @@ def test_negative_dim_rejection(ctx_factory):
     queue = cl.CommandQueue(context)
 
     with pytest.raises(ValueError):
-        cl_array.Array(queue, shape=-10, dtype=np.float)
+        cl_array.Array(queue, shape=-10, dtype=np.float64)
 
     with pytest.raises(ValueError):
-        cl_array.Array(queue, shape=(-10,), dtype=np.float)
+        cl_array.Array(queue, shape=(-10,), dtype=np.float64)
 
     for left_dim in (-1, 0, 1):
         with pytest.raises(ValueError):
-            cl_array.Array(queue, shape=(left_dim, -1), dtype=np.float)
+            cl_array.Array(queue, shape=(left_dim, -1), dtype=np.float64)
 
     for right_dim in (-1, 0, 1):
         with pytest.raises(ValueError):
-            cl_array.Array(queue, shape=(-1, right_dim), dtype=np.float)
+            cl_array.Array(queue, shape=(-1, right_dim), dtype=np.float64)
 
 
 @pytest.mark.parametrize("empty_shape", [0, (), (3, 0, 2), (0, 5), (5, 0)])

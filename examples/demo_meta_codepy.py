@@ -19,10 +19,10 @@ a_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
 b_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b)
 c_buf = cl.Buffer(ctx, mf.WRITE_ONLY, b.nbytes)
 
-from codepy.cgen import FunctionBody, \
+from cgen import FunctionBody, \
         FunctionDeclaration, Typedef, POD, Value, \
         Pointer, Module, Block, Initializer, Assign, Const
-from codepy.cgen.opencl import CLKernel, CLGlobal, \
+from cgen.opencl import CLKernel, CLGlobal, \
         CLRequiredWorkGroupSize
 
 mod = Module([
@@ -33,14 +33,14 @@ mod = Module([
             arg_decls=[CLGlobal(Pointer(Const(POD(dtype, name))))
                 for name in ["tgt", "op1", "op2"]]))),
         Block([
-            Initializer(POD(numpy.int32, "idx"), 
+            Initializer(POD(numpy.int32, "idx"),
                 "get_local_id(0) + %d * get_group_id(0)"
                 % (local_size*thread_strides))
             ]+[
             Assign(
                 "tgt[idx+%d]" % (o*local_size),
                 "op1[idx+%d] + op2[idx+%d]" % (
-                    o*local_size, 
+                    o*local_size,
                     o*local_size))
             for o in range(thread_strides)]))])
 
@@ -50,7 +50,7 @@ knl(queue, (local_size*macroblock_count,), (local_size,),
         c_buf, a_buf, b_buf)
 
 c = numpy.empty_like(a)
-cl.enqueue_read_buffer(queue, c_buf, c).wait()
+cl.enqueue_copy(queue, c, c_buf).wait()
 
 assert la.norm(c-(a+b)) == 0
 
