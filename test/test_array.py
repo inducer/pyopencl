@@ -1488,6 +1488,9 @@ def test_zero_size_array(ctx_factory, empty_shape):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
+    if queue.device.platform.name == "Intel(R) OpenCL":
+        pytest.xfail("size-0 arrays fail on Intel CL")
+
     a = cl_array.zeros(queue, empty_shape, dtype=np.float32)
     b = cl_array.zeros(queue, empty_shape, dtype=np.float32)
     b.fill(1)
