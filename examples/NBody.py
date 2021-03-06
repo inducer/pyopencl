@@ -22,8 +22,6 @@ import pyopencl as cl
 import pyopencl.array as cl_array
 from numpy.random import randint as nprnd
 import string, sys
-from OpenGL.GL import *
-from OpenGL.GLUT import *
 
 def DictionariesAPI():
     Marsaglia={'CONG':0,'SHR3':1,'MWC':2,'KISS':3}
@@ -858,6 +856,8 @@ if __name__=='__main__':
     Durations=np.array([],dtype=MyFloat)
     print('Starting!')
     if OpenGL:
+        from OpenGL.GL import *
+        from OpenGL.GLUT import *
         global ViewRX,ViewRY,ViewRZ
         Iterations=0
         ViewRX,ViewRY,ViewRZ = 0.,0.,0.
