@@ -38,7 +38,6 @@ import time,string
 from numpy.random import randint as nprnd
 import sys
 import getopt
-import matplotlib.pyplot as plt
 from socket import gethostname
 
 def DictionariesAPI():
@@ -1615,26 +1614,26 @@ __global__ void Original(float *zImage,float *fImage,
 """
     return(BlobCUDA)
 
-# def ImageOutput(sigma,prefix):
-#     from PIL import Image
-#     Max=sigma.max()
-#     Min=sigma.min()
-#     # Normalize value as 8bits Integer
-#     SigmaInt=(255*(sigma-Min)/(Max-Min)).astype('uint8')
-#     image = Image.fromarray(SigmaInt)
-#     image.save("%s.jpg" % prefix)
+# def ImageOutput(sigma,prefix,Colors):
+#     import matplotlib.pyplot as plt
+#     start_time=time.time()
+#     if Colors == 'Red2Yellow':
+#         plt.imsave("%s.png" % prefix, sigma, cmap='afmhot')
+#     else:
+#         plt.imsave("%s.png" % prefix, sigma, cmap='Greys_r')
+#     save_time = time.time()-start_time
+#     print("Save image as %s.png file" % prefix)
+#     print("Save Time : %f" % save_time)
 
 def ImageOutput(sigma,prefix,Colors):
-    import matplotlib.pyplot as plt
-    start_time=time.time()
-    if Colors == 'Red2Yellow':
-        plt.imsave("%s.png" % prefix, sigma, cmap='afmhot')
-    else:
-        plt.imsave("%s.png" % prefix, sigma, cmap='Greys_r')
-    save_time = time.time()-start_time
-    print("Save image as %s.png file" % prefix)
-    print("Save Time : %f" % save_time)
-
+    from PIL import Image
+    Max=sigma.max()
+    Min=sigma.min()
+    # Normalize value as 8bits Integer
+    SigmaInt=(255*(sigma-Min)/(Max-Min)).astype('uint8')
+    image = Image.fromarray(SigmaInt)
+    image.save("%s.jpg" % prefix)
+    
 def BlackHoleCL(zImage,fImage,InputCL):
 
     kernel_params = {}
