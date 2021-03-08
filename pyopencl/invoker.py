@@ -294,7 +294,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v38",
+        "pyopencl-invoker-cache-v39",
         key_builder=_NumpyTypesKeyBuilder())
 
 

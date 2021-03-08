@@ -36,6 +36,7 @@ from pyopencl.tools import (  # noqa
         pytest_generate_tests_for_pyopencl as pytest_generate_tests,
         ImmediateAllocator, DeferredAllocator)
 from pyopencl.characterize import get_pocl_version
+from pyopencl.check_concurrency import with_concurrency_check
 
 # Are CL implementations crashy? You be the judge. :)
 try:
@@ -1199,6 +1200,20 @@ def test_threaded_nanny_events(ctx_factory):
 
     t1.join()
     t2.join()
+
+
+@with_concurrency_check
+def test_concurrency_checker(ctx_factory):
+    ctx = ctx_factory()
+    queue1 = cl.CommandQueue(ctx)
+    queue2 = cl.CommandQueue(ctx)
+
+    arr1 = cl_array.zeros(queue1, (10,), np.float32)
+    arr2 = cl_array.zeros(queue2, (10,), np.float32)
+    # del arr1.events[:]
+    del arr2.events[:]
+
+    arr1 - arr2
 
 
 @pytest.mark.parametrize("empty_shape", [(0,), (3, 0, 2)])
