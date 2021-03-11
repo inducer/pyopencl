@@ -8,6 +8,7 @@ include test/*.h
 include test/*.spv
 include examples/*.py
 include examples/*.ipynb
+include examples/noisyImage.jpg
 
 include doc/*.rst
 include doc/Makefile
