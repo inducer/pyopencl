@@ -7,11 +7,11 @@ from delocate import wheeltools
 
 def add_library(paths):
     wheel_fnames = glob('/io/wheelhouse/pyopencl*.whl')
-    libs_dir = os.path.join('pyopencl', '.libs')
-    os.makedirs(libs_dir, exist_ok=True)
     for fname in wheel_fnames:
         print('Processing', fname)
         with wheeltools.InWheel(fname, fname):
+            libs_dir = os.path.join('pyopencl', '.libs')
+            os.makedirs(libs_dir, exist_ok=True)
             for lib_path in paths:
                 shutil.copy2(lib_path, libs_dir)
 
