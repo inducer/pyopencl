@@ -10,8 +10,16 @@ Program
 
 .. envvar:: PYOPENCL_NO_CACHE
 
+    By default, PyOpenCL will used cached "binaries" returned by the
+    OpenCL runtime when calling :meth:`Program.build` on a program
+    constructed with source. (It will depend on the ICD in use how much
+    compilation work is saved by this.)
     By setting the environment variable :envvar:`PYOPENCL_NO_CACHE` to any
     non-empty value, this caching is suppressed.
+    
+    PyOpenCL will also cache "invokers", which are short snippets of Python
+    that are generated to accelerate passing arguments to and enqueuing
+    a kernel. For now, this caching is unaffected by ``PYOPENCL_NO_CACHE``.
 
     .. versionadded:: 2013.1
 
