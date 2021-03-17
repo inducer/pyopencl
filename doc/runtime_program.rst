@@ -10,7 +10,7 @@ Program
 
 .. envvar:: PYOPENCL_NO_CACHE
 
-    By default, PyOpenCL will used cached (on disk) "binaries" returned by the
+    By default, PyOpenCL will use cached (on disk) "binaries" returned by the
     OpenCL runtime when calling :meth:`Program.build` on a program
     constructed with source. (It will depend on the ICD in use how much
     compilation work is saved by this.)
