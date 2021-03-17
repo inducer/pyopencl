@@ -47,7 +47,7 @@ jobs:
                 . ./prepare-and-run-pylint.sh "$(basename $GITHUB_REPOSITORY)" test/test_*.py
 
     pytest:
-        name: Pytest Linux
+        name: Pytest Linux POCL
         runs-on: ubuntu-latest
         steps:
         -   uses: actions/checkout@v2
@@ -58,8 +58,27 @@ jobs:
                 ./configure.py --cl-use-shipped-ext
                 . ./build-and-test-py-project-within-miniconda.sh
 
+    pytest_intel:
+        name: Pytest Linux Intel CL
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                curl -L -O https://raw.githubusercontent.com/illinois-scicomp/machine-shop-maintenance/main/install-intel-icd.sh
+                sudo bash ./install-intel-icd.sh
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                echo "- ocl-icd-system" >> "$CONDA_ENVIRONMENT"
+                sed -i "/pocl/ d" "$CONDA_ENVIRONMENT"
+                source /opt/enable-intel-cl.sh
+
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project-within-miniconda.sh
+                ./configure.py --cl-use-shipped-ext
+                . ./build-and-test-py-project-within-miniconda.sh
+
     pytest_mac:
-        name: Pytest Mac
+        name: Pytest Mac POCL
         runs-on: macos-latest
         steps:
         -   uses: actions/checkout@v2
