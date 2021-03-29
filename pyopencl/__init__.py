@@ -583,7 +583,8 @@ class Program:
     def compile(self, options=[], devices=None, headers=[]):
         options_bytes, _ = self._process_build_options(self._context, options)
 
-        self._get_prg().compile(options_bytes, devices, headers)
+        self._get_prg().compile(options_bytes, devices,
+                [(name, prg._get_prg()) for name, prg in headers])
         return self
 
     def __eq__(self, other):
