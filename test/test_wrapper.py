@@ -1146,14 +1146,22 @@ def test_compile_link(ctx_factory):
         {
         }
         """).compile()
+    pi_h__prg = cl.Program(ctx, """//CL//
+        inline float get_pi()
+        {
+            return 3.1415f;
+        }
+        """).compile()
     main_prg = cl.Program(ctx, """//CL//
+        #include "pi.h"
+
         void value_sink(float x);
 
         __kernel void experiment()
         {
-            value_sink(3.1415f + get_global_id(0));
+            value_sink(get_pi() + get_global_id(0));
         }
-        """).compile()
+        """).compile(headers=[("pi.h", pi_h__prg)])
     z = cl.link_program(ctx, [vsink_prg, main_prg], devices=ctx.devices)
     z.experiment(queue, (128**2,), (128,))
     queue.finish()
