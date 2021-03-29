@@ -720,9 +720,14 @@ class Array:
                     stacklevel=2)
 
         if self.size:
-            event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
-                    device_offset=self.offset,
-                    is_blocking=not async_)
+            if self.offset:
+                event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
+                        device_offset=self.offset,
+                        is_blocking=not async_)
+            else:
+                event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
+                        is_blocking=not async_)
+
             self.add_event(event1)
 
     def _get(self, queue=None, ary=None, async_=None, **kwargs):
@@ -770,9 +775,14 @@ class Array:
                     "to associate one.")
 
         if self.size:
-            event1 = cl.enqueue_copy(queue, ary, self.base_data,
-                    device_offset=self.offset,
-                    wait_for=self.events, is_blocking=not async_)
+            if self.offset:
+                event1 = cl.enqueue_copy(queue, ary, self.base_data,
+                        device_offset=self.offset,
+                        wait_for=self.events, is_blocking=not async_)
+            else:
+                event1 = cl.enqueue_copy(queue, ary, self.base_data,
+                        wait_for=self.events, is_blocking=not async_)
+
             self.add_event(event1)
         else:
             event1 = None
