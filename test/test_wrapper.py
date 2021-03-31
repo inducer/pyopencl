@@ -571,14 +571,23 @@ def test_mempool_2(ctx_factory):
 
     pool = MemoryPool(ImmediateAllocator(queue))
 
-    for i in range(2000):
-        s = randrange(1 << 31) >> randrange(32)
+    for s in [randrange(1 << 31) >> randrange(32) for _ in range(2000)] + [2**30]:
         bin_nr = pool.bin_number(s)
         asize = pool.alloc_size(bin_nr)
 
         assert asize >= s, s
         assert pool.bin_number(asize) == bin_nr, s
         assert asize < asize*(1+1/8)
+
+
+def test_mempool_32bit_issues():
+    # https://github.com/inducer/pycuda/issues/282
+    from pyopencl._cl import _TestMemoryPool
+    pool = _TestMemoryPool()
+
+    for i in [30, 31, 32, 33, 34]:
+        for offs in range(-5, 5):
+            pool.allocate(2**i + offs)
 
 
 @pytest.mark.parametrize("allocator_cls", [ImmediateAllocator, DeferredAllocator])

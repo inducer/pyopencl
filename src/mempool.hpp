@@ -34,12 +34,28 @@
 #include <memory>
 #include <ostream>
 #include <iostream>
-#include "wrap_cl.hpp"
 #include "bitlog.hpp"
 
 
 namespace PYGPU_PACKAGE
 {
+  // https://stackoverflow.com/a/44175911
+  class mp_noncopyable {
+  public:
+    mp_noncopyable() = default;
+    ~mp_noncopyable() = default;
+
+  private:
+    mp_noncopyable(const mp_noncopyable&) = delete;
+    mp_noncopyable& operator=(const mp_noncopyable&) = delete;
+  };
+
+#ifdef PYGPU_PYCUDA
+#define PYGPU_SHARED_PTR boost::shared_ptr
+#else
+#define PYGPU_SHARED_PTR std::shared_ptr
+#endif
+
   template <class T>
   inline T signed_left_shift(T x, signed shift_amount)
   {
@@ -64,8 +80,15 @@ namespace PYGPU_PACKAGE
 
 
 
+#define always_assert(cond) \
+  do { \
+    if (!(cond)) \
+      throw std::logic_error("mem pool assertion violated: " #cond); \
+  } while (false);
+
+
   template<class Allocator>
-  class memory_pool : noncopyable
+  class memory_pool : mp_noncopyable
   {
     public:
       typedef typename Allocator::pointer_type pointer_type;
@@ -151,13 +174,13 @@ namespace PYGPU_PACKAGE
         bin_nr_t exponent = bin >> m_leading_bits_in_bin_id;
         bin_nr_t mantissa = bin & mantissa_mask();
 
-        size_type ones = signed_left_shift(1,
+        size_type ones = signed_left_shift((size_type) 1,
             signed(exponent)-signed(m_leading_bits_in_bin_id)
             );
         if (ones) ones -= 1;
 
         size_type head = signed_left_shift(
-           (1<<m_leading_bits_in_bin_id) | mantissa,
+           (size_type) ((1<<m_leading_bits_in_bin_id) | mantissa),
             signed(exponent)-signed(m_leading_bits_in_bin_id));
         if (ones & head)
           throw std::runtime_error("memory_pool::alloc_size: bit-counting fault");
@@ -213,9 +236,10 @@ namespace PYGPU_PACKAGE
           return pop_block_from_bin(bin, size);
         }
 
-        size_type alloc_sz = alloc_size(bin_nr);
+         size_type alloc_sz = alloc_size(bin_nr);
 
-        assert(bin_number(alloc_sz) == bin_nr);
+        always_assert(bin_number(alloc_sz) == bin_nr);
+        always_assert(alloc_sz >= size);
 
         if (m_trace)
           std::cout << "[pool] allocation of size " << size << " required new memory" << std::endl;
@@ -321,8 +345,10 @@ namespace PYGPU_PACKAGE
       bool try_to_free_memory()
       {
         // free largest stuff first
-        for (bin_pair_t &bin_pair: reverse(m_container))
+        for (typename container_t::reverse_iterator it = m_container.rbegin();
+            it != m_container.rend(); ++it)
         {
+          bin_pair_t &bin_pair = *it;
           bin_t &bin = bin_pair.second;
 
           if (bin.size())
@@ -366,7 +392,7 @@ namespace PYGPU_PACKAGE
 
 
   template <class Pool>
-  class pooled_allocation : public noncopyable
+  class pooled_allocation : public mp_noncopyable
   {
     public:
       typedef Pool pool_type;
@@ -374,14 +400,14 @@ namespace PYGPU_PACKAGE
       typedef typename Pool::size_type size_type;
 
     private:
-      std::shared_ptr<pool_type> m_pool;
+      PYGPU_SHARED_PTR<pool_type> m_pool;
 
       pointer_type m_ptr;
       size_type m_size;
       bool m_valid;
 
     public:
-      pooled_allocation(std::shared_ptr<pool_type> p, size_type size)
+      pooled_allocation(PYGPU_SHARED_PTR<pool_type> p, size_type size)
         : m_pool(p), m_ptr(p->allocate(size)), m_size(size), m_valid(true)
       { }
 
