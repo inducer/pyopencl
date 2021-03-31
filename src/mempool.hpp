@@ -34,12 +34,22 @@
 #include <memory>
 #include <ostream>
 #include <iostream>
-#include "wrap_cl.hpp"
 #include "bitlog.hpp"
 
 
 namespace PYGPU_PACKAGE
 {
+  // https://stackoverflow.com/a/44175911
+  class mp_noncopyable {
+  public:
+    mp_noncopyable() = default;
+    ~mp_noncopyable() = default;
+
+  private:
+    mp_noncopyable(const mp_noncopyable&) = delete;
+    mp_noncopyable& operator=(const mp_noncopyable&) = delete;
+  };
+
   template <class T>
   inline T signed_left_shift(T x, signed shift_amount)
   {
@@ -72,7 +82,7 @@ namespace PYGPU_PACKAGE
 
 
   template<class Allocator>
-  class memory_pool : noncopyable
+  class memory_pool : mp_noncopyable
   {
     public:
       typedef typename Allocator::pointer_type pointer_type;
@@ -374,7 +384,7 @@ namespace PYGPU_PACKAGE
 
 
   template <class Pool>
-  class pooled_allocation : public noncopyable
+  class pooled_allocation : public mp_noncopyable
   {
     public:
       typedef Pool pool_type;
