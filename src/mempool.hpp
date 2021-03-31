@@ -64,6 +64,13 @@ namespace PYGPU_PACKAGE
 
 
 
+#define always_assert(cond) \
+  do { \
+    if (!(cond)) \
+      throw std::logic_error("mem pool assertion violated: " #cond); \
+  } while (false);
+
+
   template<class Allocator>
   class memory_pool : noncopyable
   {
@@ -151,13 +158,13 @@ namespace PYGPU_PACKAGE
         bin_nr_t exponent = bin >> m_leading_bits_in_bin_id;
         bin_nr_t mantissa = bin & mantissa_mask();
 
-        size_type ones = signed_left_shift(1,
+        size_type ones = signed_left_shift((size_type) 1,
             signed(exponent)-signed(m_leading_bits_in_bin_id)
             );
         if (ones) ones -= 1;
 
         size_type head = signed_left_shift(
-           (1<<m_leading_bits_in_bin_id) | mantissa,
+           (size_type) ((1<<m_leading_bits_in_bin_id) | mantissa),
             signed(exponent)-signed(m_leading_bits_in_bin_id));
         if (ones & head)
           throw std::runtime_error("memory_pool::alloc_size: bit-counting fault");
@@ -213,9 +220,10 @@ namespace PYGPU_PACKAGE
           return pop_block_from_bin(bin, size);
         }
 
-        size_type alloc_sz = alloc_size(bin_nr);
+         size_type alloc_sz = alloc_size(bin_nr);
 
-        assert(bin_number(alloc_sz) == bin_nr);
+        always_assert(bin_number(alloc_sz) == bin_nr);
+        always_assert(alloc_sz >= size);
 
         if (m_trace)
           std::cout << "[pool] allocation of size " << size << " required new memory" << std::endl;

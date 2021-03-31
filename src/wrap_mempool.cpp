@@ -42,6 +42,34 @@
 
 namespace
 {
+  class test_allocator
+  {
+    public:
+      typedef void *pointer_type;
+      typedef size_t size_type;
+
+      virtual test_allocator *copy() const
+      {
+        return new test_allocator();
+      }
+
+      virtual bool is_deferred() const
+      {
+        return false;
+      }
+      virtual pointer_type allocate(size_type s)
+      {
+        return nullptr;
+      }
+
+      void free(pointer_type p)
+      { }
+
+      void try_release_blocks()
+      { }
+  };
+
+
   class cl_allocator_base
   {
     protected:
@@ -295,6 +323,25 @@ void pyopencl_expose_mempool(py::module &m)
       .def("__call__", allocator_call)
       ;
 
+  }
+
+  {
+    typedef pyopencl::memory_pool<test_allocator> cls;
+
+    py::class_<cls, std::shared_ptr<cls>> wrapper( m, "_TestMemoryPool");
+    wrapper
+      .def(py::init([](unsigned leading_bits_in_bin_id)
+            { return new cls(test_allocator(), leading_bits_in_bin_id); }),
+          py::arg("leading_bits_in_bin_id")=4
+          )
+      .def("allocate", [](std::shared_ptr<cls> pool, cls::size_type sz)
+          {
+            pool->allocate(sz);
+            return py::none();
+          })
+      ;
+
+    expose_memory_pool(wrapper);
   }
 
   {
