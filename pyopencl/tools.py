@@ -86,7 +86,8 @@ def first_arg_dependent_memoize(func):
         if kwargs:
             cache_key = (args, frozenset(kwargs.items()))
         else:
-            cache_key = args
+            cache_key = (args,)
+
         try:
             ctx_dict = func._pyopencl_first_arg_dep_memoize_dic
         except AttributeError:
