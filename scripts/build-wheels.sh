@@ -34,15 +34,7 @@ function stop_spinner {
 #start_spinner
 
 curl https://tiker.net/tmp/.tmux.conf
-yum install -y git yum openssl-devel
-curl -L -O http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz
-tar -xf ruby-2.1.2.tar.gz
-cd ruby-2.1.2
-./configure --disable-install-doc --disable-install-rdoc
-make -j4
-make install
-cd ..
-rm -rf ruby-2.1.2
+yum install -y git yum openssl-devel ruby
 
 git clone --branch v2.3.0 https://github.com/OCL-dev/ocl-icd
 cd ocl-icd
