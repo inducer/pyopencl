@@ -83,6 +83,10 @@ def first_arg_dependent_memoize(func):
 
         .. versionadded:: 2011.2
         """
+        if kwargs:
+            cache_key = (args, kwargs)
+        else:
+            cache_key = args
         try:
             ctx_dict = func._pyopencl_first_arg_dep_memoize_dic
         except AttributeError:
@@ -92,11 +96,11 @@ def first_arg_dependent_memoize(func):
             _first_arg_dependent_caches.append(ctx_dict)
 
         try:
-            return ctx_dict[cl_object][args]
+            return ctx_dict[cl_object][cache_key]
         except KeyError:
             arg_dict = ctx_dict.setdefault(cl_object, {})
             result = func(cl_object, *args, **kwargs)
-            arg_dict[args] = result
+            arg_dict[cache_key] = result
             return result
 
     from functools import update_wrapper
