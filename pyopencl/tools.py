@@ -84,7 +84,7 @@ def first_arg_dependent_memoize(func):
         .. versionadded:: 2011.2
         """
         if kwargs:
-            cache_key = (args, kwargs)
+            cache_key = (args, frozenset(kwargs.items()))
         else:
             cache_key = args
         try:
