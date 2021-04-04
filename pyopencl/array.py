@@ -2238,7 +2238,7 @@ def arange(queue, *args, **kwargs):
 # }}}
 
 
-# {{{ take/put/concatenate/diff
+# {{{ take/put/concatenate/diff/(h?stack)
 
 @elwise_kernel_runner
 def _take(result, ary, indices):
@@ -2576,6 +2576,58 @@ def hstack(arrays, queue=None):
     for ary in arrays:
         result[..., index:index+ary.shape[-1]] = ary
         index += ary.shape[-1]
+
+    return result
+
+
+def stack(arrays, axis=0, queue=None):
+    """
+    Join a sequence of arrays along a new axis.
+
+    :arg arrays: A sequnce of :class:`Array`.
+    :arg axis: Index of the dimension of the new axis in the result array.
+        Can be -1, for the new axis to be last dimension.
+
+    :returns: :class:`Array`
+    """
+    if not arrays:
+        raise ValueError("need at least one array to stack")
+
+    input_shape = arrays[0].shape
+    input_ndim = arrays[0].ndim
+    axis = input_ndim if axis == -1 else axis
+
+    if queue is None:
+        for ary in arrays:
+            if ary.queue is not None:
+                queue = ary.queue
+                break
+
+    if not all(ary.shape == input_shape for ary in arrays[1:]):
+        raise ValueError("arrays must have the same shape")
+
+    if not (0 <= axis <= input_ndim):
+        raise ValueError("invalid axis")
+
+    if (axis == 0 and not all(ary.flags.c_contiguous
+                              for ary in arrays)):
+        # pyopencl.Array.__setitem__ does not support non-contiguous assignments
+        raise NotImplementedError
+
+    if (axis == input_ndim and not all(ary.flags.f_contiguous
+                                       for ary in arrays)):
+        # pyopencl.Array.__setitem__ does not support non-contiguous assignments
+        raise NotImplementedError
+
+    result_shape = input_shape[:axis] + (len(arrays),) + input_shape[axis:]
+    result = empty(queue, result_shape, np.result_type(*(ary.dtype
+                                                         for ary in arrays)),
+                   # TODO: reconsider once arrays support non-contiguous
+                   # assignments
+                   order="C" if axis == 0 else "F")
+    for i, ary in enumerate(arrays):
+        idx = (slice(None),)*axis + (i,) + (slice(None),)*(input_ndim-axis)
+        result[idx] = ary
 
     return result
 
