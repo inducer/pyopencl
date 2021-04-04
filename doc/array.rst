@@ -149,6 +149,7 @@ Constructing :class:`Array` Instances
 .. autofunction:: arange
 .. autofunction:: take
 .. autofunction:: concatenate
+.. autofunction:: stack
 
 Manipulating :class:`Array` instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
