@@ -702,13 +702,14 @@ for detailed acknowledgments.
 Funding
 -------
 
-Andreas Klöckner's work on :mod:`pyopencl` was supported in part by
+Work on pytential was supported in part by
 
-* US Navy ONR grant number N00014-14-1-0117
-* the US National Science Foundation under grant numbers DMS-1418961 and CCF-1524433.
+* the US National Science Foundation under grant numbers DMS-1418961,
+  DMS-1654756, SHF-1911019, and OAC-1931577.
 
-AK also gratefully acknowledges a hardware gift from Nvidia Corporation.  The
-views and opinions expressed herein do not necessarily reflect those of the
+AK also gratefully acknowledges a hardware gift from Nvidia Corporation.
+
+The views and opinions expressed herein do not necessarily reflect those of the
 funding agencies.
 
 Documentation Cross-References
