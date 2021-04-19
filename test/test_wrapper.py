@@ -975,6 +975,11 @@ def test_spirv(ctx_factory):
         pytest.skip("SPIR-V program creation only available "
                 "in OpenCL 2.1 and higher")
 
+    if queue.device.platform.name == "Portable Computing Language":
+        # I'm not sure this is universal, but pocl 1.7 seems to use it.
+        if "cl_khr_spirv" not in queue.device.extensions.split():
+            pytest.skip("SPIR-V program creation not supported by device")
+
     n = 50000
 
     a_dev = cl.clrandom.rand(queue, n, np.float32)
