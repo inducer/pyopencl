@@ -243,7 +243,7 @@ void pyopencl_expose_part_2(py::module &m)
           py::arg("flags"),
           py::arg("packet_size"),
           py::arg("max_packets"),
-          py::arg("properties")
+          py::arg("properties")=py::make_tuple()
           )
 #endif
       .DEF_SIMPLE_METHOD(get_pipe_info)
