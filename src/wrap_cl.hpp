@@ -3178,7 +3178,7 @@ namespace pyopencl
         flags,
         pipe_packet_size,
         pipe_max_packets,
-        PYOPENCL_STACK_CONTAINER_GET_PTR(props),
+        nullptr,
         &status_code);
 
     if (status_code != CL_SUCCESS)
