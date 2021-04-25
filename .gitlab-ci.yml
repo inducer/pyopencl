@@ -4,7 +4,7 @@ Python 3 Intel CPU:
   - source /opt/enable-intel-cl.sh
   - export PYOPENCL_TEST="intel(r):pu"
   - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3
@@ -20,7 +20,7 @@ Python 3 Nvidia Titan X:
   - export PY_EXE=python3
   - export PYOPENCL_TEST=nvi:titan
   - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3
@@ -36,7 +36,7 @@ Python 3 Nvidia Titan V:
   - export PY_EXE=python3
   - export PYOPENCL_TEST=nvi:titan
   - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3
@@ -52,7 +52,7 @@ Python 3 Nvidia K40:
   - export PY_EXE=python3
   - export PYOPENCL_TEST=nvi:k40
   - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3
@@ -73,7 +73,7 @@ Python 3 AMD GPU:
   # https://andreask.cs.illinois.edu/MachineShop/UserNotes
   - export OCL_ICD_VENDORS=/etc/OpenCLwithAMD/vendors
 
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3
@@ -89,7 +89,7 @@ Python 3 POCL:
   - export PY_EXE=python3
   - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3
@@ -105,7 +105,7 @@ Python 3 POCL CL 1.1:
   - export PY_EXE=python3
   - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - echo "CL_PRETEND_VERSION = '1.1'" > siteconf.py
   - ". ./build-and-test-py-project.sh"
   tags:
@@ -122,7 +122,7 @@ Python 3 POCL K40:
   - export PY_EXE=python3
   - export PYOPENCL_TEST=portable:k40
   - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3
@@ -139,7 +139,7 @@ Python 3 POCL Titan V:
   - export PY_EXE=python3
   - export PYOPENCL_TEST=portable:titan
   - export EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3
@@ -157,7 +157,7 @@ Python 3 POCL (+GL and special functions):
   - export PYOPENCL_TEST=portable:pthread
   - export EXTRA_INSTALL="pybind11 numpy mako scipy pyfmmlib"
   - echo "CL_ENABLE_GL = True" > siteconf.py
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
   - python3
@@ -173,7 +173,7 @@ Python 3 Conda Apple:
     CONDA_ENVIRONMENT=.test-conda-env.yml
     grep -v ocl-icd .test-conda-env-py3.yml > $CONDA_ENVIRONMENT
     export CC=gcc
-    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
+    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project-within-miniconda.sh
     ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
     . ./build-and-test-py-project-within-miniconda.sh
   tags:
@@ -195,7 +195,7 @@ PyPy3 POCL:
   - export EXTRA_INSTALL="pybind11 numpy mako"
 
   - export NO_DOCTESTS=1
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
 
   tags:
@@ -215,24 +215,38 @@ Pylint:
   # to package shadowing. To work around this, build in editable mode so there
   # is only one copy of everything.
   - PROJECT_INSTALL_FLAGS="--editable"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-pylint.sh
   - . ./prepare-and-run-pylint.sh "$CI_PROJECT_NAME" test/test_*.py
   tags:
   - python3
   except:
   - tags
 
+Examples:
+  script: |
+    curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
+    . ci-support.sh
+    EXTRA_INSTALL="pillow cgen mako imageio"
+    build_py_project_in_venv
+    (cd examples; rm -f gl_*)
+    run_examples --no-require-main
+  except:
+  - tags
+  tags:
+  - python3
+  - pocl
+
 Documentation:
   script:
   - EXTRA_INSTALL="pybind11 numpy mako"
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-docs.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-docs.sh
   - ". ./build-docs.sh"
   tags:
   - linux
 
 Flake8:
   script:
-  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
   - . ./prepare-and-run-flake8.sh "$CI_PROJECT_NAME" test
   tags:
   - python3

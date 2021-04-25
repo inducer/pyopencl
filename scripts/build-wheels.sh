@@ -34,19 +34,11 @@ function stop_spinner {
 #start_spinner
 
 curl https://tiker.net/tmp/.tmux.conf
-yum install -y git yum openssl-devel
-curl -L -O http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.2.tar.gz
-tar -xf ruby-2.1.2.tar.gz
-cd ruby-2.1.2
-./configure --disable-install-doc --disable-install-rdoc
-make -j4
-make install
-cd ..
-rm -rf ruby-2.1.2
+yum install -y git yum openssl-devel ruby
 
-git clone --branch v2.2.12 https://github.com/OCL-dev/ocl-icd
+git clone --branch v2.3.0 https://github.com/OCL-dev/ocl-icd
 cd ocl-icd
-curl -L -O https://raw.githubusercontent.com/conda-forge/ocl-icd-feedstock/22625432a0ae85920825dfeb103af9fe7bd6a950/recipe/install-headers.patch
+curl -L -O https://raw.githubusercontent.com/conda-forge/ocl-icd-feedstock/e2c03e3ddb1ff86630ccf80dc7b87a81640025ea/recipe/install-headers.patch
 git apply install-headers.patch
 curl -L -O https://github.com/isuruf/ocl-icd/commit/3862386b51930f95d9ad1089f7157a98165d5a6b.patch
 git apply 3862386b51930f95d9ad1089f7157a98165d5a6b.patch
@@ -77,7 +69,7 @@ done
 
 # Bundle external shared libraries into the wheels
 for whl in wheelhouse/pyopencl*.whl; do
-    auditwheel repair "$whl" -w /io/wheelhouse/
+    auditwheel repair "$whl" -w /io/wheelhouse/ --lib-sdir=/.libs
 done
 
 # Bundle license files

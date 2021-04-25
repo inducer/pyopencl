@@ -134,6 +134,20 @@ not complicated::
         The number of blocks in active use that have been allocated
         through this pool.
 
+    .. attribute:: managed_bytes
+
+        "Managed" memory is "active" and "held" memory.
+
+        .. versionadded: 2021.1.2
+
+    .. attribute:: active_bytes
+
+        "Active" bytes are bytes under the control of the application.
+        This may be smaller than the actual allocated size reflected
+        in :attr:`managed_bytes`.
+
+        .. versionadded: 2021.1.2
+
     .. method:: allocate(size)
 
         Return a :class:`PooledBuffer` of the given *size*.

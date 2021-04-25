@@ -23,8 +23,8 @@ from mako.template import Template
 
 tpl = Template("""
     __kernel void add(
-            __global ${ type_name } *tgt, 
-            __global const ${ type_name } *op1, 
+            __global ${ type_name } *tgt,
+            __global const ${ type_name } *op1,
             __global const ${ type_name } *op2)
     {
       int idx = get_local_id(0)
@@ -33,13 +33,13 @@ tpl = Template("""
 
       % for i in range(thread_strides):
           <% offset = i*local_size %>
-          tgt[idx + ${ offset }] = 
-            op1[idx + ${ offset }] 
+          tgt[idx + ${ offset }] =
+            op1[idx + ${ offset }]
             + op2[idx + ${ offset } ];
       % endfor
     }""")
 
-rendered_tpl = tpl.render(type_name="float", 
+rendered_tpl = tpl.render(type_name="float",
     local_size=local_size, thread_strides=thread_strides)
 
 knl = cl.Program(ctx, str(rendered_tpl)).build().add
@@ -48,6 +48,6 @@ knl(queue, (local_size*macroblock_count,), (local_size,),
         c_buf, a_buf, b_buf)
 
 c = numpy.empty_like(a)
-cl.enqueue_read_buffer(queue, c_buf, c).wait()
+cl.enqueue_copy(queue, c, c_buf).wait()
 
 assert la.norm(c-(a+b)) == 0

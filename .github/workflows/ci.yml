@@ -2,7 +2,7 @@ name: CI
 on:
     push:
         branches:
-        - master
+        - main
         tags:
         - v*
     pull_request:
@@ -18,10 +18,11 @@ jobs:
         -
             uses: actions/setup-python@v1
             with:
-                python-version: '3.x'
+                # matches compat target in setup.py
+                python-version: '3.6'
         -   name: "Main Script"
             run: |
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-flake8.sh
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
                 . ./prepare-and-run-flake8.sh "$(basename $GITHUB_REPOSITORY)" ./test
 
     pylint:
@@ -39,7 +40,7 @@ jobs:
                 cat $CONDA_ENVIRONMENT
                 echo "-------------------------------------------"
                 USE_CONDA_BUILD=1
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/prepare-and-run-pylint.sh
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-pylint.sh
 
                 # Pylint won't find the Cython bits without this
                 PROJECT_INSTALL_FLAGS="--editable"
@@ -47,19 +48,38 @@ jobs:
                 . ./prepare-and-run-pylint.sh "$(basename $GITHUB_REPOSITORY)" test/test_*.py
 
     pytest:
-        name: Pytest Linux
+        name: Pytest Linux POCL
         runs-on: ubuntu-latest
         steps:
         -   uses: actions/checkout@v2
         -   name: "Main Script"
             run: |
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project-within-miniconda.sh
+                ./configure.py --cl-use-shipped-ext
+                . ./build-and-test-py-project-within-miniconda.sh
+
+    pytest_intel:
+        name: Pytest Linux Intel CL
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                curl -L -O https://raw.githubusercontent.com/illinois-scicomp/machine-shop-maintenance/main/install-intel-icd.sh
+                sudo bash ./install-intel-icd.sh
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                echo "- ocl-icd-system" >> "$CONDA_ENVIRONMENT"
+                sed -i "/pocl/ d" "$CONDA_ENVIRONMENT"
+                source /opt/enable-intel-cl.sh
+
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project-within-miniconda.sh
                 ./configure.py --cl-use-shipped-ext
                 . ./build-and-test-py-project-within-miniconda.sh
 
     pytest_mac:
-        name: Pytest Mac
+        name: Pytest Mac POCL
         runs-on: macos-latest
         steps:
         -   uses: actions/checkout@v2
@@ -68,7 +88,7 @@ jobs:
                 export CC=gcc
                 CONDA_ENVIRONMENT=.test-conda-env.yml
                 grep -v ocl-icd .test-conda-env-py3.yml > $CONDA_ENVIRONMENT
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project-within-miniconda.sh
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project-within-miniconda.sh
                 ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
                 . ./build-and-test-py-project-within-miniconda.sh
 
@@ -84,11 +104,26 @@ jobs:
         -   name: "Main Script"
             run: |
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
                 . ci-support.sh
                 ./configure.py --cl-use-shipped-ext
                 build_py_project_in_conda_env
                 build_docs
+
+    examples:
+        name: Examples
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
+                . ci-support.sh
+                EXTRA_INSTALL="pillow cgen mako imageio"
+                build_py_project_in_conda_env
+                (cd examples; rm -f gl_*)
+                run_examples --no-require-main
 
     wheels:
         name: Build and upload wheels
@@ -164,7 +199,7 @@ jobs:
                 # Avoid slow or complicated tests in downstream projects
                 export PYTEST_ADDOPTS="-k 'not (slowtest or octave or mpi)'"
 
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/ci-support.sh
+                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
                 . ./ci-support.sh
 
                 build_py_project_in_conda_env

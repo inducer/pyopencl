@@ -1,25 +1,14 @@
 import pyopencl as cl
 import numpy as np
-from scipy.misc import imread, imsave
+from imageio import imread, imsave
 
 #Read in image
-img = imread('noisyImage.jpg', flatten=True).astype(np.float32)
+img = imread('noisyImage.jpg').astype(np.float32)
+print(img.shape)
+img = np.mean(img, axis=2)
+print(img.shape)
 
-# Get platforms, both CPU and GPU
-plat = cl.get_platforms()
-CPU = plat[0].get_devices()
-try:
-    GPU = plat[1].get_devices()
-except IndexError:
-    GPU = "none"
-
-#Create context for GPU/CPU
-if GPU!= "none":
-    ctx = cl.Context(GPU)
-else:
-    ctx = cl.Context(CPU)
-
-# Create queue for each kernel execution
+ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
 mf = cl.mem_flags
@@ -97,4 +86,4 @@ result = np.empty_like(img)
 cl.enqueue_copy(queue, result, result_g)
 
 # Show the blurred image
-imsave('medianFilter-OpenCL.jpg',result)
+imsave('medianFilter-OpenCL.jpg', result)

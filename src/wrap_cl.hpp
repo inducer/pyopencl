@@ -3157,6 +3157,7 @@ namespace pyopencl
       cl_uint pipe_max_packets,
       py::sequence py_props)
   {
+#if 0
     PYOPENCL_STACK_CONTAINER(cl_pipe_properties, props, py::len(py_props) + 1);
     {
       size_t i = 0;
@@ -3164,6 +3165,10 @@ namespace pyopencl
         props[i++] = py::cast<cl_pipe_properties>(prop);
       props[i++] = 0;
     }
+#endif
+    if (py::len(py_props) != 0)
+      throw pyopencl::error("Pipe", CL_INVALID_VALUE, "non-empty properties "
+          "argument to Pipe not allowed");
 
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clCreatePipe");
@@ -3173,7 +3178,7 @@ namespace pyopencl
         flags,
         pipe_packet_size,
         pipe_max_packets,
-        PYOPENCL_STACK_CONTAINER_GET_PTR(props),
+        nullptr,
         &status_code);
 
     if (status_code != CL_SUCCESS)

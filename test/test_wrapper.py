@@ -571,14 +571,23 @@ def test_mempool_2(ctx_factory):
 
     pool = MemoryPool(ImmediateAllocator(queue))
 
-    for i in range(2000):
-        s = randrange(1 << 31) >> randrange(32)
+    for s in [randrange(1 << 31) >> randrange(32) for _ in range(2000)] + [2**30]:
         bin_nr = pool.bin_number(s)
         asize = pool.alloc_size(bin_nr)
 
         assert asize >= s, s
         assert pool.bin_number(asize) == bin_nr, s
         assert asize < asize*(1+1/8)
+
+
+def test_mempool_32bit_issues():
+    # https://github.com/inducer/pycuda/issues/282
+    from pyopencl._cl import _TestMemoryPool
+    pool = _TestMemoryPool()
+
+    for i in [30, 31, 32, 33, 34]:
+        for offs in range(-5, 5):
+            pool.allocate(2**i + offs)
 
 
 @pytest.mark.parametrize("allocator_cls", [ImmediateAllocator, DeferredAllocator])
@@ -966,6 +975,11 @@ def test_spirv(ctx_factory):
         pytest.skip("SPIR-V program creation only available "
                 "in OpenCL 2.1 and higher")
 
+    if queue.device.platform.name == "Portable Computing Language":
+        # I'm not sure this is universal, but pocl 1.7 seems to use it.
+        if "cl_khr_spirv" not in queue.device.extensions.split():
+            pytest.skip("SPIR-V program creation not supported by device")
+
     n = 50000
 
     a_dev = cl.clrandom.rand(queue, n, np.float32)
@@ -1146,14 +1160,22 @@ def test_compile_link(ctx_factory):
         {
         }
         """).compile()
+    pi_h__prg = cl.Program(ctx, """//CL//
+        inline float get_pi()
+        {
+            return 3.1415f;
+        }
+        """).compile()
     main_prg = cl.Program(ctx, """//CL//
+        #include "pi.h"
+
         void value_sink(float x);
 
         __kernel void experiment()
         {
-            value_sink(3.1415f + get_global_id(0));
+            value_sink(get_pi() + get_global_id(0));
         }
-        """).compile()
+        """).compile(headers=[("pi.h", pi_h__prg)])
     z = cl.link_program(ctx, [vsink_prg, main_prg], devices=ctx.devices)
     z.experiment(queue, (128**2,), (128,))
     queue.finish()
