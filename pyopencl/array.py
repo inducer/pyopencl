@@ -422,7 +422,10 @@ class Array:
 
     __array_priority__ = 100
 
+    big_threshold = 30_000
     total_arrays = 0
+    total_big_arrays = 0
+    max_big_arrays = 0
     total_bytes = 0
     alloc_dict = {}
     alloc_number = 0
@@ -532,13 +535,40 @@ class Array:
         Array.total_arrays += 1
         Array.total_bytes += alloc_nbytes
         Array.alloc_number += 1
-        print(f"CREATING PYOPENCL ARRAY: {Array.total_bytes/1e9} ({Array.total_arrays})")
+
+        if alloc_nbytes > Array.big_threshold:
+            Array.total_big_arrays += 1
+            from builtins import max
+            Array.max_big_arrays = max(Array.max_big_arrays, Array.total_big_arrays)
+
+        if 0:
+            if Array.total_big_arrays >= 44:
+                new_dict = {}
+                for key, (alloc_id, aid, stack, size) in Array.alloc_dict.items():
+                    new_dict.setdefault(stack, []).append((alloc_id, aid, size))
+                nallocs = 0
+                for stack, alloc_sizes in new_dict.items():
+                    if any(frame.func_name in ["nodes", "normal"]
+                            for frame in stack):
+                        continue
+                    s = [(alloc_id, aid, s) for alloc_id, aid, s in alloc_sizes if s>Array.big_threshold]
+                    if s:
+                        for frame in stack:
+                            print(frame)
+                        print(s)
+                    nallocs += len(s)
+                print(f"{nallocs} live allocations that matter")
+                pu.db
+                import os
+                os._exit(1)
+
+        print(f"CREATING PYOPENCL ARRAY: {Array.total_bytes/1e9} ({Array.total_arrays}/{Array.max_big_arrays})")
         from traceback import extract_stack
 
         stack = tuple(MyFrameSummary(filename=fs.filename, lineno=fs.lineno, func_name=fs.name) for fs in extract_stack())
         self.alloc_id = Array.alloc_number
         #print(self.stack)
-        Array.alloc_dict[Array.alloc_number] = (stack, alloc_nbytes)
+        Array.alloc_dict[Array.alloc_number] = (self.alloc_id, id(self), stack, alloc_nbytes)
 
         """
         if Array.total_arrays == 55:
@@ -588,7 +618,9 @@ class Array:
     def __del__(self):
         Array.total_arrays -= 1
         Array.total_bytes -= self.nbytes
-        print(f"DELETING PYOPENCL ARRAY: {Array.total_bytes/1e9} ({Array.total_arrays})")
+        if self.nbytes > Array.big_threshold:
+            Array.total_big_arrays -= 1
+        #print(f"DELETING PYOPENCL ARRAY: {Array.total_bytes/1e9} ({Array.total_arrays})")
         #print(self.stack)
         Array.alloc_dict.pop(self.alloc_id)
         #print(Array.alloc_dict[self.stack])
