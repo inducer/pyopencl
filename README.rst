@@ -1,5 +1,5 @@
 PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
----------------------------------------------------------------
+===============================================================
 
 .. image:: https://gitlab.tiker.net/inducer/pyopencl/badges/main/pipeline.svg
     :alt: Gitlab Build Status
@@ -53,12 +53,11 @@ instead build from source:
 *   `numpy <https://numpy.org>`_, and
 *   an OpenCL implementation. (See this `howto <https://wiki.tiker.net/OpenCLHowTo>`_ for how to get one.)
 
-Places on the web related to PyOpenCL:
-
-* `Python package index <https://pypi.python.org/pypi/pyopencl>`_ (download releases)
+Links
+-----
 
 * `Documentation <https://documen.tician.de/pyopencl>`__ (read how things work)
 * `Conda Forge <https://anaconda.org/conda-forge/pyopencl>`_ (download binary packages for Linux, macOS, Windows)
+* `Python package index <https://pypi.python.org/pypi/pyopencl>`_ (download releases)
 * `C. Gohlke's Windows binaries <https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`_ (download Windows binaries)
 * `Github <https://github.com/inducer/pyopencl>`_ (get latest source code, file bugs)
-* `Wiki <https://wiki.tiker.net/PyOpenCL>`_ (read installation tips, get examples, read FAQ)
