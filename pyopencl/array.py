@@ -228,6 +228,14 @@ class _copy_queue:  # noqa
 
 _ARRAY_GET_SIZES_CACHE = {}
 
+from dataclasses import dataclass
+
+@dataclass(frozen=True, repr=True)
+class MyFrameSummary:
+    filename: str
+    lineno: int
+    func_name: str
+
 
 class Array:
     """A :class:`numpy.ndarray` work-alike that stores its data and performs
@@ -414,6 +422,14 @@ class Array:
 
     __array_priority__ = 100
 
+    big_threshold = 30_000
+    total_arrays = 0
+    total_big_arrays = 0
+    max_big_arrays = 0
+    total_bytes = 0
+    alloc_dict = {}
+    alloc_number = 0
+
     def __init__(self, cq, shape, dtype, order="C", allocator=None,
             data=None, offset=0, strides=None, events=None, _flags=None):
         # {{{ backward compatibility
@@ -516,6 +532,60 @@ class Array:
         self.size = size
         alloc_nbytes = self.nbytes = self.dtype.itemsize * self.size
 
+        Array.total_arrays += 1
+        Array.total_bytes += alloc_nbytes
+        Array.alloc_number += 1
+
+        if alloc_nbytes > Array.big_threshold:
+            Array.total_big_arrays += 1
+            from builtins import max
+            Array.max_big_arrays = max(Array.max_big_arrays, Array.total_big_arrays)
+
+        if 0:
+            if Array.total_big_arrays >= 44:
+                new_dict = {}
+                for key, (alloc_id, aid, stack, size) in Array.alloc_dict.items():
+                    new_dict.setdefault(stack, []).append((alloc_id, aid, size))
+                nallocs = 0
+                for stack, alloc_sizes in new_dict.items():
+                    if any(frame.func_name in ["nodes", "normal"]
+                            for frame in stack):
+                        continue
+                    s = [(alloc_id, aid, s) for alloc_id, aid, s in alloc_sizes if s>Array.big_threshold]
+                    if s:
+                        for frame in stack:
+                            print(frame)
+                        print(s)
+                    nallocs += len(s)
+                print(f"{nallocs} live allocations that matter")
+                pu.db
+                import os
+                os._exit(1)
+
+        print(f"CREATING PYOPENCL ARRAY: {Array.total_bytes/1e9} ({Array.total_arrays}/{Array.max_big_arrays})")
+        from traceback import extract_stack
+
+        stack = tuple(MyFrameSummary(filename=fs.filename, lineno=fs.lineno, func_name=fs.name) for fs in extract_stack())
+        self.alloc_id = Array.alloc_number
+        #print(self.stack)
+        Array.alloc_dict[Array.alloc_number] = (self.alloc_id, id(self), stack, alloc_nbytes)
+
+        """
+        if Array.total_arrays == 55:
+            # Combine old values
+            new_dict = {}
+            for key, value in Array.alloc_dict.items():
+                if value[0] in new_dict:
+                    new_dict[value[0]] += value[1]
+                else:
+                    new_dict[value[0]] = value[1]
+            for key, value in new_dict.items():
+                for entry in key:
+                    print(entry)
+                print(value/1e9)
+            exit()
+        """
+
         self.allocator = allocator
 
         if data is None:
@@ -534,6 +604,9 @@ class Array:
                     self.base_data = cl.Buffer(
                             context, cl.mem_flags.READ_WRITE, alloc_nbytes)
                 else:
+                    #print("Allocating {} GB".format(alloc_nbytes / 1e9))
+                    #if alloc_nbytes / 1e9 > .4:
+                    #    import pudb; pu.db
                     self.base_data = self.allocator(alloc_nbytes)
         else:
             self.base_data = data
@@ -541,6 +614,19 @@ class Array:
         self.offset = offset
         self.context = context
         self._flags = _flags
+
+    def __del__(self):
+        Array.total_arrays -= 1
+        Array.total_bytes -= self.nbytes
+        if self.nbytes > Array.big_threshold:
+            Array.total_big_arrays -= 1
+        #print(f"DELETING PYOPENCL ARRAY: {Array.total_bytes/1e9} ({Array.total_arrays})")
+        #print(self.stack)
+        Array.alloc_dict.pop(self.alloc_id)
+        #print(Array.alloc_dict[self.stack])
+        #super().__del__()
+        #self.base_data.release()
+        #print("DELETING ARRAY")
 
     @property
     def ndim(self):
@@ -2238,7 +2324,7 @@ def arange(queue, *args, **kwargs):
 # }}}
 
 
-# {{{ take/put/concatenate/diff/(h?stack)
+# {{{ take/put/concatenate/diff
 
 @elwise_kernel_runner
 def _take(result, ary, indices):
@@ -2576,58 +2662,6 @@ def hstack(arrays, queue=None):
     for ary in arrays:
         result[..., index:index+ary.shape[-1]] = ary
         index += ary.shape[-1]
-
-    return result
-
-
-def stack(arrays, axis=0, queue=None):
-    """
-    Join a sequence of arrays along a new axis.
-
-    :arg arrays: A sequnce of :class:`Array`.
-    :arg axis: Index of the dimension of the new axis in the result array.
-        Can be -1, for the new axis to be last dimension.
-
-    :returns: :class:`Array`
-    """
-    if not arrays:
-        raise ValueError("need at least one array to stack")
-
-    input_shape = arrays[0].shape
-    input_ndim = arrays[0].ndim
-    axis = input_ndim if axis == -1 else axis
-
-    if queue is None:
-        for ary in arrays:
-            if ary.queue is not None:
-                queue = ary.queue
-                break
-
-    if not all(ary.shape == input_shape for ary in arrays[1:]):
-        raise ValueError("arrays must have the same shape")
-
-    if not (0 <= axis <= input_ndim):
-        raise ValueError("invalid axis")
-
-    if (axis == 0 and not all(ary.flags.c_contiguous
-                              for ary in arrays)):
-        # pyopencl.Array.__setitem__ does not support non-contiguous assignments
-        raise NotImplementedError
-
-    if (axis == input_ndim and not all(ary.flags.f_contiguous
-                                       for ary in arrays)):
-        # pyopencl.Array.__setitem__ does not support non-contiguous assignments
-        raise NotImplementedError
-
-    result_shape = input_shape[:axis] + (len(arrays),) + input_shape[axis:]
-    result = empty(queue, result_shape, np.result_type(*(ary.dtype
-                                                         for ary in arrays)),
-                   # TODO: reconsider once arrays support non-contiguous
-                   # assignments
-                   order="C" if axis == 0 else "F")
-    for i, ary in enumerate(arrays):
-        idx = (slice(None),)*axis + (i,) + (slice(None),)*(input_ndim-axis)
-        result[idx] = ary
 
     return result
 
