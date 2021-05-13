@@ -20,7 +20,7 @@ b_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b)
 c_buf = cl.Buffer(ctx, mf.WRITE_ONLY, b.nbytes)
 
 from cgen import FunctionBody, \
-        FunctionDeclaration, Typedef, POD, Value, \
+        FunctionDeclaration, POD, Value, \
         Pointer, Module, Block, Initializer, Assign, Const
 from cgen.opencl import CLKernel, CLGlobal, \
         CLRequiredWorkGroupSize
@@ -53,4 +53,3 @@ c = numpy.empty_like(a)
 cl.enqueue_copy(queue, c, c_buf).wait()
 
 assert la.norm(c-(a+b)) == 0
-

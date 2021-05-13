@@ -1,6 +1,7 @@
 import numpy as np
 import pyopencl as cl
 
+
 def make_collector_dtype(device):
     dtype = np.dtype([
         ("cur_min", np.int32),
@@ -15,6 +16,7 @@ def make_collector_dtype(device):
     dtype = get_or_register_dtype(name, dtype)
 
     return dtype, c_decl
+
 
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)

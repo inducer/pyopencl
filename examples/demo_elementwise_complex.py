@@ -8,11 +8,9 @@ queue = cl.CommandQueue(ctx)
 
 n = 10
 a_gpu = cl_array.to_device(queue,
-        ( numpy.random.randn(n) + 1j*numpy.random.randn(n)
-            ).astype(numpy.complex64))
+        (numpy.random.randn(n) + 1j*numpy.random.randn(n)).astype(numpy.complex64))
 b_gpu = cl_array.to_device(queue,
-        ( numpy.random.randn(n) + 1j*numpy.random.randn(n)
-            ).astype(numpy.complex64))
+        (numpy.random.randn(n) + 1j*numpy.random.randn(n)).astype(numpy.complex64))
 
 from pyopencl.elementwise import ElementwiseKernel
 complex_prod = ElementwiseKernel(ctx,
@@ -24,7 +22,7 @@ complex_prod = ElementwiseKernel(ctx,
         "complex_prod",
         preamble="""
         #define complex_ctr(x, y) (float2)(x, y)
-        #define complex_mul(a, b) complex_ctr(mad(-(a).y, (b).y, (a).x * (b).x), mad((a).y, (b).x, (a).x * (b).y))
+        #define complex_mul(a, b) complex_ctr(mad(-(a).y, (b).y, (a).x * (b).x), mad((a).y, (b).x, (a).x * (b).y))  # noqa: E501
         #define complex_div_scalar(a, b) complex_ctr((a).x / (b), (a).y / (b))
         #define conj(a) complex_ctr((a).x, -(a).y)
         #define conj_transp(a) complex_ctr(-(a).y, (a).x)

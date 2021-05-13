@@ -27,10 +27,12 @@ def main():
         for i in range(6, 31, 2):
             bs = 1 << i
             try:
-                result = "%g GB/s" % (perf.transfer_bandwidth(queue, tx_type, bs)/1e9)
+                result = "%g GB/s" % (
+                        perf.transfer_bandwidth(queue, tx_type, bs)/1e9)
             except Exception as e:
                 result = "exception: %s" % e.__class__.__name__
             print("bandwidth @ %d bytes: %s" % (bs, result))
+
 
 if __name__ == "__main__":
     main()
