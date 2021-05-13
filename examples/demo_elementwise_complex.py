@@ -15,31 +15,26 @@ b_gpu = cl_array.to_device(queue,
 from pyopencl.elementwise import ElementwiseKernel
 complex_prod = ElementwiseKernel(ctx,
         "float a, "
-        "float2 *x, "
-        "float2 *y, "
-        "float2 *z",
-        "z[i] = a * complex_mul(x[i], y[i])",
+        "cfloat_t *x, "
+        "cfloat_t *y, "
+        "cfloat_t *z",
+        "z[i] = cfloat_rmul(a, cfloat_mul(x[i], y[i]))",
         "complex_prod",
-        preamble="""
-        #define complex_ctr(x, y) (float2)(x, y)
-        #define complex_mul(a, b) complex_ctr(mad(-(a).y, (b).y, (a).x * (b).x), mad((a).y, (b).x, (a).x * (b).y))  # noqa: E501
-        #define complex_div_scalar(a, b) complex_ctr((a).x / (b), (a).y / (b))
-        #define conj(a) complex_ctr((a).x, -(a).y)
-        #define conj_transp(a) complex_ctr(-(a).y, (a).x)
-        #define conj_transp_and_mul(a, b) complex_ctr(-(a).y * (b), (a).x * (b))
-        """)
+        preamble="#include <pyopencl-complex.h>")
 
 complex_add = ElementwiseKernel(ctx,
-        "float2 *x, "
-        "float2 *y, "
-        "float2 *z",
-        "z[i] = x[i] + y[i]",
-        "complex_add")
+        "cfloat_t *x, "
+        "cfloat_t *y, "
+        "cfloat_t *z",
+        "z[i] = cfloat_add(x[i], y[i])",
+        "complex_add",
+        preamble="#include <pyopencl-complex.h>")
 
 real_part = ElementwiseKernel(ctx,
-        "float2 *x, float *z",
-        "z[i] = x[i].x",
-        "real_part")
+        "cfloat_t *x, float *z",
+        "z[i] = cfloat_real(x[i])",
+        "real_part",
+        preamble="#include <pyopencl-complex.h>")
 
 c_gpu = cl_array.empty_like(a_gpu)
 complex_prod(5, a_gpu, b_gpu, c_gpu)
