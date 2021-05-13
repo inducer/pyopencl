@@ -28,80 +28,29 @@
 # - Pierre Lena for his passion about science and vulgarisation
 
 # If crash on OpenCL Intel implementation, add following options and force
-#export PYOPENCL_COMPILER_OUTPUT=1
-#export CL_CONFIG_USE_VECTORIZER=True
-#export CL_CONFIG_CPU_VECTORIZER_MODE=16
+# export PYOPENCL_COMPILER_OUTPUT=1
+# export CL_CONFIG_USE_VECTORIZER=True
+# export CL_CONFIG_CPU_VECTORIZER_MODE=16
 
 import pyopencl as cl
 import numpy
-import time,string
-from numpy.random import randint as nprnd
+import time
 import sys
 import getopt
 from socket import gethostname
 
+
 def DictionariesAPI():
-    PhysicsList={'Einstein':0,'Newton':1}
-    return(PhysicsList)
+    PhysicsList = {"Einstein": 0, "Newton": 1}
+    return PhysicsList
+
 
 #
 # Blank space below to simplify debugging on OpenCL code
 #
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-BlobOpenCL= """
+BlobOpenCL = """
 
 #define PI (float)3.14159265359e0f
 #define nbr 256
@@ -218,7 +167,7 @@ float spectre_cn(float rf32,float b32,float db32,
 
   MYFLOAT v=1.e0f-3.e0f/r;
 
-  qu=1.e0f/sqrt((1.e0f-3.e0f/r)*r)*(sqrt(r)-sqrt(6.e0f)+sqrt(3.e0f)/2.e0f*log((sqrt(r)+sqrt(3.e0f))/(sqrt(r)-sqrt(3.e0f))* 0.17157287525380988e0f ));
+  qu=1.e0f/sqrt((1.e0f-3.e0f/r)*r)*(sqrt(r)-sqrt(6.e0f)+sqrt(3.e0f)/2.e0f*log((sqrt(r)+sqrt(3.e0f))/(sqrt(r)-sqrt(3.e0f))* 0.17157287525380988e0f ));  // # noqa: E501
 
   temp_em=temp*sqrt(m)*exp(0.25e0f*log(m_point)-0.75e0f*log(r)-0.125e0f*log(v)+0.25e0f*log(fabs(qu)));
 
@@ -340,7 +289,7 @@ __kernel void EachPixel(__global float *zImage,__global float *fImage,
      vp=vs;
      rungekutta(&ps,&us,&vs,pp,up,vp,h,m,b);
      rps=fabs(b/us);
-     ExitOnImpact = ((fmod(pp,PI)<fmod(phd,PI))&&(fmod(ps,PI)>fmod(phd,PI)))&&(rps>=ri)&&(rps<=re)?1:0;       
+     ExitOnImpact = ((fmod(pp,PI)<fmod(phd,PI))&&(fmod(ps,PI)>fmod(phd,PI)))&&(rps>=ri)&&(rps<=re)?1:0;
 
   } while ((rps>=rs)&&(rps<=rp0)&&(ExitOnImpact==0)&&(nh<TRACKPOINTS));
 
@@ -827,78 +776,8 @@ __kernel void Original(__global float *zImage,__global float *fImage,
 """
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def KernelCodeCuda():
-    BlobCUDA= """
+    BlobCUDA = """
 
 #define PI (float)3.14159265359
 #define nbr 256
@@ -1019,7 +898,7 @@ __device__ float spectre_cn(float rf32,float b32,float db32,
 
   MYFLOAT v=1.-3./r;
 
-  qu=1./sqrt((1.-3./r)*r)*(sqrt(r)-sqrt(6.)+sqrt(3.)/2.*log((sqrt(r)+sqrt(3.))/(sqrt(r)-sqrt(3.))* 0.17157287525380988 ));
+  qu=1./sqrt((1.-3./r)*r)*(sqrt(r)-sqrt(6.)+sqrt(3.)/2.*log((sqrt(r)+sqrt(3.))/(sqrt(r)-sqrt(3.))* 0.17157287525380988 ));  // # noqa: #051
 
   temp_em=temp*sqrt(m)*exp(0.25*log(m_point)-0.75*log(r)-0.125*log(v)+0.25*log(fabs(qu)));
 
@@ -1145,7 +1024,7 @@ __global__ void EachPixel(float *zImage,float *fImage,
      rungekutta(&ps,&us,&vs,pp,up,vp,h,m,b);
      rpp=rps;
      rps=fabs(b/us);
-     ExitOnImpact = ((fmod(pp,PI)<fmod(phd,PI))&&(fmod(ps,PI)>fmod(phd,PI)))&&(rps>ri)&&(rps<re)?1:0;          
+     ExitOnImpact = ((fmod(pp,PI)<fmod(phd,PI))&&(fmod(ps,PI)>fmod(phd,PI)))&&(rps>ri)&&(rps<re)?1:0;
 
   } while ((rps>=rs)&&(rps<=rp0)&&(ExitOnImpact==0));
 
@@ -1612,7 +1491,8 @@ __global__ void Original(float *zImage,float *fImage,
 
 }
 """
-    return(BlobCUDA)
+    return BlobCUDA
+
 
 # def ImageOutput(sigma,prefix,Colors):
 #     import matplotlib.pyplot as plt
@@ -1625,459 +1505,602 @@ __global__ void Original(float *zImage,float *fImage,
 #     print("Save image as %s.png file" % prefix)
 #     print("Save Time : %f" % save_time)
 
-def ImageOutput(sigma,prefix,Colors):
+
+def ImageOutput(sigma, prefix, Colors):
     from PIL import Image
-    Max=sigma.max()
-    Min=sigma.min()
+
+    Max = sigma.max()
+    Min = sigma.min()
     # Normalize value as 8bits Integer
-    SigmaInt=(255*(sigma-Min)/(Max-Min)).astype('uint8')
+    SigmaInt = (255 * (sigma - Min) / (Max - Min)).astype("uint8")
     image = Image.fromarray(SigmaInt)
     image.save("%s.jpg" % prefix)
-    
-def BlackHoleCL(zImage,fImage,InputCL):
 
-    kernel_params = {}
 
-    Device=InputCL['Device']
-    GpuStyle=InputCL['GpuStyle']
-    VariableType=InputCL['VariableType']
-    Size=InputCL['Size']
-    Mass=InputCL['Mass']
-    InternalRadius=InputCL['InternalRadius']
-    ExternalRadius=InputCL['ExternalRadius']
-    Angle=InputCL['Angle']
-    Method=InputCL['Method']
-    TrackPoints=InputCL['TrackPoints']
-    Physics=InputCL['Physics']
-    NoImage=InputCL['NoImage']
-    TrackSave=InputCL['TrackSave']
+def BlackHoleCL(zImage, fImage, InputCL):
+    Device = InputCL["Device"]
+    Mass = InputCL["Mass"]
+    InternalRadius = InputCL["InternalRadius"]
+    ExternalRadius = InputCL["ExternalRadius"]
+    Angle = InputCL["Angle"]
+    Method = InputCL["Method"]
+    TrackPoints = InputCL["TrackPoints"]
+    Physics = InputCL["Physics"]
+    NoImage = InputCL["NoImage"]
+    TrackSave = InputCL["TrackSave"]
 
-    PhysicsList=DictionariesAPI()
-    
-    if InputCL['BlackBody']:
+    PhysicsList = DictionariesAPI()
+
+    if InputCL["BlackBody"]:
         # Spectrum is Black Body one
-        Line=0
+        Line = 0
     else:
         # Spectrum is Monochromatic Line one
-        Line=1
+        Line = 1
 
-    Trajectories=numpy.zeros((int(InputCL['Size']/2),InputCL['TrackPoints']),dtype=numpy.float32)
-    IdLast=numpy.zeros(int(InputCL['Size']/2),dtype=numpy.int32)
+    Trajectories = numpy.zeros(
+        (int(InputCL["Size"] / 2), InputCL["TrackPoints"]), dtype=numpy.float32
+    )
+    IdLast = numpy.zeros(int(InputCL["Size"] / 2), dtype=numpy.int32)
 
     # Je detecte un peripherique GPU dans la liste des peripheriques
-    Id=0
-    HasXPU=False
+    Id = 0
+    HasXPU = False
     for platform in cl.get_platforms():
         for device in platform.get_devices():
-            if Id==Device:
-                PF4XPU=platform.name
-                XPU=device
-                print("CPU/GPU selected: ",device.name.lstrip())
-                HasXPU=True
-            Id+=1
+            if Id == Device:
+                PF4XPU = platform.name
+                XPU = device
+                print("CPU/GPU selected: ", device.name.lstrip())
+                HasXPU = True
+            Id += 1
 
-    if HasXPU==False:
-        print("No XPU #%i found in all of %i devices, sorry..." % (Device,Id-1))
+    if not HasXPU:
+        print("No XPU #%i found in all of %i devices, sorry..." % (Device, Id - 1))
         sys.exit()
 
     ctx = cl.Context([XPU])
-    queue = cl.CommandQueue(ctx,
-			    properties=cl.command_queue_properties.PROFILING_ENABLE)
+    queue = cl.CommandQueue(
+        ctx, properties=cl.command_queue_properties.PROFILING_ENABLE
+    )
 
-    BuildOptions="-DPHYSICS=%i -DSETTRACKPOINTS=%i " % (PhysicsList[Physics],InputCL['TrackPoints'])
+    BuildOptions = "-DPHYSICS=%i -DSETTRACKPOINTS=%i " % (
+        PhysicsList[Physics],
+        InputCL["TrackPoints"],
+    )
 
-    print('My Platform is ',PF4XPU)
-    
-    if 'Intel' in PF4XPU or 'Experimental' in PF4XPU or 'Clover' in PF4XPU or 'Portable' in PF4XPU :
-        print('No extra options for Intel and Clover!')
+    print("My Platform is ", PF4XPU)
+
+    if (
+        "Intel" in PF4XPU
+        or "Experimental" in PF4XPU
+        or "Clover" in PF4XPU
+        or "Portable" in PF4XPU
+    ):
+        print("No extra options for Intel and Clover!")
     else:
-        BuildOptions = BuildOptions+" -cl-mad-enable"
+        BuildOptions = BuildOptions + " -cl-mad-enable"
 
-    BlackHoleCL = cl.Program(ctx,BlobOpenCL).build(options = BuildOptions)
-    
+    BlackHoleCL = cl.Program(ctx, BlobOpenCL).build(options=BuildOptions)
+
     # Je recupere les flag possibles pour les buffers
     mf = cl.mem_flags
 
-    if Method=='TrajectoPixel' or Method=='TrajectoCircle':
-        TrajectoriesCL = cl.Buffer(ctx, mf.WRITE_ONLY | mf.COPY_HOST_PTR, hostbuf=Trajectories) 
+    if Method == "TrajectoPixel" or Method == "TrajectoCircle":
+        TrajectoriesCL = cl.Buffer(
+            ctx, mf.WRITE_ONLY | mf.COPY_HOST_PTR, hostbuf=Trajectories
+        )
         IdLastCL = cl.Buffer(ctx, mf.WRITE_ONLY | mf.COPY_HOST_PTR, hostbuf=IdLast)
 
     zImageCL = cl.Buffer(ctx, mf.WRITE_ONLY | mf.COPY_HOST_PTR, hostbuf=zImage)
     fImageCL = cl.Buffer(ctx, mf.WRITE_ONLY | mf.COPY_HOST_PTR, hostbuf=fImage)
-    
-    start_time=time.time()
 
-    if Method=='EachPixel':
-        CLLaunch=BlackHoleCL.EachPixel(queue,(zImage.shape[0],zImage.shape[1]),
-                                       None,zImageCL,fImageCL,
-                                       numpy.float32(Mass),
-                                       numpy.float32(InternalRadius),
-                                       numpy.float32(ExternalRadius),
-                                       numpy.float32(Angle),
-                                       numpy.int32(Line))
+    start_time = time.time()
+
+    if Method == "EachPixel":
+        CLLaunch = BlackHoleCL.EachPixel(
+            queue,
+            (zImage.shape[0], zImage.shape[1]),
+            None,
+            zImageCL,
+            fImageCL,
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+        )
         CLLaunch.wait()
-    elif Method=='Original':
-        CLLaunch=BlackHoleCL.Original(queue,(1,),
-                                      None,zImageCL,fImageCL,
-                                      numpy.uint32(zImage.shape[0]/2),
-                                      numpy.float32(Mass),
-                                      numpy.float32(InternalRadius),
-                                      numpy.float32(ExternalRadius),
-                                      numpy.float32(Angle),
-                                      numpy.int32(Line))
+    elif Method == "Original":
+        CLLaunch = BlackHoleCL.Original(
+            queue,
+            (1,),
+            None,
+            zImageCL,
+            fImageCL,
+            numpy.uint32(zImage.shape[0] / 2),
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+        )
         CLLaunch.wait()
-    elif Method=='EachCircle':
-        CLLaunch=BlackHoleCL.EachCircle(queue,(int(zImage.shape[0]/2),),
-                                        None,zImageCL,fImageCL,
-                                        numpy.float32(Mass),
-                                        numpy.float32(InternalRadius),
-                                        numpy.float32(ExternalRadius),
-                                        numpy.float32(Angle),
-                                        numpy.int32(Line))
+    elif Method == "EachCircle":
+        CLLaunch = BlackHoleCL.EachCircle(
+            queue,
+            (int(zImage.shape[0] / 2),),
+            None,
+            zImageCL,
+            fImageCL,
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+        )
         CLLaunch.wait()
-    elif Method=='TrajectoCircle':
-        CLLaunch=BlackHoleCL.Trajectory(queue,(Trajectories.shape[0],),
-                                        None,TrajectoriesCL,IdLastCL,
-                                        numpy.float32(Mass),
-                                        numpy.float32(InternalRadius),
-                                        numpy.float32(ExternalRadius),
-                                        numpy.float32(Angle),
-                                        numpy.int32(Line))
-        
-        CLLaunch=BlackHoleCL.Circle(queue,(Trajectories.shape[0],
-                                           int(zImage.shape[0]*4)),None,
-                                    TrajectoriesCL,IdLastCL,
-                                    zImageCL,fImageCL,
-                                    numpy.float32(Mass),
-                                    numpy.float32(InternalRadius),
-                                    numpy.float32(ExternalRadius),
-                                    numpy.float32(Angle),
-                                    numpy.int32(Line))
+    elif Method == "TrajectoCircle":
+        CLLaunch = BlackHoleCL.Trajectory(
+            queue,
+            (Trajectories.shape[0],),
+            None,
+            TrajectoriesCL,
+            IdLastCL,
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+        )
+
+        CLLaunch = BlackHoleCL.Circle(
+            queue,
+            (Trajectories.shape[0], int(zImage.shape[0] * 4)),
+            None,
+            TrajectoriesCL,
+            IdLastCL,
+            zImageCL,
+            fImageCL,
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+        )
         CLLaunch.wait()
     else:
-        CLLaunch=BlackHoleCL.Trajectory(queue,(Trajectories.shape[0],),
-                                        None,TrajectoriesCL,IdLastCL,
-                                        numpy.float32(Mass),
-                                        numpy.float32(InternalRadius),
-                                        numpy.float32(ExternalRadius),
-                                        numpy.float32(Angle),
-                                        numpy.int32(Line))
-        
-        CLLaunch=BlackHoleCL.Pixel(queue,(zImage.shape[0],zImage.shape[1]),None,
-                                   zImageCL,fImageCL,TrajectoriesCL,IdLastCL,
-                                   numpy.uint32(Trajectories.shape[0]),
-                                   numpy.float32(Mass),
-                                   numpy.float32(InternalRadius),
-                                   numpy.float32(ExternalRadius),
-                                   numpy.float32(Angle),
-                                   numpy.int32(Line))
+        CLLaunch = BlackHoleCL.Trajectory(
+            queue,
+            (Trajectories.shape[0],),
+            None,
+            TrajectoriesCL,
+            IdLastCL,
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+        )
+
+        CLLaunch = BlackHoleCL.Pixel(
+            queue,
+            (zImage.shape[0], zImage.shape[1]),
+            None,
+            zImageCL,
+            fImageCL,
+            TrajectoriesCL,
+            IdLastCL,
+            numpy.uint32(Trajectories.shape[0]),
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+        )
         CLLaunch.wait()
-    
-    compute = time.time()-start_time
-    
-    cl.enqueue_copy(queue,zImage,zImageCL).wait()
-    cl.enqueue_copy(queue,fImage,fImageCL).wait()
-    if Method=='TrajectoPixel' or Method=='TrajectoCircle':
-        cl.enqueue_copy(queue,Trajectories,TrajectoriesCL).wait()
-        cl.enqueue_copy(queue,IdLast,IdLastCL).wait()
-    elapsed = time.time()-start_time
+
+    compute = time.time() - start_time
+
+    cl.enqueue_copy(queue, zImage, zImageCL).wait()
+    cl.enqueue_copy(queue, fImage, fImageCL).wait()
+    if Method == "TrajectoPixel" or Method == "TrajectoCircle":
+        cl.enqueue_copy(queue, Trajectories, TrajectoriesCL).wait()
+        cl.enqueue_copy(queue, IdLast, IdLastCL).wait()
+    elapsed = time.time() - start_time
     print("\nCompute Time : %f" % compute)
     print("Elapsed Time : %f\n" % elapsed)
 
-    zMaxPosition=numpy.where(zImage[:,:]==zImage.max())
-    fMaxPosition=numpy.where(fImage[:,:]==fImage.max())
-    print("Z max @(%f,%f) : %f" % ((1.*zMaxPosition[1][0]/zImage.shape[1]-0.5,1.*zMaxPosition[0][0]/zImage.shape[0]-0.5,zImage.max())))
-    print("Flux max @(%f,%f) : %f" % ((1.*fMaxPosition[1][0]/fImage.shape[1]-0.5,1.*fMaxPosition[0][0]/fImage.shape[0]-0.5,fImage.max())))
+    zMaxPosition = numpy.where(zImage[:, :] == zImage.max())
+    fMaxPosition = numpy.where(fImage[:, :] == fImage.max())
+    print(
+        "Z max @(%f,%f) : %f"
+        % (
+            (
+                1.0 * zMaxPosition[1][0] / zImage.shape[1] - 0.5,
+                1.0 * zMaxPosition[0][0] / zImage.shape[0] - 0.5,
+                zImage.max(),
+            )
+        )
+    )
+    print(
+        "Flux max @(%f,%f) : %f"
+        % (
+            (
+                1.0 * fMaxPosition[1][0] / fImage.shape[1] - 0.5,
+                1.0 * fMaxPosition[0][0] / fImage.shape[0] - 0.5,
+                fImage.max(),
+            )
+        )
+    )
     zImageCL.release()
     fImageCL.release()
 
-    if Method=='TrajectoPixel' or Method=='TrajectoCircle':
+    if Method == "TrajectoPixel" or Method == "TrajectoCircle":
         if not NoImage:
-            AngleStep=4*numpy.pi/TrackPoints
-            Angles=numpy.arange(0.,4*numpy.pi,AngleStep)
-            Angles.shape=(1,TrackPoints)
-            Hostname=gethostname()
-            Date=time.strftime("%Y%m%d_%H%M%S")
-            ImageInfo="%s_Device%i_%s_%s" % (Method,Device,Hostname,Date)
-            
+            AngleStep = 4 * numpy.pi / TrackPoints
+            Angles = numpy.arange(0.0, 4 * numpy.pi, AngleStep)
+            Angles.shape = (1, TrackPoints)
+
             if TrackSave:
                 # numpy.savetxt("TrouNoirTrajectories_%s.csv" % ImageInfo,
                 #               numpy.transpose(numpy.concatenate((Angles,Trajectories),axis=0)),
                 #               delimiter=' ', fmt='%.2e')
-                numpy.savetxt("TrouNoirTrajectories.csv",
-                            numpy.transpose(numpy.concatenate((Angles,Trajectories),axis=0)),delimiter=' ', fmt='%.2e')
-        
+                numpy.savetxt(
+                    "TrouNoirTrajectories.csv",
+                    numpy.transpose(numpy.concatenate((Angles, Trajectories),
+                        axis=0)),
+                    delimiter=" ",
+                    fmt="%.2e",
+                )
+
         TrajectoriesCL.release()
         IdLastCL.release()
-        
-    return(elapsed)
 
-def BlackHoleCUDA(zImage,fImage,InputCL):
+    return elapsed
 
-    kernel_params = {}
 
-    Device=InputCL['Device']
-    GpuStyle=InputCL['GpuStyle']
-    VariableType=InputCL['VariableType']
-    Size=InputCL['Size']
-    Mass=InputCL['Mass']
-    InternalRadius=InputCL['InternalRadius']
-    ExternalRadius=InputCL['ExternalRadius']
-    Angle=InputCL['Angle']
-    Method=InputCL['Method']
-    TrackPoints=InputCL['TrackPoints']
-    Physics=InputCL['Physics']
-    Threads=InputCL['Threads']
+def BlackHoleCUDA(zImage, fImage, InputCL):
+    Device = InputCL["Device"]
+    Mass = InputCL["Mass"]
+    InternalRadius = InputCL["InternalRadius"]
+    ExternalRadius = InputCL["ExternalRadius"]
+    Angle = InputCL["Angle"]
+    Method = InputCL["Method"]
+    TrackPoints = InputCL["TrackPoints"]
+    Physics = InputCL["Physics"]
+    Threads = InputCL["Threads"]
 
-    PhysicsList=DictionariesAPI()
-    
-    if InputCL['BlackBody']:
+    PhysicsList = DictionariesAPI()
+
+    if InputCL["BlackBody"]:
         # Spectrum is Black Body one
-        Line=0
+        Line = 0
     else:
         # Spectrum is Monochromatic Line one
-        Line=1
+        Line = 1
 
-    Trajectories=numpy.zeros((int(InputCL['Size']/2),InputCL['TrackPoints']),dtype=numpy.float32)
-    IdLast=numpy.zeros(int(InputCL['Size']/2),dtype=numpy.int32)
+    Trajectories = numpy.zeros(
+        (int(InputCL["Size"] / 2), InputCL["TrackPoints"]), dtype=numpy.float32
+    )
+    IdLast = numpy.zeros(int(InputCL["Size"] / 2), dtype=numpy.int32)
 
     try:
         # For PyCUDA import
         import pycuda.driver as cuda
         from pycuda.compiler import SourceModule
-        
+
         cuda.init()
         for Id in range(cuda.Device.count()):
-            if Id==Device:
-                XPU=cuda.Device(Id)
+            if Id == Device:
+                XPU = cuda.Device(Id)
                 print("GPU selected %s" % XPU.name())
         print
 
     except ImportError:
         print("Platform does not seem to support CUDA")
 
-    Context=XPU.make_context()
+    Context = XPU.make_context()
 
     try:
-        mod = SourceModule(KernelCodeCuda(),options=['--compiler-options','-DPHYSICS=%i -DSETTRACKPOINTS=%i' % (PhysicsList[Physics],TrackPoints)])
+        mod = SourceModule(
+            KernelCodeCuda(),
+            options=[
+                "--compiler-options",
+                "-DPHYSICS=%i -DSETTRACKPOINTS=%i"
+                % (PhysicsList[Physics], TrackPoints),
+            ],
+        )
         print("Compilation seems to be OK")
-    except:
+    except Exception:
         print("Compilation seems to break")
 
-    EachPixelCU=mod.get_function("EachPixel")
-    OriginalCU=mod.get_function("Original")
-    EachCircleCU=mod.get_function("EachCircle")
-    TrajectoryCU=mod.get_function("Trajectory")
-    PixelCU=mod.get_function("Pixel")
-    CircleCU=mod.get_function("Circle")
-    
-    TrajectoriesCU = cuda.mem_alloc(Trajectories.size*Trajectories.dtype.itemsize)
+    EachPixelCU = mod.get_function("EachPixel")
+    OriginalCU = mod.get_function("Original")
+    EachCircleCU = mod.get_function("EachCircle")
+    TrajectoryCU = mod.get_function("Trajectory")
+    PixelCU = mod.get_function("Pixel")
+    CircleCU = mod.get_function("Circle")
+
+    TrajectoriesCU = cuda.mem_alloc(Trajectories.size * Trajectories.dtype.itemsize)
     cuda.memcpy_htod(TrajectoriesCU, Trajectories)
-    zImageCU = cuda.mem_alloc(zImage.size*zImage.dtype.itemsize)
+    zImageCU = cuda.mem_alloc(zImage.size * zImage.dtype.itemsize)
     cuda.memcpy_htod(zImageCU, zImage)
-    fImageCU = cuda.mem_alloc(fImage.size*fImage.dtype.itemsize)
+    fImageCU = cuda.mem_alloc(fImage.size * fImage.dtype.itemsize)
     cuda.memcpy_htod(zImageCU, fImage)
-    IdLastCU = cuda.mem_alloc(IdLast.size*IdLast.dtype.itemsize)
+    IdLastCU = cuda.mem_alloc(IdLast.size * IdLast.dtype.itemsize)
     cuda.memcpy_htod(IdLastCU, IdLast)
 
-    start_time=time.time()
+    start_time = time.time()
 
-    if Method=='EachPixel':
-        EachPixelCU(zImageCU,fImageCU,
-                    numpy.float32(Mass),
-                    numpy.float32(InternalRadius),
-                    numpy.float32(ExternalRadius),
-                    numpy.float32(Angle),
-                    numpy.int32(Line),
-                    grid=(int(zImage.shape[0]/Threads),
-                          int(zImage.shape[1]/Threads)),
-                    block=(Threads,Threads,1))
-    elif Method=='EachCircle':
-        EachCircleCU(zImageCU,fImageCU,
-                   numpy.float32(Mass),
-                   numpy.float32(InternalRadius),
-                   numpy.float32(ExternalRadius),
-                   numpy.float32(Angle),
-                   numpy.int32(Line),
-                   grid=(int(zImage.shape[0]/Threads/2),1),
-                   block=(Threads,1,1))
-    elif Method=='Original':
-        OriginalCU(zImageCU,fImageCU,
-                   numpy.uint32(zImage.shape[0]/2),
-                   numpy.float32(Mass),
-                   numpy.float32(InternalRadius),
-                   numpy.float32(ExternalRadius),
-                   numpy.float32(Angle),
-                   numpy.int32(Line),
-                   grid=(1,1),
-                   block=(1,1,1))
-    elif Method=='TrajectoCircle':
-        TrajectoryCU(TrajectoriesCU,IdLastCU,
-                     numpy.float32(Mass),
-                     numpy.float32(InternalRadius),
-                     numpy.float32(ExternalRadius),
-                     numpy.float32(Angle),
-                     numpy.int32(Line),
-                     grid=(int(Trajectories.shape[0]/Threads),1),
-                     block=(Threads,1,1))
-        
-        CircleCU(TrajectoriesCU,IdLastCU,zImageCU,fImageCU,
-                 numpy.float32(Mass),
-                 numpy.float32(InternalRadius),
-                 numpy.float32(ExternalRadius),
-                 numpy.float32(Angle),
-                 numpy.int32(Line),
-                 grid=(int(Trajectories.shape[0]/Threads),
-                       int(zImage.shape[0]*4/Threads)),
-                 block=(Threads,Threads,1))
+    if Method == "EachPixel":
+        EachPixelCU(
+            zImageCU,
+            fImageCU,
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+            grid=(int(zImage.shape[0] / Threads), int(zImage.shape[1] / Threads)),
+            block=(Threads, Threads, 1),
+        )
+    elif Method == "EachCircle":
+        EachCircleCU(
+            zImageCU,
+            fImageCU,
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+            grid=(int(zImage.shape[0] / Threads / 2), 1),
+            block=(Threads, 1, 1),
+        )
+    elif Method == "Original":
+        OriginalCU(
+            zImageCU,
+            fImageCU,
+            numpy.uint32(zImage.shape[0] / 2),
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+            grid=(1, 1),
+            block=(1, 1, 1),
+        )
+    elif Method == "TrajectoCircle":
+        TrajectoryCU(
+            TrajectoriesCU,
+            IdLastCU,
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+            grid=(int(Trajectories.shape[0] / Threads), 1),
+            block=(Threads, 1, 1),
+        )
+
+        CircleCU(
+            TrajectoriesCU,
+            IdLastCU,
+            zImageCU,
+            fImageCU,
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+            grid=(
+                int(Trajectories.shape[0] / Threads),
+                int(zImage.shape[0] * 4 / Threads),
+            ),
+            block=(Threads, Threads, 1),
+        )
     else:
         # Default method: TrajectoPixel
-        TrajectoryCU(TrajectoriesCU,IdLastCU,
-                     numpy.float32(Mass),
-                     numpy.float32(InternalRadius),
-                     numpy.float32(ExternalRadius),
-                     numpy.float32(Angle),
-                     numpy.int32(Line),
-                     grid=(int(Trajectories.shape[0]/Threads),1),
-                     block=(Threads,1,1))
-        
-        PixelCU(zImageCU,fImageCU,TrajectoriesCU,IdLastCU,
-                numpy.uint32(Trajectories.shape[0]),
-                numpy.float32(Mass),
-                numpy.float32(InternalRadius),
-                numpy.float32(ExternalRadius),
-                numpy.float32(Angle),
-                numpy.int32(Line),
-                grid=(int(zImage.shape[0]/Threads),
-                      int(zImage.shape[1]/Threads),1),
-                block=(Threads,Threads,1))
+        TrajectoryCU(
+            TrajectoriesCU,
+            IdLastCU,
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+            grid=(int(Trajectories.shape[0] / Threads), 1),
+            block=(Threads, 1, 1),
+        )
+
+        PixelCU(
+            zImageCU,
+            fImageCU,
+            TrajectoriesCU,
+            IdLastCU,
+            numpy.uint32(Trajectories.shape[0]),
+            numpy.float32(Mass),
+            numpy.float32(InternalRadius),
+            numpy.float32(ExternalRadius),
+            numpy.float32(Angle),
+            numpy.int32(Line),
+            grid=(int(zImage.shape[0] / Threads), int(zImage.shape[1] / Threads), 1),
+            block=(Threads, Threads, 1),
+        )
 
     Context.synchronize()
 
-    compute = time.time()-start_time
+    compute = time.time() - start_time
 
-    cuda.memcpy_dtoh(zImage,zImageCU)
-    cuda.memcpy_dtoh(fImage,fImageCU)
-    if Method=='TrajectoPixel' or Method=='TrajectoCircle':
-        cuda.memcpy_dtoh(Trajectories,TrajectoriesCU)
-    elapsed = time.time()-start_time
+    cuda.memcpy_dtoh(zImage, zImageCU)
+    cuda.memcpy_dtoh(fImage, fImageCU)
+    if Method == "TrajectoPixel" or Method == "TrajectoCircle":
+        cuda.memcpy_dtoh(Trajectories, TrajectoriesCU)
+    elapsed = time.time() - start_time
     print("\nCompute Time : %f" % compute)
     print("Elapsed Time : %f\n" % elapsed)
 
-    zMaxPosition=numpy.where(zImage[:,:]==zImage.max())
-    fMaxPosition=numpy.where(fImage[:,:]==fImage.max())
-    print("Z max @(%f,%f) : %f" % ((1.*zMaxPosition[1][0]/zImage.shape[1]-0.5,1.*zMaxPosition[0][0]/zImage.shape[0]-0.5,zImage.max())))
-    print("Flux max @(%f,%f) : %f" % ((1.*fMaxPosition[1][0]/fImage.shape[1]-0.5,1.*fMaxPosition[0][0]/fImage.shape[0]-0.5,fImage.max())))
+    zMaxPosition = numpy.where(zImage[:, :] == zImage.max())
+    fMaxPosition = numpy.where(fImage[:, :] == fImage.max())
+    print(
+        "Z max @(%f,%f) : %f"
+        % (
+            (
+                1.0 * zMaxPosition[1][0] / zImage.shape[1] - 0.5,
+                1.0 * zMaxPosition[0][0] / zImage.shape[0] - 0.5,
+                zImage.max(),
+            )
+        )
+    )
+    print(
+        "Flux max @(%f,%f) : %f"
+        % (
+            (
+                1.0 * fMaxPosition[1][0] / fImage.shape[1] - 0.5,
+                1.0 * fMaxPosition[0][0] / fImage.shape[0] - 0.5,
+                fImage.max(),
+            )
+        )
+    )
 
-    
     Context.pop()
 
     Context.detach()
 
-    if Method=='TrajectoPixel' or Method=='TrajectoCircle':
+    if Method == "TrajectoPixel" or Method == "TrajectoCircle":
         if not NoImage:
-            AngleStep=4*numpy.pi/TrackPoints
-            Angles=numpy.arange(0.,4*numpy.pi,AngleStep)
-            Angles.shape=(1,TrackPoints)
-            Hostname=gethostname()
-            Date=time.strftime("%Y%m%d_%H%M%S")
-            ImageInfo="%s_Device%i_%s_%s" % (Method,Device,Hostname,Date)
-            
+            AngleStep = 4 * numpy.pi / TrackPoints
+            Angles = numpy.arange(0.0, 4 * numpy.pi, AngleStep)
+            Angles.shape = (1, TrackPoints)
+
             # numpy.savetxt("TrouNoirTrajectories_%s.csv" % ImageInfo,
             #               numpy.transpose(numpy.concatenate((Angles,Trajectories),axis=0)),
             #               delimiter=' ', fmt='%.2e')
-            numpy.savetxt("TrouNoirTrajectories.csv",
-                          numpy.transpose(numpy.concatenate((Angles,Trajectories),axis=0)),
-                          delimiter=' ', fmt='%.2e')
+            numpy.savetxt(
+                "TrouNoirTrajectories.csv",
+                numpy.transpose(numpy.concatenate((Angles, Trajectories), axis=0)),
+                delimiter=" ",
+                fmt="%.2e",
+            )
 
-    
-    return(elapsed)
+    return elapsed
 
-if __name__=='__main__':
+
+if __name__ == "__main__":
 
     # Default device: first one!
-    Device=0
+    Device = 0
     # Default implementation: OpenCL, most versatile!
-    GpuStyle = 'OpenCL'
-    Mass = 1.
+    GpuStyle = "OpenCL"
+    Mass = 1.0
     # Internal Radius 3 times de Schwarzschild Radius
-    InternalRadius=6.*Mass
+    InternalRadius = 6.0 * Mass
     #
-    ExternalRadius=12.
+    ExternalRadius = 12.0
     #
     # Angle with normal to disc 10 degrees
-    Angle = numpy.pi/180.*(90.-10.)
+    Angle = numpy.pi / 180.0 * (90.0 - 10.0)
     # Radiation of disc : BlackBody or Monochromatic
     BlackBody = False
     # Size of image
-    Size=1024
+    Size = 1024
     # Variable Type
-    VariableType='FP32'
+    VariableType = "FP32"
     # ?
-    q=-2
+    q = -2
     # Method of resolution
-    Method='TrajectoPixel'
+    Method = "TrajectoPixel"
     # Colors for output image
-    Colors='Greyscale'
+    Colors = "Greyscale"
     # Physics
-    Physics='Einstein'
+    Physics = "Einstein"
     # No output as image
     NoImage = False
     # Threads in CUDA
     Threads = 32
     # Trackpoints of trajectories
-    TrackPoints=2048
+    TrackPoints = 2048
     # Tracksave of trajectories
-    TrackSave=False
-    
-    HowToUse='%s -h [Help] -b [BlackBodyEmission] -j [TrackSave] -n [NoImage] -p <Einstein/Newton> -s <SizeInPixels> -m <Mass> -i <DiscInternalRadius> -x <DiscExternalRadius> -a <AngleAboveDisc> -d <DeviceId> -c <Greyscale/Red2Yellow> -g <CUDA/OpenCL> -o <EachPixel/TrajectoCircle/TrajectoPixel/EachCircle/Original> -t <ThreadsInCuda> -v <FP32/FP64> -k <TrackPoints>'
+    TrackSave = False
+
+    HowToUse = "%s -h [Help] -b [BlackBodyEmission] -j [TrackSave] -n [NoImage] -p <Einstein/Newton> -s <SizeInPixels> -m <Mass> -i <DiscInternalRadius> -x <DiscExternalRadius> -a <AngleAboveDisc> -d <DeviceId> -c <Greyscale/Red2Yellow> -g <CUDA/OpenCL> -o <EachPixel/TrajectoCircle/TrajectoPixel/EachCircle/Original> -t <ThreadsInCuda> -v <FP32/FP64> -k <TrackPoints>"  # noqa: E501
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hbnjs:m:i:x:a:d:g:v:o:t:c:p:k:",["tracksave","blackbody","noimage","camera","size=","mass=","internal=","external=","angle=","device=","gpustyle=","variabletype=","method=","threads=","colors=","physics=","trackpoints="])
+        opts, args = getopt.getopt(
+            sys.argv[1:],
+            "hbnjs:m:i:x:a:d:g:v:o:t:c:p:k:",
+            [
+                "tracksave",
+                "blackbody",
+                "noimage",
+                "camera",
+                "size=",
+                "mass=",
+                "internal=",
+                "external=",
+                "angle=",
+                "device=",
+                "gpustyle=",
+                "variabletype=",
+                "method=",
+                "threads=",
+                "colors=",
+                "physics=",
+                "trackpoints=",
+            ],
+        )
     except getopt.GetoptError:
         print(HowToUse % sys.argv[0])
         sys.exit(2)
 
     # List of Devices
-    Devices=[]
-    Alu={}
-        
+    Devices = []
+    Alu = {}
+
     for opt, arg in opts:
-        if opt == '-h':
+        if opt == "-h":
             print(HowToUse % sys.argv[0])
-            
+
             print("\nInformations about devices detected under OpenCL API:")
             # For PyOpenCL import
             try:
-                import pyopencl as cl
-                Id=0
+                Id = 0
                 for platform in cl.get_platforms():
                     for device in platform.get_devices():
-                        #deviceType=cl.device_type.to_string(device.type)
-                        deviceType="xPU"
-                        print("Device #%i from %s of type %s : %s" % (Id,platform.vendor.lstrip(),deviceType,device.name.lstrip()))
-                        Id=Id+1
-                        
-            except:
+                        # deviceType=cl.device_type.to_string(device.type)
+                        deviceType = "xPU"
+                        print(
+                            "Device #%i from %s of type %s : %s"
+                            % (
+                                Id,
+                                platform.vendor.lstrip(),
+                                deviceType,
+                                device.name.lstrip(),
+                            )
+                        )
+                        Id = Id + 1
+
+            except Exception:
                 print("Your platform does not seem to support OpenCL")
-                
+
             print("\nInformations about devices detected under CUDA API:")
-                # For PyCUDA import
+            # For PyCUDA import
             try:
                 import pycuda.driver as cuda
+
                 cuda.init()
                 for Id in range(cuda.Device.count()):
-                    device=cuda.Device(Id)
-                    print("Device #%i of type GPU : %s" % (Id,device.name()))
+                    device = cuda.Device(Id)
+                    print("Device #%i of type GPU : %s" % (Id, device.name()))
                 print
-            except:
+            except Exception:
                 print("Your platform does not seem to support CUDA")
-        
+
             sys.exit()
-        
+
         elif opt in ("-d", "--device"):
-#            Devices.append(int(arg))
-            Device=int(arg)
+            #            Devices.append(int(arg))
+            Device = int(arg)
         elif opt in ("-g", "--gpustyle"):
             GpuStyle = arg
         elif opt in ("-v", "--variabletype"):
@@ -2093,7 +2116,7 @@ if __name__=='__main__':
         elif opt in ("-e", "--external"):
             ExternalRadius = float(arg)
         elif opt in ("-a", "--angle"):
-            Angle = numpy.pi/180.*(90.-float(arg))
+            Angle = numpy.pi / 180.0 * (90.0 - float(arg))
         elif opt in ("-b", "--blackbody"):
             BlackBody = True
         elif opt in ("-j", "--tracksave"):
@@ -2124,72 +2147,79 @@ if __name__=='__main__':
     print("Trackpoints of Trajectories : %i" % TrackPoints)
     print("Tracksave of Trajectories : %i" % TrackSave)
 
-    if GpuStyle=='CUDA':
-        print("\nSelection of CUDA device") 
+    if GpuStyle == "CUDA":
+        print("\nSelection of CUDA device")
         try:
             # For PyCUDA import
             import pycuda.driver as cuda
-            
+
             cuda.init()
             for Id in range(cuda.Device.count()):
-                device=cuda.Device(Id)
-                print("Device #%i of type GPU : %s" % (Id,device.name()))
+                device = cuda.Device(Id)
+                print("Device #%i of type GPU : %s" % (Id, device.name()))
                 if Id in Devices:
-                    Alu[Id]='GPU'
-            
+                    Alu[Id] = "GPU"
+
         except ImportError:
             print("Platform does not seem to support CUDA")
 
-    if GpuStyle=='OpenCL':
-        print("\nSelection of OpenCL device") 
+    if GpuStyle == "OpenCL":
+        print("\nSelection of OpenCL device")
         try:
             # For PyOpenCL import
             import pyopencl as cl
-            Id=0
+
+            Id = 0
             for platform in cl.get_platforms():
                 for device in platform.get_devices():
-                    #deviceType=cl.device_type.to_string(device.type)
-                    deviceType="xPU"
-                    print("Device #%i from %s of type %s : %s" % (Id,platform.vendor.lstrip().rstrip(),deviceType,device.name.lstrip().rstrip()))
+                    # deviceType=cl.device_type.to_string(device.type)
+                    deviceType = "xPU"
+                    print(
+                        "Device #%i from %s of type %s : %s"
+                        % (
+                            Id,
+                            platform.vendor.lstrip().rstrip(),
+                            deviceType,
+                            device.name.lstrip().rstrip(),
+                        )
+                    )
 
                     if Id in Devices:
-                    # Set the Alu as detected Device Type
-                        Alu[Id]=deviceType
-                    Id=Id+1
+                        # Set the Alu as detected Device Type
+                        Alu[Id] = deviceType
+                    Id = Id + 1
         except ImportError:
             print("Platform does not seem to support OpenCL")
 
+    zImage = numpy.zeros((Size, Size), dtype=numpy.float32)
+    fImage = numpy.zeros((Size, Size), dtype=numpy.float32)
 
-    zImage=numpy.zeros((Size,Size),dtype=numpy.float32)
-    fImage=numpy.zeros((Size,Size),dtype=numpy.float32)
+    InputCL = {}
+    InputCL["Device"] = Device
+    InputCL["GpuStyle"] = GpuStyle
+    InputCL["VariableType"] = VariableType
+    InputCL["Size"] = Size
+    InputCL["Mass"] = Mass
+    InputCL["InternalRadius"] = InternalRadius
+    InputCL["ExternalRadius"] = ExternalRadius
+    InputCL["Angle"] = Angle
+    InputCL["BlackBody"] = BlackBody
+    InputCL["Method"] = Method
+    InputCL["TrackPoints"] = TrackPoints
+    InputCL["Physics"] = Physics
+    InputCL["Threads"] = Threads
+    InputCL["NoImage"] = NoImage
+    InputCL["TrackSave"] = TrackSave
 
-    InputCL={}
-    InputCL['Device']=Device
-    InputCL['GpuStyle']=GpuStyle
-    InputCL['VariableType']=VariableType
-    InputCL['Size']=Size
-    InputCL['Mass']=Mass
-    InputCL['InternalRadius']=InternalRadius
-    InputCL['ExternalRadius']=ExternalRadius
-    InputCL['Angle']=Angle
-    InputCL['BlackBody']=BlackBody
-    InputCL['Method']=Method
-    InputCL['TrackPoints']=TrackPoints
-    InputCL['Physics']=Physics
-    InputCL['Threads']=Threads
-    InputCL['NoImage']=NoImage
-    InputCL['TrackSave']=TrackSave
-
-    if GpuStyle=='OpenCL':
-        duration=BlackHoleCL(zImage,fImage,InputCL)
+    if GpuStyle == "OpenCL":
+        duration = BlackHoleCL(zImage, fImage, InputCL)
     else:
-        duration=BlackHoleCUDA(zImage,fImage,InputCL)
-        
-    Hostname=gethostname()
-    Date=time.strftime("%Y%m%d_%H%M%S")
-    ImageInfo="%s_Device%i_%s_%s" % (Method,Device,Hostname,Date)
-    
-    
+        duration = BlackHoleCUDA(zImage, fImage, InputCL)
+
+    Hostname = gethostname()
+    Date = time.strftime("%Y%m%d_%H%M%S")
+    ImageInfo = "%s_Device%i_%s_%s" % (Method, Device, Hostname, Date)
+
     if not NoImage:
-        ImageOutput(zImage,"TrouNoirZ_%s" % ImageInfo,Colors)
-        ImageOutput(fImage,"TrouNoirF_%s" % ImageInfo,Colors)
+        ImageOutput(zImage, "TrouNoirZ_%s" % ImageInfo, Colors)
+        ImageOutput(fImage, "TrouNoirF_%s" % ImageInfo, Colors)

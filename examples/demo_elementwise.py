@@ -18,8 +18,7 @@ b_g = cl.array.to_device(queue, b_np)
 lin_comb = ElementwiseKernel(ctx,
     "float k1, float *a_g, float k2, float *b_g, float *res_g",
     "res_g[i] = k1 * a_g[i] + k2 * b_g[i]",
-    "lin_comb"
-)
+    "lin_comb")
 
 res_g = cl.array.empty_like(a_g)
 lin_comb(2, a_g, 3, b_g, res_g)

@@ -14,7 +14,7 @@ def print_info(obj, info_cls):
             info = getattr(info_cls, info_name)
             try:
                 info_value = obj.get_info(info)
-            except:
+            except Exception:
                 info_value = "<error>"
 
             if (info_cls == cl.device_info and info_name == "PARTITION_TYPES_EXT"
@@ -26,8 +26,9 @@ def print_info(obj, info_cls):
             else:
                 try:
                     print(f"{info_name}: {info_value}")
-                except:
+                except Exception:
                     print("%s: <error>" % info_name)
+
 
 for platform in cl.get_platforms():
     print(75*"=")
@@ -55,7 +56,7 @@ for platform in cl.get_platforms():
                         ]:
                     try:
                         formats = cl.get_supported_image_formats(ctx, mf, itype)
-                    except:
+                    except Exception:
                         formats = "<error>"
                     else:
                         def str_chd_type(chdtype):

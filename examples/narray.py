@@ -2,7 +2,7 @@
 import pyopencl as cl
 import numpy as np
 
-demo_r = np.empty( (500,5), dtype=np.uint32)
+demo_r = np.empty((500, 5), dtype=np.uint32)
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
@@ -23,7 +23,7 @@ __kernel void demo(__global uint *demo)
 
 try:
     prg.build()
-except:
+except Exception:
     print("Error:")
     print(prg.get_build_info(ctx.devices[0], cl.program_build_info.LOG))
     raise
@@ -33,4 +33,3 @@ cl.enqueue_copy(queue, demo_r, demo_buf).wait()
 
 for res in demo_r:
     print(res)
-

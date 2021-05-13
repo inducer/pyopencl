@@ -2,8 +2,8 @@ import pyopencl as cl
 import numpy as np
 from imageio import imread, imsave
 
-#Read in image
-img = imread('noisyImage.jpg').astype(np.float32)
+# Read in image
+img = imread("noisyImage.jpg").astype(np.float32)
 print(img.shape)
 img = np.mean(img, axis=2)
 print(img.shape)
@@ -14,7 +14,7 @@ queue = cl.CommandQueue(ctx)
 mf = cl.mem_flags
 
 # Kernel function
-src = '''
+src = """
 void sort(int *a, int *b, int *c) {
    int swap;
    if(*a > *b) {
@@ -33,7 +33,9 @@ void sort(int *a, int *b, int *c) {
       *c = swap;
    }
 }
-__kernel void medianFilter(__global float *img, __global float *result, __global int *width, __global int *height)
+__kernel void medianFilter(
+    __global float *img, __global float *result, __global int *width, __global
+    int *height)
 {
     int w = *width;
     int h = *height;
@@ -47,7 +49,8 @@ __kernel void medianFilter(__global float *img, __global float *result, __global
     }
     else
     {
-        int pixel00, pixel01, pixel02, pixel10, pixel11, pixel12, pixel20, pixel21, pixel22;
+        int pixel00, pixel01, pixel02, pixel10, pixel11, pixel12, pixel20,
+            pixel21, pixel22;
         pixel00 = img[i - 1 - w];
         pixel01 = img[i- w];
         pixel02 = img[i + 1 - w];
@@ -71,19 +74,23 @@ __kernel void medianFilter(__global float *img, __global float *result, __global
         result[i] = pixel11;
     }
 }
-'''
+"""
 
-#Kernel function instantiation
+# Kernel function instantiation
 prg = cl.Program(ctx, src).build()
-#Allocate memory for variables on the device
-img_g =  cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=img)
+# Allocate memory for variables on the device
+img_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=img)
 result_g = cl.Buffer(ctx, mf.WRITE_ONLY, img.nbytes)
-width_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np.int32(img.shape[1]))
-height_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np.int32(img.shape[0]))
+width_g = cl.Buffer(
+    ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np.int32(img.shape[1])
+)
+height_g = cl.Buffer(
+    ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=np.int32(img.shape[0])
+)
 # Call Kernel. Automatically takes care of block/grid distribution
-prg.medianFilter(queue, img.shape, None , img_g, result_g, width_g, height_g)
+prg.medianFilter(queue, img.shape, None, img_g, result_g, width_g, height_g)
 result = np.empty_like(img)
 cl.enqueue_copy(queue, result, result_g)
 
 # Show the blurred image
-imsave('medianFilter-OpenCL.jpg', result)
+imsave("medianFilter-OpenCL.jpg", result)
