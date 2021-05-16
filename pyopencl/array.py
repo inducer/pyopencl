@@ -584,8 +584,14 @@ class Array:
         """
         :arg data: *None* means allocate a new array.
         """
+        fast = True
+        size = self.size
         if shape is None:
             shape = self.shape
+        else:
+            fast = False
+            size = None
+
         if dtype is None:
             dtype = self.dtype
         if strides is None:
@@ -604,14 +610,10 @@ class Array:
         else:
             events = self.events
 
-        if queue is not None:
-            return Array(queue, shape, dtype, allocator=allocator,
-                    strides=strides, data=data, offset=offset,
-                    events=events)
-        else:
-            return Array(self.context, shape, dtype,
-                    strides=strides, data=data, offset=offset,
-                    events=events, allocator=allocator)
+        return Array(None, shape, dtype, allocator=allocator,
+                strides=strides, data=data, offset=offset,
+                events=events,
+                _fast=fast, _context=self.context, _queue=queue, _size=size)
 
     def with_queue(self, queue):
         """Return a copy of *self* with the default queue set to *queue*.
