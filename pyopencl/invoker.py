@@ -78,7 +78,7 @@ BUF_PACK_TYPECHARS = ["c", "b", "B", "h", "H", "i", "I", "l", "L", "f", "d"]
 def generate_specific_arg_handling_body(function_name,
         num_cl_args, arg_types,
         work_around_arg_count_bug, warn_about_arg_count_bug,
-        in_enqueue):
+        in_enqueue, include_debug_code):
 
     assert work_around_arg_count_bug is not None
     assert warn_about_arg_count_bug is not None
@@ -126,13 +126,14 @@ def generate_specific_arg_handling_body(function_name,
             continue
 
         elif isinstance(arg_type, VectorArg):
-            gen(f"if not {arg_var}.flags.forc:")
-            with Indentation(gen):
-                gen("raise RuntimeError('only contiguous arrays may '")
-                gen("   'be used as arguments to this operation')")
-                gen("")
+            if include_debug_code:
+                gen(f"if not {arg_var}.flags.forc:")
+                with Indentation(gen):
+                    gen("raise RuntimeError('only contiguous arrays may '")
+                    gen("   'be used as arguments to this operation')")
+                    gen("")
 
-            if in_enqueue:
+            if in_enqueue and include_debug_code:
                 gen(f"assert {arg_var}.queue is None or {arg_var}.queue == queue, "
                     "'queues for all arrays must match the queue supplied "
                     "to enqueue'")
@@ -231,7 +232,7 @@ def generate_specific_arg_handling_body(function_name,
 
 def _generate_enqueue_and_set_args_module(function_name,
         num_passed_args, num_cl_args,
-        arg_types,
+        arg_types, include_debug_code,
         work_around_arg_count_bug, warn_about_arg_count_bug):
 
     arg_names = ["arg%d" % i for i in range(num_passed_args)]
@@ -244,7 +245,7 @@ def _generate_enqueue_and_set_args_module(function_name,
                     function_name, num_cl_args, arg_types,
                     warn_about_arg_count_bug=warn_about_arg_count_bug,
                     work_around_arg_count_bug=work_around_arg_count_bug,
-                    in_enqueue=in_enqueue)
+                    in_enqueue=in_enqueue, include_debug_code=include_debug_code)
 
     gen = PythonCodeGenerator()
 
@@ -304,7 +305,7 @@ def generate_enqueue_and_set_args(function_name,
         work_around_arg_count_bug, warn_about_arg_count_bug):
 
     cache_key = (function_name, num_passed_args, num_cl_args,
-            arg_types,
+            arg_types, __debug__,
             work_around_arg_count_bug, warn_about_arg_count_bug)
 
     from_cache = False
