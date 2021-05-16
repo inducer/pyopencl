@@ -983,22 +983,26 @@ class Array:
                 dest.context, dest.dtype, src.dtype)
 
     def _new_like_me(self, dtype=None, queue=None):
-        strides = None
-        flags = None
         if dtype is None:
             dtype = self.dtype
-
-        if dtype == self.dtype:
             strides = self.strides
             flags = self.flags
+            fast = True
+        else:
+            strides = None
+            flags = None
+            if dtype == self.dtype:
+                strides = self.strides
+                flags = self.flags
+                fast = True
+            else:
+                fast = False
 
         queue = queue or self.queue
-        if queue is not None:
-            return self.__class__(queue, self.shape, dtype,
-                    allocator=self.allocator, strides=strides, _flags=flags)
-        else:
-            return self.__class__(self.context, self.shape, dtype,
-                    strides=strides, allocator=self.allocator, _flags=flags)
+        return self.__class__(None, self.shape, dtype,
+                allocator=self.allocator, strides=strides, _flags=flags,
+                _fast=fast,
+                _size=self.size, _queue=queue, _context=self.context)
 
     @staticmethod
     @elwise_kernel_runner
