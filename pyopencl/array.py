@@ -2134,8 +2134,9 @@ def zeros(queue, shape, dtype, order="C", allocator=None):
         *context* argument was deprecated.
     """
 
-    result = Array(queue, shape, dtype,
-            order=order, allocator=allocator)
+    result = Array(None, shape, dtype,
+            order=order, allocator=allocator,
+            _context=queue.context, _queue=queue)
     result._zero_fill()
     return result
 
@@ -2154,7 +2155,7 @@ def zeros_like(ary):
     as *other_ary*.
     """
 
-    result = empty_like(ary)
+    result = ary._new_like_me()
     result._zero_fill()
     return result
 
