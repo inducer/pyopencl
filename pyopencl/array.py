@@ -416,115 +416,134 @@ class Array:
     __array_priority__ = 100
 
     def __init__(self, cq, shape, dtype, order="C", allocator=None,
-            data=None, offset=0, strides=None, events=None, _flags=None):
-        # {{{ backward compatibility
+            data=None, offset=0, strides=None, events=None, _flags=None,
+            _fast=False, _size=None, _context=None, _queue=None):
+        if _fast:
+            # Assumptions, should be disabled if not testing
+            if 0:
+                assert cq is None
+                assert isinstance(_context, cl.Context)
+                assert _queue is None or isinstance(_queue, cl.CommandQueue)
+                assert isinstance(shape, tuple)
+                assert isinstance(strides, tuple)
+                assert isinstance(dtype, np.dtype)
+                assert _size is not None
 
-        if isinstance(cq, cl.CommandQueue):
-            queue = cq
-            context = queue.context
-
-        elif isinstance(cq, cl.Context):
-            context = cq
-            queue = None
+            size = _size
+            context = _context
+            queue = _queue
+            alloc_nbytes = dtype.itemsize * size
 
         else:
-            raise TypeError("cq may be a queue or a context, not '%s'"
-                    % type(cq))
+            # {{{ backward compatibility
 
-        if allocator is not None:
-            # "is" would be wrong because two Python objects are allowed
-            # to hold handles to the same context.
+            if cq is None:
+                context = _context
+                queue = _queue
 
-            # FIXME It would be nice to check this. But it would require
-            # changing the allocator interface. Trust the user for now.
+            elif isinstance(cq, cl.CommandQueue):
+                queue = cq
+                context = queue.context
 
-            #assert allocator.context == context
-            pass
+            elif isinstance(cq, cl.Context):
+                context = cq
+                queue = None
 
-        # Queue-less arrays do have a purpose in life.
-        # They don't do very much, but at least they don't run kernels
-        # in random queues.
-        #
-        # See also :meth:`with_queue`.
-
-        del cq
-
-        # }}}
-
-        # invariant here: allocator, queue set
-
-        # {{{ determine shape, size, and strides
-        dtype = np.dtype(dtype)
-
-        try:
-            size = 1
-            for dim in shape:
-                size *= dim
-                if dim < 0:
-                    raise ValueError("negative dimensions are not allowed")
-
-        except TypeError:
-            admissible_types = (int, np.integer)
-
-            if not isinstance(shape, admissible_types):
-                raise TypeError("shape must either be iterable or "
-                        "castable to an integer")
-            size = shape
-            if shape < 0:
-                raise ValueError("negative dimensions are not allowed")
-            shape = (shape,)
-
-        if isinstance(size, np.integer):
-            size = size.item()
-
-        if strides is None:
-            if order in "cC":
-                # inlined from compyte.array.c_contiguous_strides
-                if shape:
-                    strides = [dtype.itemsize]
-                    for s in shape[:0:-1]:
-                        strides.append(strides[-1]*s)
-                    strides = tuple(strides[::-1])
-                else:
-                    strides = ()
-            elif order in "fF":
-                strides = _f_contiguous_strides(dtype.itemsize, shape)
             else:
-                raise ValueError("invalid order: %s" % order)
+                raise TypeError("cq may be a queue or a context, not '%s'"
+                        % type(cq))
 
-        else:
-            # FIXME: We should possibly perform some plausibility
-            # checking on 'strides' here.
+            if allocator is not None:
+                # "is" would be wrong because two Python objects are allowed
+                # to hold handles to the same context.
 
-            strides = tuple(strides)
+                # FIXME It would be nice to check this. But it would require
+                # changing the allocator interface. Trust the user for now.
 
-        # }}}
+                #assert allocator.context == context
+                pass
 
-        assert dtype != object, \
-                "object arrays on the compute device are not allowed"
-        assert isinstance(shape, tuple)
-        assert isinstance(strides, tuple)
+            # Queue-less arrays do have a purpose in life.
+            # They don't do very much, but at least they don't run kernels
+            # in random queues.
+            #
+            # See also :meth:`with_queue`.
+
+            del cq
+
+            # }}}
+
+            # invariant here: allocator, queue set
+
+            # {{{ determine shape, size, and strides
+            dtype = np.dtype(dtype)
+
+            try:
+                size = 1
+                for dim in shape:
+                    size *= dim
+                    if dim < 0:
+                        raise ValueError("negative dimensions are not allowed")
+
+            except TypeError:
+                admissible_types = (int, np.integer)
+
+                if not isinstance(shape, admissible_types):
+                    raise TypeError("shape must either be iterable or "
+                            "castable to an integer")
+                size = shape
+                if shape < 0:
+                    raise ValueError("negative dimensions are not allowed")
+                shape = (shape,)
+
+            if isinstance(size, np.integer):
+                size = size.item()
+
+            if strides is None:
+                if order in "cC":
+                    # inlined from compyte.array.c_contiguous_strides
+                    if shape:
+                        strides = [dtype.itemsize]
+                        for s in shape[:0:-1]:
+                            strides.append(strides[-1]*s)
+                        strides = tuple(strides[::-1])
+                    else:
+                        strides = ()
+                elif order in "fF":
+                    strides = _f_contiguous_strides(dtype.itemsize, shape)
+                else:
+                    raise ValueError("invalid order: %s" % order)
+
+            else:
+                # FIXME: We should possibly perform some plausibility
+                # checking on 'strides' here.
+
+                strides = tuple(strides)
+
+            # }}}
+
+            assert dtype != object, \
+                    "object arrays on the compute device are not allowed"
+            assert isinstance(shape, tuple)
+            assert isinstance(strides, tuple)
+
+            alloc_nbytes = dtype.itemsize * size
+
+            if alloc_nbytes < 0:
+                raise ValueError("cannot allocate CL buffer with "
+                        "negative size")
 
         self.queue = queue
         self.shape = shape
         self.dtype = dtype
         self.strides = strides
-        if events is None:
-            self.events = []
-        else:
-            self.events = events
-
+        self.events = [] if events is None else events
+        self.nbytes = alloc_nbytes
         self.size = size
-        alloc_nbytes = self.nbytes = self.dtype.itemsize * self.size
-
         self.allocator = allocator
 
         if data is None:
-            if alloc_nbytes < 0:
-                raise ValueError("cannot allocate CL buffer with "
-                        "negative size")
-
-            elif alloc_nbytes == 0:
+            if alloc_nbytes == 0:
                 self.base_data = None
 
             else:
