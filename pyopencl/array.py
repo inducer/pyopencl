@@ -339,6 +339,7 @@ class Array:
     .. automethod :: __sub__
     .. automethod :: __iadd__
     .. automethod :: __isub__
+    .. automethod :: __pos__
     .. automethod :: __neg__
     .. automethod :: __mul__
     .. automethod :: __div__
@@ -1126,6 +1127,9 @@ class Array:
         else:
             self._axpbz(self, self.dtype.type(1), self, -other)
             return self
+
+    def __pos__(self):
+        return self
 
     def __neg__(self):
         result = self._new_like_me()
