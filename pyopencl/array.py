@@ -227,6 +227,7 @@ class _copy_queue:  # noqa
 
 
 _ARRAY_GET_SIZES_CACHE = {}
+_BOOL_DTYPE = np.dtype(np.int8)
 
 
 class Array:
@@ -1482,71 +1483,71 @@ class Array:
 
     def __eq__(self, other):
         if isinstance(other, Array):
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._array_comparison(result, self, other, op="=="))
             return result
         else:
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._scalar_comparison(result, self, other, op="=="))
             return result
 
     def __ne__(self, other):
         if isinstance(other, Array):
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._array_comparison(result, self, other, op="!="))
             return result
         else:
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._scalar_comparison(result, self, other, op="!="))
             return result
 
     def __le__(self, other):
         if isinstance(other, Array):
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._array_comparison(result, self, other, op="<="))
             return result
         else:
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             self._scalar_comparison(result, self, other, op="<=")
             return result
 
     def __ge__(self, other):
         if isinstance(other, Array):
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._array_comparison(result, self, other, op=">="))
             return result
         else:
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._scalar_comparison(result, self, other, op=">="))
             return result
 
     def __lt__(self, other):
         if isinstance(other, Array):
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._array_comparison(result, self, other, op="<"))
             return result
         else:
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._scalar_comparison(result, self, other, op="<"))
             return result
 
     def __gt__(self, other):
         if isinstance(other, Array):
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._array_comparison(result, self, other, op=">"))
             return result
         else:
-            result = self._new_like_me(np.int8)
+            result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
                     self._scalar_comparison(result, self, other, op=">"))
             return result
