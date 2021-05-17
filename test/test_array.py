@@ -1046,6 +1046,10 @@ def test_comparisons(ctx_factory):
 
         assert (res_dev.get() == res).all()
 
+        res2_dev = op(0, res_dev)
+        res2 = op(0, res)
+        assert (res2_dev.get() == res2).all()
+
 
 def test_any_all(ctx_factory):
     context = ctx_factory()
