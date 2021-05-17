@@ -2019,7 +2019,7 @@ class Array:
                 raise ValueError("cannot assign between arrays of "
                         "differing shapes")
             if subarray.strides != value.strides:
-                raise ValueError("cannot assign between arrays of "
+                raise NotImplementedError("cannot assign between arrays of "
                         "differing strides")
 
             self.add_event(

@@ -1544,6 +1544,18 @@ def test_stack(ctx_factory, input_dims, order):
                                 np.stack((x_in, y_in), axis=axis))
 
 
+def test_assign_different_strides(ctx_factory):
+    cl_ctx = ctx_factory()
+    queue = cl.CommandQueue(cl_ctx)
+
+    from pyopencl.clrandom import rand as clrand
+
+    a = clrand(queue, (20, 30), dtype=np.float32)
+    b = cl_array.empty(queue, (20, 30), dtype=np.float32, order="F")
+    with pytest.raises(NotImplementedError):
+        b[:] = a
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
