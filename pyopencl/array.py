@@ -2707,9 +2707,9 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
     contains *then_[i]* if *criterion[i]>0*, else *else_[i]*.
     """
 
-    if all(isinstance(k, SCALAR_CLASSES) for k in [criterion,
-                                                   then_,
-                                                   else_]):
+    if (isinstance(criterion, SCALAR_CLASSES)
+            and isinstance(then_, SCALAR_CLASSES)
+            and isinstance(else_, SCALAR_CLASSES)):
         result = np.where(criterion, then_, else_)
 
         if out is not None:
@@ -2733,7 +2733,7 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
 
 def maximum(a, b, out=None, queue=None):
     """Return the elementwise maximum of *a* and *b*."""
-    if all(isinstance(k, SCALAR_CLASSES) for k in [a, b]):
+    if isinstance(a, SCALAR_CLASSES) and isinstance(b, SCALAR_CLASSES):
         result = np.maximum(a, b)
         if out is not None:
             out[...] = result
@@ -2748,7 +2748,7 @@ def maximum(a, b, out=None, queue=None):
 
 def minimum(a, b, out=None, queue=None):
     """Return the elementwise minimum of *a* and *b*."""
-    if all(isinstance(k, SCALAR_CLASSES) for k in [a, b]):
+    if isinstance(a, SCALAR_CLASSES) and isinstance(b, SCALAR_CLASSES):
         result = np.minimum(a, b)
         if out is not None:
             out[...] = result
