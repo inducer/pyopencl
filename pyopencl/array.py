@@ -44,7 +44,7 @@ from pyopencl.characterize import has_double_support
 from pyopencl import cltypes
 from numbers import Number
 
-SCALAR_CLASSES = (Number, np.number, np.bool_, bool)
+SCALAR_CLASSES = (Number, np.bool_, bool)
 
 
 _COMMON_DTYPE_CACHE = {}
