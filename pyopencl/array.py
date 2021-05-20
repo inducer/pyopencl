@@ -2714,7 +2714,7 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
 
         if out is not None:
             out[...] = result
-            return
+            return out
 
         return result
 
@@ -2737,7 +2737,7 @@ def maximum(a, b, out=None, queue=None):
         result = np.maximum(a, b)
         if out is not None:
             out[...] = result
-            return
+            return out
 
         return result
 
@@ -2752,7 +2752,7 @@ def minimum(a, b, out=None, queue=None):
         result = np.minimum(a, b)
         if out is not None:
             out[...] = result
-            return
+            return out
 
         return result
     # silly, but functional
