@@ -1560,6 +1560,19 @@ def test_assign_different_strides(ctx_factory):
         b[:] = a
 
 
+def test_branch_operations_on_pure_scalars(ctx_factory):
+    x = np.random.rand()
+    y = np.random.rand()
+    cond = np.random.choice([False, True])
+
+    np.testing.assert_allclose(np.maximum(x, y),
+                               cl_array.maximum(x, y))
+    np.testing.assert_allclose(np.minimum(x, y),
+                               cl_array.minimum(x, y))
+    np.testing.assert_allclose(np.where(cond, x, y),
+                               cl_array.if_positive(cond, x, y))
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])

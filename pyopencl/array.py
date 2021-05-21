@@ -42,6 +42,9 @@ from pyopencl.compyte.array import (
         get_common_dtype as _get_common_dtype_base)
 from pyopencl.characterize import has_double_support
 from pyopencl import cltypes
+from numbers import Number
+
+SCALAR_CLASSES = (Number, np.bool_, bool)
 
 
 _COMMON_DTYPE_CACHE = {}
@@ -2704,6 +2707,17 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
     contains *then_[i]* if *criterion[i]>0*, else *else_[i]*.
     """
 
+    if (isinstance(criterion, SCALAR_CLASSES)
+            and isinstance(then_, SCALAR_CLASSES)
+            and isinstance(else_, SCALAR_CLASSES)):
+        result = np.where(criterion, then_, else_)
+
+        if out is not None:
+            out[...] = result
+            return out
+
+        return result
+
     if not (criterion.shape == then_.shape == else_.shape):
         raise ValueError("shapes do not match")
 
@@ -2719,6 +2733,13 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
 
 def maximum(a, b, out=None, queue=None):
     """Return the elementwise maximum of *a* and *b*."""
+    if isinstance(a, SCALAR_CLASSES) and isinstance(b, SCALAR_CLASSES):
+        result = np.maximum(a, b)
+        if out is not None:
+            out[...] = result
+            return out
+
+        return result
 
     # silly, but functional
     return if_positive(a.mul_add(1, b, -1, queue=queue), a, b,
@@ -2727,6 +2748,13 @@ def maximum(a, b, out=None, queue=None):
 
 def minimum(a, b, out=None, queue=None):
     """Return the elementwise minimum of *a* and *b*."""
+    if isinstance(a, SCALAR_CLASSES) and isinstance(b, SCALAR_CLASSES):
+        result = np.minimum(a, b)
+        if out is not None:
+            out[...] = result
+            return out
+
+        return result
     # silly, but functional
     return if_positive(a.mul_add(1, b, -1, queue=queue), b, a,
             queue=queue, out=out)
