@@ -823,6 +823,9 @@ class Array:
         if result.queue is not queue:
             result = result.with_queue(queue)
 
+        if not self.flags.forc:
+            raise RuntimeError("cannot copy non-contiguous array")
+
         if self.nbytes:
             event1 = cl.enqueue_copy(queue or self.queue,
                     result.base_data, self.base_data,
