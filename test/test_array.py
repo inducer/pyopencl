@@ -1560,7 +1560,7 @@ def test_assign_different_strides(ctx_factory):
         b[:] = a
 
 
-def test_branch_operations_on_pure_scalars(ctx_factory):
+def test_branch_operations_on_pure_scalars():
     x = np.random.rand()
     y = np.random.rand()
     cond = np.random.choice([False, True])
@@ -1571,6 +1571,16 @@ def test_branch_operations_on_pure_scalars(ctx_factory):
                                cl_array.minimum(x, y))
     np.testing.assert_allclose(np.where(cond, x, y),
                                cl_array.if_positive(cond, x, y))
+
+
+def test_slice_copy(ctx_factory):
+    cl_ctx = ctx_factory()
+    queue = cl.CommandQueue(cl_ctx)
+
+    x = cl.array.to_device(queue, np.random.rand(96, 27))
+    y = x[::8, ::3]
+    with pytest.raises(RuntimeError):
+        y.copy()
 
 
 if __name__ == "__main__":
