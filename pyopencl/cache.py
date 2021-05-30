@@ -349,7 +349,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
     binaries = []
     to_be_built_indices = []
     logs = []
-    for i, (device, cache_key) in enumerate(zip(devices, cache_keys)):
+    for i, (_device, cache_key) in enumerate(zip(devices, cache_keys)):
         cache_result = retrieve_from_cache(cache_dir, cache_key)
 
         if cache_result is None:

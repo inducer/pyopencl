@@ -190,7 +190,7 @@ def get_reduction_kernel(stage,
          ctx, dtype_out,
          neutral, reduce_expr, map_expr=None, arguments=None,
          name="reduce_kernel", preamble="",
-         device=None, options=[], max_group_size=None):
+         device=None, options=None, max_group_size=None):
 
     if map_expr is None:
         if stage == 2:
@@ -240,7 +240,7 @@ def get_reduction_kernel(stage,
 class ReductionKernel:
     def __init__(self, ctx, dtype_out,
             neutral, reduce_expr, map_expr=None, arguments=None,
-            name="reduce_kernel", options=[], preamble=""):
+            name="reduce_kernel", options=None, preamble=""):
 
         dtype_out = self.dtype_out = np.dtype(dtype_out)
 
@@ -443,8 +443,11 @@ class ReductionKernel:
 class ReductionTemplate(KernelTemplateBase):
     def __init__(self,
             arguments, neutral, reduce_expr, map_expr=None,
-            is_segment_start_expr=None, input_fetch_exprs=[],
+            is_segment_start_expr=None, input_fetch_exprs=None,
             name_prefix="reduce", preamble="", template_processor=None):
+
+        if input_fetch_exprs is None:
+            input_fetch_exprs = []
 
         KernelTemplateBase.__init__(
                 self, template_processor=template_processor)

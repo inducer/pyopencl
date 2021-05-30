@@ -69,12 +69,12 @@ def _get_time(queue, f, timer_factory=None, desired_duration=0.1,
     while True:
         timer = timer_factory(queue)
 
-        for i in range(warmup_rounds):
+        for _i in range(warmup_rounds):
             f()
         warmup_rounds = 0
 
         timer.start()
-        for i in range(count):
+        for _i in range(count):
             timer.add_event(f())
         timer.stop()
 

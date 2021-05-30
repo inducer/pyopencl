@@ -853,7 +853,7 @@ def test_nan_arithmetic(ctx_factory):
         shape = (size,)
         a = np.random.randn(*shape).astype(np.float32)
         from random import randrange
-        for i in range(size // 10):
+        for _i in range(size // 10):
             a[randrange(0, size)] = float("nan")
         return a
 
@@ -965,7 +965,7 @@ def test_slice(ctx_factory):
     b = b_gpu.get()
 
     from random import randrange
-    for i in range(20):
+    for _i in range(20):
         start = randrange(ary_len)
         end = randrange(start, ary_len)
 
@@ -974,7 +974,7 @@ def test_slice(ctx_factory):
 
         assert la.norm(a_gpu_slice.get() - a_slice) == 0
 
-    for i in range(20):
+    for _i in range(20):
         start = randrange(ary_len)
         end = randrange(start, ary_len)
 
@@ -983,7 +983,7 @@ def test_slice(ctx_factory):
 
         assert la.norm(a_gpu.get() - a) == 0
 
-    for i in range(20):
+    for _i in range(20):
         start = randrange(ary_len)
         end = randrange(start, ary_len)
 
@@ -1175,12 +1175,12 @@ def test_event_management(ctx_factory):
     y = 2**x
     assert len(y.events) == 1
 
-    for i in range(10):
+    for _i in range(10):
         x.fill(0)
 
     assert len(x.events) == 10
 
-    for i in range(1000):
+    for _i in range(1000):
         x.fill(0)
 
     assert len(x.events) < 100
@@ -1355,7 +1355,7 @@ def test_multi_put(ctx_factory):
     ]
 
     out_compare = [np.zeros((10,), np.float32) for i in range(9)]
-    for i, ary in enumerate(out_compare):
+    for _i, ary in enumerate(out_compare):
         ary[idx.get()] = np.arange(0, 6, dtype=np.float32)
 
     cl_array.multi_put(cl_arrays, idx, out=out_arrays)

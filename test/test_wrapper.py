@@ -194,7 +194,7 @@ def test_get_info(ctx_factory):
     kernel = prg.all_kernels()[0]
     do_test(kernel, cl.kernel_info)
 
-    for i in range(2):  # exercise cache
+    for _i in range(2):  # exercise cache
         for info_name in dir(cl.kernel_work_group_info):
             if not info_name.startswith("_") and info_name != "to_string":
                 try:
@@ -361,13 +361,15 @@ def test_that_python_args_fail(ctx_factory):
     knl = cl.Kernel(prg, "mult")
     try:
         knl(queue, a.shape, None, a_buf, 2, 3)
-        assert False, "PyOpenCL should not accept bare Python types as arguments"
+        raise AssertionError(
+                "PyOpenCL should not accept bare Python types as arguments")
     except cl.LogicError:
         pass
 
     try:
         prg.mult(queue, a.shape, None, a_buf, float(2), 3)
-        assert False, "PyOpenCL should not accept bare Python types as arguments"
+        raise AssertionError(
+                "PyOpenCL should not accept bare Python types as arguments")
     except cl.LogicError:
         pass
 
@@ -554,7 +556,7 @@ def test_mempool(ctx_factory):
     e0 = 12
 
     for e in range(e0-6, e0-4):
-        for i in range(100):
+        for _i in range(100):
             alloc_queue.append(pool.allocate(1 << e))
             if len(alloc_queue) > 10:
                 alloc_queue.pop(0)
@@ -818,7 +820,7 @@ def test_buffer_get_host_array(ctx_factory):
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.ALLOC_HOST_PTR, size=100)
     try:
         host_buf2 = buf.get_host_array(25, np.float32)
-        assert False, ("MemoryObject.get_host_array should not accept buffer "
+        raise AssertionError("MemoryObject.get_host_array should not accept buffer "
                        "without USE_HOST_PTR")
     except cl.LogicError:
         pass
@@ -827,7 +829,7 @@ def test_buffer_get_host_array(ctx_factory):
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=host_buf)
     try:
         host_buf2 = buf.get_host_array(25, np.float32)
-        assert False, ("MemoryObject.get_host_array should not accept buffer "
+        raise AssertionError("MemoryObject.get_host_array should not accept buffer "
                        "without USE_HOST_PTR")
     except cl.LogicError:
         pass
@@ -1205,8 +1207,8 @@ def test_threaded_nanny_events(ctx_factory):
     def create_arrays_thread(n1=10, n2=20):
         ctx = ctx_factory()
         queue = cl.CommandQueue(ctx)
-        for i1 in range(n2):
-            for i in range(n1):
+        for _i1 in range(n2):
+            for _i in range(n1):
                 acl = cl.array.zeros(queue, 10, dtype=np.float32)
                 acl.get()
             # Garbage collection triggers the error

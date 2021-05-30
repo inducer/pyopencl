@@ -479,6 +479,9 @@ class Program:
 
     @classmethod
     def _process_build_options(cls, context, options, _add_include_path=False):
+        if options is None:
+            options = []
+
         options = _split_options_if_necessary(options)
 
         options = (options
@@ -496,7 +499,7 @@ class Program:
                 _options_to_bytestring(options),
                 _find_include_path(options))
 
-    def build(self, options=[], devices=None, cache_dir=None):
+    def build(self, options=None, devices=None, cache_dir=None):
         options_bytes, include_path = self._process_build_options(
                 self._context, options)
 
@@ -580,7 +583,10 @@ class Program:
 
     # }}}
 
-    def compile(self, options=[], devices=None, headers=[]):
+    def compile(self, options=None, devices=None, headers=None):
+        if headers is None:
+            headers = []
+
         options_bytes, _ = self._process_build_options(self._context, options)
 
         self._get_prg().compile(options_bytes, devices,
@@ -1370,7 +1376,7 @@ def _add_functionality():
 
     for cls, (info_method, info_class, cacheable_attrs) \
             in cls_to_info_cls.items():
-        for info_name, info_value in info_class.__dict__.items():
+        for info_name, _info_value in info_class.__dict__.items():
             if info_name == "to_string" or info_name.startswith("_"):
                 continue
 
@@ -1410,7 +1416,7 @@ def create_some_context(interactive=None, answers=None):
 
         if "PYOPENCL_TEST" in os.environ:
             from pyopencl.tools import get_test_platforms_and_devices
-            for plat, devs in get_test_platforms_and_devices():
+            for _plat, devs in get_test_platforms_and_devices():
                 for dev in devs:
                     return Context([dev])
 
@@ -1472,7 +1478,7 @@ def create_some_context(interactive=None, answers=None):
 
             if platform is None:
                 answer = answer.lower()
-                for i, pf in enumerate(platforms):
+                for pf in platforms:
                     if answer in pf.name.lower():
                         platform = pf
                 if platform is None:
@@ -1494,7 +1500,7 @@ def create_some_context(interactive=None, answers=None):
                 return devices[int_choice]
 
         choice = choice.lower()
-        for i, dev in enumerate(devices):
+        for dev in devices:
             if choice in dev.name.lower():
                 return dev
         raise RuntimeError("input did not match any device")
