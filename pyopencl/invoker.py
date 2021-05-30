@@ -299,7 +299,10 @@ def _generate_enqueue_and_set_args_module(function_name,
 
     # }}}
 
-    return gen.get_picklable_module(), enqueue_name
+    return (
+            gen.get_picklable_module(
+                name="<pyopencl invoker for '{function_name}'>"),
+            enqueue_name)
 
 
 invoker_cache = WriteOncePersistentDict(
