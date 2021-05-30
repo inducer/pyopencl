@@ -460,7 +460,7 @@ class ReductionTemplate(KernelTemplateBase):
 
     def build_inner(self, context, type_aliases=(), var_values=(),
             more_preamble="", more_arguments=(), declare_types=(),
-            options=(), devices=None):
+            options=None, devices=None):
         renderer = self.get_renderer(
                 type_aliases, var_values, context, options)
 
