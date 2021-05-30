@@ -481,6 +481,8 @@ class Program:
     def _process_build_options(cls, context, options, _add_include_path=False):
         if options is None:
             options = []
+        if isinstance(options, tuple):
+            options = list(options)
 
         options = _split_options_if_necessary(options)
 
