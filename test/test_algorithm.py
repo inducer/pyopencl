@@ -1,6 +1,3 @@
-#! /usr/bin/env python
-
-
 __copyright__ = "Copyright (C) 2013 Andreas Kloeckner"
 
 __license__ = """
@@ -106,7 +103,7 @@ def test_ranged_elwise_kernel(ctx_factory):
     set_to_seven = ElementwiseKernel(context,
             "float *z", "z[i] = 7", "set_to_seven")
 
-    for i, slc in enumerate([
+    for _i, slc in enumerate([
             slice(5, 20000),
             slice(5, 20000, 17),
             slice(3000, 5, -1),

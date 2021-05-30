@@ -940,9 +940,9 @@ class _GenericScanKernelBase:
 
     def __init__(self, ctx, dtype,
             arguments, input_expr, scan_expr, neutral, output_statement,
-            is_segment_start_expr=None, input_fetch_exprs=[],
+            is_segment_start_expr=None, input_fetch_exprs=None,
             index_dtype=np.int32,
-            name_prefix="scan", options=[], preamble="", devices=None):
+            name_prefix="scan", options=None, preamble="", devices=None):
         """
         :arg ctx: a :class:`pyopencl.Context` within which the code
             for this scan kernel will be generated.
@@ -1025,6 +1025,9 @@ class _GenericScanKernelBase:
         being processed in the scan.
         """
 
+        if input_fetch_exprs is None:
+            input_fetch_exprs = []
+
         self.context = ctx
         dtype = self.dtype = np.dtype(dtype)
 
@@ -1063,7 +1066,7 @@ class _GenericScanKernelBase:
 
         self.output_statement = output_statement
 
-        for name, arg_name, ife_offset in input_fetch_exprs:
+        for _name, _arg_name, ife_offset in input_fetch_exprs:
             if ife_offset not in [0, -1]:
                 raise RuntimeError("input_fetch_expr offsets must either be 0 or -1")
         self.input_fetch_exprs = input_fetch_exprs
@@ -1074,7 +1077,6 @@ class _GenericScanKernelBase:
             arg_dtypes[arg.name] = arg.dtype
             arg_ctypes[arg.name] = dtype_to_ctype(arg.dtype)
 
-        self.options = options
         self.name_prefix = name_prefix
 
         # {{{ set up shared code dict
@@ -1383,7 +1385,7 @@ class GenericScanKernel(_GenericScanKernelBase):
             arg_dtypes[arg.name] = arg.dtype
 
         fetch_expr_offsets = {}
-        for name, arg_name, ife_offset in self.input_fetch_exprs:
+        for _name, arg_name, ife_offset in self.input_fetch_exprs:
             fetch_expr_offsets.setdefault(arg_name, set()).add(ife_offset)
 
         itemsize = self.dtype.itemsize
@@ -1723,7 +1725,7 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
 class _LegacyScanKernelBase(GenericScanKernel):
     def __init__(self, ctx, dtype,
             scan_expr, neutral=None,
-            name_prefix="scan", options=[], preamble="", devices=None):
+            name_prefix="scan", options=None, preamble="", devices=None):
         scan_ctype = dtype_to_ctype(dtype)
         GenericScanKernel.__init__(self,
                 ctx, dtype,
@@ -1782,8 +1784,11 @@ class ExclusiveScanKernel(_LegacyScanKernelBase):
 class ScanTemplate(KernelTemplateBase):
     def __init__(self,
             arguments, input_expr, scan_expr, neutral, output_statement,
-            is_segment_start_expr=None, input_fetch_exprs=[],
+            is_segment_start_expr=None, input_fetch_exprs=None,
             name_prefix="scan", preamble="", template_processor=None):
+
+        if input_fetch_exprs is None:
+            input_fetch_exprs = []
 
         KernelTemplateBase.__init__(self, template_processor=template_processor)
         self.arguments = arguments
@@ -1798,7 +1803,7 @@ class ScanTemplate(KernelTemplateBase):
 
     def build_inner(self, context, type_aliases=(), var_values=(),
             more_preamble="", more_arguments=(), declare_types=(),
-            options=(), devices=None, scan_cls=GenericScanKernel):
+            options=None, devices=None, scan_cls=GenericScanKernel):
         renderer = self.get_renderer(type_aliases, var_values, context, options)
 
         arg_list = renderer.render_argument_list(self.arguments, more_arguments)
@@ -1813,7 +1818,7 @@ class ScanTemplate(KernelTemplateBase):
             is_segment_start_expr=renderer(self.is_segment_start_expr),
             input_fetch_exprs=self.input_fetch_exprs,
             index_dtype=renderer.type_aliases.get("index_t", np.int32),
-            name_prefix=renderer(self.name_prefix), options=list(options),
+            name_prefix=renderer(self.name_prefix), options=options,
             preamble=(
                 type_decl_preamble
                 + "\n"

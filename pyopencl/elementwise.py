@@ -38,7 +38,7 @@ from pyopencl.tools import (dtype_to_ctype, VectorArg, ScalarArg,
 # {{{ elementwise kernel code generator
 
 def get_elwise_program(context, arguments, operation,
-        name="elwise_kernel", options=[],
+        name="elwise_kernel", options=None,
         preamble="", loop_prep="", after_loop="",
         use_range=False):
 
@@ -108,7 +108,7 @@ def get_elwise_program(context, arguments, operation,
 
 
 def get_elwise_kernel_and_types(context, arguments, operation,
-        name="elwise_kernel", options=[], preamble="", use_range=False,
+        name="elwise_kernel", options=None, preamble="", use_range=False,
         **kwargs):
 
     from pyopencl.tools import parse_arg_list, get_arg_offset_adjuster_code
@@ -165,7 +165,7 @@ def get_elwise_kernel_and_types(context, arguments, operation,
 
 
 def get_elwise_kernel(context, arguments, operation,
-        name="elwise_kernel", options=[], **kwargs):
+        name="elwise_kernel", options=None, **kwargs):
     """Return a L{pyopencl.Kernel} that performs the same scalar operation
     on one or several vectors.
     """
@@ -204,7 +204,7 @@ class ElementwiseKernel:
     """
 
     def __init__(self, context, arguments, operation,
-            name="elwise_kernel", options=[], **kwargs):
+            name="elwise_kernel", options=None, **kwargs):
         self.context = context
         self.arguments = arguments
         self.operation = operation
@@ -335,7 +335,7 @@ class ElementwiseTemplate(KernelTemplateBase):
 
     def build_inner(self, context, type_aliases=(), var_values=(),
             more_preamble="", more_arguments=(), declare_types=(),
-            options=()):
+            options=None):
         renderer = self.get_renderer(
                 type_aliases, var_values, context, options)
 
@@ -346,7 +346,7 @@ class ElementwiseTemplate(KernelTemplateBase):
 
         return ElementwiseKernel(context,
             arg_list, renderer(self.operation),
-            name=renderer(self.name), options=list(options),
+            name=renderer(self.name), options=options,
             preamble=(
                 type_decl_preamble
                 + "\n"

@@ -552,7 +552,7 @@ class _CDeclList:
             self.add_dtype(dtype.subdtype[0])
             return
 
-        for name, field_data in sorted(dtype.fields.items()):
+        for _name, field_data in sorted(dtype.fields.items()):
             field_dtype, offset = field_data[:2]
             self.add_dtype(field_dtype)
 
@@ -661,7 +661,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
             name)
 
     cdl = _CDeclList(device)
-    for field_name, dtype_and_offset in fields:
+    for _field_name, dtype_and_offset in fields:
         field_dtype, offset = dtype_and_offset[:2]
         cdl.add_dtype(field_dtype)
 
@@ -853,7 +853,7 @@ class _ScalarArgPlaceholder(_ArgumentPlaceholder):
 
 class _TemplateRenderer:
     def __init__(self, template, type_aliases, var_values, context=None,
-            options=[]):
+            options=None):
         self.template = template
         self.type_aliases = dict(type_aliases)
         self.var_dict = dict(var_values)
@@ -1003,7 +1003,7 @@ class KernelTemplateBase:
             raise RuntimeError(
                     "unknown template processor '%s'" % proc_match.group(1))
 
-    def get_renderer(self, type_aliases, var_values, context=None, options=[]):
+    def get_renderer(self, type_aliases, var_values, context=None, options=None):
         return _TemplateRenderer(self, type_aliases, var_values)
 
     def build_inner(self, context, *args, **kwargs):

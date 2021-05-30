@@ -42,6 +42,8 @@ from mako.template import Template
 # {{{ "extra args" handling utility
 
 def _extract_extra_args_types_values(extra_args):
+    if extra_args is None:
+        extra_args = []
     from pyopencl.tools import VectorArg, ScalarArg
 
     extra_args_types = []
@@ -76,7 +78,7 @@ _copy_if_template = ScanTemplate(
         template_processor="printf")
 
 
-def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
+def copy_if(ary, predicate, extra_args=None, preamble="", queue=None, wait_for=None):
     """Copy the elements of *ary* satisfying *predicate* to an output array.
 
     :arg predicate: a C expression evaluating to a `bool`, represented as a string.
@@ -124,7 +126,8 @@ def copy_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=Non
 
 # {{{ remove_if
 
-def remove_if(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
+def remove_if(ary, predicate, extra_args=None, preamble="",
+        queue=None, wait_for=None):
     """Copy the elements of *ary* not satisfying *predicate* to an output array.
 
     :arg predicate: a C expression evaluating to a `bool`, represented as a string.
@@ -164,7 +167,8 @@ _partition_template = ScanTemplate(
         template_processor="printf")
 
 
-def partition(ary, predicate, extra_args=[], preamble="", queue=None, wait_for=None):
+def partition(ary, predicate, extra_args=None, preamble="",
+        queue=None, wait_for=None):
     """Copy the elements of *ary* into one of two arrays depending on whether
     they satisfy *predicate*.
 
@@ -229,7 +233,7 @@ _unique_template = ScanTemplate(
         template_processor="printf")
 
 
-def unique(ary, is_equal_expr="a == b", extra_args=[], preamble="",
+def unique(ary, is_equal_expr="a == b", extra_args=None, preamble="",
         queue=None, wait_for=None):
     """Copy the elements of *ary* into the output if *is_equal_expr*, applied to the
     array element and its predecessor, yields false.
@@ -429,7 +433,7 @@ class RadixSort:
     """
     def __init__(self, context, arguments, key_expr, sort_arg_names,
             bits_at_a_time=2, index_dtype=np.int32, key_dtype=np.uint32,
-            scan_kernel=GenericScanKernel, options=[]):
+            scan_kernel=GenericScanKernel, options=None):
         """
         :arg arguments: A string of comma-separated C argument declarations.
             If *arguments* is specified, then *input_expr* must also be
@@ -762,9 +766,9 @@ class ListOfListsBuilder:
     """
     def __init__(self, context, list_names_and_dtypes, generate_template,
             arg_decls, count_sharing=None, devices=None,
-            name_prefix="plb_build_list", options=[], preamble="",
+            name_prefix="plb_build_list", options=None, preamble="",
             debug=False, complex_kernel=False,
-            eliminate_empty_output_lists=[]):
+            eliminate_empty_output_lists=False):
         """
         :arg context: A :class:`pyopencl.Context`.
         :arg list_names_and_dtypes: a list of `(name, dtype)` tuples
@@ -820,7 +824,6 @@ class ListOfListsBuilder:
             Change *eliminate_empty_output_lists* argument type from `bool` to
             `list`.
         """
-
         if devices is None:
             devices = context.devices
 
@@ -925,7 +928,7 @@ class ListOfListsBuilder:
                 if name not in self.count_sharing]
 
         user_list_args = []
-        for name, dtype in self.list_names_and_dtypes:
+        for name, _dtype in self.list_names_and_dtypes:
             if name in self.count_sharing:
                 continue
 
@@ -1157,7 +1160,7 @@ class ListOfListsBuilder:
 
         # {{{ allocate memory for counts
 
-        for name, dtype in self.list_names_and_dtypes:
+        for name, _dtype in self.list_names_and_dtypes:
             if name in self.count_sharing:
                 continue
             if name in omit_lists:
@@ -1196,7 +1199,7 @@ class ListOfListsBuilder:
                 wait_for=wait_for)
 
         compress_events = {}
-        for name, dtype in self.list_names_and_dtypes:
+        for name, _dtype in self.list_names_and_dtypes:
             if name in omit_lists:
                 continue
             if name in self.count_sharing:
@@ -1228,7 +1231,7 @@ class ListOfListsBuilder:
 
         scan_events = []
 
-        for name, dtype in self.list_names_and_dtypes:
+        for name, _dtype in self.list_names_and_dtypes:
             if name in self.count_sharing:
                 continue
             if name in omit_lists:
