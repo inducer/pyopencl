@@ -346,7 +346,7 @@ class ElementwiseTemplate(KernelTemplateBase):
 
         return ElementwiseKernel(context,
             arg_list, renderer(self.operation),
-            name=renderer(self.name), options=list(options),
+            name=renderer(self.name), options=options,
             preamble=(
                 type_decl_preamble
                 + "\n"

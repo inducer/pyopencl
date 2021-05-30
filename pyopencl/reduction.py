@@ -474,7 +474,7 @@ class ReductionTemplate(KernelTemplateBase):
                 renderer(self.neutral), renderer(self.reduce_expr),
                 renderer(self.map_expr),
                 renderer.render_argument_list(self.arguments, more_arguments),
-                name=renderer(self.name_prefix), options=list(options),
+                name=renderer(self.name_prefix), options=options,
                 preamble=(
                     type_decl_preamble
                     + "\n"
