@@ -4,36 +4,40 @@ Installation
 Installing from Conda Forge
 ---------------------------
 
+Installing PyOpenCL
+^^^^^^^^^^^^^^^^^^^
+
 By far the easiest way to install PyOpenCL is to use the packages available in
 `Conda Forge <https://conda-forge.org/>`_. Conda Forge is a repository of
 community-maintained packages for the `Conda <https://conda.io/docs/>`_
-package manager.
-
-On Linux or OS X, the following set of instructions should work:
-
-#.  Install a version of
-    `miniforge <https://github.com/conda-forge/miniforge#miniforge3>`_
-    or `miniconda <https://conda.io/miniconda.html>`_
-    that fits your system.
-    You can install these pieces of software in your user account and
-    do not need root/administrator privileges.
-
-    Note that if you already have Continuum Anaconda installed on your system,
-    you may just use that and do *not* need to install Miniconda.
-
-#.  ``source /WHERE/YOU/INSTALLED/MINICONDA/bin/activate root``
-
-#.  ``conda config --add channels conda-forge``
-
-#.  ``conda install pyopencl``
-
+package manager. The following instructions are aimed at Linux and macOS.
 The analogous steps for Windows should also work.
+
+Install a version of
+`miniforge <https://github.com/conda-forge/miniforge#miniforge3>`_
+that fits your system::
+
+    curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+    bash ./Miniforge3-*.sh
+    # (answer questions, pick install location)
+
+Then run::
+
+    source /WHERE/YOU/INSTALLED/MINIFORGE/bin/activate root
+    conda install pyopencl
+
+You can install these pieces of software in your user account and
+do not need root/administrator privileges.
+
+
+Enabling access to CPUs and GPUs via (Py)OpenCL
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Note that PyOpenCL is no fun (i.e. cannot run code) without an OpenCL device
 driver (a so-called "ICD", for "installable client driver") that provides access
 to hardware through OpenCL.  If you get an error message like
-``pyopencl.cffi_cl.LogicError: clGetPlatformIDs failed: <unknown error
--1001>``, that means you have no OpenCL drivers installed.
+``pyopencl._cl.LogicError: clGetPlatformIDs failed: PLATFORM_NOT_FOUND_KHR``,
+that means PyOpenCL installed sucessfully, but you have no OpenCL drivers installed.
 
 Note that drivers (ICDs) are separate pieces of software from PyOpenCL.  They
 might be provided by your hardware vendor (e.g. for Nvidia or AMD GPUs). If
@@ -42,28 +46,28 @@ with PyOpenCL from Conda Forge.
 
 It is important to note that OpenCL is not restricted to GPUs. In fact, no special
 hardware is required to use OpenCL for computation--your existing CPU is enough.
-On Linux or macOS, type:
+On Linux or macOS, type::
 
-#.  ``conda install pocl``
+    conda install pocl
 
 to install a CPU-based OpenCL driver. On Windows, you may install e.g.
 the `CPU OpenCL driver from Intel <https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime>`_.
 On macOS, pocl can offer a marked robustness (and, sometimes, performance)
 improvement over the OpenCL drivers built into the operating system.
 
-On Linux and macOS, you can use Oclgrind to detect memory access errors.
+On Linux and macOS, you can use Oclgrind to detect memory access errors::
 
-#. ``conda install oclgrind``
+    conda install oclgrind
 
 On Linux Intel Broadwell or newer processors with an Intel graphics card, you
-can use NEO.
+can use NEO::
 
-#. ``conda install intel-compute-runtime``
+    conda install intel-compute-runtime
 
 On Linux Intel Sandybridge or newer processors with an Intel graphics card, you
-can use Beignet.
+can use Beignet::
 
-#. ``conda install beignet``
+    conda install beignet
 
 You are now ready to run code based on PyOpenCL, such as the `code
 examples <https://github.com/inducer/pyopencl/tree/master/examples>`_.
@@ -122,12 +126,12 @@ are automatically available, in addition to other ICDs installed manually.
 Installing from PyPI with Linux wheels
 --------------------------------------
 
-PyOpenCL distributes manylinux1 wheels in PyPI. These wheels are compatible with
+PyOpenCL distributes ``manylinux1`` wheels in PyPI. These wheels are compatible with
 GLIBC>=2.5 based distributions.
 
-On Linux, type
+On Linux, type::
 
-#.  ``pip install pyopencl``
+    pip install pyopencl
 
 The wheels comes with OCL-ICD bundled and configured to use any OpenCL implementation
 supporting ICD interface installed in :file:`/etc/OpenCL/vendors`
@@ -136,13 +140,13 @@ You can also install the following CPU based OpenCL implementation using pip shi
 wheels. Note that pyopencl has to be installed using a wheel for pyopencl to recognize these
 wheels.
 
-To install pyopencl with pocl, a CPU based implementation do,
+To install pyopencl with pocl, a CPU based implementation do::
 
-#.  ``pip install pyopencl[pocl]``
+    pip install pyopencl[pocl]
 
-To install pyopencl with oclgrind, an OpenCL debugger do,
+To install pyopencl with oclgrind, an OpenCL debugger do::
 
-#.  ``pip install pyopencl[oclgrind]``
+    pip install pyopencl[oclgrind]
 
 .. note::
 
@@ -150,12 +154,17 @@ To install pyopencl with oclgrind, an OpenCL debugger do,
     For example, installing PyOpenCL from pip followed by OCL-ICD from Conda Forge can
     redirect the ICD loader, removing access to system-wide ICDs.
 
+Installing via Christoph Gohlke's binary wheels (Windows)
+---------------------------------------------------------
+
+Christoph Gohlke distributes `binary wheels for PyOpenCL on Windows
+<https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`__.
 
 Installing from source
 ----------------------
 
-Information on how to install PyOpenCL *from source* is maintained collaboratively on the
-`PyOpenCL Wiki <http://wiki.tiker.net/PyOpenCL/Installation>`_, but that should
+Information on how to install PyOpenCL *from source* is still available on the
+`Former PyOpenCL Wiki <http://wiki.tiker.net/PyOpenCL/Installation>`_, but that should
 mostly not be necessary unless you have very specific needs or would like to modify
 PyOpenCL yourself.
 
