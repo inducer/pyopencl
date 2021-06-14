@@ -51,6 +51,10 @@ _COMMON_DTYPE_CACHE = {}
 
 
 def _get_common_dtype(obj1, obj2, queue):
+    if queue is None:
+        raise ValueError("PyOpenCL array has no queue; call .with_queue() to "
+                "add one in order to be able to perform operations")
+
     dsupport = has_double_support(queue.device)
     cache_key = None
     o1_dtype = obj1.dtype
