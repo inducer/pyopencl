@@ -1583,6 +1583,26 @@ def test_slice_copy(ctx_factory):
         y.copy()
 
 
+@pytest.mark.parametrize("order", ("C", "F"))
+def test_ravel(ctx_factory, order):
+    ctx = ctx_factory()
+    cq = cl.CommandQueue(ctx)
+
+    x = np.random.randn(10, 4)
+
+    if order == "F":
+        x = np.asfortranarray(x)
+    elif order == "C":
+        pass
+    else:
+        raise AssertionError
+
+    x_cl = cl.array.to_device(cq, x)
+
+    np.testing.assert_allclose(x_cl.ravel(order=order).get(),
+                               x.ravel(order=order))
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])

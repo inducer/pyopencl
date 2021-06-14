@@ -1759,9 +1759,9 @@ class Array:
                 data=self.base_data, offset=self.offset, shape=shape,
                 strides=tuple(newstrides))
 
-    def ravel(self):
+    def ravel(self, order="C"):
         """Returns flattened array containing the same data."""
-        return self.reshape(self.size)
+        return self.reshape(self.size, order=order)
 
     def view(self, dtype=None):
         """Returns view of array with the same data. If *dtype* is different
