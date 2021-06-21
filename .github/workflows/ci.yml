@@ -134,6 +134,8 @@ jobs:
         steps:
         -   uses: actions/checkout@v2
         -   name: "build wheel"
+            env:
+                CIBW_SKIP: "cp27-* cp35-* pp27-*"
             run: |
                 pipx run --spec='cibuildwheel==1.11.1.post1' cibuildwheel --output-dir dist
                 ls -l ./dist/
