@@ -139,7 +139,7 @@ jobs:
             env:
                 CIBW_PROJECT_REQUIRES_PYTHON: "~=3.6"
                 CIBW_BEFORE_BUILD: "./scripts/prepare-build-wheels.sh"
-                CIBW_REPAIR_WHEEL_COMMAND: "auditwheel repair {wheel} -w {dest_dir} --lib-sdir=/.libs && python ./scripts/fix-wheel.py {wheel} /deps/ocl-icd/COPYING"
+                CIBW_REPAIR_WHEEL_COMMAND: "auditwheel repair {wheel} -w {dest_dir} --lib-sdir=/.libs && python ./scripts/fix-wheel.py {wheel} ~/deps/ocl-icd/COPYING"
                 CIBW_MANYLINUX_X86_64_IMAGE: "manylinux2014"
             run: |
                 pipx run --spec='cibuildwheel==1.11.1.post1' cibuildwheel --output-dir dist
