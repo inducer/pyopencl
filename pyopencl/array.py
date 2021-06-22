@@ -1653,7 +1653,10 @@ class Array:
             shape = list(shape)
             idx = shape.index(-1)
             size = -reduce(lambda x, y: x * y, shape, 1)
-            shape[idx] = self.size // size
+            if size == 0:
+                shape[idx] = 0
+            else:
+                shape[idx] = self.size // size
             if any(s < 0 for s in shape):
                 raise ValueError("can only specify one unknown dimension")
             shape = tuple(shape)
