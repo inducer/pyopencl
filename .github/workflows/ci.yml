@@ -141,6 +141,7 @@ jobs:
                 CIBW_BEFORE_BUILD: "./scripts/prepare-build-wheels.sh"
                 CIBW_REPAIR_WHEEL_COMMAND: "auditwheel repair {wheel} -w {dest_dir} --lib-sdir=/.libs && python ./scripts/fix-wheel.py {wheel} ~/deps/ocl-icd/COPYING"
                 CIBW_MANYLINUX_X86_64_IMAGE: "manylinux2014"
+                CIBW_ARCHS: "auto64" # 32bit unsupported for now
             run: |
                 pipx run --spec='cibuildwheel==1.11.1.post1' cibuildwheel --output-dir dist
                 ls -l ./dist/
