@@ -49,6 +49,10 @@ make -j4
 make install
 cd ..
 
+# Bundle license files
+echo "PyOpenCL wheel includes ocl-icd which is licensed as below" >> /io/LICENSE
+cat /deps/ocl-icd/COPYING >> /io/LICENSE
+
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
     if [[ "${PYBIN}" == *cp310* ]]; then
@@ -63,11 +67,6 @@ done
 for whl in wheelhouse/pyopencl*.whl; do
     auditwheel repair "$whl" -w /io/wheelhouse/ --lib-sdir=/.libs
 done
-
-# Bundle license files
-
-/opt/python/cp39-cp39/bin/pip install delocate
-/opt/python/cp39-cp39/bin/python /io/scripts/fix-wheel.py /deps/ocl-icd/COPYING
 
 if [[ "${TWINE_USERNAME}" == "" ]]; then
     echo "TWINE_USERNAME not set. Skipping uploading wheels"
