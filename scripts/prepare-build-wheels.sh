@@ -1,34 +1,5 @@
 #!/bin/bash
-set -e -x
-
-function start_spinner {
-    if [ -n "$SPINNER_PID" ]; then
-        return
-    fi
-
-    >&2 echo "Building libraries..."
-    # Start a process that runs as a keep-alive
-    # to avoid travis quitting if there is no output
-    (while true; do
-        sleep 60
-        >&2 echo "Still building..."
-    done) &
-    SPINNER_PID=$!
-    disown
-}
-
-function stop_spinner {
-    if [ ! -n "$SPINNER_PID" ]; then
-        return
-    fi
-
-    kill $SPINNER_PID
-    unset SPINNER_PID
-
-    >&2 echo "Building libraries finished."
-}
-
-#start_spinner
+set -e -x -o pipefail
 
 if [[ ! -d ~/deps ]]; then
 
@@ -76,5 +47,3 @@ pip install "numpy${NUMPY_VERSION_SPEC}" pybind11 mako
 
 # For bundling license files
 pip install delocate
-
-#stop_spinner
