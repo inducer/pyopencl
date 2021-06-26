@@ -389,7 +389,7 @@ class Array:
     Boolean arrays are stored as :class:`numpy.int8` because ``bool``
     has an unspecified size in the OpenCL spec.
 
-    .. automethod :: __nonzero__
+    .. automethod :: __bool__
 
         Only works for device scalars. (i.e. "arrays" with ``shape == ()``.)
 
