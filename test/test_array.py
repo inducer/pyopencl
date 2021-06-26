@@ -1603,6 +1603,22 @@ def test_ravel(ctx_factory, order):
                                x.ravel(order=order))
 
 
+def test_arithmetic_on_non_scalars(ctx_factory):
+    from dataclasses import dataclass
+    ctx = ctx_factory()
+    cq = cl.CommandQueue(ctx)
+
+    @dataclass
+    class ArrayContainer:
+        _data: np.ndarray
+
+        def __eq__(self, other):
+            return ArrayContainer(self._data == other)
+
+    with pytest.raises(TypeError):
+        ArrayContainer(np.ones(100)) + cl.array.zeros(cq, (10,), dtype=np.float64)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
