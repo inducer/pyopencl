@@ -389,7 +389,7 @@ class Array:
     Boolean arrays are stored as :class:`numpy.int8` because ``bool``
     has an unspecified size in the OpenCL spec.
 
-    .. automethod :: __nonzero__
+    .. automethod :: __bool__
 
         Only works for device scalars. (i.e. "arrays" with ``shape == ()``.)
 
@@ -1448,14 +1448,12 @@ class Array:
 
     # {{{ rich comparisons, any, all
 
-    def __nonzero__(self):
+    def __bool__(self):
         if self.shape == ():
             return bool(self.get())
         else:
             raise ValueError("The truth value of an array with "
                     "more than one element is ambiguous. Use a.any() or a.all()")
-
-    __bool__ = __nonzero__
 
     def any(self, queue=None, wait_for=None):
         from pyopencl.reduction import get_any_kernel
