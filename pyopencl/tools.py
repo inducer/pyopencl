@@ -198,7 +198,7 @@ class _ContextFactory:
 
     def __str__(self):
         # Don't show address, so that parallel test collection works
-        return ("<context factory for <pyopencl.Device '%s' on '%s'>" %
+        return ("<context factory for <pyopencl.Device '%s' on '%s'>>" %
                 (self.device.name.strip(),
                  self.device.platform.name.strip()))
 
