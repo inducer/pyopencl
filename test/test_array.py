@@ -1604,6 +1604,8 @@ def test_ravel(ctx_factory, order):
 
 
 def test_arithmetic_on_non_scalars(ctx_factory):
+    pytest.importorskip("dataclasses")
+
     from dataclasses import dataclass
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
