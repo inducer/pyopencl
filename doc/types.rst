@@ -23,7 +23,7 @@ see that a cl_long is 64 bit unsigned integer. Use the module as follows:
 
 .. note::
 
-    The OpenCL type ``bool`` does not have a correpsonding :mod:`numpy` type defined here,
+    The OpenCL type ``bool`` does not have a corresponding :mod:`numpy` type defined here,
     because OpenCL does not specify the in-memory representation (or even the storage
     size) for this type.
 

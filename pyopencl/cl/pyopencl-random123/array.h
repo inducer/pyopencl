@@ -146,7 +146,7 @@ inline R123_CUDA_DEVICE value_type assemble_from_u32(uint32_t *p32){
            constant-folded/optimized away by the compiler, so only the  \
            overflow tests (!!v[i]) remain to be done at runtime.  For  \
            small values of N, it would be better to do this as an       \
-           uncondtional sequence of adc.  An experiment/optimization    \
+           unconditional sequence of adc.  An experiment/optimization    \
            for another day...                                           \
            N.B.  The weird subscripting: v[_N>3?3:0] is to silence      \
            a spurious error from icpc                                   \
