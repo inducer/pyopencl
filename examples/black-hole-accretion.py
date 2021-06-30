@@ -23,7 +23,7 @@
 # - Herve Aussel for his part of code of black body spectrum
 # - Didier Pelat for his help to perform this work
 # - Jean-Pierre Luminet for his article published in 1979
-# - Numerical Recipies for Runge Kutta recipies
+# - Numerical Recipes for Runge Kutta recipes
 # - Luc Blanchet for his disponibility about my questions in General Relativity
 # - Pierre Lena for his passion about science and vulgarisation
 

@@ -1634,7 +1634,7 @@ def enqueue_copy(queue, dest, src, **kwargs):
         The size of the transfer is controlled by the size of the
         of the host-side buffer. If the host-side buffer
         is a :class:`numpy.ndarray`, you can control the transfer size by
-        transfering into a smaller 'view' of the target array, like this::
+        transferring into a smaller 'view' of the target array, like this::
 
             cl.enqueue_copy(queue, large_dest_numpy_array[:15], src_buffer)
 
@@ -1960,7 +1960,7 @@ def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
 def enqueue_svm_migratemem(queue, svms, flags, wait_for=None):
     """
     :arg svms: a collection of Python buffer objects (e.g. :mod:`numpy`
-        arrrays), optionally wrapped in :class:`SVM` objects.
+        arrays), optionally wrapped in :class:`SVM` objects.
     :arg flags: a combination of :class:`mem_migration_flags`
 
     |std-enqueue-blurb|
