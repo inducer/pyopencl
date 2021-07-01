@@ -104,6 +104,24 @@ def _get_truedivide_dtype(obj1, obj2, queue):
     return result
 
 
+def _get_broadcasted_binary_op_result(obj1, obj2, cq, dtype_getter=None):
+    if dtype_getter is None:
+        dtype_getter = _get_common_dtype
+
+    if obj1.shape == obj2.shape:
+        return obj1._new_like_me(dtype_getter(obj1, obj2, cq),
+                                 cq)
+    elif obj1.shape == ():
+        return obj2._new_like_me(dtype_getter(obj1, obj2, cq),
+                                 cq)
+    elif obj2.shape == ():
+        return obj1._new_like_me(dtype_getter(obj1, obj2, cq),
+                                 cq)
+    else:
+        raise NotImplementedError("Broadcasting binary op with shapes:"
+                                  f" {obj1.shape}, {obj2.shape}.")
+
+
 class InconsistentOpenCLQueueWarning(UserWarning):
     pass
 
@@ -874,11 +892,10 @@ class Array:
     def _axpbyz(out, afac, a, bfac, b, queue=None):
         """Compute ``out = selffac * self + otherfac*other``,
         where *other* is an array."""
-        assert out.shape == a.shape
-        assert out.shape == b.shape
-
         return elementwise.get_axpbyz_kernel(
-                out.context, a.dtype, b.dtype, out.dtype)
+                out.context, a.dtype, b.dtype, out.dtype,
+                x_is_scalar=(a.shape == ()),
+                y_is_scalar=(b.shape == ()))
 
     @staticmethod
     @elwise_kernel_runner
@@ -893,10 +910,11 @@ class Array:
     @staticmethod
     @elwise_kernel_runner
     def _elwise_multiply(out, a, b, queue=None):
-        assert out.shape == a.shape
-        assert out.shape == b.shape
         return elementwise.get_multiply_kernel(
-                a.context, a.dtype, b.dtype, out.dtype)
+                a.context, a.dtype, b.dtype, out.dtype,
+                x_is_scalar=(a.shape == ()),
+                y_is_scalar=(b.shape == ())
+        )
 
     @staticmethod
     @elwise_kernel_runner
@@ -910,11 +928,10 @@ class Array:
     @elwise_kernel_runner
     def _div(out, self, other, queue=None):
         """Divides an array by another array."""
-
-        assert self.shape == other.shape
-
         return elementwise.get_divide_kernel(self.context,
-                self.dtype, other.dtype, out.dtype)
+                self.dtype, other.dtype, out.dtype,
+                x_is_scalar=(self.shape == ()),
+                y_is_scalar=(other.shape == ()))
 
     @staticmethod
     @elwise_kernel_runner
@@ -1027,10 +1044,10 @@ class Array:
     @staticmethod
     @elwise_kernel_runner
     def _array_binop(out, a, b, queue=None, op=None):
-        if a.shape != b.shape:
-            raise ValueError("shapes of binop arguments do not match")
         return elementwise.get_array_binop_kernel(
-                out.context, op, out.dtype, a.dtype, b.dtype)
+                out.context, op, out.dtype, a.dtype, b.dtype,
+                a_is_scalar=(a.shape == ()),
+                b_is_scalar=(b.shape == ()))
 
     @staticmethod
     @elwise_kernel_runner
@@ -1047,8 +1064,7 @@ class Array:
     def mul_add(self, selffac, other, otherfac, queue=None):
         """Return `selffac * self + otherfac*other`.
         """
-        result = self._new_like_me(
-                _get_common_dtype(self, other, queue or self.queue))
+        result = _get_broadcasted_binary_op_result(self, other, queue or self.queue)
         result.add_event(
                 self._axpbyz(result, selffac, self, otherfac, other))
         return result
@@ -1058,8 +1074,7 @@ class Array:
 
         if isinstance(other, Array):
             # add another vector
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
+            result = _get_broadcasted_binary_op_result(self, other, self.queue)
 
             result.add_event(
                     self._axpbyz(result,
@@ -1087,8 +1102,8 @@ class Array:
         """Substract an array from an array or a scalar from an array."""
 
         if isinstance(other, Array):
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
+            # add another vector
+            result = _get_broadcasted_binary_op_result(self, other, self.queue)
             result.add_event(
                     self._axpbyz(result,
                         self.dtype.type(1), self,
@@ -1123,6 +1138,10 @@ class Array:
 
     def __iadd__(self, other):
         if isinstance(other, Array):
+            if (other.shape != self.shape
+                    and other.shape != ()):
+                raise NotImplementedError("Broadcasting binary op with shapes:"
+                                          f" {self.shape}, {other.shape}.")
             self.add_event(
                     self._axpbyz(self,
                         self.dtype.type(1), self,
@@ -1135,6 +1154,10 @@ class Array:
 
     def __isub__(self, other):
         if isinstance(other, Array):
+            if (other.shape != self.shape
+                    and other.shape != ()):
+                raise NotImplementedError("Broadcasting binary op with shapes:"
+                                          f" {self.shape}, {other.shape}.")
             self.add_event(
                     self._axpbyz(self, self.dtype.type(1), self,
                         other.dtype.type(-1), other))
@@ -1155,8 +1178,7 @@ class Array:
 
     def __mul__(self, other):
         if isinstance(other, Array):
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
+            result = _get_broadcasted_binary_op_result(self, other, self.queue)
             result.add_event(
                     self._elwise_multiply(result, self, other))
             return result
@@ -1180,6 +1202,10 @@ class Array:
 
     def __imul__(self, other):
         if isinstance(other, Array):
+            if (other.shape != self.shape
+                    and other.shape != ()):
+                raise NotImplementedError("Broadcasting binary op with shapes:"
+                                          f" {self.shape}, {other.shape}.")
             self.add_event(
                     self._elwise_multiply(self, self, other))
             return self
@@ -1194,15 +1220,17 @@ class Array:
     def __div__(self, other):
         """Divides an array by an array or a scalar, i.e. ``self / other``.
         """
-        common_dtype = _get_truedivide_dtype(self, other, self.queue)
         if isinstance(other, Array):
-            result = self._new_like_me(common_dtype)
+            result = _get_broadcasted_binary_op_result(
+                            self, other, self.queue,
+                            dtype_getter=_get_truedivide_dtype)
             result.add_event(self._div(result, self, other))
             return result
         elif np.isscalar(other):
             if other == 1:
                 return self.copy()
             else:
+                common_dtype = _get_truedivide_dtype(self, other, self.queue)
                 # create a new array for the result
                 result = self._new_like_me(common_dtype)
                 result.add_event(
@@ -1243,6 +1271,10 @@ class Array:
                             .format(self.dtype, common_dtype))
 
         if isinstance(other, Array):
+            if (other.shape != self.shape
+                    and other.shape != ()):
+                raise NotImplementedError("Broadcasting binary op with shapes:"
+                                          f" {self.shape}, {other.shape}.")
             self.add_event(
                 self._div(self, self, other))
             return self
@@ -1264,7 +1296,8 @@ class Array:
             raise TypeError("Integral types only")
 
         if isinstance(other, Array):
-            result = self._new_like_me(common_dtype)
+            result = _get_broadcasted_binary_op_result(self, other,
+                                                       self.queue)
             result.add_event(self._array_binop(result, self, other, op="&"))
         else:
             # create a new array for the result
@@ -1283,7 +1316,8 @@ class Array:
             raise TypeError("Integral types only")
 
         if isinstance(other, Array):
-            result = self._new_like_me(common_dtype)
+            result = _get_broadcasted_binary_op_result(self, other,
+                                                       self.queue)
             result.add_event(self._array_binop(result, self, other, op="|"))
         else:
             # create a new array for the result
@@ -1302,7 +1336,8 @@ class Array:
             raise TypeError("Integral types only")
 
         if isinstance(other, Array):
-            result = self._new_like_me(common_dtype)
+            result = _get_broadcasted_binary_op_result(self, other,
+                                                       self.queue)
             result.add_event(self._array_binop(result, self, other, op="^"))
         else:
             # create a new array for the result
@@ -1321,6 +1356,10 @@ class Array:
             raise TypeError("Integral types only")
 
         if isinstance(other, Array):
+            if (other.shape != self.shape
+                    and other.shape != ()):
+                raise NotImplementedError("Broadcasting binary op with shapes:"
+                                          f" {self.shape}, {other.shape}.")
             self.add_event(self._array_binop(self, self, other, op="&"))
         else:
             self.add_event(
@@ -1335,6 +1374,10 @@ class Array:
             raise TypeError("Integral types only")
 
         if isinstance(other, Array):
+            if (other.shape != self.shape
+                    and other.shape != ()):
+                raise NotImplementedError("Broadcasting binary op with shapes:"
+                                          f" {self.shape}, {other.shape}.")
             self.add_event(self._array_binop(self, self, other, op="|"))
         else:
             self.add_event(
@@ -1349,6 +1392,10 @@ class Array:
             raise TypeError("Integral types only")
 
         if isinstance(other, Array):
+            if (other.shape != self.shape
+                    and other.shape != ()):
+                raise NotImplementedError("Broadcasting binary op with shapes:"
+                                          f" {self.shape}, {other.shape}.")
             self.add_event(self._array_binop(self, self, other, op="^"))
         else:
             self.add_event(
