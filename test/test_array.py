@@ -1621,6 +1621,30 @@ def test_arithmetic_on_non_scalars(ctx_factory):
         ArrayContainer(np.ones(100)) + cl.array.zeros(cq, (10,), dtype=np.float64)
 
 
+@pytest.mark.parametrize("which", ("add", "sub", "mul", "truediv"))
+def test_arithmetic_with_device_scalars(ctx_factory, which):
+    import operator
+    from numpy.random import default_rng
+
+    ctx = ctx_factory()
+    cq = cl.CommandQueue(ctx)
+
+    rng = default_rng()
+    ndim = rng.integers(1, 5)
+
+    shape = tuple(rng.integers(2, 7) for i in range(ndim))
+
+    x_in = rng.random(shape)
+    x_cl = cl_array.to_device(cq, x_in)
+    idx = tuple(rng.integers(0, dim) for dim in shape)
+
+    op = getattr(operator, which)
+    res_cl = op(x_cl, x_cl[idx])
+    res_np = op(x_in, x_in[idx])
+
+    np.testing.assert_allclose(res_cl.get(), res_np)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
