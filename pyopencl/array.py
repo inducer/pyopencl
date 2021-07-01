@@ -892,9 +892,9 @@ class Array:
     def _axpbyz(out, afac, a, bfac, b, queue=None):
         """Compute ``out = selffac * self + otherfac*other``,
         where *other* is an array."""
-        assert (a.shape == b.shape
-                or a.shape == ()
-                or b.shape == ())
+        assert (a.shape == b.shape == out.shape
+                or (a.shape == () and b.shape == out.shape)
+                or (b.shape == () and a.shape == out.shape))
         return elementwise.get_axpbyz_kernel(
                 out.context, a.dtype, b.dtype, out.dtype,
                 x_is_scalar=(a.shape == ()),
@@ -913,9 +913,9 @@ class Array:
     @staticmethod
     @elwise_kernel_runner
     def _elwise_multiply(out, a, b, queue=None):
-        assert (a.shape == b.shape
-                or a.shape == ()
-                or b.shape == ())
+        assert (a.shape == b.shape == out.shape
+                or (a.shape == () and b.shape == out.shape)
+                or (b.shape == () and a.shape == out.shape))
         return elementwise.get_multiply_kernel(
                 a.context, a.dtype, b.dtype, out.dtype,
                 x_is_scalar=(a.shape == ()),
@@ -934,9 +934,9 @@ class Array:
     @elwise_kernel_runner
     def _div(out, self, other, queue=None):
         """Divides an array by another array."""
-        assert (other.shape == self.shape
-                or other.shape == ()
-                or self.shape == ())
+        assert (self.shape == other.shape == out.shape
+                or (self.shape == () and other.shape == out.shape)
+                or (other.shape == () and self.shape == out.shape))
 
         return elementwise.get_divide_kernel(self.context,
                 self.dtype, other.dtype, out.dtype,
@@ -1054,9 +1054,9 @@ class Array:
     @staticmethod
     @elwise_kernel_runner
     def _array_binop(out, a, b, queue=None, op=None):
-        assert (a.shape == b.shape
-                or a.shape == ()
-                or b.shape == ())
+        assert (a.shape == b.shape == out.shape
+                or (a.shape == () and b.shape == out.shape)
+                or (b.shape == () and a.shape == out.shape))
         return elementwise.get_array_binop_kernel(
                 out.context, op, out.dtype, a.dtype, b.dtype,
                 a_is_scalar=(a.shape == ()),
