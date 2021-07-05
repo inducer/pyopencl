@@ -118,7 +118,7 @@ def _get_broadcasted_binary_op_result(obj1, obj2, cq, dtype_getter=None):
         return obj1._new_like_me(dtype_getter(obj1, obj2, cq),
                                  cq)
     else:
-        raise NotImplementedError("Broadcasting binary op with shapes:"
+        raise NotImplementedError("Broadcasting binary operator with shapes:"
                                   f" {obj1.shape}, {obj2.shape}.")
 
 
