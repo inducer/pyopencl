@@ -104,9 +104,8 @@ def _get_truedivide_dtype(obj1, obj2, queue):
     return result
 
 
-def _get_broadcasted_binary_op_result(obj1, obj2, cq, dtype_getter=None):
-    if dtype_getter is None:
-        dtype_getter = _get_common_dtype
+def _get_broadcasted_binary_op_result(obj1, obj2, cq,
+                                      dtype_getter=_get_common_dtype):
 
     if obj1.shape == obj2.shape:
         return obj1._new_like_me(dtype_getter(obj1, obj2, cq),
