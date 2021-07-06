@@ -493,32 +493,36 @@ def real_dtype(dtype):
 
 
 @context_dependent_memoize
-def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z):
+def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z,
+                      x_is_scalar=False, y_is_scalar=False):
     result_t = dtype_to_ctype(dtype_z)
 
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
+
+    x = "x[0]" if x_is_scalar else "x[i]"
+    y = "y[0]" if y_is_scalar else "y[i]"
 
     if dtype_z.kind == "c":
         # a and b will always be complex here.
         z_ct = complex_dtype_to_name(dtype_z)
 
         if x_is_complex:
-            ax = f"{z_ct}_mul(a, {z_ct}_cast(x[i]))"
+            ax = f"{z_ct}_mul(a, {z_ct}_cast({x}))"
         else:
-            ax = f"{z_ct}_mulr(a, x[i])"
+            ax = f"{z_ct}_mulr(a, {x})"
 
         if y_is_complex:
-            by = f"{z_ct}_mul(b, {z_ct}_cast(y[i]))"
+            by = f"{z_ct}_mul(b, {z_ct}_cast({y}))"
         else:
-            by = f"{z_ct}_mulr(b, y[i])"
+            by = f"{z_ct}_mulr(b, {y})"
 
         result = f"{z_ct}_add({ax}, {by})"
     else:
         # real-only
 
-        ax = f"a*(({result_t}) x[i])"
-        by = f"b*(({result_t}) y[i])"
+        ax = f"a*(({result_t}) {x})"
+        by = f"b*(({result_t}) {y})"
 
         result = f"{ax} + {by}"
 
@@ -594,12 +598,13 @@ def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
 
 
 @context_dependent_memoize
-def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z):
+def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z,
+                        x_is_scalar=False, y_is_scalar=False):
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
 
-    x = "x[i]"
-    y = "y[i]"
+    x = "x[0]" if x_is_scalar else "x[i]"
+    y = "y[0]" if y_is_scalar else "y[i]"
 
     if x_is_complex and dtype_x != dtype_z:
         x = "{}_cast({})".format(complex_dtype_to_name(dtype_z), x)
@@ -626,13 +631,14 @@ def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z):
 
 
 @context_dependent_memoize
-def get_divide_kernel(context, dtype_x, dtype_y, dtype_z):
+def get_divide_kernel(context, dtype_x, dtype_y, dtype_z,
+                      x_is_scalar=False, y_is_scalar=False):
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
     z_is_complex = dtype_z.kind == "c"
 
-    x = "x[i]"
-    y = "y[i]"
+    x = "x[0]" if x_is_scalar else "x[i]"
+    y = "y[0]" if y_is_scalar else "y[i]"
 
     if z_is_complex and dtype_x != dtype_y:
         if x_is_complex and dtype_x != dtype_z:
@@ -809,13 +815,16 @@ def get_array_scalar_binop_kernel(context, operator, dtype_res, dtype_a, dtype_b
 
 
 @context_dependent_memoize
-def get_array_binop_kernel(context, operator, dtype_res, dtype_a, dtype_b):
+def get_array_binop_kernel(context, operator, dtype_res, dtype_a, dtype_b,
+                           a_is_scalar=False, b_is_scalar=False):
+    a = "a[0]" if a_is_scalar else "a[i]"
+    b = "b[0]" if b_is_scalar else "b[i]"
     return get_elwise_kernel(context, [
         VectorArg(dtype_res, "out", with_offset=True),
         VectorArg(dtype_a, "a", with_offset=True),
         VectorArg(dtype_b, "b", with_offset=True),
         ],
-        "out[i] = a[i] %s b[i]" % operator,
+        f"out[i] = {a} {operator} {b}",
         name="binop_kernel")
 
 
