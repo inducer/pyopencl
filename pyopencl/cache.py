@@ -89,7 +89,7 @@ class CacheLockManager(CleanupBase):
                     pass
 
                 from time import sleep
-                sleep(1)
+                sleep(0.05)
 
                 attempts += 1
 
