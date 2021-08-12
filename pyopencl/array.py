@@ -2604,7 +2604,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
 
 def concatenate(arrays, axis=0, queue=None, allocator=None):
     """
-    Return a :class:`Array` that is a concatenation of the input tuple of 
+    Return a :class:`Array` that is a concatenation of the input tuple of
     :class:`Array` along :arg axis:. **Warning** The current implementation
     allows only concatenation of row-major arrays along axis = 0.
 
@@ -2614,10 +2614,9 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
 
     shape = None
     if axis != 0:
-        raise NotImplementedError("Axis != 0. "+
-                                  "To be implemented when Array.setitems " +
-                                  "allows values with different stride.")
-
+        raise NotImplementedError("Axis != 0. "
+                                  + "To be implemented when Array.setitems "
+                                  + "allows values with different stride.")
 
     for i_ary, ary in enumerate(arrays):
         queue = queue or ary.queue
