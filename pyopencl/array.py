@@ -636,7 +636,7 @@ class Array:
         else:
             events = self.events
 
-        return Array(None, shape, dtype, allocator=allocator,
+        return type(self)(None, shape, dtype, allocator=allocator,
                 strides=strides, data=data, offset=offset,
                 events=events,
                 _fast=fast, _context=self.context, _queue=queue, _size=size)
