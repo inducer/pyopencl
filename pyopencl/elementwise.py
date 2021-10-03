@@ -1035,14 +1035,32 @@ def get_diff_kernel(context, dtype):
 
 
 @context_dependent_memoize
-def get_if_positive_kernel(context, crit_dtype, dtype):
+def get_if_positive_kernel(
+        context, crit_dtype, then_else_dtype,
+        is_then_array, is_else_array,
+        is_then_scalar, is_else_scalar):
+    if is_then_array:
+        then_ = "then_[0]" if is_then_scalar else "then_[i]"
+        then_arg = VectorArg(then_else_dtype, "then_", with_offset=True)
+    else:
+        assert is_then_scalar
+        then_ = "then_"
+        then_arg = ScalarArg(then_else_dtype, "then_")
+
+    if is_else_array:
+        else_ = "else_[0]" if is_else_scalar else "else_[i]"
+        else_arg = VectorArg(then_else_dtype, "else_", with_offset=True)
+    else:
+        assert is_else_scalar
+        else_ = "else_"
+        else_arg = ScalarArg(then_else_dtype, "else_")
+
     return get_elwise_kernel(context, [
-            VectorArg(dtype, "result", with_offset=True),
+            VectorArg(then_else_dtype, "result", with_offset=True),
             VectorArg(crit_dtype, "crit", with_offset=True),
-            VectorArg(dtype, "then_", with_offset=True),
-            VectorArg(dtype, "else_", with_offset=True),
+            then_arg, else_arg,
             ],
-            "result[i] = crit[i] > 0 ? then_[i] : else_[i]",
+            f"result[i] = crit[i] > 0 ? {then_} : {else_}",
             name="if_positive")
 
 # }}}
