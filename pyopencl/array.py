@@ -2790,7 +2790,12 @@ def reshape(a, shape):
 @elwise_kernel_runner
 def _if_positive(result, criterion, then_, else_):
     return elementwise.get_if_positive_kernel(
-            result.context, criterion.dtype, then_.dtype)
+            result.context, criterion.dtype, then_.dtype,
+            is_then_array=isinstance(then_, Array),
+            is_else_array=isinstance(else_, Array),
+            is_then_scalar=then_.shape == (),
+            is_else_scalar=else_.shape == (),
+            )
 
 
 def if_positive(criterion, then_, else_, out=None, queue=None):
@@ -2798,9 +2803,9 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
     contains *then_[i]* if *criterion[i]>0*, else *else_[i]*.
     """
 
-    if (isinstance(criterion, SCALAR_CLASSES)
-            and isinstance(then_, SCALAR_CLASSES)
-            and isinstance(else_, SCALAR_CLASSES)):
+    is_then_scalar = isinstance(then_, SCALAR_CLASSES)
+    is_else_scalar = isinstance(else_, SCALAR_CLASSES)
+    if isinstance(criterion, SCALAR_CLASSES) and is_then_scalar and is_else_scalar:
         result = np.where(criterion, then_, else_)
 
         if out is not None:
@@ -2809,16 +2814,46 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
 
         return result
 
-    if not (criterion.shape == then_.shape == else_.shape):
-        raise ValueError("shapes do not match")
+    if is_then_scalar:
+        then_ = np.array(then_)
 
-    if not (then_.dtype == else_.dtype):
-        raise ValueError("dtypes do not match")
+    if is_else_scalar:
+        else_ = np.array(else_)
+
+    if then_.dtype != else_.dtype:
+        raise ValueError(
+                f"dtypes do not match: then_ is '{then_.dtype}' and "
+                f"else_ is '{else_.dtype}'")
+
+    if then_.shape == () and else_.shape == ():
+        pass
+    elif then_.shape != () and else_.shape != ():
+        if not (criterion.shape == then_.shape == else_.shape):
+            raise ValueError(
+                    f"shapes do not match: 'criterion' has shape {criterion.shape}"
+                    f", 'then_' has shape {then_.shape} and 'else_' has shape "
+                    f"{else_.shape}")
+    elif then_.shape == ():
+        if criterion.shape != else_.shape:
+            raise ValueError(
+                    f"shapes do not match: 'criterion' has shape {criterion.shape}"
+                    f" and 'else_' has shape {else_.shape}")
+    elif else_.shape == ():
+        if criterion.shape != then_.shape:
+            raise ValueError(
+                    f"shapes do not match: 'criterion' has shape {criterion.shape}"
+                    f" and 'then_' has shape {then_.shape}")
+    else:
+        raise AssertionError()
 
     if out is None:
-        out = empty_like(then_)
+        out = empty(
+                criterion.queue, criterion.shape, then_.dtype,
+                allocator=criterion.allocator)
+
     event1 = _if_positive(out, criterion, then_, else_, queue=queue)
     out.add_event(event1)
+
     return out
 
 

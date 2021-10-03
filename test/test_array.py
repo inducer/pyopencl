@@ -1645,6 +1645,41 @@ def test_arithmetic_with_device_scalars(ctx_factory, which):
     np.testing.assert_allclose(res_cl.get(), res_np)
 
 
+@pytest.mark.parametrize("then_type", ["array", "host_scalar", "device_scalar"])
+@pytest.mark.parametrize("else_type", ["array", "host_scalar", "device_scalar"])
+def test_if_positive_with_scalars(ctx_factory, then_type, else_type):
+    ctx = ctx_factory()
+    cq = cl.CommandQueue(ctx)
+
+    rng = np.random.default_rng()
+    shape = (512,)
+
+    criterion_np = rng.random(shape)
+    criterion_cl = cl_array.to_device(cq, criterion_np)
+
+    def _get_array_or_scalar(rtype, value):
+        if rtype == "array":
+            ary_np = value + np.zeros(shape, dtype=criterion_cl.dtype)
+            ary_cl = value + cl_array.zeros_like(criterion_cl)
+        elif rtype == "host_scalar":
+            ary_np = ary_cl = value
+        elif rtype == "device_scalar":
+            ary_np = value
+            ary_cl = cl_array.to_device(cq, np.array(value))
+        else:
+            raise ValueError(rtype)
+
+        return ary_np, ary_cl
+
+    then_np, then_cl = _get_array_or_scalar(then_type, 0.0)
+    else_np, else_cl = _get_array_or_scalar(else_type, 1.0)
+
+    result_cl = cl_array.if_positive(criterion_cl < 0.5, then_cl, else_cl)
+    result_np = np.where(criterion_np < 0.5, then_np, else_np)
+
+    np.testing.assert_allclose(result_cl.get(), result_np)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
