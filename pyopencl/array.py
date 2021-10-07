@@ -530,7 +530,8 @@ class Array:
                     if shape:
                         strides = [dtype.itemsize]
                         for s in shape[:0:-1]:
-                            strides.append(strides[-1]*s)
+                            # NOTE: https://github.com/inducer/compyte/pull/36
+                            strides.append(strides[-1]*_builtin_max(1, s))
                         strides = tuple(strides[::-1])
                     else:
                         strides = ()
