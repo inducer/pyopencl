@@ -1680,6 +1680,31 @@ def test_if_positive_with_scalars(ctx_factory, then_type, else_type):
     np.testing.assert_allclose(result_cl.get(), result_np)
 
 
+def test_maximum_minimum_with_scalars(ctx_factory):
+    ctx = ctx_factory()
+    cq = cl.CommandQueue(ctx)
+
+    a_np = np.float64(4.0)
+    a_cl = cl_array.to_device(cq, np.array(a_np)).with_queue(None)
+
+    b_np = np.float64(-3.0)
+    b_cl = cl_array.to_device(cq, np.array(b_np)).with_queue(None)
+
+    result = cl_array.maximum(a_np, b_cl, queue=cq)
+    np.testing.assert_allclose(result.get(), a_np)
+    result = cl_array.maximum(a_cl, b_np, queue=cq)
+    np.testing.assert_allclose(result.get(), a_np)
+    result = cl_array.maximum(a_cl, b_cl, queue=cq)
+    np.testing.assert_allclose(result.get(), a_np)
+
+    result = cl_array.minimum(a_np, b_cl, queue=cq)
+    np.testing.assert_allclose(result.get(), b_np)
+    result = cl_array.minimum(a_cl, b_np, queue=cq)
+    np.testing.assert_allclose(result.get(), b_np)
+    result = cl_array.minimum(a_cl, b_cl, queue=cq)
+    np.testing.assert_allclose(result.get(), b_np)
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])

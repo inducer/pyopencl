@@ -1086,10 +1086,25 @@ class Array:
     def mul_add(self, selffac, other, otherfac, queue=None):
         """Return `selffac * self + otherfac*other`.
         """
-        result = _get_broadcasted_binary_op_result(self, other, queue or self.queue)
-        result.add_event(
-                self._axpbyz(result, selffac, self, otherfac, other))
-        return result
+        queue = queue or self.queue
+
+        if isinstance(other, Array):
+            result = _get_broadcasted_binary_op_result(self, other, queue)
+            result.add_event(
+                    self._axpbyz(
+                        result, selffac, self, otherfac, other,
+                        queue=queue))
+            return result
+        elif np.isscalar(other):
+            common_dtype = _get_common_dtype(self, other, queue)
+            result = self._new_like_me(common_dtype, queue=queue)
+            result.add_event(
+                    self._axpbz(result, selffac,
+                        self, common_dtype.type(otherfac * other),
+                        queue=queue))
+            return result
+        else:
+            raise NotImplementedError
 
     def __add__(self, other):
         """Add an array with an array or an array with a scalar."""
@@ -2869,8 +2884,14 @@ def maximum(a, b, out=None, queue=None):
         return result
 
     # silly, but functional
-    return if_positive(a.mul_add(1, b, -1, queue=queue), a, b,
-            queue=queue, out=out)
+    if isinstance(a, Array):
+        criterion = a.mul_add(1, b, -1, queue=queue)
+    elif isinstance(b, Array):
+        criterion = b.mul_add(-1, a, 1, queue=queue)
+    else:
+        raise AssertionError
+
+    return if_positive(criterion, a, b, queue=queue, out=out)
 
 
 def minimum(a, b, out=None, queue=None):
@@ -2882,9 +2903,16 @@ def minimum(a, b, out=None, queue=None):
             return out
 
         return result
+
     # silly, but functional
-    return if_positive(a.mul_add(1, b, -1, queue=queue), b, a,
-            queue=queue, out=out)
+    if isinstance(a, Array):
+        criterion = a.mul_add(1, b, -1, queue=queue)
+    elif isinstance(b, Array):
+        criterion = b.mul_add(-1, a, 1, queue=queue)
+    else:
+        raise AssertionError
+
+    return if_positive(criterion, b, a, queue=queue, out=out)
 
 # }}}
 
