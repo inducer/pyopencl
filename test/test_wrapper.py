@@ -583,6 +583,10 @@ def test_mempool_2(ctx_factory):
 
 
 def test_mempool_32bit_issues():
+    import struct
+    if struct.calcsize("@P") * 8 < 64:
+        pytest.skip("only relevant on 64-bit systems")
+
     # https://github.com/inducer/pycuda/issues/282
     from pyopencl._cl import _TestMemoryPool
     pool = _TestMemoryPool()
