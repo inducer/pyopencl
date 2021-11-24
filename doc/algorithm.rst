@@ -23,7 +23,7 @@ evaluate multi-stage expressions on one or several operands in a single pass.
 
         |std-enqueue-blurb|
 
-Here's a usage example::
+Here's a usage example:
 
 .. literalinclude:: ../examples/demo_elementwise.py
 
