@@ -2863,9 +2863,19 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
         raise AssertionError()
 
     if out is None:
-        out = empty(
-                criterion.queue, criterion.shape, then_.dtype,
-                allocator=criterion.allocator)
+
+        if not then_.shape == ():
+            out = empty_like( 
+                then_, criterion.queue, allocator=criterion.allocator)
+        else:   
+            # Use same strides as criterion
+            cr_byte_strides = np.array(criterion.strides,dtype=np.int64)
+            cr_item_strides = cr_byte_strides // criterion.dtype.itemsize
+            out_strides = tuple(cr_item_strides*then_.dtype.itemsize)    
+
+            out = Array(criterion.queue, criterion.shape, then_.dtype,
+                        allocator=criterion.allocator,
+                        strides=out_strides)
 
     event1 = _if_positive(out, criterion, then_, else_, queue=queue)
     out.add_event(event1)
