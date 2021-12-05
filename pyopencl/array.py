@@ -2865,13 +2865,13 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
     if out is None:
 
         if not then_.shape == ():
-            out = empty_like( 
+            out = empty_like(
                 then_, criterion.queue, allocator=criterion.allocator)
-        else:   
+        else:
             # Use same strides as criterion
-            cr_byte_strides = np.array(criterion.strides,dtype=np.int64)
+            cr_byte_strides = np.array(criterion.strides, dtype=np.int64)
             cr_item_strides = cr_byte_strides // criterion.dtype.itemsize
-            out_strides = tuple(cr_item_strides*then_.dtype.itemsize)    
+            out_strides = tuple(cr_item_strides*then_.dtype.itemsize)
 
             out = Array(criterion.queue, criterion.shape, then_.dtype,
                         allocator=criterion.allocator,
