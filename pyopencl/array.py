@@ -2864,7 +2864,7 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
 
     if out is None:
 
-        if not then_.shape == ():
+        if then_.shape != ():
             out = empty_like(
                 then_, criterion.queue, allocator=criterion.allocator)
         else:
