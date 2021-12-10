@@ -77,38 +77,18 @@ class CleanupManager(CleanupBase):
 class CacheLockManager(CleanupBase):
     def __init__(self, cleanup_m, cache_dir):
         if cache_dir is not None:
-            self.lock_file = os.path.join(cache_dir, "lock")
+            lock_file = os.path.join(cache_dir, "lock")
 
-            attempts = 0
-            while True:
-                try:
-                    self.fd = os.open(self.lock_file,
-                            os.O_CREAT | os.O_WRONLY | os.O_EXCL)
-                    break
-                except OSError:
-                    pass
+            from pyopencl.filelock import FileLock
 
-                from time import sleep
-                sleep(1)
+            self.lock = FileLock(lock_file, timeout=30)
 
-                attempts += 1
-
-                if attempts > 10:
-                    from warnings import warn
-                    warn("could not obtain cache lock--delete '%s' if necessary"
-                            % self.lock_file)
-
-                if attempts > 3 * 60:
-                    raise RuntimeError("waited more than three minutes "
-                            "on the lock file '%s'"
-                            "--something is wrong" % self.lock_file)
+            self.lock.acquire()
 
             cleanup_m.register(self)
 
     def clean_up(self):
-        import os
-        os.close(self.fd)
-        os.unlink(self.lock_file)
+        self.lock.release()
 
     def error_clean_up(self):
         pass
