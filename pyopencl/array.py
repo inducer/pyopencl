@@ -530,7 +530,8 @@ class Array:
                     if shape:
                         strides = [dtype.itemsize]
                         for s in shape[:0:-1]:
-                            strides.append(strides[-1]*s)
+                            # NOTE: https://github.com/inducer/compyte/pull/36
+                            strides.append(strides[-1]*_builtin_max(1, s))
                         strides = tuple(strides[::-1])
                     else:
                         strides = ()
@@ -636,7 +637,7 @@ class Array:
         else:
             events = self.events
 
-        return Array(None, shape, dtype, allocator=allocator,
+        return self.__class__(None, shape, dtype, allocator=allocator,
                 strides=strides, data=data, offset=offset,
                 events=events,
                 _fast=fast, _context=self.context, _queue=queue, _size=size)
@@ -1085,10 +1086,25 @@ class Array:
     def mul_add(self, selffac, other, otherfac, queue=None):
         """Return `selffac * self + otherfac*other`.
         """
-        result = _get_broadcasted_binary_op_result(self, other, queue or self.queue)
-        result.add_event(
-                self._axpbyz(result, selffac, self, otherfac, other))
-        return result
+        queue = queue or self.queue
+
+        if isinstance(other, Array):
+            result = _get_broadcasted_binary_op_result(self, other, queue)
+            result.add_event(
+                    self._axpbyz(
+                        result, selffac, self, otherfac, other,
+                        queue=queue))
+            return result
+        elif np.isscalar(other):
+            common_dtype = _get_common_dtype(self, other, queue)
+            result = self._new_like_me(common_dtype, queue=queue)
+            result.add_event(
+                    self._axpbz(result, selffac,
+                        self, common_dtype.type(otherfac * other),
+                        queue=queue))
+            return result
+        else:
+            raise NotImplementedError
 
     def __add__(self, other):
         """Add an array with an array or an array with a scalar."""
@@ -2790,7 +2806,12 @@ def reshape(a, shape):
 @elwise_kernel_runner
 def _if_positive(result, criterion, then_, else_):
     return elementwise.get_if_positive_kernel(
-            result.context, criterion.dtype, then_.dtype)
+            result.context, criterion.dtype, then_.dtype,
+            is_then_array=isinstance(then_, Array),
+            is_else_array=isinstance(else_, Array),
+            is_then_scalar=then_.shape == (),
+            is_else_scalar=else_.shape == (),
+            )
 
 
 def if_positive(criterion, then_, else_, out=None, queue=None):
@@ -2798,9 +2819,9 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
     contains *then_[i]* if *criterion[i]>0*, else *else_[i]*.
     """
 
-    if (isinstance(criterion, SCALAR_CLASSES)
-            and isinstance(then_, SCALAR_CLASSES)
-            and isinstance(else_, SCALAR_CLASSES)):
+    is_then_scalar = isinstance(then_, SCALAR_CLASSES)
+    is_else_scalar = isinstance(else_, SCALAR_CLASSES)
+    if isinstance(criterion, SCALAR_CLASSES) and is_then_scalar and is_else_scalar:
         result = np.where(criterion, then_, else_)
 
         if out is not None:
@@ -2809,16 +2830,56 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
 
         return result
 
-    if not (criterion.shape == then_.shape == else_.shape):
-        raise ValueError("shapes do not match")
+    if is_then_scalar:
+        then_ = np.array(then_)
 
-    if not (then_.dtype == else_.dtype):
-        raise ValueError("dtypes do not match")
+    if is_else_scalar:
+        else_ = np.array(else_)
+
+    if then_.dtype != else_.dtype:
+        raise ValueError(
+                f"dtypes do not match: then_ is '{then_.dtype}' and "
+                f"else_ is '{else_.dtype}'")
+
+    if then_.shape == () and else_.shape == ():
+        pass
+    elif then_.shape != () and else_.shape != ():
+        if not (criterion.shape == then_.shape == else_.shape):
+            raise ValueError(
+                    f"shapes do not match: 'criterion' has shape {criterion.shape}"
+                    f", 'then_' has shape {then_.shape} and 'else_' has shape "
+                    f"{else_.shape}")
+    elif then_.shape == ():
+        if criterion.shape != else_.shape:
+            raise ValueError(
+                    f"shapes do not match: 'criterion' has shape {criterion.shape}"
+                    f" and 'else_' has shape {else_.shape}")
+    elif else_.shape == ():
+        if criterion.shape != then_.shape:
+            raise ValueError(
+                    f"shapes do not match: 'criterion' has shape {criterion.shape}"
+                    f" and 'then_' has shape {then_.shape}")
+    else:
+        raise AssertionError()
 
     if out is None:
-        out = empty_like(then_)
+
+        if then_.shape != ():
+            out = empty_like(
+                then_, criterion.queue, allocator=criterion.allocator)
+        else:
+            # Use same strides as criterion
+            cr_byte_strides = np.array(criterion.strides, dtype=np.int64)
+            cr_item_strides = cr_byte_strides // criterion.dtype.itemsize
+            out_strides = tuple(cr_item_strides*then_.dtype.itemsize)
+
+            out = Array(criterion.queue, criterion.shape, then_.dtype,
+                        allocator=criterion.allocator,
+                        strides=out_strides)
+
     event1 = _if_positive(out, criterion, then_, else_, queue=queue)
     out.add_event(event1)
+
     return out
 
 
@@ -2833,8 +2894,14 @@ def maximum(a, b, out=None, queue=None):
         return result
 
     # silly, but functional
-    return if_positive(a.mul_add(1, b, -1, queue=queue), a, b,
-            queue=queue, out=out)
+    if isinstance(a, Array):
+        criterion = a.mul_add(1, b, -1, queue=queue)
+    elif isinstance(b, Array):
+        criterion = b.mul_add(-1, a, 1, queue=queue)
+    else:
+        raise AssertionError
+
+    return if_positive(criterion, a, b, queue=queue, out=out)
 
 
 def minimum(a, b, out=None, queue=None):
@@ -2846,9 +2913,16 @@ def minimum(a, b, out=None, queue=None):
             return out
 
         return result
+
     # silly, but functional
-    return if_positive(a.mul_add(1, b, -1, queue=queue), b, a,
-            queue=queue, out=out)
+    if isinstance(a, Array):
+        criterion = a.mul_add(1, b, -1, queue=queue)
+    elif isinstance(b, Array):
+        criterion = b.mul_add(-1, a, 1, queue=queue)
+    else:
+        raise AssertionError
+
+    return if_positive(criterion, b, a, queue=queue, out=out)
 
 # }}}
 

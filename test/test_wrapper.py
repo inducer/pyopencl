@@ -583,6 +583,10 @@ def test_mempool_2(ctx_factory):
 
 
 def test_mempool_32bit_issues():
+    import struct
+    if struct.calcsize("@P") * 8 < 64:
+        pytest.skip("only relevant on 64-bit systems")
+
     # https://github.com/inducer/pycuda/issues/282
     from pyopencl._cl import _TestMemoryPool
     pool = _TestMemoryPool()
@@ -977,10 +981,8 @@ def test_spirv(ctx_factory):
         pytest.skip("SPIR-V program creation only available "
                 "in OpenCL 2.1 and higher")
 
-    if queue.device.platform.name == "Portable Computing Language":
-        # I'm not sure this is universal, but pocl 1.7 seems to use it.
-        if "cl_khr_spirv" not in queue.device.extensions.split():
-            pytest.skip("SPIR-V program creation not supported by device")
+    if not queue.device.il_version:
+        pytest.skip("SPIR-V program creation not supported by device")
 
     n = 50000
 
