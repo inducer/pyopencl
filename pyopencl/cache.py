@@ -89,17 +89,24 @@ class CacheLockManager(CleanupBase):
                     pass
 
                 wait_time_seconds = 0.05
+
+                # Warn every 10 seconds if not able to acquire lock
+                warn_attempts = int(10/wait_time_seconds)
+
+                # Exit after 60 seconds if not able to acquire lock
+                exit_attempts = int(60/wait_time_seconds)
+
                 from time import sleep
                 sleep(wait_time_seconds)
 
                 attempts += 1
 
-                if attempts % (10/wait_time_seconds) == 0:
+                if attempts % warn_attempts == 0:
                     from warnings import warn
                     warn("could not obtain cache lock--delete '%s' if necessary"
                             % self.lock_file)
 
-                if attempts > 60 / wait_time_seconds:
+                if attempts > exit_attempts:
                     raise RuntimeError("waited more than one minute "
                             "on the lock file '%s'"
                             "--something is wrong" % self.lock_file)
