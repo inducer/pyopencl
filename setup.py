@@ -257,7 +257,7 @@ def main():
             install_requires=[
                 "numpy",
                 "pytools>=2021.2.7",
-                "appdirs>=1.4.0",
+                "platformdirs>=2.2.0",
                 # "Mako>=0.3.6",
                 ],
             extras_require={
