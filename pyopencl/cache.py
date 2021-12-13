@@ -333,7 +333,11 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
     from os.path import join
 
     if cache_dir is None:
-        import appdirs
+        try:
+            import platformdirs as appdirs
+        except ImportError:
+            import appdirs
+
         cache_dir = join(appdirs.user_cache_dir("pyopencl", "pyopencl"),
                 "pyopencl-compiler-cache-v2-py{}".format(
                     ".".join(str(i) for i in sys.version_info)))
