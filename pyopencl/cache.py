@@ -88,18 +88,32 @@ class CacheLockManager(CleanupBase):
                 except OSError:
                     pass
 
+                # This value was chosen based on the py-filelock package:
+                # https://github.com/tox-dev/py-filelock/blob/a6c8fabc4192fa7a4ae19b1875ee842ec5eb4f61/src/filelock/_api.py#L113
+                # When running pyopencl in an application with multiple ranks
+                # that share a cache_dir, higher timeouts can lead to
+                # application stalls even with low numbers of ranks.
+                # cf. https://github.com/inducer/pyopencl/pull/504
+                wait_time_seconds = 0.05
+
+                # Warn every 10 seconds if not able to acquire lock
+                warn_attempts = int(10/wait_time_seconds)
+
+                # Exit after 60 seconds if not able to acquire lock
+                exit_attempts = int(60/wait_time_seconds)
+
                 from time import sleep
-                sleep(1)
+                sleep(wait_time_seconds)
 
                 attempts += 1
 
-                if attempts > 10:
+                if attempts % warn_attempts == 0:
                     from warnings import warn
                     warn("could not obtain cache lock--delete '%s' if necessary"
                             % self.lock_file)
 
-                if attempts > 3 * 60:
-                    raise RuntimeError("waited more than three minutes "
+                if attempts > exit_attempts:
+                    raise RuntimeError("waited more than one minute "
                             "on the lock file '%s'"
                             "--something is wrong" % self.lock_file)
 
