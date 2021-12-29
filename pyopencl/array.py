@@ -1754,7 +1754,7 @@ class Array:
                 shape[idx] = 0
             else:
                 shape[idx] = self.size // size
-            if any(s < 0 for s in shape):
+            if _builtin_any(s < 0 for s in shape):
                 raise ValueError("can only specify one unknown dimension")
             shape = tuple(shape)
 
@@ -2744,19 +2744,19 @@ def stack(arrays, axis=0, queue=None):
                 queue = ary.queue
                 break
 
-    if not all(ary.shape == input_shape for ary in arrays[1:]):
+    if not _builtin_all(ary.shape == input_shape for ary in arrays[1:]):
         raise ValueError("arrays must have the same shape")
 
     if not (0 <= axis <= input_ndim):
         raise ValueError("invalid axis")
 
-    if (axis == 0 and not all(ary.flags.c_contiguous
-                              for ary in arrays)):
+    if (axis == 0 and not _builtin_all(
+            ary.flags.c_contiguous for ary in arrays)):
         # pyopencl.Array.__setitem__ does not support non-contiguous assignments
         raise NotImplementedError
 
-    if (axis == input_ndim and not all(ary.flags.f_contiguous
-                                       for ary in arrays)):
+    if (axis == input_ndim and not _builtin_all(
+            ary.flags.f_contiguous for ary in arrays)):
         # pyopencl.Array.__setitem__ does not support non-contiguous assignments
         raise NotImplementedError
 
@@ -2928,21 +2928,46 @@ def minimum(a, b, out=None, queue=None):
 
 
 # {{{ reductions
+
 _builtin_sum = sum
 _builtin_min = min
 _builtin_max = max
+_builtin_any = any
+_builtin_all = all
 
 
-def sum(a, dtype=None, queue=None, slice=None):
+def sum(a, dtype=None, queue=None, slice=None, initial=np._NoValue):
     """
     .. versionadded:: 2011.1
     """
+    if initial is not np._NoValue and not isinstance(initial, SCALAR_CLASSES):
+        raise ValueError("'initial' is not a scalar")
+
     from pyopencl.reduction import get_sum_kernel
     krnl = get_sum_kernel(a.context, dtype, a.dtype)
     result, event1 = krnl(a, queue=queue, slice=slice, wait_for=a.events,
             return_event=True)
     result.add_event(event1)
+
+    # NOTE: neutral element in `get_sum_kernel` is 0 by default
+    if initial is not np._NoValue:
+        result += a.dtype.type(initial)
+
     return result
+
+
+def any(a, queue=None, wait_for=None):
+    if len(a) == 0:
+        return _BOOL_DTYPE.type(False)
+
+    return a.any(queue=queue, wait_for=wait_for)
+
+
+def all(a, queue=None, wait_for=None):
+    if len(a) == 0:
+        return _BOOL_DTYPE.type(True)
+
+    return a.all(queue=queue, wait_for=wait_for)
 
 
 def dot(a, b, dtype=None, queue=None, slice=None):
@@ -2985,23 +3010,46 @@ def subset_dot(subset, a, b, dtype=None, queue=None, slice=None):
 
 
 def _make_minmax_kernel(what):
-    def f(a, queue=None):
+    def f(a, queue=None, initial=np._NoValue):
+        if len(a) == 0:
+            if initial is np._NoValue:
+                raise ValueError(
+                        f"zero-size array to reduction '{what}' "
+                        "which has no identity")
+            else:
+                return initial
+
+        if initial is not np._NoValue and not isinstance(initial, SCALAR_CLASSES):
+            raise ValueError("'initial' is not a scalar")
+
         from pyopencl.reduction import get_minmax_kernel
         krnl = get_minmax_kernel(a.context, what, a.dtype)
         result, event1 = krnl(a, queue=queue, wait_for=a.events,
                 return_event=True)
         result.add_event(event1)
+
+        if initial is not np._NoValue:
+            initial = a.dtype.type(initial)
+            if what == "min":
+                result = minimum(result, initial, queue=queue)
+            elif what == "max":
+                result = maximum(result, initial, queue=queue)
+            else:
+                raise ValueError(f"unknown minmax reduction type: '{what}'")
+
         return result
 
     return f
 
 
 min = _make_minmax_kernel("min")
+min.__name__ = "min"
 min.__doc__ = """
     .. versionadded:: 2011.1
     """
 
 max = _make_minmax_kernel("max")
+max.__name__ = "max"
 max.__doc__ = """
     .. versionadded:: 2011.1
     """
