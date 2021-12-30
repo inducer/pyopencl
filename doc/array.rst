@@ -170,6 +170,8 @@ Reductions
 ^^^^^^^^^^
 
 .. autofunction:: sum
+.. autofunction:: all
+.. autofunction:: any
 .. autofunction:: dot
 .. autofunction:: vdot
 .. autofunction:: subset_dot

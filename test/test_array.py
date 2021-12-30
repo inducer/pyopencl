@@ -1705,6 +1705,68 @@ def test_maximum_minimum_with_scalars(ctx_factory):
     np.testing.assert_allclose(result.get(), b_np)
 
 
+@pytest.mark.parametrize(("reduction", "supports_initial"), [
+    (cl_array.any, False),
+    (cl_array.all, False),
+    (cl_array.sum, True),
+    (cl_array.max, True),
+    (cl_array.min, True),
+    ])
+def test_empty_reductions_vs_numpy(ctx_factory, reduction, supports_initial):
+    ctx = ctx_factory()
+    cq = cl.CommandQueue(ctx)
+
+    # {{{ empty
+
+    x_np = np.array([], dtype=np.float64)
+    x_cl = cl_array.to_device(cq, x_np)
+
+    try:
+        ref = getattr(np, reduction.__name__)(x_np)
+    except ValueError:
+        ref = None
+
+    if ref is None:
+        with pytest.raises(ValueError):
+            reduction(x_cl)
+    else:
+        result = reduction(x_cl)
+        if isinstance(result, cl_array.Array):
+            result = result.get()
+
+        np.testing.assert_allclose(result, ref)
+
+    # }}}
+
+    # {{{ empty with initial
+
+    if supports_initial:
+        ref = getattr(np, reduction.__name__)(x_np, initial=5.0)
+        result = reduction(x_cl, initial=5.0)
+        if isinstance(result, cl_array.Array):
+            result = result.get()
+
+        np.testing.assert_allclose(result, ref)
+
+    # }}}
+
+    # {{{ non-empty with initial
+
+    if supports_initial:
+        x_np = np.linspace(-1, 1, 10)
+        x_cl = cl_array.to_device(cq, x_np)
+
+        ref = getattr(np, reduction.__name__)(x_np, initial=5.0)
+        result = reduction(x_cl, initial=5.0).get()
+        np.testing.assert_allclose(result, ref)
+
+        ref = getattr(np, reduction.__name__)(x_np, initial=-5.0)
+        result = reduction(x_cl, initial=-5.0).get()
+        np.testing.assert_allclose(result, ref)
+
+    # }}}
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
