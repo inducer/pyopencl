@@ -291,6 +291,7 @@ class ReductionKernel:
         SMALL_SEQ_COUNT = 4  # noqa
 
         from pyopencl.array import empty
+        empty = args[0].__class__ if args else empty
 
         stage_inf = self.stage_1_inf
 
