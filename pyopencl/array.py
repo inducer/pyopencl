@@ -2622,6 +2622,9 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
     """
     .. versionadded:: 2013.1
     """
+    if not arrays:
+        raise ValueError("need at least one array to concatenate")
+
     # {{{ find properties of result array
 
     shape = None
@@ -2697,7 +2700,7 @@ def hstack(arrays, queue=None):
     from pyopencl.array import empty
 
     if len(arrays) == 0:
-        return empty(queue, (), dtype=np.float64)
+        raise ValueError("need at least one array to hstack")
 
     if queue is None:
         for ary in arrays:
