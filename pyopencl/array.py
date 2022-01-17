@@ -1988,7 +1988,7 @@ class Array:
         """
 
         if isinstance(index, Array):
-            if index.dtype.kind != "i":
+            if index.dtype.kind not in ("i", "u"):
                 raise TypeError(
                         "fancy indexing is only allowed with integers")
             if len(index.shape) != 1:
@@ -2097,7 +2097,7 @@ class Array:
         wait_for = wait_for + self.events
 
         if isinstance(subscript, Array):
-            if subscript.dtype.kind != "i":
+            if subscript.dtype.kind not in ("i", "u"):
                 raise TypeError(
                         "fancy indexing is only allowed with integers")
             if len(subscript.shape) != 1:
