@@ -40,6 +40,7 @@ from pyopencl.tools import (  # noqa
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 
 from pyopencl.clrandom import RanluxGenerator, PhiloxGenerator, ThreefryGenerator
+import operator
 
 _PYPY = cl._PYPY
 
@@ -342,6 +343,22 @@ def test_custom_type_take_put(ctx_factory):
 
 
 # {{{ operators
+
+@pytest.mark.parametrize("dtype", [np.int8, np.int32, np.int64, np.float32])
+# FIXME Implement florodiv
+#@pytest.mark.parametrize("op", [operator.truediv, operator.floordiv])
+@pytest.mark.parametrize("op", [operator.truediv])
+def test_div_type_matches_numpy(ctx_factory, dtype, op):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = cl_array.arange(queue, 10, dtype=dtype) + 1
+    res = op(4*a, 3*a)
+    a_np = a.get()
+    res_np = op(4*a_np, 3*a_np)
+    assert res_np.dtype == res.dtype
+    assert np.allclose(res_np, res.get())
+
 
 def test_rmul_yields_right_type(ctx_factory):
     context = ctx_factory()

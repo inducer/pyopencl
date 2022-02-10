@@ -645,6 +645,11 @@ def get_divide_kernel(context, dtype_x, dtype_y, dtype_z,
             x = "{}_cast({})".format(complex_dtype_to_name(dtype_z), x)
         if y_is_complex and dtype_y != dtype_z:
             y = "{}_cast({})".format(complex_dtype_to_name(dtype_z), y)
+    else:
+        if dtype_x != dtype_z:
+            x = f"({dtype_to_ctype(dtype_z)}) ({x})"
+        if dtype_y != dtype_z:
+            y = f"({dtype_to_ctype(dtype_z)}) ({y})"
 
     if x_is_complex and y_is_complex:
         xoy = "{}_divide({}, {})".format(complex_dtype_to_name(dtype_z), x, y)
