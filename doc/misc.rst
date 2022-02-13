@@ -121,7 +121,7 @@ If you are looking for more information, see `ocl-icd
 "ICD loader" used by PyOpenCL when installed from Conda Forge on Linux.
 It represents the code behind :file:`libOpenCL.so`.
 
-On macOS, by using the command::
+On macOS, using the command::
 
     conda install ocl_icd_wrapper_apple
 
