@@ -50,14 +50,13 @@ On Linux or macOS, type::
 
     conda install pocl
 
-to install a CPU-based OpenCL driver. On Windows, you may install e.g.
-the `CPU OpenCL driver from Intel <https://software.intel.com/en-us/articles/opencl-drivers#latest_CPU_runtime>`_.
+to install a CPU-based OpenCL driver.
 On macOS, pocl can offer a marked robustness (and, sometimes, performance)
 improvement over the OpenCL drivers built into the operating system.
 
-On Linux and macOS, you can use Oclgrind to detect memory access errors::
+On Linux and Windows, you can use Intel's CPU OpenCL runtime::
 
-    conda install oclgrind
+    conda install intel-opencl-rt
 
 On Linux Intel Broadwell or newer processors with an Intel graphics card, you
 can use NEO::
@@ -68,6 +67,10 @@ On Linux Intel Sandybridge or newer processors with an Intel graphics card, you
 can use Beignet::
 
     conda install beignet
+
+On Linux, Windows and macOS, you can use Oclgrind to detect memory access errors::
+
+    conda install oclgrind
 
 You are now ready to run code based on PyOpenCL, such as the `code
 examples <https://github.com/inducer/pyopencl/tree/master/examples>`_.
@@ -118,10 +121,17 @@ If you are looking for more information, see `ocl-icd
 "ICD loader" used by PyOpenCL when installed from Conda Forge on Linux.
 It represents the code behind :file:`libOpenCL.so`.
 
-On macOS, the packaging of PyOpenCL for Conda Forge relies on the
+On macOS, by using the command::
+
+    conda install ocl_icd_wrapper_apple
+
+will make sure that the Apple provided CPU and GPU implementations are available.
+
+On Windows, the packaging of PyOpenCL for Conda Forge relies on the
 `Khronos ICD Loader <https://github.com/KhronosGroup/OpenCL-ICD-Loader>`_,
-and it is packaged so that the OpenCL drivers built into the operating system
-are automatically available, in addition to other ICDs installed manually.
+and it is packaged so that the OpenCL drivers that are registered in the OS
+using registry keys are automatically available.
+
 
 Installing from PyPI with Linux wheels
 --------------------------------------
