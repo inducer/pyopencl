@@ -202,13 +202,13 @@ def get_reduction_kernel(stage,
             parse_arg_list, get_arg_list_scalar_arg_dtypes,
             get_arg_offset_adjuster_code, VectorArg)
 
-    arg_prep = ""
-    if stage == 1 and arguments is not None:
-        arguments = parse_arg_list(arguments, with_offset=True)
-        arg_prep = get_arg_offset_adjuster_code(arguments)
+    if arguments is None:
+        raise ValueError("arguments must not be None")
+
+    arguments = parse_arg_list(arguments, with_offset=True)
+    arg_prep = get_arg_offset_adjuster_code(arguments)
 
     if stage == 2 and arguments is not None:
-        arguments = parse_arg_list(arguments)
         arguments = (
                 [VectorArg(dtype_out, "pyopencl_reduction_inp")]
                 + arguments)
@@ -241,6 +241,8 @@ class ReductionKernel:
     def __init__(self, ctx, dtype_out,
             neutral, reduce_expr, map_expr=None, arguments=None,
             name="reduce_kernel", options=None, preamble=""):
+        from pyopencl.tools import parse_arg_list
+        arguments = parse_arg_list(arguments, with_offset=True)
 
         dtype_out = self.dtype_out = np.dtype(dtype_out)
 
@@ -290,9 +292,6 @@ class ReductionKernel:
         MAX_GROUP_COUNT = 1024  # noqa
         SMALL_SEQ_COUNT = 4  # noqa
 
-        from pyopencl.array import empty
-        empty = args[0].__class__ if args else empty
-
         stage_inf = self.stage_1_inf
 
         queue = kwargs.pop("queue", None)
@@ -315,13 +314,18 @@ class ReductionKernel:
 
         stage1_args = args
 
+        from pyopencl.array import empty
+
         while True:
             invocation_args = []
             vectors = []
 
+            array_empty = empty
+
             from pyopencl.tools import VectorArg
             for arg, arg_tp in zip(args, stage_inf.arg_types):
                 if isinstance(arg_tp, VectorArg):
+                    array_empty = arg.__class__
                     if not arg.flags.forc:
                         raise RuntimeError("ReductionKernel cannot "
                                 "deal with non-contiguous arrays")
@@ -387,7 +391,8 @@ class ReductionKernel:
                     allocator = repr_vec.allocator
 
             if sz == 0:
-                result = empty(use_queue, (), self.dtype_out, allocator=allocator)
+                result = array_empty(
+                        use_queue, (), self.dtype_out, allocator=allocator)
                 group_count = 1
                 seq_count = 0
 
@@ -406,11 +411,11 @@ class ReductionKernel:
             if group_count == 1 and out is not None:
                 result = out
             elif group_count == 1:
-                result = empty(use_queue,
+                result = array_empty(use_queue,
                         (), self.dtype_out,
                         allocator=allocator)
             else:
-                result = empty(use_queue,
+                result = array_empty(use_queue,
                         (group_count,), self.dtype_out,
                         allocator=allocator)
 

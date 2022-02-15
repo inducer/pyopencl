@@ -282,6 +282,28 @@ def test_sum_without_data(ctx_factory):
     assert result_dev == result_ref
 
 
+def test_reduction_not_first_argument(ctx_factory):
+    # https://github.com/inducer/pyopencl/issues/535
+    from pytest import importorskip
+    importorskip("mako")
+
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    n = 400
+    a = cl_array.arange(queue, n, dtype=np.float32)
+    b = cl_array.arange(queue, n, dtype=np.float32)
+
+    from pyopencl.reduction import ReductionKernel
+    krnl = ReductionKernel(context, np.float32, neutral="0",
+            reduce_expr="a+b", map_expr="z*x[i]*y[i]",
+            arguments="float z, __global float *x, __global float *y")
+
+    my_dot_prod = krnl(0.1, a, b).get()
+
+    assert abs(my_dot_prod - 0.1*np.sum(np.arange(n)**2)) < 1e-4
+
+
 def test_minmax(ctx_factory):
     from pytest import importorskip
     importorskip("mako")
