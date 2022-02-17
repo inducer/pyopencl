@@ -30,6 +30,10 @@ import pyopencl.cltypes  # noqa: F401
 import logging
 logger = logging.getLogger(__name__)
 
+# This supports ocl-icd find shipped OpenCL ICDs, cf.
+# https://github.com/isuruf/ocl-icd/commit/3862386b51930f95d9ad1089f7157a98165d5a6b
+# via
+# https://github.com/inducer/pyopencl/blob/0b3d0ef92497e6838eea300b974f385f94cb5100/scripts/build-wheels.sh#L43-L44
 import os
 os.environ["PYOPENCL_HOME"] = os.path.dirname(os.path.abspath(__file__))
 
