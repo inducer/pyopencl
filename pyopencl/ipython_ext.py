@@ -3,12 +3,6 @@ from IPython.core.magic import (magics_class, Magics, cell_magic, line_magic)
 import pyopencl as cl
 
 
-def _try_to_utf8(text):
-    if isinstance(text, str):
-        return text.encode("utf8")
-    return text
-
-
 @magics_class
 class PyOpenCLMagics(Magics):
     def _run_kernel(self, kernel, options):
