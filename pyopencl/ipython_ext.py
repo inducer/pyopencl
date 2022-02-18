@@ -1,7 +1,6 @@
 from IPython.core.magic import (magics_class, Magics, cell_magic, line_magic)
 
 import pyopencl as cl
-import sys
 
 
 def _try_to_utf8(text):
@@ -13,10 +12,6 @@ def _try_to_utf8(text):
 @magics_class
 class PyOpenCLMagics(Magics):
     def _run_kernel(self, kernel, options):
-        if sys.version_info < (3,):
-            kernel = _try_to_utf8(kernel)
-            options = _try_to_utf8(options).strip()
-
         try:
             ctx = self.shell.user_ns["cl_ctx"]
         except KeyError:
