@@ -408,14 +408,6 @@ class Program:
                 self._prg = _cl._create_program_with_il(context, source)
                 return
 
-            import sys
-            if isinstance(source, str) and sys.version_info < (3,):
-                from warnings import warn
-                warn("Received OpenCL source code in Unicode, "
-                     "should be ASCII string. Attempting conversion.",
-                     stacklevel=2)
-                source = source.encode()
-
             self._context = context
             self._source = source
             self._prg = None
