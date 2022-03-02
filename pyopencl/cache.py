@@ -60,9 +60,9 @@ class ModuleCacheDirManager(ItemDirManager):
     def __init__(self, cleanup_m: CleanupManager, path: str):
         super().__init__(cleanup_m, path, delete_on_error=True)
 
-    def sub(self, subdir: str):
+    def sub(self, subpath: str):
         from os.path import join
-        return join(self.path, subdir)
+        return join(self.path, subpath)
 
     def reset(self):
         super().reset()
