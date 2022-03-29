@@ -28,7 +28,7 @@
 #define _ASDFDAFVVAFF_PYCUDA_HEADER_SEEN_TOOLS_HPP
 
 
-#include <pybind11/pybind11.h>
+#include <nanobind/nanobind.h>
 
 #include <numeric>
 #include <numpy/arrayobject.h>
@@ -51,9 +51,9 @@ namespace pyopencl
 
   inline void run_python_gc()
   {
-    namespace py = pybind11;
+    namespace py = nanobind;
 
-    py::module_::import("gc").attr("collect")();
+    py::module_::import_("gc").attr("collect")();
   }
 
 

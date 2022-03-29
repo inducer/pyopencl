@@ -497,6 +497,13 @@ namespace pyopencl {
         else
           return nullptr;
       }
+
+      // This shouldn't be necessary, but somehow nanobind gets unhappy if
+      // it's not there.
+      void free()
+      {
+        super::free();
+      }
   };
 
   // }}}
@@ -554,12 +561,12 @@ namespace {
   template<class Wrapper>
   void expose_memory_pool(Wrapper &wrapper)
   {
-    typedef typename Wrapper::type cls;
+    typedef typename Wrapper::Type cls;
     wrapper
-      .def_property_readonly("held_blocks", &cls::held_blocks)
-      .def_property_readonly("active_blocks", &cls::active_blocks)
-      .def_property_readonly("managed_bytes", &cls::managed_bytes)
-      .def_property_readonly("active_bytes", &cls::active_bytes)
+      .def_prop_ro("held_blocks", &cls::held_blocks)
+      .def_prop_ro("active_blocks", &cls::active_blocks)
+      .def_prop_ro("managed_bytes", &cls::managed_bytes)
+      .def_prop_ro("active_bytes", &cls::active_bytes)
       .DEF_SIMPLE_METHOD(bin_number)
       .DEF_SIMPLE_METHOD(alloc_size)
       .DEF_SIMPLE_METHOD(free_held)
@@ -580,7 +587,7 @@ void pyopencl_expose_mempool(py::module_ &m)
 
   {
     typedef pyopencl::buffer_allocator_base cls;
-    py::class_<cls, std::shared_ptr<cls>> wrapper(m, "AllocatorBase");
+    py::class_<cls> wrapper(m, "AllocatorBase");
     wrapper
       .def("__call__", pyopencl::allocate_from_buffer_allocator, py::arg("size"))
       ;
@@ -590,13 +597,16 @@ void pyopencl_expose_mempool(py::module_ &m)
   {
     typedef pyopencl::memory_pool<pyopencl::test_allocator> cls;
 
-    py::class_<cls, std::shared_ptr<cls>> wrapper( m, "_TestMemoryPool");
+    py::class_<cls> wrapper(m, "_TestMemoryPool");
     wrapper
-      .def(py::init([](unsigned leading_bits_in_bin_id)
-            { return new cls(
-                std::shared_ptr<pyopencl::test_allocator>(
-                  new pyopencl::test_allocator()),
-                leading_bits_in_bin_id); }),
+      .def("__init__",
+            [](cls *self, unsigned leading_bits_in_bin_id)
+            {
+              new (self) cls(
+                  std::shared_ptr<pyopencl::test_allocator>(
+                    new pyopencl::test_allocator()),
+                leading_bits_in_bin_id);
+            },
           py::arg("leading_bits_in_bin_id")=4
           )
       .def("allocate", [](std::shared_ptr<cls> pool, cls::size_type sz)
@@ -611,11 +621,10 @@ void pyopencl_expose_mempool(py::module_ &m)
 
   {
     typedef pyopencl::deferred_buffer_allocator cls;
-    py::class_<cls, pyopencl::buffer_allocator_base, std::shared_ptr<cls>> wrapper(
+    py::class_<cls, pyopencl::buffer_allocator_base> wrapper(
         m, "DeferredAllocator");
     wrapper
-      .def(py::init<
-          std::shared_ptr<pyopencl::context> const &>())
+      .def(py::init<std::shared_ptr<pyopencl::context> const &>())
       .def(py::init<
           std::shared_ptr<pyopencl::context> const &,
           cl_mem_flags>(),
@@ -625,7 +634,7 @@ void pyopencl_expose_mempool(py::module_ &m)
 
   {
     typedef pyopencl::immediate_buffer_allocator cls;
-    py::class_<cls, pyopencl::buffer_allocator_base, std::shared_ptr<cls>> wrapper(
+    py::class_<cls, pyopencl::buffer_allocator_base> wrapper(
         m, "ImmediateAllocator");
     wrapper
       .def(py::init<pyopencl::command_queue &>())
@@ -647,7 +656,7 @@ void pyopencl_expose_mempool(py::module_ &m)
   {
     typedef pyopencl::memory_pool<pyopencl::buffer_allocator_base> cls;
 
-    py::class_<cls, std::shared_ptr<cls>> wrapper( m, "MemoryPool");
+    py::class_<cls> wrapper( m, "MemoryPool");
     wrapper
       .def(py::init<std::shared_ptr<pyopencl::buffer_allocator_base>, unsigned>(),
           py::arg("allocator"),
@@ -663,11 +672,11 @@ void pyopencl_expose_mempool(py::module_ &m)
 #if PYOPENCL_CL_VERSION >= 0x2000
   {
     typedef pyopencl::svm_allocator cls;
-    py::class_<cls, std::shared_ptr<cls>> wrapper(m, "SVMAllocator");
+    py::class_<cls> wrapper(m, "SVMAllocator");
     wrapper
       .def(py::init<std::shared_ptr<pyopencl::context>  const &, cl_uint, cl_uint, pyopencl::command_queue *>(),
           py::arg("context"),
-          py::kw_only(),
+          /* py::kw_only(), */
           py::arg("alignment")=0,
           py::arg("flags")=CL_MEM_READ_WRITE,
           py::arg("queue").none(true)=nullptr
@@ -688,7 +697,7 @@ void pyopencl_expose_mempool(py::module_ &m)
       .DEF_SIMPLE_METHOD(unbind_from_queue)
 
       // only for diagnostic/debugging/testing purposes!
-      .def_property_readonly("_queue",
+      .def_prop_ro("_queue",
           [](cls const &self) -> py::object
           {
             cl_command_queue queue = self.queue();
@@ -703,11 +712,11 @@ void pyopencl_expose_mempool(py::module_ &m)
   {
     typedef pyopencl::memory_pool<pyopencl::svm_allocator> cls;
 
-    py::class_<cls, std::shared_ptr<cls>> wrapper( m, "SVMPool");
+    py::class_<cls> wrapper( m, "SVMPool");
     wrapper
       .def(py::init<std::shared_ptr<pyopencl::svm_allocator>, unsigned>(),
           py::arg("allocator"),
-          py::kw_only(),
+          /* py::kw_only(), */
           py::arg("leading_bits_in_bin_id")=4
           )
       .def("__call__", pyopencl::allocate_from_svm_pool, py::arg("size"))

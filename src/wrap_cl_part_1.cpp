@@ -47,9 +47,8 @@ void pyopencl_expose_part_1(py::module_ &m)
       .DEF_SIMPLE_METHOD(get_info)
       .def("get_devices", &cls::get_devices,
           py::arg("device_type")=CL_DEVICE_TYPE_ALL)
-      .def(py::self == py::self)
-      .def(py::self != py::self)
       .def("__hash__", &cls::hash)
+      PYOPENCL_EXPOSE_EQUALITY_TESTS
       PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_platform_id)
       ;
   }
@@ -61,8 +60,7 @@ void pyopencl_expose_part_1(py::module_ &m)
     typedef device cls;
     py::class_<cls>(m, "Device", py::dynamic_attr())
       .DEF_SIMPLE_METHOD(get_info)
-      .def(py::self == py::self)
-      .def(py::self != py::self)
+      PYOPENCL_EXPOSE_EQUALITY_TESTS
       .def("__hash__", &cls::hash)
 #if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(create_sub_devices)
@@ -81,26 +79,26 @@ void pyopencl_expose_part_1(py::module_ &m)
 
   {
     typedef context cls;
-    py::class_<cls, std::shared_ptr<cls>>(m, "Context", py::dynamic_attr())
+    py::class_<cls>(m, "Context", py::dynamic_attr(), py::is_weak_referenceable())
       .def(
-          py::init(
-            [](py::object py_devices, py::object py_properties,
-              py::object py_dev_type)
-            {
-              PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
-                  return create_context_inner(
-                    py_devices,
-                    py_properties,
-                    py_dev_type);
-              )
-            }),
+          "__init__",
+          [](cls *self, py::object py_devices, py::object py_properties,
+            py::object py_dev_type)
+          {
+            PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
+                create_context_inner(
+                  self,
+                  py_devices,
+                  py_properties,
+                  py_dev_type);
+            )
+          },
           py::arg("devices").none(true)=py::none(),
           py::arg("properties").none(true)=py::none(),
           py::arg("dev_type").none(true)=py::none()
           )
       .DEF_SIMPLE_METHOD(get_info)
-      .def(py::self == py::self)
-      .def(py::self != py::self)
+      PYOPENCL_EXPOSE_EQUALITY_TESTS
       .def("__hash__", &cls::hash)
       PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_context)
 #if PYOPENCL_CL_VERSION >= 0x2010
@@ -114,7 +112,7 @@ void pyopencl_expose_part_1(py::module_ &m)
   // {{{ command queue
   {
     typedef command_queue cls;
-    py::class_<cls, std::shared_ptr<cls>>(m, "CommandQueue", py::dynamic_attr())
+    py::class_<cls>(m, "CommandQueue", py::dynamic_attr())
       .def(
         py::init<const context &, const device *, py::object>(),
         py::arg("context"),
@@ -127,8 +125,7 @@ void pyopencl_expose_part_1(py::module_ &m)
 #endif
       .DEF_SIMPLE_METHOD(flush)
       .DEF_SIMPLE_METHOD(finish)
-      .def(py::self == py::self)
-      .def(py::self != py::self)
+      PYOPENCL_EXPOSE_EQUALITY_TESTS
       .def("__hash__", &cls::hash)
       PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_command_queue)
       ;
@@ -139,12 +136,11 @@ void pyopencl_expose_part_1(py::module_ &m)
   // {{{ events/synchronization
   {
     typedef event cls;
-    py::class_<cls>(m, "Event", py::dynamic_attr())
+    py::class_<cls>(m, "Event")
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_profiling_info)
       .DEF_SIMPLE_METHOD(wait)
-      .def(py::self == py::self)
-      .def(py::self != py::self)
+      PYOPENCL_EXPOSE_EQUALITY_TESTS
       .def("__hash__", &cls::hash)
       PYOPENCL_EXPOSE_TO_FROM_INT_PTR(cl_event)
 #if PYOPENCL_CL_VERSION >= 0x1010
@@ -183,11 +179,9 @@ void pyopencl_expose_part_1(py::module_ &m)
   {
     typedef user_event cls;
     py::class_<cls, event>(m, "UserEvent", py::dynamic_attr())
-      .def(py::init(
-            [](context &ctx)
-            {
-              return create_user_event(ctx);
-            }),
+      .def("__init__",
+          [](cls *self, context &ctx)
+          { create_user_event(self, ctx); },
           py::arg("context"))
       .DEF_SIMPLE_METHOD(set_status)
       ;
@@ -209,11 +203,10 @@ void pyopencl_expose_part_1(py::module_ &m)
           py::arg("dtype"),
           py::arg("order")="C")
 #endif
-      .def("__eq__", [](const cls &self, const cls &other){ return self == other; })
-      .def("__ne__", [](const cls &self, const cls &other){ return self != other; })
+      PYOPENCL_EXPOSE_EQUALITY_TESTS
       .def("__hash__", &cls::hash)
 
-      .def_property_readonly("int_ptr", to_int_ptr<cls>,
+      .def_prop_ro("int_ptr", to_int_ptr<cls>,
           "Return an integer corresponding to the pointer value "
           "of the underlying :c:type:`cl_mem`. "
           "Use :meth:`from_int_ptr` to turn back into a Python object."
@@ -224,7 +217,7 @@ void pyopencl_expose_part_1(py::module_ &m)
     typedef memory_object cls;
     py::class_<cls, memory_object_holder>(m, "MemoryObject", py::dynamic_attr())
       .DEF_SIMPLE_METHOD(release)
-      .def_property_readonly("hostbuf", &cls::hostbuf)
+      .def_prop_ro("hostbuf", &cls::hostbuf)
 
       .def_static("from_int_ptr", memory_object_from_int,
         "(static method) Return a new Python object referencing the C-level "
@@ -257,10 +250,9 @@ void pyopencl_expose_part_1(py::module_ &m)
     typedef buffer cls;
     py::class_<cls, memory_object>(m, "Buffer", py::dynamic_attr())
       .def(
-          py::init(
-            [](context &ctx, cl_mem_flags flags, size_t size, py::object py_hostbuf)
-            { return create_buffer_py(ctx, flags, size, py_hostbuf); }
-            ),
+          "__init__",
+          [](cls *self, context &ctx, cl_mem_flags flags, size_t size, py::object py_hostbuf)
+          { create_buffer_py(self, ctx, flags, size, py_hostbuf); },
           py::arg("context"),
           py::arg("flags"),
           py::arg("size")=0,

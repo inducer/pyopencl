@@ -41,6 +41,11 @@ jobs:
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
                 build_py_project_in_conda_env
+
+                # Avoid linting local directory, where native module
+                # cannot be imported.
+                rm -Rf "$(get_proj_name)"
+
                 run_pylint "$(get_proj_name)" test/*.py
 
     mypy:
@@ -122,7 +127,7 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
+                ./configure.py --cl-libname=OpenCL
                 build_py_project_in_conda_env
                 test_py_project
 

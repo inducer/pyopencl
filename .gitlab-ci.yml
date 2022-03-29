@@ -165,31 +165,6 @@ Python 3 POCL (+GL and special functions):
     reports:
       junit: test/pytest.xml
 
-PyPy3 POCL:
-  script: |
-    export PY_EXE=pypy3
-    export PYOPENCL_TEST=portable:pthread
-    export NO_DOCTESTS=1
-
-    # On pypy, this seems to install old versions from the package index
-    # independently of whether newer ones are already present.
-    rm -f pyproject.toml
-    export EXTRA_INSTALL="pybind11 numpy mako"
-
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
-    build_py_project_in_venv
-    test_py_project
-
-  tags:
-  - pypy
-  - pocl
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
 Flake8:
   script: |
     curl -L -O https://tiker.net/ci-support-v0
