@@ -19,7 +19,7 @@ jobs:
             uses: actions/setup-python@v1
             with:
                 # matches compat target in setup.py
-                python-version: '3.6'
+                python-version: '3.8'
         -   name: "Main Script"
             run: |
                 curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
@@ -114,7 +114,7 @@ jobs:
                 grep -v ocl-icd .test-conda-env-py3.yml > $CONDA_ENVIRONMENT
                 curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
                 . ./ci-support.sh
-                ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
+                ./configure.py --cl-libname=OpenCL
                 build_py_project_in_conda_env
                 test_py_project
 

@@ -96,6 +96,7 @@
 #include <iostream>
 #include <vector>
 #include <utility>
+#include <array>
 #include <numeric>
 #include "wrap_helpers.hpp"
 #include <numpy/arrayobject.h>
@@ -468,7 +469,7 @@ namespace pyopencl
       cl_program m_program;
 
     public:
-      error(const char *routine, cl_int c, const char *msg="")
+      error(std::string const &routine, cl_int c, std::string const &msg="")
         : std::runtime_error(msg), m_routine(routine), m_code(c),
         m_program_initialized(false), m_program(nullptr)
       { }
@@ -504,6 +505,27 @@ namespace pyopencl
 
       program *get_program() const;
 
+      // FIXME: Inheritance from builtin_exception confuses nanobind
+      const char *err_what()
+      {
+        return what();
+      }
+
+      void set_error() const
+      {
+        py::object err_obj = py::cast(*this);
+        py::object errors_mod = py::module_::import_("pyopencl._errors");
+
+        if (code() == CL_MEM_OBJECT_ALLOCATION_FAILURE)
+          PyErr_SetObject(errors_mod.attr("MemoryError").ptr(), err_obj.ptr());
+        else if (code() <= CL_INVALID_VALUE)
+          PyErr_SetObject(errors_mod.attr("LogicError").ptr(), err_obj.ptr());
+        else if (code() > CL_INVALID_VALUE && code() < CL_SUCCESS)
+          PyErr_SetObject(errors_mod.attr("RuntimeError").ptr(), err_obj.ptr());
+        else
+          PyErr_SetObject(errors_mod.attr("Error").ptr(), err_obj.ptr());
+      }
+
   };
 
   // }}}
@@ -524,14 +546,13 @@ namespace pyopencl
 
   // {{{ buffer interface helper
 
-
   class py_buffer_wrapper : public noncopyable
   {
     private:
       bool m_initialized;
 
-    public:
-      Py_buffer m_buf;
+      public:
+        Py_buffer m_buf;
 
     py_buffer_wrapper()
       : m_initialized(false)
@@ -548,13 +569,13 @@ namespace pyopencl
         {
           PyErr_Clear();
           if (PyObject_GetBuffer(obj, &m_buf, flags_wo_cont | PyBUF_F_CONTIGUOUS))
-            throw py::error_already_set();
+            throw py::python_error();
         }
       }
       else
 #endif
       if (PyObject_GetBuffer(obj, &m_buf, flags))
-        throw py::error_already_set();
+        throw py::python_error();
 
       m_initialized = true;
     }
@@ -1329,7 +1350,7 @@ namespace pyopencl
 
 
   inline
-  context *create_context_inner(py::object py_devices, py::object py_properties,
+  void create_context_inner(context *self, py::object py_devices, py::object py_properties,
       py::object py_dev_type)
   {
     std::vector<cl_context_properties> props
@@ -1376,7 +1397,7 @@ namespace pyopencl
 
     try
     {
-      return new context(ctx, false);
+      new (self) context(ctx, false);
     }
     catch (...)
     {
@@ -1387,11 +1408,11 @@ namespace pyopencl
 
 
   inline
-  context *create_context(py::object py_devices, py::object py_properties,
+  void create_context(context *self, py::object py_devices, py::object py_properties,
       py::object py_dev_type)
   {
     PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
-      return create_context_inner(py_devices, py_properties, py_dev_type);
+      create_context_inner(self, py_devices, py_properties, py_dev_type);
     )
   }
 
@@ -1463,7 +1484,7 @@ namespace pyopencl
             num_props = py::cast<cl_command_queue_properties>(py_props);
             props_given_as_numeric = true;
           }
-          catch (py::cast_error &)
+          catch (cast_error &)
           {
             props_given_as_numeric = false;
           }
@@ -1552,8 +1573,8 @@ namespace pyopencl
       {
         if (m_finalized)
         {
-          auto mod_warnings(py::module_::import("warnings"));
-          auto mod_cl(py::module_::import("pyopencl"));
+          auto mod_warnings(py::module_::import_("warnings"));
+          auto mod_cl(py::module_::import_("pyopencl"));
           mod_warnings.attr("warn")(
               "Command queue used after exit of context manager. "
               "This is deprecated and will stop working in 2023.",
@@ -2001,7 +2022,7 @@ namespace pyopencl
       {
         if (m_ward.get())
         {
-          return py::reinterpret_borrow<py::object>(m_ward->m_buf.obj);
+          return py::borrow<py::object>(m_ward->m_buf.obj);
         }
         else
           return py::none();
@@ -2121,7 +2142,7 @@ namespace pyopencl
 
 
   inline
-  user_event *create_user_event(context &ctx)
+  void create_user_event(user_event *self, context &ctx)
   {
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clCreateUserEvent");
@@ -2132,7 +2153,7 @@ namespace pyopencl
 
     try
     {
-      return new user_event(evt, false);
+      new (self) user_event(evt, false);
     }
     catch (...)
     {
@@ -2228,7 +2249,7 @@ namespace pyopencl
       py::object hostbuf()
       {
         if (m_hostbuf.get())
-          return py::reinterpret_borrow<py::object>(m_hostbuf->m_buf.obj);
+          return py::borrow<py::object>(m_hostbuf->m_buf.obj);
         else
           return py::none();
       }
@@ -2360,23 +2381,21 @@ namespace pyopencl
         }
       }
 
-      buffer *getitem(py::slice slc) const
+      buffer *getitem(py::object slc) const
       {
         PYOPENCL_BUFFER_SIZE_T start, end, stride, length;
+
+        if (!PySlice_Check(slc.ptr()))
+          throw pyopencl::error("Buffer.__getitem__", CL_INVALID_VALUE,
+              "Buffer slice must be a slice object");
 
         size_t my_length;
         PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
             (data(), CL_MEM_SIZE, sizeof(my_length), &my_length, 0));
 
-#if PY_VERSION_HEX >= 0x03020000
         if (PySlice_GetIndicesEx(slc.ptr(),
               my_length, &start, &end, &stride, &length) != 0)
-          throw py::error_already_set();
-#else
-        if (PySlice_GetIndicesEx(reinterpret_cast<PySliceObject *>(slc.ptr()),
-              my_length, &start, &end, &stride, &length) != 0)
-          throw py::error_already_set();
-#endif
+          throw py::python_error();
 
         if (stride != 1)
           throw pyopencl::error("Buffer.__getitem__", CL_INVALID_VALUE,
@@ -2399,8 +2418,8 @@ namespace pyopencl
 
   // {{{ buffer creation
 
-  inline
-  buffer *create_buffer_py(
+  inline void create_buffer_py(
+      buffer *self,
       context &ctx,
       cl_mem_flags flags,
       size_t size,
@@ -2443,7 +2462,7 @@ namespace pyopencl
 
     try
     {
-      return new buffer(mem, false, std::move(retained_buf_obj));
+      new (self) buffer(mem, false, std::move(retained_buf_obj));
     }
     catch (...)
     {
@@ -2817,12 +2836,10 @@ namespace pyopencl
   // {{{ image formats
 
   inline
-  cl_image_format *make_image_format(cl_channel_order ord, cl_channel_type tp)
+  void set_image_format(cl_image_format *self, cl_channel_order ord, cl_channel_type tp)
   {
-    std::unique_ptr<cl_image_format> result(new cl_image_format);
-    result->image_channel_order = ord;
-    result->image_channel_data_type = tp;
-    return result.release();
+    self->image_channel_order = ord;
+    self->image_channel_data_type = tp;
   }
 
   inline
@@ -2904,7 +2921,8 @@ namespace pyopencl
   // {{{ image creation
 
   inline
-  image *create_image(
+  void create_image(
+      image *self,
       context const &ctx,
       cl_mem_flags flags,
       cl_image_format const &fmt,
@@ -3014,7 +3032,7 @@ namespace pyopencl
 
     try
     {
-      return new image(mem, false, std::move(retained_buf_obj));
+      new (self) image(mem, false, std::move(retained_buf_obj));
     }
     catch (...)
     {
@@ -3026,7 +3044,8 @@ namespace pyopencl
 #if PYOPENCL_CL_VERSION >= 0x1020
 
   inline
-  image *create_image_from_desc(
+  void create_image_from_desc(
+      image *self,
       context const &ctx,
       cl_mem_flags flags,
       cl_image_format const &fmt,
@@ -3067,7 +3086,7 @@ namespace pyopencl
 
     try
     {
-      return new image(mem, false, std::move(retained_buf_obj));
+      new (self) image(mem, false, std::move(retained_buf_obj));
     }
     catch (...)
     {
@@ -3319,7 +3338,8 @@ namespace pyopencl
 
 #if PYOPENCL_CL_VERSION >= 0x2000
   inline
-  pipe *create_pipe(
+  void create_pipe(
+      pipe *self,
       context const &ctx,
       cl_mem_flags flags,
       cl_uint pipe_packet_size,
@@ -3355,7 +3375,7 @@ namespace pyopencl
 
     try
     {
-      return new pipe(mem, false);
+      new (self) pipe(mem, false);
     }
     catch (...)
     {
@@ -3459,7 +3479,7 @@ namespace pyopencl
     std::unique_ptr<memory_map> map;
     try
     {
-      result = py::object(py::reinterpret_steal<py::object>(PyArray_NewFromDescr(
+      result = py::object(py::steal<py::object>(PyArray_NewFromDescr(
           &PyArray_Type, tp_descr,
           shape.size(),
           shape.empty() ? nullptr : &shape.front(),
@@ -3546,7 +3566,7 @@ namespace pyopencl
       throw;
     }
 
-    py::object result = py::reinterpret_steal<py::object>(PyArray_NewFromDescr(
+    py::object result = py::steal<py::object>(PyArray_NewFromDescr(
         &PyArray_Type, tp_descr,
         shape.size(),
         shape.empty() ? nullptr : &shape.front(),
@@ -4320,7 +4340,7 @@ namespace pyopencl
               for (unsigned i = 0; i < sizes.size(); ++i)
               {
                 py::object binary_pyobj(
-                    py::reinterpret_steal<py::object>(
+                    py::steal<py::object>(
 #if PY_VERSION_HEX >= 0x03000000
                     PyBytes_FromStringAndSize(
                       reinterpret_cast<char *>(ptr), sizes[i])
@@ -4391,7 +4411,7 @@ namespace pyopencl
         }
       }
 
-      void build(std::string options, py::object py_devices)
+      void build(py::bytes options, py::object py_devices)
       {
         PYOPENCL_PARSE_PY_DEVICES;
 
@@ -4401,7 +4421,7 @@ namespace pyopencl
       }
 
 #if PYOPENCL_CL_VERSION >= 0x1020
-      void compile(std::string options, py::object py_devices,
+      void compile(py::bytes options, py::object py_devices,
           py::object py_headers)
       {
         PYOPENCL_PARSE_PY_DEVICES;
@@ -4413,7 +4433,7 @@ namespace pyopencl
         std::vector<cl_program> programs;
         for (py::handle name_hdr_tup_py: py_headers)
         {
-          py::tuple name_hdr_tup = py::reinterpret_borrow<py::tuple>(name_hdr_tup_py);
+          py::tuple name_hdr_tup = py::borrow<py::tuple>(name_hdr_tup_py);
           if (py::len(name_hdr_tup) != 2)
             throw error("Program.compile", CL_INVALID_VALUE,
                 "epxected (name, header) tuple in headers list");
@@ -4454,7 +4474,8 @@ namespace pyopencl
 
 
   inline
-  program *create_program_with_source(
+  void create_program_with_source(
+      program *self,
       context &ctx,
       std::string const &src)
   {
@@ -4470,7 +4491,7 @@ namespace pyopencl
 
     try
     {
-      return new program(result, false, program::KND_SOURCE);
+      new (self) program(result, false, program::KND_SOURCE);
     }
     catch (...)
     {
@@ -4484,7 +4505,8 @@ namespace pyopencl
 
 
   inline
-  program *create_program_with_binary(
+  void create_program_with_binary(
+      program *self,
       context &ctx,
       py::sequence py_devices,
       py::sequence py_binaries)
@@ -4536,7 +4558,7 @@ namespace pyopencl
 
     try
     {
-      return new program(result, false, program::KND_BINARY);
+      new (self) program(result, false, program::KND_BINARY);
     }
     catch (...)
     {
@@ -4613,7 +4635,7 @@ namespace pyopencl
   program *link_program(
       context &ctx,
       py::object py_programs,
-      std::string const &options,
+      py::bytes options,
       py::object py_devices
       )
   {
@@ -4778,33 +4800,36 @@ namespace pyopencl
 
       void set_arg_buf_pack(cl_uint arg_index, py::handle py_typechar, py::handle obj)
       {
-        std::string typechar_str(py::cast<std::string>(py_typechar));
+        py::bytes typechar_str(py::cast<py::bytes>(py_typechar));
         if (typechar_str.size() != 1)
           throw error("Kernel.set_arg_buf_pack", CL_INVALID_VALUE,
               "type char argument must have exactly one character");
 
-        char typechar = typechar_str[0];
+        char typechar = *typechar_str.c_str();
 
-#define PYOPENCL_KERNEL_PACK_AND_SET_ARG(TYPECH_VAL, TYPE) \
+#define PYOPENCL_KERNEL_PACK_AND_SET_ARG(TYPECH_VAL, TYPE, CAST_TYPE) \
         case TYPECH_VAL: \
           { \
-            TYPE val = py::cast<TYPE>(obj); \
+            TYPE val = (TYPE) py::cast<CAST_TYPE>(obj); \
             PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index, sizeof(val), &val)); \
             break; \
           }
         switch (typechar)
         {
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('c', char)
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('b', signed char)
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('B', unsigned char)
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('h', short)
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('H', unsigned short)
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('i', int)
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('I', unsigned int)
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('l', long)
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('L', unsigned long)
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('f', float)
-          PYOPENCL_KERNEL_PACK_AND_SET_ARG('d', double)
+          // FIXME: nanobind thinks of char as "short string", not number
+          // The detour via 'int' may lose data.
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('c', char, int)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('b', signed char, int)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('B', unsigned char, int)
+
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('h', short, short)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('H', unsigned short, unsigned short)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('i', int, int)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('I', unsigned int, unsigned int)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('l', long, long)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('L', unsigned long, unsigned long)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('f', float, float)
+          PYOPENCL_KERNEL_PACK_AND_SET_ARG('d', double, double)
           default:
             throw error("Kernel.set_arg_buf_pack", CL_INVALID_VALUE,
                 "invalid type char");
@@ -4823,7 +4848,7 @@ namespace pyopencl
         {
           buf_wrapper.get(py_buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
         }
-        catch (py::error_already_set &)
+        catch (py::python_error &)
         {
           PyErr_Clear();
           throw error("Kernel.set_arg", CL_INVALID_VALUE,
@@ -4864,7 +4889,7 @@ namespace pyopencl
             set_arg_svm(arg_index, py::cast<svm_pointer const &>(arg));
             return;
           }
-          catch (py::cast_error &) { }
+          catch (cast_error &) { }
 #endif
 
           try
@@ -4873,7 +4898,7 @@ namespace pyopencl
             m_set_arg_prefer_svm = false;
             return;
           }
-          catch (py::cast_error &) { }
+          catch (cast_error &) { }
         }
         else
         {
@@ -4882,7 +4907,7 @@ namespace pyopencl
             set_arg_mem(arg_index, py::cast<memory_object_holder &>(arg));
             return;
           }
-          catch (py::cast_error &) { }
+          catch (cast_error &) { }
 
 #if PYOPENCL_CL_VERSION >= 0x2000
           try
@@ -4891,7 +4916,7 @@ namespace pyopencl
             m_set_arg_prefer_svm = true;
             return;
           }
-          catch (py::cast_error &) { }
+          catch (cast_error &) { }
 #endif
         }
 
@@ -4900,21 +4925,21 @@ namespace pyopencl
           set_arg_local(arg_index, py::cast<local_memory>(arg));
           return;
         }
-        catch (py::cast_error &) { }
+        catch (cast_error &) { }
 
         try
         {
           set_arg_sampler(arg_index, py::cast<const sampler &>(arg));
           return;
         }
-        catch (py::cast_error &) { }
+        catch (cast_error &) { }
 
         try
         {
           set_arg_command_queue(arg_index, py::cast<const command_queue &>(arg));
           return;
         }
-        catch (py::cast_error &) { }
+        catch (cast_error &) { }
 
         set_arg_buf(arg_index, arg);
       }
@@ -5090,9 +5115,13 @@ namespace pyopencl
           std::string("when processing arg#") + std::to_string(arg_index+1) \
           + std::string(" (1-based): ") + std::string(err.what())); \
       \
-      auto mod_cl_ary(py::module_::import("pyopencl.array")); \
+      auto mod_cl_ary(py::module_::import_("pyopencl.array")); \
       auto cls_array(mod_cl_ary.attr("Array")); \
-      if (arg_value.ptr() && py::isinstance(arg_value, cls_array)) \
+      int isinstance_result = PyObject_IsInstance(arg_value.ptr(), cls_array.ptr()); \
+      if (isinstance_result == -1) \
+        throw py::python_error(); \
+      \
+      if (arg_value.ptr() && isinstance_result) \
         msg.append( \
             " (perhaps you meant to pass 'array.data' instead of the array itself?)"); \
       throw error(err.routine().c_str(), err.code(), msg.c_str()); \
@@ -5376,7 +5405,7 @@ namespace pyopencl
 
 #define PYOPENCL_WRAP_BUFFER_CREATOR(TYPE, NAME, CL_NAME, ARGS, CL_ARGS) \
   inline \
-  TYPE *NAME ARGS \
+  void NAME ARGS \
   { \
     cl_int status_code; \
     PYOPENCL_PRINT_CALL_TRACE(#CL_NAME); \
@@ -5387,7 +5416,7 @@ namespace pyopencl
     \
     try \
     { \
-      return new TYPE(mem, false); \
+      new (self) TYPE(mem, false); \
     } \
     catch (...) \
     { \
@@ -5401,33 +5430,34 @@ namespace pyopencl
 
   PYOPENCL_WRAP_BUFFER_CREATOR(gl_buffer,
       create_from_gl_buffer, clCreateFromGLBuffer,
-      (context &ctx, cl_mem_flags flags, GLuint bufobj),
+      (gl_buffer *self, context &ctx, cl_mem_flags flags, GLuint bufobj),
       (ctx.data(), flags, bufobj, &status_code));
   PYOPENCL_WRAP_BUFFER_CREATOR(gl_texture,
       create_from_gl_texture_2d, clCreateFromGLTexture2D,
-      (context &ctx, cl_mem_flags flags,
+      (gl_texture *self, context &ctx, cl_mem_flags flags,
          GLenum texture_target, GLint miplevel, GLuint texture),
       (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
   PYOPENCL_WRAP_BUFFER_CREATOR(gl_texture,
       create_from_gl_texture_3d, clCreateFromGLTexture3D,
-      (context &ctx, cl_mem_flags flags,
+      (gl_texture *self, context &ctx, cl_mem_flags flags,
          GLenum texture_target, GLint miplevel, GLuint texture),
       (ctx.data(), flags, texture_target, miplevel, texture, &status_code));
   PYOPENCL_WRAP_BUFFER_CREATOR(gl_renderbuffer,
       create_from_gl_renderbuffer, clCreateFromGLRenderbuffer,
-      (context &ctx, cl_mem_flags flags, GLuint renderbuffer),
+      (gl_renderbuffer *self, context &ctx, cl_mem_flags flags, GLuint renderbuffer),
       (ctx.data(), flags, renderbuffer, &status_code));
 
   inline
-  gl_texture *create_from_gl_texture(
+  void create_from_gl_texture(
+      gl_texture *self,
       context &ctx, cl_mem_flags flags,
       GLenum texture_target, GLint miplevel,
       GLuint texture, unsigned dims)
   {
     if (dims == 2)
-      return create_from_gl_texture_2d(ctx, flags, texture_target, miplevel, texture);
+      return create_from_gl_texture_2d(self, ctx, flags, texture_target, miplevel, texture);
     else if (dims == 3)
-      return create_from_gl_texture_3d(ctx, flags, texture_target, miplevel, texture);
+      return create_from_gl_texture_3d(self, ctx, flags, texture_target, miplevel, texture);
     else
       throw pyopencl::error("Image", CL_INVALID_VALUE,
           "invalid dimension");
@@ -5693,7 +5723,7 @@ namespace pyopencl
       py::cast<memory_object_holder const &>(mem_obj_py);
     PyArray_Descr *tp_descr;
     if (PyArray_DescrConverter(dtype.ptr(), &tp_descr) != NPY_SUCCEED)
-      throw py::error_already_set();
+      throw py::python_error();
     cl_mem_flags mem_flags;
     PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
             (mem_obj.data(), CL_MEM_FLAGS, sizeof(mem_flags), &mem_flags, 0));
@@ -5707,7 +5737,7 @@ namespace pyopencl
     {
       dims.push_back(py::cast<npy_intp>(shape));
     }
-    catch (py::cast_error &)
+    catch (cast_error &)
     {
       for (auto it: shape)
         dims.push_back(py::cast<npy_intp>(it));
@@ -5733,7 +5763,7 @@ namespace pyopencl
         (mem_obj.data(), CL_MEM_SIZE, sizeof(mem_obj_size),
          &mem_obj_size, 0));
 
-    py::object result = py::reinterpret_steal<py::object>(PyArray_NewFromDescr(
+    py::object result = py::steal<py::object>(PyArray_NewFromDescr(
         &PyArray_Type, tp_descr,
         dims.size(), &dims.front(), /*strides*/ nullptr,
         host_ptr, ary_flags, /*obj*/nullptr));
