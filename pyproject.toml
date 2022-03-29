@@ -5,17 +5,19 @@ requires = [
         "wheel>=0.34.2",
         "numpy;python_version >= '3.9' and platform_python_implementation == 'PyPy'",
         "oldest-supported-numpy;python_version < '3.9' or platform_python_implementation != 'PyPy'",
-        "pybind11>=2.5.0"
+        "scikit-build",
+        "cmake>=3.17",
+        "nanobind>=1.9.2",
+        "ninja; platform_system!='Windows'",
         ]
 build-backend = "setuptools.build_meta"
-
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/test"
 test-extras = ["test"]
 
 [tool.cibuildwheel.linux]
-skip = ["pp37*", "cp36-*", "cp37-*", "*_i686"]
+skip = ["pp*", "cp36-*", "cp37-*", "*_i686"]
 test-command = ""
 before-all = [
     "yum install -y git openssl-devel ruby",
@@ -41,6 +43,10 @@ test-command = "pytest {project}/test/test_array.py" # same limitation as conda-
 archs = "x86_64 arm64"
 
 # https://github.com/conda-forge/pyopencl-feedstock/blob/6f3c5de59b18c9518abba3cb94f6ae92964553f8/recipe/meta.yaml#L62-L63
+
+[tool.cibuildwheel.macos.environment]
+# Needed for full C++17 support
+MACOSX_DEPLOYMENT_TARGET = "10.14"
 
 [tool.cibuildwheel.windows]
 skip = ["*-win32", "pp*", "cp36-*", "cp37-*"]

@@ -3,7 +3,6 @@
 
 __copyright__ = """
 Copyright (C) 2009-15 Andreas Kloeckner
-Copyright (C) 2013 Marko Bencun
 """
 
 __license__ = """
@@ -29,7 +28,7 @@ THE SOFTWARE.
 
 import os
 import sys
-from os.path import exists
+from os.path import exists, join
 
 
 sys.path.append(os.path.dirname(__file__))
@@ -37,47 +36,7 @@ sys.path.append(os.path.dirname(__file__))
 
 def get_config_schema():
     from aksetup_helper import (
-        ConfigSchema, IncludeDir, Libraries, LibraryDir, Option, StringListOption,
-        Switch)
-
-    default_cxxflags = [
-            # Required for pybind11:
-            # https://pybind11.readthedocs.io/en/stable/faq.html#someclass-declared-with-greater-visibility-than-the-type-of-its-field-someclass-member-wattributes
-            "-fvisibility=hidden"
-            ]
-
-    if "darwin" in sys.platform:
-        import platform
-        osx_ver, _, _ = platform.mac_ver()
-        osx_ver = ".".join(osx_ver.split(".")[:2])
-
-        sysroot_paths = [
-                "/Applications/Xcode.app/Contents/Developer/Platforms/"
-                "MacOSX.platform/Developer/SDKs/MacOSX%s.sdk" % osx_ver,
-                "/Developer/SDKs/MacOSX%s.sdk" % osx_ver
-                ]
-
-        default_libs = []
-        default_cxxflags = default_cxxflags + [
-                "-stdlib=libc++", "-mmacosx-version-min=10.7"]
-
-        from os.path import isdir
-        for srp in sysroot_paths:
-            if isdir(srp):
-                default_cxxflags.extend(["-isysroot", srp])
-                break
-
-        default_ldflags = default_cxxflags[:] + ["-Wl,-framework,OpenCL"]
-
-    else:
-        default_libs = ["OpenCL"]
-        if "linux" in sys.platform:
-            # Requested in
-            # https://github.com/inducer/pyopencl/issues/132#issuecomment-314713573
-            # to make life with Altera FPGAs less painful by default.
-            default_ldflags = ["-Wl,--no-as-needed"]
-        else:
-            default_ldflags = []
+        ConfigSchema, IncludeDir, Libraries, LibraryDir, Option, Switch)
 
     return ConfigSchema([
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
@@ -87,6 +46,10 @@ def get_config_schema():
             "Use the pyopencl version of CL/cl_ext.h which includes"
             + " a broader range of vendor-specific OpenCL extension attributes"
             + " than the standard Khronos (or vendor specific) CL/cl_ext.h."),
+
+        IncludeDir("CL", []),
+        LibraryDir("CL", []),
+        Libraries("CL", []),
 
         # This is here because the ocl-icd wheel declares but doesn't define
         # clSetProgramSpecializationConstant as of 2021-05-22, and providing
@@ -101,14 +64,6 @@ def get_config_schema():
             os.environ.get("PYOPENCL_CL_PRETEND_VERSION", None),
             "Dotted CL version (e.g. 1.2) which you'd like to use."),
 
-        IncludeDir("CL", []),
-        LibraryDir("CL", []),
-        Libraries("CL", default_libs),
-
-        StringListOption("CXXFLAGS", default_cxxflags,
-            help="Any extra C++ compiler options to include"),
-        StringListOption("LDFLAGS", default_ldflags,
-            help="Any extra linker options to include"),
         ])
 
 
@@ -116,45 +71,90 @@ SEPARATOR = "-"*75
 
 
 def main():
-    from setuptools import find_packages
+    try:
+        import nanobind  # noqa: F401
+        from setuptools import find_packages
+        from skbuild import setup
+    except ImportError:
+        print("The preferred way to invoke 'setup.py' is via pip, as in 'pip "
+              "install .'. If you wish to run the setup script directly, you must "
+              "first install the build dependencies listed in pyproject.toml!",
+              file=sys.stderr)
+        raise
 
-    from aksetup_helper import (
-        ExtensionUsingNumpy, PybindBuildExtCommand, check_git_submodules,
-        check_pybind11, get_config, get_pybind_include, hack_distutils, setup)
-    check_pybind11()
+    # {{{ import aksetup_helper bits
+
+    prev_path = sys.path[:]
+    # FIXME skbuild seems to remove this. Why?
+    sys.path.append(".")
+
+    from aksetup_helper import check_git_submodules, get_config
+
+    sys.path = prev_path
+
+    # }}}
+
     check_git_submodules()
 
-    hack_distutils()
-    conf = get_config(get_config_schema(),
-            warn_about_no_config=False)
+    conf = get_config(get_config_schema(), warn_about_no_config=False)
 
-    extra_defines = {}
-
-    extra_defines["PYGPU_PACKAGE"] = "pyopencl"
-    extra_defines["PYGPU_PYOPENCL"] = "1"
+    cmake_args = []
 
     if conf["CL_TRACE"]:
-        extra_defines["PYOPENCL_TRACE"] = 1
+        cmake_args.append("-DPYOPENCL_TRACE:BOOL=ON")
 
     if conf["CL_ENABLE_GL"]:
-        extra_defines["HAVE_GL"] = 1
+        cmake_args.append("-DPYOPENCL_ENABLE_GL:BOOL=ON")
 
     if conf["CL_USE_SHIPPED_EXT"]:
-        extra_defines["PYOPENCL_USE_SHIPPED_EXT"] = 1
+        cmake_args.append("-DPYOPENCL_USE_SHIPPED_EXT:BOOL=ON")
+
+    if conf["CL_LIB_DIR"] or conf["CL_LIBNAME"]:
+        if conf["CL_LIBNAME"] and not conf["CL_LIB_DIR"]:
+            raise ValueError("must specify CL_LIBNAME if CL_LIB_DIR is provided")
+        if conf["CL_LIB_DIR"] and not conf["CL_LIBNAME"]:
+            from warnings import warn
+            warn("Only CL_LIB_DIR specified, assuming 'OpenCL' as library name. "
+                    "Specify 'CL_LIBNAME' if this is undesired.")
+            conf["CL_LIBNAME"] = ["OpenCL"]
+
+        if len(conf["CL_LIBNAME"]) != 1:
+            raise ValueError("Specifying more than one value for 'CL_LIBNAME' "
+                    "is no longer supported.")
+        if len(conf["CL_LIB_DIR"]) != 1:
+            raise ValueError("Specifying more than one value for 'CL_LIB_DIR' "
+                    "is no longer supported.")
+
+        lib_dir, = conf["CL_LIB_DIR"]
+        libname, = conf["CL_LIBNAME"]
+
+        cl_library = None
+
+        for prefix in ["lib", ""]:
+            for suffix in [".so", ".dylib", ".lib"]:
+                try_cl_library = join(lib_dir, prefix+libname+suffix)
+                if exists(try_cl_library):
+                    cl_library = try_cl_library
+
+        if cl_library is None:
+            cl_library = join(lib_dir, "lib"+libname)
+
+        cmake_args.append(f"-DOpenCL_LIBRARY={cl_library}")
+
+    if conf["CL_INC_DIR"]:
+        cmake_args.append(f"-DOpenCL_INCLUDE_DIR:LIST="
+                f"{';'.join(conf['CL_INC_DIR'])}")
 
     if conf["CL_PRETEND_VERSION"]:
         try:
             major, minor = [int(x) for x in conf["CL_PRETEND_VERSION"].split(".")]
-            extra_defines["PYOPENCL_PRETEND_CL_VERSION"] = \
-                    0x1000*major + 0x10 * minor
+            cmake_args.append(
+                    "-DPYOPENCL_PRETEND_CL_VERSION:INT="
+                    f"{0x1000*major + 0x10 * minor}")
         except Exception:
             print("CL_PRETEND_VERSION must be of the form M.N, "
                     "with two integers M and N")
             raise
-
-    conf["EXTRA_DEFINES"] = extra_defines
-
-    INCLUDE_DIRS = conf["CL_INC_DIR"] + ["pybind11/include"]  # noqa: N806
 
     ver_dic = {}
     version_file = open("pyopencl/version.py")
@@ -202,30 +202,9 @@ def main():
                 "Topic :: Scientific/Engineering :: Physics",
                 ],
 
-            # build info
             packages=find_packages(),
 
-            ext_modules=[
-                ExtensionUsingNumpy("pyopencl._cl",
-                    [
-                        "src/wrap_constants.cpp",
-                        "src/wrap_cl.cpp",
-                        "src/wrap_cl_part_1.cpp",
-                        "src/wrap_cl_part_2.cpp",
-                        "src/wrap_mempool.cpp",
-                        "src/bitlog.cpp",
-                        ],
-                    include_dirs=INCLUDE_DIRS + [
-                        get_pybind_include(),
-                        ],
-                    library_dirs=conf["CL_LIB_DIR"],
-                    libraries=conf["CL_LIBNAME"],
-                    define_macros=list(conf["EXTRA_DEFINES"].items()),
-                    extra_compile_args=conf["CXXFLAGS"],
-                    extra_link_args=conf["LDFLAGS"],
-                    language="c++",
-                    ),
-                ],
+            cmake_args=cmake_args,
 
             python_requires="~=3.8",
             install_requires=[
@@ -250,7 +229,7 @@ def main():
                         ]
                     },
 
-            cmdclass={"build_ext": PybindBuildExtCommand},
+            cmake_install_dir="pyopencl",
             zip_safe=False)
 
 

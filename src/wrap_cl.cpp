@@ -47,10 +47,10 @@ static bool import_numpy_helper()
   return true;
 }
 
-PYBIND11_MODULE(_cl, m)
+NB_MODULE(_cl, m)
 {
   if (!import_numpy_helper())
-    throw py::error_already_set();
+    throw py::python_error();
 
   pyopencl_expose_constants(m);
   pyopencl_expose_part_1(m);

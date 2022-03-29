@@ -28,15 +28,19 @@
 #define PYCUDA_WRAP_HELPERS_HEADER_SEEN
 
 
-#include <pybind11/pybind11.h>
-#include <pybind11/operators.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/shared_ptr.h>
+#include <nanobind/ndarray.h>
 
 
-namespace py = pybind11;
+namespace py = nanobind;
 
 
 #define ENUM_VALUE(NAME) \
   value(#NAME, NAME)
+
+// {{{ DEF_SIMPLE_XXX
 
 #define DEF_SIMPLE_METHOD(NAME) \
   def(#NAME, &cls::NAME)
@@ -120,7 +124,7 @@ namespace py = pybind11;
 #define PYOPENCL_PARSE_NUMPY_ARRAY_SPEC \
     PyArray_Descr *tp_descr; \
     if (PyArray_DescrConverter(dtype.ptr(), &tp_descr) != NPY_SUCCEED) \
-      throw py::error_already_set(); \
+      throw py::python_error(); \
     \
     std::vector<npy_intp> shape; \
     try \
@@ -162,7 +166,7 @@ namespace
   template <typename T>
   inline py::object handle_from_new_ptr(T *ptr)
   {
-    return py::cast(ptr, py::return_value_policy::take_ownership);
+    return py::cast(ptr, py::rv_policy::take_ownership);
   }
 
   template <typename T, typename ClType>
@@ -192,10 +196,18 @@ namespace
       ":mod:`pyopencl`." \
       "\n\n.. versionadded:: 2013.2\n" \
       "\n\n.. versionchanged:: 2016.1\n\n    *retain* added.") \
-  .def_property_readonly("int_ptr", to_int_ptr<cls>, \
+  .def_prop_ro("int_ptr", to_int_ptr<cls>, \
       "Return an integer corresponding to the pointer value " \
       "of the underlying :c:type:`" #CL_TYPENAME "`. " \
       "Use :meth:`from_int_ptr` to turn back into a Python object." \
       "\n\n.. versionadded:: 2013.2\n") \
 
+#define PYOPENCL_EXPOSE_EQUALITY_TESTS \
+    /* this relies on nanobind overload resolution going in order of registration */ \
+    .def("__eq__", [](cls const &self, cls const &other) { return self == other; }) \
+    .def("__eq__", [](cls const &self, py::object obj) { return false; }, py::arg("obj").none())
+
+
 #endif
+
+// vim: foldmethod=marker
