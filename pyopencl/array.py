@@ -859,28 +859,29 @@ class Array:
 
     def __str__(self):
         if self.queue is None:
-            return (f"<cl.Array {self.shape} of {self.dtype} "
+            return (f"<cl.{type(self).__name__} {self.shape} of {self.dtype} "
                     "without queue, call with_queue()>")
 
         return str(self.get())
 
     def __repr__(self):
         if self.queue is None:
-            return (f"<cl.Array {self.shape} of {self.dtype} "
+            return (f"<cl.{type(self).__name__} {self.shape} of {self.dtype} "
                     f"at {id(self):x} without queue, "
                     "call with_queue()>")
 
         result = repr(self.get())
         if result[:5] == "array":
-            result = "cl.Array" + result[5:]
+            result = f"cl.{type(self).__name__}" + result[5:]
         else:
             from warnings import warn
-            warn("numpy.ndarray.__repr__ was expected to return a string starting "
-                    f"with 'array'. It didn't: '{result[:10]:r}'")
+            warn(f"{type(result).__name__}.__repr__ was expected to return a "
+                     f"string starting with 'array', got '{result[:10]!r}'")
+
         return result
 
     def safely_stringify_for_pudb(self):
-        return f"cl.Array {self.dtype} {self.shape}"
+        return f"cl.{type(self).__name__} {self.dtype} {self.shape}"
 
     def __hash__(self):
         raise TypeError("pyopencl arrays are not hashable.")
