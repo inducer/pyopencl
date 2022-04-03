@@ -99,8 +99,8 @@ jobs:
         -   name: "Main Script"
             run: |
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
-                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
-                . ci-support.sh
+                curl -L -O https://tiker.net/ci-support-v0
+                . ci-support-v0
                 ./configure.py --cl-use-shipped-ext
                 build_py_project_in_conda_env
                 build_docs
@@ -113,8 +113,8 @@ jobs:
         -   name: "Main Script"
             run: |
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
-                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
-                . ci-support.sh
+                curl -L -O https://tiker.net/ci-support-v0
+                . ci-support-v0
                 EXTRA_INSTALL="pillow cgen mako imageio"
                 build_py_project_in_conda_env
                 (cd examples; rm -f gl_*)
@@ -194,8 +194,8 @@ jobs:
                 # Avoid slow or complicated tests in downstream projects
                 export PYTEST_ADDOPTS="-k 'not (slowtest or octave or mpi)'"
 
-                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
-                . ./ci-support.sh
+                curl -L -O https://tiker.net/ci-support-v0
+                . ./ci-support-v0
 
                 build_py_project_in_conda_env
                 test_py_project
