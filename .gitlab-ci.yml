@@ -256,3 +256,25 @@ Flake8:
   - python3
   except:
   - tags
+
+Downstream:
+  parallel:
+    matrix:
+    - DOWNSTREAM_PROJECT: [loopy, boxtree, meshmode]
+  tags:
+  - large-node
+  - "docker-runner"
+  script: |
+    curl -L -O https://tiker.net/ci-support-v0
+    . ./ci-support-v0
+
+    TEST_ENV_ROOT="$(pwd)/$DOWNSTREAM_PROJECT/.miniforge3/envs/testing"
+    ./configure.py --cl-inc-dir="$TEST_ENV_ROOT/include" --cl-lib-dir="$TEST_ENV_ROOT/lib"
+    git add -f siteconf.py
+
+    prepare_downstream_build "$DOWNSTREAM_PROJECT"
+    sed -i 's/pyopencl/ocl-icd/' .test-conda-env-py3.yml
+    build_py_project_in_conda_env
+    test_py_project
+
+# vim: sw=2
