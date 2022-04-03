@@ -170,6 +170,10 @@ Python 3 POCL (+GL and special functions):
 
 Python 3 Conda Apple:
   script: |
+    # That's where homebrew lives, and it has the curl that doesn't cause
+    # cert errors from the OS being too old.
+    export PATH="/usr/local/opt/curl/bin:$PATH"
+
     CONDA_ENVIRONMENT=.test-conda-env.yml
     grep -v ocl-icd .test-conda-env-py3.yml > $CONDA_ENVIRONMENT
     export CC=gcc
