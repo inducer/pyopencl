@@ -315,6 +315,12 @@ def generate_enqueue_and_set_args(function_name,
         arg_types,
         work_around_arg_count_bug, warn_about_arg_count_bug):
 
+    if num_cl_args > 500:
+        from warnings import warn
+        warn(f"Kernel '{function_name}' has {num_cl_args} arguments. "
+              "This might lead to compilation errors on CUDA devices, "
+              "which have a limit of ~4 KByte of kernel arguments.")
+
     cache_key = (function_name, num_passed_args, num_cl_args,
             arg_types, __debug__,
             work_around_arg_count_bug, warn_about_arg_count_bug)
