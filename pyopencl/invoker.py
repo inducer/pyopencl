@@ -313,13 +313,41 @@ invoker_cache = WriteOncePersistentDict(
 def generate_enqueue_and_set_args(function_name,
         num_passed_args, num_cl_args,
         arg_types,
-        work_around_arg_count_bug, warn_about_arg_count_bug):
+        work_around_arg_count_bug, warn_about_arg_count_bug, dev):
 
-    if num_cl_args > 500:
-        from warnings import warn
-        warn(f"Kernel '{function_name}' has {num_cl_args} arguments. "
-              "This might lead to compilation errors on CUDA devices, "
-              "which have a limit of ~4 KByte of kernel arguments.")
+    # {{{ Check whether argument size exceeds the OpenCL device limit
+
+    arg_size = 0
+    if arg_types:
+        dev_limit = dev.max_parameter_size
+        dev_ptr_size = int(dev.address_bits / 8)
+
+        for arg_type in arg_types:
+            if arg_type is None or isinstance(arg_type, VectorArg):
+                arg_size += dev_ptr_size
+            else:
+                arg_size += np.dtype(arg_type).itemsize
+
+        if arg_size > dev_limit:
+            from warnings import warn
+            warn(f"Kernel '{function_name}' has {num_cl_args} arguments with "
+                 f"a total size of {arg_size} bytes, which is higher than "
+                 f"your device limit of {dev_limit} bytes. This might "
+                 "lead to compilation errors especially on CUDA devices.")
+        elif arg_size >= dev_limit * 0.75:
+            from warnings import warn
+            warn(f"Kernel '{function_name}' has {num_cl_args} arguments with "
+                 f"a total size of {arg_size} bytes, which approaches "
+                 f"your device limit of {dev_limit} bytes. This might "
+                  "lead to compilation errors especially on CUDA devices.")
+    else:
+        if num_cl_args > 500:
+            from warnings import warn
+            warn(f"Kernel '{function_name}' has {num_cl_args} arguments. "
+                "This might lead to compilation errors on CUDA devices, "
+                "which have a limit of ~4 KByte of kernel arguments.")
+
+    # }}}
 
     cache_key = (function_name, num_passed_args, num_cl_args,
             arg_types, __debug__,

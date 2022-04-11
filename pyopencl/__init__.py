@@ -819,7 +819,7 @@ def _add_functionality():
                 self.function_name, self.num_args, self.num_args,
                 None,
                 warn_about_arg_count_bug=None,
-                work_around_arg_count_bug=None)
+                work_around_arg_count_bug=None, dev=self.context.devices[0])
 
         self._wg_info_cache = {}
         return self
@@ -858,7 +858,8 @@ def _add_functionality():
                         len(arg_types), self.num_args,
                         arg_types,
                         warn_about_arg_count_bug=warn_about_arg_count_bug,
-                        work_around_arg_count_bug=work_around_arg_count_bug)
+                        work_around_arg_count_bug=work_around_arg_count_bug,
+                        dev=self.context.devices[0])
 
         # Make ourselves a kernel-specific class, so that we're able to override
         # __call__. Inspired by https://stackoverflow.com/a/38541437
@@ -880,7 +881,7 @@ def _add_functionality():
         return result
 
     def kernel_set_args(self, *args, **kwargs):
-        # Need to dupicate the 'self' argument for dynamically generated  method
+        # Need to duplicate the 'self' argument for dynamically generated  method
         return self._set_args(self, *args, **kwargs)
 
     def kernel_call(self, queue, global_size, local_size, *args, **kwargs):
