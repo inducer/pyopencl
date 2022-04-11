@@ -819,7 +819,7 @@ def _add_functionality():
                 self.function_name, self.num_args, self.num_args,
                 None,
                 warn_about_arg_count_bug=None,
-                work_around_arg_count_bug=None, dev=self.context.devices[0])
+                work_around_arg_count_bug=None, devs=self.context.devices)
 
         self._wg_info_cache = {}
         return self
@@ -859,7 +859,7 @@ def _add_functionality():
                         arg_types,
                         warn_about_arg_count_bug=warn_about_arg_count_bug,
                         work_around_arg_count_bug=work_around_arg_count_bug,
-                        dev=self.context.devices[0])
+                        devs=self.context.devices)
 
         # Make ourselves a kernel-specific class, so that we're able to override
         # __call__. Inspired by https://stackoverflow.com/a/38541437
