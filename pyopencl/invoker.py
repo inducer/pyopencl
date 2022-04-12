@@ -29,6 +29,7 @@ import pyopencl._cl as _cl
 from pytools.persistent_dict import WriteOncePersistentDict
 from pytools.py_codegen import Indentation, PythonCodeGenerator
 from pyopencl.tools import _NumpyTypesKeyBuilder, VectorArg
+import pyopencl as cl
 
 
 # {{{ arg packing helpers
@@ -305,6 +306,65 @@ def _generate_enqueue_and_set_args_module(function_name,
             enqueue_name)
 
 
+# {{{ Helper functions related to argument sizes and device limits
+
+def _get_max_parameter_size(dev):
+    """Get the device's maximum parameter size and adjust it for pocl."""
+    from pyopencl.characterize import get_pocl_version
+
+    dev_limit = dev.max_parameter_size
+
+    if get_pocl_version(dev.platform) is not None:
+        # Older pocl versions have an incorrect parameter size limit of 1024
+        # See e.g. https://github.com/pocl/pocl/pull/1046
+        if dev_limit == 1024:
+            if dev.type & cl.device_type.CPU:
+                return 1024*1024
+            if dev.type & cl.device_type.GPU:
+                # All modern Nvidia GPUs (starting from Compute Capability 2)
+                # have this limit
+                return 4352
+
+    return dev_limit
+
+
+def _check_arg_size(function_name, num_cl_args, arg_types, devs):
+    """Check whether argument sizes exceed the OpenCL device limit."""
+
+    for dev in devs:
+        dev_ptr_size = int(dev.address_bits / 8)
+        dev_limit = _get_max_parameter_size(dev)
+
+        total_arg_size = 0
+
+        if arg_types:
+            for arg_type in arg_types:
+                if arg_type is None or isinstance(arg_type, VectorArg):
+                    total_arg_size += dev_ptr_size
+                else:
+                    total_arg_size += np.dtype(arg_type).itemsize
+        else:
+            # Estimate that each argument will have the size of a pointer on average
+            total_arg_size = dev_ptr_size * num_cl_args
+
+        if total_arg_size > dev_limit:
+            from warnings import warn
+            warn(f"Kernel '{function_name}' has {num_cl_args} arguments with "
+                f"a total size of {total_arg_size} bytes, which is higher than "
+                f"the limit of {dev_limit} bytes on {dev}. This might "
+                "lead to compilation errors especially on CUDA devices.")
+        elif total_arg_size >= dev_limit * 0.75:
+            # Since total_arg_size is just an estimate, also warn in case we are
+            # just below the actual limit.
+            from warnings import warn
+            warn(f"Kernel '{function_name}' has {num_cl_args} arguments with "
+                f"a total size of {total_arg_size} bytes, which approaches "
+                f"the limit of {dev_limit} bytes on {dev}. This might "
+                "lead to compilation errors especially on CUDA devices.")
+
+# }}}
+
+
 invoker_cache = WriteOncePersistentDict(
         "pyopencl-invoker-cache-v41",
         key_builder=_NumpyTypesKeyBuilder())
@@ -315,40 +375,7 @@ def generate_enqueue_and_set_args(function_name,
         arg_types,
         work_around_arg_count_bug, warn_about_arg_count_bug, devs):
 
-    # {{{ Check whether argument size exceeds the OpenCL device limit
-
-    if arg_types:
-        for dev in devs:
-            arg_size = 0
-            dev_limit = dev.max_parameter_size
-            dev_ptr_size = int(dev.address_bits / 8)
-
-            for arg_type in arg_types:
-                if arg_type is None or isinstance(arg_type, VectorArg):
-                    arg_size += dev_ptr_size
-                else:
-                    arg_size += np.dtype(arg_type).itemsize
-
-            if arg_size > dev_limit:
-                from warnings import warn
-                warn(f"Kernel '{function_name}' has {num_cl_args} arguments with "
-                    f"a total size of {arg_size} bytes, which is higher than "
-                    f"the limit of {dev_limit} bytes on {dev}. This might "
-                    "lead to compilation errors especially on CUDA devices.")
-            elif arg_size >= dev_limit * 0.75:
-                from warnings import warn
-                warn(f"Kernel '{function_name}' has {num_cl_args} arguments with "
-                    f"a total size of {arg_size} bytes, which approaches "
-                    f"the limit of {dev_limit} bytes on {dev}. This might "
-                    "lead to compilation errors especially on CUDA devices.")
-    else:
-        if num_cl_args > 500:
-            from warnings import warn
-            warn(f"Kernel '{function_name}' has {num_cl_args} arguments. "
-                "This might lead to compilation errors on CUDA devices, "
-                "which have a limit of ~4 KByte of kernel arguments.")
-
-    # }}}
+    _check_arg_size(function_name, num_cl_args, arg_types, devs)
 
     cache_key = (function_name, num_passed_args, num_cl_args,
             arg_types, __debug__,
