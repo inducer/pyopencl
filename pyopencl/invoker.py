@@ -309,7 +309,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 # {{{ Helper functions related to argument sizes and device limits
 
 def _get_max_parameter_size(dev):
-    """Get the device's maximum parameter size and adjust it for pocl."""
+    """Return the device's maximum parameter size adjusted for pocl."""
     from pyopencl.characterize import get_pocl_version
 
     dev_limit = dev.max_parameter_size
@@ -344,7 +344,7 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
                 else:
                     total_arg_size += np.dtype(arg_type).itemsize
         else:
-            # Estimate that each argument will have the size of a pointer on average
+            # Estimate that each argument has the size of a pointer on average
             total_arg_size = dev_ptr_size * num_cl_args
 
         if total_arg_size > dev_limit:
