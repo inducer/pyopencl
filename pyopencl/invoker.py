@@ -352,7 +352,7 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
             warn(f"Kernel '{function_name}' has {num_cl_args} arguments with "
                 f"a total size of {total_arg_size} bytes, which is higher than "
                 f"the limit of {dev_limit} bytes on {dev}. This might "
-                "lead to compilation errors especially on CUDA devices.")
+                "lead to compilation errors, especially on GPU devices.")
         elif total_arg_size >= dev_limit * 0.75:
             # Since total_arg_size is just an estimate, also warn in case we are
             # just below the actual limit.
@@ -360,7 +360,7 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
             warn(f"Kernel '{function_name}' has {num_cl_args} arguments with "
                 f"a total size of {total_arg_size} bytes, which approaches "
                 f"the limit of {dev_limit} bytes on {dev}. This might "
-                "lead to compilation errors especially on CUDA devices.")
+                "lead to compilation errors, especially on GPU devices.")
 
 # }}}
 
