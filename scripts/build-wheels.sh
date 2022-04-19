@@ -33,6 +33,8 @@ function stop_spinner {
 
 #start_spinner
 
+git config --global --add safe.directory /io
+
 curl https://tiker.net/tmp/.tmux.conf
 yum install -y git yum openssl-devel ruby
 
@@ -55,9 +57,6 @@ cat /deps/ocl-icd/COPYING >> /io/LICENSE
 
 # Compile wheels
 for PYBIN in /opt/python/*/bin; do
-    if [[ "${PYBIN}" == *cp310* ]]; then
-        continue
-    fi
     # Build with the oldest numpy available to be compatible with newer ones
     "${PYBIN}/pip" install oldest-supported-numpy pybind11 mako
     "${PYBIN}/pip" wheel /io/ -w wheelhouse/ --no-deps
