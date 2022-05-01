@@ -272,7 +272,7 @@ Downstream:
     ./configure.py --cl-inc-dir="$TEST_ENV_ROOT/include" --cl-lib-dir="$TEST_ENV_ROOT/lib"
     git add -f siteconf.py
 
-    prepare_downstream_build "$DOWNSTREAM_PROJECT"
+    prepare_downstream_build "https://github.com/inducer/$DOWNSTREAM_PROJECT.git"
     sed -i 's/pyopencl/ocl-icd/' .test-conda-env-py3.yml
     build_py_project_in_conda_env
     test_py_project
