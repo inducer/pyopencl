@@ -323,11 +323,11 @@ def get_pocl_version(platform, fallback_value=None):
         return None
 
     import re
-    ver_match = re.match(
-            r"^OpenCL [0-9.]+ pocl ([0-9]+)\.([0-9]+)", platform.version)
+    version = platform.version
+    ver_match = re.match(r"^OpenCL [0-9.]+ pocl ([0-9]+)\.([0-9]+)", version)
+
     if ver_match is None:
-        msg = ("pocl version number did not have expected format: '%s'"
-                    % platform.version)
+        msg = f"pocl version number did not have expected format: '{version}'"
         if fallback_value is not None:
             from warnings import warn
             warn(msg)
@@ -378,7 +378,7 @@ def has_struct_arg_count_bug(dev, ctx=None):
     if dev.platform.name == "Apple" and dev.type & cl.device_type.CPU:
         return "apple"
     if dev.platform.name == "Portable Computing Language":
-        pocl_version = get_pocl_version(dev.platform, fallback_value=(0.14))
+        pocl_version = get_pocl_version(dev.platform, fallback_value=(0, 14))
         if pocl_version <= (0, 13):
             return "pocl"
         elif pocl_version <= (0, 14) and _check_for_pocl_arg_count_bug(dev, ctx):
