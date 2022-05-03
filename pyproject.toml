@@ -21,11 +21,11 @@ select = "*-musllinux*"
 before-all = "apk add ruby git openssl opencl-dev"
 
 [tool.cibuildwheel.macos]
-skip = "pp*-macosx_x86_64"
+skip = "pp*"
 before-all = "bash {package}/scripts/build-ocl-macos.sh"
 test-command = "pytest {project}/test/test_array.py" # same limitation as conda-forge
 
 [tool.cibuildwheel.windows]
-skip = "*-win32"
+skip = ["*-win32", "pp*"]
 test-command = ""
 before-all = "bash {package}/scripts/build-ocl-windows.sh"
