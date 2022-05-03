@@ -320,7 +320,6 @@ def test_image_format_constructor():
         assert not hasattr(iform, "__dict__")
 
 
-@pytest.mark.skipif(not hasattr(cl, "DeviceTopologyAmd"), reason="not AMD procesor")
 def test_device_topology_amd_constructor():
     # doesn't need cl_amd_device_attribute_query support to succeed
     topol = cl.DeviceTopologyAmd(3, 4, 5)
@@ -670,7 +669,6 @@ def test_context_dep_memoize(ctx_factory):
     assert counter[0] == 1
 
 
-@pytest.mark.xfail
 def test_can_build_and_run_binary(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
