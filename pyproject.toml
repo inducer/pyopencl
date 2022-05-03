@@ -1,0 +1,30 @@
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools>=42.0.0", "wheel>=0.34.2", "Cython", "oldest-supported-numpy", "pybind11>=2.5.0", "Mako"]  # PEP 508 specifications.
+build-backend = "setuptools.build_meta"
+
+
+[tool.cibuildwheel]
+test-command = "pytest {project}/test"
+test-extras = ["test"]
+
+[tool.cibuildwheel.linux]
+test-command = ""
+skip = "*-musllinux*" # lack of opencl bindings. currently avaliable only on edge channel
+before-all = [
+    "yum install -y git openssl-devel ruby",
+    "bash {package}/scripts/build-ocl.sh",
+]
+
+[[tool.cibuildwheel.overrides]]
+select = "*-musllinux*"
+before-all = "apk add ruby git openssl opencl-dev"
+
+[tool.cibuildwheel.macos]
+skip = "pp*-macosx_x86_64"
+before-all = "bash {package}/scripts/build-ocl-macos.sh"
+test-command = "pytest {project}/test/test_array.py" # same limitation as conda-forge
+
+[tool.cibuildwheel.windows]
+skip = "*-win32"
+before-all = "bash {package}/scripts/build-ocl-windows.sh"

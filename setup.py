@@ -31,6 +31,8 @@ import os
 import sys
 from os.path import exists
 
+sys.path.append(os.path.dirname(__file__))
+
 
 def get_config_schema():
     from aksetup_helper import (ConfigSchema, Option,
@@ -75,6 +77,17 @@ def get_config_schema():
             default_ldflags = ["-Wl,--no-as-needed"]
         else:
             default_ldflags = []
+
+    if os.environ.get("CIBUILDWHEEL", False) and sys.platform == "win32":
+        import struct
+
+        default_cxxflags.append("-ID:/a/pyopencl/pyopencl/OpenCL-Headers/install/include")
+        if struct.calcsize("P") == 8:
+            default_ldflags.append("/LIBPATH:C:/Program Files/OpenCL-ICD-Loader/lib")
+            default_ldflags.append("/LIBPATH:C:/Program Files/OpenCL-ICD-Loader/bin")
+        else:
+            default_ldflags.append("/LIBPATH:C:/Program Files (x86)/OpenCL-ICD-Loader/lib")
+            default_ldflags.append("/LIBPATH:C:/Program Files (x86)/OpenCL-ICD-Loader/bin")
 
     return ConfigSchema([
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
@@ -263,6 +276,7 @@ def main():
             extras_require={
                 "pocl":  ["pocl_binary_distribution>=1.2"],
                 "oclgrind":  ["oclgrind_binary_distribution>=18.3"],
+                "test": ["pytest>=7.0.0", "Mako"],
             },
             include_package_data=True,
             package_data={
