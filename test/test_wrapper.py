@@ -669,6 +669,7 @@ def test_context_dep_memoize(ctx_factory):
 
     assert counter[0] == 1
 
+
 @pytest.mark.xfail
 def test_can_build_and_run_binary(ctx_factory):
     ctx = ctx_factory()
