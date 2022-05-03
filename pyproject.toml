@@ -27,4 +27,5 @@ test-command = "pytest {project}/test/test_array.py" # same limitation as conda-
 
 [tool.cibuildwheel.windows]
 skip = "*-win32"
+test-command = ""
 before-all = "bash {package}/scripts/build-ocl-windows.sh"
