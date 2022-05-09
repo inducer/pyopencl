@@ -23,11 +23,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import pyopencl._cl as _cl
 import re
-import sys
 import os
-from pytools import Record
+import sys
+from dataclasses import dataclass
+from typing import List, Optional, Tuple
+
+import pyopencl._cl as _cl
 
 import logging
 logger = logging.getLogger(__name__)
@@ -330,8 +332,10 @@ def retrieve_from_cache(cache_dir, cache_key):
 
 # {{{ top-level driver
 
-class _SourceInfo(Record):
-    pass
+@dataclass(frozen=True)
+class _SourceInfo:
+    dependencies: List[Tuple[str, ...]]
+    log: Optional[str]
 
 
 def _create_built_program_from_source_cached(ctx, src, options_bytes,
