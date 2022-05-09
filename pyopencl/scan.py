@@ -22,6 +22,9 @@ limitations under the License.
 Derived from code within the Thrust project, https://github.com/thrust/thrust/
 """
 
+from dataclasses import dataclass
+from typing import List
+
 import numpy as np
 
 import pyopencl as cl
@@ -862,26 +865,13 @@ def _make_template(s):
     return mako.template.Template(s, strict_undefined=True)
 
 
-from pytools import Record, RecordWithoutPickling
-
-
-class _GeneratedScanKernelInfo(Record):
-
-    __slots__ = [
-            "scan_src",
-            "kernel_name",
-            "scalar_arg_dtypes",
-            "wg_size",
-            "k_group_size"]
-
-    def __init__(self, scan_src, kernel_name, scalar_arg_dtypes, wg_size,
-            k_group_size):
-        Record.__init__(self,
-                scan_src=scan_src,
-                kernel_name=kernel_name,
-                scalar_arg_dtypes=scalar_arg_dtypes,
-                wg_size=wg_size,
-                k_group_size=k_group_size)
+@dataclass(frozen=True)
+class _GeneratedScanKernelInfo:
+    scan_src: str
+    kernel_name: str
+    scalar_arg_dtypes: List["np.dtype"]
+    wg_size: int
+    k_group_size: int
 
     def build(self, context, options):
         program = cl.Program(context, self.scan_src).build(options)
@@ -893,25 +883,19 @@ class _GeneratedScanKernelInfo(Record):
                 k_group_size=self.k_group_size)
 
 
-class _BuiltScanKernelInfo(RecordWithoutPickling):
-
-    __slots__ = ["kernel", "wg_size", "k_group_size"]
-
-    def __init__(self, kernel, wg_size, k_group_size):
-        RecordWithoutPickling.__init__(self,
-                kernel=kernel,
-                wg_size=wg_size,
-                k_group_size=k_group_size)
+@dataclass(frozen=True)
+class _BuiltScanKernelInfo:
+    kernel: cl.Kernel
+    wg_size: int
+    k_group_size: int
 
 
-class _GeneratedFinalUpdateKernelInfo(Record):
-
-    def __init__(self, source, kernel_name, scalar_arg_dtypes, update_wg_size):
-        Record.__init__(self,
-                source=source,
-                kernel_name=kernel_name,
-                scalar_arg_dtypes=scalar_arg_dtypes,
-                update_wg_size=update_wg_size)
+@dataclass(frozen=True)
+class _GeneratedFinalUpdateKernelInfo:
+    source: str
+    kernel_name: str
+    scalar_arg_dtypes: List["np.dtype"]
+    update_wg_size: int
 
     def build(self, context, options):
         program = cl.Program(context, self.source).build(options)
@@ -920,13 +904,10 @@ class _GeneratedFinalUpdateKernelInfo(Record):
         return _BuiltFinalUpdateKernelInfo(kernel, self.update_wg_size)
 
 
-class _BuiltFinalUpdateKernelInfo(RecordWithoutPickling):
-    __slots__ = ["kernel", "update_wg_size"]
-
-    def __init__(self, kernel, update_wg_size):
-        RecordWithoutPickling.__init__(self,
-                kernel=kernel,
-                update_wg_size=update_wg_size)
+@dataclass(frozen=True)
+class _BuiltFinalUpdateKernelInfo:
+    kernel: cl.Kernel
+    update_wg_size: int
 
 # }}}
 
