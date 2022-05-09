@@ -28,6 +28,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
+from dataclasses import dataclass, field
+from typing import Any, List, Optional
 from functools import reduce
 
 import numpy as np
@@ -2276,6 +2278,16 @@ def zeros_like(ary):
     return result
 
 
+@dataclass
+class _ArangeInfo:
+    start: Optional[int] = None
+    stop: Optional[int] = None
+    step: Optional[int] = None
+    dtype: Optional["np.dtype"] = None
+    allocator: Optional[Any] = None
+    wait_for: List[cl.Event] = field(default_factory=list)
+
+
 @elwise_kernel_runner
 def _arange_knl(result, start, step):
     return elementwise.get_arange_kernel(
@@ -2301,23 +2313,12 @@ def arange(queue, *args, **kwargs):
         *allocator* keyword argument was added.
     """
 
-    # argument processing -----------------------------------------------------
+    # {{{ argument processing
 
     # Yuck. Thanks, numpy developers. ;)
-    from pytools import Record
-
-    class Info(Record):
-        pass
 
     explicit_dtype = False
-
-    inf = Info()
-    inf.start = None
-    inf.stop = None
-    inf.step = None
-    inf.dtype = None
-    inf.allocator = None
-    inf.wait_for = []
+    inf = _ArangeInfo()
 
     if isinstance(args[-1], np.dtype):
         inf.dtype = args[-1]
@@ -2359,7 +2360,10 @@ def arange(queue, *args, **kwargs):
     if inf.dtype is None:
         inf.dtype = np.array([inf.start, inf.stop, inf.step]).dtype
 
-    # actual functionality ----------------------------------------------------
+    # }}}
+
+    # {{{ actual functionality
+
     dtype = np.dtype(inf.dtype)
     start = dtype.type(inf.start)
     step = dtype.type(inf.step)
@@ -2375,6 +2379,9 @@ def arange(queue, *args, **kwargs):
     result = Array(queue, (size,), dtype, allocator=inf.allocator)
     result.add_event(
             _arange_knl(result, start, step, queue=queue, wait_for=wait_for))
+
+    # }}}
+
     return result
 
 # }}}
