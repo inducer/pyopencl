@@ -1378,17 +1378,26 @@ namespace pyopencl
   {
     private:
       cl_command_queue m_queue;
+      // m_finalized==True indicates that this command queue should no longer
+      // be used. An example of this is if a command queue is used as a context
+      // manager, after the 'with' block exits.
+      //
+      // This mechanism is not foolproof, as it is perfectly possible to create
+      // other Python proxy objects referring to the same underlying
+      // cl_command_queue. Even so, this ought to flag a class of potentially
+      // very damaging synchronization bugs.
+      bool m_finalized;
 
     public:
       command_queue(cl_command_queue q, bool retain)
-        : m_queue(q)
+        : m_queue(q), m_finalized(false)
       {
         if (retain)
           PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (q));
       }
 
       command_queue(command_queue const &src)
-        : m_queue(src.m_queue)
+        : m_queue(src.m_queue), m_finalized(false)
       {
         PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (m_queue));
       }
@@ -1397,6 +1406,7 @@ namespace pyopencl
           const context &ctx,
           const device *py_dev=nullptr,
           py::object py_props=py::none())
+      : m_finalized(false)
       {
         cl_device_id dev;
         if (py_dev)
@@ -1513,7 +1523,24 @@ namespace pyopencl
       }
 
       const cl_command_queue data() const
-      { return m_queue; }
+      {
+        if (m_finalized)
+        {
+          auto mod_warnings(py::module_::import("warnings"));
+          auto mod_cl(py::module_::import("pyopencl"));
+          mod_warnings.attr("warn")(
+              "Command queue used after exit of context manager. "
+              "This is deprecated and will stop working in 2023.",
+              mod_cl.attr("CommandQueueUsedAfterExit")
+              );
+        }
+        return m_queue;
+      }
+
+      void finalize()
+      {
+        m_finalized = true;
+      }
 
       PYOPENCL_EQUALITY_TESTS(command_queue);
 
@@ -1547,7 +1574,7 @@ namespace pyopencl
           case CL_QUEUE_PROPERTIES_ARRAY:
             {
               std::vector<cl_queue_properties> result;
-              PYOPENCL_GET_VEC_INFO(CommandQueue, m_queue, param_name, result);
+              PYOPENCL_GET_VEC_INFO(CommandQueue, data(), param_name, result);
               PYOPENCL_RETURN_VECTOR(cl_queue_properties, result);
             }
 #endif
@@ -1561,7 +1588,7 @@ namespace pyopencl
       {
         cl_context param_value;
         PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo,
-            (m_queue, CL_QUEUE_CONTEXT, sizeof(param_value), &param_value, 0));
+            (data(), CL_QUEUE_CONTEXT, sizeof(param_value), &param_value, 0));
         return std::unique_ptr<context>(
             new context(param_value, /*retain*/ true));
       }
@@ -1573,15 +1600,19 @@ namespace pyopencl
       {
         cl_command_queue_properties old_prop;
         PYOPENCL_CALL_GUARDED(clSetCommandQueueProperty,
-            (m_queue, prop, PYOPENCL_CAST_BOOL(enable), &old_prop));
+            (data(), prop, PYOPENCL_CAST_BOOL(enable), &old_prop));
         return old_prop;
       }
 #endif
 
       void flush()
-      { PYOPENCL_CALL_GUARDED(clFlush, (m_queue)); }
+      { PYOPENCL_CALL_GUARDED(clFlush, (data())); }
       void finish()
-      { PYOPENCL_CALL_GUARDED_THREADED(clFinish, (m_queue)); }
+      {
+        cl_command_queue queue = data();
+
+        PYOPENCL_CALL_GUARDED_THREADED(clFinish, (queue));
+      }
 
       // not exposed to python
       int get_hex_device_version() const
@@ -1589,7 +1620,7 @@ namespace pyopencl
         cl_device_id dev;
 
         PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo,
-            (m_queue, CL_QUEUE_DEVICE, sizeof(dev), &dev, nullptr));
+            (data(), CL_QUEUE_DEVICE, sizeof(dev), &dev, nullptr));
 
         std::string dev_version;
         {
@@ -2318,10 +2349,12 @@ namespace pyopencl
     buf = ward->m_buf.buf;
     len = ward->m_buf.len;
 
+    cl_command_queue queue = cq.data();
+
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
       PYOPENCL_CALL_GUARDED_THREADED(clEnqueueReadBuffer, (
-            cq.data(),
+            queue,
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
             device_offset, len, buf,
@@ -2355,10 +2388,12 @@ namespace pyopencl
     buf = ward->m_buf.buf;
     len = ward->m_buf.len;
 
+    cl_command_queue queue = cq.data();
+
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
       PYOPENCL_CALL_GUARDED_THREADED(clEnqueueWriteBuffer, (
-            cq.data(),
+            queue,
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
             device_offset, len, buf,
@@ -2442,10 +2477,12 @@ namespace pyopencl
 
     buf = ward->m_buf.buf;
 
+    cl_command_queue queue = cq.data();
+
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
       PYOPENCL_CALL_GUARDED_THREADED(clEnqueueReadBufferRect, (
-            cq.data(),
+            queue,
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
             buffer_origin, host_origin, region,
@@ -2490,10 +2527,12 @@ namespace pyopencl
 
     buf = ward->m_buf.buf;
 
+    cl_command_queue queue = cq.data();
+
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(
       PYOPENCL_CALL_GUARDED_THREADED(clEnqueueWriteBufferRect, (
-            cq.data(),
+            queue,
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
             buffer_origin, host_origin, region,

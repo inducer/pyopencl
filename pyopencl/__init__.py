@@ -261,6 +261,10 @@ class CompilerWarning(UserWarning):
     pass
 
 
+class CommandQueueUsedAfterExit(UserWarning):
+    pass
+
+
 def compiler_output(text):
     import os
     from warnings import warn
@@ -706,6 +710,7 @@ def _add_functionality():
 
     def command_queue_exit(self, exc_type, exc_val, exc_tb):
         self.finish()
+        self._finalize()
 
     def command_queue_get_cl_version(self):
         return self.device._get_cl_version()

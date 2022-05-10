@@ -120,6 +120,7 @@ void pyopencl_expose_part_1(py::module &m)
         py::arg("context"),
         py::arg("device").none(true)=py::none(),
         py::arg("properties")=py::cast(0))
+      .def("_finalize", &cls::finalize)
       .DEF_SIMPLE_METHOD(get_info)
 #if PYOPENCL_CL_VERSION < 0x1010
       .DEF_SIMPLE_METHOD(set_property)

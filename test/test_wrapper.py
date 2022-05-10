@@ -1247,6 +1247,15 @@ def test_empty_ndrange(ctx_factory, empty_shape):
     prg.add_two(queue, a.shape, None, a.data, allow_empty_ndrange=True)
 
 
+def test_command_queue_context_manager(ctx_factory):
+    ctx = ctx_factory()
+    with cl.CommandQueue(ctx) as queue:
+        q = queue
+
+    with pytest.warns(cl.CommandQueueUsedAfterExit):
+        q.finish()
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa
