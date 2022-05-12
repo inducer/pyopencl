@@ -32,7 +32,7 @@ Command Queue
             enqueue_stuff(queue, ...)
 
     :meth:`finish` is automatically called at the end of the ``with``-delimited
-    context.
+    context, and further operations on the queue are considered an error.
 
     .. versionadded:: 2013.1
 
@@ -41,6 +41,13 @@ Command Queue
     .. versionchanged:: 2018.2
 
         Added the sequence-of-properties interface for OpenCL 2.
+
+    .. versionchanged:: 2022.1.4
+
+        Use of a command queue after its context manager completes
+        is now considered an error. :mod:`pyopencl` will warn about this
+        for a transitionary period and will start raising an exception
+        in 2023.
 
     .. attribute:: info
 
