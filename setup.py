@@ -174,32 +174,6 @@ def main():
 
     exec(compile(version_file_contents, "pyopencl/version.py", "exec"), ver_dic)
 
-    if not os.environ.get("CIBUILDWHEEL", False):
-        try:
-            import mako  # noqa
-        except ImportError:
-            print(SEPARATOR)
-            print("Mako is not installed.")
-            print(SEPARATOR)
-            print("That is not a problem, as most of PyOpenCL will be just fine ")
-            print("without it. Some higher-level parts of pyopencl (such as ")
-            print("pyopencl.reduction) will not function without the templating engine ")
-            print("Mako [1] being installed. If you would like this functionality to ")
-            print("work, you might want to install Mako after you finish ")
-            print("installing PyOpenCL.")
-            print("")
-            print("Simply type")
-            print("python -m pip install mako")
-            print("either now or after the installation completes to fix this.")
-            print("")
-            print("[1] http://www.makotemplates.org/")
-            print(SEPARATOR)
-            print("Hit Ctrl-C now if you'd like to think about the situation.")
-            print(SEPARATOR)
-
-            from aksetup_helper import count_down_delay
-            count_down_delay(delay=5)
-
     if not exists("pyopencl/compyte/dtypes.py"):
         print(75 * "-")
         print("You are missing important files from the pyopencl distribution.")
