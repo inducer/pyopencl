@@ -10,7 +10,6 @@ test-extras = ["test"]
 
 [tool.cibuildwheel.linux]
 test-command = ""
-skip = "*-musllinux*" # lack of opencl bindings. currently avaliable only on edge channel
 before-all = [
     "yum install -y git openssl-devel ruby",
     "bash {package}/scripts/build-ocl.sh",
@@ -18,7 +17,10 @@ before-all = [
 
 [[tool.cibuildwheel.overrides]]
 select = "*-musllinux*"
-before-all = "apk add ruby git openssl opencl-dev"
+before-all = [
+    "apk add ruby git openssl-dev",
+    "bash {package}/scripts/build-ocl.sh",
+]
 
 [tool.cibuildwheel.macos]
 skip = "pp*"
