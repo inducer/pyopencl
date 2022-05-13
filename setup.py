@@ -78,17 +78,6 @@ def get_config_schema():
         else:
             default_ldflags = []
 
-    if os.environ.get("CIBUILDWHEEL", False) and sys.platform == "win32":
-        import struct
-
-        default_cxxflags.append("-ID:/a/pyopencl/pyopencl/OpenCL-Headers/install/include")
-        if struct.calcsize("P") == 8:
-            default_ldflags.append("/LIBPATH:C:/Program Files/OpenCL-ICD-Loader/lib")
-            default_ldflags.append("/LIBPATH:C:/Program Files/OpenCL-ICD-Loader/bin")
-        else:
-            default_ldflags.append("/LIBPATH:C:/Program Files (x86)/OpenCL-ICD-Loader/lib")
-            default_ldflags.append("/LIBPATH:C:/Program Files (x86)/OpenCL-ICD-Loader/bin")
-
     return ConfigSchema([
         Switch("CL_TRACE", False, "Enable OpenCL API tracing"),
         Switch("CL_ENABLE_GL", False, "Enable OpenCL<->OpenGL interoperability"),
