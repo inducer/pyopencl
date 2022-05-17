@@ -637,8 +637,8 @@ def test_vector_args(ctx_factory):
 def test_header_dep_handling(ctx_factory):
     context = ctx_factory()
 
-    from os.path import exists
-    assert exists("empty-header.h")  # if this fails, change dir to pyopencl/test
+    from os.path import exists, dirname, join
+    assert exists(join(dirname(__file__), "empty-header.h"))
 
     kernel_src = """
     #include <empty-header.h>
@@ -648,10 +648,8 @@ def test_header_dep_handling(ctx_factory):
     }
     """
 
-    import os
-
-    cl.Program(context, kernel_src).build(["-I", os.getcwd()])
-    cl.Program(context, kernel_src).build(["-I", os.getcwd()])
+    cl.Program(context, kernel_src).build(["-I", dirname(__file__)])
+    cl.Program(context, kernel_src).build(["-I", dirname(__file__)])
 
 
 def test_context_dep_memoize(ctx_factory):

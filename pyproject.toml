@@ -1,0 +1,35 @@
+[build-system]
+# Minimum requirements for the build system to execute.
+requires = ["setuptools>=42.0.0", "wheel>=0.34.2", "Cython", "oldest-supported-numpy", "pybind11>=2.5.0"]  # PEP 508 specifications.
+build-backend = "setuptools.build_meta"
+
+
+[tool.cibuildwheel]
+test-command = "pytest {project}/test"
+test-extras = ["test"]
+
+[tool.cibuildwheel.linux]
+test-command = ""
+before-all = [
+    "yum install -y git openssl-devel ruby",
+    "bash {package}/scripts/build-ocl.sh",
+]
+
+[[tool.cibuildwheel.overrides]]
+select = "*-musllinux*"
+before-all = [
+    "apk add ruby git openssl-dev",
+    "bash {package}/scripts/build-ocl.sh",
+]
+
+[tool.cibuildwheel.macos]
+skip = "pp*"
+before-all = "bash {package}/scripts/build-ocl-macos.sh"
+test-command = "pytest {project}/test/test_array.py" # same limitation as conda-forge
+# https://github.com/conda-forge/pyopencl-feedstock/blob/6f3c5de59b18c9518abba3cb94f6ae92964553f8/recipe/meta.yaml#L62-L63
+
+[tool.cibuildwheel.windows]
+skip = ["*-win32", "pp*"]
+test-command = ""
+before-all = "bash {package}/scripts/build-ocl-windows.sh"
+before-build = "python configure.py --cxxflags=-ID:/a/pyopencl/pyopencl/OpenCL-Headers/install/include --ldflags=\"/LIBPATH:C:/Program Files/OpenCL-ICD-Loader/lib\""

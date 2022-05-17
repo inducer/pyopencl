@@ -66,3 +66,5 @@ cffi_build.py
 .cache
 .pytest_cache
 .idea
+
+wheelhouse

@@ -1,3 +1,4 @@
+import os
 import sys
 try:
     from setuptools import Extension
@@ -256,7 +257,7 @@ def expand_options(options):
 
 
 class ConfigSchema:
-    def __init__(self, options, conf_file="siteconf.py", conf_dir="."):
+    def __init__(self, options, conf_file="siteconf.py", conf_dir=os.path.dirname(__file__)):
         self.optdict = dict((opt.name, opt) for opt in options)
         self.options = options
         self.conf_dir = conf_dir
