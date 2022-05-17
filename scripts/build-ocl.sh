@@ -6,9 +6,7 @@ set -e -x
 mkdir -p ~/deps
 cd ~/deps
 
-curl https://tiker.net/tmp/.tmux.conf
-
-git clone --branch v2.3.0 https://github.com/OCL-dev/ocl-icd
+git clone --branch v2.3.1 https://github.com/OCL-dev/ocl-icd
 cd ocl-icd
 curl -L -O https://raw.githubusercontent.com/conda-forge/ocl-icd-feedstock/e2c03e3ddb1ff86630ccf80dc7b87a81640025ea/recipe/install-headers.patch
 git apply install-headers.patch
