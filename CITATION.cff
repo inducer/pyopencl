@@ -61,6 +61,8 @@ authors:
   given-names: "Drew"
 - family-names: "Nitz"
   given-names: "Alex"
+- family-names: "Bokota"
+  given-names: "Grzegorz"
 
 title: "PyOpenCL"
 version: 2022.1.3
