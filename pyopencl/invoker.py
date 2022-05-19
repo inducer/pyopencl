@@ -313,8 +313,8 @@ def _get_max_parameter_size(dev):
     from pyopencl.characterize import get_pocl_version
 
     dev_limit = dev.max_parameter_size
-
-    if get_pocl_version(dev.platform) is not None:
+    pocl_version = get_pocl_version(dev.platform, fallback_value=(1, 8))
+    if pocl_version is not None and pocl_version < (3, 0):
         # Current pocl versions (as of 04/2022) have an incorrect parameter
         # size limit of 1024; see e.g. https://github.com/pocl/pocl/pull/1046
         if dev_limit == 1024:
