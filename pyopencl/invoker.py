@@ -31,6 +31,9 @@ from pytools.py_codegen import Indentation, PythonCodeGenerator
 from pyopencl.tools import _NumpyTypesKeyBuilder, VectorArg
 import pyopencl as cl
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 # {{{ arg packing helpers
 
@@ -367,6 +370,12 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
                 f"a total size of {total_arg_size} bytes, which approaches "
                 f"the limit of {dev_limit} bytes on {dev}. This might "
                 "lead to compilation errors, especially on GPU devices.")
+        elif num_cl_args > 50:
+            logger.info(
+                f"Kernel '{function_name}' has {num_cl_args} arguments with "
+                f"a {'total estimated' if is_estimate else 'total'} size of "
+                f"{total_arg_size} bytes.")
+
 
 # }}}
 
