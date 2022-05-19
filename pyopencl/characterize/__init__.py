@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 import pyopencl as cl
 from pytools import memoize
+from typing import Optional, Tuple
 
 
 class CLCharacterizationWarning(UserWarning):
@@ -318,22 +319,23 @@ def get_simd_group_size(dev, type_size):
     return None
 
 
-def get_pocl_version(platform, fallback_value=None):
+def get_pocl_version(
+        platform: cl.Platform,
+        fallback_value: Optional[Tuple[int, int]] = None
+        ) -> Optional[Tuple[int, int]]:
     if platform.name != "Portable Computing Language":
         return None
 
     import re
     version = platform.version
-    ver_match = re.match(r"^OpenCL [0-9.]+ pocl ([0-9]+)\.([0-9]+)", version)
+    ver_match = re.match(
+            r"^OpenCL [0-9.]+ [Pp]o[Cc][Ll] ([0-9]+)\.([0-9]+)", version)
 
     if ver_match is None:
         msg = f"pocl version number did not have expected format: '{version}'"
-        if fallback_value is not None:
-            from warnings import warn
-            warn(msg)
-            return fallback_value
-        else:
-            raise ValueError(msg)
+        from warnings import warn
+        warn(msg)
+        return fallback_value
     else:
         return (int(ver_match.group(1)), int(ver_match.group(2)))
 
