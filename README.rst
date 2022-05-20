@@ -12,7 +12,7 @@ PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
     :target: https://pypi.org/project/pyopencl/
 .. image:: https://zenodo.org/badge/1575307.svg
     :alt: Zenodo DOI for latest release
-   :target: https://zenodo.org/badge/latestdoi/1575307
+    :target: https://zenodo.org/badge/latestdoi/1575307
 
 PyOpenCL lets you access GPUs and other massively parallel compute
 devices from Python. It tries to offer computing goodness in the
