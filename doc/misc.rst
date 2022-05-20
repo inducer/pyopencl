@@ -136,22 +136,19 @@ using registry keys are automatically available.
 Installing from PyPI wheels
 ---------------------------
 
-PyOpenCL distributes wheels for Python 3.6-3.10 for macOS, Windows, GLIBC base Linux and musl base Linux.
-For GLIBC base linux minimum version of GLIBC is 2.17. 
-There are also distributted wheels for PyPy 3.7-3.9 but only for GLIBC based linux 
+PyOpenCL distributes wheels for most popular systems and versions.
+To check available versions please visit `PyPI page for PyOpenCL <https://pypi.org/project/pyopencl/>`_
 
-For all systems there are 64 bit wheels available. 32 bit wheels are available for linux only.
 
-Wheels for linux are build using `ocl-icd`. Wheels for Windows and MacOS are build using 
+On Linux the wheels comes with OCL-ICD bundled and configured to use any OpenCL implementation
+supporting ICD interface installed in :file:`/etc/OpenCL/vendors`.
+Wheels for Windows and MacOS are build using 
 OpenCL-ICD-Loader from KhronosGroup
-
 
 To install type::
 
     pip install pyopencl
 
-On Linux the wheels comes with OCL-ICD bundled and configured to use any OpenCL implementation
-supporting ICD interface installed in :file:`/etc/OpenCL/vendors`
 
 You can also install the following CPU based OpenCL implementation using pip shipped as binary
 wheels. Note that pyopencl has to be installed using a wheel for pyopencl to recognize these
