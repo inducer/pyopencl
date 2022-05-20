@@ -63,6 +63,7 @@ authors:
   given-names: "Alex"
 - family-names: "Bokota"
   given-names: "Grzegorz"
+  orcid: 'https://orcid.org/0000-0002-5470-1676'
 
 title: "PyOpenCL"
 version: 2022.1.3
