@@ -133,18 +133,22 @@ and it is packaged so that the OpenCL drivers that are registered in the OS
 using registry keys are automatically available.
 
 
-Installing from PyPI with Linux wheels
---------------------------------------
+Installing from PyPI wheels
+---------------------------
 
-PyOpenCL distributes ``manylinux1`` wheels in PyPI. These wheels are compatible with
-GLIBC>=2.5 based distributions.
+PyOpenCL distributes wheels for most popular OSs and Python versions.
+To check available versions please visit `PyPI page for PyOpenCL <https://pypi.org/project/pyopencl/>`__.
 
-On Linux, type::
+
+On Linux, the wheels come with `OCL-ICD <https://github.com/OCL-dev/ocl-icd>`__ bundled and
+configured to use any OpenCL implementation supporting the ICD interface and listed
+in :file:`/etc/OpenCL/vendors`.
+Wheels for Windows and MacOS are built using the ICD Loader from the Khronos Group.
+
+To install, type::
 
     pip install pyopencl
 
-The wheels comes with OCL-ICD bundled and configured to use any OpenCL implementation
-supporting ICD interface installed in :file:`/etc/OpenCL/vendors`
 
 You can also install the following CPU based OpenCL implementation using pip shipped as binary
 wheels. Note that pyopencl has to be installed using a wheel for pyopencl to recognize these
