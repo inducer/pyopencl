@@ -136,16 +136,16 @@ using registry keys are automatically available.
 Installing from PyPI wheels
 ---------------------------
 
-PyOpenCL distributes wheels for most popular systems and versions.
-To check available versions please visit `PyPI page for PyOpenCL <https://pypi.org/project/pyopencl/>`_
+PyOpenCL distributes wheels for most popular OSs and Python versions.
+To check available versions please visit `PyPI page for PyOpenCL <https://pypi.org/project/pyopencl/>`__.
 
 
-On Linux the wheels comes with OCL-ICD bundled and configured to use any OpenCL implementation
-supporting ICD interface installed in :file:`/etc/OpenCL/vendors`.
-Wheels for Windows and MacOS are build using 
-OpenCL-ICD-Loader from KhronosGroup
+On Linux, the wheels come with `OCL-ICD <https://github.com/OCL-dev/ocl-icd>`__ bundled and
+configured to use any OpenCL implementation supporting the ICD interface and listed
+in :file:`/etc/OpenCL/vendors`.
+Wheels for Windows and MacOS are built using the ICD Loader from the Khronos Group.
 
-To install type::
+To install, type::
 
     pip install pyopencl
 
