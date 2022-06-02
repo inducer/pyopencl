@@ -62,8 +62,10 @@ def calc_fractal_opencl(q, maxiter):
             imag = 2* real*imag + q[gid].y;
             real = nreal;
 
-            if (real*real + imag*imag > 4.0f)
+            if (real*real + imag*imag > 4.0f) {
                  output[gid] = curiter;
+                 break;
+            }
         }
     }
     """,
