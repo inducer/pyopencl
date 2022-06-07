@@ -470,6 +470,9 @@ class Program:
                     logger.info("build program: kernel '%s' was part of a "
                             "lengthy %s (%.2f s)" % (attr, build_descr, duration))
 
+                # don't whine about build times more than once.
+                self._build_duration_info = None
+
             return knl
         except LogicError:
             raise AttributeError("'%s' was not found as a program "
