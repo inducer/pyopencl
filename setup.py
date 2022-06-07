@@ -236,6 +236,8 @@ def main():
                 "pytools>=2021.2.7",
                 "platformdirs>=2.2.0",
                 # "Mako>=0.3.6",
+
+                "dataclasses; python_version<'3.7'",
                 ],
             extras_require={
                 "pocl":  ["pocl_binary_distribution>=1.2"],
