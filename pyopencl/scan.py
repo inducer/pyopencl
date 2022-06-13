@@ -1152,17 +1152,19 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         from_cache = False
 
-        try:
-            result = generic_scan_kernel_cache[cache_key]
-            from_cache = True
-            logger.debug(
+        import os
+        if not os.environ.get("PYOPENCL_NO_CACHE"):
+            try:
+                result = generic_scan_kernel_cache[cache_key]
+                from_cache = True
+                logger.debug(
                     "cache hit for generated scan kernel '%s'" % self.name_prefix)
-            (
-                self.first_level_scan_gen_info,
-                self.second_level_scan_gen_info,
-                self.final_update_gen_info) = result
-        except KeyError:
-            pass
+                (
+                    self.first_level_scan_gen_info,
+                    self.second_level_scan_gen_info,
+                    self.final_update_gen_info) = result
+            except KeyError:
+                pass
 
         if not from_cache:
             logger.debug(
