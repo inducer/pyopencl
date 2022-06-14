@@ -30,21 +30,21 @@ CLUDA_PREAMBLE = """
 #define LOCAL_MEM_ARG __local
 #define REQD_WG_SIZE(X,Y,Z) __attribute__((reqd_work_group_size(X, Y, Z)))
 
-#define LID_0 get_local_id(0)
-#define LID_1 get_local_id(1)
-#define LID_2 get_local_id(2)
+#define LID_0 ((ptrdiff_t) get_local_id(0))
+#define LID_1 ((ptrdiff_t) get_local_id(1))
+#define LID_2 ((ptrdiff_t) get_local_id(2))
 
-#define GID_0 get_group_id(0)
-#define GID_1 get_group_id(1)
-#define GID_2 get_group_id(2)
+#define GID_0 ((ptrdiff_t) get_group_id(0))
+#define GID_1 ((ptrdiff_t) get_group_id(1))
+#define GID_2 ((ptrdiff_t) get_group_id(2))
 
-#define LDIM_0 get_local_size(0)
-#define LDIM_1 get_local_size(1)
-#define LDIM_2 get_local_size(2)
+#define LDIM_0 ((ptrdiff_t) get_local_size(0))
+#define LDIM_1 ((ptrdiff_t) get_local_size(1))
+#define LDIM_2 ((ptrdiff_t) get_local_size(2))
 
-#define GDIM_0 get_num_groups(0)
-#define GDIM_1 get_num_groups(1)
-#define GDIM_2 get_num_groups(2)
+#define GDIM_0 ((ptrdiff_t) get_num_groups(0))
+#define GDIM_1 ((ptrdiff_t) get_num_groups(1))
+#define GDIM_2 ((ptrdiff_t) get_num_groups(2))
 
 % if double_support:
     #if __OPENCL_C_VERSION__ < 120
