@@ -785,7 +785,7 @@ _IGNORED_WORDS = set("""
 
         typedef for endfor if void while endwhile endfor endif else const printf
         None return bool n char true false ifdef pycl_printf str range assert
-        np iinfo max itemsize __packed__ struct restrict
+        np iinfo max itemsize __packed__ struct restrict ptrdiff_t
 
         set iteritems len setdefault
 
