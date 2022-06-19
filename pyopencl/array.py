@@ -357,6 +357,7 @@ class Array:
     .. automethod :: get
     .. automethod :: get_async
     .. automethod :: copy
+    .. automethod :: __array__
 
     .. automethod :: __str__
     .. automethod :: __repr__
@@ -858,6 +859,21 @@ class Array:
             result.add_event(event1)
 
         return result
+
+    def __array__(self, dtype=None):
+        """Return a numpy array copy of the array.
+
+        Equivalent to :meth:`get` with no arguments. If `dtype` is given, two
+        copies of the input array will be made: one for the conversion, and
+        another for the cast.
+
+        :arg dtype: a valid NumPy dtype, such as ``np.float64`` or
+                    ``'float32'``.
+
+        .. versionadded:: ...
+        """
+        out = self.get().astype(dtype)
+        return out
 
     def __str__(self):
         if self.queue is None:
