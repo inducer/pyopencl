@@ -31,8 +31,8 @@ __kernel void twice(
 
 if has_coarse_grain_buffer_svm(dev):
     print("Testing coarse-grained buffer SVM...", end="")
-    svm_ary = cl.SVM(
-        cl.csvm_empty(ctx, 10, np.float32))
+
+    svm_ary = cl.SVM(cl.csvm_empty(ctx, 10, np.float32))
     assert isinstance(svm_ary.mem, np.ndarray)
 
     with svm_ary.map_rw(queue) as ary:
@@ -47,11 +47,10 @@ if has_coarse_grain_buffer_svm(dev):
 
     print(" done.")
 
-
 if has_fine_grain_buffer_svm(dev):
     print("Testing fine-grained buffer SVM...", end="")
-    ary = cl.fsvm_empty(ctx, 10, np.float32)
 
+    ary = cl.fsvm_empty(ctx, 10, np.float32)
     assert isinstance(ary.base, cl.SVMAllocation)
 
     ary.fill(17)
@@ -66,14 +65,14 @@ if has_fine_grain_buffer_svm(dev):
 
 if has_fine_grain_system_svm(dev):
     print("Testing fine-grained system SVM...", end="")
-    ary = cl.fsvm_empty(ctx, 10, np.float32)
 
-    assert isinstance(ary.base, cl.SVMAllocation)
+    ary = np.zeros(10, np.float32)
+    assert isinstance(ary, np.ndarray)
 
     ary.fill(17)
     orig_ary = ary.copy()
 
-    prg.twice(queue, ary.shape, None, ary)
+    prg.twice(queue, ary.shape, None, cl.SVM(ary))
     queue.finish()
 
     assert np.array_equal(orig_ary*2, ary)
