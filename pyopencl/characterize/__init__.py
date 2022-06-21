@@ -417,3 +417,13 @@ def has_fine_grain_system_svm(dev):
     return (_may_have_svm(dev)
             and bool(dev.svm_capabilities
                 & cl.device_svm_capabilities.FINE_GRAIN_SYSTEM))
+
+
+def has_fine_grain_buffer_svm_atomics(dev):
+    return has_fine_grain_buffer_svm(dev) and bool(dev.svm_capabilities
+                & cl.device_svm_capabilities.ATOMICS)
+
+
+def has_fine_grain_system_svm_atomics(dev):
+    return has_fine_grain_system_svm(dev) and bool(dev.svm_capabilities
+                & cl.device_svm_capabilities.ATOMICS)
