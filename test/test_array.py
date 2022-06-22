@@ -81,6 +81,8 @@ def make_random_array(queue, dtype, size):
 
 # {{{ dtype-related
 
+# {{{ test_basic_complex
+
 def test_basic_complex(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -96,6 +98,10 @@ def test_basic_complex(ctx_factory):
     host_ary = ary.get()
     assert la.norm((ary*c).get() - c*host_ary) < 1e-5 * la.norm(host_ary)
 
+# }}}
+
+
+# {{{ test_mix_complex
 
 def test_mix_complex(ctx_factory):
     context = ctx_factory()
@@ -171,6 +177,10 @@ def test_mix_complex(ctx_factory):
 
                     assert correct
 
+# }}}
+
+
+# {{{ test_pow_neg1_vs_inv
 
 def test_pow_neg1_vs_inv(ctx_factory):
     ctx = ctx_factory()
@@ -193,6 +203,10 @@ def test_pow_neg1_vs_inv(ctx_factory):
     assert la.norm(res1-ref, np.inf) / la.norm(ref) < 1e-13
     assert la.norm(res2-ref, np.inf) / la.norm(ref) < 1e-13
 
+# }}}
+
+
+# {{{ test_vector_fill
 
 def test_vector_fill(ctx_factory):
     context = ctx_factory()
@@ -205,6 +219,10 @@ def test_vector_fill(ctx_factory):
 
     a_gpu = cl_array.zeros(queue, 100, dtype=cltypes.float4)
 
+# }}}
+
+
+# {{{ test_zeros_large_array
 
 def test_zeros_large_array(ctx_factory):
     context = ctx_factory()
@@ -222,6 +240,10 @@ def test_zeros_large_array(ctx_factory):
     else:
         pass
 
+# }}}
+
+
+# {{{ test_absrealimag
 
 def test_absrealimag(ctx_factory):
     context = ctx_factory()
@@ -252,6 +274,10 @@ def test_absrealimag(ctx_factory):
                 print(dev_res-host_res)
             assert correct
 
+# }}}
+
+
+# {{{ test_custom_type_zeros
 
 def test_custom_type_zeros(ctx_factory):
     context = ctx_factory()
@@ -281,6 +307,10 @@ def test_custom_type_zeros(ctx_factory):
 
     assert np.array_equal(np.zeros(n, dtype), z)
 
+# }}}
+
+
+# {{{ test_custom_type_fill
 
 def test_custom_type_fill(ctx_factory):
     context = ctx_factory()
@@ -310,6 +340,10 @@ def test_custom_type_fill(ctx_factory):
 
     assert np.array_equal(np.zeros(n, dtype), z)
 
+# }}}
+
+
+# {{{ test_custom_type_take_put
 
 def test_custom_type_take_put(ctx_factory):
     context = ctx_factory()
@@ -341,8 +375,12 @@ def test_custom_type_take_put(ctx_factory):
 
 # }}}
 
+# }}}
+
 
 # {{{ operators
+
+# {{{ test_div_type_matches_numpy
 
 @pytest.mark.parametrize("dtype", [np.int8, np.int32, np.int64, np.float32])
 # FIXME Implement florodiv
@@ -359,6 +397,10 @@ def test_div_type_matches_numpy(ctx_factory, dtype, op):
     assert res_np.dtype == res.dtype
     assert np.allclose(res_np, res.get())
 
+# }}}
+
+
+# {{{ test_rmul_yields_right_type
 
 def test_rmul_yields_right_type(ctx_factory):
     context = ctx_factory()
@@ -373,6 +415,10 @@ def test_rmul_yields_right_type(ctx_factory):
     two_a = np.float32(2)*a_gpu
     assert isinstance(two_a, cl_array.Array)
 
+# }}}
+
+
+# {{{ test_pow_array
 
 def test_pow_array(ctx_factory):
     context = ctx_factory()
@@ -387,6 +433,10 @@ def test_pow_array(ctx_factory):
     result = (a_gpu ** a_gpu).get()
     assert (np.abs(pow(a, a) - result) < 3e-3).all()
 
+# }}}
+
+
+# {{{ test_pow_number
 
 def test_pow_number(ctx_factory):
     context = ctx_factory()
@@ -398,6 +448,10 @@ def test_pow_number(ctx_factory):
     result = pow(a_gpu, 2).get()
     assert (np.abs(a ** 2 - result) < 1e-3).all()
 
+# }}}
+
+
+# {{{ test_multiply
 
 def test_multiply(ctx_factory):
     """Test the muliplication of an array with a scalar. """
@@ -417,6 +471,10 @@ def test_multiply(ctx_factory):
 
                 assert (a * scalar == a_mult).all()
 
+# }}}
+
+
+# {{{ test_multiply_array
 
 def test_multiply_array(ctx_factory):
     """Test the multiplication of two arrays."""
@@ -434,6 +492,11 @@ def test_multiply_array(ctx_factory):
     assert (a * a == a_squared).all()
 
 
+# }}}
+
+
+# {{{ test_addition_array
+
 def test_addition_array(ctx_factory):
     """Test the addition of two arrays."""
 
@@ -446,6 +509,10 @@ def test_addition_array(ctx_factory):
 
     assert (a + a == a_added).all()
 
+# }}}
+
+
+# {{{ test_addition_scalar
 
 def test_addition_scalar(ctx_factory):
     """Test the addition of an array and a scalar."""
@@ -459,6 +526,10 @@ def test_addition_scalar(ctx_factory):
 
     assert (7 + a == a_added).all()
 
+# }}}
+
+
+# {{{ test_subtract_array
 
 @pytest.mark.parametrize(("dtype_a", "dtype_b"),
         [
@@ -469,7 +540,7 @@ def test_addition_scalar(ctx_factory):
             (np.int64, np.uint32),
             ])
 def test_subtract_array(ctx_factory, dtype_a, dtype_b):
-    """Test the substraction of two arrays."""
+    """Test the subtraction of two arrays."""
     #test data
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(dtype_a)
     b = np.array([10, 20, 30, 40, 50,
@@ -487,9 +558,13 @@ def test_subtract_array(ctx_factory, dtype_a, dtype_b):
     result = (b_gpu - a_gpu).get()
     assert (b - a == result).all()
 
+# }}}
 
-def test_substract_scalar(ctx_factory):
-    """Test the substraction of an array and a scalar."""
+
+# {{{ test_subtract_scalar
+
+def test_subtract_scalar(ctx_factory):
+    """Test the subtraction of an array and a scalar."""
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -506,6 +581,10 @@ def test_substract_scalar(ctx_factory):
     result = (7 - a_gpu).get()
     assert (7 - a == result).all()
 
+# }}}
+
+
+# {{{ test_divide_scalar
 
 def test_divide_scalar(ctx_factory):
     """Test the division of an array and a scalar."""
@@ -540,6 +619,10 @@ def test_divide_scalar(ctx_factory):
         assert (np.abs(c_gpu.get() - c) < 1e-3).all()
         assert c_gpu.dtype is c.dtype
 
+# }}}
+
+
+# {{{ test_divide_array
 
 def test_divide_array(ctx_factory):
     """Test the division of an array and a scalar. """
@@ -571,6 +654,10 @@ def test_divide_array(ctx_factory):
         assert (np.abs(d_gpu.get() - d) < 1e-3).all()
         assert d_gpu.dtype is d.dtype
 
+# }}}
+
+
+# {{{ test_divide_inplace_scalar
 
 def test_divide_inplace_scalar(ctx_factory):
     """Test inplace division of arrays and a scalar."""
@@ -607,6 +694,10 @@ def test_divide_inplace_scalar(ctx_factory):
             assert (np.abs(a_gpu.get() - a) < 1e-3).all()
             assert a_gpu.dtype is a.dtype
 
+# }}}
+
+
+# {{{ test_divide_inplace_array
 
 def test_divide_inplace_array(ctx_factory):
     """Test inplace division of arrays."""
@@ -645,6 +736,10 @@ def test_divide_inplace_array(ctx_factory):
             assert (np.abs(a_gpu.get() - a) < 1e-3).all()
             assert a_gpu.dtype is a.dtype
 
+# }}}
+
+
+# {{{ test_bitwise
 
 def test_bitwise(ctx_factory):
     if _PYPY:
@@ -722,8 +817,12 @@ def test_bitwise(ctx_factory):
 
 # }}}
 
+# }}}
+
 
 # {{{ RNG
+
+# {{{ test_random_float_in_range
 
 @pytest.mark.parametrize("rng_class",
         [RanluxGenerator, PhiloxGenerator, ThreefryGenerator])
@@ -788,6 +887,10 @@ def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False
             pt.hist(ran.get(), 30)
             pt.show()
 
+# }}}
+
+
+# {{{ test_random_int_in_range
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64])
 @pytest.mark.parametrize("rng_class",
@@ -825,8 +928,12 @@ def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
 
 # }}}
 
+# }}}
+
 
 # {{{ misc
+
+# {{{ test_numpy_integer_shape
 
 def test_numpy_integer_shape(ctx_factory):
     try:
@@ -842,6 +949,10 @@ def test_numpy_integer_shape(ctx_factory):
     cl_array.empty(queue, np.int32(17), np.float32)
     cl_array.empty(queue, (np.int32(17), np.int32(17)), np.float32)
 
+# }}}
+
+
+# {{{ test_len
 
 def test_len(ctx_factory):
     context = ctx_factory()
@@ -851,6 +962,10 @@ def test_len(ctx_factory):
     a_cpu = cl_array.to_device(queue, a)
     assert len(a_cpu) == 10
 
+# }}}
+
+
+# {{{ test_stride_preservation
 
 def test_stride_preservation(ctx_factory):
     if _PYPY:
@@ -866,6 +981,10 @@ def test_stride_preservation(ctx_factory):
     print(at_gpu.flags.f_contiguous, at_gpu.flags.c_contiguous)
     assert np.allclose(at_gpu.get(), at)
 
+# }}}
+
+
+# {{{ test_nan_arithmetic
 
 def test_nan_arithmetic(ctx_factory):
     context = ctx_factory()
@@ -891,6 +1010,10 @@ def test_nan_arithmetic(ctx_factory):
 
     assert (np.isnan(ab) == np.isnan(ab_gpu)).all()
 
+# }}}
+
+
+# {{{ test_mem_pool_with_arrays
 
 def test_mem_pool_with_arrays(ctx_factory):
     context = ctx_factory()
@@ -903,6 +1026,10 @@ def test_mem_pool_with_arrays(ctx_factory):
     assert a_dev.allocator is mem_pool
     assert b_dev.allocator is mem_pool
 
+# }}}
+
+
+# {{{ test_view
 
 def test_view(ctx_factory):
     context = ctx_factory()
@@ -923,6 +1050,10 @@ def test_view(ctx_factory):
     view = a_dev.view(np.int16)
     assert view.shape == (8, 32) and view.dtype == np.int16
 
+# }}}
+
+
+# {{{ test_diff
 
 def test_diff(ctx_factory):
     context = ctx_factory()
@@ -938,6 +1069,10 @@ def test_diff(ctx_factory):
             cl.array.diff(a_dev).get() - np.diff(a))
     assert err < 1e-4
 
+# }}}
+
+
+# {{{ test_copy
 
 def test_copy(ctx_factory):
     context = ctx_factory()
@@ -966,8 +1101,12 @@ def test_copy(ctx_factory):
 
 # }}}
 
+# }}}
+
 
 # {{{ slices, concatenation
+
+# {{{ test_slice
 
 def test_slice(ctx_factory):
     if _PYPY:
@@ -1014,6 +1153,10 @@ def test_slice(ctx_factory):
 
         assert la.norm(a_gpu.get() - a) == 0
 
+# }}}
+
+
+# {{{ test_concatenate
 
 def test_concatenate(ctx_factory):
     context = ctx_factory()
@@ -1035,8 +1178,12 @@ def test_concatenate(ctx_factory):
 
 # }}}
 
+# }}}
+
 
 # {{{ conditionals, any, all
+
+# {{{ test_comparisons
 
 def test_comparisons(ctx_factory):
     context = ctx_factory()
@@ -1073,6 +1220,11 @@ def test_comparisons(ctx_factory):
         assert (res2_dev.get() == res2).all()
 
 
+# }}}
+
+
+# {{{ test_any_all
+
 def test_any_all(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -1095,6 +1247,10 @@ def test_any_all(ctx_factory):
 
 # }}}
 
+# }}}
+
+
+# {{{ test_map_to_host
 
 def test_map_to_host(ctx_factory):
     if _PYPY:
@@ -1125,11 +1281,14 @@ def test_map_to_host(ctx_factory):
 
     assert (a_host_saved == a_dev.get()).all()
 
+# }}}
+
+
+# {{{ test_view_and_strides
 
 def test_view_and_strides(ctx_factory):
     if _PYPY:
         pytest.xfail("numpypy: no array creation from __array_interface__")
-    return
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -1146,6 +1305,10 @@ def test_view_and_strides(ctx_factory):
     with pytest.raises(AssertionError):
         assert (yv.get() == x.get()[:3, :5]).all()
 
+# }}}
+
+
+# {{{ test_meshmode_view
 
 def test_meshmode_view(ctx_factory):
     if _PYPY:
@@ -1168,6 +1331,10 @@ def test_meshmode_view(ctx_factory):
     x = result.get()
     assert (view(x) == 1).all()
 
+# }}}
+
+
+# {{{ test_event_management
 
 def test_event_management(ctx_factory):
     context = ctx_factory()
@@ -1207,6 +1374,10 @@ def test_event_management(ctx_factory):
 
     assert len(x.events) < 100
 
+# }}}
+
+
+# {{{ test_reshape
 
 def test_reshape(ctx_factory):
     context = ctx_factory()
@@ -1229,6 +1400,10 @@ def test_reshape(ctx_factory):
     with pytest.raises(ValueError):
         a_dev.reshape(-1, -1, 4)
 
+# }}}
+
+
+# {{{ test_skip_slicing
 
 def test_skip_slicing(ctx_factory):
     context = ctx_factory()
@@ -1242,6 +1417,10 @@ def test_skip_slicing(ctx_factory):
     assert b.shape == b_host.shape
     assert np.array_equal(b[1].get(), b_host[1])  # noqa pylint:disable=unsubscriptable-object
 
+# }}}
+
+
+# {{{ test_transpose
 
 def test_transpose(ctx_factory):
     if _PYPY:
@@ -1259,6 +1438,10 @@ def test_transpose(ctx_factory):
     #assert np.allclose(a_gpu.transpose((1,2,0)).get(), a.transpose((1,2,0)))
     assert np.array_equal(a_gpu.T.get(), a.T)
 
+# }}}
+
+
+# {{{ test_newaxis
 
 def test_newaxis(ctx_factory):
     context = ctx_factory()
@@ -1277,6 +1460,10 @@ def test_newaxis(ctx_factory):
         if b.shape[i] > 1:
             assert b_gpu.strides[i] == b.strides[i]
 
+# }}}
+
+
+# {{{ test_squeeze
 
 def test_squeeze(ctx_factory):
     context = ctx_factory()
@@ -1312,6 +1499,10 @@ def test_squeeze(ctx_factory):
     # Check that we get the original values out
     #assert np.all(a_gpu_slice.get().ravel() == a_gpu_squeezed_slice.get().ravel())
 
+# }}}
+
+
+# {{{ test_fancy_fill
 
 def test_fancy_fill(ctx_factory):
     if _PYPY:
@@ -1331,6 +1522,10 @@ def test_fancy_fill(ctx_factory):
 
     assert np.all(numpy_dest == cl_dest.get())
 
+# }}}
+
+
+# {{{ test_fancy_indexing
 
 def test_fancy_indexing(ctx_factory):
     if _PYPY:
@@ -1358,6 +1553,10 @@ def test_fancy_indexing(ctx_factory):
 
     assert np.array_equal(numpy_dest, cl_dest.get())
 
+# }}}
+
+
+# {{{ test_multi_put
 
 def test_multi_put(ctx_factory):
     if _PYPY:
@@ -1384,6 +1583,10 @@ def test_multi_put(ctx_factory):
 
     assert np.all(np.all(out_compare[i] == out_arrays[i].get()) for i in range(9))
 
+# }}}
+
+
+# {{{ test_get_async
 
 def test_get_async(ctx_factory):
     context = ctx_factory()
@@ -1416,6 +1619,10 @@ def test_get_async(ctx_factory):
     evt.wait()
     assert np.abs(b1 - b).mean() < 1e-5
 
+# }}}
+
+
+# {{{ test_outoforderqueue_get
 
 def test_outoforderqueue_get(ctx_factory):
     context = ctx_factory()
@@ -1431,6 +1638,10 @@ def test_outoforderqueue_get(ctx_factory):
     b = a + a**5 + 1
     assert np.abs(b1 - b).mean() < 1e-5
 
+# }}}
+
+
+# {{{ test_outoforderqueue_copy
 
 def test_outoforderqueue_copy(ctx_factory):
     context = ctx_factory()
@@ -1449,6 +1660,11 @@ def test_outoforderqueue_copy(ctx_factory):
     b = 10 * (a**2 - 7)
     assert np.abs(b1 - b).mean() < 1e-5
 
+
+# }}}
+
+
+# {{{ test_outoforderqueue_indexing
 
 def test_outoforderqueue_indexing(ctx_factory):
     context = ctx_factory()
@@ -1472,6 +1688,10 @@ def test_outoforderqueue_indexing(ctx_factory):
     b[i + 10000] = c - 10
     assert np.abs(b1 - b).mean() < 1e-5
 
+# }}}
+
+
+# {{{ test_outoforderqueue_reductions
 
 def test_outoforderqueue_reductions(ctx_factory):
     context = ctx_factory()
@@ -1489,6 +1709,10 @@ def test_outoforderqueue_reductions(ctx_factory):
     b3 = (a_gpu < 5).all().get()
     assert b1 == a.sum() and b2 == a.dot(3 - a) and b3 == 0
 
+# }}}
+
+
+# {{{ test_negative_dim_rejection
 
 def test_negative_dim_rejection(ctx_factory):
     context = ctx_factory()
@@ -1508,6 +1732,10 @@ def test_negative_dim_rejection(ctx_factory):
         with pytest.raises(ValueError):
             cl_array.Array(queue, shape=(-1, right_dim), dtype=np.float64)
 
+# }}}
+
+
+# {{{ test_zero_size_array
 
 @pytest.mark.parametrize("empty_shape", [0, (), (3, 0, 2), (0, 5), (5, 0)])
 def test_zero_size_array(ctx_factory, empty_shape):
@@ -1535,6 +1763,10 @@ def test_zero_size_array(ctx_factory, empty_shape):
         assert c_flat.flags.c_contiguous == c_host_flat.flags.c_contiguous
         assert c_flat.flags.f_contiguous == c_host_flat.flags.f_contiguous
 
+# }}}
+
+
+# {{{ test_str_without_queue
 
 def test_str_without_queue(ctx_factory):
     context = ctx_factory()
@@ -1544,6 +1776,10 @@ def test_str_without_queue(ctx_factory):
     print(str(a))
     print(repr(a))
 
+# }}}
+
+
+# {{{ test_stack
 
 @pytest.mark.parametrize("order", ("F", "C"))
 @pytest.mark.parametrize("input_dims", (1, 2, 3))
@@ -1569,6 +1805,10 @@ def test_stack(ctx_factory, input_dims, order):
     np.testing.assert_allclose(cla.stack((x, y), axis=axis).get(),
                                 np.stack((x_in, y_in), axis=axis))
 
+# }}}
+
+
+# {{{ test_assign_different_strides
 
 def test_assign_different_strides(ctx_factory):
     cl_ctx = ctx_factory()
@@ -1581,6 +1821,10 @@ def test_assign_different_strides(ctx_factory):
     with pytest.raises(NotImplementedError):
         b[:] = a
 
+# }}}
+
+
+# {{{ test_branch_operations_on_pure_scalars
 
 def test_branch_operations_on_pure_scalars():
     x = np.random.rand()
@@ -1594,6 +1838,10 @@ def test_branch_operations_on_pure_scalars():
     np.testing.assert_allclose(np.where(cond, x, y),
                                cl_array.if_positive(cond, x, y))
 
+# }}}
+
+
+# {{{ test_slice_copy
 
 def test_slice_copy(ctx_factory):
     cl_ctx = ctx_factory()
@@ -1604,6 +1852,10 @@ def test_slice_copy(ctx_factory):
     with pytest.raises(RuntimeError):
         y.copy()
 
+# }}}
+
+
+# {{{{ test_ravel
 
 @pytest.mark.parametrize("order", ("C", "F"))
 def test_ravel(ctx_factory, order):
@@ -1624,6 +1876,10 @@ def test_ravel(ctx_factory, order):
     np.testing.assert_allclose(x_cl.ravel(order=order).get(),
                                x.ravel(order=order))
 
+# }}}
+
+
+# {{{ test_arithmetic_on_non_scalars
 
 def test_arithmetic_on_non_scalars(ctx_factory):
     pytest.importorskip("dataclasses")
@@ -1642,6 +1898,10 @@ def test_arithmetic_on_non_scalars(ctx_factory):
     with pytest.raises(TypeError):
         ArrayContainer(np.ones(100)) + cl.array.zeros(cq, (10,), dtype=np.float64)
 
+# }}}
+
+
+# {{{ test_arithmetic_with_device_scalars
 
 @pytest.mark.parametrize("which", ("add", "sub", "mul", "truediv"))
 def test_arithmetic_with_device_scalars(ctx_factory, which):
@@ -1666,6 +1926,10 @@ def test_arithmetic_with_device_scalars(ctx_factory, which):
 
     np.testing.assert_allclose(res_cl.get(), res_np)
 
+# }}}
+
+
+# {{{ test_if_positive_with_scalars
 
 @pytest.mark.parametrize("then_type", ["array", "host_scalar", "device_scalar"])
 @pytest.mark.parametrize("else_type", ["array", "host_scalar", "device_scalar"])
@@ -1701,6 +1965,10 @@ def test_if_positive_with_scalars(ctx_factory, then_type, else_type):
 
     np.testing.assert_allclose(result_cl.get(), result_np)
 
+# }}}
+
+
+# {{{ test_maximum_minimum_with_scalars
 
 def test_maximum_minimum_with_scalars(ctx_factory):
     ctx = ctx_factory()
@@ -1726,6 +1994,10 @@ def test_maximum_minimum_with_scalars(ctx_factory):
     result = cl_array.minimum(a_cl, b_cl, queue=cq)
     np.testing.assert_allclose(result.get(), b_np)
 
+# }}}
+
+
+# {{{ test_empty_reductions_vs_numpy
 
 @pytest.mark.parametrize(("reduction", "supports_initial"), [
     (cl_array.any, False),
@@ -1787,6 +2059,29 @@ def test_empty_reductions_vs_numpy(ctx_factory, reduction, supports_initial):
         np.testing.assert_allclose(result, ref)
 
     # }}}
+
+# }}}
+
+
+# {{{ test_reductions_dtype
+
+def test_dtype_conversions(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    ary = cl.array.to_device(queue, np.linspace(0, 1, 32))
+
+    for func, nargs, arg_name in [
+            (cl.array.sum, 1, "dtype"),
+            (cl.array.dot, 2, "dtype"),
+            (cl.array.vdot, 2, "dtype"),
+            (cl.array.cumsum, 1, "output_dtype"),
+            ]:
+        for dtype in [np.float32, np.float64]:
+            result = func(*((ary,) * nargs), **{arg_name: dtype})
+            assert result.dtype == dtype, result.dtype
+
+# }}}
 
 
 if __name__ == "__main__":
