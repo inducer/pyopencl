@@ -1251,7 +1251,7 @@ def test_command_queue_context_manager(ctx_factory):
         q = queue
 
     with pytest.warns(cl.CommandQueueUsedAfterExit):
-        q.finish()
+        q.flush()
 
 
 if __name__ == "__main__":
