@@ -1609,9 +1609,13 @@ namespace pyopencl
       { PYOPENCL_CALL_GUARDED(clFlush, (data())); }
       void finish()
       {
-        cl_command_queue queue = data();
+        if (m_finalized) {
+          return;
+        } else {
+          cl_command_queue queue = data();
 
-        PYOPENCL_CALL_GUARDED_THREADED(clFinish, (queue));
+          PYOPENCL_CALL_GUARDED_THREADED(clFinish, (queue));
+        }
       }
 
       // not exposed to python
