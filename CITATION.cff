@@ -50,7 +50,7 @@ authors:
   given-names: "Holger"
 - family-names: "van der Walt"
   given-names: "Stefan"
-- alias: "gw0"
+# - alias: "gw0"
 - family-names: "Thalhammer"
   given-names: "Gregor"
 - family-names: "Kieffer"
