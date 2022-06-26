@@ -728,7 +728,7 @@ def _get_arg_list(arg_list, prefix=""):
 class BuiltList:
     count: Optional[int]
     starts: Optional[pyopencl.array.Array]
-    lists: Optional[pyopencl.array.Array]
+    lists: Optional[pyopencl.array.Array] = None
     num_nonempty_lists: Optional[int] = None
     nonempty_indices: Optional[pyopencl.array.Array] = None
     compressed_indices: Optional[pyopencl.array.Array] = None
