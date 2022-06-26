@@ -2660,6 +2660,7 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
                 raise ValueError("%d'th array has residual not matching "
                         "other arrays" % i_ary)
 
+            # pylint: disable=unsupported-assignment-operation
             shape[axis] += ary.shape[axis]
 
     # }}}
