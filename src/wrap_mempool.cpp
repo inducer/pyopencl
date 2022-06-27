@@ -70,6 +70,8 @@ namespace
   };
 
 
+  // {{{ cl allocators
+
   class cl_allocator_base
   {
     protected:
@@ -210,8 +212,10 @@ namespace
       }
   };
 
+  // }}}
 
 
+  // {{{ allocator_call
 
   inline
   pyopencl::buffer *allocator_call(cl_allocator_base &alloc, size_t size)
@@ -256,8 +260,10 @@ namespace
     }
   }
 
+  // }}}
 
 
+  // {{{ pooled_buffer
 
   class pooled_buffer
     : public pyopencl::pooled_allocation<pyopencl::memory_pool<cl_allocator_base> >,
@@ -278,8 +284,10 @@ namespace
       { return ptr(); }
   };
 
+  // }}}
 
 
+  // {{{{ device_pool_allocate
 
   pooled_buffer *device_pool_allocate(
       std::shared_ptr<pyopencl::memory_pool<cl_allocator_base> > pool,
@@ -287,6 +295,9 @@ namespace
   {
     return new pooled_buffer(pool, sz);
   }
+
+  // }}}
+
 
 
 
@@ -398,3 +409,5 @@ void pyopencl_expose_mempool(py::module &m)
       ;
   }
 }
+
+// vim: foldmethod=marker
