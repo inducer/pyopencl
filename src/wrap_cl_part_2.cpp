@@ -305,7 +305,13 @@ void pyopencl_expose_part_2(py::module &m)
   {
     typedef svm_allocation cls;
     py::class_<cls>(m, "SVMAllocation", py::dynamic_attr())
-      .def(py::init<std::shared_ptr<context>, size_t, cl_uint, cl_svm_mem_flags>())
+      .def(py::init<std::shared_ptr<context>, size_t, cl_uint, cl_svm_mem_flags, const command_queue *>(),
+          py::arg("context"),
+          py::arg("size"),
+          py::arg("alignment"),
+          py::arg("flags"),
+          py::arg("queue").none(true)=py::none()
+          )
       .DEF_SIMPLE_METHOD(release)
       .def("enqueue_release", &cls::enqueue_release,
           ":returns: a :class:`pyopencl.Event`\n\n"
@@ -314,6 +320,8 @@ void pyopencl_expose_part_2(py::module &m)
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__hash__", &cls::ptr_as_int)
+      .DEF_SIMPLE_METHOD(bind_to_queue)
+      .DEF_SIMPLE_METHOD(unbind_from_queue)
       ;
   }
 
