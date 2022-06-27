@@ -50,6 +50,7 @@ authors:
   given-names: "Holger"
 - family-names: "van der Walt"
   given-names: "Stefan"
+# Removed pending resolution of https://github.com/zenodo/zenodo/issues/2343
 # - alias: "gw0"
 - family-names: "Thalhammer"
   given-names: "Gregor"
