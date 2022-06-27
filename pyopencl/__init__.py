@@ -1146,12 +1146,13 @@ def _add_functionality():
     if get_cl_header_version() >= (2, 0):
         svmallocation_old_init = SVMAllocation.__init__
 
-    def svmallocation_init(self, ctx, size, alignment, flags, _interface=None):
+    def svmallocation_init(self, ctx, size, alignment, flags, _interface=None,
+            queue=None):
         """
         :arg ctx: a :class:`Context`
         :arg flags: some of :class:`svm_mem_flags`.
         """
-        svmallocation_old_init(self, ctx, size, alignment, flags)
+        svmallocation_old_init(self, ctx, size, alignment, flags, queue)
 
         # mem_flags.READ_ONLY applies to kernels, not the host
         read_write = True
@@ -1996,7 +1997,7 @@ def enqueue_svm_migratemem(queue, svms, flags, wait_for=None):
             wait_for)
 
 
-def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
+def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None, queue=None):
     """Allocate an empty :class:`numpy.ndarray` of the given *shape*, *dtype*
     and *order*. (See :func:`numpy.empty` for the meaning of these arguments.)
     The array will be allocated in shared virtual memory belonging
@@ -2014,6 +2015,10 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
     will likely want to wrap the returned array in an :class:`SVM` tag.
 
     .. versionadded:: 2016.2
+
+    .. versionchanged:: 2022.2
+
+        *queue* argument added.
     """
 
     dtype = np.dtype(dtype)
@@ -2060,7 +2065,8 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
     if alignment is None:
         alignment = itemsize
 
-    svm_alloc = SVMAllocation(ctx, nbytes, alignment, flags, _interface=interface)
+    svm_alloc = SVMAllocation(ctx, nbytes, alignment, flags, _interface=interface,
+            queue=queue)
     return np.asarray(svm_alloc)
 
 

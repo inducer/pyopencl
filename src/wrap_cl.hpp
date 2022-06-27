@@ -3562,16 +3562,28 @@ namespace pyopencl
   };
 
 
-  class svm_allocation : noncopyable
+  class svm_allocation
   {
     private:
       std::shared_ptr<context> m_context;
       void *m_allocation;
+      command_queue_ref m_queue;
+      // FIXME Should keep a list of events so that we can wait for users
+      // to finish in the case of out-of-order queues.
 
     public:
-      svm_allocation(std::shared_ptr<context> const &ctx, size_t size, cl_uint alignment, cl_svm_mem_flags flags)
+      svm_allocation(std::shared_ptr<context> const &ctx, size_t size, cl_uint alignment,
+          cl_svm_mem_flags flags, const command_queue *queue = nullptr)
         : m_context(ctx)
       {
+        if (queue)
+        {
+          m_queue.set(queue->data());
+          if (!is_queue_in_order(m_queue.data()))
+            throw error("SVMAllocation.__init__", CL_INVALID_VALUE,
+                "supplying an out-of-order queue to SVMAllocation is invalid");
+        }
+
         PYOPENCL_PRINT_CALL_TRACE("clSVMalloc");
         m_allocation = clSVMAlloc(
             ctx->data(),
@@ -3580,6 +3592,9 @@ namespace pyopencl
         if (!m_allocation)
           throw pyopencl::error("clSVMAlloc", CL_OUT_OF_RESOURCES);
       }
+
+      svm_allocation(const svm_allocation &) = delete;
+      svm_allocation &operator=(const svm_allocation &) = delete;
 
       ~svm_allocation()
       {
@@ -3593,8 +3608,20 @@ namespace pyopencl
           throw error("SVMAllocation.release", CL_INVALID_VALUE,
               "trying to double-unref svm allocation");
 
-        clSVMFree(m_context->data(), m_allocation);
-        m_allocation = nullptr;
+        if (m_queue.is_valid())
+        {
+          PYOPENCL_CALL_GUARDED_CLEANUP(clEnqueueSVMFree, (
+                m_queue.data(), 1, &m_allocation,
+                nullptr, nullptr,
+                0, nullptr, nullptr));
+          m_queue.reset();
+        }
+        else
+        {
+          PYOPENCL_PRINT_CALL_TRACE("clSVMFree");
+          clSVMFree(m_context->data(), m_allocation);
+          m_allocation = nullptr;
+        }
       }
 
       void enqueue_release(command_queue &queue, py::object py_wait_for)
@@ -3633,6 +3660,16 @@ namespace pyopencl
       bool operator!=(svm_allocation const &other) const
       {
         return m_allocation != other.m_allocation;
+      }
+
+      void bind_to_queue(command_queue const &queue)
+      {
+        m_queue.set(queue.data());
+      }
+
+      void unbind_from_queue()
+      {
+        m_queue.reset();
       }
   };
 
