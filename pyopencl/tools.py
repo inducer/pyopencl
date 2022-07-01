@@ -67,6 +67,25 @@ from pyopencl._cl import (  # noqa
 # }}}
 
 
+# {{{ svm allocator
+
+# FIXME: Replace me with C++
+class SVMAllocator:
+    def __init__(self, ctx, flags, *, alignment=0, queue=None):
+        self._context = ctx
+        self._flags = flags
+        self._alignment = alignment
+        self._queue = queue
+
+    def __call__(self, nbytes):
+        import pyopencl as cl
+        return cl.SVM(cl.svm_empty(
+                self._context, self._flags, (nbytes,), np.int8, "C", self._alignment,
+                self._queue))
+
+# }}}
+
+
 # {{{ first-arg caches
 
 _first_arg_dependent_caches = []
