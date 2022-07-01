@@ -281,6 +281,8 @@ Transfers
 
 .. autofunction:: enqueue_copy(queue, dest, src, **kwargs)
 
+.. autofunction:: enqueue_fill(queue, dest, src, **kwargs)
+
 Mapping Memory into Host Address Space
 --------------------------------------
 
