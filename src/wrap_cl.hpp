@@ -137,10 +137,8 @@
 // }}}
 
 
+// {{{ macros and typedefs for wrappers
 
-
-
-// {{{ tools
 #if PY_VERSION_HEX >= 0x02050000
   typedef Py_ssize_t PYOPENCL_BUFFER_SIZE_T;
 #else
@@ -262,6 +260,7 @@
 
 // }}}
 
+
 // {{{ tracing and error reporting
 #ifdef PYOPENCL_TRACE
   #define PYOPENCL_PRINT_CALL_TRACE(NAME) \
@@ -329,6 +328,7 @@
 
 // }}}
 
+
 // {{{ get_info helpers
 #define PYOPENCL_GET_OPAQUE_INFO(WHAT, FIRST_ARG, SECOND_ARG, CL_TYPE, TYPE) \
   { \
@@ -383,6 +383,7 @@
 
 // }}}
 
+
 // {{{ event helpers --------------------------------------------------------------
 #define PYOPENCL_PARSE_WAIT_FOR \
     cl_uint num_events_in_wait_list = 0; \
@@ -424,7 +425,9 @@
 
 // }}}
 
+
 // {{{ equality testing
+
 #define PYOPENCL_EQUALITY_TESTS(cls) \
     bool operator==(cls const &other) const \
     { return data() == other.data(); } \
@@ -432,8 +435,8 @@
     { return data() != other.data(); } \
     long hash() const \
     { return (long) (intptr_t) data(); }
-// }}}
 
+// }}}
 
 
 namespace pyopencl
