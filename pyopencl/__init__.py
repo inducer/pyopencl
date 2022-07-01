@@ -1779,6 +1779,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
             src = SVM(src)
 
         is_blocking = kwargs.pop("is_blocking", True)
+        assert kwargs.pop("src_offset", 0) == 0
+        assert kwargs.pop("dest_offset", 0) == 0
+        assert "byte_count" not in kwargs or kwargs.pop("byte_count") == src._size()
         return _cl._enqueue_svm_memcpy(queue, is_blocking, dest, src, **kwargs)
 
     else:
