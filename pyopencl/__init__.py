@@ -21,6 +21,7 @@ THE SOFTWARE.
 """
 
 from sys import intern
+from warnings import warn
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
@@ -43,7 +44,6 @@ except ImportError:
     import os
     from os.path import dirname, join, realpath
     if realpath(join(os.getcwd(), "pyopencl")) == realpath(dirname(__file__)):
-        from warnings import warn
         warn("It looks like you are importing PyOpenCL from "
                 "its source directory. This likely won't work.")
     raise
@@ -267,7 +267,6 @@ class CommandQueueUsedAfterExit(UserWarning):
 
 def compiler_output(text):
     import os
-    from warnings import warn
     if int(os.environ.get("PYOPENCL_COMPILER_OUTPUT", "0")):
         warn(text, CompilerWarning)
     else:
@@ -389,7 +388,6 @@ def enable_debugging(platform_or_context):
         import os
         os.environ["CPU_MAX_COMPUTE_UNITS"] = "1"
     else:
-        from warnings import warn
         warn("do not know how to enable debugging on '%s'"
                 % platform.name)
 
@@ -428,7 +426,6 @@ class Program:
             return self._prg
         else:
             # "no program" can only happen in from-source case.
-            from warnings import warn
             warn("Pre-build attribute access defeats compiler caching.",
                     stacklevel=3)
 
@@ -662,7 +659,6 @@ def _add_functionality():
         return ("v1", self.vendor, self.vendor_id, self.name, self.version)
 
     def device_persistent_unique_id(self):
-        from warnings import warn
         warn("Device.persistent_unique_id is deprecated. "
                 "Use Device.hashable_model_and_version_identifier instead.",
                 DeprecationWarning, stacklevel=2)
@@ -684,7 +680,6 @@ def _add_functionality():
 
     def context_init(self, devices, properties, dev_type, cache_dir=None):
         if cache_dir is not None:
-            from warnings import warn
             warn("The 'cache_dir' argument to the Context constructor "
                 "is deprecated and no longer has an effect. "
                 "It was removed because it only applied to the wrapper "
@@ -970,7 +965,6 @@ def _add_functionality():
 
         if hostbuf is not None and not \
                 (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
-            from warnings import warn
             warn("'hostbuf' was passed, but no memory flags to make use of it.")
 
         if hostbuf is None and pitches is not None:
@@ -1043,7 +1037,6 @@ def _add_functionality():
 
     class _ImageInfoGetter:
         def __init__(self, event):
-            from warnings import warn
             warn("Image.image.attr is deprecated and will go away in 2021. "
                     "Use Image.attr directly, instead.")
 
@@ -1927,7 +1920,6 @@ def enqueue_barrier(queue, wait_for=None):
 
 def enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
     if not (queue._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2)):
-        from warnings import warn
         warn("The context for this queue does not declare OpenCL 1.2 support, so "
                 "the next thing you might see is a crash")
 
