@@ -496,6 +496,19 @@ namespace pyopencl
   // }}}
 
 
+  // {{{ utility functions
+
+  inline bool is_queue_in_order(cl_command_queue queue)
+  {
+      cl_command_queue_properties param_value;
+      PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo,
+          (queue, CL_QUEUE_PROPERTIES, sizeof(param_value), &param_value, 0));
+      return !(param_value & CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE);
+  }
+
+  // }}}
+
+
   // {{{ buffer interface helper
 
 
