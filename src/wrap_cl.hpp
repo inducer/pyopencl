@@ -1668,6 +1668,76 @@ namespace pyopencl
   // }}}
 
 
+  // {{{ command_queue_ref
+
+  // In contrast to command_queue, command_queue_ref is "nullable", i.e.
+  // it is a RAII *optional* reference to a command queue.
+
+  class command_queue_ref
+  {
+    private:
+      bool m_valid;
+      cl_command_queue m_queue;
+
+    public:
+      command_queue_ref()
+        : m_valid(false)
+      {}
+
+      command_queue_ref(cl_command_queue queue)
+        : m_valid(true), m_queue(queue)
+      {
+        PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (m_queue));
+      }
+
+      command_queue_ref(command_queue_ref &&src)
+        : m_valid(src.m_valid), m_queue(src.m_queue)
+      {
+        src.m_valid = false;
+      }
+
+      command_queue_ref(const command_queue_ref &) = delete;
+      command_queue_ref &operator=(const command_queue_ref &) = delete;
+
+      ~command_queue_ref()
+      {
+        reset();
+      }
+
+      bool is_valid() const
+      {
+        return m_valid;
+      }
+
+      cl_command_queue data() const
+      {
+        if (m_valid)
+          return m_queue;
+        else
+          throw error("command_queue_ref.data", CL_INVALID_VALUE,
+              "command_queue_ref is not valid");
+      }
+
+      void reset()
+      {
+        if (m_valid)
+          PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseCommandQueue, (m_queue));
+        m_valid = false;
+      }
+
+      void set(cl_command_queue queue)
+      {
+        if (m_valid)
+          PYOPENCL_CALL_GUARDED(clReleaseCommandQueue, (m_queue));
+        m_queue = queue;
+        PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (m_queue));
+        m_valid = true;
+      }
+  };
+
+  // }}}
+
+
   // {{{ event/synchronization
 
   class event : noncopyable
