@@ -299,6 +299,7 @@ void pyopencl_expose_part_2(py::module &m)
     typedef svm_arg_wrapper cls;
     py::class_<cls>(m, "SVM", py::dynamic_attr())
       .def(py::init<py::object>())
+      .def("_ptr_as_int", [](cls &self) { return (intptr_t) self.ptr(); })
       .def("_size", &cls::size)
       ;
   }
