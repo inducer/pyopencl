@@ -296,17 +296,33 @@ void pyopencl_expose_part_2(py::module &m)
 
 #if PYOPENCL_CL_VERSION >= 0x2000
   {
-    typedef svm_arg_wrapper cls;
-    py::class_<cls>(m, "SVM", py::dynamic_attr())
-      .def(py::init<py::object>())
+    typedef svm_pointer cls;
+    py::class_<cls>(m, "SVMPointer", py::dynamic_attr())
       .def("_ptr_as_int", [](cls &self) { return (intptr_t) self.ptr(); })
-      .def("_size", &cls::size)
+      .def("_size", [](cls &self) -> py::object
+          {
+            try
+            {
+              return py::cast(self.size());
+            }
+            catch (size_not_available)
+            {
+              return py::none();
+            }
+          })
+      ;
+  }
+
+  {
+    typedef svm_arg_wrapper cls;
+    py::class_<cls, svm_pointer>(m, "SVM", py::dynamic_attr())
+      .def(py::init<py::object>())
       ;
   }
 
   {
     typedef svm_allocation cls;
-    py::class_<cls>(m, "SVMAllocation", py::dynamic_attr())
+    py::class_<cls, svm_pointer>(m, "SVMAllocation", py::dynamic_attr())
       .def(py::init<std::shared_ptr<context>, size_t, cl_uint, cl_svm_mem_flags, const command_queue *>(),
           py::arg("context"),
           py::arg("size"),
@@ -318,10 +334,9 @@ void pyopencl_expose_part_2(py::module &m)
       .def("enqueue_release", &cls::enqueue_release,
           ":returns: a :class:`pyopencl.Event`\n\n"
           "|std-enqueue-blurb|")
-      .def("_ptr_as_int", &cls::ptr_as_int)
       .def(py::self == py::self)
       .def(py::self != py::self)
-      .def("__hash__", &cls::ptr_as_int)
+      .def("__hash__", [](cls &self) { return (intptr_t) self.ptr(); })
       .DEF_SIMPLE_METHOD(bind_to_queue)
       .DEF_SIMPLE_METHOD(unbind_from_queue)
       ;
@@ -332,7 +347,8 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("is_blocking"),
       py::arg("dst"),
       py::arg("src"),
-      py::arg("wait_for")=py::none()
+      py::arg("wait_for")=py::none(),
+      py::arg("byte_count")=py::none()
       );
 
   m.def("_enqueue_svm_memfill", enqueue_svm_memfill,
@@ -348,7 +364,8 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("is_blocking"),
       py::arg("flags"),
       py::arg("svm"),
-      py::arg("wait_for")=py::none()
+      py::arg("wait_for")=py::none(),
+      py::arg("size")=py::none()
       );
 
   m.def("_enqueue_svm_unmap", enqueue_svm_unmap,
