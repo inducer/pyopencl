@@ -200,11 +200,9 @@ if get_cl_header_version() >= (1, 2):
 
 if get_cl_header_version() >= (2, 0):
     from pyopencl._cl import (  # noqa
-        SVMAllocation,
+        SVMPointer,
         SVM,
-
-        # FIXME
-        #enqueue_svm_migratemem,
+        SVMAllocation,
         )
 
 if _cl.have_gl():
@@ -1145,25 +1143,19 @@ def _add_functionality():
             """
 
     if get_cl_header_version() >= (2, 0):
-        svmallocation_old_init = SVMAllocation.__init__
+        class _ArrayInterfaceSVMAllocation(SVMAllocation):
+            def __init__(self, ctx, size, alignment, flags, _interface=None,
+                    queue=None):
+                """
+                :arg ctx: a :class:`Context`
+                :arg flags: some of :class:`svm_mem_flags`.
+                """
+                super().__init__(ctx, size, alignment, flags, queue)
 
-    def svmallocation_init(self, ctx, size, alignment, flags, _interface=None,
-            queue=None):
-        """
-        :arg ctx: a :class:`Context`
-        :arg flags: some of :class:`svm_mem_flags`.
-        """
-        svmallocation_old_init(self, ctx, size, alignment, flags, queue)
-
-        # mem_flags.READ_ONLY applies to kernels, not the host
-        read_write = True
-        _interface["data"] = (
-                int(self._ptr_as_int()), not read_write)
-
-        self.__array_interface__ = _interface
-
-    if get_cl_header_version() >= (2, 0):
-        SVMAllocation.__init__ = svmallocation_init
+                # mem_flags.READ_ONLY applies to kernels, not the host
+                read_write = True
+                _interface["data"] = (
+                        int(self._ptr_as_int()), not read_write)
 
     # }}}
 
@@ -1774,15 +1766,14 @@ def enqueue_copy(queue, dest, src, **kwargs):
         else:
             raise ValueError("invalid dest mem object type")
 
-    elif get_cl_header_version() >= (2, 0) and isinstance(dest, SVM):
+    elif get_cl_header_version() >= (2, 0) and isinstance(dest, SVMPointer):
         # to SVM
-        if not isinstance(src, SVM):
+        if not isinstance(src, SVMPointer):
             src = SVM(src)
 
         is_blocking = kwargs.pop("is_blocking", True)
         assert kwargs.pop("src_offset", 0) == 0
         assert kwargs.pop("dest_offset", 0) == 0
-        assert "byte_count" not in kwargs or kwargs.pop("byte_count") == src._size()
         return _cl._enqueue_svm_memcpy(queue, is_blocking, dest, src, **kwargs)
 
     else:
@@ -1808,7 +1799,7 @@ def enqueue_copy(queue, dest, src, **kwargs):
                         queue, src, origin, region, dest, **kwargs)
             else:
                 raise ValueError("invalid src mem object type")
-        elif isinstance(src, SVM):
+        elif isinstance(src, SVMPointer):
             # from svm
             # dest is not a SVM instance, otherwise we'd be in the branch above
             is_blocking = kwargs.pop("is_blocking", True)
@@ -1823,14 +1814,14 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
 # {{{ enqueue_fill
 
-def enqueue_fill(queue: CommandQueue, dest: Union[MemoryObjectHolder, SVM],
+def enqueue_fill(queue: CommandQueue, dest: Union[MemoryObjectHolder, SVMPointer],
         pattern: Any, size: int, *, offset: int = 0, wait_for=None) -> Event:
     """
     .. versionadded:: 2022.2
     """
     if isinstance(dest, MemoryObjectHolder):
         return enqueue_fill_buffer(queue, dest, pattern, offset, size, wait_for)
-    elif isinstance(dest, SVM):
+    elif isinstance(dest, SVMPointer):
         if offset:
             raise NotImplementedError("enqueue_fill with SVM does not yet support "
                     "offsets")
@@ -1962,7 +1953,7 @@ def enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
 def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
     """Fill shared virtual memory with a pattern.
 
-    :arg dest: a Python buffer object, optionally wrapped in an :class:`SVM` object
+    :arg dest: a Python buffer object, or any implementation of :class:`SVMPointer`.
     :arg pattern: a Python buffer object (e.g. a :class:`numpy.ndarray` with the
         fill pattern to be used.
     :arg byte_count: The size of the memory to be fill. Defaults to the
@@ -1973,8 +1964,8 @@ def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
     .. versionadded:: 2016.2
     """
 
-    if not isinstance(dest, SVM):
-        dest = SVM(dest)
+    if not isinstance(dest, SVMPointer):
+        dest = SVMPointer(dest)
 
     return _cl._enqueue_svm_memfill(
             queue, dest, pattern, byte_count=None, wait_for=None)
@@ -1983,7 +1974,7 @@ def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
 def enqueue_svm_migratemem(queue, svms, flags, wait_for=None):
     """
     :arg svms: a collection of Python buffer objects (e.g. :mod:`numpy`
-        arrays), optionally wrapped in :class:`SVM` objects.
+        arrays), or any implementation of :class:`SVMPointer`.
     :arg flags: a combination of :class:`mem_migration_flags`
 
     |std-enqueue-blurb|
@@ -2069,7 +2060,8 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None, queue=None):
     if alignment is None:
         alignment = itemsize
 
-    svm_alloc = SVMAllocation(ctx, nbytes, alignment, flags, _interface=interface,
+    svm_alloc = _ArrayInterfaceSVMAllocation(
+            ctx, nbytes, alignment, flags, _interface=interface,
             queue=queue)
     return np.asarray(svm_alloc)
 

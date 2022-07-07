@@ -79,9 +79,9 @@ class SVMAllocator:
 
     def __call__(self, nbytes):
         import pyopencl as cl
-        return cl.SVM(cl.svm_empty(
-                self._context, self._flags, (nbytes,), np.int8, "C", self._alignment,
-                self._queue))
+        return cl.SVMAllocation(
+                self._context, nbytes, self._alignment, self._flags,
+                queue=self._queue)
 
 # }}}
 
