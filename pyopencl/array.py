@@ -2812,7 +2812,8 @@ def stack(arrays, axis=0, queue=None):
                                                   for ary in arrays)),
                                  # TODO: reconsider once arrays support
                                  # non-contiguous assignments
-                                 order="C" if axis == 0 else "F")
+                                 order="C" if axis == 0 else "F",
+                                 allocator=arrays[0].allocator)
     for i, ary in enumerate(arrays):
         idx = (slice(None),)*axis + (i,) + (slice(None),)*(input_ndim-axis)
         result[idx] = ary
