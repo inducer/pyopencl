@@ -106,7 +106,7 @@ void pyopencl_expose_constants(py::module &m)
 #define DECLARE_EXC(NAME, BASE) \
   static py::exception<pyopencl::error> CL##NAME(m, #NAME, BASE);
 
-    DECLARE_EXC(Error, NULL);
+    DECLARE_EXC(Error, nullptr);
     DECLARE_EXC(MemoryError, CLError.ptr());
     DECLARE_EXC(LogicError, CLError.ptr());
     DECLARE_EXC(RuntimeError, CLError.ptr());
