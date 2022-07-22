@@ -62,7 +62,9 @@ from pyopencl._cl import (  # noqa
         PooledBuffer as PooledBuffer,
         _tools_DeferredAllocator as DeferredAllocator,
         _tools_ImmediateAllocator as ImmediateAllocator,
-        MemoryPool as MemoryPool)
+        _tools_SVMAllocator as SVMAllocator,
+        MemoryPool as MemoryPool,
+        SVMMemoryPool as SVMMemoryPool)
 
 # }}}
 

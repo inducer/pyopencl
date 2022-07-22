@@ -349,7 +349,91 @@ namespace
       {
         pyopencl::run_python_gc();
       }
+
+      bool is_deferred() const { return false; }
+
+      svm_allocator *copy() const
+      {
+        return new svm_allocator(*this);
+      }
   };
+
+  // }}}
+
+
+  // {{{ SVM mempool
+
+  inline
+  void *svm_allocator_call(svm_allocator &alloc, size_t size)
+  {
+    void * mem;
+    int try_count = 0;
+    while (try_count < 2)
+    {
+      try
+      {
+        mem = alloc.allocate(size);
+        break;
+      }
+      catch (pyopencl::error &e)
+      {
+        if (!e.is_out_of_memory())
+          throw;
+        if (++try_count == 2)
+          throw;
+      }
+
+      alloc.try_release_blocks();
+    }
+
+    if (!mem)
+    {
+      if (size == 0)
+        return nullptr;
+      else
+        throw pyopencl::error("Allocator", CL_INVALID_VALUE,
+            "svm allocator succeeded but returned NULL pointer");
+    }
+
+    return mem;
+  }
+
+  // }}}
+
+
+  // {{{ pooled_buffer
+
+  class svm_pooled_buffer
+    : public pyopencl::pooled_allocation<pyopencl::memory_pool<svm_allocator> > //,
+    // public pyopencl::memory_object_holder
+  {
+    private:
+      typedef
+        pyopencl::pooled_allocation<pyopencl::memory_pool<svm_allocator> >
+        super;
+
+    public:
+      svm_pooled_buffer(
+          std::shared_ptr<super::pool_type> p, super::size_type s)
+        : super(p, s)
+      { }
+
+      const super::pointer_type data() const
+      { return ptr(); }
+  };
+
+  // }}}
+
+
+  // {{{{ device_pool_allocate
+
+  svm_pooled_buffer *svm_device_pool_allocate(
+      std::shared_ptr<pyopencl::memory_pool<svm_allocator> > pool,
+      pyopencl::memory_pool<svm_allocator>::size_type sz)
+  {
+    return new svm_pooled_buffer(pool, sz);
+  }
+
 
   // }}}
 
@@ -447,6 +531,36 @@ void pyopencl_expose_mempool(py::module &m)
           )
       .def("allocate", device_pool_allocate)
       .def("__call__", device_pool_allocate)
+      // undoc for now
+      .DEF_SIMPLE_METHOD(set_trace)
+      ;
+
+    expose_memory_pool(wrapper);
+  }
+
+  {
+    typedef svm_allocator cls;
+    py::class_<cls> wrapper(
+        m, "_tools_SVMAllocator");
+    wrapper
+      .def(py::init<svm_allocator &>())
+      .def(py::init<std::shared_ptr<pyopencl::context> const &, cl_uint, cl_mem_flags>())
+      ;
+  }
+
+  {
+    typedef pyopencl::memory_pool<svm_allocator> cls;
+
+    py::class_<
+      cls, /* boost::noncopyable, */
+      std::shared_ptr<cls>> wrapper( m, "SVMMemoryPool");
+    wrapper
+      .def(py::init<svm_allocator const &, unsigned>(),
+          py::arg("allocator"),
+          py::arg("leading_bits_in_bin_id")=4
+          )
+      .def("allocate", svm_device_pool_allocate)
+      .def("__call__", svm_device_pool_allocate)
       // undoc for now
       .DEF_SIMPLE_METHOD(set_trace)
       ;
