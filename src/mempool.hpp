@@ -233,7 +233,8 @@ namespace PYGPU_PACKAGE
             std::cout
               << "[pool] allocation of size " << size << " served from bin " << bin_nr
               << " which contained " << bin.size() << " entries" << std::endl;
-          return pop_block_from_bin(bin, size);
+          return m_allocator->hand_out_existing_block(
+              pop_block_from_bin(bin, size));
         }
 
          size_type alloc_sz = alloc_size(bin_nr);
@@ -256,7 +257,8 @@ namespace PYGPU_PACKAGE
 
         m_allocator->try_release_blocks();
         if (bin.size())
-          return pop_block_from_bin(bin, size);
+          return m_allocator->hand_out_existing_block(
+              pop_block_from_bin(bin, size));
 
         if (m_trace)
           std::cout << "[pool] allocation still OOM after GC" << std::endl;
@@ -282,7 +284,7 @@ namespace PYGPU_PACKAGE
             "failed to free memory for allocation");
       }
 
-      void free(pointer_type p, size_type size)
+      void free(pointer_type &&p, size_type size)
       {
         --m_active_blocks;
         m_active_bytes -= size;
@@ -291,7 +293,7 @@ namespace PYGPU_PACKAGE
         if (!m_stop_holding)
         {
           inc_held_blocks();
-          get_bin(bin_nr).push_back(p);
+          get_bin(bin_nr).push_back(std::move(p));
 
           if (m_trace)
             std::cout << "[pool] block of size " << size << " returned to bin "
@@ -300,7 +302,7 @@ namespace PYGPU_PACKAGE
         }
         else
         {
-          m_allocator->free(p);
+          m_allocator->free(std::move(p));
           m_managed_bytes -= alloc_size(bin_nr);
         }
       }
@@ -313,7 +315,7 @@ namespace PYGPU_PACKAGE
 
           while (bin.size())
           {
-            m_allocator->free(bin.back());
+            m_allocator->free(std::move(bin.back()));
             m_managed_bytes -= alloc_size(bin_pair.first);
             bin.pop_back();
 
@@ -353,7 +355,7 @@ namespace PYGPU_PACKAGE
 
           if (bin.size())
           {
-            m_allocator->free(bin.back());
+            m_allocator->free(std::move(bin.back()));
             m_managed_bytes -= alloc_size(bin_pair.first);
             bin.pop_back();
 
@@ -379,7 +381,7 @@ namespace PYGPU_PACKAGE
 
       pointer_type pop_block_from_bin(bin_t &bin, size_type size)
       {
-        pointer_type result = bin.back();
+        pointer_type result(std::move(bin.back()));
         bin.pop_back();
 
         dec_held_blocks();
@@ -399,7 +401,7 @@ namespace PYGPU_PACKAGE
       typedef typename Pool::pointer_type pointer_type;
       typedef typename Pool::size_type size_type;
 
-    private:
+    protected:
       PYGPU_SHARED_PTR<pool_type> m_pool;
 
       pointer_type m_ptr;
@@ -421,7 +423,7 @@ namespace PYGPU_PACKAGE
       {
         if (m_valid)
         {
-          m_pool->free(m_ptr, m_size);
+          m_pool->free(std::move(m_ptr), m_size);
           m_valid = false;
         }
         else
@@ -435,16 +437,8 @@ namespace PYGPU_PACKAGE
 #endif
               );
       }
-
-      pointer_type ptr() const
-      { return m_ptr; }
-
-      size_type size() const
-      { return m_size; }
   };
 }
-
-
 
 
 #endif

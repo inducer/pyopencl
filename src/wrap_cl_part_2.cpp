@@ -298,7 +298,7 @@ void pyopencl_expose_part_2(py::module &m)
   {
     typedef svm_pointer cls;
     py::class_<cls>(m, "SVMPointer", py::dynamic_attr())
-      .def("_ptr_as_int", [](cls &self) { return (intptr_t) self.ptr(); })
+      .def("_ptr_as_int", [](cls &self) { return (intptr_t) self.svm_ptr(); })
       .def("_size", [](cls &self) -> py::object
           {
             try
@@ -336,7 +336,7 @@ void pyopencl_expose_part_2(py::module &m)
           "|std-enqueue-blurb|")
       .def(py::self == py::self)
       .def(py::self != py::self)
-      .def("__hash__", [](cls &self) { return (intptr_t) self.ptr(); })
+      .def("__hash__", [](cls &self) { return (intptr_t) self.svm_ptr(); })
       .DEF_SIMPLE_METHOD(bind_to_queue)
       .DEF_SIMPLE_METHOD(unbind_from_queue)
       ;
