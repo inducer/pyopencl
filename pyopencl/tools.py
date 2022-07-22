@@ -33,7 +33,7 @@ from sys import intern
 
 import numpy as np
 from pytools import memoize, memoize_method
-from pyopencl._cl import bitlog2  # noqa: F401
+from pyopencl._cl import bitlog2, get_cl_header_version  # noqa: F401
 from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
 
 import re
@@ -59,29 +59,19 @@ _register_types()
 # {{{ imported names
 
 from pyopencl._cl import (  # noqa
-        PooledBuffer as PooledBuffer,
+        _tools_PooledBuffer as PooledBuffer,
         _tools_DeferredAllocator as DeferredAllocator,
         _tools_ImmediateAllocator as ImmediateAllocator,
-        MemoryPool as MemoryPool)
+        _tools_MemoryPool as MemoryPool,
+        )
 
-# }}}
 
-
-# {{{ svm allocator
-
-# FIXME: Replace me with C++
-class SVMAllocator:
-    def __init__(self, ctx, flags, *, alignment=0, queue=None):
-        self._context = ctx
-        self._flags = flags
-        self._alignment = alignment
-        self._queue = queue
-
-    def __call__(self, nbytes):
-        import pyopencl as cl
-        return cl.SVMAllocation(
-                self._context, nbytes, self._alignment, self._flags,
-                queue=self._queue)
+if get_cl_header_version() >= (2, 0):
+    from pyopencl._cl import (  # noqa
+            _tools_SVMPool as SVMPool,
+            _tools_PooledSVM as PooledSVM,
+            _tools_SVMAllocator as SVMAllocator,
+            )
 
 # }}}
 

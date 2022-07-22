@@ -1,6 +1,6 @@
 import pyopencl as cl
 import pyopencl.array as cl_array
-from pyopencl.tools import SVMAllocator
+from pyopencl.tools import SVMAllocator, SVMPool
 import numpy as np
 import numpy.linalg as la
 
@@ -12,7 +12,8 @@ b = np.random.rand(n).astype(np.float32)
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
-alloc = SVMAllocator(ctx, cl.svm_mem_flags.READ_WRITE, queue=queue)
+alloc = SVMAllocator(ctx, alignment=0, queue=queue)
+alloc = SVMPool(alloc)
 
 a_dev = cl_array.to_device(queue, a, allocator=alloc)
 print("A_DEV", a_dev.data)

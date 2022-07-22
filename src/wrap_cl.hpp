@@ -1697,18 +1697,39 @@ namespace pyopencl
       {}
 
       command_queue_ref(cl_command_queue queue)
-        : m_valid(true), m_queue(queue)
+        : m_valid(queue != nullptr), m_queue(queue)
       {
-        PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (m_queue));
+        // E.g. SVM allocations of size zero use a NULL queue. Tolerate that.
+        if (m_valid)
+          PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (m_queue));
       }
 
-      command_queue_ref(command_queue_ref &&src)
+      command_queue_ref(command_queue_ref &&src) noexcept
         : m_valid(src.m_valid), m_queue(src.m_queue)
       {
         src.m_valid = false;
       }
 
-      command_queue_ref(const command_queue_ref &) = delete;
+      command_queue_ref(const command_queue_ref &src)
+      : m_valid(src.m_valid), m_queue(src.m_queue)
+      {
+        // Note that there isn't anything per se wrong with this
+        // copy constructor, the refcounting is just potentially
+        // expensive.
+        //
+        // All code in current use moves these, it does not copy them,
+        // so this should never get called.
+        //
+        // Unfortunately, we can't delete this copy constructor,
+        // because we would like to return these from functions.
+        // This makes at least gcc require copy constructors, even
+        // if those are never called due to NRVO.
+        std::cerr << "COPYING A COMMAND_QUEUE_REF." << std::endl;
+
+        if (m_valid)
+          PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (m_queue));
+      }
+
       command_queue_ref &operator=(const command_queue_ref &) = delete;
 
       ~command_queue_ref()
@@ -1739,6 +1760,10 @@ namespace pyopencl
 
       void set(cl_command_queue queue)
       {
+        if (!queue)
+          throw error("command_queue_ref.set", CL_INVALID_VALUE,
+              "cannot set to NULL command queue");
+
         if (m_valid)
           PYOPENCL_CALL_GUARDED(clReleaseCommandQueue, (m_queue));
         m_queue = queue;
@@ -3545,7 +3570,7 @@ namespace pyopencl
   class svm_pointer
   {
     public:
-      virtual void *ptr() const = 0;
+      virtual void *svm_ptr() const = 0;
       // may throw size_not_available
       virtual size_t size() const = 0;
   };
@@ -3578,7 +3603,7 @@ namespace pyopencl
         m_size = ward->m_buf.len;
       }
 
-      void *ptr() const
+      void *svm_ptr() const
       {
         return m_ptr;
       }
@@ -3625,6 +3650,22 @@ namespace pyopencl
           throw pyopencl::error("clSVMAlloc", CL_OUT_OF_RESOURCES);
       }
 
+      svm_allocation(std::shared_ptr<context> const &ctx, void *allocation, size_t size,
+           const cl_command_queue queue)
+        : m_context(ctx), m_allocation(allocation), m_size(size)
+      {
+        if (queue)
+        {
+          if (is_queue_out_of_order(queue))
+          {
+            release();
+            throw error("SVMAllocation.__init__", CL_INVALID_VALUE,
+                "supplying an out-of-order queue to SVMAllocation is invalid");
+          }
+          m_queue.set(queue);
+        }
+      }
+
       svm_allocation(const svm_allocation &) = delete;
       svm_allocation &operator=(const svm_allocation &) = delete;
 
@@ -3652,8 +3693,8 @@ namespace pyopencl
         {
           PYOPENCL_PRINT_CALL_TRACE("clSVMFree");
           clSVMFree(m_context->data(), m_allocation);
-          m_allocation = nullptr;
         }
+        m_allocation = nullptr;
       }
 
       void enqueue_release(command_queue &queue, py::object py_wait_for)
@@ -3674,7 +3715,7 @@ namespace pyopencl
         m_allocation = nullptr;
       }
 
-      void *ptr() const
+      void *svm_ptr() const
       {
         return m_allocation;
       }
@@ -3682,11 +3723,6 @@ namespace pyopencl
       size_t size() const
       {
         return m_size;
-      }
-
-      intptr_t ptr_as_int() const
-      {
-        return (intptr_t) m_allocation;
       }
 
       bool operator==(svm_allocation const &other) const
@@ -3701,17 +3737,21 @@ namespace pyopencl
 
       void bind_to_queue(command_queue const &queue)
       {
-        if (is_queue_out_of_order(m_queue.data()))
+        if (is_queue_out_of_order(queue.data()))
           throw error("SVMAllocation.bind_to_queue", CL_INVALID_VALUE,
               "supplying an out-of-order queue to SVMAllocation is invalid");
 
         if (m_queue.is_valid())
         {
-          // make sure synchronization promises stay valid in new queue
-          cl_event evt;
+          if (m_queue.data() != queue.data())
+          {
+            // make sure synchronization promises stay valid in new queue
+            cl_event evt;
 
-          PYOPENCL_CALL_GUARDED(clEnqueueMarker, (m_queue.data(), &evt));
-          PYOPENCL_CALL_GUARDED(clEnqueueWaitForEvents, (queue.data(), 1, &evt));
+            PYOPENCL_CALL_GUARDED(clEnqueueMarker, (m_queue.data(), &evt));
+            PYOPENCL_CALL_GUARDED(clEnqueueMarkerWithWaitList,
+                (queue.data(), 1, &evt, nullptr));
+          }
         }
 
         m_queue.set(queue.data());
@@ -3794,7 +3834,7 @@ namespace pyopencl
         (
           cq.data(),
           is_blocking,
-          dst.ptr(), src.ptr(),
+          dst.svm_ptr(), src.svm_ptr(),
           size,
           PYOPENCL_WAITLIST_ARGS,
           &evt
@@ -3856,7 +3896,7 @@ namespace pyopencl
         clEnqueueSVMMemFill,
         (
           cq.data(),
-          dst.ptr(), pattern_ptr,
+          dst.svm_ptr(), pattern_ptr,
           pattern_len,
           size,
           PYOPENCL_WAITLIST_ARGS,
@@ -3913,7 +3953,7 @@ namespace pyopencl
           cq.data(),
           is_blocking,
           flags,
-          svm.ptr(), size,
+          svm.svm_ptr(), size,
           PYOPENCL_WAITLIST_ARGS,
           &evt
         ));
@@ -3936,7 +3976,7 @@ namespace pyopencl
         clEnqueueSVMUnmap,
         (
           cq.data(),
-          svm.ptr(),
+          svm.svm_ptr(),
           PYOPENCL_WAITLIST_ARGS,
           &evt
         ));
@@ -3964,7 +4004,7 @@ namespace pyopencl
     {
       svm_pointer &svm(py::cast<svm_pointer &>(py_svm));
 
-      svm_pointers.push_back(svm.ptr());
+      svm_pointers.push_back(svm.svm_ptr());
       sizes.push_back(svm.size());
     }
 
@@ -4760,7 +4800,7 @@ namespace pyopencl
       void set_arg_svm(cl_uint arg_index, svm_pointer const &wrp)
       {
         PYOPENCL_CALL_GUARDED(clSetKernelArgSVMPointer,
-            (m_kernel, arg_index, wrp.ptr()));
+            (m_kernel, arg_index, wrp.svm_ptr()));
       }
 #endif
 

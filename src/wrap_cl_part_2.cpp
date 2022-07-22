@@ -298,7 +298,12 @@ void pyopencl_expose_part_2(py::module &m)
   {
     typedef svm_pointer cls;
     py::class_<cls>(m, "SVMPointer", py::dynamic_attr())
-      .def("_ptr_as_int", [](cls &self) { return (intptr_t) self.ptr(); })
+      // For consistency, it may seem appropriate to use int_ptr here, but:
+      // - that would work on both buffers and SVM, and passing a buffer pointer to
+      //   a kernel is going to lead to a bad time.
+      // - I cannot think of code that would exploit the int_ptr commonality.
+      .def_property_readonly("svm_ptr",
+          [](cls &self) { return (intptr_t) self.svm_ptr(); })
       .def("_size", [](cls &self) -> py::object
           {
             try
@@ -336,7 +341,7 @@ void pyopencl_expose_part_2(py::module &m)
           "|std-enqueue-blurb|")
       .def(py::self == py::self)
       .def(py::self != py::self)
-      .def("__hash__", [](cls &self) { return (intptr_t) self.ptr(); })
+      .def("__hash__", [](cls &self) { return (intptr_t) self.svm_ptr(); })
       .DEF_SIMPLE_METHOD(bind_to_queue)
       .DEF_SIMPLE_METHOD(unbind_from_queue)
       ;

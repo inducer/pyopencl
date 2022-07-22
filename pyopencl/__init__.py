@@ -1142,21 +1142,6 @@ def _add_functionality():
             .. automethod:: enqueue_release
             """
 
-    if get_cl_header_version() >= (2, 0):
-        class _ArrayInterfaceSVMAllocation(SVMAllocation):
-            def __init__(self, ctx, size, alignment, flags, _interface=None,
-                    queue=None):
-                """
-                :arg ctx: a :class:`Context`
-                :arg flags: some of :class:`svm_mem_flags`.
-                """
-                super().__init__(ctx, size, alignment, flags, queue)
-
-                # mem_flags.READ_ONLY applies to kernels, not the host
-                read_write = True
-                _interface["data"] = (
-                        int(self._ptr_as_int()), not read_write)
-
     # }}}
 
     # {{{ SVM
@@ -1396,6 +1381,27 @@ def _add_functionality():
 
 
 _add_functionality()
+
+# }}}
+
+
+# {{{ _ArrayInterfaceSVMAllocation
+
+if get_cl_header_version() >= (2, 0):
+    class _ArrayInterfaceSVMAllocation(SVMAllocation):
+        def __init__(self, ctx, size, alignment, flags, *, _interface,
+                queue=None):
+            """
+            :arg ctx: a :class:`Context`
+            :arg flags: some of :class:`svm_mem_flags`.
+            """
+            super().__init__(ctx, size, alignment, flags, queue)
+
+            # mem_flags.READ_ONLY applies to kernels, not the host
+            read_write = True
+            _interface["data"] = (int(self.svm_ptr), not read_write)
+
+            self.__array_interface__ = _interface
 
 # }}}
 
@@ -1965,7 +1971,7 @@ def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
     """
 
     if not isinstance(dest, SVMPointer):
-        dest = SVMPointer(dest)
+        dest = SVM(dest)
 
     return _cl._enqueue_svm_memfill(
             queue, dest, pattern, byte_count=None, wait_for=None)
