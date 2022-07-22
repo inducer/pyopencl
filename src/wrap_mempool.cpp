@@ -307,13 +307,15 @@ namespace
   {
     protected:
       std::shared_ptr<pyopencl::context> m_context;
+      pyopencl::command_queue m_queue;
       cl_uint m_alignment;
       cl_mem_flags m_flags;
 
     public:
       svm_allocator(std::shared_ptr<pyopencl::context> const &ctx,
+          pyopencl::command_queue &queue,
           cl_uint alignment, cl_mem_flags flags=CL_MEM_READ_WRITE)
-        : m_context(ctx), m_alignment(alignment), m_flags(flags)
+        : m_context(ctx), m_queue(queue), m_alignment(alignment), m_flags(flags)
       {
         if (flags & (CL_MEM_USE_HOST_PTR | CL_MEM_COPY_HOST_PTR))
           throw pyopencl::error("Allocator", CL_INVALID_VALUE,
@@ -321,7 +323,7 @@ namespace
       }
 
       svm_allocator(svm_allocator const &src)
-      : m_context(src.m_context), m_alignment(src.m_alignment),
+      : m_context(src.m_context), m_queue(src.m_queue), m_alignment(src.m_alignment),
       m_flags(src.m_flags)
       { }
 
@@ -544,7 +546,11 @@ void pyopencl_expose_mempool(py::module &m)
         m, "_tools_SVMAllocator");
     wrapper
       .def(py::init<svm_allocator &>())
-      .def(py::init<std::shared_ptr<pyopencl::context> const &, cl_uint, cl_mem_flags>())
+      .def(py::init<std::shared_ptr<pyopencl::context> const &, pyopencl::command_queue &, cl_uint, cl_mem_flags>(),
+      py::arg("ctx"),
+      py::arg("queue"),
+      py::arg("alignment")=0,
+      py::arg("flags")=CL_MEM_READ_WRITE)
       ;
   }
 

@@ -71,19 +71,19 @@ from pyopencl._cl import (  # noqa
 
 # {{{ svm allocator
 
-# FIXME: Replace me with C++
-class SVMAllocator:
-    def __init__(self, ctx, flags, *, alignment=0, queue=None):
-        self._context = ctx
-        self._flags = flags
-        self._alignment = alignment
-        self._queue = queue
+# # FIXME: Replace me with C++
+# class SVMAllocator:
+#     def __init__(self, ctx, flags, *, alignment=0, queue=None):
+#         self._context = ctx
+#         self._flags = flags
+#         self._alignment = alignment
+#         self._queue = queue
 
-    def __call__(self, nbytes):
-        import pyopencl as cl
-        return cl.SVMAllocation(
-                self._context, nbytes, self._alignment, self._flags,
-                queue=self._queue)
+#     def __call__(self, nbytes):
+#         import pyopencl as cl
+#         return cl.SVMAllocation(
+#                 self._context, nbytes, self._alignment, self._flags,
+#                 queue=self._queue)
 
 # }}}
 
