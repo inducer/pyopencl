@@ -305,7 +305,7 @@ namespace
   // allocators? (I.e. can I tell whether I am out of memory just from allocations?)
   class svm_allocator
   {
-    protected:
+    public:
       std::shared_ptr<pyopencl::context> m_context;
       pyopencl::command_queue m_queue;
       cl_uint m_alignment;
@@ -366,7 +366,7 @@ namespace
   // {{{ SVM mempool
 
   inline
-  void *svm_allocator_call(svm_allocator &alloc, size_t size)
+  pyopencl::svm_allocation *svm_allocator_call(svm_allocator &alloc, size_t size)
   {
     void * mem;
     int try_count = 0;
@@ -397,7 +397,8 @@ namespace
             "svm allocator succeeded but returned NULL pointer");
     }
 
-    return mem;
+
+    return new pyopencl::svm_allocation(alloc.m_context, size, alloc.m_alignment, alloc.m_flags, &alloc.m_queue);
   }
 
   // }}}
@@ -405,7 +406,7 @@ namespace
 
   // {{{ pooled_buffer
 
-  class svm_pooled_buffer
+  class svm_pooled_allocation
     : public pyopencl::pooled_allocation<pyopencl::memory_pool<svm_allocator> > //,
     // public pyopencl::memory_object_holder
   {
@@ -415,7 +416,7 @@ namespace
         super;
 
     public:
-      svm_pooled_buffer(
+      svm_pooled_allocation(
           std::shared_ptr<super::pool_type> p, super::size_type s)
         : super(p, s)
       { }
@@ -429,11 +430,11 @@ namespace
 
   // {{{{ device_pool_allocate
 
-  svm_pooled_buffer *svm_device_pool_allocate(
+  svm_pooled_allocation *svm_device_pool_allocate(
       std::shared_ptr<pyopencl::memory_pool<svm_allocator> > pool,
       pyopencl::memory_pool<svm_allocator>::size_type sz)
   {
-    return new svm_pooled_buffer(pool, sz);
+    return new svm_pooled_allocation(pool, sz);
   }
 
 
@@ -572,6 +573,14 @@ void pyopencl_expose_mempool(py::module &m)
       ;
 
     expose_memory_pool(wrapper);
+  }
+
+  {
+    typedef svm_pooled_allocation cls;
+    py::class_<cls>(
+          m, "SVMPooledAllocation"/* , py::no_init */)
+      .def("release", &cls::free)
+      ;
   }
 
   {

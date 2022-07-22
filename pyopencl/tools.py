@@ -60,6 +60,7 @@ _register_types()
 
 from pyopencl._cl import (  # noqa
         PooledBuffer as PooledBuffer,
+        SVMPooledAllocation as SVMPooledAllocation,
         _tools_DeferredAllocator as DeferredAllocator,
         _tools_ImmediateAllocator as ImmediateAllocator,
         _tools_SVMAllocator as SVMAllocator,
