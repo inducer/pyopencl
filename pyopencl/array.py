@@ -3077,6 +3077,9 @@ def subset_dot(subset, a, b, dtype=None, queue=None, slice=None):
 
 def _make_minmax_kernel(what):
     def f(a, queue=None, initial=np._NoValue):
+        if isinstance(a, SCALAR_CLASSES):
+            return np.array(a).dtype.type(a)
+
         if len(a) == 0:
             if initial is np._NoValue:
                 raise ValueError(
