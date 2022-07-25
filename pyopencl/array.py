@@ -2942,14 +2942,30 @@ def maximum(a, b, out=None, queue=None):
         return result
 
     # silly, but functional
-    if isinstance(a, Array):
+    a_is_array = isinstance(a, Array)
+    b_is_array = isinstance(b, Array)
+    if a_is_array:
         criterion = a.mul_add(1, b, -1, queue=queue)
-    elif isinstance(b, Array):
+    elif b_is_array:
         criterion = b.mul_add(-1, a, 1, queue=queue)
     else:
         raise AssertionError
 
-    return if_positive(criterion, a, b, queue=queue, out=out)
+    # {{{ propagate NaNs
+
+    if a_is_array:
+        a_with_nan = a.mul_add(1, b, 0, queue=queue)
+    else:
+        a_with_nan = b.mul_add(0, a, 1, queue=queue)
+
+    if b_is_array:
+        b_with_nan = b.mul_add(1, a, 0, queue=queue)
+    else:
+        b_with_nan = a.mul_add(0, b, 1, queue=queue)
+
+    # }}}
+
+    return if_positive(criterion, a_with_nan, b_with_nan, queue=queue, out=out)
 
 
 def minimum(a, b, out=None, queue=None):
@@ -2963,14 +2979,30 @@ def minimum(a, b, out=None, queue=None):
         return result
 
     # silly, but functional
-    if isinstance(a, Array):
+    a_is_array = isinstance(a, Array)
+    b_is_array = isinstance(b, Array)
+    if a_is_array:
         criterion = a.mul_add(1, b, -1, queue=queue)
-    elif isinstance(b, Array):
+    elif b_is_array:
         criterion = b.mul_add(-1, a, 1, queue=queue)
     else:
         raise AssertionError
 
-    return if_positive(criterion, b, a, queue=queue, out=out)
+    # {{{ propagate NaNs
+
+    if a_is_array:
+        a_with_nan = a.mul_add(1, b, 0, queue=queue)
+    else:
+        a_with_nan = b.mul_add(0, a, 1, queue=queue)
+
+    if b_is_array:
+        b_with_nan = b.mul_add(1, a, 0, queue=queue)
+    else:
+        b_with_nan = a.mul_add(0, b, 1, queue=queue)
+
+    # }}}
+
+    return if_positive(criterion, b_with_nan, a_with_nan, queue=queue, out=out)
 
 # }}}
 
