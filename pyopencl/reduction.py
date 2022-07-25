@@ -649,7 +649,7 @@ def get_minmax_neutral(what, dtype):
 @context_dependent_memoize
 def get_minmax_kernel(ctx, what, dtype):
     if dtype.kind == "f":
-        reduce_expr = "f%s(a,b)" % what
+        reduce_expr = "f%s_nanprop(a,b)" % what
     elif dtype.kind in "iu":
         reduce_expr = "%s(a,b)" % what
     else:
@@ -660,7 +660,11 @@ def get_minmax_kernel(ctx, what, dtype):
             reduce_expr=f"{reduce_expr}",
             arguments="const {tp} *in".format(
                 tp=dtype_to_ctype(dtype),
-                ), preamble="#define MY_INFINITY (1./0)")
+                ), preamble="""
+                #define MY_INFINITY (1./0)
+                #define fmin_nanprop(a, b) (isnan(a) || isnan(b)) ? a+b : fmin(a, b)
+                #define fmax_nanprop(a, b) (isnan(a) || isnan(b)) ? a+b : fmax(a, b)
+                """)
 
 
 @context_dependent_memoize
