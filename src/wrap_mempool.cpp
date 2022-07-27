@@ -1,4 +1,4 @@
-// Warp memory pool
+// Wrap memory pool
 //
 // Copyright (C) 2009 Andreas Kloeckner
 //
@@ -349,7 +349,7 @@ namespace
         : m_context(ctx), m_alignment(alignment), m_flags(flags)
       {
         if (queue)
-          m_queue.set(m_queue.data());
+          m_queue.set(queue->data());
       }
 
       svm_allocator(svm_allocator const &src)
@@ -678,6 +678,12 @@ void pyopencl_expose_mempool(py::module &m)
           )
       .def("__call__", svm_allocator_call)
       ;
+  }
+
+  {
+    typedef svm_held_pointer cls;
+    py::class_<cls> wrapper(
+        m, "_tools_SVMHeldPointer");
   }
 #endif
 }

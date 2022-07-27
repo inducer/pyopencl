@@ -12,7 +12,7 @@ b = np.random.rand(n).astype(np.float32)
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 
-alloc = SVMAllocator(ctx, cl.svm_mem_flags.READ_WRITE, queue=queue)
+alloc = SVMAllocator(ctx, 0, cl.svm_mem_flags.READ_WRITE, queue)
 
 a_dev = cl_array.to_device(queue, a, allocator=alloc)
 print("A_DEV", a_dev.data)
