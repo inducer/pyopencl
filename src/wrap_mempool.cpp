@@ -1,4 +1,4 @@
-// Warp memory pool
+// Wrap memory pool
 //
 // Copyright (C) 2009 Andreas Kloeckner
 //
