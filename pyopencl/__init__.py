@@ -1134,7 +1134,8 @@ def _add_functionality():
     # {{{ SVMAllocation
 
     if get_cl_header_version() >= (2, 0):
-        SVMAllocation.__doc__ = """An object whose lifetime is tied to an allocation of shared virtual memory.
+        SVMAllocation.__doc__ = """An object whose lifetime is tied to an
+            allocation of shared virtual memory.
 
             .. note::
 
