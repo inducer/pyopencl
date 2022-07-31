@@ -43,7 +43,7 @@ if has_coarse_grain_buffer_svm(dev):
     queue.finish()
 
     with svm_ary.map_ro(queue) as ary:
-        assert(np.array_equal(orig_ary*2, ary))
+        assert np.array_equal(orig_ary*2, ary)
 
     print(" done.")
 
