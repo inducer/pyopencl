@@ -1847,12 +1847,31 @@ def test_branch_operations_on_pure_scalars():
     cl_array.maximum,
     cl_array.minimum,
 ])
-def test_branch_operations_on_nans(ctx_factory, op):
+@pytest.mark.parametrize("special_a", [
+    np.nan,
+    np.inf,
+    -np.inf,
+])
+@pytest.mark.parametrize("special_b", [
+    np.nan,
+    np.inf,
+    -np.inf,
+    None
+])
+def test_branch_operations_on_nans(ctx_factory, op, special_a, special_b):
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
 
-    x_np = np.array([np.nan, 1., np.nan, 2.], dtype=np.float64)
-    y_np = np.array([np.nan, np.nan, 1., 3.], dtype=np.float64)
+    def sb_or(x):
+        if special_b is None:
+            return x
+        else:
+            return special_b
+
+    x_np = np.array([special_a, sb_or(1.), special_a, sb_or(2.), sb_or(3.)],
+            dtype=np.float64)
+    y_np = np.array([special_a, special_a, sb_or(1.), sb_or(3.), sb_or(2.)],
+            dtype=np.float64)
 
     x_cl = cl_array.to_device(cq, x_np)
     y_cl = cl_array.to_device(cq, y_np)

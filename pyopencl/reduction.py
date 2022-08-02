@@ -628,6 +628,13 @@ def get_subset_dot_kernel(ctx, dtype_out, dtype_subset, dtype_a=None, dtype_b=No
                     }))
 
 
+_MINMAX_PREAMBLE = """
+#define MY_INFINITY (1./0)
+#define fmin_nanprop(a, b) (isnan(a) || isnan(b)) ? a+b : fmin(a, b)
+#define fmax_nanprop(a, b) (isnan(a) || isnan(b)) ? a+b : fmax(a, b)
+"""
+
+
 def get_minmax_neutral(what, dtype):
     dtype = np.dtype(dtype)
     if issubclass(dtype.type, np.inexact):
@@ -660,11 +667,7 @@ def get_minmax_kernel(ctx, what, dtype):
             reduce_expr=f"{reduce_expr}",
             arguments="const {tp} *in".format(
                 tp=dtype_to_ctype(dtype),
-                ), preamble="""
-                #define MY_INFINITY (1./0)
-                #define fmin_nanprop(a, b) (isnan(a) || isnan(b)) ? a+b : fmin(a, b)
-                #define fmax_nanprop(a, b) (isnan(a) || isnan(b)) ? a+b : fmax(a, b)
-                """)
+                ), preamble=_MINMAX_PREAMBLE)
 
 
 @context_dependent_memoize
@@ -686,7 +689,7 @@ def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
                     "tp": dtype_to_ctype(dtype),
                     "tp_lut": dtype_to_ctype(dtype_subset),
                     }),
-            preamble="#define MY_INFINITY (1./0)")
+            preamble=_MINMAX_PREAMBLE)
 
 # }}}
 
