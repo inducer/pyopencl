@@ -34,6 +34,7 @@ from functools import reduce
 
 import numpy as np
 import pyopencl.elementwise as elementwise
+
 import pyopencl as cl
 from pyopencl.compyte.array import (
         as_strided as _as_strided,
@@ -2930,10 +2931,28 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
 
     return out
 
+# }}}
+
+
+# {{{ minimum/maximum
+
+@elwise_kernel_runner
+def _minimum_maximum_backend(out, a, b, minmax):
+    from pyopencl.elementwise import get_minmaximum_kernel
+    return get_minmaximum_kernel(out.context, minmax,
+            out.dtype,
+            a.dtype if isinstance(a, Array) else np.dtype(type(a)),
+            b.dtype if isinstance(b, Array) else np.dtype(type(b)),
+            elementwise.get_argument_kind(a),
+            elementwise.get_argument_kind(b))
+
 
 def maximum(a, b, out=None, queue=None):
     """Return the elementwise maximum of *a* and *b*."""
-    if isinstance(a, SCALAR_CLASSES) and isinstance(b, SCALAR_CLASSES):
+
+    a_is_scalar = np.isscalar(a)
+    b_is_scalar = np.isscalar(b)
+    if a_is_scalar and b_is_scalar:
         result = np.maximum(a, b)
         if out is not None:
             out[...] = result
@@ -2941,36 +2960,25 @@ def maximum(a, b, out=None, queue=None):
 
         return result
 
-    # silly, but functional
-    a_is_array = isinstance(a, Array)
-    b_is_array = isinstance(b, Array)
-    if a_is_array:
-        criterion = a.mul_add(1, b, -1, queue=queue)
-    elif b_is_array:
-        criterion = b.mul_add(-1, a, 1, queue=queue)
-    else:
-        raise AssertionError
+    queue = queue or a.queue or b.queue
 
-    # {{{ propagate NaNs
+    if out is None:
+        out_dtype = _get_common_dtype(a, b, queue)
+        if not a_is_scalar:
+            out = a._new_like_me(out_dtype, queue)
+        elif not b_is_scalar:
+            out = b._new_like_me(out_dtype, queue)
 
-    if a_is_array:
-        a_with_nan = a.mul_add(1, b, 0, queue=queue)
-    else:
-        a_with_nan = b.mul_add(0, a, 1, queue=queue)
+    out.add_event(_minimum_maximum_backend(out, a, b, queue=queue, minmax="max"))
 
-    if b_is_array:
-        b_with_nan = b.mul_add(1, a, 0, queue=queue)
-    else:
-        b_with_nan = a.mul_add(0, b, 1, queue=queue)
-
-    # }}}
-
-    return if_positive(criterion, a_with_nan, b_with_nan, queue=queue, out=out)
+    return out
 
 
 def minimum(a, b, out=None, queue=None):
     """Return the elementwise minimum of *a* and *b*."""
-    if isinstance(a, SCALAR_CLASSES) and isinstance(b, SCALAR_CLASSES):
+    a_is_scalar = np.isscalar(a)
+    b_is_scalar = np.isscalar(b)
+    if a_is_scalar and b_is_scalar:
         result = np.minimum(a, b)
         if out is not None:
             out[...] = result
@@ -2978,31 +2986,18 @@ def minimum(a, b, out=None, queue=None):
 
         return result
 
-    # silly, but functional
-    a_is_array = isinstance(a, Array)
-    b_is_array = isinstance(b, Array)
-    if a_is_array:
-        criterion = a.mul_add(1, b, -1, queue=queue)
-    elif b_is_array:
-        criterion = b.mul_add(-1, a, 1, queue=queue)
-    else:
-        raise AssertionError
+    queue = queue or a.queue or b.queue
 
-    # {{{ propagate NaNs
+    if out is None:
+        out_dtype = _get_common_dtype(a, b, queue)
+        if not a_is_scalar:
+            out = a._new_like_me(out_dtype, queue)
+        elif not b_is_scalar:
+            out = b._new_like_me(out_dtype, queue)
 
-    if a_is_array:
-        a_with_nan = a.mul_add(1, b, 0, queue=queue)
-    else:
-        a_with_nan = b.mul_add(0, a, 1, queue=queue)
+    out.add_event(_minimum_maximum_backend(out,  a, b, queue=queue, minmax="min"))
 
-    if b_is_array:
-        b_with_nan = b.mul_add(1, a, 0, queue=queue)
-    else:
-        b_with_nan = a.mul_add(0, b, 1, queue=queue)
-
-    # }}}
-
-    return if_positive(criterion, b_with_nan, a_with_nan, queue=queue, out=out)
+    return out
 
 # }}}
 

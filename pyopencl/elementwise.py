@@ -27,6 +27,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
+from typing import Any, Tuple
+import enum
 from pyopencl.tools import context_dependent_memoize
 import numpy as np
 import pyopencl as cl
@@ -352,6 +354,38 @@ class ElementwiseTemplate(KernelTemplateBase):
                 + "\n"
                 + renderer(self.preamble + "\n" + more_preamble)),
             auto_preamble=False)
+
+# }}}
+
+
+# {{{ argument kinds
+
+class ArgumentKind(enum.Enum):
+    ARRAY = enum.auto()
+    DEV_SCALAR = enum.auto()
+    SCALAR = enum.auto()
+
+
+def get_argument_kind(v: Any) -> ArgumentKind:
+    from pyopencl.array import Array
+    if isinstance(v, Array):
+        if v.shape == ():
+            return ArgumentKind.DEV_SCALAR
+        else:
+            return ArgumentKind.ARRAY
+    else:
+        return ArgumentKind.SCALAR
+
+
+def get_decl_and_access_for_kind(name: str, kind: ArgumentKind) -> Tuple[str, str]:
+    if kind == ArgumentKind.ARRAY:
+        return f"*{name}", f"{name}[i]"
+    elif kind == ArgumentKind.SCALAR:
+        return f"{name}", name
+    elif kind == ArgumentKind.DEV_SCALAR:
+        return f"*{name}", f"{name}[0]"
+    else:
+        raise AssertionError()
 
 # }}}
 
@@ -951,6 +985,32 @@ def get_ldexp_kernel(context, out_dtype=np.float32, sig_dtype=np.float32,
 
 
 @context_dependent_memoize
+def get_minmaximum_kernel(context, minmax, dtype_z, dtype_x, dtype_y,
+        kind_x: ArgumentKind, kind_y: ArgumentKind):
+    if dtype_z.kind == "f":
+        reduce_func = f"f{minmax}_nanprop"
+    elif dtype_z.kind in "iu":
+        reduce_func = minmax
+    else:
+        raise TypeError("unsupported dtype specified")
+
+    tp_x = dtype_to_ctype(dtype_x)
+    tp_y = dtype_to_ctype(dtype_y)
+    tp_z = dtype_to_ctype(dtype_z)
+    decl_x, acc_x = get_decl_and_access_for_kind("x", kind_x)
+    decl_y, acc_y = get_decl_and_access_for_kind("y", kind_y)
+
+    return get_elwise_kernel(context,
+            f"{tp_z} *z, {tp_x} {decl_x}, {tp_y} {decl_y}",
+            f"z[i] = {reduce_func}({acc_x}, {acc_y})",
+            name=f"{minmax}imum",
+            preamble="""
+                #define fmin_nanprop(a, b) (isnan(a) || isnan(b)) ? a+b : fmin(a, b)
+                #define fmax_nanprop(a, b) (isnan(a) || isnan(b)) ? a+b : fmax(a, b)
+                """)
+
+
+@context_dependent_memoize
 def get_bessel_kernel(context, which_func, out_dtype=np.float64,
                       order_dtype=np.int32, x_dtype=np.float64):
     if x_dtype.kind != "c":
@@ -1070,4 +1130,4 @@ def get_if_positive_kernel(
 
 # }}}
 
-# vim: fdm=marker:filetype=pyopencl
+# vim: fdm=marker
