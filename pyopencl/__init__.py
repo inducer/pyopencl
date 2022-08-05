@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 from sys import intern
 from warnings import warn
-from typing import Union, Any
+from typing import Union, Any, Optional, Sequence
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
@@ -1820,8 +1820,10 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
 # {{{ enqueue_fill
 
-def enqueue_fill(queue: CommandQueue, dest: Union[MemoryObjectHolder, SVMPointer],
-        pattern: Any, size: int, *, offset: int = 0, wait_for=None) -> Event:
+def enqueue_fill(queue: CommandQueue,
+        dest: "Union[MemoryObjectHolder, SVMPointer]",
+        pattern: Any, size: int, *, offset: int = 0,
+        wait_for: Optional[Sequence[Event]] = None) -> Event:
     """
     .. versionadded:: 2022.2
     """
