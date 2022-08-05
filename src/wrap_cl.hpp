@@ -4647,16 +4647,18 @@ namespace pyopencl
   {
     private:
       cl_kernel m_kernel;
+      bool m_set_arg_prefer_svm;
 
     public:
       kernel(cl_kernel knl, bool retain)
-        : m_kernel(knl)
+        : m_kernel(knl), m_set_arg_prefer_svm(false)
       {
         if (retain)
           PYOPENCL_CALL_GUARDED(clRetainKernel, (knl));
       }
 
       kernel(program const &prg, std::string const &kernel_name)
+        : m_set_arg_prefer_svm(false)
       {
         cl_int status_code;
 
@@ -4812,21 +4814,47 @@ namespace pyopencl
           return;
         }
 
-        try
+        // It turns out that a taken 'catch' has a relatively high cost, so
+        // in deciding which of "mem object" and "svm" to try first, we use
+        // whatever we were given last time around.
+        if (m_set_arg_prefer_svm)
         {
-          set_arg_mem(arg_index, arg.cast<memory_object_holder &>());
-          return;
+#if PYOPENCL_CL_VERSION >= 0x2000
+          try
+          {
+            set_arg_svm(arg_index, arg.cast<svm_pointer const &>());
+            return;
+          }
+          catch (py::cast_error &) { }
+#endif
+
+          try
+          {
+            set_arg_mem(arg_index, arg.cast<memory_object_holder &>());
+            m_set_arg_prefer_svm = false;
+            return;
+          }
+          catch (py::cast_error &) { }
         }
-        catch (py::cast_error &) { }
+        else
+        {
+          try
+          {
+            set_arg_mem(arg_index, arg.cast<memory_object_holder &>());
+            return;
+          }
+          catch (py::cast_error &) { }
 
 #if PYOPENCL_CL_VERSION >= 0x2000
-        try
-        {
-          set_arg_svm(arg_index, arg.cast<svm_pointer const &>());
-          return;
-        }
-        catch (py::cast_error &) { }
+          try
+          {
+            set_arg_svm(arg_index, arg.cast<svm_pointer const &>());
+            m_set_arg_prefer_svm = true;
+            return;
+          }
+          catch (py::cast_error &) { }
 #endif
+        }
 
         try
         {
