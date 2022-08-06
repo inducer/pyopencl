@@ -757,8 +757,6 @@ def test_bitwise(ctx_factory):
     for a_dtype, b_dtype in product(dtypes, dtypes):
         ary_len = 16
 
-        np.random.seed(10)
-
         int32_min = np.iinfo(np.int32).min
         int32_max = np.iinfo(np.int32).max
 
@@ -974,7 +972,9 @@ def test_stride_preservation(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    a = np.random.rand(3, 3)
+    rng = np.random.default_rng(seed=42)
+    a = rng.random(size=(3, 3))
+
     at = a.T
     print(at.flags.f_contiguous, at.flags.c_contiguous)
     at_gpu = cl_array.to_device(queue, at)
@@ -989,10 +989,11 @@ def test_stride_preservation(ctx_factory):
 def test_nan_arithmetic(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+    rng = np.random.default_rng(seed=42)
 
     def make_nan_contaminated_vector(size):
-        shape = (size,)
-        a = np.random.randn(*shape).astype(np.float32)
+        a = rng.standard_normal(size=(size,), dtype=np.float32)
+
         from random import randrange
         for _i in range(size // 10):
             a[randrange(0, size)] = float("nan")
@@ -1468,9 +1469,10 @@ def test_newaxis(ctx_factory):
 def test_squeeze(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+    rng = np.random.default_rng(seed=42)
 
     shape = (40, 2, 5, 100)
-    a_cpu = np.random.random(size=shape)
+    a_cpu = rng.random(size=shape)
     a_gpu = cl_array.to_device(queue, a_cpu)
 
     # Slice with length 1 on dimensions 0 and 1
@@ -1532,11 +1534,12 @@ def test_fancy_indexing(ctx_factory):
         pytest.xfail("numpypy: multi value setting is not supported")
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+    rng = np.random.default_rng(seed=42)
 
     n = 2 ** 20 + 2**18 + 22
     numpy_dest = np.zeros(n, dtype=np.int32)
     numpy_idx = np.arange(n, dtype=np.int32)
-    np.random.shuffle(numpy_idx)
+    rng.shuffle(numpy_idx)
     numpy_src = 20000+np.arange(n, dtype=np.int32)
 
     cl_dest = cl_array.to_device(queue, numpy_dest)
@@ -1598,7 +1601,8 @@ def test_get_async(ctx_factory):
         pytest.xfail("the async get test fails on POCL + Nvidia,"
                 "at least the K40, as of pocl 1.6, 2021-01-20")
 
-    a = np.random.rand(10**6).astype(np.dtype("float32"))
+    rng = np.random.default_rng(seed=42)
+    a = rng.random(10**6, dtype=np.float32)
     a_gpu = cl_array.to_device(queue, a)
     b = a + a**5 + 1
     b_gpu = a_gpu + a_gpu**5 + 1
@@ -1631,7 +1635,9 @@ def test_outoforderqueue_get(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype("float32"))
+
+    rng = np.random.default_rng(seed=42)
+    a = rng.random(10**6, dtype=np.float32)
     a_gpu = cl_array.to_device(queue, a)
     b_gpu = a_gpu + a_gpu**5 + 1
     b1 = b_gpu.get()  # testing that this waits for events
@@ -1650,7 +1656,9 @@ def test_outoforderqueue_copy(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype("float32"))
+
+    rng = np.random.default_rng(seed=42)
+    a = rng.random(10**6, dtype=np.float32)
     a_gpu = cl_array.to_device(queue, a)
     c_gpu = a_gpu**2 - 7
     b_gpu = c_gpu.copy()  # testing that this waits for and creates events
@@ -1673,8 +1681,11 @@ def test_outoforderqueue_indexing(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype("float32"))
-    i = (8e5 + 1e5 * np.random.rand(10**5)).astype(np.dtype("int32"))
+
+    rng = np.random.default_rng(seed=42)
+    a = rng.random(10**6, dtype=np.float32)
+    i = (8e5 + 1e5 * rng.random(10**5)).astype(np.int32)
+
     a_gpu = cl_array.to_device(queue, a)
     i_gpu = cl_array.to_device(queue, i)
     c_gpu = (a_gpu**2)[i_gpu - 10000]
@@ -1701,7 +1712,9 @@ def test_outoforderqueue_reductions(ctx_factory):
     except Exception:
         pytest.skip("out-of-order queue not available")
     # 0/1 values to avoid accumulated rounding error
-    a = (np.random.rand(10**6) > 0.5).astype(np.dtype("float32"))
+    rng = np.random.default_rng(seed=42)
+    a = (rng.random(10**6) > 0.5).astype(np.float32)
+
     a[800000] = 10  # all<5 looks true until near the end
     a_gpu = cl_array.to_device(queue, a)
     b1 = cl_array.sum(a_gpu).get()
@@ -1792,8 +1805,7 @@ def test_stack(ctx_factory, input_dims, order):
     shape = (2, 2, 2)[:input_dims]
     axis = -1 if order == "F" else 0
 
-    from numpy.random import default_rng
-    rng = default_rng()
+    rng = np.random.default_rng(seed=42)
     x_in = rng.random(size=shape)
     y_in = rng.random(size=shape)
     x_in = x_in if order == "C" else np.asfortranarray(x_in)
@@ -1827,9 +1839,10 @@ def test_assign_different_strides(ctx_factory):
 # {{{ test_branch_operations_on_pure_scalars
 
 def test_branch_operations_on_pure_scalars():
-    x = np.random.rand()
-    y = np.random.rand()
-    cond = np.random.choice([False, True])
+    rng = np.random.default_rng(seed=42)
+    x = rng.random()
+    y = rng.random()
+    cond = rng.choice([False, True])
 
     np.testing.assert_allclose(np.maximum(x, y),
                                cl_array.maximum(x, y))
@@ -1892,7 +1905,8 @@ def test_slice_copy(ctx_factory):
     cl_ctx = ctx_factory()
     queue = cl.CommandQueue(cl_ctx)
 
-    x = cl.array.to_device(queue, np.random.rand(96, 27))
+    rng = np.random.default_rng(seed=42)
+    x = cl.array.to_device(queue, rng.random(size=(96, 27)))
     y = x[::8, ::3]
     with pytest.raises(RuntimeError):
         y.copy()
@@ -1907,7 +1921,8 @@ def test_ravel(ctx_factory, order):
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
 
-    x = np.random.randn(10, 4)
+    rng = np.random.default_rng(seed=42)
+    x = rng.standard_normal(size=(10, 4))
 
     if order == "F":
         x = np.asfortranarray(x)
@@ -1951,12 +1966,11 @@ def test_arithmetic_on_non_scalars(ctx_factory):
 @pytest.mark.parametrize("which", ("add", "sub", "mul", "truediv"))
 def test_arithmetic_with_device_scalars(ctx_factory, which):
     import operator
-    from numpy.random import default_rng
 
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
 
-    rng = default_rng()
+    rng = np.random.default_rng(seed=42)
     ndim = rng.integers(1, 5)
 
     shape = tuple(rng.integers(2, 7) for i in range(ndim))
@@ -1982,7 +1996,7 @@ def test_if_positive_with_scalars(ctx_factory, then_type, else_type):
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
 
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(seed=42)
     shape = (512,)
 
     criterion_np = rng.random(shape)

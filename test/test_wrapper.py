@@ -353,7 +353,8 @@ def test_that_python_args_fail(ctx_factory):
         { a[get_global_id(0)] *= (b+c); }
         """).build()
 
-    a = np.random.rand(50000)
+    rng = np.random.default_rng(seed=42)
+    a = rng.random(50000)
     queue = cl.CommandQueue(context)
     mf = cl.mem_flags
     a_buf = cl.Buffer(context, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=a)
@@ -413,7 +414,9 @@ def test_image_2d(ctx_factory):
         """).build()
 
     num_channels = 1
-    a = np.random.rand(1024, 512, num_channels).astype(np.float32)
+
+    rng = np.random.default_rng(seed=42)
+    a = rng.random((1024, 512, num_channels), dtype=np.float32)
     if num_channels == 1:
         a = a[:, :, 0]
 
@@ -489,7 +492,9 @@ def test_image_3d(ctx_factory):
 
     num_channels = 2
     shape = (3, 4, 2)
-    a = np.random.random(shape + (num_channels,)).astype(np.float32)
+
+    rng = np.random.default_rng(seed=42)
+    a = rng.random(size=shape + (num_channels,), dtype=np.float32)
 
     queue = cl.CommandQueue(context)
     try:
@@ -532,7 +537,8 @@ def test_copy_buffer(ctx_factory):
     queue = cl.CommandQueue(context)
     mf = cl.mem_flags
 
-    a = np.random.rand(50000).astype(np.float32)
+    rng = np.random.default_rng(seed=42)
+    a = rng.random(50000, dtype=np.float32)
     b = np.empty_like(a)
 
     buf1 = cl.Buffer(context, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a)
@@ -811,7 +817,8 @@ def test_buffer_get_host_array(ctx_factory):
     ctx = ctx_factory()
     mf = cl.mem_flags
 
-    host_buf = np.random.rand(25).astype(np.float32)
+    rng = np.random.default_rng(seed=42)
+    host_buf = rng.random(25, dtype=np.float32)
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.USE_HOST_PTR, hostbuf=host_buf)
     host_buf2 = buf.get_host_array(25, np.float32)
     assert (host_buf == host_buf2).all()
@@ -827,7 +834,7 @@ def test_buffer_get_host_array(ctx_factory):
     except cl.LogicError:
         pass
 
-    host_buf = np.random.rand(25).astype(np.float32)
+    host_buf = rng.random(25, dtype=np.float32)
     buf = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=host_buf)
     try:
         host_buf2 = buf.get_host_array(25, np.float32)
@@ -867,8 +874,9 @@ def test_event_set_callback(ctx_factory):
     if ctx._get_cl_version() < (1, 1):
         pytest.skip("OpenCL 1.1 or newer required for set_callback")
 
-    a_np = np.random.rand(50000).astype(np.float32)
-    b_np = np.random.rand(50000).astype(np.float32)
+    rng = np.random.default_rng(seed=42)
+    a_np = rng.random(50000, dtype=np.float32)
+    b_np = rng.random(50000, dtype=np.float32)
 
     got_called = []
 
@@ -926,7 +934,9 @@ def test_global_offset(ctx_factory):
         """).build()
 
     n = 50
-    a = np.random.rand(n).astype(np.float32)
+
+    rng = np.random.default_rng(seed=42)
+    a = rng.random(n, dtype=np.float32)
 
     queue = cl.CommandQueue(context)
     mf = cl.mem_flags
@@ -954,7 +964,9 @@ def test_sub_buffers(ctx_factory):
     queue = cl.CommandQueue(ctx)
 
     n = 30000
-    a = (np.random.rand(n) * 100).astype(np.uint8)
+
+    rng = np.random.default_rng(seed=42)
+    a = (rng.random(n) * 100).astype(np.uint8)
 
     mf = cl.mem_flags
     a_buf = cl.Buffer(ctx, mf.READ_WRITE | mf.COPY_HOST_PTR, hostbuf=a)

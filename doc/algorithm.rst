@@ -241,7 +241,8 @@ Here's a usage example::
     knl = InclusiveScanKernel(context, np.int32, "a+b")
 
     n = 2**20-2**18+5
-    host_data = np.random.randint(0, 10, n).astype(np.int32)
+    rng = np.random.default_rng(seed=42)
+    host_data = rng.integers(0, 10, size=n, dtype=np.int32)
     dev_data = cl_array.to_device(queue, host_data)
 
     knl(dev_data)
