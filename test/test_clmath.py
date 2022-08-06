@@ -334,10 +334,10 @@ def test_complex_bessel(ctx_factory, ref_src):
     v = 40
     n = 10**5
 
-    np.random.seed(13)
+    rng = np.random.default_rng(seed=13)
     z = (
         np.logspace(-5, 2, n)
-        * np.exp(1j * 2 * np.pi * np.random.rand(n)))
+        * np.exp(1j * 2 * np.pi * rng.random(n)))
 
     if ref_src == "pyfmmlib":
         pyfmmlib = pytest.importorskip("pyfmmlib")
@@ -404,11 +404,11 @@ def test_hankel_01_complex(ctx_factory, ref_src):
         from pytest import skip
         skip("no double precision support--cannot test complex bessel function")
 
+    rng = np.random.default_rng(seed=11)
     n = 10**6
-    np.random.seed(11)
     z = (
         np.logspace(-5, 2, n)
-        * np.exp(1j * 2 * np.pi * np.random.rand(n)))
+        * np.exp(1j * 2 * np.pi * rng.random(n)))
 
     def get_err(check, ref):
         return np.max(np.abs(check-ref)) / np.max(np.abs(ref))
@@ -454,7 +454,9 @@ def test_outoforderqueue_clmath(ctx_factory):
                properties=cl.command_queue_properties.OUT_OF_ORDER_EXEC_MODE_ENABLE)
     except Exception:
         pytest.skip("out-of-order queue not available")
-    a = np.random.rand(10**6).astype(np.dtype("float32"))
+
+    rng = np.random.default_rng(seed=42)
+    a = rng.random(10**6, dtype=np.float32)
     a_gpu = cl_array.to_device(queue, a)
     # testing that clmath functions wait for and create events
     b_gpu = clmath.fabs(clmath.sin(a_gpu * 5))

@@ -571,8 +571,9 @@ def test_scan(ctx_factory, dtype, scan_cls):
 
     knl = scan_cls(context, dtype, "a+b", "0")
 
+    rng = np.random.default_rng(seed=42)
     for n in scan_test_counts:
-        host_data = np.random.randint(0, 10, n).astype(dtype)
+        host_data = rng.integers(0, 10, n, dtype=dtype)
         dev_data = cl_array.to_device(queue, host_data)
 
         # /!\ fails on Nv GT2?? for some drivers
@@ -617,7 +618,8 @@ def test_scan_with_vectorargs_with_offsets(ctx_factory, scan_cls):
 
     n = 20
 
-    host_data = np.random.randint(0, 10, n).astype(float)
+    rng = np.random.default_rng(seed=42)
+    host_data = rng.integers(0, 10, n).astype(np.float64)
     dev_data = cl.array.to_device(queue, host_data)
     segment_data = np.zeros(n, dtype=int)
     dev_segment_data = cl.array.to_device(queue, segment_data)

@@ -73,15 +73,8 @@ def test_enqueue_copy_rect_2d(ctx_factory, honor_skip=True):
     buf_out_shp = 300, 400  # shape of 2nd device buffer
 
     # Create host array of random values.
-    h_ary_in = \
-        np.array(
-            np.random.randint(
-                0,
-                256,
-                np.product(ary_in_shp)
-            ),
-            dtype=np.uint8
-        ).reshape(ary_in_shp)
+    rng = np.random.default_rng(seed=42)
+    h_ary_in = rng.integers(0, 256, ary_in_shp, dtype=np.uint8)
 
     # Create device buffers
     d_in_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY, size=np.product(buf_in_shp))
@@ -169,15 +162,8 @@ def test_enqueue_copy_rect_3d(ctx_factory, honor_skip=True):
     buf_out_shp = 300, 400, 40  # shape of 2nd device buffer
 
     # Create host array of random values.
-    h_ary_in = \
-        np.array(
-            np.random.randint(
-                0,
-                256,
-                np.product(ary_in_shp)
-            ),
-            dtype=np.uint8
-        ).reshape(ary_in_shp)
+    rng = np.random.default_rng(seed=42)
+    h_ary_in = rng.integers(0, 256, ary_in_shp, dtype=np.uint8)
 
     # Create device buffers
     d_in_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY, size=np.product(buf_in_shp))
