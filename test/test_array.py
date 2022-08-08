@@ -2180,6 +2180,23 @@ def test_dtype_conversions(ctx_factory):
 # }}}
 
 
+# {{{ test_svm_mem_pool_with_arrays
+
+def test_svm_mem_pool_with_arrays(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+    mem_pool = cl_tools.SVMPool(cl_tools.SVMAllocator(context, alignment=0,
+                                                      queue=queue))
+
+    a_dev = cl_array.arange(queue, 2000, dtype=np.float32, allocator=mem_pool)
+    b_dev = cl_array.to_device(queue, np.arange(2000), allocator=mem_pool) + 4000
+
+    assert a_dev.allocator is mem_pool
+    assert b_dev.allocator is mem_pool
+
+# }}}
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])

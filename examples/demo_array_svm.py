@@ -2,9 +2,8 @@ import pyopencl as cl
 import pyopencl.array as cl_array
 from pyopencl.tools import SVMAllocator, SVMPool
 import numpy as np
-import numpy.linalg as la
 
-n = 500000
+n = 50000
 a = np.random.rand(n).astype(np.float32)
 b = np.random.rand(n).astype(np.float32)
 
@@ -16,10 +15,8 @@ alloc = SVMAllocator(ctx, alignment=0, queue=queue)
 alloc = SVMPool(alloc)
 
 a_dev = cl_array.to_device(queue, a, allocator=alloc)
-print("A_DEV", a_dev.data)
 b_dev = cl_array.to_device(queue, b, allocator=alloc)
 dest_dev = cl_array.empty_like(a_dev)
-print("DEST", dest_dev.data)
 
 prg = cl.Program(ctx, """
     __kernel void sum(__global const float *a,
@@ -30,18 +27,7 @@ prg = cl.Program(ctx, """
     }
     """).build()
 
-knl = prg.sum  # Use this Kernel object for repeated calls
+knl = prg.sum
 knl(queue, a.shape, None, a_dev.data, b_dev.data, dest_dev.data)
 
-# PROBLEM: numpy frees the temporary out of (a_dev+b_dev) before
-# we're done with it
-diff = dest_dev - (a_dev+b_dev)
-
-if 0:
-    diff = diff.get()
-    np.set_printoptions(linewidth=400)
-    print(dest_dev)
-    print((a_dev+b_dev).get())
-    print(diff)
-    print(la.norm(diff))
-    print("A_DEV", a_dev.data.mem.__array_interface__)
+np.testing.assert_allclose(dest_dev.get(), (a_dev+b_dev).get())
