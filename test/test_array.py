@@ -2185,6 +2185,15 @@ def test_dtype_conversions(ctx_factory):
 def test_svm_mem_pool_with_arrays(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+
+    from pyopencl.characterize import has_coarse_grain_buffer_svm
+    has_cg_svm = has_coarse_grain_buffer_svm(queue.device)
+
+    assert has_cg_svm == hasattr(cl_tools, "SVMAllocator")
+
+    if not has_cg_svm:
+        pytest.skip("Need coarse-grained SVM support for this test.")
+
     mem_pool = cl_tools.SVMPool(cl_tools.SVMAllocator(context, alignment=0,
                                                       queue=queue))
 
