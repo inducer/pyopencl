@@ -2749,7 +2749,8 @@ def hstack(arrays, queue=None):
                  "an instance of the type of arrays[0]",
                  stacklevel=2)
 
-    result = arrays[0].__class__(queue, lead_shape+(w,), arrays[0].dtype)
+    result = arrays[0].__class__(queue, lead_shape+(w,), arrays[0].dtype,
+                                 allocator=arrays[0].allocator)
     index = 0
     for ary in arrays:
         result[..., index:index+ary.shape[-1]] = ary
