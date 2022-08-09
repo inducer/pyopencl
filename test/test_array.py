@@ -2185,6 +2185,7 @@ def test_dtype_conversions(ctx_factory):
 def test_svm_mem_pool_with_arrays(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
+    queue2 = cl.CommandQueue(context)
 
     from pyopencl.characterize import has_coarse_grain_buffer_svm
     has_cg_svm = has_coarse_grain_buffer_svm(queue.device)
@@ -2200,6 +2201,14 @@ def test_svm_mem_pool_with_arrays(ctx_factory):
 
     assert a_dev.allocator is mem_pool
     assert b_dev.allocator is mem_pool
+
+    a_dev2 = cl_array.arange(queue2, 2000, dtype=np.float32, allocator=mem_pool)
+    b_dev2 = cl_array.to_device(queue2, np.arange(2000), allocator=mem_pool) + 4000
+
+    assert a_dev2.allocator is mem_pool
+    assert b_dev2.allocator is mem_pool
+
+    np.testing.assert_allclose((a_dev+b_dev).get(), (a_dev2+b_dev2).get())
 
 # }}}
 
