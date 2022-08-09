@@ -148,7 +148,6 @@ namespace pyopencl {
       }
   };
 
-  const unsigned zero = 0;
 
   class immediate_buffer_allocator : public buffer_allocator_base
   {
@@ -449,6 +448,9 @@ namespace pyopencl {
       pooled_svm(
           std::shared_ptr<super::pool_type> p, super::size_type s)
         : super(p, s)
+      { }
+
+      virtual ~pooled_svm()
       { }
 
       void *svm_ptr() const
