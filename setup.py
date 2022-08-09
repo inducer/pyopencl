@@ -222,6 +222,15 @@ def main():
                     extra_compile_args=conf["CXXFLAGS"],
                     extra_link_args=conf["LDFLAGS"],
                     language="c++",
+                    depends=[
+                        "src/bitlog.hpp",
+                        "src/clinfo_ext.h",
+                        "src/mempool.hpp",
+                        "src/pyopencl_ext.h",
+                        "src/tools.hpp",
+                        "src/wrap_cl.hpp",
+                        "src/wrap_helpers.hpp",
+                        ],
                     ),
                 ],
 
