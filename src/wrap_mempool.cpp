@@ -63,6 +63,9 @@ namespace
         return p;
       }
 
+      virtual ~test_allocator()
+      { }
+
       void free(pointer_type &&p)
       { }
 
@@ -142,7 +145,6 @@ namespace
       }
   };
 
-  const unsigned zero = 0;
 
   class immediate_buffer_allocator : public buffer_allocator_base
   {
@@ -216,7 +218,7 @@ namespace
   inline
   pyopencl::buffer *buffer_allocator_call(buffer_allocator_base &alloc, size_t size)
   {
-    cl_mem mem;
+    cl_mem mem = nullptr;
     int try_count = 0;
     while (try_count < 2)
     {
@@ -274,6 +276,9 @@ namespace
       pooled_buffer(
           std::shared_ptr<super::pool_type> p, super::size_type s)
         : super(p, s)
+      { }
+
+      virtual ~pooled_buffer()
       { }
 
       const super::pointer_type data() const
@@ -462,6 +467,9 @@ namespace
       pooled_svm(
           std::shared_ptr<super::pool_type> p, super::size_type s)
         : super(p, s)
+      { }
+
+      virtual ~pooled_svm()
       { }
 
       void *svm_ptr() const
