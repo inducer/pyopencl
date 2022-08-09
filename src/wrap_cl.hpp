@@ -2166,6 +2166,9 @@ namespace pyopencl
       }
 
       py::object get_info(cl_mem_info param_name) const;
+
+      virtual ~memory_object_holder()
+      { }
   };
 
 
@@ -2213,7 +2216,7 @@ namespace pyopencl
         m_valid = false;
       }
 
-      virtual ~memory_object()
+      ~memory_object()
       {
         if (m_valid)
           release();
@@ -3573,6 +3576,8 @@ namespace pyopencl
       virtual void *svm_ptr() const = 0;
       // may throw size_not_available
       virtual size_t size() const = 0;
+      virtual ~svm_pointer()
+      { }
   };
 
   // }}}
