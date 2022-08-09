@@ -2189,8 +2189,6 @@ def test_svm_mem_pool_with_arrays(ctx_factory):
     from pyopencl.characterize import has_coarse_grain_buffer_svm
     has_cg_svm = has_coarse_grain_buffer_svm(queue.device)
 
-    assert has_cg_svm == hasattr(cl_tools, "SVMAllocator")
-
     if not has_cg_svm:
         pytest.skip("Need coarse-grained SVM support for this test.")
 
