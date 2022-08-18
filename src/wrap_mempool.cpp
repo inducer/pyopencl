@@ -253,7 +253,7 @@ namespace pyopencl {
   inline
   buffer *allocate_from_buffer_allocator(buffer_allocator_base &alloc, size_t size)
   {
-    cl_mem mem;
+    cl_mem mem = nullptr;
     int try_count = 0;
     while (try_count < 2)
     {
