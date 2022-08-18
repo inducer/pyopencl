@@ -1068,6 +1068,9 @@ def test_bitonic_sort(ctx_factory, size, dtype):
     if dtype == np.float64 and not has_double_support(dev):
         from pytest import skip
         skip("double precision not supported on %s" % dev)
+    if dev.platform.name == "Intel(R) OpenCL":
+        pytest.skip("Fails to compile on Intel because of "
+                "https://github.com/intel/llvm/issues/6607")
 
     import pyopencl.clrandom as clrandom
     from pyopencl.bitonic_sort import BitonicSort
@@ -1113,6 +1116,9 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
             and device.type & cl.device_type.GPU:
         pytest.xfail("bitonic argsort fails on POCL + Nvidia,"
                 "at least the K40, as of pocl 1.6, 2021-01-20")
+    if device.platform.name == "Intel(R) OpenCL":
+        pytest.skip("Fails to compile on Intel because of "
+                "https://github.com/intel/llvm/issues/6607")
 
     dev = ctx.devices[0]
     if (dev.platform.name == "Portable Computing Language"
