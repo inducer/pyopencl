@@ -1469,8 +1469,8 @@ class Array:
         # https://github.com/inducer/pyopencl/issues/395
         if cl_version_gtr_1_2 and not (on_nvidia and self.nbytes >= 2**31):
             self.add_event(
-                    cl.enqueue_fill_buffer(queue, self.base_data, np.int8(0),
-                        self.offset, self.nbytes, wait_for=wait_for))
+                    cl.enqueue_fill(queue, self.base_data, np.int8(0),
+                        self.nbytes, offset=self.offset, wait_for=wait_for))
         else:
             zero = np.zeros((), self.dtype)
             self.fill(zero, queue=queue)
