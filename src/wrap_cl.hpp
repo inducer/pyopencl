@@ -227,8 +227,6 @@
     }
 
 
-
-
 #define PYOPENCL_RETRY_IF_MEM_ERROR(OPERATION) \
   { \
     bool failed_with_mem_error = false; \
@@ -257,6 +255,17 @@
       } \
     } \
   }
+
+
+#define PYOPENCL_GET_SVM_SIZE(NAME) \
+  size_t NAME##_size; \
+  bool NAME##_has_size = false; \
+  try \
+  { \
+    NAME##_size = NAME.size(); \
+    NAME##_has_size = true; \
+  } \
+  catch (size_not_available)  { }
 
 // }}}
 
@@ -3552,11 +3561,26 @@ namespace pyopencl
   // }}}
 
 
-  // {{{ svm
-
 #if PYOPENCL_CL_VERSION >= 0x2000
 
-  class svm_arg_wrapper
+  // {{{ svm pointer
+
+  class size_not_available { };
+
+  class svm_pointer
+  {
+    public:
+      virtual void *svm_ptr() const = 0;
+      // may throw size_not_available
+      virtual size_t size() const = 0;
+  };
+
+  // }}}
+
+
+  // {{{ svm_arg_wrapper
+
+  class svm_arg_wrapper : public svm_pointer
   {
     private:
       void *m_ptr;
@@ -3579,7 +3603,7 @@ namespace pyopencl
         m_size = ward->m_buf.len;
       }
 
-      void *ptr() const
+      void *svm_ptr() const
       {
         return m_ptr;
       }
@@ -3589,17 +3613,34 @@ namespace pyopencl
       }
   };
 
+  // }}}
 
-  class svm_allocation : noncopyable
+
+  // {{{ svm_allocation
+
+  class svm_allocation : public svm_pointer
   {
     private:
       std::shared_ptr<context> m_context;
       void *m_allocation;
+      size_t m_size;
+      command_queue_ref m_queue;
+      // FIXME Should maybe also allow keeping a list of events so that we can
+      // wait for users to finish in the case of out-of-order queues.
 
     public:
-      svm_allocation(std::shared_ptr<context> const &ctx, size_t size, cl_uint alignment, cl_svm_mem_flags flags)
-        : m_context(ctx)
+      svm_allocation(std::shared_ptr<context> const &ctx, size_t size, cl_uint alignment,
+          cl_svm_mem_flags flags, const command_queue *queue = nullptr)
+        : m_context(ctx), m_size(size)
       {
+        if (queue)
+        {
+          m_queue.set(queue->data());
+          if (is_queue_out_of_order(m_queue.data()))
+            throw error("SVMAllocation.__init__", CL_INVALID_VALUE,
+                "supplying an out-of-order queue to SVMAllocation is invalid");
+        }
+
         PYOPENCL_PRINT_CALL_TRACE("clSVMalloc");
         m_allocation = clSVMAlloc(
             ctx->data(),
@@ -3608,6 +3649,25 @@ namespace pyopencl
         if (!m_allocation)
           throw pyopencl::error("clSVMAlloc", CL_OUT_OF_RESOURCES);
       }
+
+      svm_allocation(std::shared_ptr<context> const &ctx, void *allocation, size_t size,
+           const cl_command_queue queue)
+        : m_context(ctx), m_allocation(allocation), m_size(size)
+      {
+        if (queue)
+        {
+          if (is_queue_out_of_order(queue))
+          {
+            release();
+            throw error("SVMAllocation.__init__", CL_INVALID_VALUE,
+                "supplying an out-of-order queue to SVMAllocation is invalid");
+          }
+          m_queue.set(queue);
+        }
+      }
+
+      svm_allocation(const svm_allocation &) = delete;
+      svm_allocation &operator=(const svm_allocation &) = delete;
 
       ~svm_allocation()
       {
@@ -3621,36 +3681,62 @@ namespace pyopencl
           throw error("SVMAllocation.release", CL_INVALID_VALUE,
               "trying to double-unref svm allocation");
 
-        clSVMFree(m_context->data(), m_allocation);
+        if (m_queue.is_valid())
+        {
+          PYOPENCL_CALL_GUARDED_CLEANUP(clEnqueueSVMFree, (
+                m_queue.data(), 1, &m_allocation,
+                nullptr, nullptr,
+                0, nullptr, nullptr));
+          m_queue.reset();
+        }
+        else
+        {
+          PYOPENCL_PRINT_CALL_TRACE("clSVMFree");
+          clSVMFree(m_context->data(), m_allocation);
+        }
         m_allocation = nullptr;
       }
 
-      void enqueue_release(command_queue &queue, py::object py_wait_for)
+      event *enqueue_release(command_queue *queue, py::object py_wait_for)
       {
         PYOPENCL_PARSE_WAIT_FOR;
 
         if (!m_allocation)
-          throw error("SVMAllocation.release", CL_INVALID_VALUE,
-              "trying to double-unref svm allocation");
+          throw error("SVMAllocation.enqueue_release", CL_INVALID_VALUE,
+              "trying to enqueue_release on an already-freed allocation");
+
+        cl_command_queue use_queue;
+        if (queue)
+          use_queue = queue->data();
+        else
+        {
+          if (m_queue.is_valid())
+            use_queue = m_queue.data();
+          else
+            throw error("SVMAllocation.enqueue_release", CL_INVALID_VALUE,
+                "no implicit queue available, must be provided explicitly");
+        }
 
         cl_event evt;
 
         PYOPENCL_CALL_GUARDED_CLEANUP(clEnqueueSVMFree, (
-              queue.data(), 1, &m_allocation,
+              use_queue, 1, &m_allocation,
               nullptr, nullptr,
               PYOPENCL_WAITLIST_ARGS, &evt));
 
         m_allocation = nullptr;
+
+        PYOPENCL_RETURN_NEW_EVENT(evt);
       }
 
-      void *ptr() const
+      void *svm_ptr() const
       {
         return m_allocation;
       }
 
-      intptr_t ptr_as_int() const
+      size_t size() const
       {
-        return (intptr_t) m_allocation;
+        return m_size;
       }
 
       bool operator==(svm_allocation const &other) const
@@ -3662,22 +3748,99 @@ namespace pyopencl
       {
         return m_allocation != other.m_allocation;
       }
+
+      void bind_to_queue(command_queue const &queue)
+      {
+        if (is_queue_out_of_order(queue.data()))
+          throw error("SVMAllocation.bind_to_queue", CL_INVALID_VALUE,
+              "supplying an out-of-order queue to SVMAllocation is invalid");
+
+        if (m_queue.is_valid())
+        {
+          if (m_queue.data() != queue.data())
+          {
+            // make sure synchronization promises stay valid in new queue
+            cl_event evt;
+
+            PYOPENCL_CALL_GUARDED(clEnqueueMarker, (m_queue.data(), &evt));
+            PYOPENCL_CALL_GUARDED(clEnqueueMarkerWithWaitList,
+                (queue.data(), 1, &evt, nullptr));
+          }
+        }
+
+        m_queue.set(queue.data());
+      }
+
+      void unbind_from_queue()
+      {
+        if (m_queue.is_valid())
+          PYOPENCL_CALL_GUARDED_THREADED(clFinish, (m_queue.data()));
+
+        m_queue.reset();
+      }
   };
 
+  // }}}
+
+
+  // {{{ svm operations
 
   inline
   event *enqueue_svm_memcpy(
       command_queue &cq,
       cl_bool is_blocking,
-      svm_arg_wrapper &dst, svm_arg_wrapper &src,
-      py::object py_wait_for
+      svm_pointer &dst, svm_pointer &src,
+      py::object py_wait_for,
+      py::object byte_count_py
       )
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
-    if (src.size() != dst.size())
+    // {{{ process size
+
+    PYOPENCL_GET_SVM_SIZE(src);
+    PYOPENCL_GET_SVM_SIZE(dst);
+
+    size_t size;
+    bool have_size = false;
+
+    if (src_has_size)
+    {
+      size = src_size;
+      have_size = true;
+    }
+    if (dst_has_size)
+    {
+      if (have_size)
+      {
+        if (!byte_count_py.is_none())
+          size = std::min(size, dst_size);
+        else if (size != dst_size)
+          throw error("_enqueue_svm_memcpy", CL_INVALID_VALUE,
+              "sizes of source and destination buffer do not match");
+      }
+      else
+      {
+        size = dst_size;
+        have_size = true;
+      }
+    }
+
+    if (!byte_count_py.is_none())
+    {
+      size_t byte_count = byte_count_py.cast<size_t>();
+      if (have_size && byte_count > size)
+        throw error("_enqueue_svm_memcpy", CL_INVALID_VALUE,
+            "specified byte_count larger than size of source or destination buffers");
+      size = byte_count;
+      have_size = true;
+    }
+
+    if (!have_size)
       throw error("_enqueue_svm_memcpy", CL_INVALID_VALUE,
-          "sizes of source and destination buffer do not match");
+          "size not passed and could not be determined");
+
+    // }}}
 
     cl_event evt;
     PYOPENCL_CALL_GUARDED(
@@ -3685,8 +3848,8 @@ namespace pyopencl
         (
           cq.data(),
           is_blocking,
-          dst.ptr(), src.ptr(),
-          dst.size(),
+          dst.svm_ptr(), src.svm_ptr(),
+          size,
           PYOPENCL_WAITLIST_ARGS,
           &evt
         ));
@@ -3698,7 +3861,7 @@ namespace pyopencl
   inline
   event *enqueue_svm_memfill(
       command_queue &cq,
-      svm_arg_wrapper &dst, py::object py_pattern,
+      svm_pointer &dst, py::object py_pattern,
       py::object byte_count,
       py::object py_wait_for
       )
@@ -3715,18 +3878,41 @@ namespace pyopencl
     pattern_ptr = pattern_ward->m_buf.buf;
     pattern_len = pattern_ward->m_buf.len;
 
-    size_t fill_size = dst.size();
+    // {{{ process size
+
+    PYOPENCL_GET_SVM_SIZE(dst);
+
+    size_t size;
+    bool have_size = false;
+    if (dst_has_size)
+    {
+      size = dst_size;
+      have_size = true;
+    }
     if (!byte_count.is_none())
-      fill_size = py::cast<size_t>(byte_count);
+    {
+      size_t user_size = py::cast<size_t>(byte_count);
+      if (have_size && user_size > size)
+        throw error("enqueue_svm_memfill", CL_INVALID_VALUE,
+            "byte_count too large for specified SVM buffer");
+    }
+
+    if (!have_size)
+    {
+      throw error("enqueue_svm_memfill", CL_INVALID_VALUE,
+          "byte_count not passed and could not be determined");
+    }
+
+    // }}}
 
     cl_event evt;
     PYOPENCL_CALL_GUARDED(
         clEnqueueSVMMemFill,
         (
           cq.data(),
-          dst.ptr(), pattern_ptr,
+          dst.svm_ptr(), pattern_ptr,
           pattern_len,
-          fill_size,
+          size,
           PYOPENCL_WAITLIST_ARGS,
           &evt
         ));
@@ -3740,11 +3926,39 @@ namespace pyopencl
       command_queue &cq,
       cl_bool is_blocking,
       cl_map_flags flags,
-      svm_arg_wrapper &svm,
-      py::object py_wait_for
+      svm_pointer &svm,
+      py::object py_wait_for,
+      py::object user_size_py
       )
   {
     PYOPENCL_PARSE_WAIT_FOR;
+
+    // {{{ process size
+
+    PYOPENCL_GET_SVM_SIZE(svm);
+
+    size_t size;
+    bool have_size = false;
+    if (svm_has_size)
+    {
+      size = svm_size;
+      have_size = true;
+    }
+    if (!user_size_py.is_none())
+    {
+      size_t user_size = py::cast<size_t>(user_size_py);
+      if (have_size && user_size > size)
+        throw error("enqueue_svm_memfill", CL_INVALID_VALUE,
+            "user-provided size too large for specified SVM buffer");
+    }
+
+    if (!have_size)
+    {
+      throw error("enqueue_svm_mem_map", CL_INVALID_VALUE,
+          "size not passed and could not be determined");
+    }
+
+    // }}}
 
     cl_event evt;
     PYOPENCL_CALL_GUARDED(
@@ -3753,7 +3967,7 @@ namespace pyopencl
           cq.data(),
           is_blocking,
           flags,
-          svm.ptr(), svm.size(),
+          svm.svm_ptr(), size,
           PYOPENCL_WAITLIST_ARGS,
           &evt
         ));
@@ -3765,7 +3979,7 @@ namespace pyopencl
   inline
   event *enqueue_svm_unmap(
       command_queue &cq,
-      svm_arg_wrapper &svm,
+      svm_pointer &svm,
       py::object py_wait_for
       )
   {
@@ -3776,7 +3990,7 @@ namespace pyopencl
         clEnqueueSVMUnmap,
         (
           cq.data(),
-          svm.ptr(),
+          svm.svm_ptr(),
           PYOPENCL_WAITLIST_ARGS,
           &evt
         ));
@@ -3802,9 +4016,9 @@ namespace pyopencl
 
     for (py::handle py_svm: svms)
     {
-      svm_arg_wrapper &svm(py::cast<svm_arg_wrapper &>(py_svm));
+      svm_pointer &svm(py::cast<svm_pointer &>(py_svm));
 
-      svm_pointers.push_back(svm.ptr());
+      svm_pointers.push_back(svm.svm_ptr());
       sizes.push_back(svm.size());
     }
 
@@ -4597,10 +4811,10 @@ namespace pyopencl
       }
 
 #if PYOPENCL_CL_VERSION >= 0x2000
-      void set_arg_svm(cl_uint arg_index, svm_arg_wrapper const &wrp)
+      void set_arg_svm(cl_uint arg_index, svm_pointer const &wrp)
       {
         PYOPENCL_CALL_GUARDED(clSetKernelArgSVMPointer,
-            (m_kernel, arg_index, wrp.ptr()));
+            (m_kernel, arg_index, wrp.svm_ptr()));
       }
 #endif
 
@@ -4622,7 +4836,7 @@ namespace pyopencl
 #if PYOPENCL_CL_VERSION >= 0x2000
         try
         {
-          set_arg_svm(arg_index, arg.cast<svm_arg_wrapper const &>());
+          set_arg_svm(arg_index, arg.cast<svm_pointer const &>());
           return;
         }
         catch (py::cast_error &) { }

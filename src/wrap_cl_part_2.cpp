@@ -24,6 +24,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
+#include <memory>
 #define NO_IMPORT_ARRAY
 #define PY_ARRAY_UNIQUE_SYMBOL pyopencl_ARRAY_API
 
@@ -63,6 +64,22 @@ namespace pyopencl {
       desc.buffer = 0;
   }
 
+#endif
+
+#if PYOPENCL_CL_VERSION >= 0x2000
+  class svm_pointer_as_buffer
+  {
+    private:
+      svm_pointer &m_ptr;
+
+    public:
+      svm_pointer_as_buffer(svm_pointer &ptr)
+        : m_ptr(ptr)
+      { }
+
+      svm_pointer &ptr() const
+      { return m_ptr; }
+  };
 #endif
 }
 
@@ -292,37 +309,119 @@ void pyopencl_expose_part_2(py::module &m)
 
   // }}}
 
-  // {{{ svm
+  // {{{ svm_pointer
 
 #if PYOPENCL_CL_VERSION >= 0x2000
   {
+    typedef svm_pointer cls;
+    py::class_<cls>(m, "SVMPointer", py::dynamic_attr())
+      // For consistency, it may seem appropriate to use int_ptr here, but
+      // that would work on both buffers and SVM, and passing a buffer pointer to
+      // a kernel is going to lead to a bad time.
+      .def_property_readonly("svm_ptr",
+          [](cls &self) { return (intptr_t) self.svm_ptr(); })
+      .def_property_readonly("size", [](cls &self) -> py::object
+          {
+            try
+            {
+              return py::cast(self.size());
+            }
+            catch (size_not_available)
+            {
+              return py::none();
+            }
+          })
+      .def_property_readonly("buf", [](cls &self) -> svm_pointer_as_buffer * {
+            return new svm_pointer_as_buffer(self);
+          }, py::return_value_policy::reference_internal)
+      ;
+  }
+
+  {
+    typedef svm_pointer_as_buffer cls;
+    py::class_<cls>(m, "_SVMPointerAsBuffer", pybind11::buffer_protocol())
+      .def_buffer([](cls &self) -> pybind11::buffer_info
+          {
+            size_t size;
+            try
+            {
+              size = self.ptr().size();
+            }
+            catch (size_not_available)
+            {
+              throw pyopencl::error("SVMPointer buffer protocol", CL_INVALID_VALUE,
+                  "size of SVM is not known");
+            }
+            return pybind11::buffer_info(
+                // Pointer to buffer
+                self.ptr().svm_ptr(),
+                // Size of one scalar
+                sizeof(unsigned char),
+                // Python struct-style format descriptor
+                pybind11::format_descriptor<unsigned char>::format(),
+                // Number of dimensions
+                1,
+                // Buffer dimensions
+                { size },
+                // Strides (in bytes) for each index
+                { sizeof(unsigned char) }
+                );
+          })
+    ;
+  }
+
+  // }}}
+
+  // {{{ svm_arg_wrapper
+
+  {
     typedef svm_arg_wrapper cls;
-    py::class_<cls>(m, "SVM", py::dynamic_attr())
+    py::class_<cls, svm_pointer>(m, "SVM", py::dynamic_attr())
       .def(py::init<py::object>())
       ;
   }
 
+  // }}}
+
+  // {{{ svm_allocation
+
   {
     typedef svm_allocation cls;
-    py::class_<cls>(m, "SVMAllocation", py::dynamic_attr())
-      .def(py::init<std::shared_ptr<context>, size_t, cl_uint, cl_svm_mem_flags>())
+    py::class_<cls, svm_pointer>(m, "SVMAllocation", py::dynamic_attr())
+      .def(py::init<std::shared_ptr<context>, size_t, cl_uint, cl_svm_mem_flags, const command_queue *>(),
+          py::arg("context"),
+          py::arg("size"),
+          py::arg("alignment"),
+          py::arg("flags"),
+          py::arg("queue").none(true)=py::none()
+          )
       .DEF_SIMPLE_METHOD(release)
       .def("enqueue_release", &cls::enqueue_release,
           ":returns: a :class:`pyopencl.Event`\n\n"
-          "|std-enqueue-blurb|")
-      .def("_ptr_as_int", &cls::ptr_as_int)
+          "|std-enqueue-blurb|",
+          py::arg("queue").none(true)=py::none(),
+          py::arg("wait_for").none(true)=py::none()
+          )
       .def(py::self == py::self)
       .def(py::self != py::self)
-      .def("__hash__", &cls::ptr_as_int)
+      .def("__hash__", [](cls &self) { return (intptr_t) self.svm_ptr(); })
+      .def("bind_to_queue", &cls::bind_to_queue,
+          py::arg("queue"))
+      .DEF_SIMPLE_METHOD(unbind_from_queue)
       ;
   }
+
+  // }}}
+
+  // {{{ svm operations
 
   m.def("_enqueue_svm_memcpy", enqueue_svm_memcpy,
       py::arg("queue"),
       py::arg("is_blocking"),
       py::arg("dst"),
       py::arg("src"),
-      py::arg("wait_for")=py::none()
+      py::arg("wait_for")=py::none(),
+      py::arg("byte_count")=py::none()
       );
 
   m.def("_enqueue_svm_memfill", enqueue_svm_memfill,
@@ -338,7 +437,8 @@ void pyopencl_expose_part_2(py::module &m)
       py::arg("is_blocking"),
       py::arg("flags"),
       py::arg("svm"),
-      py::arg("wait_for")=py::none()
+      py::arg("wait_for")=py::none(),
+      py::arg("size")=py::none()
       );
 
   m.def("_enqueue_svm_unmap", enqueue_svm_unmap,

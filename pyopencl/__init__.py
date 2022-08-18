@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 from sys import intern
 from warnings import warn
+from typing import Union, Any, Optional, Sequence
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
@@ -199,11 +200,9 @@ if get_cl_header_version() >= (1, 2):
 
 if get_cl_header_version() >= (2, 0):
     from pyopencl._cl import (  # noqa
-        SVMAllocation,
+        SVMPointer,
         SVM,
-
-        # FIXME
-        #enqueue_svm_migratemem,
+        SVMAllocation,
         )
 
 if _cl.have_gl():
@@ -1124,44 +1123,166 @@ def _add_functionality():
 
     # }}}
 
+    # {{{ SVMPointer
+
+    if get_cl_header_version() >= (2, 0):
+        SVMPointer.__doc__ = """A base class for things that can be passed to
+            functions that allow an SVM pointer, e.g. kernel enqueues and memory
+            copies.
+
+            Objects of this type cannot currently be directly created or
+            implemented in Python.  To obtain objects implementing this type,
+            consider its subtypes :class:`SVMAllocation` and :class:`SVM`.
+
+
+            .. property:: svm_ptr
+
+                Gives the SVM pointer as an :class:`int`.
+
+            .. property:: size
+
+                An :class:`int` denoting the size in bytes, or *None*, if the size
+                of the SVM pointed to is not known.
+
+                *Most* objects of this type (e.g. instances of
+                :class:`SVMAllocation` and :class:`SVM` know their size, so that,
+                for example :class:`enqueue_copy` will automatically copy an entire
+                :class:`SVMAllocation` when a size is not explicitly specified.
+
+            .. automethod:: map
+            .. automethod:: map_ro
+            .. automethod:: map_rw
+            .. automethod:: as_buffer
+            .. property:: buf
+
+                An opaque object implementing the :c:func:`Python buffer protocol
+                <PyObject_GetBuffer>`. It exposes the pointed-to memory as
+                a one-dimensional buffer of bytes, with the size matching
+                :attr:`size`.
+
+                No guarantee is provided that two references to this attribute
+                result in the same object.
+            """
+
+    def svmptr_map(self, queue: CommandQueue, *, flags: int, is_blocking: bool =
+                   True, wait_for: Optional[Sequence[Event]] = None,
+                   size: Optional[Event] = None) -> "SVMMap":
+        """
+        :arg is_blocking: If *False*, subsequent code must wait on
+            :attr:`SVMMap.event` in the returned object before accessing the
+            mapped memory.
+        :arg flags: a combination of :class:`pyopencl.map_flags`.
+        :arg size: The size of the map in bytes. If not provided, defaults to
+            :attr:`size`.
+
+        |std-enqueue-blurb|
+        """
+        return SVMMap(self,
+                np.asarray(self.buf),
+                queue,
+                _cl._enqueue_svm_map(queue, is_blocking, flags, self, wait_for,
+                                    size=size))
+
+    def svmptr_map_ro(self, queue: CommandQueue, *, is_blocking: bool = True,
+                      wait_for: Optional[Sequence[Event]] = None,
+                      size: Optional[int] = None) -> "SVMMap":
+        """Like :meth:`map`, but with *flags* set for a read-only map.
+        """
+
+        return self.map(queue, flags=map_flags.READ,
+                is_blocking=is_blocking, wait_for=wait_for, size=size)
+
+    def svmptr_map_rw(self, queue: CommandQueue, *, is_blocking: bool = True,
+                      wait_for: Optional[Sequence[Event]] = None,
+                      size: Optional[int] = None) -> "SVMMap":
+        """Like :meth:`map`, but with *flags* set for a read-only map.
+        """
+
+        return self.map(queue, flags=map_flags.READ | map_flags.WRITE,
+                is_blocking=is_blocking, wait_for=wait_for, size=size)
+
+    def svmptr__enqueue_unmap(self, queue, wait_for=None):
+        return _cl._enqueue_svm_unmap(queue, self, wait_for)
+
+    def svmptr_as_buffer(self, ctx: Context, *, flags: Optional[int] = None,
+                         size: Optional[int] = None) -> Buffer:
+        """
+        :arg ctx: a :class:`Context`
+        :arg flags: a combination of :class:`pyopencl.map_flags`, defaults to
+            read-write.
+        :arg size: The size of the map in bytes. If not provided, defaults to
+            :attr:`size`.
+        :returns: a :class:`Buffer` corresponding to *self*.
+
+        The memory referred to by this object must not be freed before
+        the returned :class:`Buffer` is released.
+        """
+
+        if flags is None:
+            flags = mem_flags.READ_WRITE | mem_flags.USE_HOST_PTR
+
+        if size is None:
+            size = self.size
+
+        return Buffer(ctx, flags, size=size, hostbuf=self.buf)
+
+    if get_cl_header_version() >= (2, 0):
+        SVMPointer.map = svmptr_map
+        SVMPointer.map_ro = svmptr_map_ro
+        SVMPointer.map_rw = svmptr_map_rw
+        SVMPointer._enqueue_unmap = svmptr__enqueue_unmap
+        SVMPointer.as_buffer = svmptr_as_buffer
+
+    # }}}
+
     # {{{ SVMAllocation
 
     if get_cl_header_version() >= (2, 0):
-        SVMAllocation.__doc__ = """An object whose lifetime is tied to an
-            allocation of shared virtual memory.
-
-            .. note::
-
-                Most likely, you will not want to use this directly, but rather
-                :func:`svm_empty` and related functions which allow access to this
-                functionality using a friendlier, more Pythonic interface.
+        SVMAllocation.__doc__ = """
+            Is a :class:`SVMPointer`.
 
             .. versionadded:: 2016.2
 
-            .. automethod:: __init__(self, ctx, size, alignment, flags=None)
-            .. automethod:: release
+            .. automethod:: __init__
+
+                :arg flags: See :class:`svm_mem_flags`.
+                :arg queue: If not specified, the allocation will be freed
+                    eagerly, irrespective of whether pending/enqueued operations
+                    are still using this memory.
+
+                    If specified, deallocation of the memory will be enqueued
+                    with the given queue, and will only be performed
+                    after previously-enqueue operations in the queue have
+                    completed.
+
+                    It is an error to specify an out-of-order queue.
+
+                    .. warning::
+
+                        Not specifying a queue will typically lead to undesired
+                        behavior, including crashes and memory corruption.
+                        See the warning in :ref:`svm`.
+
             .. automethod:: enqueue_release
+
+                Enqueue the release of this allocation into *queue*.
+                If *queue* is not specified, enqueue the deallocation
+                into the queue provided at allocation time or via
+                :class:`bind_to_queue`.
+
+            .. automethod:: bind_to_queue
+
+                Change the queue used for implicit enqueue of deallocation
+                to *queue*. Sufficient synchronization is ensured by
+                enqueuing a marker into the old queue and waiting on this
+                marker in the new queue.
+
+            .. automethod:: unbind_from_queue
+
+                Configure the allocation to no longer implicitly enqueue
+                memory allocation. If such a queue was previously provided,
+                :meth:`~CommandQueue.finish` is automatically called on it.
             """
-
-    if get_cl_header_version() >= (2, 0):
-        svmallocation_old_init = SVMAllocation.__init__
-
-    def svmallocation_init(self, ctx, size, alignment, flags, _interface=None):
-        """
-        :arg ctx: a :class:`Context`
-        :arg flags: some of :class:`svm_mem_flags`.
-        """
-        svmallocation_old_init(self, ctx, size, alignment, flags)
-
-        # mem_flags.READ_ONLY applies to kernels, not the host
-        read_write = True
-        _interface["data"] = (
-                int(self._ptr_as_int()), not read_write)
-
-        self.__array_interface__ = _interface
-
-    if get_cl_header_version() >= (2, 0):
-        SVMAllocation.__init__ = svmallocation_init
 
     # }}}
 
@@ -1172,22 +1293,13 @@ def _add_functionality():
             (such as a :class:`numpy.ndarray`) as referring to shared virtual
             memory.
 
+            Is a :class:`SVMPointer`, hence objects of this type may be passed
+            to kernel calls and :func:`enqueue_copy`, and all methods declared
+            there are also available there. Note that :meth:`map` differs
+            slightly from :meth:`SVMPointer.map`.
+
             Depending on the features of the OpenCL implementation, the following
             types of objects may be passed to/wrapped in this type:
-
-            *   coarse-grain shared memory as returned by (e.g.) :func:`csvm_empty`
-                for any implementation of OpenCL 2.0.
-
-                This is how coarse-grain SVM may be used from both host and device::
-
-                    svm_ary = cl.SVM(
-                        cl.csvm_empty(ctx, 1000, np.float32, alignment=64))
-                    assert isinstance(svm_ary.mem, np.ndarray)
-
-                    with svm_ary.map_rw(queue) as ary:
-                        ary.fill(17)  # use from host
-
-                    prg.twice(queue, svm_ary.mem.shape, None, svm_ary)
 
             *   fine-grain shared memory as returned by (e.g.) :func:`fsvm_empty`,
                 if the implementation supports fine-grained shared virtual memory.
@@ -1215,10 +1327,28 @@ def _add_functionality():
                     queue.finish() # synchronize
                     print(ary) # access from host
 
-            Objects of this type may be passed to kernel calls and
-            :func:`enqueue_copy`.  Coarse-grain shared-memory *must* be mapped
-            into host address space using :meth:`map` before being accessed
-            through the :mod:`numpy` interface.
+            *   coarse-grain shared memory as returned by (e.g.) :func:`csvm_empty`
+                for any implementation of OpenCL 2.0.
+
+                .. note::
+
+                    Applications making use of coarse-grain SVM may be better
+                    served by opaque-style SVM. See :ref:`opaque-svm`.
+
+                This is how coarse-grain SVM may be used from both host and device::
+
+                    svm_ary = cl.SVM(
+                        cl.csvm_empty(ctx, 1000, np.float32, alignment=64))
+                    assert isinstance(svm_ary.mem, np.ndarray)
+
+                    with svm_ary.map_rw(queue) as ary:
+                        ary.fill(17)  # use from host
+
+                    prg.twice(queue, svm_ary.mem.shape, None, svm_ary)
+
+            Coarse-grain shared-memory *must* be mapped into host address space
+            using :meth:`~SVMPointer.map` before being accessed through the
+            :mod:`numpy` interface.
 
             .. note::
 
@@ -1239,8 +1369,9 @@ def _add_functionality():
             .. automethod:: map
             .. automethod:: map_ro
             .. automethod:: map_rw
-            .. automethod:: as_buffer
             """
+
+    # }}}
 
     if get_cl_header_version() >= (2, 0):
         svm_old_init = SVM.__init__
@@ -1255,14 +1386,18 @@ def _add_functionality():
         :arg is_blocking: If *False*, subsequent code must wait on
             :attr:`SVMMap.event` in the returned object before accessing the
             mapped memory.
-        :arg flags: a combination of :class:`pyopencl.map_flags`, defaults to
-            read-write.
+        :arg flags: a combination of :class:`pyopencl.map_flags`.
         :returns: an :class:`SVMMap` instance
+
+        This differs from the inherited :class:`SVMPointer.map` in that no size
+        can be specified, and that :attr:`mem` is the exact array produced
+        when the :class:`SVMMap` is used as a context manager.
 
         |std-enqueue-blurb|
         """
         return SVMMap(
                 self,
+                self.mem,
                 queue,
                 _cl._enqueue_svm_map(queue, is_blocking, flags, self, wait_for))
 
@@ -1281,29 +1416,12 @@ def _add_functionality():
     def svm__enqueue_unmap(self, queue, wait_for=None):
         return _cl._enqueue_svm_unmap(queue, self, wait_for)
 
-    def svm_as_buffer(self, ctx, flags=None):
-        """
-        :arg ctx: a :class:`Context`
-        :arg flags: a combination of :class:`pyopencl.map_flags`, defaults to
-            read-write.
-        :returns: a :class:`Buffer` corresponding to *self*.
-
-        The memory referred to by this object must not be freed before
-        the returned :class:`Buffer` is released.
-        """
-
-        if flags is None:
-            flags = mem_flags.READ_WRITE
-
-        return Buffer(ctx, flags, size=self.mem.nbytes, hostbuf=self.mem)
-
     if get_cl_header_version() >= (2, 0):
         SVM.__init__ = svm_init
         SVM.map = svm_map
         SVM.map_ro = svm_map_ro
         SVM.map_rw = svm_map_rw
         SVM._enqueue_unmap = svm__enqueue_unmap
-        SVM.as_buffer = svm_as_buffer
 
     # }}}
 
@@ -1402,6 +1520,27 @@ def _add_functionality():
 
 
 _add_functionality()
+
+# }}}
+
+
+# {{{ _OverriddenArrayInterfaceSVMAllocation
+
+if get_cl_header_version() >= (2, 0):
+    class _OverriddenArrayInterfaceSVMAllocation(SVMAllocation):
+        def __init__(self, ctx, size, alignment, flags, *, _interface,
+                queue=None):
+            """
+            :arg ctx: a :class:`Context`
+            :arg flags: some of :class:`svm_mem_flags`.
+            """
+            super().__init__(ctx, size, alignment, flags, queue)
+
+            # mem_flags.READ_ONLY applies to kernels, not the host
+            read_write = True
+            _interface["data"] = (int(self.svm_ptr), not read_write)
+
+            self.__array_interface__ = _interface
 
 # }}}
 
@@ -1546,19 +1685,24 @@ _csc = create_some_context
 
 class SVMMap:
     """
-    .. attribute:: event
-
-    .. versionadded:: 2016.2
-
-    .. automethod:: release
-
+    Returned by :func:`SVMPointer.map` and :func:`SVM.map`.
     This class may also be used as a context manager in a ``with`` statement.
     :meth:`release` will be called upon exit from the ``with`` region.
     The value returned to the ``as`` part of the context manager is the
     mapped Python object (e.g. a :mod:`numpy` array).
+
+    .. versionadded:: 2016.2
+
+    .. property:: event
+
+        The :class:`Event` returned when mapping the memory.
+
+    .. automethod:: release
+
     """
-    def __init__(self, svm, queue, event):
+    def __init__(self, svm, array, queue, event):
         self.svm = svm
+        self.array = array
         self.queue = queue
         self.event = event
 
@@ -1567,7 +1711,7 @@ class SVMMap:
             self.release()
 
     def __enter__(self):
-        return self.svm.mem
+        return self.array
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.release()
@@ -1712,7 +1856,7 @@ def enqueue_copy(queue, dest, src, **kwargs):
         three or shorter. (mandatory)
 
     .. ------------------------------------------------------------------------
-    .. rubric :: Transfer :class:`SVM`/host ↔ :class:`SVM`/host
+    .. rubric :: Transfer :class:`SVMPointer`/host ↔ :class:`SVMPointer`/host
     .. ------------------------------------------------------------------------
 
     :arg byte_count: (optional) If not specified, defaults to the
@@ -1772,12 +1916,14 @@ def enqueue_copy(queue, dest, src, **kwargs):
         else:
             raise ValueError("invalid dest mem object type")
 
-    elif get_cl_header_version() >= (2, 0) and isinstance(dest, SVM):
+    elif get_cl_header_version() >= (2, 0) and isinstance(dest, SVMPointer):
         # to SVM
-        if not isinstance(src, SVM):
+        if not isinstance(src, SVMPointer):
             src = SVM(src)
 
         is_blocking = kwargs.pop("is_blocking", True)
+        assert kwargs.pop("src_offset", 0) == 0
+        assert kwargs.pop("dest_offset", 0) == 0
         return _cl._enqueue_svm_memcpy(queue, is_blocking, dest, src, **kwargs)
 
     else:
@@ -1803,7 +1949,7 @@ def enqueue_copy(queue, dest, src, **kwargs):
                         queue, src, origin, region, dest, **kwargs)
             else:
                 raise ValueError("invalid src mem object type")
-        elif isinstance(src, SVM):
+        elif isinstance(src, SVMPointer):
             # from svm
             # dest is not a SVM instance, otherwise we'd be in the branch above
             is_blocking = kwargs.pop("is_blocking", True)
@@ -1937,7 +2083,7 @@ def enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None):
 def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
     """Fill shared virtual memory with a pattern.
 
-    :arg dest: a Python buffer object, optionally wrapped in an :class:`SVM` object
+    :arg dest: a Python buffer object, or any implementation of :class:`SVMPointer`.
     :arg pattern: a Python buffer object (e.g. a :class:`numpy.ndarray` with the
         fill pattern to be used.
     :arg byte_count: The size of the memory to be fill. Defaults to the
@@ -1948,17 +2094,17 @@ def enqueue_svm_memfill(queue, dest, pattern, byte_count=None, wait_for=None):
     .. versionadded:: 2016.2
     """
 
-    if not isinstance(dest, SVM):
+    if not isinstance(dest, SVMPointer):
         dest = SVM(dest)
 
     return _cl._enqueue_svm_memfill(
-            queue, dest, pattern, byte_count=None, wait_for=None)
+            queue, dest, pattern, byte_count=byte_count, wait_for=wait_for)
 
 
 def enqueue_svm_migratemem(queue, svms, flags, wait_for=None):
     """
     :arg svms: a collection of Python buffer objects (e.g. :mod:`numpy`
-        arrays), optionally wrapped in :class:`SVM` objects.
+        arrays), or any implementation of :class:`SVMPointer`.
     :arg flags: a combination of :class:`mem_migration_flags`
 
     |std-enqueue-blurb|
@@ -1968,15 +2114,10 @@ def enqueue_svm_migratemem(queue, svms, flags, wait_for=None):
     This function requires OpenCL 2.1.
     """
 
-    return _cl._enqueue_svm_migratemem(
-            queue,
-            [svm.mem if isinstance(svm, SVM) else svm
-                for svm in svms],
-            flags,
-            wait_for)
+    return _cl._enqueue_svm_migratemem(queue, svms, flags, wait_for)
 
 
-def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
+def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None, queue=None):
     """Allocate an empty :class:`numpy.ndarray` of the given *shape*, *dtype*
     and *order*. (See :func:`numpy.empty` for the meaning of these arguments.)
     The array will be allocated in shared virtual memory belonging
@@ -1994,6 +2135,10 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
     will likely want to wrap the returned array in an :class:`SVM` tag.
 
     .. versionadded:: 2016.2
+
+    .. versionchanged:: 2022.2
+
+        *queue* argument added.
     """
 
     dtype = np.dtype(dtype)
@@ -2040,7 +2185,9 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None):
     if alignment is None:
         alignment = itemsize
 
-    svm_alloc = SVMAllocation(ctx, nbytes, alignment, flags, _interface=interface)
+    svm_alloc = _OverriddenArrayInterfaceSVMAllocation(
+            ctx, nbytes, alignment, flags, _interface=interface,
+            queue=queue)
     return np.asarray(svm_alloc)
 
 
