@@ -1,4 +1,92 @@
-"""Various helpful bits and pieces without much of a common theme."""
+r"""
+.. _memory-pools:
+
+Memory Pools
+------------
+
+Memory allocation (e.g. in the form of the :func:`pyopencl.Buffer` constructor)
+can be expensive if used frequently. For example, code based on
+:class:`pyopencl.array.Array` can easily run into this issue because a fresh
+memory area is allocated for each intermediate result.  Memory pools are a
+remedy for this problem based on the observation that often many of the block
+allocations are of the same sizes as previously used ones.
+
+Then, instead of fully returning the memory to the system and incurring the
+associated reallocation overhead, the pool holds on to the memory and uses it
+to satisfy future allocations of similarly-sized blocks. The pool reacts
+appropriately to out-of-memory conditions as long as all memory allocations
+are made through it. Allocations performed from outside of the pool may run
+into spurious out-of-memory conditions due to the pool owning much or all of
+the available memory.
+
+There are two flavors of allocators and memory pools:
+
+- :ref:`buf-mempool`
+- :ref:`svm-mempool`
+
+Using :class:`pyopencl.array.Array`\ s can be used with memory pools in a
+straightforward manner::
+
+    mem_pool = pyopencl.tools.MemoryPool(pyopencl.tools.ImmediateAllocator(queue))
+    a_dev = cl_array.arange(queue, 2000, dtype=np.float32, allocator=mem_pool)
+
+Likewise, SVM-based allocators are directly usable with
+:class:`pyopencl.array.Array`.
+
+.. _buf-mempool:
+
+:class:`~pyopencl.Buffer`-based Allocators and Memory Pools
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: PooledBuffer
+
+.. autoclass:: AllocatorBase
+
+.. autoclass:: DeferredAllocator
+
+.. autoclass:: ImmediateAllocator
+
+.. autoclass:: MemoryPool
+
+.. _svm-mempool:
+
+:ref:`SVM <svm>`-Based Allocators and Memory Pools
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+SVM functionality requires OpenCL 2.0.
+
+.. autoclass:: PooledSVM
+
+.. autoclass:: SVMAllocator
+
+.. autoclass:: SVMPool
+
+CL-Object-dependent Caching
+---------------------------
+
+.. autofunction:: first_arg_dependent_memoize
+.. autofunction:: clear_first_arg_caches
+
+Testing
+-------
+
+.. autofunction:: pytest_generate_tests_for_pyopencl
+
+Device Characterization
+-----------------------
+
+.. automodule:: pyopencl.characterize
+    :members:
+
+Type aliases
+------------
+
+.. currentmodule:: pyopencl._cl
+
+.. class:: AllocatorBase
+
+   See :class:`pyopencl.tools.AllocatorBase`.
+"""
 
 
 __copyright__ = "Copyright (C) 2010 Andreas Kloeckner"
@@ -33,7 +121,7 @@ from sys import intern
 
 import numpy as np
 from pytools import memoize, memoize_method
-from pyopencl._cl import bitlog2  # noqa: F401
+from pyopencl._cl import bitlog2, get_cl_header_version  # noqa: F401
 from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
 
 import re
@@ -59,10 +147,293 @@ _register_types()
 # {{{ imported names
 
 from pyopencl._cl import (  # noqa
-        PooledBuffer as PooledBuffer,
-        _tools_DeferredAllocator as DeferredAllocator,
-        _tools_ImmediateAllocator as ImmediateAllocator,
-        MemoryPool as MemoryPool)
+        PooledBuffer, AllocatorBase, DeferredAllocator,
+        ImmediateAllocator, MemoryPool,
+        )
+
+
+if get_cl_header_version() >= (2, 0):
+    from pyopencl._cl import (  # noqa
+            SVMPool,
+            PooledSVM,
+            SVMAllocator,
+            )
+
+# }}}
+
+
+# {{{ monkeypatch docstrings into imported interfaces
+
+_MEMPOOL_IFACE_DOCS = """
+.. note::
+
+    The current implementation of the memory pool will retain allocated
+    memory after it is returned by the application and keep it in a bin
+    identified by the leading *leading_bits_in_bin_id* bits of the
+    allocation size. To ensure that allocations within each bin are
+    interchangeable, allocation sizes are rounded up to the largest size
+    that shares the leading bits of the requested allocation size.
+
+    The current default value of *leading_bits_in_bin_id* is
+    four, but this may change in future versions and is not
+    guaranteed.
+
+    *leading_bits_in_bin_id* must be passed by keyword,
+    and its role is purely advisory. It is not guaranteed
+    that future versions of the pool will use the
+    same allocation scheme and/or honor *leading_bits_in_bin_id*.
+
+.. attribute:: held_blocks
+
+    The number of unused blocks being held by this pool.
+
+.. attribute:: active_blocks
+
+    The number of blocks in active use that have been allocated
+    through this pool.
+
+.. attribute:: managed_bytes
+
+    "Managed" memory is "active" and "held" memory.
+
+    .. versionadded:: 2021.1.2
+
+.. attribute:: active_bytes
+
+    "Active" bytes are bytes under the control of the application.
+    This may be smaller than the actual allocated size reflected
+    in :attr:`managed_bytes`.
+
+    .. versionadded:: 2021.1.2
+
+
+.. method:: free_held
+
+    Free all unused memory that the pool is currently holding.
+
+.. method:: stop_holding
+
+    Instruct the memory to start immediately freeing memory returned
+    to it, instead of holding it for future allocations.
+    Implicitly calls :meth:`free_held`.
+    This is useful as a cleanup action when a memory pool falls out
+    of use.
+"""
+
+
+def _monkeypatch_docstrings():
+
+    PooledBuffer.__doc__ = """
+    An object representing a :class:`MemoryPool`-based allocation of
+    :class:`~pyopencl.Buffer`-style device memory.  Analogous to
+    :class:`~pyopencl.Buffer`, however once this object is deleted, its
+    associated device memory is returned to the pool.
+
+    Is a :class:`pyopencl.MemoryObject`.
+    """
+
+    AllocatorBase.__doc__ = """
+    An interface implemented by various memory allocation functions
+    in :mod:`pyopencl`.
+
+    .. automethod:: __call__
+
+        Allocate and return a :class:`pyopencl.Buffer` of the given *size*.
+    """
+
+    # {{{ DeferredAllocator
+
+    DeferredAllocator.__doc__ = """
+    *mem_flags* takes its values from :class:`pyopencl.mem_flags` and corresponds
+    to the *flags* argument of :class:`pyopencl.Buffer`. DeferredAllocator
+    has the same semantics as regular OpenCL buffer allocation, i.e. it may
+    promise memory to be available that may (in any call to a buffer-using
+    CL function) turn out to not exist later on. (Allocations in CL are
+    bound to contexts, not devices, and memory availability depends on which
+    device the buffer is used with.)
+
+    Implements :class:`AllocatorBase`.
+
+    .. versionchanged :: 2013.1
+
+        ``CLAllocator`` was deprecated and replaced
+        by :class:`DeferredAllocator`.
+
+    .. method::  __init__(context, mem_flags=pyopencl.mem_flags.READ_WRITE)
+
+    .. automethod:: __call__
+
+        Allocate a :class:`pyopencl.Buffer` of the given *size*.
+
+        .. versionchanged :: 2020.2
+
+            The allocator will succeed even for allocations of size zero,
+            returning *None*.
+    """
+
+    # }}}
+
+    # {{{ ImmediateAllocator
+
+    ImmediateAllocator.__doc__ = """
+    *mem_flags* takes its values from :class:`pyopencl.mem_flags` and corresponds
+    to the *flags* argument of :class:`pyopencl.Buffer`.
+    :class:`ImmediateAllocator` will attempt to ensure at allocation time that
+    allocated memory is actually available. If no memory is available, an
+    out-of-memory error is reported at allocation time.
+
+    Implements :class:`AllocatorBase`.
+
+    .. versionadded:: 2013.1
+
+    .. method:: __init__(queue, mem_flags=pyopencl.mem_flags.READ_WRITE)
+
+    .. automethod:: __call__
+
+        Allocate a :class:`pyopencl.Buffer` of the given *size*.
+
+        .. versionchanged :: 2020.2
+
+            The allocator will succeed even for allocations of size zero,
+            returning *None*.
+    """
+
+    # }}}
+
+    # {{{ MemoryPool
+
+    MemoryPool.__doc__ = """
+    A memory pool for OpenCL device memory in :class:`pyopencl.Buffer` form.
+    *allocator* must be an instance of one of the above classes, and should be
+    an :class:`ImmediateAllocator`.  The memory pool assumes that allocation
+    failures are reported by the allocator immediately, and not in the
+    OpenCL-typical deferred manner.
+
+    Implements :class:`AllocatorBase`.
+
+    .. versionchanged:: 2019.1
+
+        Current bin allocation behavior documented, *leading_bits_in_bin_id*
+        added.
+
+    .. automethod:: __init__
+
+    .. automethod:: allocate
+
+        Return a :class:`PooledBuffer` of the given *size*.
+
+    .. automethod:: __call__
+
+        Synonym for :meth:`allocate` to match :class:`AllocatorBase`.
+
+        .. versionadded:: 2011.2
+    """ + _MEMPOOL_IFACE_DOCS
+
+    # }}}
+
+
+_monkeypatch_docstrings()
+
+
+def _monkeypatch_svm_docstrings():
+    # {{{ PooledSVM
+
+    PooledSVM.__doc__ = """
+    An object representing a :class:`SVMPool`-based allocation of
+    :ref:`svm`.  Analogous to :class:`~pyopencl.SVMAllocation`, however once
+    this object is deleted, its associated device memory is returned to the
+    pool from which it came.
+
+    .. versionadded:: 2022.2
+
+    .. note::
+
+        If the :class:`SVMAllocator` for the :class:`SVMPool` that allocated an
+        object of this type is associated with an (in-order)
+        :class:`~pyopencl.CommandQueue`, sufficient synchronization is provided
+        to ensure operations enqueued before deallocation complete before
+        operations from a different use (possibly in a different queue) are
+        permitted to start. This applies when :class:`release` is called and
+        also when the object is freed automatically by the garbage collector.
+
+    Is a :class:`pyopencl.SVMPointer`.
+
+    Supports structural equality and hashing.
+
+    .. automethod:: release
+
+        Return the held memory to the pool. See the note about synchronization
+        behavior during deallocation above.
+
+    .. automethod:: enqueue_release
+
+        Synonymous to :meth;`release`, for consistency with
+        :class:`~pyopencl.SVMAllocation`. Note that, unlike
+        :meth:`pyopencl.SVMAllocation.enqueue_release`, specifying a queue
+        or events to be waited for is not supported.
+
+    .. automethod:: bind_to_queue
+
+        Analogous to :meth:`pyopencl.SVMAllocation.bind_to_queue`.
+
+    .. automethod:: unbind_from_queue
+
+        Analogous to :meth:`pyopencl.SVMAllocation.unbind_from_queue`.
+    """
+
+    # }}}
+
+    # {{{ SVMAllocator
+
+    SVMAllocator.__doc__ = """
+    .. versionadded:: 2022.2
+
+    .. automethod:: __init__
+
+        :arg flags: See :class:`~pyopencl.svm_mem_flags`.
+        :arg queue: If not specified, allocations will be freed
+            eagerly, irrespective of whether pending/enqueued operations
+            are still using the memory.
+
+            If specified, deallocation of memory will be enqueued
+            with the given queue, and will only be performed
+            after previously-enqueue operations in the queue have
+            completed.
+
+            It is an error to specify an out-of-order queue.
+
+            .. warning::
+
+                Not specifying a queue will typically lead to undesired
+                behavior, including crashes and memory corruption.
+                See the warning in :ref:`svm`.
+
+    .. automethod:: __call__
+
+        Return a :class:`~pyopencl.SVMAllocation` of the given *size*.
+    """
+
+    # }}}
+
+    # {{{ SVMPool
+
+    SVMPool.__doc__ = """
+    A memory pool for OpenCL device memory in :ref:`SVM <svm>` form.
+    *allocator* must be an instance of :class:`SVMAllocator`.
+
+    .. versionadded:: 2022.2
+
+    .. automethod:: __init__
+    .. automethod:: __call__
+
+        Return a :class:`PooledSVM` of the given *size*.
+    """ + _MEMPOOL_IFACE_DOCS
+
+    # }}}
+
+
+if get_cl_header_version() >= (2, 0):
+    _monkeypatch_svm_docstrings()
 
 # }}}
 
@@ -310,6 +681,22 @@ def get_pyopencl_fixture_arg_values():
 
 
 def pytest_generate_tests_for_pyopencl(metafunc):
+    """Using the line::
+
+        from pyopencl.tools import pytest_generate_tests_for_pyopencl
+                as pytest_generate_tests
+
+    in your `pytest <http://pytest.org>`_ test scripts allows you to use the
+    arguments *ctx_factory*, *device*, or *platform* in your test functions,
+    and they will automatically be run for each OpenCL device/platform in the
+    system, as appropriate.
+
+    The following two environment variabls is also supported to control
+    device/platform choice::
+
+        PYOPENCL_TEST=0:0,1;intel=i5,i7
+    """
+
     arg_names = get_pyopencl_fixture_arg_names(metafunc)
     if not arg_names:
         return
@@ -605,7 +992,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     the given *device* to ensure that :mod:`numpy` and C offsets and
     sizes match.)
 
-    .. versionadded: 2013.1
+    .. versionadded:: 2013.1
 
     This example explains the use of this function::
 

@@ -116,14 +116,109 @@ by both the host and the device. *Coarse-grain* SVM requires that
 buffers be mapped before being accessed on the host, *fine-grain* SVM
 does away with that requirement.
 
+.. warning::
+
+    Compared to :class:`Buffer`\ s, SVM brings with it a new concern: the
+    synchronization of memory deallocation. Unlike other objects in OpenCL,
+    SVM is represented by a plain (C-language) pointer and thus has no ability for
+    reference counting.
+
+    As a result, it is perfectly legal to allocate a :class:`Buffer`, enqueue an
+    operation on it, and release the buffer, without worrying about whether the
+    operation has completed. The OpenCL implementation will keep the buffer alive
+    until the operation has completed. This is *not* the case with SVM: Unless
+    otherwise specified, memory deallocation is performed immediately when
+    requested, and so SVM will be deallocated whenever the Python
+    garbage collector sees fit, even if the operation has not completed,
+    immediately leading to undefined behavior (i.e., typically, memory corruption and,
+    before too long, a crash).
+
+    Version 2022.2 of PyOpenCL offers substantially improved tools
+    for dealing with this. In particular, all means for allocating SVM
+    allow specifying a :class:`CommandQueue`, so that deallocation
+    is enqueued and performed after previously-enqueued operations
+    have completed.
+
 SVM requires OpenCL 2.0.
+
+.. _opaque-svm:
+
+Opaque and "Wrapped-:mod:`numpy`" Styles of Referencing SVM
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When trying to pass SVM pointers to functionality in :mod:`pyopencl`,
+two styles are supported:
+
+- First, the opaque style. This style most closely resembles
+  :class:`Buffer`-based allocation available in OpenCL 1.x.
+  SVM pointers are held in opaque "handle" objects such as :class:`SVMAllocation`.
+
+- Second, the wrapped-:mod:`numpy` style. In this case, a :class:`numpy.ndarray`
+  (or another object implementing the  :c:func:`Python buffer protocol
+  <PyObject_GetBuffer>`) serves as the reference to an area of SVM.
+  This style permits using memory areas with :mod:`pyopencl`'s SVM
+  interfaces even if they were allocated outside of :mod:`pyopencl`.
+
+  Since passing a :class:`numpy.ndarray` (or another type of object obeying the
+  buffer interface) already has existing semantics in most settings in
+  :mod:`pyopencl` (such as when passing arguments to a kernel or calling
+  :func:`enqueue_copy`), there exists a wrapper object, :class:`SVM`, that may
+  be "wrapped around" these objects to mark them as SVM.
+
+The commonality between the two styles is that both ultimately implement
+the :class:`SVMPointer` interface, which :mod:`pyopencl` uses to obtain
+the actual SVM pointer.
+
+Note that it is easily possible to obtain a :class:`numpy.ndarray` view of SVM
+areas held in the opaque style, see :attr:`SVMPointer.buf`, permitting
+transitions from opaque to wrapped-:mod:`numpy` style. The opposite transition
+(from wrapped-:mod:`numpy` to opaque) is not necessarily straightforward,
+as it would require "fishing" the opaque SVM handle out of a chain of
+:attr:`numpy.ndarray.base` attributes (or similar, depending on
+the actual object serving as the main SVM reference).
+
+See :ref:`numpy-svm-helpers` for helper functions that ease setting up the
+wrapped-:mod:`numpy` structure.
+
+Wrapped-:mod:`numpy` SVM tends to be a good fit for fine-grain SVM because of
+the ease of direct host-side access, but the creation of the nested structure
+that makes this possible is associated with a certain amount of cost.
+
+By comparison, opaque SVM access tends to be a good fit for coarse-grain
+SVM, because direct host access is not possible without mapping the array
+anyway, and it has lower setup cost. It is of course entirely possible to use
+opaque SVM access with fine-grain SVM.
+
+.. versionchanged:: 2022.2
+
+   This version adds the opaque style of SVM access.
+
+Using SVM with Arrays
+^^^^^^^^^^^^^^^^^^^^^
+
+While all types of SVM can be used as the memory backing
+:class:`pyopencl.array.Array` objects, ensuring that new arrays returned
+by array operations (e.g. arithmetic) also use SVM is easiest to accomplish
+by passing an :class:`~pyopencl.tools.SVMAllocator` (or
+:class:`~pyopencl.tools.SVMPool`) as the *allocator* parameter in functions
+returning new arrays.
+
+SVM Pointers, Allocations, and Maps
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: SVMPointer
+
+.. autoclass:: SVMAllocation
 
 .. autoclass:: SVM
 
 .. autoclass:: SVMMap
 
-Allocating SVM
-^^^^^^^^^^^^^^
+
+.. _numpy-svm-helpers:
+
+Helper functions for :mod:`numpy`-based SVM allocation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autofunction:: svm_empty
 .. autofunction:: svm_empty_like
@@ -139,11 +234,6 @@ Operations on SVM
 
 .. autofunction:: enqueue_svm_memfill
 .. autofunction:: enqueue_svm_migratemem
-
-SVM Allocation Holder
-^^^^^^^^^^^^^^^^^^^^^
-
-.. autoclass:: SVMAllocation
 
 Image
 -----
@@ -406,3 +496,11 @@ Pipes
 
         See :class:`pipe_info` for values of *param*.
 
+Type aliases
+------------
+
+.. currentmodule:: pyopencl._cl
+
+.. class:: Buffer
+
+   See :class:`pyopencl.Buffer`.
