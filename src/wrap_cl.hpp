@@ -1671,6 +1671,101 @@ namespace pyopencl
   // }}}
 
 
+  // {{{ command_queue_ref
+
+  // In contrast to command_queue, command_queue_ref is "nullable", i.e.
+  // it is a RAII *optional* reference to a command queue.
+
+  class command_queue_ref
+  {
+    private:
+      bool m_valid;
+      cl_command_queue m_queue;
+
+    public:
+      command_queue_ref()
+        : m_valid(false)
+      {}
+
+      command_queue_ref(cl_command_queue queue)
+        : m_valid(queue != nullptr), m_queue(queue)
+      {
+        // E.g. SVM allocations of size zero use a NULL queue. Tolerate that.
+        if (m_valid)
+          PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (m_queue));
+      }
+
+      command_queue_ref(command_queue_ref &&src) noexcept
+        : m_valid(src.m_valid), m_queue(src.m_queue)
+      {
+        src.m_valid = false;
+      }
+
+      command_queue_ref(const command_queue_ref &src)
+      : m_valid(src.m_valid), m_queue(src.m_queue)
+      {
+        // Note that there isn't anything per se wrong with this
+        // copy constructor, the refcounting is just potentially
+        // expensive.
+        //
+        // All code in current use moves these, it does not copy them,
+        // so this should never get called.
+        //
+        // Unfortunately, we can't delete this copy constructor,
+        // because we would like to return these from functions.
+        // This makes at least gcc require copy constructors, even
+        // if those are never called due to NRVO.
+        std::cerr << "COPYING A COMMAND_QUEUE_REF." << std::endl;
+
+        if (m_valid)
+          PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (m_queue));
+      }
+
+      command_queue_ref &operator=(const command_queue_ref &) = delete;
+
+      ~command_queue_ref()
+      {
+        reset();
+      }
+
+      bool is_valid() const
+      {
+        return m_valid;
+      }
+
+      cl_command_queue data() const
+      {
+        if (m_valid)
+          return m_queue;
+        else
+          throw error("command_queue_ref.data", CL_INVALID_VALUE,
+              "command_queue_ref is not valid");
+      }
+
+      void reset()
+      {
+        if (m_valid)
+          PYOPENCL_CALL_GUARDED_CLEANUP(clReleaseCommandQueue, (m_queue));
+        m_valid = false;
+      }
+
+      void set(cl_command_queue queue)
+      {
+        if (!queue)
+          throw error("command_queue_ref.set", CL_INVALID_VALUE,
+              "cannot set to NULL command queue");
+
+        if (m_valid)
+          PYOPENCL_CALL_GUARDED(clReleaseCommandQueue, (m_queue));
+        m_queue = queue;
+        PYOPENCL_CALL_GUARDED(clRetainCommandQueue, (m_queue));
+        m_valid = true;
+      }
+  };
+
+  // }}}
+
+
   // {{{ event/synchronization
 
   class event : noncopyable
