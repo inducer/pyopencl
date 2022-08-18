@@ -1962,6 +1962,28 @@ def enqueue_copy(queue, dest, src, **kwargs):
 # }}}
 
 
+# {{{ enqueue_fill
+
+def enqueue_fill(queue: CommandQueue,
+        dest: "Union[MemoryObjectHolder, SVMPointer]",
+        pattern: Any, size: int, *, offset: int = 0,
+        wait_for: Optional[Sequence[Event]] = None) -> Event:
+    """
+    .. versionadded:: 2022.2
+    """
+    if isinstance(dest, MemoryObjectHolder):
+        return enqueue_fill_buffer(queue, dest, pattern, offset, size, wait_for)
+    elif isinstance(dest, SVMPointer):
+        if offset:
+            raise NotImplementedError("enqueue_fill with SVM does not yet support "
+                    "offsets")
+        return enqueue_svm_memfill(queue, dest, pattern, size, wait_for)
+    else:
+        raise TypeError(f"enqueue_fill does not know how to fill '{type(dest)}'")
+
+# }}}
+
+
 # {{{ image creation
 
 DTYPE_TO_CHANNEL_TYPE = {
