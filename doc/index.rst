@@ -91,6 +91,9 @@ Software that works with or enhances PyOpenCL
   <https://github.com/cbclab/MOT>`_ offers a variety of GPU-enabled non-linear optimization algorithms
   and MCMC sampling routines for parallel optimization and sampling of multiple problems.
 
+* Vincent Favre-Nicolin's `pyvkfft <https://github.com/vincefn/pyvkfft/>`__
+  makes `vkfft <https://github.com/DTolm/VkFFT>`__ accessible from PyOpenCL.
+
 If you know of a piece of software you feel that should be on this list, please
 let me know, or, even better, send a patch!
 
