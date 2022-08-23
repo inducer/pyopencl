@@ -900,10 +900,10 @@ def _add_functionality():
         # kernel_set_scalar_arg_dtypes is called.
         return self._enqueue(self, queue, global_size, local_size, *args, **kwargs)
 
-    def kernel_capture_call(self, filename, queue, global_size, local_size,
+    def kernel_capture_call(self, output_file, queue, global_size, local_size,
             *args, **kwargs):
         from pyopencl.capture_call import capture_kernel_call
-        capture_kernel_call(self, filename, queue, global_size, local_size,
+        capture_kernel_call(self, output_file, queue, global_size, local_size,
                 *args, **kwargs)
 
     def kernel_get_info(self, param_name):

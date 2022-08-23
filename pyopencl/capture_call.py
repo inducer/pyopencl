@@ -26,7 +26,7 @@ import numpy as np
 from pytools.py_codegen import PythonCodeGenerator, Indentation
 
 
-def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs):
+def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwargs):
     try:
         source = kernel._source
     except AttributeError:
@@ -168,5 +168,8 @@ def capture_kernel_call(kernel, filename, queue, g_size, l_size, *args, **kwargs
 
     # }}}
 
-    with open(filename, "w") as outf:
-        outf.write(cg.get())
+    if isinstance(output_file, str):
+        with open(output_file, "w") as outf:
+            outf.write(cg.get())
+    else:
+        output_file.write(cg.get())
