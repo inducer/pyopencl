@@ -19,7 +19,7 @@ Program
     caching is performed. To retain the compiled version of a kernel
     in memory, simply retain the :class:`Program` and/or :class:`Kernel`
     objects.
-    
+
     PyOpenCL will also cache "invokers", which are short snippets of Python
     that are generated to accelerate passing arguments to and enqueuing
     a kernel. For now, this caching is unaffected by ``PYOPENCL_NO_CACHE``.
@@ -298,7 +298,7 @@ Kernel
 
             Added the *allow_empty_ndrange* keyword argument.
 
-    .. method:: capture_call(filename, queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
+    .. method:: capture_call(output_file, queue, global_size, local_size, *args, global_offset=None, wait_for=None, g_times_l=False)
 
         This method supports the exact same interface as :meth:`__call__`, but
         instead of invoking the kernel, it writes a self-contained PyOpenCL program
@@ -309,6 +309,9 @@ Kernel
         to automate the task of creating a small, self-contained test case for
         an observed problem. It can also help separate a misbehaving kernel from
         a potentially large or time-consuming outer code.
+
+        :arg output_file: a a filename or a file-like to which the generated
+            code is to be written.
 
         To use, simply change::
 
