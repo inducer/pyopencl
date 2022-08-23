@@ -1266,6 +1266,39 @@ def test_command_queue_context_manager(ctx_factory):
         q.flush()
 
 
+def test_capture_call(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    a_np = np.random.rand(500).astype(np.float32)
+    b_np = np.random.rand(500).astype(np.float32)
+
+    ctx = cl.create_some_context()
+    queue = cl.CommandQueue(ctx)
+
+    mf = cl.mem_flags
+    a_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=a_np)
+    b_g = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=b_np)
+
+    prg = cl.Program(ctx, """
+    __kernel void sum(
+        __global const float *a_g, __global const float *b_g, __global float *res_g)
+    {
+    int gid = get_global_id(0);
+    res_g[gid] = a_g[gid] + b_g[gid];
+    }
+    """).build()
+
+    res_g = cl.Buffer(ctx, mf.WRITE_ONLY, a_np.nbytes)
+    from io import StringIO
+    sio = StringIO()
+    prg.sum.capture_call(sio, queue, a_np.shape, None, a_g, b_g, res_g)
+
+    compile_dict = {}
+    exec(compile(sio.getvalue(), "captured.py", "exec"), compile_dict)
+    compile_dict["main"]()
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa

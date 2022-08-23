@@ -146,7 +146,7 @@ def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwa
     for name, val in arg_data:
         cg("%s = (" % name)
         with Indentation(cg):
-            val = str(b64encode(compress(memoryview(val))))
+            val = b64encode(compress(memoryview(val))).decode()
             i = 0
             while i < len(val):
                 cg(repr(val[i:i+line_len]))
