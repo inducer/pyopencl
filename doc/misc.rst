@@ -29,7 +29,6 @@ Then run::
 You can install these pieces of software in your user account and
 do not need root/administrator privileges.
 
-
 Enabling access to CPUs and GPUs via (Py)OpenCL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -728,7 +727,9 @@ Funding
 Work on pytential was supported in part by
 
 * the US National Science Foundation under grant numbers DMS-1418961,
-  DMS-1654756, SHF-1911019, and OAC-1931577.
+  DMS-1654756, SHF-1911019, and OAC-1931577, and
+* the Department of Energy, National Nuclear Security Administration,
+  under Award Number DE-NA0003963.
 
 AK also gratefully acknowledges a hardware gift from Nvidia Corporation.
 
