@@ -110,11 +110,11 @@ Contents
     runtime_memory
     runtime_program
     runtime_gl
+    tools
     array
     types
     algorithm
     howto
-    tools
     misc
     🚀 Github <https://github.com/inducer/pyopencl>
     💾 Download Releases <https://pypi.org/project/pyopencl>
