@@ -1143,6 +1143,12 @@ class ListOfListsBuilder:
             from pyopencl.tools import VectorArg
             if isinstance(arg_descr, VectorArg):
                 from pyopencl import MemoryObject
+                if arg_val is None:
+                    data_args.append(arg_val)
+                    if arg_descr.with_offset:
+                        data_args.append(0)
+                    continue
+
                 if isinstance(arg_val, MemoryObject):
                     data_args.append(arg_val)
                     if arg_descr.with_offset:
