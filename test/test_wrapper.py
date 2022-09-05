@@ -59,6 +59,8 @@ def _xfail_if_pocl_gpu(device, what):
                 "at least the Titan V, as of pocl 1.6, 2021-01-20")
 
 
+# {{{ test_get_info
+
 def test_get_info(ctx_factory):
     ctx = ctx_factory()
     device, = ctx.devices
@@ -236,6 +238,10 @@ def test_get_info(ctx_factory):
         do_test(img, cl.image_info,
                 lambda info: img.get_image_info(info))
 
+# }}}
+
+
+# {{{ test_int_ptr
 
 def test_int_ptr(ctx_factory):
     def do_test(obj):
@@ -285,6 +291,10 @@ def test_int_ptr(ctx_factory):
         img = cl.Image(ctx, cl.mem_flags.READ_ONLY, img_format, (128, 256))
         do_test(img)
 
+# }}}
+
+
+# {{{ test_invalid_kernel_names_cause_failures
 
 def test_invalid_kernel_names_cause_failures(ctx_factory):
     ctx = ctx_factory()
@@ -308,6 +318,10 @@ def test_invalid_kernel_names_cause_failures(ctx_factory):
         else:
             raise
 
+# }}}
+
+
+# {{{ test_image_format_constructor
 
 def test_image_format_constructor():
     # doesn't need image support to succeed
@@ -319,6 +333,10 @@ def test_image_format_constructor():
     if not cl._PYPY:
         assert not hasattr(iform, "__dict__")
 
+# }}}
+
+
+# {{{ test_device_topology_amd_constructor
 
 def test_device_topology_amd_constructor():
     # doesn't need cl_amd_device_attribute_query support to succeed
@@ -331,6 +349,10 @@ def test_device_topology_amd_constructor():
     if not cl._PYPY:
         assert not hasattr(topol, "__dict__")
 
+# }}}
+
+
+# {{{ test_nonempty_supported_image_formats
 
 def test_nonempty_supported_image_formats(ctx_factory):
     context = ctx_factory()
@@ -344,6 +366,10 @@ def test_nonempty_supported_image_formats(ctx_factory):
         from pytest import skip
         skip("images not supported on %s" % device.name)
 
+# }}}
+
+
+# {{{ test_that_python_args_fail
 
 def test_that_python_args_fail(ctx_factory):
     context = ctx_factory()
@@ -379,6 +405,10 @@ def test_that_python_args_fail(ctx_factory):
     a_result = np.empty_like(a)
     cl.enqueue_copy(queue, a_buf, a_result).wait()
 
+# }}}
+
+
+# {{{ test_image_2d
 
 def test_image_2d(ctx_factory):
     context = ctx_factory()
@@ -452,6 +482,10 @@ def test_image_2d(ctx_factory):
         else:
             assert good
 
+# }}}
+
+
+# {{{ test_image_3d
 
 def test_image_3d(ctx_factory):
     #test for image_from_array for 3d image of float2
@@ -530,6 +564,10 @@ def test_image_3d(ctx_factory):
         else:
             assert good
 
+# }}}
+
+
+# {{{ test_copy_buffer
 
 def test_copy_buffer(ctx_factory):
     context = ctx_factory()
@@ -549,6 +587,10 @@ def test_copy_buffer(ctx_factory):
 
     assert la.norm(a - b) == 0
 
+# }}}
+
+
+# {{{ test_mempool_*
 
 def test_mempool(ctx_factory):
     from pyopencl.tools import MemoryPool, ImmediateAllocator
@@ -601,6 +643,10 @@ def test_mempool_32bit_issues():
         for offs in range(-5, 5):
             pool.allocate(2**i + offs)
 
+# }}}
+
+
+# {{{ test_allocator
 
 @pytest.mark.parametrize("allocator_cls", [ImmediateAllocator, DeferredAllocator])
 def test_allocator(ctx_factory, allocator_cls):
@@ -618,6 +664,10 @@ def test_allocator(ctx_factory, allocator_cls):
     assert mem is not None
     assert mem2 is None
 
+# }}}
+
+
+# {{{ test_vector_args
 
 def test_vector_args(ctx_factory):
     context = ctx_factory()
@@ -639,7 +689,10 @@ def test_vector_args(ctx_factory):
 
     assert (dest == x).all()
 
+# }}}
 
+
+# {{{ test_header_dep_handling
 def test_header_dep_handling(ctx_factory):
     context = ctx_factory()
 
@@ -657,6 +710,10 @@ def test_header_dep_handling(ctx_factory):
     cl.Program(context, kernel_src).build(["-I", dirname(__file__)])
     cl.Program(context, kernel_src).build(["-I", dirname(__file__)])
 
+# }}}
+
+
+# {{{ test_context_dep_memoize
 
 def test_context_dep_memoize(ctx_factory):
     context = ctx_factory()
@@ -674,6 +731,10 @@ def test_context_dep_memoize(ctx_factory):
 
     assert counter[0] == 1
 
+# }}}
+
+
+# {{{ test_can_build_and_run_binary
 
 def test_can_build_and_run_binary(ctx_factory):
     ctx = ctx_factory()
@@ -698,6 +759,10 @@ def test_can_build_and_run_binary(ctx_factory):
 
     foo.simple(queue, (n,), (16,), a_dev.data, dest_dev.data)
 
+# }}}
+
+
+# {{{ test_enqueue_barrier_marker
 
 def test_enqueue_barrier_marker(ctx_factory):
     ctx = ctx_factory()
@@ -716,6 +781,10 @@ def test_enqueue_barrier_marker(ctx_factory):
     evt2 = cl.enqueue_marker(queue, wait_for=[evt1])
     cl.enqueue_barrier(queue, wait_for=[evt1, evt2])
 
+# }}}
+
+
+# {{{ test_wait_for_events
 
 def test_wait_for_events(ctx_factory):
     ctx = ctx_factory()
@@ -724,6 +793,10 @@ def test_wait_for_events(ctx_factory):
     evt2 = cl.enqueue_marker(queue)
     cl.wait_for_events([evt1, evt2])
 
+# }}}
+
+
+# {{{ test_unload_compiler
 
 def test_unload_compiler(platform):
     if (platform._get_cl_version() < (1, 2)
@@ -736,6 +809,10 @@ def test_unload_compiler(platform):
         skip("Intel proprietary driver does not support unloading compiler")
     cl.unload_platform_compiler(platform)
 
+# }}}
+
+
+# {{{ test_platform_get_devices
 
 def test_platform_get_devices(ctx_factory):
     ctx = ctx_factory()
@@ -762,6 +839,10 @@ def test_platform_get_devices(ctx_factory):
         for dev in devs:
             assert dev.type & dev_type == dev_type
 
+# }}}
+
+
+# {{{ test_user_event
 
 def test_user_event(ctx_factory):
     ctx = ctx_factory()
@@ -808,6 +889,10 @@ def test_user_event(ctx_factory):
         raise RuntimeError("cl.wait_for_events timeout on UserEvent")
     assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
+# }}}
+
+
+# {{{ test_buffer_get_host_array
 
 def test_buffer_get_host_array(ctx_factory):
     if cl._PYPY:
@@ -843,6 +928,10 @@ def test_buffer_get_host_array(ctx_factory):
     except cl.LogicError:
         pass
 
+# }}}
+
+
+# {{{ test_program_valued_get_info
 
 def test_program_valued_get_info(ctx_factory):
     ctx = ctx_factory()
@@ -860,6 +949,10 @@ def test_program_valued_get_info(ctx_factory):
     assert knl.program == prg
     knl.program.binaries[0]
 
+# }}}
+
+
+# {{{ test_event_set_callback
 
 def test_event_set_callback(ctx_factory):
     import sys
@@ -921,6 +1014,10 @@ def test_event_set_callback(ctx_factory):
 
     assert got_called
 
+# }}}
+
+
+# {{{ test_global_offset
 
 def test_global_offset(ctx_factory):
     context = ctx_factory()
@@ -951,6 +1048,10 @@ def test_global_offset(ctx_factory):
 
     assert (a_2 == 2*a).all()
 
+# }}}
+
+
+# {{{ test_sub_buffers
 
 def test_sub_buffers(ctx_factory):
     ctx = ctx_factory()
@@ -981,6 +1082,10 @@ def test_sub_buffers(ctx_factory):
 
     assert np.array_equal(a_sub, a_sub_ref)
 
+# }}}
+
+
+# {{{ test_spirv
 
 def test_spirv(ctx_factory):
     ctx = ctx_factory()
@@ -1012,6 +1117,10 @@ def test_spirv(ctx_factory):
 
     assert la.norm((dest_dev - (a_dev+b_dev)).get()) < 1e-7
 
+# }}}
+
+
+# {{{ test_coarse_grain_svm
 
 def test_coarse_grain_svm(ctx_factory):
     import sys
@@ -1095,6 +1204,10 @@ def test_coarse_grain_svm(ctx_factory):
 
     # }}}
 
+# }}}
+
+
+# {{{ test_fine_grain_svm
 
 def test_fine_grain_svm(ctx_factory):
     import sys
@@ -1133,6 +1246,10 @@ def test_fine_grain_svm(ctx_factory):
     print(ary)
     assert np.array_equal(orig_ary*2, ary)
 
+# }}}
+
+
+# {{{ test_map_dtype
 
 @pytest.mark.parametrize("dtype", [
     np.uint,
@@ -1157,6 +1274,10 @@ def test_map_dtype(ctx_factory, dtype):
         print(array.dtype)
         assert array.dtype == dt
 
+# }}}
+
+
+# {{{ test_compile_link
 
 def test_compile_link(ctx_factory):
     ctx = ctx_factory()
@@ -1194,6 +1315,10 @@ def test_compile_link(ctx_factory):
     z.experiment(queue, (128**2,), (128,))
     queue.finish()
 
+# }}}
+
+
+# {{{ test_copy_buffer_rect
 
 def test_copy_buffer_rect(ctx_factory):
     ctx = ctx_factory()
@@ -1209,6 +1334,10 @@ def test_copy_buffer_rect(ctx_factory):
             src_origin=(0, 0), dst_origin=(1, 1),
             region=arr1.shape[::-1])
 
+# }}}
+
+
+# {{{ test_threaded_nanny_events
 
 def test_threaded_nanny_events(ctx_factory):
     # https://github.com/inducer/pyopencl/issues/296
@@ -1236,6 +1365,10 @@ def test_threaded_nanny_events(ctx_factory):
     t1.join()
     t2.join()
 
+# }}}
+
+
+# {{{ test_empty_ndrange
 
 @pytest.mark.parametrize("empty_shape", [(0,), (3, 0, 2)])
 def test_empty_ndrange(ctx_factory, empty_shape):
@@ -1256,6 +1389,10 @@ def test_empty_ndrange(ctx_factory, empty_shape):
 
     prg.add_two(queue, a.shape, None, a.data, allow_empty_ndrange=True)
 
+# }}}
+
+
+# {{{ test_command_queue_context_manager
 
 def test_command_queue_context_manager(ctx_factory):
     ctx = ctx_factory()
@@ -1265,6 +1402,10 @@ def test_command_queue_context_manager(ctx_factory):
     with pytest.warns(cl.CommandQueueUsedAfterExit):
         q.flush()
 
+# }}}
+
+
+# {{{ test_capture_call
 
 def test_capture_call(ctx_factory):
     ctx = ctx_factory()
@@ -1298,6 +1439,8 @@ def test_capture_call(ctx_factory):
     exec(compile(sio.getvalue(), "captured.py", "exec"), compile_dict)
     compile_dict["main"]()
 
+# }}}
+
 
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
@@ -1309,3 +1452,5 @@ if __name__ == "__main__":
     else:
         from pytest import main
         main([__file__])
+
+# vim: foldmethod=marker
