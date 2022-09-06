@@ -488,6 +488,15 @@ namespace pyopencl {
 
         m_ptr.queue.reset();
       }
+
+      // only use for testing/diagnostic/debugging purposes!
+      cl_command_queue queue() const
+      {
+        if (m_ptr.queue.is_valid())
+          return m_ptr.queue.data();
+        else
+          return nullptr;
+      }
   };
 
   // }}}
@@ -677,6 +686,17 @@ void pyopencl_expose_mempool(py::module &m)
       .def("__hash__", [](cls &self) { return (intptr_t) self.svm_ptr(); })
       .DEF_SIMPLE_METHOD(bind_to_queue)
       .DEF_SIMPLE_METHOD(unbind_from_queue)
+
+      // only for diagnostic/debugging/testing purposes!
+      .def_property_readonly("_queue",
+          [](cls const &self) -> py::object
+          {
+            cl_command_queue queue = self.queue();
+            if (queue)
+              return py::cast(new pyopencl::command_queue(queue, true));
+            else
+              return py::none();
+          })
       ;
   }
 
