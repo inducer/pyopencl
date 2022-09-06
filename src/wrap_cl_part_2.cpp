@@ -408,6 +408,17 @@ void pyopencl_expose_part_2(py::module &m)
       .def("bind_to_queue", &cls::bind_to_queue,
           py::arg("queue"))
       .DEF_SIMPLE_METHOD(unbind_from_queue)
+
+      // only for diagnostic/debugging/testing purposes!
+      .def_property_readonly("_queue",
+          [](cls const &self) -> py::object
+          {
+            cl_command_queue queue = self.queue();
+            if (queue)
+              return py::cast(new command_queue(queue, true));
+            else
+              return py::none();
+          })
       ;
   }
 

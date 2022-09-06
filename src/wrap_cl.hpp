@@ -3783,6 +3783,15 @@ namespace pyopencl
 
         m_queue.reset();
       }
+
+      // only use for testing/diagnostic/debugging purposes!
+      cl_command_queue queue() const
+      {
+        if (m_queue.is_valid())
+          return m_queue.data();
+        else
+          return nullptr;
+      }
   };
 
   // }}}
