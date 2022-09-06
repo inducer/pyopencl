@@ -6,6 +6,7 @@ OpenCL Runtime: Constants
 .. include:: constants.inc
 
 .. class:: NameVersion
+
     Describes the version of a specific feature.
 
     .. note::
@@ -19,6 +20,7 @@ OpenCL Runtime: Constants
     .. attribute:: name
 
 .. class:: DeviceTopologyAmd
+
     .. method:: __init__(bus, device, function)
     .. attribute:: type
     .. attribute:: bus
