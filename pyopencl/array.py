@@ -31,6 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 from dataclasses import dataclass, field
 from typing import Any, List, Optional
 from functools import reduce
+from warnings import warn
 
 import numpy as np
 import pyopencl.elementwise as elementwise
@@ -130,7 +131,6 @@ class InconsistentOpenCLQueueWarning(UserWarning):
 
 class VecLookupWarner:
     def __getattr__(self, name):
-        from warnings import warn
         warn("pyopencl.array.vec is deprecated. "
              "Please use pyopencl.cltypes for OpenCL vector and scalar types",
              DeprecationWarning, 2)
@@ -226,7 +226,6 @@ def elwise_kernel_runner(kernel_getter):
 
 class DefaultAllocator(cl.tools.DeferredAllocator):
     def __init__(self, *args, **kwargs):
-        from warnings import warn
         warn("pyopencl.array.DefaultAllocator is deprecated. "
                 "It will be continue to exist throughout the 2013.x "
                 "versions of PyOpenCL.",
@@ -714,7 +713,6 @@ class Array:
             raise RuntimeError("cannot set from non-contiguous array")
 
         if not _equal_strides(ary.strides, self.strides, self.shape):
-            from warnings import warn
             warn("Setting array from one with different "
                     "strides/storage order. This will cease to work "
                     "in 2013.x.",
@@ -761,7 +759,6 @@ class Array:
                 raise TypeError("'ary' has non-matching type")
 
             if self.shape != ary.shape:
-                from warnings import warn
                 warn("get() between arrays of different shape is deprecated "
                         "and will be removed in PyCUDA 2017.x",
                         DeprecationWarning, stacklevel=2)
@@ -816,7 +813,6 @@ class Array:
         """
 
         if async_:
-            from warnings import warn
             warn("calling pyopencl.Array.get with `async_=True` is deprecated. "
                     "Please use pyopencl.Array.get_async for asynchronous "
                     "device-to-host transfers",
@@ -887,7 +883,6 @@ class Array:
         if result[:5] == "array":
             result = f"cl.{type(self).__name__}" + result[5:]
         else:
-            from warnings import warn
             warn(f"{type(result).__name__}.__repr__ was expected to return a "
                      f"string starting with 'array', got '{result[:10]!r}'")
 
@@ -2685,7 +2680,6 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
         import builtins
         if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
                         for ary in arrays[1:]):
-            from warnings import warn
             warn("Elements of 'arrays' not of the same type, returning "
                  "an instance of the type of arrays[0]",
                  stacklevel=2)
@@ -2754,7 +2748,6 @@ def hstack(arrays, queue=None):
         import builtins
         if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
                         for ary in arrays[1:]):
-            from warnings import warn
             warn("Elements of 'arrays' not of the same type, returning "
                  "an instance of the type of arrays[0]",
                  stacklevel=2)
@@ -2814,7 +2807,6 @@ def stack(arrays, axis=0, queue=None):
         import builtins
         if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
                         for ary in arrays[1:]):
-            from warnings import warn
             warn("Elements of 'arrays' not of the same type, returning "
                  "an instance of the type of arrays[0]",
                  stacklevel=2)
