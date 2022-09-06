@@ -1122,14 +1122,13 @@ def test_spirv(ctx_factory):
 
 # {{{ test_coarse_grain_svm
 
-def test_coarse_grain_svm(ctx_factory):
+@pytest.mark.parametrize("use_opaque_style", [False, True])
+def test_coarse_grain_svm(ctx_factory, use_opaque_style):
     import sys
     is_pypy = "__pypy__" in sys.builtin_module_names
 
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
-
-    _xfail_if_pocl_gpu(queue.device, "SVM")
 
     dev = ctx.devices[0]
 
@@ -1144,16 +1143,32 @@ def test_coarse_grain_svm(ctx_factory):
     if ("AMD" in dev.platform.name
             and dev.type & cl.device_type.GPU):
         pytest.xfail("AMD GPU crashes on SVM unmap")
+    if (dev.platform.vendor == "The pocl project"
+            and dev.type & cl.device_type.GPU
+            and "k40" in dev.name.lower()):
+        pytest.xfail("Crashes on K40s via POCL-CUDA")
 
+    dtype = np.dtype(np.float32)
     n = 3000
-    svm_ary = cl.SVM(cl.csvm_empty(ctx, (n,), np.float32, alignment=64))
-    if not is_pypy:
-        # https://bitbucket.org/pypy/numpy/issues/52
-        assert isinstance(svm_ary.mem.base, cl.SVMAllocation)
+    if use_opaque_style:
+        svm_ary = cl.SVMAllocation(ctx, n*dtype.itemsize, alignment=64,
+                                   flags=cl.svm_mem_flags.READ_WRITE)
+    else:
+        svm_ary = cl.SVM(cl.csvm_empty(ctx, (n,), dtype, alignment=64))
+        if not is_pypy:
+            # https://bitbucket.org/pypy/numpy/issues/52
+            assert isinstance(svm_ary.mem.base, cl.SVMAllocation)
 
-    cl.enqueue_svm_memfill(queue, svm_ary, np.zeros((), svm_ary.mem.dtype))
+    cl.enqueue_svm_memfill(queue, svm_ary, np.zeros((), dtype))
 
     with svm_ary.map_rw(queue) as ary:
+        if use_opaque_style:
+            ary = ary.view(dtype)
+        else:
+            assert ary is svm_ary.mem
+
+        assert ary.nbytes == n * dtype.itemsize
+
         ary.fill(17)
         orig_ary = ary.copy()
 
@@ -1164,21 +1179,28 @@ def test_coarse_grain_svm(ctx_factory):
         }
         """).build()
 
-    prg.twice(queue, svm_ary.mem.shape, None, svm_ary)
+    prg.twice(queue, (n,), None, svm_ary)
+
+    if dev.platform.vendor == "The pocl project" \
+            and dev.type & cl.device_type.GPU:
+        # clCreateBuffer from SVM doesn't work yet on GPU pocl
+        prg.twice(queue, (n,), None, svm_ary)
+    else:
+        prg.twice(queue, (n,), None, svm_ary.as_buffer(ctx))
 
     with svm_ary.map_ro(queue) as ary:
-        print(ary)
-        assert np.array_equal(orig_ary*2, ary)
+        if use_opaque_style:
+            ary = ary.view(dtype)
+        else:
+            assert ary is svm_ary.mem
+
+        assert np.array_equal(orig_ary*4, ary)
 
     new_ary = np.empty_like(orig_ary)
     new_ary.fill(-1)
 
-    if ctx.devices[0].platform.name != "Portable Computing Language":
-        # "Blocking memcpy is unimplemented (clEnqueueSVMMemcpy.c:61)"
-        # in pocl up to and including 1.0rc1.
-
-        cl.enqueue_copy(queue, new_ary, svm_ary)
-        assert np.array_equal(orig_ary*2, new_ary)
+    cl.enqueue_copy(queue, new_ary, svm_ary)
+    assert np.array_equal(orig_ary*4, new_ary)
 
     # {{{ https://github.com/inducer/pyopencl/issues/372
 
