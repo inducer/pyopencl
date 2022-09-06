@@ -50,6 +50,11 @@ from numbers import Number
 
 SCALAR_CLASSES = (Number, np.bool_, bool)
 
+if cl.get_cl_header_version() >= (2, 0):
+    _SVMPointer_or_nothing = cl.SVMPointer
+else:
+    _SVMPointer_or_nothing = ()
+
 
 _COMMON_DTYPE_CACHE = {}
 
@@ -254,6 +259,7 @@ class _copy_queue:  # noqa
 
 _ARRAY_GET_SIZES_CACHE = {}
 _BOOL_DTYPE = np.dtype(np.int8)
+_NOT_PRESENT = object()
 
 
 class Array:
@@ -589,6 +595,16 @@ class Array:
         self.offset = offset
         self.context = context
         self._flags = _flags
+
+        if __debug__:
+            if queue is not None and isinstance(
+                    self.base_data, _SVMPointer_or_nothing):
+                mem_queue = getattr(self.base_data, "_queue", _NOT_PRESENT)
+                if mem_queue is not _NOT_PRESENT and mem_queue != queue:
+                    warn("Array has different queue from backing SVM memory. "
+                         "This may lead to the array getting deallocated sooner "
+                         "than expected, potentially leading to crashes.",
+                         InconsistentOpenCLQueueWarning, stacklevel=2)
 
     @property
     def ndim(self):
