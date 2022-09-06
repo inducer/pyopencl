@@ -2460,7 +2460,7 @@ namespace pyopencl
       command_queue &cq,
       memory_object_holder &mem,
       py::object buffer,
-      size_t device_offset,
+      size_t src_offset,
       py::object py_wait_for,
       bool is_blocking)
   {
@@ -2484,7 +2484,7 @@ namespace pyopencl
             queue,
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
-            device_offset, len, buf,
+            src_offset, len, buf,
             PYOPENCL_WAITLIST_ARGS, &evt
             ))
       );
@@ -2499,7 +2499,7 @@ namespace pyopencl
       command_queue &cq,
       memory_object_holder &mem,
       py::object buffer,
-      size_t device_offset,
+      size_t dst_offset,
       py::object py_wait_for,
       bool is_blocking)
   {
@@ -2523,7 +2523,7 @@ namespace pyopencl
             queue,
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
-            device_offset, len, buf,
+            dst_offset, len, buf,
             PYOPENCL_WAITLIST_ARGS, &evt
             ))
       );
