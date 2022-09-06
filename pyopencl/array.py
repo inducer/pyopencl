@@ -735,13 +735,9 @@ class Array:
                     stacklevel=2)
 
         if self.size:
-            if self.offset:
-                event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
-                        device_offset=self.offset,
-                        is_blocking=not async_)
-            else:
-                event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
-                        is_blocking=not async_)
+            event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
+                    dst_offset=self.offset,
+                    is_blocking=not async_)
 
             self.add_event(event1)
 
@@ -789,13 +785,9 @@ class Array:
                     "to associate one.")
 
         if self.size:
-            if self.offset:
-                event1 = cl.enqueue_copy(queue, ary, self.base_data,
-                        device_offset=self.offset,
-                        wait_for=self.events, is_blocking=not async_)
-            else:
-                event1 = cl.enqueue_copy(queue, ary, self.base_data,
-                        wait_for=self.events, is_blocking=not async_)
+            event1 = cl.enqueue_copy(queue, ary, self.base_data,
+                    src_offset=self.offset,
+                    wait_for=self.events, is_blocking=not async_)
 
             self.add_event(event1)
         else:
@@ -2142,7 +2134,7 @@ class Array:
             if subarray.shape == value.shape and subarray.strides == value.strides:
                 self.add_event(
                         cl.enqueue_copy(queue, subarray.base_data,
-                            value, device_offset=subarray.offset, wait_for=wait_for))
+                            value, dst_offset=subarray.offset, wait_for=wait_for))
                 return
             else:
                 value = to_device(queue, value, self.allocator)

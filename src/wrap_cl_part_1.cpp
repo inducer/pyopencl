@@ -282,11 +282,12 @@ void pyopencl_expose_part_1(py::module &m)
   // {{{ transfers
 
   // {{{ byte-for-byte
+
   m.def("_enqueue_read_buffer", enqueue_read_buffer,
       py::arg("queue"),
       py::arg("mem"),
       py::arg("hostbuf"),
-      py::arg("device_offset")=0,
+      py::arg("src_offset")=0,
       py::arg("wait_for")=py::none(),
       py::arg("is_blocking")=true
       );
@@ -294,7 +295,7 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("queue"),
       py::arg("mem"),
       py::arg("hostbuf"),
-      py::arg("device_offset")=0,
+      py::arg("dst_offset")=0,
       py::arg("wait_for")=py::none(),
       py::arg("is_blocking")=true
       );

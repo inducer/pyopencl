@@ -1770,7 +1770,13 @@ def enqueue_copy(queue, dest, src, **kwargs):
     .. rubric :: Transfer :class:`Buffer` ↔ host
     .. ------------------------------------------------------------------------
 
-    :arg device_offset: offset in bytes (optional)
+    :arg src_offset: offset in bytes (optional)
+
+        May only be nonzero if applied on the device side.
+
+    :arg dst_offset: offset in bytes (optional)
+
+        May only be nonzero if applied on the device side.
 
     .. note::
 
@@ -1790,7 +1796,7 @@ def enqueue_copy(queue, dest, src, **kwargs):
         and to the minimum of the size of the source and target
         from 2013.1 on.
     :arg src_offset: (optional)
-    :arg dest_offset: (optional)
+    :arg dst_offset: (optional)
 
     .. ------------------------------------------------------------------------
     .. rubric :: Rectangular :class:`Buffer` ↔  host transfers (CL 1.1 and newer)
@@ -1873,25 +1879,61 @@ def enqueue_copy(queue, dest, src, **kwargs):
         if dest.type == mem_object_type.BUFFER:
             if isinstance(src, MemoryObjectHolder):
                 if src.type == mem_object_type.BUFFER:
+                    # {{{ buffer -> buffer
+
                     if "src_origin" in kwargs:
+                        # rectangular
                         return _cl._enqueue_copy_buffer_rect(
                                 queue, src, dest, **kwargs)
                     else:
-                        kwargs["dst_offset"] = kwargs.pop("dest_offset", 0)
+                        # linear
+                        dest_offset = kwargs.pop("dest_offset", None)
+                        if dest_offset is not None:
+                            if "dst_offset" in kwargs:
+                                raise TypeError("may not specify both 'dst_offset' "
+                                                "and 'dest_offset'")
+
+                            warn("The 'dest_offset' argument of enqueue_copy "
+                                 "is deprecated. Use 'dst_offset' instead. "
+                                 "'dest_offset' will stop working in 2023.x.",
+                                 DeprecationWarning, stacklevel=2)
+
+                            kwargs["dst_offset"] = dest_offset
+
                         return _cl._enqueue_copy_buffer(queue, src, dest, **kwargs)
+
+                    # }}}
                 elif src.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
                     return _cl._enqueue_copy_image_to_buffer(
                             queue, src, dest, **kwargs)
                 else:
                     raise ValueError("invalid src mem object type")
             else:
-                # assume from-host
+                # {{{ host -> buffer
+
                 if "buffer_origin" in kwargs:
                     return _cl._enqueue_write_buffer_rect(queue, dest, src, **kwargs)
                 else:
+                    device_offset = kwargs.pop("device_offset", None)
+                    if device_offset is not None:
+                        if "dst_offset" in kwargs:
+                            raise TypeError("may not specify both 'device_offset' "
+                                            "and 'dst_offset'")
+
+                        warn("The 'device_offset' argument of enqueue_copy "
+                                "is deprecated. Use 'dst_offset' instead. "
+                                "'dst_offset' will stop working in 2023.x.",
+                                DeprecationWarning, stacklevel=2)
+
+                        kwargs["dst_offset"] = device_offset
+
                     return _cl._enqueue_write_buffer(queue, dest, src, **kwargs)
 
+                # }}}
+
         elif dest.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
+            # {{{ ... -> image
+
             if isinstance(src, MemoryObjectHolder):
                 if src.type == mem_object_type.BUFFER:
                     return _cl._enqueue_copy_buffer_to_image(
@@ -1913,18 +1955,27 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
                 return _cl._enqueue_write_image(
                         queue, dest, origin, region, src, **kwargs)
+
+            # }}}
         else:
             raise ValueError("invalid dest mem object type")
 
     elif get_cl_header_version() >= (2, 0) and isinstance(dest, SVMPointer):
-        # to SVM
+        # {{{ ... ->  SVM
+
         if not isinstance(src, SVMPointer):
             src = SVM(src)
 
         is_blocking = kwargs.pop("is_blocking", True)
+
+        # These are NOT documented. They only support consistency with the
+        # Buffer-based API for the sake of the Array.
         assert kwargs.pop("src_offset", 0) == 0
-        assert kwargs.pop("dest_offset", 0) == 0
+        assert kwargs.pop("dst_offset", 0) == 0
+
         return _cl._enqueue_svm_memcpy(queue, is_blocking, dest, src, **kwargs)
+
+        # }}}
 
     else:
         # assume to-host
@@ -1934,7 +1985,21 @@ def enqueue_copy(queue, dest, src, **kwargs):
                 if "buffer_origin" in kwargs:
                     return _cl._enqueue_read_buffer_rect(queue, src, dest, **kwargs)
                 else:
+                    device_offset = kwargs.pop("device_offset", None)
+                    if device_offset is not None:
+                        if "src_offset" in kwargs:
+                            raise TypeError("may not specify both 'device_offset' "
+                                            "and 'src_offset'")
+
+                        warn("The 'device_offset' argument of enqueue_copy "
+                                "is deprecated. Use 'src_offset' instead. "
+                                "'dst_offset' will stop working in 2023.x.",
+                                DeprecationWarning, stacklevel=2)
+
+                        kwargs["src_offset"] = device_offset
+
                     return _cl._enqueue_read_buffer(queue, src, dest, **kwargs)
+
             elif src.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
                 origin = kwargs.pop("origin")
                 region = kwargs.pop("region")
@@ -1950,11 +2015,19 @@ def enqueue_copy(queue, dest, src, **kwargs):
             else:
                 raise ValueError("invalid src mem object type")
         elif isinstance(src, SVMPointer):
-            # from svm
+            # {{{ svm -> host
+
             # dest is not a SVM instance, otherwise we'd be in the branch above
+
+            # This is NOT documented. They only support consistency with the
+            # Buffer-based API for the sake of the Array.
+            assert kwargs.pop("src_offset", 0) == 0
+
             is_blocking = kwargs.pop("is_blocking", True)
             return _cl._enqueue_svm_memcpy(
                     queue, is_blocking, SVM(dest), src, **kwargs)
+
+            # }}}
         else:
             # assume from-host
             raise TypeError("enqueue_copy cannot perform host-to-host transfers")
