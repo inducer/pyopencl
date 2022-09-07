@@ -282,6 +282,13 @@ other software to be turned into the corresponding :mod:`pyopencl` objects.
 User-visible Changes
 ====================
 
+Version 2022.2
+--------------
+
+- Added :ref:`opaque-style SVM <opaque-svm>` and :class:`pyopencl.SVMPointer`.
+- Added :class:`pyopencl.tools.SVMPool`.
+- Added automatic queue-synchronized deallocation of SVM.
+
 Version 2020.3
 --------------
 .. note::
