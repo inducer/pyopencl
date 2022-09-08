@@ -1970,8 +1970,10 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
         # These are NOT documented. They only support consistency with the
         # Buffer-based API for the sake of the Array.
-        assert kwargs.pop("src_offset", 0) == 0
-        assert kwargs.pop("dst_offset", 0) == 0
+        if kwargs.pop("src_offset", 0) != 0:
+            raise AssertionError
+        if kwargs.pop("dst_offset", 0) != 0:
+            raise AssertionError
 
         return _cl._enqueue_svm_memcpy(queue, is_blocking, dest, src, **kwargs)
 
@@ -2021,7 +2023,8 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
             # This is NOT documented. They only support consistency with the
             # Buffer-based API for the sake of the Array.
-            assert kwargs.pop("src_offset", 0) == 0
+            if kwargs.pop("src_offset", 0) != 0:
+                raise AssertionError
 
             is_blocking = kwargs.pop("is_blocking", True)
             return _cl._enqueue_svm_memcpy(
