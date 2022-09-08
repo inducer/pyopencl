@@ -353,7 +353,7 @@ namespace pyopencl {
       {
         // According to experiments with the Nvidia implementation (and based
         // on my reading of the CL spec), clSVMalloc will return an error
-        // immedaitely upon being out of memory.  Therefore the
+        // immediately upon being out of memory.  Therefore the
         // immediate/deferred split on the buffer side is not needed here.
         // -AK, 2022-09-07
 
@@ -535,9 +535,9 @@ namespace pyopencl {
   // }}}
 
 
-  // {{{ allocate_from_svm_ppol
+  // {{{ allocate_from_svm_pool
 
-  pooled_svm *allocate_from_svm_ppol(
+  pooled_svm *allocate_from_svm_pool(
       std::shared_ptr<pyopencl::memory_pool<svm_allocator> > pool,
       pyopencl::memory_pool<svm_allocator>::size_type sz)
   {
@@ -710,7 +710,7 @@ void pyopencl_expose_mempool(py::module &m)
           py::kw_only(),
           py::arg("leading_bits_in_bin_id")=4
           )
-      .def("__call__", pyopencl::allocate_from_svm_ppol, py::arg("size"))
+      .def("__call__", pyopencl::allocate_from_svm_pool, py::arg("size"))
       ;
 
     expose_memory_pool(wrapper);
