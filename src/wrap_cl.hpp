@@ -3646,10 +3646,19 @@ namespace pyopencl
                 "supplying an out-of-order queue to SVMAllocation is invalid");
         }
 
-        PYOPENCL_PRINT_CALL_TRACE("clSVMalloc");
-        m_allocation = clSVMAlloc(
-            ctx->data(),
-            flags, size, alignment);
+        int try_count = 0;
+        while (try_count < 2)
+        {
+          PYOPENCL_PRINT_CALL_TRACE("clSVMalloc");
+          m_allocation = clSVMAlloc(
+              ctx->data(),
+              flags, size, alignment);
+          if (m_allocation)
+            return;
+
+          ++try_count;
+          run_python_gc();
+        }
 
         if (!m_allocation)
           throw pyopencl::error("clSVMAlloc", CL_OUT_OF_RESOURCES);
