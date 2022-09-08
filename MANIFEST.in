@@ -22,5 +22,6 @@ include README_SETUP.txt
 include README.rst
 include LICENSE
 include pytest.ini
+include CITATION.cff
 
 recursive-include contrib *.vim *.py README
