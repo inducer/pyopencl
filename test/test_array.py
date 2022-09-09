@@ -2053,6 +2053,23 @@ def test_maximum_minimum_with_scalars(ctx_factory):
     result = cl_array.minimum(a_cl, b_cl, queue=cq)
     np.testing.assert_allclose(result.get(), b_np)
 
+    # Test 'untyped' scalars
+    # FIXME: these don't work with unsized ints
+    result = cl_array.minimum(4.0, b_cl, queue=cq)
+    np.testing.assert_allclose(result.get(), b_np)
+    result = cl_array.maximum(4.0, b_cl, queue=cq)
+    np.testing.assert_allclose(result.get(), a_np)
+
+    result = cl_array.minimum(b_cl, 4.0, queue=cq)
+    np.testing.assert_allclose(result.get(), b_np)
+    result = cl_array.maximum(b_cl, 4.0, queue=cq)
+    np.testing.assert_allclose(result.get(), a_np)
+
+    result = cl_array.minimum(-3.0, 4.0, queue=cq)
+    np.testing.assert_allclose(result, b_np)
+    result = cl_array.maximum(-3.0, 4.0, queue=cq)
+    np.testing.assert_allclose(result, a_np)
+
 # }}}
 
 
