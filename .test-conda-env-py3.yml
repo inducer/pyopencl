@@ -1,8 +1,5 @@
 name: test-conda-env
 channels:
-# For https://github.com/pocl/pocl/pull/1069
-# See https://github.com/conda-forge/pocl-feedstock/pull/80
-- conda-forge/label/pocl_dev
 - conda-forge
 - nodefaults
 
