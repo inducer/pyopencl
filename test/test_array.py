@@ -93,6 +93,7 @@ def test_basic_complex(ctx_factory):
 
     ary = (rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64)
             + rand(queue, shape=(size,), dtype=np.float32).astype(np.complex64) * 1j)
+    assert ary.dtype != np.dtype(np.complex128)
     c = np.complex64(5+7j)
 
     host_ary = ary.get()
