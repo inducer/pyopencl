@@ -59,7 +59,8 @@ def test_elwise_kernel(ctx_factory):
             "linear_combination")
 
     c_gpu = cl_array.empty_like(a_gpu)
-    lin_comb(5, a_gpu, 6, b_gpu, c_gpu)
+    evt = lin_comb(5, a_gpu, 6, b_gpu, c_gpu)
+    assert evt in c_gpu.events
 
     assert la.norm((c_gpu - (5 * a_gpu + 6 * b_gpu)).get()) < 1e-5
 
