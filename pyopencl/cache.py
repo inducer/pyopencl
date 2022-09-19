@@ -39,14 +39,6 @@ import hashlib
 new_hash = hashlib.md5
 
 
-def _erase_dir(dir):
-    from os import listdir, unlink, rmdir
-    from os.path import join
-    for name in listdir(dir):
-        unlink(join(dir, name))
-    rmdir(dir)
-
-
 def update_checksum(checksum, obj):
     if isinstance(obj, str):
         checksum.update(obj.encode("utf8"))
@@ -56,106 +48,27 @@ def update_checksum(checksum, obj):
 
 # {{{ cleanup
 
-class CleanupBase:
-    pass
+from pytools.persistent_dict import CleanupManager, LockManager, ItemDirManager
 
 
-class CleanupManager(CleanupBase):
-    def __init__(self):
-        self.cleanups = []
+class CacheLockManager(LockManager):
+    def __init__(self, cleanup_m: CleanupManager, cache_dir: str):
+        lock_file = os.path.join(cache_dir, "lock")
 
-    def register(self, c):
-        self.cleanups.insert(0, c)
-
-    def clean_up(self):
-        for c in self.cleanups:
-            c.clean_up()
-
-    def error_clean_up(self):
-        for c in self.cleanups:
-            c.error_clean_up()
+        super().__init__(cleanup_m, lock_file)
 
 
-class CacheLockManager(CleanupBase):
-    def __init__(self, cleanup_m, cache_dir):
-        if cache_dir is not None:
-            self.lock_file = os.path.join(cache_dir, "lock")
+class ModuleCacheDirManager(ItemDirManager):
+    def __init__(self, cleanup_m: CleanupManager, path: str):
+        super().__init__(cleanup_m, path, delete_on_error=True)
 
-            attempts = 0
-            while True:
-                try:
-                    self.fd = os.open(self.lock_file,
-                            os.O_CREAT | os.O_WRONLY | os.O_EXCL)
-                    break
-                except OSError:
-                    pass
-
-                # This value was chosen based on the py-filelock package:
-                # https://github.com/tox-dev/py-filelock/blob/a6c8fabc4192fa7a4ae19b1875ee842ec5eb4f61/src/filelock/_api.py#L113
-                # When running pyopencl in an application with multiple ranks
-                # that share a cache_dir, higher timeouts can lead to
-                # application stalls even with low numbers of ranks.
-                # cf. https://github.com/inducer/pyopencl/pull/504
-                wait_time_seconds = 0.05
-
-                # Warn every 10 seconds if not able to acquire lock
-                warn_attempts = int(10/wait_time_seconds)
-
-                # Exit after 60 seconds if not able to acquire lock
-                exit_attempts = int(60/wait_time_seconds)
-
-                from time import sleep
-                sleep(wait_time_seconds)
-
-                attempts += 1
-
-                if attempts % warn_attempts == 0:
-                    from warnings import warn
-                    warn("could not obtain cache lock--delete '%s' if necessary"
-                            % self.lock_file)
-
-                if attempts > exit_attempts:
-                    raise RuntimeError("waited more than one minute "
-                            "on the lock file '%s'"
-                            "--something is wrong" % self.lock_file)
-
-            cleanup_m.register(self)
-
-    def clean_up(self):
-        import os
-        os.close(self.fd)
-        os.unlink(self.lock_file)
-
-    def error_clean_up(self):
-        pass
-
-
-class ModuleCacheDirManager(CleanupBase):
-    def __init__(self, cleanup_m, path):
-        from os import mkdir
-
-        self.path = path
-        try:
-            mkdir(self.path)
-            cleanup_m.register(self)
-            self.existed = False
-        except OSError:
-            self.existed = True
-
-    def sub(self, n):
+    def sub(self, subpath: str):
         from os.path import join
-        return join(self.path, n)
+        return join(self.path, subpath)
 
     def reset(self):
-        import os
-        _erase_dir(self.path)
+        super().reset()
         os.mkdir(self.path)
-
-    def clean_up(self):
-        pass
-
-    def error_clean_up(self):
-        _erase_dir(self.path)
 
 # }}}
 
