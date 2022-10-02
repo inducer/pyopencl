@@ -369,9 +369,23 @@ class RanluxGenerator:
         evt = knl(queue,
                 (self.num_work_items,), self.wg_size,
                 self.state.data, ary.data, ary.size*size_multiplier, sigma, mu,
+<<<<<<< Updated upstream
                 wait_for=ary.events)
         ary.add_event(evt)
         self.state.add_event(evt)
+||||||| Stash base
+                wait_for=ary.write_events)
+
+        ary.add_write_event(evt)
+        self.state.add_write_event(evt)
+
+=======
+                wait_for=ary.write_events + ary.read_events)
+
+        ary.add_write_event(evt)
+        self.state.add_write_event(evt)
+
+>>>>>>> Stashed changes
         return evt
 
     def normal(self, *args, **kwargs):
