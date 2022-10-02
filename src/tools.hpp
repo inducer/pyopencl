@@ -53,7 +53,7 @@ namespace pyopencl
   {
     namespace py = pybind11;
 
-    py::module::import("gc").attr("collect")();
+    py::module_::import("gc").attr("collect")();
   }
 
 

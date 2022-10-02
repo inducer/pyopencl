@@ -36,10 +36,10 @@ using namespace pyopencl;
 
 
 
-extern void pyopencl_expose_constants(py::module &m);
-extern void pyopencl_expose_part_1(py::module &m);
-extern void pyopencl_expose_part_2(py::module &m);
-extern void pyopencl_expose_mempool(py::module &m);
+extern void pyopencl_expose_constants(py::module_ &m);
+extern void pyopencl_expose_part_1(py::module_ &m);
+extern void pyopencl_expose_part_2(py::module_ &m);
+extern void pyopencl_expose_mempool(py::module_ &m);
 
 static bool import_numpy_helper()
 {

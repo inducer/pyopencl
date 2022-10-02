@@ -263,7 +263,7 @@ def _generate_enqueue_and_set_args_module(function_name,
                     ["self", "queue", "global_size", "local_size"]
                     + arg_names
                     + ["global_offset=None",
-                        "g_times_l=None",
+                        "g_times_l=False",
                         "allow_empty_ndrange=False",
                         "wait_for=None"])))
 

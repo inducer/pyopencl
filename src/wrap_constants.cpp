@@ -99,14 +99,14 @@ namespace
 }
 
 
-void pyopencl_expose_constants(py::module &m)
+void pyopencl_expose_constants(py::module_ &m)
 {
   // {{{ exceptions
   {
 #define DECLARE_EXC(NAME, BASE) \
   static py::exception<pyopencl::error> CL##NAME(m, #NAME, BASE);
 
-    DECLARE_EXC(Error, nullptr);
+    DECLARE_EXC(Error, PyExc_Exception);
     DECLARE_EXC(MemoryError, CLError.ptr());
     DECLARE_EXC(LogicError, CLError.ptr());
     DECLARE_EXC(RuntimeError, CLError.ptr());
