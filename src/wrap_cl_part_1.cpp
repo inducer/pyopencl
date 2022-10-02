@@ -33,7 +33,7 @@
 using namespace pyopencl;
 
 
-void pyopencl_expose_part_1(py::module &m)
+void pyopencl_expose_part_1(py::module_ &m)
 {
   m.def("get_cl_header_version", get_cl_header_version);
   m.def("_sizeof_size_t", [](){ return sizeof(size_t); });
@@ -94,9 +94,9 @@ void pyopencl_expose_part_1(py::module &m)
                     py_dev_type);
               )
             }),
-          py::arg("devices")=py::none(),
-          py::arg("properties")=py::none(),
-          py::arg("dev_type")=py::none()
+          py::arg("devices").none(true)=py::none(),
+          py::arg("properties").none(true)=py::none(),
+          py::arg("dev_type").none(true)=py::none()
           )
       .DEF_SIMPLE_METHOD(get_info)
       .def(py::self == py::self)
@@ -163,18 +163,18 @@ void pyopencl_expose_part_1(py::module &m)
 
 #if PYOPENCL_CL_VERSION >= 0x1020
   m.def("_enqueue_marker_with_wait_list", enqueue_marker_with_wait_list,
-      py::arg("queue"), py::arg("wait_for")=py::none()
+      py::arg("queue"), py::arg("wait_for").none(true)=py::none()
       );
 #endif
   m.def("_enqueue_marker", enqueue_marker,
       py::arg("queue")
       );
   m.def("_enqueue_wait_for_events", enqueue_wait_for_events,
-      py::arg("queue"), py::arg("wait_for")=py::none());
+      py::arg("queue"), py::arg("wait_for").none(true)=py::none());
 
 #if PYOPENCL_CL_VERSION >= 0x1020
   m.def("_enqueue_barrier_with_wait_list", enqueue_barrier_with_wait_list,
-      py::arg("queue"), py::arg("wait_for")=py::none()
+      py::arg("queue"), py::arg("wait_for").none(true)=py::none()
       );
 #endif
   m.def("_enqueue_barrier", enqueue_barrier, py::arg("queue"));
@@ -246,7 +246,7 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("queue"),
       py::arg("mem_objects"),
       py::arg("flags")=0,
-      py::arg("wait_for")=py::none()
+      py::arg("wait_for").none(true)=py::none()
       );
 #endif
 
@@ -264,7 +264,7 @@ void pyopencl_expose_part_1(py::module &m)
           py::arg("context"),
           py::arg("flags"),
           py::arg("size")=0,
-          py::arg("hostbuf")=py::none()
+          py::arg("hostbuf").none(true)=py::none()
           )
 #if PYOPENCL_CL_VERSION >= 0x1010
       .def("get_sub_region", &cls::get_sub_region,
@@ -288,7 +288,7 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("mem"),
       py::arg("hostbuf"),
       py::arg("src_offset")=0,
-      py::arg("wait_for")=py::none(),
+      py::arg("wait_for").none(true)=py::none(),
       py::arg("is_blocking")=true
       );
   m.def("_enqueue_write_buffer", enqueue_write_buffer,
@@ -296,7 +296,7 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("mem"),
       py::arg("hostbuf"),
       py::arg("dst_offset")=0,
-      py::arg("wait_for")=py::none(),
+      py::arg("wait_for").none(true)=py::none(),
       py::arg("is_blocking")=true
       );
   m.def("_enqueue_copy_buffer", enqueue_copy_buffer,
@@ -306,7 +306,7 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("byte_count")=-1,
       py::arg("src_offset")=0,
       py::arg("dst_offset")=0,
-      py::arg("wait_for")=py::none()
+      py::arg("wait_for").none(true)=py::none()
       );
 
   // }}}
@@ -321,9 +321,9 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("buffer_origin"),
       py::arg("host_origin"),
       py::arg("region"),
-      py::arg("buffer_pitches")=py::none(),
-      py::arg("host_pitches")=py::none(),
-      py::arg("wait_for")=py::none(),
+      py::arg("buffer_pitches").none(true)=py::none(),
+      py::arg("host_pitches").none(true)=py::none(),
+      py::arg("wait_for").none(true)=py::none(),
       py::arg("is_blocking")=true
       );
   m.def("_enqueue_write_buffer_rect", enqueue_write_buffer_rect,
@@ -333,9 +333,9 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("buffer_origin"),
       py::arg("host_origin"),
       py::arg("region"),
-      py::arg("buffer_pitches")=py::none(),
-      py::arg("host_pitches")=py::none(),
-      py::arg("wait_for")=py::none(),
+      py::arg("buffer_pitches").none(true)=py::none(),
+      py::arg("host_pitches").none(true)=py::none(),
+      py::arg("wait_for").none(true)=py::none(),
       py::arg("is_blocking")=true
       );
   m.def("_enqueue_copy_buffer_rect", enqueue_copy_buffer_rect,
@@ -345,9 +345,9 @@ void pyopencl_expose_part_1(py::module &m)
       py::arg("src_origin"),
       py::arg("dst_origin"),
       py::arg("region"),
-      py::arg("src_pitches")=py::none(),
-      py::arg("dst_pitches")=py::none(),
-      py::arg("wait_for")=py::none()
+      py::arg("src_pitches").none(true)=py::none(),
+      py::arg("dst_pitches").none(true)=py::none(),
+      py::arg("wait_for").none(true)=py::none()
       );
 #endif
 
@@ -359,7 +359,7 @@ void pyopencl_expose_part_1(py::module &m)
   m.def("_enqueue_fill_buffer", enqueue_fill_buffer,
       py::arg("queue"), py::arg("mem"), py::arg("pattern"),
       py::arg("offset"), py::arg("size"),
-      py::arg("wait_for")=py::none());
+      py::arg("wait_for").none(true)=py::none());
 #endif
 }
 

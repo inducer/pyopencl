@@ -574,7 +574,7 @@ namespace {
 
 
 
-void pyopencl_expose_mempool(py::module &m)
+void pyopencl_expose_mempool(py::module_ &m)
 {
   m.def("bitlog2", pyopencl::bitlog2);
 
