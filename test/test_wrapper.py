@@ -1105,7 +1105,11 @@ def test_spirv(ctx_factory):
     b_dev = cl.clrandom.rand(queue, n, np.float32)
     dest_dev = cl_array.empty_like(a_dev)
 
-    with open("add-vectors-%d.spv" % queue.device.address_bits, "rb") as spv_file:
+    from os.path import dirname, join
+    spv_filename = join(dirname(__file__),
+            "add-vectors-%d.spv" % queue.device.address_bits)
+
+    with open(spv_filename, "rb") as spv_file:
         spv = spv_file.read()
 
     prg = cl.Program(ctx, spv).build()
