@@ -1373,36 +1373,55 @@ def test_event_management(ctx_factory):
     from pyopencl.clrandom import rand as clrand
 
     x = clrand(queue, (5, 10), dtype=np.float32)
-    assert len(x.events) == 1, len(x.events)
+    assert len(x.write_events) == 1, x.write_events
+    assert len(x.read_events) == 0, x.read_events
 
     x.finish()
 
-    assert len(x.events) == 0
+    assert len(x.write_events) == 0
+    assert len(x.read_events) == 0
 
-    y = x+x
-    assert len(y.events) == 1
-    y = x*x
-    assert len(y.events) == 1
-    y = 2*x
-    assert len(y.events) == 1
-    y = 2/x
-    assert len(y.events) == 1
-    y = x/2
-    assert len(y.events) == 1
-    y = x**2
-    assert len(y.events) == 1
-    y = 2**x
-    assert len(y.events) == 1
+    y = x + x
+    assert len(y.write_events) == 1 and len(y.read_events) == 0
+    assert len(x.write_events) == 0 and len(x.read_events) == 2
+
+    y = x * x
+    assert len(y.write_events) == 1 and len(y.read_events) == 0
+    assert len(x.write_events) == 0 and len(x.read_events) == 4
+
+    y = 2 * x
+    assert len(y.write_events) == 1 and len(y.read_events) == 0
+    assert len(x.write_events) == 0 and len(x.read_events) == 5
+
+    y = 2 / x
+    assert len(y.write_events) == 1 and len(y.read_events) == 0
+    assert len(x.write_events) == 0 and len(x.read_events) == 6
+
+    y = x / 2
+    assert len(y.write_events) == 1 and len(y.read_events) == 0
+    assert len(x.write_events) == 0 and len(x.read_events) == 7
+
+    y = x ** 2
+    assert len(y.write_events) == 1 and len(y.read_events) == 0
+    assert len(x.write_events) == 0 and len(x.read_events) == 8
+
+    y = 2 ** x
+    assert len(y.write_events) == 1 and len(y.read_events) == 0
+    assert len(x.write_events) == 0 and len(x.read_events) == 9
+
+    x.finish()
 
     for _i in range(10):
         x.fill(0)
 
-    assert len(x.events) == 10
+    assert len(x.write_events) == 10
+    assert len(x.read_events) == 0
 
     for _i in range(1000):
         x.fill(0)
 
-    assert len(x.events) < 100
+    assert len(x.write_events) < 100
+    assert len(x.read_events) == 0
 
 # }}}
 
@@ -1648,7 +1667,7 @@ def test_get_async(ctx_factory):
     assert np.abs(b1 - b).mean() < 1e-5
 
     wait_event = cl.UserEvent(context)
-    b_gpu.add_event(wait_event)
+    b_gpu.add_write_event(wait_event)
     b, evt = b_gpu.get_async()  # testing that this doesn't hang
     wait_event.set_status(cl.command_execution_status.COMPLETE)
     evt.wait()
@@ -2286,6 +2305,8 @@ def test_arrays_with_svm_allocators(ctx_factory, use_mempool):
 # }}}
 
 
+# {{{ test_logical_and_or
+
 def test_logical_and_or(ctx_factory):
     # NOTE: Copied over from pycuda/test/test_gpuarray.py
     rng = np.random.default_rng(seed=0)
@@ -2338,6 +2359,31 @@ def test_logical_not(ctx_factory):
     np.testing.assert_array_equal(
         cl_array.logical_not(cl_array.zeros(cq, 10, np.float64) + 1).get(),
         np.logical_not(np.ones(10)))
+
+# }}}
+
+
+# {{{ test multiple queues
+
+def test_multiple_queues(ctx_factory):
+    ctx = ctx_factory()
+
+    a = [None] * 3
+    for i in range(len(a)):
+        queue = cl.CommandQueue(ctx)
+        a[i] = cl_array.arange(queue, 1000, dtype=np.float32)
+
+        b = a[i] + a[i]
+        b = a[i] ** 2
+        b = a[i] + 4000
+        assert len(b.write_events) == 1
+        assert len(a[i].read_events) == 4
+
+        a[i] = a[i].with_queue(None)
+
+    b = a[0].with_queue(queue) + a[1].with_queue(queue)
+
+# }}}
 
 
 # {{{ test XDG_CACHE_HOME handling
