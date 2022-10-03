@@ -1521,7 +1521,7 @@ class GenericScanKernel(GenericScanKernelBase):
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
                     data_args.append(arg_val.offset)
-                wait_for.extend(arg_val.events)
+                wait_for.extend(arg_val.write_events)
             else:
                 data_args.append(arg_val)
 
@@ -1748,7 +1748,7 @@ class GenericDebugScanKernel(GenericScanKernelBase):
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
                     data_args.append(arg_val.offset)
-                wait_for.extend(arg_val.events)
+                wait_for.extend(arg_val.write_events)
             else:
                 data_args.append(arg_val)
 
