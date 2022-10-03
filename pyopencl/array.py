@@ -326,9 +326,9 @@ _NOT_PRESENT = object()
 
 class Array:
     """A :class:`numpy.ndarray` work-alike that stores its data and performs
-    its computations on the compute device.  *shape* and *dtype* work exactly
-    as in :mod:`numpy`.  Arithmetic methods in :class:`Array` support the
-    broadcasting of scalars. (e.g. `array+5`)
+    its computations on the compute device. :attr:`shape` and :attr:`dtype` work
+    exactly as in :mod:`numpy`. Arithmetic methods in :class:`Array` support the
+    broadcasting of scalars. (e.g. ``array + 5``).
 
     *cq* must be a :class:`~pyopencl.CommandQueue` or a :class:`~pyopencl.Context`.
 
@@ -338,16 +338,18 @@ class Array:
     :class:`~pyopencl.Context`.
 
     *allocator* may be `None` or a callable that, upon being called with an
-    argument of the number of bytes to be allocated, returns an
+    argument of the number of bytes to be allocated, returns a
     :class:`pyopencl.Buffer` object. (A :class:`pyopencl.tools.MemoryPool`
     instance is one useful example of an object to pass here.)
 
     .. versionchanged:: 2011.1
+
         Renamed *context* to *cqa*, made it general-purpose.
 
         All arguments beyond *order* should be considered keyword-only.
 
     .. versionchanged:: 2015.2
+
         Renamed *context* to *cq*, disallowed passing allocators through it.
 
     .. attribute :: data
@@ -380,7 +382,7 @@ class Array:
 
     .. attribute :: shape
 
-        The tuple of lengths of each dimension in the array.
+        A tuple of lengths of each dimension in the array.
 
     .. attribute :: ndim
 
@@ -402,11 +404,11 @@ class Array:
 
     .. attribute :: strides
 
-        Tuple of bytes to step in each dimension when traversing an array.
+        A tuple of bytes to step in each dimension when traversing an array.
 
     .. attribute :: flags
 
-        Return an object with attributes `c_contiguous`, `f_contiguous` and
+        An object with attributes `c_contiguous`, `f_contiguous` and
         `forc`, which may be used to query contiguity properties in analogy to
         :attr:`numpy.ndarray.flags`.
 
@@ -478,7 +480,7 @@ class Array:
 
     .. automethod :: __bool__
 
-        Only works for device scalars. (i.e. "arrays" with ``shape == ()``.)
+        Only works for device scalars. (i.e. "arrays" with ``shape == ()``)
 
     .. automethod :: any
     .. automethod :: all
