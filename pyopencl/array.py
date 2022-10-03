@@ -1,7 +1,7 @@
 """CL device arrays."""
 
-# pylint:disable=unexpected-keyword-arg  # for @elwise_kernel_runner
-
+# NOTE: for elwise_kernel_runner which adds keyword arguments
+# pylint:disable=unexpected-keyword-arg
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -54,6 +54,8 @@ if cl.get_cl_header_version() >= (2, 0):
 else:
     _SVMPointer_or_nothing = ()
 
+
+# {{{ _get_common_dtype
 
 _COMMON_DTYPE_CACHE = {}
 
@@ -155,6 +157,10 @@ def _get_common_dtype(obj1, obj2, queue):
 
     return result
 
+# }}}
+
+
+# {{{ _get_truedivide_dtype
 
 def _get_truedivide_dtype(obj1, obj2, queue):
     # the dtype of the division result obj1 / obj2
@@ -174,6 +180,10 @@ def _get_truedivide_dtype(obj1, obj2, queue):
 
     return result
 
+# }}}
+
+
+# {{{ _get_broadcasted_binary_op_result
 
 def _get_broadcasted_binary_op_result(obj1, obj2, cq,
                                       dtype_getter=_get_common_dtype):
@@ -191,10 +201,10 @@ def _get_broadcasted_binary_op_result(obj1, obj2, cq,
         raise NotImplementedError("Broadcasting binary operator with shapes:"
                                   f" {obj1.shape}, {obj2.shape}.")
 
+# }}}
 
-class InconsistentOpenCLQueueWarning(UserWarning):
-    pass
 
+# {{{ VecLookupWarner
 
 class VecLookupWarner:
     def __getattr__(self, name):
@@ -211,6 +221,8 @@ class VecLookupWarner:
 
 
 vec = VecLookupWarner()
+
+# }}}
 
 
 # {{{ helper functionality
@@ -257,38 +269,33 @@ def elwise_kernel_runner(kernel_getter):
 
     Assumes that the zeroth entry in *args* is an :class:`Array`.
     """
+    from functools import wraps
 
-    def kernel_runner(*args, **kwargs):
-        repr_ary = args[0]
-        queue = kwargs.pop("queue", None)
-        implicit_queue = queue is None
-        if implicit_queue:
-            queue = repr_ary.queue
+    @wraps(kernel_getter)
+    def kernel_runner(out, *args, **kwargs):
+        assert isinstance(out, Array)
 
         wait_for = kwargs.pop("wait_for", None)
+        queue = kwargs.pop("queue", None)
+        if queue is None:
+            queue = out.queue
 
-        knl = kernel_getter(*args, **kwargs)
+        assert queue is not None
 
-        gs, ls = repr_ary._get_sizes(queue,
-                knl.get_work_group_info(
-                    cl.kernel_work_group_info.WORK_GROUP_SIZE,
-                    queue.device))
+        knl = kernel_getter(out, *args, **kwargs)
+        work_group_info = knl.get_work_group_info(
+            cl.kernel_work_group_info.WORK_GROUP_SIZE,
+            queue.device)
+        gs, ls = out._get_sizes(queue, work_group_info)
 
-        assert isinstance(repr_ary, Array)
-        args = args + (repr_ary.size,)
-
+        args = (out,) + args + (out.size,)
         if ARRAY_KERNEL_EXEC_HOOK is not None:
             return ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
                     knl, queue, gs, ls, *args, wait_for=wait_for)
         else:
             return knl(queue, gs, ls, *args, wait_for=wait_for)
 
-    try:
-        from functools import update_wrapper
-    except ImportError:
-        return kernel_runner
-    else:
-        return update_wrapper(kernel_runner, kernel_getter)
+    return kernel_runner
 
 
 class DefaultAllocator(cl.tools.DeferredAllocator):
@@ -303,6 +310,10 @@ class DefaultAllocator(cl.tools.DeferredAllocator):
 
 
 # {{{ array class
+
+class InconsistentOpenCLQueueWarning(UserWarning):
+    pass
+
 
 class ArrayHasOffsetError(ValueError):
     """
