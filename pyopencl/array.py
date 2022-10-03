@@ -644,8 +644,7 @@ class Array:
             alloc_nbytes = dtype.itemsize * size
 
             if alloc_nbytes < 0:
-                raise ValueError("cannot allocate CL buffer with "
-                        "negative size")
+                raise ValueError("cannot allocate CL buffer with negative size")
 
         self.queue = queue
         self.shape = shape
@@ -927,6 +926,7 @@ class Array:
         :arg queue: The :class:`~pyopencl.CommandQueue` for the returned array.
 
         .. versionchanged:: 2017.1.2
+
             Updates the queue of the returned array.
 
         .. versionadded:: 2013.1
@@ -964,8 +964,7 @@ class Array:
     def __repr__(self):
         if self.queue is None:
             return (f"<cl.{type(self).__name__} {self.shape} of {self.dtype} "
-                    f"at {id(self):x} without queue, "
-                    "call with_queue()>")
+                    f"at {id(self):x} without queue, call with_queue()>")
 
         result = repr(self.get())
         if result[:5] == "array":
@@ -1207,9 +1206,7 @@ class Array:
         """Add an array with an array or an array with a scalar."""
 
         if isinstance(other, Array):
-            # add another vector
             result = _get_broadcasted_binary_op_result(self, other, self.queue)
-
             result.add_event(
                     self._axpbyz(result,
                         self.dtype.type(1), self,
@@ -1217,7 +1214,6 @@ class Array:
 
             return result
         elif np.isscalar(other):
-            # add a scalar
             if other == 0:
                 return self.copy()
             else:
@@ -1244,7 +1240,6 @@ class Array:
 
             return result
         elif np.isscalar(other):
-            # subtract a scalar
             if other == 0:
                 return self.copy()
             else:
@@ -1271,14 +1266,14 @@ class Array:
 
     def __iadd__(self, other):
         if isinstance(other, Array):
-            if (other.shape != self.shape
-                    and other.shape != ()):
+            if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(
                     self._axpbyz(self,
                         self.dtype.type(1), self,
                         other.dtype.type(1), other))
+
             return self
         else:
             self.add_event(
@@ -1287,8 +1282,7 @@ class Array:
 
     def __isub__(self, other):
         if isinstance(other, Array):
-            if (other.shape != self.shape
-                    and other.shape != ()):
+            if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(
@@ -1335,15 +1329,13 @@ class Array:
 
     def __imul__(self, other):
         if isinstance(other, Array):
-            if (other.shape != self.shape
-                    and other.shape != ()):
+            if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(
                     self._elwise_multiply(self, self, other))
             return self
         elif np.isscalar(other):
-            # scalar
             self.add_event(
                     self._axpbz(self, other, self, self.dtype.type(0)))
             return self
@@ -1358,13 +1350,13 @@ class Array:
                             self, other, self.queue,
                             dtype_getter=_get_truedivide_dtype)
             result.add_event(self._div(result, self, other))
+
             return result
         elif np.isscalar(other):
             if other == 1:
                 return self.copy()
             else:
                 common_dtype = _get_truedivide_dtype(self, other, self.queue)
-                # create a new array for the result
                 result = self._new_like_me(common_dtype)
                 result.add_event(
                         self._axpbz(result,
@@ -1386,7 +1378,6 @@ class Array:
             result.add_event(other._div(result, self))
             return result
         elif np.isscalar(other):
-            # create a new array for the result
             result = self._new_like_me(common_dtype)
             result.add_event(
                     self._rdiv_scalar(result, self, common_dtype.type(other)))
@@ -1400,12 +1391,11 @@ class Array:
         # raise an error if the result cannot be cast to self
         common_dtype = _get_truedivide_dtype(self, other, self.queue)
         if not np.can_cast(common_dtype, self.dtype.type):
-            raise TypeError("Cannot cast {!r} to {!r}"
-                            .format(self.dtype, common_dtype))
+            raise TypeError(
+                "Cannot cast {!r} to {!r}".format(self.dtype, common_dtype))
 
         if isinstance(other, Array):
-            if (other.shape != self.shape
-                    and other.shape != ()):
+            if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(
@@ -1426,11 +1416,10 @@ class Array:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
-            raise TypeError("Integral types only")
+            raise TypeError(f"Integral types only: {common_dtype}")
 
         if isinstance(other, Array):
-            result = _get_broadcasted_binary_op_result(self, other,
-                                                       self.queue)
+            result = _get_broadcasted_binary_op_result(self, other, self.queue)
             result.add_event(self._array_binop(result, self, other, op="&"))
         else:
             # create a new array for the result
@@ -1466,11 +1455,10 @@ class Array:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
-            raise TypeError("Integral types only")
+            raise TypeError(f"Integral types only: {common_dtype}")
 
         if isinstance(other, Array):
-            result = _get_broadcasted_binary_op_result(self, other,
-                                                       self.queue)
+            result = _get_broadcasted_binary_op_result(self, other, self.queue)
             result.add_event(self._array_binop(result, self, other, op="^"))
         else:
             # create a new array for the result
@@ -1486,11 +1474,10 @@ class Array:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
-            raise TypeError("Integral types only")
+            raise TypeError(f"Integral types only: {common_dtype}")
 
         if isinstance(other, Array):
-            if (other.shape != self.shape
-                    and other.shape != ()):
+            if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(self._array_binop(self, self, other, op="&"))
@@ -1504,11 +1491,10 @@ class Array:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
-            raise TypeError("Integral types only")
+            raise TypeError(f"Integral types only: {common_dtype}")
 
         if isinstance(other, Array):
-            if (other.shape != self.shape
-                    and other.shape != ()):
+            if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(self._array_binop(self, self, other, op="|"))
@@ -1522,11 +1508,10 @@ class Array:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
-            raise TypeError("Integral types only")
+            raise TypeError(f"Integral types only: {common_dtype}")
 
         if isinstance(other, Array):
-            if (other.shape != self.shape
-                    and other.shape != ()):
+            if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(self._array_binop(self, self, other, op="^"))
@@ -1574,7 +1559,7 @@ class Array:
         if len(self.shape):
             return self.shape[0]
         else:
-            return TypeError("scalar has no len()")
+            return TypeError("len() of unsized object")
 
     def __abs__(self):
         """Return a `Array` of the absolute values of the elements
@@ -1614,7 +1599,7 @@ class Array:
 
     def __invert__(self):
         if not np.issubdtype(self.dtype, np.integer):
-            raise TypeError("Integral types only")
+            raise TypeError(f"Integral types only: {self.dtype}")
 
         result = self._new_like_me()
         result.add_event(self._unop(result, self, op="~"))
@@ -1629,8 +1614,7 @@ class Array:
         """
 
         result = self._new_like_me()
-        result.add_event(
-                self._reverse(result, self))
+        result.add_event(self._reverse(result, self))
         return result
 
     def astype(self, dtype, queue=None):
@@ -1760,7 +1744,11 @@ class Array:
 
     # {{{ complex-valued business
 
+    @property
     def real(self):
+        """
+        .. versionadded:: 2012.1
+        """
         if self.dtype.kind == "c":
             result = self._new_like_me(self.dtype.type(0).real.dtype)
             result.add_event(
@@ -1768,9 +1756,12 @@ class Array:
             return result
         else:
             return self
-    real = property(real, doc=".. versionadded:: 2012.1")
 
+    @property
     def imag(self):
+        """
+        .. versionadded:: 2012.1
+        """
         if self.dtype.kind == "c":
             result = self._new_like_me(self.dtype.type(0).real.dtype)
             result.add_event(
@@ -1778,10 +1769,11 @@ class Array:
             return result
         else:
             return zeros_like(self)
-    imag = property(imag, doc=".. versionadded:: 2012.1")
 
     def conj(self):
-        """.. versionadded:: 2012.1"""
+        """
+        .. versionadded:: 2012.1
+        """
         if self.dtype.kind == "c":
             result = self._new_like_me()
             result.add_event(self._conj(result, self))
