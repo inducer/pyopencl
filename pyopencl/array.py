@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple, Union
 from functools import reduce
 from warnings import warn
 
@@ -512,9 +512,24 @@ class Array:
 
     __array_priority__ = 100
 
-    def __init__(self, cq, shape, dtype, order="C", allocator=None,
-            data=None, offset=0, strides=None, events=None, _flags=None,
-            _fast=False, _size=None, _context=None, _queue=None):
+    def __init__(
+            self,
+            cq: Optional[Union["cl.Context", "cl.CommandQueue"]],
+            shape: Union[Tuple[int, ...], int],
+            dtype: Any,
+            order: str = "C",
+            allocator: Optional["cl.tools.AllocatorBase"] = None,
+            data: Any = None,
+            offset: int = 0,
+            strides: Optional[Tuple[int, ...]] = None,
+            events: Optional[List["cl.Event"]] = None,
+
+            # NOTE: following args are used for the fast constructor
+            _flags: Any = None,
+            _fast: bool = False,
+            _size: Optional[int] = None,
+            _context: Optional["cl.Context"] = None,
+            _queue: Optional["cl.CommandQueue"] = None) -> None:
         if _fast:
             # Assumptions, should be disabled if not testing
             if 0:
@@ -573,6 +588,7 @@ class Array:
             # invariant here: allocator, queue set
 
             # {{{ determine shape, size, and strides
+
             dtype = np.dtype(dtype)
 
             try:
