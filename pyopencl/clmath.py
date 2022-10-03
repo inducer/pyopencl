@@ -26,13 +26,12 @@ THE SOFTWARE.
 
 import numpy as np
 
-import pyopencl.array as cl_array
 import pyopencl.elementwise as elementwise
-from pyopencl.array import _get_common_dtype
+from pyopencl.array import _get_common_dtype, elwise_kernel_runner
 
 
 def _make_unary_array_func(name):
-    @cl_array.elwise_kernel_runner
+    @elwise_kernel_runner
     def knl_runner(result, arg):
         if arg.dtype.kind == "c":
             from pyopencl.elementwise import complex_dtype_to_name
@@ -45,8 +44,7 @@ def _make_unary_array_func(name):
 
     def f(array, queue=None):
         result = array._new_like_me(queue=queue)
-        event1 = knl_runner(result, array, queue=queue)
-        result.add_event(event1)
+        knl_runner(result, array, queue=queue)
         return result
 
     return f
@@ -62,13 +60,13 @@ asinh = _make_unary_array_func("asinh")
 asinpi = _make_unary_array_func("asinpi")
 
 
-@cl_array.elwise_kernel_runner
+@elwise_kernel_runner
 def _atan2(result, arg1, arg2):
     return elementwise.get_float_binary_func_kernel(
         result.context, "atan2", arg1.dtype, arg2.dtype, result.dtype)
 
 
-@cl_array.elwise_kernel_runner
+@elwise_kernel_runner
 def _atan2pi(result, arg1, arg2):
     return elementwise.get_float_binary_func_kernel(
         result.context, "atan2pi", arg1.dtype, arg2.dtype, result.dtype)
@@ -83,7 +81,7 @@ def atan2(y, x, queue=None):
     """
     queue = queue or y.queue
     result = y._new_like_me(_get_common_dtype(y, x, queue))
-    result.add_event(_atan2(result, y, x, queue=queue))
+    _atan2(result, y, x, queue=queue)
     return result
 
 
@@ -97,7 +95,7 @@ def atan2pi(y, x, queue=None):
     """
     queue = queue or y.queue
     result = y._new_like_me(_get_common_dtype(y, x, queue))
-    result.add_event(_atan2pi(result, y, x, queue=queue))
+    _atan2pi(result, y, x, queue=queue)
     return result
 
 
@@ -124,7 +122,7 @@ floor = _make_unary_array_func("floor")
 # TODO: fmin
 
 
-@cl_array.elwise_kernel_runner
+@elwise_kernel_runner
 def _fmod(result, arg, mod):
     return elementwise.get_fmod_kernel(result.context, result.dtype,
                                        arg.dtype, mod.dtype)
@@ -135,13 +133,13 @@ def fmod(arg, mod, queue=None):
     for each element in ``arg`` and ``mod``."""
     queue = (queue or arg.queue) or mod.queue
     result = arg._new_like_me(_get_common_dtype(arg, mod, queue))
-    result.add_event(_fmod(result, arg, mod, queue=queue))
+    _fmod(result, arg, mod, queue=queue)
     return result
 
 # TODO: fract
 
 
-@cl_array.elwise_kernel_runner
+@elwise_kernel_runner
 def _frexp(sig, expt, arg):
     return elementwise.get_frexp_kernel(sig.context, sig.dtype,
                                         expt.dtype, arg.dtype)
@@ -153,9 +151,7 @@ def frexp(arg, queue=None):
     """
     sig = arg._new_like_me(queue=queue)
     expt = arg._new_like_me(queue=queue, dtype=np.int32)
-    event1 = _frexp(sig, expt, arg, queue=queue)
-    sig.add_event(event1)
-    expt.add_event(event1)
+    _frexp(sig, expt, arg, queue=queue, noutputs=2)
     return sig, expt
 
 # TODO: hypot
@@ -164,7 +160,7 @@ def frexp(arg, queue=None):
 ilogb = _make_unary_array_func("ilogb")
 
 
-@cl_array.elwise_kernel_runner
+@elwise_kernel_runner
 def _ldexp(result, sig, exp):
     return elementwise.get_ldexp_kernel(result.context, result.dtype,
                                         sig.dtype, exp.dtype)
@@ -176,7 +172,7 @@ def ldexp(significand, exponent, queue=None):
     ``result = significand * 2**exponent``.
     """
     result = significand._new_like_me(queue=queue)
-    result.add_event(_ldexp(result, significand, exponent))
+    _ldexp(result, significand, exponent)
     return result
 
 
@@ -194,7 +190,7 @@ logb = _make_unary_array_func("logb")
 # TODO: minmag
 
 
-@cl_array.elwise_kernel_runner
+@elwise_kernel_runner
 def _modf(intpart, fracpart, arg):
     return elementwise.get_modf_kernel(intpart.context, intpart.dtype,
                                        fracpart.dtype, arg.dtype)
@@ -206,9 +202,7 @@ def modf(arg, queue=None):
     """
     intpart = arg._new_like_me(queue=queue)
     fracpart = arg._new_like_me(queue=queue)
-    event1 = _modf(intpart, fracpart, arg, queue=queue)
-    fracpart.add_event(event1)
-    intpart.add_event(event1)
+    _modf(intpart, fracpart, arg, queue=queue, noutputs=2)
     return fracpart, intpart
 
 
@@ -241,19 +235,19 @@ trunc = _make_unary_array_func("trunc")
 # TODO: table 6.10, integer functions
 # TODO: table 6.12, clamp et al
 
-@cl_array.elwise_kernel_runner
+@elwise_kernel_runner
 def _bessel_jn(result, n, x):
     return elementwise.get_bessel_kernel(result.context, "j", result.dtype,
                                          np.dtype(type(n)), x.dtype)
 
 
-@cl_array.elwise_kernel_runner
+@elwise_kernel_runner
 def _bessel_yn(result, n, x):
     return elementwise.get_bessel_kernel(result.context, "y", result.dtype,
                                          np.dtype(type(n)), x.dtype)
 
 
-@cl_array.elwise_kernel_runner
+@elwise_kernel_runner
 def _hankel_01(h0, h1, x):
     if h0.dtype != h1.dtype:
         raise TypeError("types of h0 and h1 must match")
@@ -263,20 +257,18 @@ def _hankel_01(h0, h1, x):
 
 def bessel_jn(n, x, queue=None):
     result = x._new_like_me(queue=queue)
-    result.add_event(_bessel_jn(result, n, x, queue=queue))
+    _bessel_jn(result, n, x, queue=queue)
     return result
 
 
 def bessel_yn(n, x, queue=None):
     result = x._new_like_me(queue=queue)
-    result.add_event(_bessel_yn(result, n, x, queue=queue))
+    _bessel_yn(result, n, x, queue=queue)
     return result
 
 
 def hankel_01(x, queue=None):
     h0 = x._new_like_me(queue=queue)
     h1 = x._new_like_me(queue=queue)
-    event1 = _hankel_01(h0, h1, x, queue=queue)
-    h0.add_event(event1)
-    h1.add_event(event1)
+    _hankel_01(h0, h1, x, queue=queue, noutputs=2)
     return h0, h1
