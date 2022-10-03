@@ -338,9 +338,11 @@ class RanluxGenerator:
         evt = knl(queue,
                 (self.num_work_items,), None,
                 self.state.data, ary.data, ary.size*size_multiplier,
-                b-a, a, wait_for=ary.events)
-        ary.add_event(evt)
-        self.state.add_event(evt)
+                b-a, a, wait_for=ary.write_events + ary.read_events)
+
+        ary.add_write_event(evt)
+        self.state.add_write_event(evt)
+
         return ary
 
     def uniform(self, *args, **kwargs):
@@ -369,23 +371,11 @@ class RanluxGenerator:
         evt = knl(queue,
                 (self.num_work_items,), self.wg_size,
                 self.state.data, ary.data, ary.size*size_multiplier, sigma, mu,
-<<<<<<< Updated upstream
-                wait_for=ary.events)
-        ary.add_event(evt)
-        self.state.add_event(evt)
-||||||| Stash base
-                wait_for=ary.write_events)
-
-        ary.add_write_event(evt)
-        self.state.add_write_event(evt)
-
-=======
                 wait_for=ary.write_events + ary.read_events)
 
         ary.add_write_event(evt)
         self.state.add_write_event(evt)
 
->>>>>>> Stashed changes
         return evt
 
     def normal(self, *args, **kwargs):
@@ -681,7 +671,7 @@ class Random123GeneratorBase:
         gsize, lsize = _splay(queue.device, ary.size)
 
         evt = knl(queue, gsize, lsize, *args)
-        ary.add_event(evt)
+        ary.add_write_event(evt)
 
         self.counter[0] += n * counter_multiplier
         c1_incr, self.counter[0] = divmod(self.counter[0], self.counter_max)
