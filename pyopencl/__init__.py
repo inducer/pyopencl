@@ -1735,6 +1735,11 @@ class SVMMap:
 
 # {{{ enqueue_copy
 
+_IMAGE_MEM_OBJ_TYPES = [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]
+if get_cl_header_version() >= (1, 2):
+    _IMAGE_MEM_OBJ_TYPES.append(mem_object_type.IMAGE2D_ARRAY)
+
+
 def enqueue_copy(queue, dest, src, **kwargs):
     """Copy from :class:`Image`, :class:`Buffer` or the host to
     :class:`Image`, :class:`Buffer` or the host. (Note: host-to-host
@@ -1903,7 +1908,7 @@ def enqueue_copy(queue, dest, src, **kwargs):
                         return _cl._enqueue_copy_buffer(queue, src, dest, **kwargs)
 
                     # }}}
-                elif src.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
+                elif src.type in _IMAGE_MEM_OBJ_TYPES:
                     return _cl._enqueue_copy_image_to_buffer(
                             queue, src, dest, **kwargs)
                 else:
@@ -1931,14 +1936,14 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
                 # }}}
 
-        elif dest.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
+        elif dest.type in _IMAGE_MEM_OBJ_TYPES:
             # {{{ ... -> image
 
             if isinstance(src, MemoryObjectHolder):
                 if src.type == mem_object_type.BUFFER:
                     return _cl._enqueue_copy_buffer_to_image(
                             queue, src, dest, **kwargs)
-                elif src.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
+                elif src.type in _IMAGE_MEM_OBJ_TYPES:
                     return _cl._enqueue_copy_image(queue, src, dest, **kwargs)
                 else:
                     raise ValueError("invalid src mem object type")
@@ -2002,7 +2007,7 @@ def enqueue_copy(queue, dest, src, **kwargs):
 
                     return _cl._enqueue_read_buffer(queue, src, dest, **kwargs)
 
-            elif src.type in [mem_object_type.IMAGE2D, mem_object_type.IMAGE3D]:
+            elif src.type in _IMAGE_MEM_OBJ_TYPES:
                 origin = kwargs.pop("origin")
                 region = kwargs.pop("region")
 

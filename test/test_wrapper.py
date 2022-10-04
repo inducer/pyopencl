@@ -1468,6 +1468,61 @@ def test_capture_call(ctx_factory):
 # }}}
 
 
+# {{{ test_enqueue_copy_array
+
+def test_enqueue_copy_array(ctx_factory):
+    # https://github.com/inducer/pyopencl/issues/618
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    if ctx._get_cl_version() < (1, 2) or cl.get_cl_header_version() < (1, 2):
+        pytest.skip("requires CL 1.2")
+
+    if not queue.device.image_support:
+        pytest.skip("device has no image support")
+
+    image_format = cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT)
+    flags = cl.mem_flags.READ_ONLY
+    image = np.ascontiguousarray(np.zeros((128, 128, 4), np.float32))
+    image_cl = cl.Image(ctx, flags, image_format,
+            shape=(image.shape[1], image.shape[0], 1), is_array=True)
+    cl.enqueue_copy(queue, dest=image, src=image_cl,
+            origin=(0, 0, 0), region=(image.shape[1], image.shape[0], 1))
+
+
+def test_enqueue_copy_array_2(ctx_factory):
+    # https://github.com/inducer/pyopencl/issues/618
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    if ctx._get_cl_version() < (1, 2) or cl.get_cl_header_version() < (1, 2):
+        pytest.skip("requires CL 1.2")
+
+    if not queue.device.image_support:
+        pytest.skip("device has no image support")
+
+    image_format = cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.FLOAT)
+    image = np.ascontiguousarray(np.zeros((128, 128, 4), np.float32))
+    image_shape = (image.shape[1], image.shape[0])
+    array_shape = (*image_shape, 1)
+    cl.Image(ctx, cl.mem_flags.READ_ONLY,
+                        image_format, shape=image_shape)
+    image_array_cl = cl.Image(ctx, cl.mem_flags.READ_ONLY,
+                              image_format, shape=array_shape, is_array=True)
+    image2_array_cl = cl.Image(ctx, cl.mem_flags.WRITE_ONLY,
+                               image_format, shape=array_shape, is_array=True)
+    buffer_cl = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, size=image.nbytes)
+
+    cl._cl._enqueue_copy_image(
+            queue, src=image_array_cl, dest=image2_array_cl, src_origin=(0, 0, 0),
+            dest_origin=(0, 0, 0), region=array_shape)
+    cl._cl._enqueue_copy_image_to_buffer(
+            queue, src=image_array_cl, dest=buffer_cl, offset=0, origin=(0, 0, 0),
+            region=array_shape)
+
+# }}}
+
+
 if __name__ == "__main__":
     # make sure that import failures get reported, instead of skipping the tests.
     import pyopencl  # noqa
