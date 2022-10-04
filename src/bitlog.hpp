@@ -55,6 +55,15 @@ namespace pyopencl
       return bitlog2_16(v);
   }
 
+#if defined(UINT64_MAX)
+  inline unsigned bitlog2(uint64_t v)
+  {
+    if (uint32_t t = v >> 32)
+      return 32+bitlog2_32(t);
+    else
+      return bitlog2_32(v);
+  }
+#else
   inline unsigned bitlog2(unsigned long v)
   {
 #if (ULONG_MAX != 4294967295)
@@ -64,6 +73,7 @@ namespace pyopencl
 #endif
       return bitlog2_32(v);
   }
+#endif
 }
 
 
