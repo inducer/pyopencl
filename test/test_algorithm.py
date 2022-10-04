@@ -875,11 +875,18 @@ def test_sort(ctx_factory, scan_kernel):
         a_sorted = np.sort(a)
         numpy_end = time()
 
+        assert (a_dev_sorted.get() == a_sorted).all()
+
         numpy_elapsed = numpy_end-dev_end
         dev_elapsed = dev_end-dev_start
-        print("  dev: {:.2f} MKeys/s numpy: {:.2f} MKeys/s ratio: {:.2f}x".format(
-                1e-6*n/dev_elapsed, 1e-6*n/numpy_elapsed, numpy_elapsed/dev_elapsed))
-        assert (a_dev_sorted.get() == a_sorted).all()
+
+        # windows clock has really low resolution (16 milliseconds) and the
+        # difference in time will end up at zero for smaller array sizes.
+        if numpy_elapsed != 0 and dev_elapsed != 0:
+            print(
+                "  dev: {:.2f} MKeys/s numpy: {:.2f} MKeys/s ratio: {:.2f}x".format(
+                    1e-6*n/dev_elapsed, 1e-6*n/numpy_elapsed,
+                    numpy_elapsed/dev_elapsed))
 
 
 def test_list_builder(ctx_factory):
