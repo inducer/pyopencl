@@ -67,7 +67,9 @@ jobs:
         -   name: "Main Script"
             run: |
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
-                sed -i "s/- pocl/- intel-opencl-rt/g" "$CONDA_ENVIRONMENT"
+
+                # https://github.com/conda-forge/intel-compiler-repack-feedstock/issues/7
+                sed -i 's/- pocl/- intel-opencl-rt!=2022.2/g' "$CONDA_ENVIRONMENT"
 
                 curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project-within-miniconda.sh
                 ./configure.py --cl-use-shipped-ext
