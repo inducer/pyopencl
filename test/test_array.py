@@ -41,6 +41,7 @@ from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 
 from pyopencl.clrandom import RanluxGenerator, PhiloxGenerator, ThreefryGenerator
 import operator
+import platform
 
 _PYPY = cl._PYPY
 
@@ -229,6 +230,11 @@ def test_zeros_large_array(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
     dev = queue.device
+
+    if dev.platform.vendor == "Intel(R) Corporation" \
+            and platform.system() == "Windows":
+        pytest.xfail("large array fail with out-of-host memory with"
+                "Intel CPU runtime as of 2022-10-05")
 
     size = 2**28 + 1
     if dev.address_bits == 64 and dev.max_mem_alloc_size >= 8 * size:

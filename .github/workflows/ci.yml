@@ -55,9 +55,11 @@ jobs:
         -   name: "Main Script"
             run: |
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
-                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project-within-miniconda.sh
+                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
+                . ./ci-support.sh
                 ./configure.py --cl-use-shipped-ext
-                . ./build-and-test-py-project-within-miniconda.sh
+                build_py_project_in_conda_env
+                test_py_project
 
     pytest_intel:
         name: Pytest Linux Intel CL
@@ -71,9 +73,34 @@ jobs:
                 # https://github.com/conda-forge/intel-compiler-repack-feedstock/issues/7
                 sed -i 's/- pocl/- intel-opencl-rt!=2022.2/g' "$CONDA_ENVIRONMENT"
 
-                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project-within-miniconda.sh
+                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
+                . ./ci-support.sh
                 ./configure.py --cl-use-shipped-ext
-                . ./build-and-test-py-project-within-miniconda.sh
+                build_py_project_in_conda_env
+                test_py_project
+
+    pytest_win:
+        name: Pytest Windows Intel CL
+        runs-on: windows-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            shell: bash
+            run: |
+                set -x
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+
+                sed -i 's/- ocl-icd/- khronos-opencl-icd-loader/g' "$CONDA_ENVIRONMENT"
+                sed -i '/- git/d' "$CONDA_ENVIRONMENT"
+
+                # https://github.com/conda-forge/intel-compiler-repack-feedstock/issues/7
+                sed -i 's/- pocl/- intel-opencl-rt!=2022.2/g' "$CONDA_ENVIRONMENT"
+
+                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
+                . ./ci-support.sh
+                ./configure.py --cl-use-shipped-ext
+                build_py_project_in_conda_env
+                test_py_project
 
     pytest_mac:
         name: Pytest Mac POCL
@@ -85,9 +112,11 @@ jobs:
                 export CC=gcc
                 CONDA_ENVIRONMENT=.test-conda-env.yml
                 grep -v ocl-icd .test-conda-env-py3.yml > $CONDA_ENVIRONMENT
-                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project-within-miniconda.sh
+                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/ci-support.sh
+                . ./ci-support.sh
                 ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
-                . ./build-and-test-py-project-within-miniconda.sh
+                build_py_project_in_conda_env
+                test_py_project
 
     docs:
         name: Documentation
