@@ -82,6 +82,7 @@ jobs:
     pytest_win:
         name: Pytest Windows Intel CL
         runs-on: windows-latest
+        continue-on-error: true
         steps:
         -   uses: actions/checkout@v2
         -   name: "Main Script"
