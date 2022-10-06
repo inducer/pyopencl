@@ -32,6 +32,7 @@ from dataclasses import dataclass, field
 from typing import Any, List, Optional, Tuple, Union
 from functools import reduce
 from warnings import warn
+import builtins
 
 import numpy as np
 import pyopencl.elementwise as elementwise
@@ -228,13 +229,12 @@ vec = VecLookupWarner()
 # {{{ helper functionality
 
 def _splay(device, n, kernel_specific_max_wg_size=None):
-    max_work_items = _builtin_min(128, device.max_work_group_size)
+    max_work_items = builtins.min(128, device.max_work_group_size)
 
     if kernel_specific_max_wg_size is not None:
-        from builtins import min
-        max_work_items = min(max_work_items, kernel_specific_max_wg_size)
+        max_work_items = builtins.min(max_work_items, kernel_specific_max_wg_size)
 
-    min_work_items = _builtin_min(32, max_work_items)
+    min_work_items = builtins.min(32, max_work_items)
     max_groups = device.max_compute_units * 4 * 8
     # 4 to overfill the device
     # 8 is an Nvidia constant--that's how many
@@ -630,7 +630,7 @@ class Array:
                         strides = [dtype.itemsize]
                         for s in shape[:0:-1]:
                             # NOTE: https://github.com/inducer/compyte/pull/36
-                            strides.append(strides[-1]*_builtin_max(1, s))
+                            strides.append(strides[-1]*builtins.max(1, s))
                         strides = tuple(strides[::-1])
                     else:
                         strides = ()
@@ -1887,7 +1887,7 @@ class Array:
                 shape[idx] = 0
             else:
                 shape[idx] = self.size // size
-            if _builtin_any(s < 0 for s in shape):
+            if builtins.any(s < 0 for s in shape):
                 raise ValueError("can only specify one unknown dimension")
             shape = tuple(shape)
 
@@ -2564,7 +2564,7 @@ def multi_take(arrays, indices, out=None, queue=None):
         if len(out) != len(arrays):
             raise ValueError("out and arrays must have the same length")
 
-    chunk_size = _builtin_min(vec_count, 10)
+    chunk_size = builtins.min(vec_count, 10)
 
     def make_func_for_chunk_size(chunk_size):
         knl = elementwise.get_take_kernel(
@@ -2587,8 +2587,8 @@ def multi_take(arrays, indices, out=None, queue=None):
                     queue.device))
 
         wait_for_this = (indices.events
-            + _builtin_sum((i.events for i in arrays[chunk_slice]), [])
-            + _builtin_sum((o.events for o in out[chunk_slice]), []))
+            + builtins.sum((i.events for i in arrays[chunk_slice]), [])
+            + builtins.sum((o.events for o in out[chunk_slice]), []))
         evt = knl(queue, gs, ls,
                 indices.data,
                 *([o.data for o in out[chunk_slice]]
@@ -2643,7 +2643,7 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
 
     max_chunk_size = 10
 
-    chunk_size = _builtin_min(vec_count, max_chunk_size)
+    chunk_size = builtins.min(vec_count, max_chunk_size)
 
     def make_func_for_chunk_size(chunk_size):
         return elementwise.get_take_put_kernel(context,
@@ -2665,8 +2665,8 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
                     queue.device))
 
         wait_for_this = (dest_indices.events + src_indices.events
-            + _builtin_sum((i.events for i in arrays[chunk_slice]), [])
-            + _builtin_sum((o.events for o in out[chunk_slice]), []))
+            + builtins.sum((i.events for i in arrays[chunk_slice]), [])
+            + builtins.sum((o.events for o in out[chunk_slice]), []))
         evt = knl(queue, gs, ls,
                 *([o for o in out[chunk_slice]]
                     + [dest_indices, src_indices]
@@ -2707,7 +2707,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
     if len(dest_indices.shape) != 1:
         raise ValueError("dest_indices must be 1D")
 
-    chunk_size = _builtin_min(vec_count, 10)
+    chunk_size = builtins.min(vec_count, 10)
 
     # array of bools to specify whether the array of same index in this chunk
     # will be filled with a single value.
@@ -2742,8 +2742,8 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
                     queue.device))
 
         wait_for_this = (wait_for
-            + _builtin_sum((i.events for i in arrays[chunk_slice]), [])
-            + _builtin_sum((o.events for o in out[chunk_slice]), []))
+            + builtins.sum([i.events for i in arrays[chunk_slice]], [])
+            + builtins.sum([o.events for o in out[chunk_slice]], []))
         evt = knl(queue, gs, ls,
                 *(
                     [o for o in out[chunk_slice]]
@@ -2801,7 +2801,6 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
     dtype = np.find_common_type([ary.dtype for ary in arrays], [])
 
     if __debug__:
-        import builtins
         if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
                         for ary in arrays[1:]):
             warn("Elements of 'arrays' not of the same type, returning "
@@ -2866,10 +2865,9 @@ def hstack(arrays, queue=None):
 
     lead_shape = single_valued(ary.shape[:-1] for ary in arrays)
 
-    w = _builtin_sum([ary.shape[-1] for ary in arrays])
+    w = builtins.sum([ary.shape[-1] for ary in arrays])
 
     if __debug__:
-        import builtins
         if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
                         for ary in arrays[1:]):
             warn("Elements of 'arrays' not of the same type, returning "
@@ -2909,18 +2907,18 @@ def stack(arrays, axis=0, queue=None):
                 queue = ary.queue
                 break
 
-    if not _builtin_all(ary.shape == input_shape for ary in arrays[1:]):
+    if not builtins.all(ary.shape == input_shape for ary in arrays[1:]):
         raise ValueError("arrays must have the same shape")
 
     if not (0 <= axis <= input_ndim):
         raise ValueError("invalid axis")
 
-    if (axis == 0 and not _builtin_all(
+    if (axis == 0 and not builtins.all(
             ary.flags.c_contiguous for ary in arrays)):
         # pyopencl.Array.__setitem__ does not support non-contiguous assignments
         raise NotImplementedError
 
-    if (axis == input_ndim and not _builtin_all(
+    if (axis == input_ndim and not builtins.all(
             ary.flags.f_contiguous for ary in arrays)):
         # pyopencl.Array.__setitem__ does not support non-contiguous assignments
         raise NotImplementedError
@@ -2928,7 +2926,6 @@ def stack(arrays, axis=0, queue=None):
     result_shape = input_shape[:axis] + (len(arrays),) + input_shape[axis:]
 
     if __debug__:
-        import builtins
         if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
                         for ary in arrays[1:]):
             warn("Elements of 'arrays' not of the same type, returning "
@@ -3130,13 +3127,6 @@ def minimum(a, b, out=None, queue=None):
 
 
 # {{{ reductions
-
-_builtin_sum = sum
-_builtin_min = min
-_builtin_max = max
-_builtin_any = any
-_builtin_all = all
-
 
 def sum(a, dtype=None, queue=None, slice=None, initial=np._NoValue):
     """
