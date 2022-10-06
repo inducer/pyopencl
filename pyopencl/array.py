@@ -28,7 +28,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, List, Optional, Tuple, Union
 from functools import reduce
 from warnings import warn
@@ -2415,7 +2415,6 @@ class _ArangeInfo:
     step: Optional[int] = None
     dtype: Optional["np.dtype"] = None
     allocator: Optional[Any] = None
-    wait_for: List[cl.Event] = field(default_factory=list)
 
 
 @elwise_kernel_runner
@@ -2478,10 +2477,9 @@ def arange(queue, *args, **kwargs):
                 if k == "dtype":
                     explicit_dtype = True
             else:
-                raise ValueError(
-                        "may not specify '%s' by position and keyword" % k)
+                raise ValueError(f"may not specify '{k}' by position and keyword")
         else:
-            raise ValueError("unexpected keyword argument '%s'" % k)
+            raise ValueError(f"unexpected keyword argument '{k}'")
 
     if inf.start is None:
         inf.start = 0
@@ -2498,7 +2496,6 @@ def arange(queue, *args, **kwargs):
     start = dtype.type(inf.start)
     step = dtype.type(inf.step)
     stop = dtype.type(inf.stop)
-    wait_for = inf.wait_for
 
     if not explicit_dtype:
         raise TypeError("arange requires a dtype argument")
@@ -2507,8 +2504,7 @@ def arange(queue, *args, **kwargs):
     size = int(ceil((stop-start)/step))
 
     result = Array(queue, (size,), dtype, allocator=inf.allocator)
-    result.add_event(
-            _arange_knl(result, start, step, queue=queue, wait_for=wait_for))
+    result.add_event(_arange_knl(result, start, step, queue=queue))
 
     # }}}
 
