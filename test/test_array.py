@@ -1135,8 +1135,8 @@ def test_slice(ctx_factory):
 
     from random import randrange
     for _i in range(20):
-        start = randrange(ary_len)
-        end = randrange(start, ary_len)
+        start = randrange(ary_len - 1)
+        end = randrange(start + 1, ary_len)
 
         a_gpu_slice = tp(2)*a_gpu[start:end]
         a_slice = tp(2)*a[start:end]
@@ -1144,8 +1144,8 @@ def test_slice(ctx_factory):
         assert la.norm(a_gpu_slice.get() - a_slice) == 0
 
     for _i in range(20):
-        start = randrange(ary_len)
-        end = randrange(start, ary_len)
+        start = randrange(ary_len - 1)
+        end = randrange(start + 1, ary_len)
 
         a_gpu[start:end] = tp(2)*b[start:end]
         a[start:end] = tp(2)*b[start:end]
@@ -1153,8 +1153,8 @@ def test_slice(ctx_factory):
         assert la.norm(a_gpu.get() - a) == 0
 
     for _i in range(20):
-        start = randrange(ary_len)
-        end = randrange(start, ary_len)
+        start = randrange(ary_len - 1)
+        end = randrange(start + 1, ary_len)
 
         a_gpu[start:end] = tp(2)*b_gpu[start:end]
         a[start:end] = tp(2)*b[start:end]
