@@ -78,7 +78,7 @@ typedef ${idxtype} idx_t;
                         x[a] = (swap)?auxb:auxa; x[b] = (swap)?auxa:auxb;${NS}
                         y[a] = (swap)?auyb:auya; y[b] = (swap)?auya:auyb;}
 #define B2V(x,y,a)  { ORDERV(x,y,a,a+1) }
-#define B4V(x,y,a)  { for (int i4=0;i4<2;i4++) { ORDERV(x,y,a+i4,a+i4+2) } B2V(x,y,a) B2V(x,y,a+2) } 
+#define B4V(x,y,a)  { for (int i4=0;i4<2;i4++) { ORDERV(x,y,a+i4,a+i4+2) } B2V(x,y,a) B2V(x,y,a+2) }
 #define B8V(x,y,a)  { for (int i8=0;i8<4;i8++) { ORDERV(x,y,a+i8,a+i8+4) } B4V(x,y,a) B4V(x,y,a+4) }
 #define B16V(x,y,a) { for (int i16=0;i16<8;i16++) { ORDERV(x,y,a+i16,a+i16+8) } B8V(x,y,a) B8V(x,y,a+8) }
 % else:
@@ -326,7 +326,7 @@ __kernel void run(__global data_t * data\\
 
 # {{{ C4
 
-# IF YOU REENABLE THIS, YOU NEED TO ADJUST LOCAL_MEM_FACTOR TO 4
+# IF YOU RE-ENABLE THIS, YOU NEED TO ADJUST LOCAL_MEM_FACTOR TO 4
 
 ParallelBitonic_C4 = """//CL//  # noqa
 //ParallelBitonic_C4

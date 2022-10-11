@@ -42,9 +42,9 @@ for some documentation if you're planning on using Random123 directly.
 
     PyOpenCL previously had documented support for the `RANLUXCL random number
     generator <https://bitbucket.org/ivarun/ranluxcl/>`_ by Ivar Ursin
-    Nikolaisen.  This support is now deprecated because of the general slowness
+    Nikolaisen. This support is now deprecated because of the general slowness
     of these generators and will be removed from PyOpenCL in the 2018.x series.
-    All users are encouraged to switch to one of the Random123 genrators,
+    All users are encouraged to switch to one of the Random123 generators,
     :class:`PhiloxGenerator` or :class:`ThreefryGenerator`.
 
 .. autoclass:: PhiloxGenerator

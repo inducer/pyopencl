@@ -1240,7 +1240,7 @@ class Array:
     __radd__ = __add__
 
     def __sub__(self, other):
-        """Substract an array from an array or a scalar from an array."""
+        """Subtract an array from an array or a scalar from an array."""
 
         if isinstance(other, Array):
             result = _get_broadcasted_binary_op_result(self, other, self.queue)
@@ -1263,7 +1263,7 @@ class Array:
             return NotImplemented
 
     def __rsub__(self, other):
-        """Substracts an array by a scalar or an array::
+        """Subtracts an array by a scalar or an array::
 
            x = n - self
         """
@@ -2778,15 +2778,15 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
             shape = list(ary.shape)
         else:
             if len(ary.shape) != len(shape):
-                raise ValueError("%d'th array has different number of axes "
-                        "(shold have %d, has %d)"
-                        % (i_ary, len(ary.shape), len(shape)))
+                raise ValueError(
+                    f"{i_ary}-th array has different number of axes: "
+                    f"expected {len(ary.shape)}, got {len(shape)})")
 
             ary_shape_list = list(ary.shape)
             if (ary_shape_list[:axis] != shape[:axis]
                     or ary_shape_list[axis+1:] != shape[axis+1:]):
-                raise ValueError("%d'th array has residual not matching "
-                        "other arrays" % i_ary)
+                raise ValueError(
+                    f"{i_ary}-th array has residual not matching other arrays")
 
             # pylint: disable=unsupported-assignment-operation
             shape[axis] += ary.shape[axis]
@@ -2884,7 +2884,7 @@ def stack(arrays, axis=0, queue=None):
     """
     Join a sequence of arrays along a new axis.
 
-    :arg arrays: A sequnce of :class:`Array`.
+    :arg arrays: A sequence of :class:`Array`.
     :arg axis: Index of the dimension of the new axis in the result array.
         Can be -1, for the new axis to be last dimension.
 

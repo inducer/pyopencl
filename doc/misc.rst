@@ -36,7 +36,7 @@ Note that PyOpenCL is no fun (i.e. cannot run code) without an OpenCL device
 driver (a so-called "ICD", for "installable client driver") that provides access
 to hardware through OpenCL.  If you get an error message like
 ``pyopencl._cl.LogicError: clGetPlatformIDs failed: PLATFORM_NOT_FOUND_KHR``,
-that means PyOpenCL installed sucessfully, but you have no OpenCL drivers installed.
+that means PyOpenCL installed successfully, but you have no OpenCL drivers installed.
 
 Note that drivers (ICDs) are separate pieces of software from PyOpenCL.  They
 might be provided by your hardware vendor (e.g. for Nvidia or AMD GPUs). If

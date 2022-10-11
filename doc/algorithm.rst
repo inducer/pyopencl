@@ -3,8 +3,8 @@ Parallel Algorithms
 
 .. include:: subst.rst
 
-Element-wise expression evalution ("map")
------------------------------------------
+Element-wise expression evaluation ("map")
+------------------------------------------
 
 .. module:: pyopencl.elementwise
 
