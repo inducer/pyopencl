@@ -243,7 +243,7 @@ Kernel
 
         .. note ::
 
-            The information set by this rountine is attached to a single kernel
+            The information set by this method is attached to a single kernel
             instance. A new kernel instance is created every time you use
             `program.kernel` attribute access. The following will therefore not
             work::
