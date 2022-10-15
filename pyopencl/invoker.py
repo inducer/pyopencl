@@ -374,7 +374,7 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v41",
+        "pyopencl-invoker-cache-v42",
         key_builder=_NumpyTypesKeyBuilder(),
         in_mem_cache_size=0)
 
