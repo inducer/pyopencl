@@ -22,10 +22,7 @@ Program
 
     PyOpenCL will also cache "invokers", which are short snippets of Python
     that are generated to accelerate passing arguments to and enqueuing
-    a kernel. For now, this caching is unaffected by ``PYOPENCL_NO_CACHE``.
-    These must be recreated every time a new :class:`Kernel` is created.
-    Hence it is highly recommended to reuse :class:`Kernel` instead of
-    recreating them when needed.
+    a kernel.
 
     .. versionadded:: 2013.1
 
