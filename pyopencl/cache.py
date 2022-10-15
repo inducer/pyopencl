@@ -122,7 +122,6 @@ class CacheLockManager(CleanupBase):
             cleanup_m.register(self)
 
     def clean_up(self):
-        import os
         os.close(self.fd)
         os.unlink(self.lock_file)
 
@@ -147,7 +146,6 @@ class ModuleCacheDirManager(CleanupBase):
         return join(self.path, n)
 
     def reset(self):
-        import os
         _erase_dir(self.path)
         os.mkdir(self.path)
 
