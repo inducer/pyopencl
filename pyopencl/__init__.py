@@ -42,7 +42,6 @@ os.environ["PYOPENCL_HOME"] = os.path.dirname(os.path.abspath(__file__))
 try:
     import pyopencl._cl as _cl
 except ImportError:
-    import os
     from os.path import dirname, join, realpath
     if realpath(join(os.getcwd(), "pyopencl")) == realpath(dirname(__file__)):
         warn("It looks like you are importing PyOpenCL from "
@@ -265,7 +264,6 @@ class CommandQueueUsedAfterExit(UserWarning):
 
 
 def compiler_output(text):
-    import os
     if int(os.environ.get("PYOPENCL_COMPILER_OUTPUT", "0")):
         warn(text, CompilerWarning)
     else:
@@ -361,6 +359,8 @@ def _options_to_bytestring(options):
 
 # {{{ Program (wrapper around _Program, adds caching support)
 
+_PYOPENCL_NO_CACHE = "PYOPENCL_NO_CACHE" in os.environ
+
 _DEFAULT_BUILD_OPTIONS = []
 _DEFAULT_INCLUDE_OPTIONS = ["-I", _find_pyopencl_include_path()]
 
@@ -384,7 +384,6 @@ def enable_debugging(platform_or_context):
     if "AMD Accelerated" in platform.name:
         _PLAT_BUILD_OPTIONS.setdefault(platform.name, []).extend(
                 ["-g", "-O0"])
-        import os
         os.environ["CPU_MAX_COMPUTE_UNITS"] = "1"
     else:
         warn("do not know how to enable debugging on '%s'"
@@ -491,7 +490,6 @@ class Program:
                 + _PLAT_BUILD_OPTIONS.get(
                     context.devices[0].platform.name, []))
 
-        import os
         forced_options = os.environ.get("PYOPENCL_BUILD_OPTIONS")
         if forced_options:
             options = options + forced_options.split()
@@ -507,10 +505,8 @@ class Program:
         if cache_dir is None:
             cache_dir = getattr(self._context, "cache_dir", None)
 
-        import os
         build_descr = None
-
-        if os.environ.get("PYOPENCL_NO_CACHE") and self._prg is None:
+        if _PYOPENCL_NO_CACHE and self._prg is None:
             build_descr = "uncached source build (cache disabled by user)"
             self._prg = _cl._Program(self._context, self._source)
 
@@ -1548,7 +1544,6 @@ if get_cl_header_version() >= (2, 0):
 # {{{ create_some_context
 
 def create_some_context(interactive=None, answers=None):
-    import os
     if answers is None:
         if "PYOPENCL_CTX" in os.environ:
             ctx_spec = os.environ["PYOPENCL_CTX"]
@@ -1571,7 +1566,6 @@ def create_some_context(interactive=None, answers=None):
     if interactive is None:
         interactive = True
         try:
-            import sys
             if not sys.stdin.isatty():
                 interactive = False
         except Exception:

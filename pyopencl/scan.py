@@ -1149,11 +1149,9 @@ class GenericScanKernel(_GenericScanKernelBase):
                 for device in self.devices)
 
         cache_key = (self.kernel_key, devices_key)
-
         from_cache = False
 
-        import os
-        if not os.environ.get("PYOPENCL_NO_CACHE"):
+        if not cl._PYOPENCL_NO_CACHE:
             try:
                 result = generic_scan_kernel_cache[cache_key]
                 from_cache = True
