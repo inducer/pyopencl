@@ -388,18 +388,16 @@ def generate_enqueue_and_set_args(function_name,
             work_around_arg_count_bug, warn_about_arg_count_bug)
 
     from_cache = False
-
-    try:
-        result = invoker_cache[cache_key]
-        from_cache = True
-    except KeyError:
-        pass
+    if not cl._PYOPENCL_NO_CACHE:
+        try:
+            pmod, enqueue_name = invoker_cache[cache_key]
+            from_cache = True
+        except KeyError:
+            pass
 
     if not from_cache:
-        result = _generate_enqueue_and_set_args_module(*cache_key)
-        invoker_cache.store_if_not_present(cache_key, result)
-
-    pmod, enqueue_name = result
+        pmod, enqueue_name = _generate_enqueue_and_set_args_module(*cache_key)
+        invoker_cache.store_if_not_present(cache_key, (pmod, enqueue_name))
 
     return (
             pmod.mod_globals[enqueue_name],
