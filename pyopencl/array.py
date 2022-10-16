@@ -2246,6 +2246,11 @@ class Array:
 
         subarray = self[subscript]
 
+        if not subarray.size:
+            # This prevents errors about mismatched strides that neither we
+            # nor numpy worry about in the empty case.
+            return
+
         if isinstance(value, np.ndarray):
             if subarray.shape == value.shape and subarray.strides == value.strides:
                 self.add_event(
