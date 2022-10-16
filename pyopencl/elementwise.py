@@ -27,14 +27,18 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 
-from typing import Any, Tuple
 import enum
-from pyopencl.tools import context_dependent_memoize
+from typing import Any, List, Optional, Tuple, Union
+
 import numpy as np
+
 import pyopencl as cl
-from pytools import memoize_method
-from pyopencl.tools import (dtype_to_ctype, VectorArg, ScalarArg,
+from pyopencl.tools import context_dependent_memoize
+from pyopencl.tools import (
+        dtype_to_ctype, DtypedArgument, VectorArg, ScalarArg,
         KernelTemplateBase, dtype_to_c_struct)
+
+from pytools import memoize_method
 
 
 # {{{ elementwise kernel code generator
@@ -205,8 +209,13 @@ class ElementwiseKernel:
         Added ``PYOPENCL_ELWISE_CONTINUE``.
     """
 
-    def __init__(self, context, arguments, operation,
-            name="elwise_kernel", options=None, **kwargs):
+    def __init__(
+            self,
+            context: cl.Context,
+            arguments: Union[str, List[DtypedArgument]],
+            operation: str,
+            name: str = "elwise_kernel",
+            options: Any = None, **kwargs: Any) -> None:
         self.context = context
         self.arguments = arguments
         self.operation = operation
@@ -215,7 +224,7 @@ class ElementwiseKernel:
         self.kwargs = kwargs
 
     @memoize_method
-    def get_kernel(self, use_range):
+    def get_kernel(self, use_range: bool):
         knl, arg_descrs = get_elwise_kernel_and_types(
             self.context, self.arguments, self.operation,
             name=self.name, options=self.options,
@@ -224,32 +233,32 @@ class ElementwiseKernel:
         for arg in arg_descrs:
             if isinstance(arg, VectorArg) and not arg.with_offset:
                 from warnings import warn
-                warn("ElementwiseKernel '%s' used with VectorArgs that do not "
-                        "have offset support enabled. This usage is deprecated. "
-                        "Just pass with_offset=True to VectorArg, everything should "
-                        "sort itself out automatically." % self.name,
+                warn(
+                        f"ElementwiseKernel '{self.name}' used with VectorArgs "
+                        "that do not have offset support enabled. This usage is "
+                        "deprecated. Just pass with_offset=True to VectorArg, "
+                        "everything should sort itself out automatically.",
                         DeprecationWarning)
 
-        if not [i for i, arg in enumerate(arg_descrs)
-                if isinstance(arg, VectorArg)]:
+        if not any(isinstance(arg, VectorArg) for arg in arg_descrs):
             raise RuntimeError(
-                "ElementwiseKernel can only be used with "
-                "functions that have at least one "
-                "vector argument")
+                "ElementwiseKernel can only be used with functions that have "
+                "at least one vector argument")
+
         return knl, arg_descrs
 
-    def __call__(self, *args, **kwargs):
-        repr_vec = None
-
+    def __call__(self, *args, **kwargs) -> cl.Event:
         range_ = kwargs.pop("range", None)
         slice_ = kwargs.pop("slice", None)
         capture_as = kwargs.pop("capture_as", None)
+        queue = kwargs.pop("queue", None)
+        wait_for = kwargs.pop("wait_for", None)
+
+        if kwargs:
+            raise TypeError(f"unknown keyword arguments: '{', '.join(kwargs)}'")
 
         use_range = range_ is not None or slice_ is not None
         kernel, arg_descrs = self.get_kernel(use_range)
-
-        queue = kwargs.pop("queue", None)
-        wait_for = kwargs.pop("wait_for", None)
 
         if wait_for is None:
             wait_for = []
@@ -259,6 +268,7 @@ class ElementwiseKernel:
 
         # {{{ assemble arg array
 
+        repr_vec = None
         invocation_args = []
         for arg, arg_descr in zip(args, arg_descrs):
             if isinstance(arg_descr, VectorArg):
@@ -269,19 +279,17 @@ class ElementwiseKernel:
             else:
                 invocation_args.append(arg)
 
-        # }}}
+        assert repr_vec is not None
 
-        if kwargs:
-            raise TypeError("unknown keyword arguments: '%s'"
-                    % ", ".join(kwargs))
+        # }}}
 
         if queue is None:
             queue = repr_vec.queue
 
         if slice_ is not None:
             if range_ is not None:
-                raise TypeError("may not specify both range and slice "
-                        "keyword arguments")
+                raise TypeError(
+                    "may not specify both range and slice keyword arguments")
 
             range_ = slice(*slice_.indices(repr_vec.size))
 
@@ -324,12 +332,14 @@ class ElementwiseKernel:
 # {{{ template
 
 class ElementwiseTemplate(KernelTemplateBase):
-    def __init__(self,
-            arguments, operation, name="elwise", preamble="",
-            template_processor=None):
-
-        KernelTemplateBase.__init__(self,
-                template_processor=template_processor)
+    def __init__(
+            self,
+            arguments: Union[str, List[DtypedArgument]],
+            operation: str,
+            name: str = "elwise",
+            preamble: str = "",
+            template_processor: Optional[str] = None) -> None:
+        super().__init__(template_processor=template_processor)
         self.arguments = arguments
         self.operation = operation
         self.name = name
