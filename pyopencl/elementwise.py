@@ -43,10 +43,16 @@ from pytools import memoize_method
 
 # {{{ elementwise kernel code generator
 
-def get_elwise_program(context, arguments, operation,
-        name="elwise_kernel", options=None,
-        preamble="", loop_prep="", after_loop="",
-        use_range=False):
+def get_elwise_program(
+        context: cl.Context,
+        arguments: List[DtypedArgument],
+        operation: str, *,
+        name: str = "elwise_kernel",
+        options: Any = None,
+        preamble: str = "",
+        loop_prep: str = "",
+        after_loop: str = "",
+        use_range: bool = False) -> cl.Program:
 
     if use_range:
         body = r"""//CL//
@@ -109,13 +115,18 @@ def get_elwise_program(context, arguments, operation,
             body=body % dict(operation=operation),
             ))
 
-    from pyopencl import Program
-    return Program(context, source).build(options)
+    return cl.Program(context, source).build(options)
 
 
-def get_elwise_kernel_and_types(context, arguments, operation,
-        name="elwise_kernel", options=None, preamble="", use_range=False,
-        **kwargs):
+def get_elwise_kernel_and_types(
+        context: cl.Context,
+        arguments: Union[str, List[DtypedArgument]],
+        operation: str, *,
+        name: str = "elwise_kernel",
+        options: Any = None,
+        preamble: str = "",
+        use_range: bool = False,
+        **kwargs: Any) -> Tuple[cl.Kernel, List[DtypedArgument]]:
 
     from pyopencl.tools import parse_arg_list, get_arg_offset_adjuster_code
     parsed_args = parse_arg_list(arguments, with_offset=True)
@@ -170,8 +181,12 @@ def get_elwise_kernel_and_types(context, arguments, operation,
     return kernel, parsed_args
 
 
-def get_elwise_kernel(context, arguments, operation,
-        name="elwise_kernel", options=None, **kwargs):
+def get_elwise_kernel(
+        context: cl.Context,
+        arguments: Union[str, List[DtypedArgument]],
+        operation: str, *,
+        name: str = "elwise_kernel",
+        options: Any = None, **kwargs: Any) -> cl.Kernel:
     """Return a L{pyopencl.Kernel} that performs the same scalar operation
     on one or several vectors.
     """
