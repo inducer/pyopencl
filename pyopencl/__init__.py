@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 from sys import intern
 from warnings import warn
-from typing import Union, Any, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
 
@@ -359,13 +359,13 @@ def _options_to_bytestring(options):
 
 # {{{ Program (wrapper around _Program, adds caching support)
 
-_PYOPENCL_NO_CACHE = "PYOPENCL_NO_CACHE" in os.environ
+_PYOPENCL_NO_CACHE: bool = "PYOPENCL_NO_CACHE" in os.environ
 
-_DEFAULT_BUILD_OPTIONS = []
-_DEFAULT_INCLUDE_OPTIONS = ["-I", _find_pyopencl_include_path()]
+_DEFAULT_BUILD_OPTIONS: List[str] = []
+_DEFAULT_INCLUDE_OPTIONS: List[str] = ["-I", _find_pyopencl_include_path()]
 
 # map of platform.name to build options list
-_PLAT_BUILD_OPTIONS = {
+_PLAT_BUILD_OPTIONS: Dict[str, List[str]] = {
         "Oclgrind": ["-D", "PYOPENCL_USING_OCLGRIND"],
         }
 
@@ -442,14 +442,15 @@ class Program:
             knl._setup(self)
         return result
 
+    @property
     def int_ptr(self):
         return self._get_prg().int_ptr
-    int_ptr = property(int_ptr, doc=_cl._Program.int_ptr.__doc__)
+    int_ptr.__doc__ = _cl._Program.int_ptr.__doc__
 
+    @staticmethod
     def from_int_ptr(int_ptr_value, retain=True):
         return Program(_cl._Program.from_int_ptr(int_ptr_value, retain))
     from_int_ptr.__doc__ = _cl._Program.from_int_ptr.__doc__
-    from_int_ptr = staticmethod(from_int_ptr)
 
     def __getattr__(self, attr):
         try:
@@ -2364,7 +2365,7 @@ def fsvm_empty_like(ctx, ary, alignment=None):
 # }}}
 
 
-_KERNEL_ARG_CLASSES = (
+_KERNEL_ARG_CLASSES: Tuple[type, ...] = (
         MemoryObjectHolder,
         Sampler,
         CommandQueue,

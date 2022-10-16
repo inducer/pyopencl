@@ -28,11 +28,12 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-from dataclasses import dataclass
-from typing import Any, List, Optional, Tuple, Union
-from functools import reduce
-from warnings import warn
 import builtins
+from dataclasses import dataclass
+from warnings import warn
+from numbers import Number
+from functools import reduce
+from typing import Any, Dict, Hashable, List, Optional, Tuple, Union
 
 import numpy as np
 import pyopencl.elementwise as elementwise
@@ -46,7 +47,6 @@ from pyopencl.compyte.array import (
         ArrayFlags as _ArrayFlags)
 from pyopencl.characterize import has_double_support
 from pyopencl import cltypes
-from numbers import Number
 
 SCALAR_CLASSES = (Number, np.bool_, bool)
 
@@ -58,7 +58,7 @@ else:
 
 # {{{ _get_common_dtype
 
-_COMMON_DTYPE_CACHE = {}
+_COMMON_DTYPE_CACHE: Dict[Tuple[Hashable, ...], np.dtype] = {}
 
 
 class DoubleDowncastWarning(UserWarning):
@@ -330,7 +330,7 @@ class _copy_queue:  # noqa
     pass
 
 
-_ARRAY_GET_SIZES_CACHE = {}
+_ARRAY_GET_SIZES_CACHE: Dict[Tuple[int, int, int], Tuple[int, int]] = {}
 _BOOL_DTYPE = np.dtype(np.int8)
 _NOT_PRESENT = object()
 
@@ -603,22 +603,21 @@ class Array:
             dtype = np.dtype(dtype)
 
             try:
-                size = 1
-                for dim in shape:
-                    size *= dim
-                    if dim < 0:
-                        raise ValueError("negative dimensions are not allowed")
-
+                shape = tuple(shape)        # type: ignore[arg-type]
             except TypeError:
-                admissible_types = (int, np.integer)
+                if not isinstance(shape, (int, np.integer)):
+                    raise TypeError(
+                        "shape must either be iterable or castable to an integer: "
+                        f"got a '{type(shape).__name__}'")
 
-                if not isinstance(shape, admissible_types):
-                    raise TypeError("shape must either be iterable or "
-                            "castable to an integer")
-                size = shape
-                if shape < 0:
-                    raise ValueError("negative dimensions are not allowed")
                 shape = (shape,)
+
+            size = 1
+            for dim in shape:
+                size *= dim
+                if dim < 0:
+                    raise ValueError(
+                        f"negative dimensions are not allowed: {shape}")
 
             if isinstance(size, np.integer):
                 size = size.item()
@@ -627,17 +626,17 @@ class Array:
                 if order in "cC":
                     # inlined from compyte.array.c_contiguous_strides
                     if shape:
-                        strides = [dtype.itemsize]
+                        strides_tmp = [dtype.itemsize]
                         for s in shape[:0:-1]:
                             # NOTE: https://github.com/inducer/compyte/pull/36
-                            strides.append(strides[-1]*builtins.max(1, s))
-                        strides = tuple(strides[::-1])
+                            strides_tmp.append(strides_tmp[-1]*builtins.max(1, s))
+                        strides = tuple(strides_tmp[::-1])
                     else:
                         strides = ()
                 elif order in "fF":
                     strides = _f_contiguous_strides(dtype.itemsize, shape)
                 else:
-                    raise ValueError("invalid order: %s" % order)
+                    raise ValueError(f"invalid order: {order}")
 
             else:
                 # FIXME: We should possibly perform some plausibility
@@ -671,7 +670,7 @@ class Array:
                 self.base_data = None
 
             else:
-                if allocator is None:
+                if self.allocator is None:
                     if context is None and queue is not None:
                         context = queue.context
 

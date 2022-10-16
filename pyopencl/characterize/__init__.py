@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 import pyopencl as cl
 from pytools import memoize
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 
 class CLCharacterizationWarning(UserWarning):
@@ -340,10 +340,12 @@ def get_pocl_version(
         return (int(ver_match.group(1)), int(ver_match.group(2)))
 
 
-_CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE = {}
+_CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE: Dict[cl.Device, bool] = {}
 
 
-def _check_for_pocl_arg_count_bug(dev, ctx=None):
+def _check_for_pocl_arg_count_bug(
+        dev: cl.Device,
+        ctx: Optional[cl.Context] = None) -> bool:
     try:
         return _CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE[dev]
     except KeyError:
