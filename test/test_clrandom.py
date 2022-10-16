@@ -56,9 +56,10 @@ def make_ranlux_generator(cl_ctx):
     np.int64,
     np.float32,
     np.float64,
-    cltypes.float2,
-    cltypes.float3,
-    cltypes.float4])
+    cltypes.float2,         # type: ignore[attr-defined]
+    cltypes.float3,         # type: ignore[attr-defined]
+    cltypes.float4,         # type: ignore[attr-defined]
+    ])
 def test_clrandom_dtypes(ctx_factory, rng_class, dtype):
     cl_ctx = ctx_factory()
     if dtype == np.float64 and not has_double_support(cl_ctx.devices[0]):
