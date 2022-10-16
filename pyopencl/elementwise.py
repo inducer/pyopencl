@@ -430,21 +430,19 @@ def get_decl_and_access_for_kind(name: str, kind: ArgumentKind) -> Tuple[str, st
 
 @context_dependent_memoize
 def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
-    ctx = {
-            "idx_tp": dtype_to_ctype(idx_dtype),
-            "tp": dtype_to_ctype(dtype),
-            }
+    idx_tp = dtype_to_ctype(idx_dtype)
 
-    args = ([VectorArg(dtype, "dest" + str(i), with_offset=True)
+    args = ([VectorArg(dtype, f"dest{i}", with_offset=True)
              for i in range(vec_count)]
-            + [VectorArg(dtype, "src" + str(i), with_offset=True)
+            + [VectorArg(dtype, f"src{i}", with_offset=True)
                for i in range(vec_count)]
             + [VectorArg(idx_dtype, "idx", with_offset=True)])
     body = (
-            ("%(idx_tp)s src_idx = idx[i];\n" % ctx)
+            f"{idx_tp} src_idx = idx[i];\n"
             + "\n".join(
-                "dest%d[i] = src%d[src_idx];" % (i, i)
-                for i in range(vec_count)))
+                f"dest{i}[i] = src{i}[src_idx];"
+                for i in range(vec_count))
+            )
 
     return get_elwise_kernel(context, args, body,
             preamble=dtype_to_c_struct(context.devices[0], dtype),
@@ -453,37 +451,31 @@ def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
 
 @context_dependent_memoize
 def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
-    ctx = {
-            "idx_tp": dtype_to_ctype(idx_dtype),
-            "tp": dtype_to_ctype(dtype),
-            }
+    idx_tp = dtype_to_ctype(idx_dtype)
 
     args = [
-            VectorArg(dtype, "dest%d" % i)
+            VectorArg(dtype, f"dest{i}")
             for i in range(vec_count)
             ] + [
                 VectorArg(idx_dtype, "gmem_dest_idx", with_offset=True),
                 VectorArg(idx_dtype, "gmem_src_idx", with_offset=True),
             ] + [
-                VectorArg(dtype, "src%d" % i, with_offset=True)
+                VectorArg(dtype, f"src{i}", with_offset=True)
                 for i in range(vec_count)
             ] + [
-                ScalarArg(idx_dtype, "offset%d" % i)
+                ScalarArg(idx_dtype, f"offset{i}")
                 for i in range(vec_count) if with_offsets
             ]
 
     if with_offsets:
         def get_copy_insn(i):
-            return ("dest%d[dest_idx] = "
-                    "src%d[src_idx+offset%d];"
-                    % (i, i, i))
+            return f"dest{i}[dest_idx] = src{i}[src_idx + offset{i}];"
     else:
         def get_copy_insn(i):
-            return ("dest%d[dest_idx] = "
-                    "src%d[src_idx];" % (i, i))
+            return f"dest{i}[dest_idx] = src{i}[src_idx];"
 
-    body = (("%(idx_tp)s src_idx = gmem_src_idx[i];\n"
-                "%(idx_tp)s dest_idx = gmem_dest_idx[i];\n" % ctx)
+    body = ((f"{idx_tp} src_idx = gmem_src_idx[i];\n"
+                f"{idx_tp} dest_idx = gmem_dest_idx[i];\n")
             + "\n".join(get_copy_insn(i) for i in range(vec_count)))
 
     return get_elwise_kernel(context, args, body,
@@ -493,18 +485,15 @@ def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
 
 @context_dependent_memoize
 def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
-    ctx = {
-            "idx_tp": dtype_to_ctype(idx_dtype),
-            "tp": dtype_to_ctype(dtype),
-            }
+    idx_tp = dtype_to_ctype(idx_dtype)
 
     args = [
-            VectorArg(dtype, "dest%d" % i, with_offset=True)
+            VectorArg(dtype, f"dest{i}", with_offset=True)
             for i in range(vec_count)
             ] + [
                 VectorArg(idx_dtype, "gmem_dest_idx", with_offset=True),
             ] + [
-                VectorArg(dtype, "src%d" % i, with_offset=True)
+                VectorArg(dtype, f"src{i}", with_offset=True)
                 for i in range(vec_count)
             ] + [
                 VectorArg(np.uint8, "use_fill", with_offset=True)
@@ -513,10 +502,10 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
             ]
 
     body = (
-            "%(idx_tp)s dest_idx = gmem_dest_idx[i];\n" % ctx
+            f"{idx_tp} dest_idx = gmem_dest_idx[i];\n"
             + "\n".join(
-                    "dest{i}[dest_idx] = (use_fill[{i}] ? src{i}[0] : "
-                    "src{i}[i % val_ary_lengths[{i}]]);".format(i=i)
+                    f"dest{i}[dest_idx] = (use_fill[{i}] ? src{i}[0] : "
+                    f"src{i}[i % val_ary_lengths[{i}]]);"
                     for i in range(vec_count)
                     )
             )
@@ -530,10 +519,12 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
 def get_copy_kernel(context, dtype_dest, dtype_src):
     src = "src[i]"
     if dtype_dest.kind == "c" != dtype_src.kind:
-        src = "{}_fromreal({})".format(complex_dtype_to_name(dtype_dest), src)
+        name = complex_dtype_to_name(dtype_dest)
+        src = f"{name}_fromreal({src})"
 
     if dtype_dest.kind == "c" and dtype_src != dtype_dest:
-        src = "{}_cast({})".format(complex_dtype_to_name(dtype_dest), src),
+        name = complex_dtype_to_name(dtype_dest)
+        src = f"{name}_cast({src})"
 
     if dtype_dest != dtype_src and (
             dtype_dest.kind == "V" or dtype_src.kind == "V"):
@@ -544,18 +535,18 @@ def get_copy_kernel(context, dtype_dest, dtype_src):
                 tp_dest=dtype_to_ctype(dtype_dest),
                 tp_src=dtype_to_ctype(dtype_src),
                 ),
-            "dest[i] = %s" % src,
+            f"dest[i] = {src}",
             preamble=dtype_to_c_struct(context.devices[0], dtype_dest),
             name="copy")
 
 
-def complex_dtype_to_name(dtype):
+def complex_dtype_to_name(dtype) -> str:
     if dtype == np.complex128:
         return "cdouble"
     elif dtype == np.complex64:
         return "cfloat"
     else:
-        raise RuntimeError("invalid complex type")
+        raise RuntimeError(f"invalid complex type: {dtype}")
 
 
 def real_dtype(dtype):
@@ -602,7 +593,7 @@ def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z,
                 tp_y=dtype_to_ctype(dtype_y),
                 tp_z=dtype_to_ctype(dtype_z),
                 ),
-            "z[i] = %s" % result,
+            f"z[i] = {result}",
             name="axpbyz")
 
 
@@ -663,7 +654,7 @@ def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
                 tp_b=dtype_to_ctype(dtype_b),
                 tp_z=dtype_to_ctype(dtype_z),
                 ),
-            "z[i] = " + expr,
+            f"z[i] = {expr}",
             name="axpb")
 
 
@@ -696,7 +687,7 @@ def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z,
                 tp_y=dtype_to_ctype(dtype_y),
                 tp_z=dtype_to_ctype(dtype_z),
                 ),
-            "z[i] = %s" % xy,
+            f"z[i] = {xy}",
             name="multiply")
 
 
@@ -739,7 +730,7 @@ def get_divide_kernel(context, dtype_x, dtype_y, dtype_z,
                 tp_y=dtype_to_ctype(dtype_y),
                 tp_z=dtype_to_ctype(dtype_z),
                 ),
-            "z[i] = %s" % xoy,
+            f"z[i] = {xoy}",
             name="divide")
 
 
@@ -774,16 +765,14 @@ def get_rdivide_elwise_kernel(context, dtype_x, dtype_y, dtype_z):
                 tp_y=dtype_to_ctype(dtype_y),
                 tp_z=dtype_to_ctype(dtype_z),
                 ),
-            "z[i] = %s" % yox,
+            f"z[i] = {yox}",
             name="divide_r")
 
 
 @context_dependent_memoize
 def get_fill_kernel(context, dtype):
     return get_elwise_kernel(context,
-            "{tp} *z, {tp} a".format(
-                tp=dtype_to_ctype(dtype),
-                ),
+            "{tp} *z, {tp} a".format(tp=dtype_to_ctype(dtype)),
             "z[i] = a",
             preamble=dtype_to_c_struct(context.devices[0], dtype),
             name="fill")
@@ -792,9 +781,7 @@ def get_fill_kernel(context, dtype):
 @context_dependent_memoize
 def get_reverse_kernel(context, dtype):
     return get_elwise_kernel(context,
-            "{tp} *z, {tp} *y".format(
-                tp=dtype_to_ctype(dtype),
-                ),
+            "{tp} *z, {tp} *y".format(tp=dtype_to_ctype(dtype)),
             "z[i] = y[n-1-i]",
             name="reverse")
 
@@ -806,14 +793,14 @@ def get_arange_kernel(context, dtype):
                 "{root}_add(start, {root}_rmul(i, step))"
                 .format(root=complex_dtype_to_name(dtype)))
     else:
-        expr = "start + ((%s) i)*step" % dtype_to_ctype(dtype)
+        expr = f"start + (({dtype_to_ctype(dtype)}) i) * step"
 
     return get_elwise_kernel(context, [
         VectorArg(dtype, "z", with_offset=True),
         ScalarArg(dtype, "start"),
         ScalarArg(dtype, "step"),
         ],
-        "z[i] = " + expr,
+        f"z[i] = {expr}",
         name="arange")
 
 
@@ -822,17 +809,17 @@ def get_pow_kernel(context, dtype_x, dtype_y, dtype_z,
         is_base_array, is_exp_array):
     if is_base_array:
         x = "x[i]"
-        x_ctype = "%(tp_x)s *x"
+        x_ctype = "{tp_x} *x"
     else:
         x = "x"
-        x_ctype = "%(tp_x)s x"
+        x_ctype = "{tp_x} x"
 
     if is_exp_array:
         y = "y[i]"
-        y_ctype = "%(tp_y)s *y"
+        y_ctype = "{tp_y} *y"
     else:
         y = "y"
-        y_ctype = "%(tp_y)s y"
+        y_ctype = "{tp_y} y"
 
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
@@ -859,12 +846,12 @@ def get_pow_kernel(context, dtype_x, dtype_y, dtype_z,
         result = f"pow({x}, {y})"
 
     return get_elwise_kernel(context,
-            ("%(tp_z)s *z, " + x_ctype + ", "+y_ctype) % {
-                "tp_x": dtype_to_ctype(dtype_x),
-                "tp_y": dtype_to_ctype(dtype_y),
-                "tp_z": dtype_to_ctype(dtype_z),
-                },
-            "z[i] = %s" % result,
+            ("{tp_z} *z, " + x_ctype + ", " + y_ctype).format(
+                tp_x=dtype_to_ctype(dtype_x),
+                tp_y=dtype_to_ctype(dtype_y),
+                tp_z=dtype_to_ctype(dtype_z),
+                ),
+            f"z[i] = {result}",
             name="pow_method")
 
 
@@ -874,7 +861,7 @@ def get_unop_kernel(context, operator, res_dtype, in_dtype):
         VectorArg(res_dtype, "z", with_offset=True),
         VectorArg(in_dtype, "y", with_offset=True),
         ],
-        "z[i] = %s y[i]" % operator,
+        f"z[i] = {operator} y[i]",
         name="unary_op_kernel")
 
 
@@ -885,7 +872,7 @@ def get_array_scalar_binop_kernel(context, operator, dtype_res, dtype_a, dtype_b
         VectorArg(dtype_a, "a", with_offset=True),
         ScalarArg(dtype_b, "b"),
         ],
-        "out[i] = a[i] %s b" % operator,
+        f"out[i] = a[i] {operator} b",
         name="scalar_binop_kernel")
 
 
@@ -910,7 +897,7 @@ def get_array_scalar_comparison_kernel(context, operator, dtype_a):
         VectorArg(dtype_a, "a", with_offset=True),
         ScalarArg(dtype_a, "b"),
         ],
-        "out[i] = a[i] %s b" % operator,
+        f"out[i] = a[i] {operator} b",
         name="scalar_comparison_kernel")
 
 
@@ -921,7 +908,7 @@ def get_array_comparison_kernel(context, operator, dtype_a, dtype_b):
         VectorArg(dtype_a, "a", with_offset=True),
         VectorArg(dtype_b, "b", with_offset=True),
         ],
-        "out[i] = a[i] %s b[i]" % operator,
+        f"out[i] = a[i] {operator} b[i]",
         name="comparison_kernel")
 
 
@@ -934,26 +921,32 @@ def get_unary_func_kernel(context, func_name, in_dtype, out_dtype=None):
         VectorArg(out_dtype, "z", with_offset=True),
         VectorArg(in_dtype, "y", with_offset=True),
         ],
-        "z[i] = %s(y[i])" % func_name,
-        name="%s_kernel" % func_name)
+        f"z[i] = {func_name}(y[i])",
+        name=f"{func_name}_kernel")
 
 
 @context_dependent_memoize
 def get_binary_func_kernel(context, func_name, x_dtype, y_dtype, out_dtype,
                            preamble="", name=None):
+    if name is None:
+        name = func_name
+
     return get_elwise_kernel(context, [
         VectorArg(out_dtype, "z", with_offset=True),
         VectorArg(x_dtype, "x", with_offset=True),
         VectorArg(y_dtype, "y", with_offset=True),
         ],
-        "z[i] = %s(x[i], y[i])" % func_name,
-        name="%s_kernel" % func_name if name is None else name,
+        f"z[i] = {func_name}(x[i], y[i])",
+        name=f"{name}_kernel",
         preamble=preamble)
 
 
 @context_dependent_memoize
 def get_float_binary_func_kernel(context, func_name, x_dtype, y_dtype,
                                  out_dtype, preamble="", name=None):
+    if name is None:
+        name = func_name
+
     if (np.array(0, x_dtype) * np.array(0, y_dtype)).itemsize > 4:
         arg_type = "double"
         preamble = """
@@ -964,13 +957,14 @@ def get_float_binary_func_kernel(context, func_name, x_dtype, y_dtype,
         """ + preamble
     else:
         arg_type = "float"
+
     return get_elwise_kernel(context, [
         VectorArg(out_dtype, "z", with_offset=True),
         VectorArg(x_dtype, "x", with_offset=True),
         VectorArg(y_dtype, "y", with_offset=True),
         ],
         f"z[i] = {func_name}(({arg_type})x[i], ({arg_type})y[i])",
-        name="%s_kernel" % func_name if name is None else name,
+        name=f"{name}_kernel",
         preamble=preamble)
 
 
@@ -1055,15 +1049,15 @@ def get_bessel_kernel(context, which_func, out_dtype=np.float64,
             ScalarArg(order_dtype, "ord_n"),
             VectorArg(x_dtype, "x", with_offset=True),
             ],
-            "z[i] = bessel_%sn(ord_n, x[i])" % which_func,
-            name="bessel_%sn_kernel" % which_func,
-            preamble="""
+            f"z[i] = bessel_{which_func}n(ord_n, x[i])",
+            name=f"bessel_{which_func}n_kernel",
+            preamble=f"""
             #if __OPENCL_C_VERSION__ < 120
             #pragma OPENCL EXTENSION cl_khr_fp64: enable
             #endif
             #define PYOPENCL_DEFINE_CDOUBLE
-            #include <pyopencl-bessel-%s.cl>
-            """ % which_func)
+            #include <pyopencl-bessel-{which_func}.cl>
+            """)
     else:
         if which_func != "j":
             raise NotImplementedError("complex arguments for Bessel Y")
