@@ -14,14 +14,7 @@ is created for each intermediate result. The functionality in the module
 :mod:`pyopencl.elementwise` contains tools to help generate kernels that
 evaluate multi-stage expressions on one or several operands in a single pass.
 
-.. autoclass:: ElementwiseKernel(context, arguments, operation, name="kernel", preamble="", options=[])
-
-    .. method:: __call__(*args, wait_for=None)
-
-        Invoke the generated scalar kernel. The arguments may either be scalars or
-        :class:`pyopencl.array.Array` instances.
-
-        |std-enqueue-blurb|
+.. autoclass:: ElementwiseKernel
 
 Here's a usage example:
 

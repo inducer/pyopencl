@@ -221,7 +221,10 @@ class ElementwiseKernel:
         ``PYOPENCL_ELWISE_CONTINUE`` instead.
 
     .. versionchanged:: 2013.1
+
         Added ``PYOPENCL_ELWISE_CONTINUE``.
+
+    .. automethod:: __call__
     """
 
     def __init__(
@@ -263,6 +266,14 @@ class ElementwiseKernel:
         return knl, arg_descrs
 
     def __call__(self, *args, **kwargs) -> cl.Event:
+        """
+        Invoke the generated scalar kernel.
+
+        The arguments may either be scalars or :class:`pyopencl.array.Array`
+        instances.
+
+        |std-enqueue-blurb|
+        """
         range_ = kwargs.pop("range", None)
         slice_ = kwargs.pop("slice", None)
         capture_as = kwargs.pop("capture_as", None)
