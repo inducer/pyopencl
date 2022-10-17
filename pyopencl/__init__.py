@@ -550,7 +550,7 @@ class Program:
     def _build_and_catch_errors(self, build_func, options_bytes, source=None):
         try:
             return build_func()
-        except _cl.RuntimeError as e:
+        except RuntimeError as e:
             msg = str(e)
             if options_bytes:
                 msg = msg + "\n(options: %s)" % options_bytes.decode("utf-8")
@@ -568,7 +568,7 @@ class Program:
             code = e.code
             routine = e.routine
 
-            err = _cl.RuntimeError(
+            err = RuntimeError(
                     _cl._ErrorRecord(
                         msg=msg,
                         code=code,
@@ -850,7 +850,7 @@ def _add_functionality():
         # }}}
 
         from pyopencl.invoker import generate_enqueue_and_set_args
-        enqueue, my_set_args = \
+        self._enqueue, self.set_args = \
                 generate_enqueue_and_set_args(
                         self.function_name,
                         len(arg_types), self.num_args,
@@ -858,14 +858,6 @@ def _add_functionality():
                         warn_about_arg_count_bug=warn_about_arg_count_bug,
                         work_around_arg_count_bug=work_around_arg_count_bug,
                         devs=self.context.devices)
-
-        # Make ourselves a kernel-specific class, so that we're able to override
-        # __call__. Inspired by https://stackoverflow.com/a/38541437
-        class KernelWithCustomEnqueue(type(self)):
-            __call__ = enqueue
-            set_args = my_set_args
-
-        self.__class__ = KernelWithCustomEnqueue
 
     def kernel_get_work_group_info(self, param, device):
         cache_key = (param, device.int_ptr)

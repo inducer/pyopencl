@@ -28,21 +28,32 @@
 #define PYCUDA_WRAP_HELPERS_HEADER_SEEN
 
 
-#include <pybind11/pybind11.h>
-#include <pybind11/operators.h>
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/shared_ptr.h>
 
 
-namespace py = pybind11;
+namespace py = nanobind;
+
+
+// {{{ work around missing bits in nanobind
+
+// FIXME: For now, while nanobind doesn't have a dedicated cast_error
+typedef std::runtime_error cast_error;
+
+// }}}
 
 
 #define PYTHON_ERROR(TYPE, REASON) \
 { \
   PyErr_SetString(PyExc_##TYPE, REASON); \
-  throw boost::python::error_already_set(); \
+  throw boost::python::python_error(); \
 }
 
 #define ENUM_VALUE(NAME) \
   value(#NAME, NAME)
+
+// {{{ DEF_SIMPLE_XXX
 
 #define DEF_SIMPLE_METHOD(NAME) \
   def(#NAME, &cls::NAME)
@@ -126,14 +137,14 @@ namespace py = pybind11;
 #define PYOPENCL_PARSE_NUMPY_ARRAY_SPEC \
     PyArray_Descr *tp_descr; \
     if (PyArray_DescrConverter(dtype.ptr(), &tp_descr) != NPY_SUCCEED) \
-      throw py::error_already_set(); \
+      throw py::python_error(); \
     \
     std::vector<npy_intp> shape; \
     try \
     { \
       shape.push_back(py::cast<npy_intp>(py_shape)); \
     } \
-    catch (py::cast_error &) \
+    catch (cast_error &) \
     { \
       COPY_PY_LIST(npy_intp, shape); \
     } \
@@ -168,7 +179,7 @@ namespace
   template <typename T>
   inline py::object handle_from_new_ptr(T *ptr)
   {
-    return py::cast(ptr, py::return_value_policy::take_ownership);
+    return py::cast(ptr, py::rv_policy::take_ownership);
   }
 
   template <typename T, typename ClType>
@@ -204,4 +215,11 @@ namespace
       "Use :meth:`from_int_ptr` to turn back into a Python object." \
       "\n\n.. versionadded:: 2013.2\n") \
 
+#define PYOPENCL_EXPOSE_EQUALITY_TESTS \
+    .def("__eq__", [](cls const &self, cls const &other) { return self == other; }) \
+    .def("__ne__", [](cls const &self, cls const &other) { return self != other; })
+
+
 #endif
+
+// vim: foldmethod=marker

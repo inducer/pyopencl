@@ -178,33 +178,10 @@ Python 3 Conda Apple:
     grep -v ocl-icd .test-conda-env-py3.yml > $CONDA_ENVIRONMENT
     export CC=gcc
     curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project-within-miniconda.sh
-    ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
+    ./configure.py --cl-libname=OpenCL
     . ./build-and-test-py-project-within-miniconda.sh
   tags:
   - apple
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
-PyPy3 POCL:
-  script:
-  - export PY_EXE=pypy3
-  - export PYOPENCL_TEST=portable:pthread
-
-  # On pypy, this seems to install old versions from the package index
-  # independently of whether newer ones are already present.
-  - rm -f pyproject.toml
-  - export EXTRA_INSTALL="pybind11 numpy mako"
-
-  - export NO_DOCTESTS=1
-  - curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
-
-  tags:
-  - pypy
-  - pocl
   except:
   - tags
   artifacts:

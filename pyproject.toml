@@ -1,8 +1,17 @@
 [build-system]
-# Minimum requirements for the build system to execute.
-requires = ["setuptools>=42.0.0", "wheel>=0.34.2", "Cython", "oldest-supported-numpy", "pybind11>=2.5.0"]  # PEP 508 specifications.
-build-backend = "setuptools.build_meta"
+requires = [
+  "setuptools>=42",
+  "wheel>=0.34.2",
+  "scikit-build",
+  "cmake>=3.17",
+  "numpy",
+  "oldest-supported-numpy",
 
+  "nanobind @ https://tiker.net/tmp/nanobind-0.0.5.tar.gz#sha256=467dc9b9875b5d26498860a46df4162fe5e59a068739aaf1f16b5bc08c5f5e3d",
+
+  "ninja; platform_system!='Windows'"
+]
+build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/test"
