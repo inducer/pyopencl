@@ -47,6 +47,21 @@ jobs:
 
                 . ./prepare-and-run-pylint.sh "$(basename $GITHUB_REPOSITORY)" test/test_*.py
 
+    mypy:
+        name: Mypy
+        runs-on: ubuntu-latest
+        steps:
+        -   uses: actions/checkout@v2
+        -   name: "Main Script"
+            run: |
+                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
+                curl -L -O https://tiker.net/ci-support-v0
+                . ci-support-v0
+                ./configure.py --cl-use-shipped-ext
+                build_py_project_in_conda_env
+                python -m pip install mypy types-setuptools
+                python -m mypy --show-error-codes pyopencl test
+
     pytest:
         name: Pytest Linux POCL
         runs-on: ubuntu-latest

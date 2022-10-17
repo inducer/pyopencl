@@ -226,6 +226,21 @@ Pylint:
   except:
   - tags
 
+Mypy:
+  script:
+  - export EXTRA_INSTALL="pybind11 numpy mako types-setuptools"
+  - export PROJECT_INSTALL_FLAGS="--editable"
+  - curl -L -O https://tiker.net/ci-support-v0
+  - . ci-support-v0
+  - ./configure.py --cl-use-shipped-ext
+  - build_py_project_in_venv
+  - python -m pip install mypy
+  - python -m mypy --show-error-codes pyopencl test
+  tags:
+  - python3
+  except:
+  - tags
+
 Examples:
   script: |
     curl -L -O https://tiker.net/ci-support-v0
