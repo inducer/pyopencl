@@ -866,7 +866,13 @@ def _add_functionality():
             __call__ = enqueue
             set_args = my_set_args
 
-        self.__class__ = KernelWithCustomEnqueue
+        try:
+            self.__class__ = KernelWithCustomEnqueue
+        except TypeError:
+            # __class__ assignment may not work in all cases, due to differing
+            # object layouts. Fall back to bouncing through kernel_call below.
+            self._enqueue = enqueue
+            self.set_args = my_set_args
 
     def kernel_get_work_group_info(self, param, device):
         cache_key = (param, device.int_ptr)
