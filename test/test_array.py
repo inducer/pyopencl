@@ -1133,7 +1133,7 @@ def test_slice(ctx_factory):
     a = a_gpu.get()
     b = b_gpu.get()
 
-    if queue.device.platform.name == "'Intel(R) OpenCL":
+    if queue.device.platform.name == "Intel(R) OpenCL":
         # Intel CL appears to miscompile the empty case as of 2022.14.8.0.04
         start_offset = 1
     else:
