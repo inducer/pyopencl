@@ -923,7 +923,7 @@ class ScanPerformanceWarning(UserWarning):
     pass
 
 
-class _GenericScanKernelBase(ABC):
+class GenericScanKernelBase(ABC):
     # {{{ constructor, argument processing
 
     def __init__(
@@ -937,7 +937,7 @@ class _GenericScanKernelBase(ABC):
             output_statement: str,
             is_segment_start_expr: Optional[str] = None,
             input_fetch_exprs: Optional[List[Tuple[str, str, int]]] = None,
-            index_dtype: Any = np.int32,
+            index_dtype: Any = None,
             name_prefix: str = "scan",
             options: Any = None,
             preamble: str = "",
@@ -1023,6 +1023,9 @@ class _GenericScanKernelBase(ABC):
         All code fragments further have access to N, the number of elements
         being processed in the scan.
         """
+
+        if index_dtype is None:
+            index_dtype = np.dtype(np.int32)
 
         if input_fetch_exprs is None:
             input_fetch_exprs = []
@@ -1142,7 +1145,7 @@ generic_scan_kernel_cache = WriteOncePersistentDict(
         key_builder=_NumpyTypesKeyBuilder())
 
 
-class GenericScanKernel(_GenericScanKernelBase):
+class GenericScanKernel(GenericScanKernelBase):
     """Generates and executes code that performs prefix sums ("scans") on
     arbitrary types, with many possible tweaks.
 
@@ -1158,6 +1161,9 @@ class GenericScanKernel(_GenericScanKernelBase):
 
         a = cl.array.arange(queue, 10000, dtype=np.int32)
         knl(a, queue=queue)
+
+    .. automethod:: __init__
+    .. automethod:: __call__
     """
 
     def finish_setup(self) -> None:
@@ -1465,6 +1471,24 @@ class GenericScanKernel(_GenericScanKernelBase):
     # }}}
 
     def __call__(self, *args: Any, **kwargs: Any) -> cl.Event:
+        """
+        |std-enqueue-blurb|
+
+        .. note::
+
+            The returned :class:`pyopencl.Event` corresponds only to part of the
+            execution of the scan. It is not suitable for profiling.
+
+        :arg queue: queue on which to execute the scan. If not given, the
+            queue of the first :class:`pyopencl.array.Array` in *args* is used
+        :arg allocator: an allocator for the temporary arrays and results. If
+            not given, the allocator of the first :class:`pyopencl.array.Array`
+            in *args* is used.
+        :arg size: specify the length of the scan to be carried out. If not
+            given, this length is inferred from the first argument
+        :arg wait_for: a :class:`list` of events to wait for.
+        """
+
         # {{{ argument processing
 
         allocator = kwargs.get("allocator")
@@ -1657,7 +1681,16 @@ void ${name_prefix}_debug_scan(
 """
 
 
-class GenericDebugScanKernel(_GenericScanKernelBase):
+class GenericDebugScanKernel(GenericScanKernelBase):
+    """
+    Performs the same function and has the same interface as
+    :class:`GenericScanKernel`, but uses a dead-simple, sequential scan.  Works
+    best on CPU platforms, and helps isolate bugs in scans by removing the
+    potential for issues originating in parallel execution.
+
+    .. automethod:: __call__
+    """
+
     def finish_setup(self) -> None:
         scan_tpl = _make_template(DEBUG_SCAN_TEMPLATE)
         scan_src = str(scan_tpl.render(
@@ -1680,6 +1713,8 @@ class GenericDebugScanKernel(_GenericScanKernelBase):
         self.kernel.set_scalar_arg_dtypes(scalar_arg_dtypes)
 
     def __call__(self, *args: Any, **kwargs: Any) -> cl.Event:
+        """See :meth:`GenericScanKernel.__call__`."""
+
         # {{{ argument processing
 
         allocator = kwargs.get("allocator")
