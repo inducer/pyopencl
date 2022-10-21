@@ -129,29 +129,10 @@ Making Custom Scan Kernels
 
 .. autoclass:: GenericScanKernel
 
-    .. method:: __call__(*args, allocator=None, queue=None, size=None, wait_for=None)
-
-        *queue* and *allocator* default to the ones provided on the first
-        :class:`pyopencl.array.Array` in *args*. *size* may specify the
-        length of the scan to be carried out. If not given, this length
-        is inferred from the first array argument passed.
-
-        |std-enqueue-blurb|
-
-        .. note::
-
-            The returned :class:`pyopencl.Event` corresponds only to part of the
-            execution of the scan. It is not suitable for profiling.
-
 Debugging aids
 ~~~~~~~~~~~~~~
 
-.. class:: GenericDebugScanKernel
-
-    Performs the same function and has the same interface as
-    :class:`GenericScanKernel`, but uses a dead-simple, sequential scan.  Works
-    best on CPU platforms, and helps isolate bugs in scans by removing the
-    potential for issues originating in parallel execution.
+.. autoclass:: GenericDebugScanKernel
 
 .. _predefined-scans:
 
