@@ -128,7 +128,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 from abc import ABC, abstractmethod
 from sys import intern
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 # Do not add a pyopencl import here: This will add an import cycle.
 
@@ -874,8 +874,10 @@ def get_arg_list_arg_types(arg_types):
     return tuple(result)
 
 
-def get_arg_list_scalar_arg_dtypes(arg_types):
-    result = []
+def get_arg_list_scalar_arg_dtypes(
+        arg_types: List[DtypedArgument]
+        ) -> List[Optional[np.dtype]]:
+    result: List[Optional[np.dtype]] = []
 
     for arg_type in arg_types:
         if isinstance(arg_type, ScalarArg):
@@ -883,9 +885,9 @@ def get_arg_list_scalar_arg_dtypes(arg_types):
         elif isinstance(arg_type, VectorArg):
             result.append(None)
             if arg_type.with_offset:
-                result.append(np.int64)
+                result.append(np.dtype(np.int64))
         else:
-            raise RuntimeError("arg type not understood: %s" % type(arg_type))
+            raise RuntimeError(f"arg type not understood: {type(arg_type)}")
 
     return result
 
