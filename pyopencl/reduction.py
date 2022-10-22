@@ -263,10 +263,25 @@ def get_reduction_kernel(
 
 # {{{ main reduction kernel
 
+MAX_GROUP_COUNT = 1024
+SMALL_SEQ_COUNT = 4
+
+
 class ReductionKernel:
-    def __init__(self, ctx, dtype_out,
-            neutral, reduce_expr, map_expr=None, arguments=None,
-            name="reduce_kernel", options=None, preamble=""):
+    def __init__(
+            self,
+            ctx: cl.Context,
+            dtype_out: Any,
+            neutral: str,
+            reduce_expr: str,
+            map_expr: Optional[str] = None,
+            arguments: Optional[Union[str, List[DtypedArgument]]] = None,
+            name: str = "reduce_kernel",
+            options: Any = None,
+            preamble: str = "") -> None:
+        if arguments is None:
+            raise ValueError("arguments must not be None")
+
         from pyopencl.tools import parse_arg_list
         arguments = parse_arg_list(arguments, with_offset=True)
 
@@ -300,8 +315,12 @@ class ReductionKernel:
                 name=name+"_stage2", options=options, preamble=preamble,
                 max_group_size=max_group_size)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> cl.Event:
         """
+        .. versionchanged:: 2016.2
+
+            *range_* and *slice_* added.
+
         :arg range: A :class:`slice` object. Specifies the range of indices on which
             the kernel will be executed. May not be given at the same time
             as *slice*.
@@ -310,15 +329,7 @@ class ReductionKernel:
             executed, relative to the first vector-like argument.
             May not be given at the same time as *range*.
         :arg allocator:
-
-        .. versionchanged:: 2016.2
-
-            *range_* and *slice_* added.
         """
-        MAX_GROUP_COUNT = 1024  # noqa
-        SMALL_SEQ_COUNT = 4  # noqa
-
-        stage_inf = self.stage_1_inf
 
         queue = kwargs.pop("queue", None)
         allocator = kwargs.pop("allocator", None)
@@ -326,21 +337,22 @@ class ReductionKernel:
         return_event = kwargs.pop("return_event", False)
         out = kwargs.pop("out", None)
 
-        if wait_for is None:
-            wait_for = []
-        else:
-            # We'll be modifying it below.
-            wait_for = list(wait_for)
-
         range_ = kwargs.pop("range", None)
         slice_ = kwargs.pop("slice", None)
 
         if kwargs:
             raise TypeError("invalid keyword argument to reduction kernel")
 
-        stage1_args = args
+        if wait_for is None:
+            wait_for = []
+        else:
+            # We'll be modifying it below.
+            wait_for = list(wait_for)
 
         from pyopencl.array import empty
+
+        stage_inf = self.stage_1_inf
+        stage1_args = args
 
         while True:
             invocation_args = []
@@ -353,8 +365,9 @@ class ReductionKernel:
                 if isinstance(arg_tp, VectorArg):
                     array_empty = arg.__class__
                     if not arg.flags.forc:
-                        raise RuntimeError("ReductionKernel cannot "
-                                "deal with non-contiguous arrays")
+                        raise RuntimeError(
+                            f"{type(self).__name__} cannot deal with "
+                            "non-contiguous arrays")
 
                     vectors.append(arg)
                     invocation_args.append(arg.base_data)
@@ -404,8 +417,8 @@ class ReductionKernel:
             else:
                 if repr_vec is None:
                     raise TypeError(
-                            "must specify queue argument when no vector argument "
-                            "present")
+                        "must specify queue argument when no vector argument present"
+                        )
 
                 use_queue = repr_vec.queue
 
@@ -473,16 +486,22 @@ class ReductionKernel:
 # {{{ template
 
 class ReductionTemplate(KernelTemplateBase):
-    def __init__(self,
-            arguments, neutral, reduce_expr, map_expr=None,
-            is_segment_start_expr=None, input_fetch_exprs=None,
-            name_prefix="reduce", preamble="", template_processor=None):
+    def __init__(
+            self,
+            arguments: Union[str, List[DtypedArgument]],
+            neutral: str,
+            reduce_expr: str,
+            map_expr: Optional[str] = None,
+            is_segment_start_expr: Optional[str] = None,
+            input_fetch_exprs: Optional[List[Tuple[str, str, int]]] = None,
+            name_prefix: str = "reduce",
+            preamble: str = "",
+            template_processor: Any = None) -> None:
+        super().__init__(template_processor=template_processor)
 
         if input_fetch_exprs is None:
             input_fetch_exprs = []
 
-        KernelTemplateBase.__init__(
-                self, template_processor=template_processor)
         self.arguments = arguments
         self.reduce_expr = reduce_expr
         self.neutral = neutral
@@ -510,7 +529,7 @@ class ReductionTemplate(KernelTemplateBase):
                 preamble=(
                     type_decl_preamble
                     + "\n"
-                    + renderer(self.preamble + "\n" + more_preamble)))
+                    + renderer(f"{self.preamble}\n{more_preamble}")))
 
 # }}}
 
