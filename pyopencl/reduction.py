@@ -263,8 +263,8 @@ def get_reduction_kernel(
 
 # {{{ main reduction kernel
 
-MAX_GROUP_COUNT = 1024
-SMALL_SEQ_COUNT = 4
+_MAX_GROUP_COUNT = 1024
+_SMALL_SEQ_COUNT = 4
 
 
 class ReductionKernel:
@@ -294,7 +294,7 @@ class ReductionKernel:
             self.stage_1_inf = get_reduction_kernel(1, ctx,
                     dtype_out,
                     neutral, reduce_expr, map_expr, arguments,
-                    name=name+"_stage1", options=options, preamble=preamble,
+                    name=f"{name}_stage1", options=options, preamble=preamble,
                     max_group_size=max_group_size)
 
             kernel_max_wg_size = self.stage_1_inf.kernel.get_work_group_info(
@@ -312,7 +312,7 @@ class ReductionKernel:
         self.stage_2_inf = get_reduction_kernel(2, ctx,
                 dtype_out,
                 neutral, reduce_expr, arguments=arguments,
-                name=name+"_stage2", options=options, preamble=preamble,
+                name=f"{name}_stage2", options=options, preamble=preamble,
                 max_group_size=max_group_size)
 
     def __call__(self, *args: Any, **kwargs: Any) -> cl.Event:
@@ -435,13 +435,13 @@ class ReductionKernel:
                 group_count = 1
                 seq_count = 0
 
-            elif sz <= stage_inf.group_size*SMALL_SEQ_COUNT*MAX_GROUP_COUNT:
-                total_group_size = SMALL_SEQ_COUNT*stage_inf.group_size
+            elif sz <= stage_inf.group_size*_SMALL_SEQ_COUNT*_MAX_GROUP_COUNT:
+                total_group_size = _SMALL_SEQ_COUNT*stage_inf.group_size
                 group_count = (sz + total_group_size - 1) // total_group_size
-                seq_count = SMALL_SEQ_COUNT
+                seq_count = _SMALL_SEQ_COUNT
 
             else:
-                group_count = MAX_GROUP_COUNT
+                group_count = _MAX_GROUP_COUNT
                 macrogroup_size = group_count*stage_inf.group_size
                 seq_count = (sz + macrogroup_size - 1) // macrogroup_size
 
@@ -562,12 +562,13 @@ def get_sum_kernel(ctx, dtype_out, dtype_in):
     if dtype_out.kind == "c":
         from pyopencl.elementwise import complex_dtype_to_name
         dtname = complex_dtype_to_name(dtype_out)
-        reduce_expr = "%s_add(a, b)" % dtname
-        neutral_expr = "%s_new(0, 0)" % dtname
+        reduce_expr = f"{dtname}_add(a, b)"
+        neutral_expr = f"{dtname}_new(0, 0)"
 
-    return ReductionKernel(ctx, dtype_out, neutral_expr, reduce_expr,
-            arguments="const %(tp)s *in"
-            % {"tp": dtype_to_ctype(dtype_in)})
+    return ReductionKernel(
+            ctx, dtype_out, neutral_expr, reduce_expr,
+            arguments="const {} *in".format(dtype_to_ctype(dtype_in)),
+            )
 
 
 def _get_dot_expr(dtype_out, dtype_a, dtype_b, conjugate_first,
@@ -589,8 +590,8 @@ def _get_dot_expr(dtype_out, dtype_a, dtype_b, conjugate_first,
 
     from pyopencl.elementwise import complex_dtype_to_name
 
-    a = "a[%s]" % index_expr
-    b = "b[%s]" % index_expr
+    a = f"a[{index_expr}]"
+    b = f"b[{index_expr}]"
 
     if a_is_complex and (dtype_a != dtype_out):
         a = "{}_cast({})".format(complex_dtype_to_name(dtype_out), a)
@@ -626,17 +627,17 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None,
     if dtype_out.kind == "c":
         from pyopencl.elementwise import complex_dtype_to_name
         dtname = complex_dtype_to_name(dtype_out)
-        reduce_expr = "%s_add(a, b)" % dtname
-        neutral_expr = "%s_new(0, 0)" % dtname
+        reduce_expr = f"{dtname}_add(a, b)"
+        neutral_expr = f"{dtname}_new(0, 0)"
 
     return ReductionKernel(ctx, dtype_out, neutral=neutral_expr,
             reduce_expr=reduce_expr, map_expr=map_expr,
             arguments=(
-                "const %(tp_a)s *a, "
-                "const %(tp_b)s *b" % {
-                    "tp_a": dtype_to_ctype(dtype_a),
-                    "tp_b": dtype_to_ctype(dtype_b),
-                    }))
+                "const {tp_a} *a, const {tp_b} *b".format(
+                    tp_a=dtype_to_ctype(dtype_a),
+                    tp_b=dtype_to_ctype(dtype_b),
+                    ))
+            )
 
 
 @context_dependent_memoize
@@ -652,13 +653,13 @@ def get_subset_dot_kernel(ctx, dtype_out, dtype_subset, dtype_a=None, dtype_b=No
     return ReductionKernel(ctx, dtype_out, neutral="0",
             reduce_expr="a+b", map_expr=map_expr,
             arguments=(
-                "const %(tp_lut)s *lookup_tbl, "
-                "const %(tp_a)s *a, "
-                "const %(tp_b)s *b" % {
-                    "tp_lut": dtype_to_ctype(dtype_subset),
-                    "tp_a": dtype_to_ctype(dtype_a),
-                    "tp_b": dtype_to_ctype(dtype_b),
-                    }))
+                "const {tp_lut} *lookup_tbl, const {tp_a} *a, const {tp_b} *b"
+                .format(
+                    tp_lut=dtype_to_ctype(dtype_subset),
+                    tp_a=dtype_to_ctype(dtype_a),
+                    tp_b=dtype_to_ctype(dtype_b),
+                    ))
+            )
 
 
 _MINMAX_PREAMBLE = """
@@ -689,9 +690,9 @@ def get_minmax_neutral(what, dtype):
 @context_dependent_memoize
 def get_minmax_kernel(ctx, what, dtype):
     if dtype.kind == "f":
-        reduce_expr = "f%s_nanprop(a,b)" % what
+        reduce_expr = f"f{what}_nanprop(a,b)"
     elif dtype.kind in "iu":
-        reduce_expr = "%s(a,b)" % what
+        reduce_expr = f"{what}(a,b)"
     else:
         raise TypeError("unsupported dtype specified")
 
@@ -706,9 +707,9 @@ def get_minmax_kernel(ctx, what, dtype):
 @context_dependent_memoize
 def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
     if dtype.kind == "f":
-        reduce_expr = "f%s(a,b)" % what
+        reduce_expr = f"f{what}(a, b)"
     elif dtype.kind in "iu":
-        reduce_expr = "%s(a,b)" % what
+        reduce_expr = f"{what}(a, b)"
     else:
         raise TypeError("unsupported dtype specified")
 
@@ -717,11 +718,11 @@ def get_subset_minmax_kernel(ctx, what, dtype, dtype_subset):
             reduce_expr=f"{reduce_expr}",
             map_expr="in[lookup_tbl[i]]",
             arguments=(
-                "const %(tp_lut)s *lookup_tbl, "
-                "const %(tp)s *in" % {
-                    "tp": dtype_to_ctype(dtype),
-                    "tp_lut": dtype_to_ctype(dtype_subset),
-                    }),
+                "const {tp_lut} *lookup_tbl, "
+                "const {tp} *in".format(
+                    tp=dtype_to_ctype(dtype),
+                    tp_lut=dtype_to_ctype(dtype_subset),
+                    )),
             preamble=_MINMAX_PREAMBLE)
 
 # }}}
