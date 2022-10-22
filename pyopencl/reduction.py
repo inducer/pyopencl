@@ -1,6 +1,5 @@
 """Computation of reductions on vectors."""
 
-
 __copyright__ = "Copyright (C) 2010 Andreas Kloeckner"
 
 __license__ = """
@@ -30,13 +29,13 @@ None of the original source code remains.
 """
 
 from dataclasses import dataclass
-from typing import List
+from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
 
 import pyopencl as cl
 from pyopencl.tools import (
-        Argument, KernelTemplateBase,
+        DtypedArgument, KernelTemplateBase,
         context_dependent_memoize, dtype_to_ctype,
         _process_code_for_macro)
 
@@ -131,14 +130,22 @@ class _ReductionInfo:
 
     program: cl.Program
     kernel: cl.Kernel
-    arg_types: List[Argument]
+    arg_types: List[DtypedArgument]
 
 
 def _get_reduction_source(
-        ctx, out_type, out_type_size,
-        neutral, reduce_expr, map_expr, parsed_args,
-        name="reduce_kernel", preamble="", arg_prep="",
-        device=None, max_group_size=None):
+        ctx: cl.Context,
+        out_type: str,
+        out_type_size: int,
+        neutral: str,
+        reduce_expr: str,
+        map_expr: str,
+        parsed_args: List[DtypedArgument],
+        name: str = "reduce_kernel",
+        preamble: str = "",
+        arg_prep: str = "",
+        device: Optional[cl.Device] = None,
+        max_group_size: Optional[int] = None) -> Tuple[str, int]:
 
     if device is not None:
         devices = [device]
@@ -147,7 +154,7 @@ def _get_reduction_source(
 
     # {{{ compute group size
 
-    def get_dev_group_size(device):
+    def get_dev_group_size(device: cl.Device) -> int:
         # dirty fix for the RV770 boards
         max_work_group_size = device.max_work_group_size
         if "RV770" in device.name:
@@ -192,17 +199,24 @@ def _get_reduction_source(
     return src, group_size
 
 
-def get_reduction_kernel(stage,
-         ctx, dtype_out,
-         neutral, reduce_expr, map_expr=None, arguments=None,
-         name="reduce_kernel", preamble="",
-         device=None, options=None, max_group_size=None):
+def get_reduction_kernel(
+        stage: int,
+        ctx: cl.Context,
+        dtype_out: Any,
+        neutral: str,
+        reduce_expr: str,
+        map_expr: Optional[str] = None,
+        arguments: Optional[List[DtypedArgument]] = None,
+        name: str = "reduce_kernel",
+        preamble: str = "",
+        device: Optional[cl.Device] = None,
+        options: Any = None,
+        max_group_size: Optional[int] = None) -> _ReductionInfo:
+    if stage not in (1, 2):
+        raise ValueError(f"unknown stage index: '{stage}'")
 
     if map_expr is None:
-        if stage == 2:
-            map_expr = "pyopencl_reduction_inp[i]"
-        else:
-            map_expr = "in[i]"
+        map_expr = "pyopencl_reduction_inp[i]" if stage == 2 else "in[i]"
 
     from pyopencl.tools import (
             parse_arg_list, get_arg_list_scalar_arg_dtypes,
