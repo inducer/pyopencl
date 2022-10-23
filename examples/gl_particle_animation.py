@@ -174,11 +174,11 @@ cl_start_velocity = cl.Buffer(
 cl_gl_position = cl.GLBuffer(context, mf.READ_WRITE, int(gl_position))
 cl_gl_color = cl.GLBuffer(context, mf.READ_WRITE, int(gl_color))
 
-kernel = """__kernel void particle_fountain(__global float4* position, 
-                                            __global float4* color, 
-                                            __global float4* velocity, 
-                                            __global float4* start_position, 
-                                            __global float4* start_velocity, 
+kernel = """__kernel void particle_fountain(__global float4* position,
+                                            __global float4* color,
+                                            __global float4* velocity,
+                                            __global float4* start_position,
+                                            __global float4* start_velocity,
                                             float time_step)
 {
     unsigned int i = get_global_id(0);
@@ -190,7 +190,7 @@ kernel = """__kernel void particle_fountain(__global float4* position,
     {
         p = start_position[i];
         v = start_velocity[i];
-        life = 1.0f;    
+        life = 1.0f;
     }
 
     v.z -= 9.8f*time_step;
