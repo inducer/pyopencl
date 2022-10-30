@@ -48,7 +48,7 @@ jobs:
         name: Mypy
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v2
+        -   uses: actions/checkout@v3
         -   name: "Main Script"
             run: |
                 curl -L -O https://tiker.net/ci-support-v0
