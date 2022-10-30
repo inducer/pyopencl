@@ -268,6 +268,33 @@ _SMALL_SEQ_COUNT = 4
 
 
 class ReductionKernel:
+    """A kernel that performs a generic reduction on arrays.
+
+    Generate a kernel that takes a number of scalar or vector *arguments*
+    (at least one vector argument), performs the *map_expr* on each entry of
+    the vector argument and then the *reduce_expr* on the outcome of that.
+    *neutral* serves as an initial value. *preamble* offers the possibility
+    to add preprocessor directives and other code (such as helper functions)
+    to be added before the actual reduction kernel code.
+
+    Vectors in *map_expr* should be indexed by the variable *i*. *reduce_expr*
+    uses the formal values "a" and "b" to indicate two operands of a binary
+    reduction operation. If you do not specify a *map_expr*, ``in[i]`` is
+    automatically assumed and treated as the only one input argument.
+
+    *dtype_out* specifies the :class:`numpy.dtype` in which the reduction is
+    performed and in which the result is returned. *neutral* is specified as
+    float or integer formatted as string. *reduce_expr* and *map_expr* are
+    specified as string formatted operations and *arguments* is specified as a
+    string formatted as a C argument list. *name* specifies the name as which
+    the kernel is compiled. *options* are passed unmodified to
+    :meth:`pyopencl.Program.build`. *preamble* specifies a string of code that
+    is inserted before the actual kernels.
+
+    .. automethod:: __init__
+    .. automethod:: __call__
+    """
+
     def __init__(
             self,
             ctx: cl.Context,
@@ -316,7 +343,25 @@ class ReductionKernel:
                 max_group_size=max_group_size)
 
     def __call__(self, *args: Any, **kwargs: Any) -> cl.Event:
-        """
+        """Invoke the generated kernel.
+
+        |explain-waitfor|
+
+        With *out* the resulting single-entry :class:`pyopencl.array.Array` can
+        be specified. Because offsets are supported one can store results
+        anywhere (e.g. ``out=a[3]``).
+
+        .. note::
+
+            The returned :class:`pyopencl.Event` corresponds only to part of the
+            execution of the reduction. It is not suitable for profiling.
+
+        .. versionadded:: 2011.1
+
+        .. versionchanged:: 2014.2
+
+            Added *out* parameter.
+
         .. versionchanged:: 2016.2
 
             *range_* and *slice_* added.
@@ -328,7 +373,12 @@ class ReductionKernel:
             Specifies the range of indices on which the kernel will be
             executed, relative to the first vector-like argument.
             May not be given at the same time as *range*.
-        :arg allocator:
+        :arg return_event: a boolean flag used to return an event for the
+            reduction.
+
+        :return: the resulting scalar as a single-entry :class:`pyopencl.array.Array`
+            if *return_event* is *False*, otherwise a tuple
+            ``(scalar_array, event)``.
         """
 
         queue = kwargs.pop("queue", None)
