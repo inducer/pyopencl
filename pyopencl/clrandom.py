@@ -40,8 +40,8 @@ for some documentation if you're planning on using Random123 directly.
 
 .. note::
 
-    PyOpenCL previously had documented support for the `RANLUXCL random number
-    generator <https://bitbucket.org/ivarun/ranluxcl/>`_ by Ivar Ursin
+    PyOpenCL previously had documented support for the RANLUXCL random number
+    generator (``https://bitbucket.org/ivarun/ranluxcl``) by Ivar Ursin
     Nikolaisen. This support is now deprecated because of the general slowness
     of these generators and will be removed from PyOpenCL in the 2018.x series.
     All users are encouraged to switch to one of the Random123 generators,
