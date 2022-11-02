@@ -127,7 +127,7 @@ Context
         just-give-me-a-context-already behavior, we recommend
         :func:`create_some_context`. See, e.g. this
         `explanation by AMD
-        <https://web.archive.org/web/20101114195033/https://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=71>`_.
+        <https://web.archive.org/web/20101114195033/https://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=71>`__.
 
     .. note::
 

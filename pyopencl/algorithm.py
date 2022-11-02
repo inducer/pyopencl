@@ -426,7 +426,7 @@ RADIX_SORT_OUTPUT_STMT_TPL = Template(r"""//CL//
 # {{{ driver
 
 class RadixSort:
-    """Provides a general `radix sort <https://en.wikipedia.org/wiki/Radix_sort>`_
+    """Provides a general `radix sort <https://en.wikipedia.org/wiki/Radix_sort>`__
     on the compute device.
 
     .. seealso:: :class:`pyopencl.bitonic_sort.BitonicSort`

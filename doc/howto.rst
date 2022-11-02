@@ -34,7 +34,7 @@ lines:
 
 Since OpenCL C may have a different opinion for :mod:`numpy` on how the struct
 should be laid out, for example because of `alignment
-<https://en.wikipedia.org/wiki/Data_structure_alignment>`_. So as a first step, we
+<https://en.wikipedia.org/wiki/Data_structure_alignment>`__. So as a first step, we
 match our dtype against CL's version:
 
 .. doctest::

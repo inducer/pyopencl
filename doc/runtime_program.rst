@@ -39,7 +39,7 @@ Program
 
     *binaries* must contain one binary for each entry in *devices*.
     If *src* is a :class:`bytes` object starting with a valid `SPIR-V
-    <https://www.khronos.org/spir>`_ magic number, it will be handed
+    <https://www.khronos.org/spir>`__ magic number, it will be handed
     off to the OpenCL implementation as such, rather than as OpenCL C source
     code. (SPIR-V support requires OpenCL 2.1.)
 
@@ -273,7 +273,7 @@ Kernel
 
             A solution involving implicit locks was discussed and decided against on the
             mailing list in `October 2012
-            <https://lists.tiker.net/pipermail/pyopencl/2012-October/001311.html>`_.
+            <https://lists.tiker.net/pipermail/pyopencl/2012-October/001311.html>`__.
 
         .. versionchanged:: 0.92
 

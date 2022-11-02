@@ -376,7 +376,7 @@ def _check_for_pocl_arg_count_bug(
 
 def has_struct_arg_count_bug(dev, ctx=None):
     """Checks whether the device is expected to have the
-    `argument counting bug <https://github.com/pocl/pocl/issues/197>`_.
+    `argument counting bug <https://github.com/pocl/pocl/issues/197>`__.
     """
 
     if dev.platform.name == "Apple" and dev.type & cl.device_type.CPU:

@@ -33,9 +33,9 @@ they are available in any piece of code compiled through PyOpenCL by::
     #include <pyopencl-random123/threefry.cl>
 
 See the `Philox source
-<https://github.com/inducer/pyopencl/blob/main/pyopencl/cl/pyopencl-random123/philox.cl>`_
+<https://github.com/inducer/pyopencl/blob/main/pyopencl/cl/pyopencl-random123/philox.cl>`__
 and the `Threefry source
-<https://github.com/inducer/pyopencl/blob/main/pyopencl/cl/pyopencl-random123/threefry.cl>`_
+<https://github.com/inducer/pyopencl/blob/main/pyopencl/cl/pyopencl-random123/threefry.cl>`__
 for some documentation if you're planning on using Random123 directly.
 
 .. note::
