@@ -853,6 +853,10 @@ Internal Types
 
     See :class:`pyopencl.MemoryMap`.
 
+.. class:: MemoryObjectHolder
+
+    See :class:`pyopencl.MemoryObjectHolder`.
+
 .. class:: Sampler
 
     See :class:`pyopencl.Sampler`.

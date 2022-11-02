@@ -5,6 +5,8 @@ OpenCL Runtime: Memory
 
 .. currentmodule:: pyopencl
 
+.. class:: MemoryObjectHolder
+
 .. class:: MemoryObject
 
     .. attribute:: info

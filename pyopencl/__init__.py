@@ -2047,7 +2047,7 @@ def enqueue_copy(queue, dest, src, **kwargs):
 # {{{ enqueue_fill
 
 def enqueue_fill(queue: CommandQueue,
-        dest: "Union[MemoryObjectHolder, SVMPointer]",
+        dest: Union[MemoryObjectHolder, "SVMPointer"],
         pattern: Any, size: int, *, offset: int = 0,
         wait_for: Optional[Sequence[Event]] = None) -> Event:
     """
