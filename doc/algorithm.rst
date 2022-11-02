@@ -74,7 +74,7 @@ difficult to parallelize because of loop-carried dependencies.
 
 .. seealso::
 
-    `Prefix sums and their applications <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.128.6230>`_, by Guy Blelloch.
+    `Prefix sums and their applications <https://doi.org/10.1184/R1/6608579.v1>`__, by Guy Blelloch.
         This article gives an overview of some surprising applications of scans.
 
     :ref:`predefined-scans`

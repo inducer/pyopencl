@@ -14,7 +14,7 @@ package manager. The following instructions are aimed at Linux and macOS.
 The analogous steps for Windows should also work.
 
 Install a version of
-`miniforge <https://github.com/conda-forge/miniforge#miniforge3>`_
+`miniforge <https://github.com/conda-forge/miniforge#miniforge3>`__
 that fits your system::
 
     curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
@@ -72,7 +72,7 @@ On Linux, Windows and macOS, you can use Oclgrind to detect memory access errors
     conda install oclgrind
 
 You are now ready to run code based on PyOpenCL, such as the `code
-examples <https://github.com/inducer/pyopencl/tree/master/examples>`_.
+examples <https://github.com/inducer/pyopencl/tree/main/examples>`_.
 
 Using vendor-supplied OpenCL drivers (mainly on Linux)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -189,7 +189,7 @@ Syntax highlighting
 
 You can obtain Vim syntax highlighting for OpenCL C inlined in Python by
 checking `this file
-<https://github.com/inducer/pyopencl/blob/master/contrib/pyopencl.vim>`_.
+<https://github.com/inducer/pyopencl/blob/main/contrib/pyopencl.vim>`_.
 
 Note that the triple-quoted strings containing the source must start with
 `"""//CL// ..."""`.
@@ -206,7 +206,7 @@ IPython extension using::
     %load_ext pyopencl.ipython_ext
 
 and then use the ``%%cl_kernel`` 'cell-magic' command. See `this notebook
-<http://nbviewer.ipython.org/urls/raw.githubusercontent.com/inducer/pyopencl/master/examples/ipython-demo.ipynb>`_
+<https://nbviewer.org/github/inducer/pyopencl/blob/main/examples/ipython-demo.ipynb>`__
 (which ships with PyOpenCL) for a demonstration.
 
 You can pass build options to be used for building the program executable by
@@ -423,10 +423,10 @@ Version 2013.1
 * Add :func:`pyopencl.tools.match_dtype_to_c_struct`,
   for better integration of the CL and :mod:`numpy` type systems.
 * More/improved Bessel functions.
-  See `the source <https://github.com/inducer/pyopencl/tree/master/src/cl>`_.
+  See `the source <https://github.com/inducer/pyopencl/tree/main/pyopencl/cl>`__.
 * Add :envvar:`PYOPENCL_NO_CACHE` environment variable to aid debugging.
   (e.g. with AMD's CPU implementation, see
-  `their programming guide <http://developer.amd.com/sdks/AMDAPPSDK/assets/AMD_Accelerated_Parallel_Processing_OpenCL_Programming_Guide.pdf>`_)
+  `their programming guide <https://developer.amd.com/wordpress/media/2013/07/AMD_Accelerated_Parallel_Processing_OpenCL_Programming_Guide-rev-2.7.pdf>`__)
 * Deprecated :func:`pyopencl.tools.register_dtype` in favor of
   :func:`pyopencl.tools.get_or_register_dtype`.
 * Clean up the :class:`pyopencl.array.Array` constructor interface.
@@ -502,7 +502,7 @@ Version 2011.2
 * All comparable PyOpenCL objects are now also hashable.
 * Add ``pyopencl.tools.context_dependent_memoize`` to the documented
   functionality.
-* Base :mod:`pyopencl.clrandom` on `RANLUXCL <https://bitbucket.org/ivarun/ranluxcl>`_,
+* Base :mod:`pyopencl.clrandom` on RANLUXCL (``https://bitbucket.org/ivarun/ranluxcl>``),
   add functionality.
 * Add :class:`pyopencl.NannyEvent` objects.
 * Add :mod:`pyopencl.characterize`.
@@ -572,7 +572,7 @@ Version 0.92
   emphasize the importance of *local_size*.
 * Add :meth:`pyopencl.Kernel.set_scalar_arg_dtypes`.
 * Add support for the
-  `cl_nv_device_attribute_query <http://www.khronos.org/registry/cl/extensions/khr/cl_nv_device_attribute_query.txt>`_
+  `cl_nv_device_attribute_query <https://registry.khronos.org/OpenCL/extensions/nv/cl_nv_device_attribute_query.txt>`_
   extension.
 * Add :meth:`pyopencl.array.Array` and related functionality.
 * Make build not depend on Boost C++.
@@ -733,7 +733,7 @@ Contributors
 ------------
 
 Too many to list. Please see the
-`commit log <https://github.com/inducer/pyopencl/commits/master>`_
+`commit log <https://github.com/inducer/pyopencl/commits/main>`_
 for detailed acknowledgments.
 
 Funding
