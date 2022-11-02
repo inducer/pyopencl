@@ -699,10 +699,10 @@ def pytest_generate_tests_for_pyopencl(metafunc):
         from pyopencl.tools import pytest_generate_tests_for_pyopencl
                 as pytest_generate_tests
 
-    in your `pytest <http://pytest.org>`_ test scripts allows you to use the
-    arguments *ctx_factory*, *device*, or *platform* in your test functions,
-    and they will automatically be run for each OpenCL device/platform in the
-    system, as appropriate.
+    in your `pytest <https://docs.pytest.org/en/latest/>`__ test scripts allows
+    you to use the arguments *ctx_factory*, *device*, or *platform* in your test
+    functions, and they will automatically be run for each OpenCL device/platform
+    in the system, as appropriate.
 
     The following two environment variabls is also supported to control
     device/platform choice::

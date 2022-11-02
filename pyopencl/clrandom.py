@@ -25,17 +25,17 @@ THE SOFTWARE.
 
 __doc__ = """
 PyOpenCL now includes and uses some of the `Random123 random number generators
-<https://www.deshawresearch.com/resources_random123.html>`_ by D.E. Shaw
-Research.  In addition to being usable through the convenience functions above,
+<https://www.deshawresearch.com/resources.html>`__ by D.E. Shaw
+Research. In addition to being usable through the convenience functions above,
 they are available in any piece of code compiled through PyOpenCL by::
 
     #include <pyopencl-random123/philox.cl>
     #include <pyopencl-random123/threefry.cl>
 
 See the `Philox source
-<https://github.com/inducer/pyopencl/blob/master/pyopencl/cl/pyopencl-random123/philox.cl>`_
+<https://github.com/inducer/pyopencl/blob/main/pyopencl/cl/pyopencl-random123/philox.cl>`_
 and the `Threefry source
-<https://github.com/inducer/pyopencl/blob/master/pyopencl/cl/pyopencl-random123/threefry.cl>`_
+<https://github.com/inducer/pyopencl/blob/main/pyopencl/cl/pyopencl-random123/threefry.cl>`_
 for some documentation if you're planning on using Random123 directly.
 
 .. note::

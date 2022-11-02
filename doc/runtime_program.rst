@@ -273,7 +273,7 @@ Kernel
 
             A solution involving implicit locks was discussed and decided against on the
             mailing list in `October 2012
-            <http://lists.tiker.net/pipermail/pyopencl/2012-October/001311.html>`_.
+            <https://lists.tiker.net/pipermail/pyopencl/2012-October/001311.html>`_.
 
         .. versionchanged:: 0.92
 
