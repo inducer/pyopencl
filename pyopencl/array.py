@@ -525,22 +525,22 @@ class Array:
 
     def __init__(
             self,
-            cq: Optional[Union["cl.Context", "cl.CommandQueue"]],
+            cq: Optional[Union[cl.Context, cl.CommandQueue]],
             shape: Union[Tuple[int, ...], int],
             dtype: Any,
             order: str = "C",
-            allocator: Optional["cl.tools.AllocatorBase"] = None,
+            allocator: Optional[cl.tools.AllocatorBase] = None,
             data: Any = None,
             offset: int = 0,
             strides: Optional[Tuple[int, ...]] = None,
-            events: Optional[List["cl.Event"]] = None,
+            events: Optional[List[cl.Event]] = None,
 
             # NOTE: following args are used for the fast constructor
             _flags: Any = None,
             _fast: bool = False,
             _size: Optional[int] = None,
-            _context: Optional["cl.Context"] = None,
-            _queue: Optional["cl.CommandQueue"] = None) -> None:
+            _context: Optional[cl.Context] = None,
+            _queue: Optional[cl.CommandQueue] = None) -> None:
         if _fast:
             # Assumptions, should be disabled if not testing
             if 0:
