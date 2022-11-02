@@ -8,8 +8,8 @@ Installing PyOpenCL
 ^^^^^^^^^^^^^^^^^^^
 
 By far the easiest way to install PyOpenCL is to use the packages available in
-`Conda Forge <https://conda-forge.org/>`_. Conda Forge is a repository of
-community-maintained packages for the `Conda <https://conda.io/docs/>`_
+`Conda Forge <https://conda-forge.org/>`__. Conda Forge is a repository of
+community-maintained packages for the `Conda <https://conda.io/en/latest>`__
 package manager. The following instructions are aimed at Linux and macOS.
 The analogous steps for Windows should also work.
 
@@ -72,7 +72,7 @@ On Linux, Windows and macOS, you can use Oclgrind to detect memory access errors
     conda install oclgrind
 
 You are now ready to run code based on PyOpenCL, such as the `code
-examples <https://github.com/inducer/pyopencl/tree/main/examples>`_.
+examples <https://github.com/inducer/pyopencl/tree/main/examples>`__.
 
 Using vendor-supplied OpenCL drivers (mainly on Linux)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -92,7 +92,7 @@ qualified path names of the shared library providing the OpenCL driver.
 .. note::
 
     If you ran the commands above in a
-    `Conda environment <https://conda.io/docs/user-guide/tasks/manage-environments.html>`_
+    `Conda environment <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html>`__
     (i.e. if the environment indicator on your command line prompt says anything other
     than ``(root)``), then you may need to use a path like the following instead:
 
@@ -116,7 +116,7 @@ As an alternative, one may manually copy ICD files from :file:`/etc/OpenCL/vendo
 e.g., :file:`$CONDA_PREFIX/etc/OpenCL/vendors`.
 
 If you are looking for more information, see `ocl-icd
-<https://github.com/OCL-dev/ocl-icd>`_ and its documentation. Ocl-icd is the
+<https://github.com/OCL-dev/ocl-icd>`__ and its documentation. Ocl-icd is the
 "ICD loader" used by PyOpenCL when installed from Conda Forge on Linux.
 It represents the code behind :file:`libOpenCL.so`.
 
@@ -127,7 +127,7 @@ On macOS, using the command::
 will make sure that the Apple provided CPU and GPU implementations are available.
 
 On Windows, the packaging of PyOpenCL for Conda Forge relies on the
-`Khronos ICD Loader <https://github.com/KhronosGroup/OpenCL-ICD-Loader>`_,
+`Khronos ICD Loader <https://github.com/KhronosGroup/OpenCL-ICD-Loader>`__,
 and it is packaged so that the OpenCL drivers that are registered in the OS
 using registry keys are automatically available.
 
@@ -136,12 +136,13 @@ Installing from PyPI wheels
 ---------------------------
 
 PyOpenCL distributes wheels for most popular OSs and Python versions.
-To check available versions please visit `PyPI page for PyOpenCL <https://pypi.org/project/pyopencl/>`__.
+To check available versions please visit `PyPI page for PyOpenCL
+<https://pypi.org/project/pyopencl/>`__.
 
 
-On Linux, the wheels come with `OCL-ICD <https://github.com/OCL-dev/ocl-icd>`__ bundled and
-configured to use any OpenCL implementation supporting the ICD interface and listed
-in :file:`/etc/OpenCL/vendors`.
+On Linux, the wheels come with `OCL-ICD <https://github.com/OCL-dev/ocl-icd>`__
+bundled and configured to use any OpenCL implementation supporting the ICD
+interface and listed in :file:`/etc/OpenCL/vendors`.
 Wheels for Windows and MacOS are built using the ICD Loader from the Khronos Group.
 
 To install, type::
@@ -149,9 +150,9 @@ To install, type::
     pip install pyopencl
 
 
-You can also install the following CPU based OpenCL implementation using pip shipped as binary
-wheels. Note that pyopencl has to be installed using a wheel for pyopencl to recognize these
-wheels.
+You can also install the following CPU based OpenCL implementation using pip
+shipped as binary wheels. Note that pyopencl has to be installed using a wheel
+for pyopencl to recognize these wheels.
 
 To install pyopencl with pocl, a CPU based implementation do::
 
@@ -177,7 +178,7 @@ Installing from source
 ----------------------
 
 Information on how to install PyOpenCL *from source* is still available on the
-`Former PyOpenCL Wiki <http://wiki.tiker.net/PyOpenCL/Installation>`_, but that should
+`Former PyOpenCL Wiki <https://wiki.tiker.net/PyOpenCL/Installation>`__, but that should
 mostly not be necessary unless you have very specific needs or would like to modify
 PyOpenCL yourself.
 
@@ -189,7 +190,7 @@ Syntax highlighting
 
 You can obtain Vim syntax highlighting for OpenCL C inlined in Python by
 checking `this file
-<https://github.com/inducer/pyopencl/blob/main/contrib/pyopencl.vim>`_.
+<https://github.com/inducer/pyopencl/blob/main/contrib/pyopencl.vim>`__.
 
 Note that the triple-quoted strings containing the source must start with
 `"""//CL// ..."""`.
@@ -290,19 +291,20 @@ other software to be turned into the corresponding :mod:`pyopencl` objects.
 User-visible Changes
 ====================
 
+Unreleased
+----------
+
+.. note::
+
+    This version is currently under development. You can get snapshots from
+    PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`__.
+
 Version 2022.2
 --------------
 
 - Added :ref:`opaque-style SVM <opaque-svm>` and :class:`pyopencl.SVMPointer`.
 - Added :class:`pyopencl.tools.SVMPool`.
 - Added automatic queue-synchronized deallocation of SVM.
-
-Version 2020.3
---------------
-.. note::
-
-    This version is currently under development. You can get snapshots from
-    PyOpenCL's `git repository <https://github.com/inducer/pyopencl>`_
 
 Version 2020.2
 --------------
@@ -321,7 +323,8 @@ Version 2018.2
 Version 2018.1
 --------------
 
-* Introduce *eliminate_empty_output_lists* argument of :class:`pyopencl.algorithm.ListOfListsBuilder`.
+* Introduce *eliminate_empty_output_lists* argument of
+  :class:`pyopencl.algorithm.ListOfListsBuilder`.
 * Many bug fixes.
 
 Version 2017.2
@@ -457,7 +460,7 @@ Version 2013.1
 
     The addition of :meth:`pyopencl.array.Array.__getitem__` has an unintended
     consequence due to `numpy bug 3375
-    <https://github.com/numpy/numpy/issues/3375>`_.  For instance, this
+    <https://github.com/numpy/numpy/issues/3375>`__.  For instance, this
     expression::
 
         numpy.float32(5) * some_pyopencl_array
@@ -496,8 +499,8 @@ Version 2011.2
 * Add :func:`pyopencl.image_from_array`.
 * IMPORTANT BUGFIX: Kernel caching was broken for all the 2011.1.x releases, with
   severe consequences on the execution time of :class:`pyopencl.array.Array`
-  operations.
-  Henrik Andresen at a `PyOpenCL workshop at DTU <http://gpulab.imm.dtu.dk/courses.html>`_
+  operations. Henrik Andresen at a
+  `PyOpenCL workshop at DTU <http://gpulab.compute.dtu.dk/courses.html>`__
   first noticed the strange timings.
 * All comparable PyOpenCL objects are now also hashable.
 * Add ``pyopencl.tools.context_dependent_memoize`` to the documented
@@ -565,14 +568,14 @@ Version 0.92
 
 * Add support for OpenCL 1.1.
 * Add support for the
-  `cl_khr_gl_sharing <ghttp://www.khronos.org/registry/cl/extensions/khr/cl_khr_gl_sharing.txt>`_
+  `cl_khr_gl_sharing <https://registry.khronos.org/OpenCL/sdk/1.2/docs/man/xhtml/cl_khr_gl_sharing.html>`__
   extension, leading to working GL interoperability.
 * Add :meth:`pyopencl.Kernel.set_args`.
 * The call signature of :meth:`pyopencl.Kernel.__call__` changed to
   emphasize the importance of *local_size*.
 * Add :meth:`pyopencl.Kernel.set_scalar_arg_dtypes`.
 * Add support for the
-  `cl_nv_device_attribute_query <https://registry.khronos.org/OpenCL/extensions/nv/cl_nv_device_attribute_query.txt>`_
+  `cl_nv_device_attribute_query <https://registry.khronos.org/OpenCL/extensions/nv/cl_nv_device_attribute_query.txt>`__
   extension.
 * Add :meth:`pyopencl.array.Array` and related functionality.
 * Make build not depend on Boost C++.
@@ -691,7 +694,7 @@ Frequently Asked Questions
 ==========================
 
 The FAQ is maintained collaboratively on the
-`Wiki FAQ page <http://wiki.tiker.net/PyOpenCL/FrequentlyAskedQuestions>`_.
+`Wiki FAQ page <https://wiki.tiker.net/PyOpenCL/FrequentlyAskedQuestions>`__.
 
 Citing PyOpenCL
 ===============
@@ -700,7 +703,7 @@ We are not asking you to gratuitously cite PyOpenCL in work that is otherwise
 unrelated to software. That said, if you do discuss some of the development
 aspects of your code and would like to highlight a few of the ideas behind
 PyOpenCL, feel free to cite `this article
-<http://dx.doi.org/10.1016/j.parco.2011.09.001>`_:
+<https://doi.org/10.1016/j.parco.2011.09.001>`__:
 
     Andreas Klöckner, Nicolas Pinto, Yunsup Lee, Bryan Catanzaro, Paul Ivanov,
     Ahmed Fasih, PyCUDA and PyOpenCL: A scripting-based approach to GPU
@@ -733,7 +736,7 @@ Contributors
 ------------
 
 Too many to list. Please see the
-`commit log <https://github.com/inducer/pyopencl/commits/main>`_
+`commit log <https://github.com/inducer/pyopencl/commits/main>`__
 for detailed acknowledgments.
 
 Funding
@@ -774,51 +777,51 @@ OpenCL Specification
 --------------------
 .. c:type:: cl_platform_id
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#opencl-platform-layer>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#opencl-platform-layer>`__.
 
 .. c:type:: cl_device_id
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#opencl-platform-layer>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#opencl-platform-layer>`__.
 
 .. c:type:: cl_context
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_contexts>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_contexts>`__.
 
 .. c:type:: cl_command_queue
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_command_queues>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_command_queues>`__.
 
 .. c:type:: cl_mem
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_memory_objects>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_memory_objects>`__.
 
 .. c:type:: cl_program
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_program_objects>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_program_objects>`__.
 
 .. c:type:: cl_kernel
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_kernel_objects>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_kernel_objects>`__.
 
 .. c:type:: cl_sampler
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_sampler_objects>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#_sampler_objects>`__.
 
 .. c:type:: cl_event
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#event-objects>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#event-objects>`__.
 
 .. c:function:: void clCreateCommandQueueWithProperties()
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#clCreateCommandQueueWithProperties>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#clCreateCommandQueueWithProperties>`__.
 
 .. c:function:: void clCreateSamplerWithProperties()
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#clCreateSamplerWithProperties>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#clCreateSamplerWithProperties>`__.
 
 .. c:function:: void clCreatePipe()
 
-   See the  `CL specification <https://www.khronos.org/registry/OpenCL/specs/3.0-unified/html/OpenCL_API.html#clCreatePipe>`__.
+   See the `CL specification <https://registry.khronos.org/OpenCL/specs/3.0-unified/html/OpenCL_API.html#clCreatePipe>`__.
 
 Internal Types
 --------------

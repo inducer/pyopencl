@@ -119,7 +119,7 @@ in PyOpenCL:
 * Segmented scans
 
 * Access to the previous item in *input_expr* (e.g. for comparisons)
-  See the `implementation <https://github.com/inducer/pyopencl/blob/master/pyopencl/scan.py#L1353>`_
+  See the `implementation <https://github.com/inducer/pyopencl/blob/36afe57784368e8d2505bc7cad8df964ba3c0264/pyopencl/algorithm.py#L226>`__
   of :func:`pyopencl.algorithm.unique` for an example.
 
 Making Custom Scan Kernels
@@ -141,7 +141,8 @@ Simple / Legacy Interface
 
 .. class:: ExclusiveScanKernel(ctx, dtype, scan_expr, neutral, name_prefix="scan", options=[], preamble="", devices=None)
 
-    Generates a kernel that can compute a `prefix sum <https://secure.wikimedia.org/wikipedia/en/wiki/Prefix_sum>`_
+    Generates a kernel that can compute a `prefix sum
+    <https://en.wikipedia.org/wiki/Prefix_sum>`__
     using any associative operation given as *scan_expr*.
     *scan_expr* uses the formal values "a" and "b" to indicate two operands of
     an associative binary operation. *neutral* is the neutral element
