@@ -54,7 +54,7 @@ Tutorials
   `4 <https://www.youtube.com/watch?v=SsuJ0LvZW1Q>`__
   (YouTube, 2011)
 * PyOpenCL course at `DTU GPULab <http://gpulab.compute.dtu.dk/>`__ and
-  `Simula <https://www.simula.no/>`_ (2011):
+  `Simula <https://www.simula.no/>`__ (2011):
   `Lecture 1 <https://tiker.net/pub/simula-pyopencl-lec1.pdf>`__
   `Lecture 2 <https://tiker.net/pub/simula-pyopencl-lec2.pdf>`__
   `Problem set 1 <https://tiker.net/pub/simula-pyopencl-probset1.pdf>`__

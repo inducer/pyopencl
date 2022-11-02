@@ -58,7 +58,7 @@ Buffer
     .. note::
 
         Python also defines a type of `buffer object
-        <https://docs.python.org/3.4/c-api/buffer.html>`_,
+        <https://docs.python.org/3/c-api/buffer.html>`__,
         and PyOpenCL interacts with those, too, as the host-side
         target of :func:`enqueue_copy`. Make sure to always be
         clear on whether a :class:`Buffer` or a Python buffer
