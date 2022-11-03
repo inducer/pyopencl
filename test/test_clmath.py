@@ -488,7 +488,7 @@ def test_complex_muladd(ctx_factory, dtype):
         )
     {{
         int gid = get_global_id(0);
-        res[gid] = c{real_type_name}_muladd(a[gid], b[gid], c[gid]);
+        res[gid] = c{real_type_name}_fma(a[gid], b[gid], c[gid]);
     }}
     """.format(real_type_name=real_type_name)
 
