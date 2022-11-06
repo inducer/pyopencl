@@ -35,12 +35,6 @@
 namespace py = pybind11;
 
 
-#define PYTHON_ERROR(TYPE, REASON) \
-{ \
-  PyErr_SetString(PyExc_##TYPE, REASON); \
-  throw boost::python::error_already_set(); \
-}
-
 #define ENUM_VALUE(NAME) \
   value(#NAME, NAME)
 
