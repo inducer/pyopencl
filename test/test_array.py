@@ -1134,8 +1134,9 @@ def test_slice(ctx_factory):
     b = b_gpu.get()
 
     if queue.device.platform.name == "Intel(R) OpenCL":
-        # Intel CL appears to miscompile the empty case as of 2022.14.8.0.04
-        start_offset = 1
+        pytest.skip("Intel CL regularly crashes on this test case "
+            "-- https://github.com/conda-forge/"
+            "intel-compiler-repack-feedstock/issues/7")
     else:
         start_offset = 0
 
