@@ -7,7 +7,7 @@ PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
 .. image:: https://github.com/inducer/pyopencl/workflows/CI/badge.svg?branch=main&event=push
     :alt: Github Build Status
     :target: https://github.com/inducer/pyopencl/actions?query=branch%3Amain+workflow%3ACI+event%3Apush
-.. image:: https://badge.fury.io/py/pyopencl.png
+.. image:: https://badge.fury.io/py/pyopencl.svg
     :alt: Python Package Index Release Page
     :target: https://pypi.org/project/pyopencl/
 .. image:: https://zenodo.org/badge/1575307.svg
