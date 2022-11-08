@@ -105,15 +105,15 @@ qualified path names of the shared library providing the OpenCL driver.
 
     :file:`$CONDA_PREFIX/etc/OpenCL/vendors` (once the Conda environment is activated).
 
-On Linux, if you have other OpenCL drivers installed (such as for your GPU), those will be
-in :file:`/etc/OpenCL/vendors`. You can make them work with PyOpenCL from Conda Forge
-by using the command::
+On Linux, if you have other OpenCL drivers installed (such as for your GPU),
+those will be in :file:`/etc/OpenCL/vendors`. You can make them work with PyOpenCL
+from Conda Forge by using the command::
 
     conda install ocl-icd-system
 
 will make sure these system-wide ICDs are also visible in your conda environment.
-As an alternative, one may manually copy ICD files from :file:`/etc/OpenCL/vendors` into,
-e.g., :file:`$CONDA_PREFIX/etc/OpenCL/vendors`.
+As an alternative, one may manually copy ICD files from :file:`/etc/OpenCL/vendors`
+into, e.g., :file:`$CONDA_PREFIX/etc/OpenCL/vendors`.
 
 If you are looking for more information, see `ocl-icd
 <https://github.com/OCL-dev/ocl-icd>`__ and its documentation. Ocl-icd is the
@@ -435,14 +435,15 @@ Version 2013.1
 * Clean up the :class:`pyopencl.array.Array` constructor interface.
 * Deprecate ``pyopencl.array.DefaultAllocator``.
 * Deprecate ``pyopencl.tools.CLAllocator``
-* Introduce :class:`pyopencl.tools.DeferredAllocator`, :class:`pyopencl.tools.ImmediateAllocator`.
+* Introduce :class:`pyopencl.tools.DeferredAllocator`,
+  :class:`pyopencl.tools.ImmediateAllocator`.
 * Allow arrays whose beginning does not coincide with the beginning of their
   :attr:`pyopencl.array.Array.data` :class:`pyopencl.Buffer`.
   See :attr:`pyopencl.array.Array.base_data` and :attr:`pyopencl.array.Array.offset`.
   Note that not all functions in PyOpenCL support such arrays just yet. These
   will fail with :exc:`pyopencl.array.ArrayHasOffsetError`.
-* Add :meth:`pyopencl.array.Array.__getitem__` and :meth:`pyopencl.array.Array.__setitem__`,
-  supporting generic slicing.
+* Add :meth:`pyopencl.array.Array.__getitem__` and
+  :meth:`pyopencl.array.Array.__setitem__`, supporting generic slicing.
 
   It is *possible* to create non-contiguous arrays using this functionality.
   Most operations (elementwise etc.) will not work on such arrays.
@@ -451,7 +452,8 @@ Version 2013.1
   arrays that start past the beginning of the original array will fail for now.
   This will be fixed in a future release.
 
-* :class:`pyopencl.CommandQueue` may be used as a context manager (in a ``with`` statement)
+* :class:`pyopencl.CommandQueue` may be used as a context manager (in a
+  ``with`` statement)
 * Add :func:`pyopencl.clmath.atan2`, :func:`pyopencl.clmath.atan2pi`.
 * Add :func:`pyopencl.array.concatenate`.
 * Add :meth:`pyopencl.Kernel.capture_call`.
@@ -505,8 +507,8 @@ Version 2011.2
 * All comparable PyOpenCL objects are now also hashable.
 * Add ``pyopencl.tools.context_dependent_memoize`` to the documented
   functionality.
-* Base :mod:`pyopencl.clrandom` on RANLUXCL (``https://bitbucket.org/ivarun/ranluxcl>``),
-  add functionality.
+* Base :mod:`pyopencl.clrandom` on RANLUXCL
+  (``https://bitbucket.org/ivarun/ranluxcl>``), add functionality.
 * Add :class:`pyopencl.NannyEvent` objects.
 * Add :mod:`pyopencl.characterize`.
 * Ensure compatibility with OS X Lion.
@@ -653,7 +655,8 @@ Version 0.91
 * :meth:`pyopencl.Image.get_image_info` now actually exists.
 * Add :attr:`pyopencl.Image.info`.
 * Fix API tracing.
-* Add constructor arguments to :class:`pyopencl.ImageFormat`.  (suggested by David Garcia)
+* Add constructor arguments to :class:`pyopencl.ImageFormat`.
+  (suggested by David Garcia)
 
 Version 0.90.4
 --------------
