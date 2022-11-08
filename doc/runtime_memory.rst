@@ -289,7 +289,7 @@ Image
     the distance in bytes from one scan line to the next, and from one 2D image
     slice to the next.
 
-    If *hostbuf* is given and *shape* is `None`, then *hostbuf.shape* is
+    If *hostbuf* is given and *shape* is *None*, then *hostbuf.shape* is
     used as the *shape* parameter.
 
     :class:`Image` inherits from :class:`MemoryObject`.
@@ -345,11 +345,11 @@ Image
 
     .. note::
 
-        When reading from the image object, the indices passed to `read_imagef` are
-        in the reverse order from what they would be when accessing *ary* from
+        When reading from the image object, the indices passed to ``read_imagef``
+        are in the reverse order from what they would be when accessing *ary* from
         Python.
 
-    If *norm_int* is `True`, then the integer values are normalized to a floating
+    If *norm_int* is *True*, then the integer values are normalized to a floating
     point scale of 0..1 when read.
 
     .. versionadded:: 2011.2

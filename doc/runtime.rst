@@ -15,16 +15,16 @@ Version Queries
 
     Gives the numeric version of PyOpenCL as a variable-length tuple
     of integers. Enables easy version checks such as
-    *VERSION >= (0, 93)*.
+    ``VERSION >= (0, 93)``.
 
 .. data:: VERSION_STATUS
 
-    A text string such as `"rc4"` or `"beta"` qualifying the status
+    A text string such as ``"rc4"`` or ``"beta"`` qualifying the status
     of the release.
 
 .. data:: VERSION_TEXT
 
-    The full release name (such as `"0.93rc4"`) in string form.
+    The full release name (such as ``"0.93rc4"``) in string form.
 
 .. function:: get_cl_header_version()
 

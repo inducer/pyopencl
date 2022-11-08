@@ -383,7 +383,7 @@ def _monkeypatch_svm_docstrings():
 
     .. automethod:: enqueue_release
 
-        Synonymous to :meth;`release`, for consistency with
+        Synonymous to :meth:`release`, for consistency with
         :class:`~pyopencl.SVMAllocation`. Note that, unlike
         :meth:`pyopencl.SVMAllocation.enqueue_release`, specifying a queue
         or events to be waited for is not supported.
@@ -1020,8 +1020,8 @@ class _CDeclList:
 
 @memoize
 def match_dtype_to_c_struct(device, name, dtype, context=None):
-    """Return a tuple `(dtype, c_decl)` such that the C struct declaration
-    in `c_decl` and the structure :class:`numpy.dtype` instance `dtype`
+    """Return a tuple ``(dtype, c_decl)`` such that the C struct declaration
+    in ``c_decl`` and the structure :class:`numpy.dtype` instance ``dtype``
     have the same memory layout.
 
     Note that *dtype* may be modified from the value that was passed in,
@@ -1052,7 +1052,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
         >>> cl.tools.get_or_register_dtype('id_val', dtype)
 
     As this example shows, it is important to call
-    :func:`get_or_register_dtype` on the modified `dtype` returned by this
+    :func:`get_or_register_dtype` on the modified ``dtype`` returned by this
     function, not the original one.
     """
 

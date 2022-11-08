@@ -128,8 +128,8 @@ def _fmod(result, arg, mod):
 
 
 def fmod(arg, mod, queue=None):
-    """Return the floating point remainder of the division `arg/mod`,
-    for each element in `arg` and `mod`."""
+    """Return the floating point remainder of the division ``arg / mod``,
+    for each element in ``arg`` and ``mod``."""
     queue = (queue or arg.queue) or mod.queue
     result = arg._new_like_me(_get_common_dtype(arg, mod, queue))
     result.add_event(_fmod(result, arg, mod, queue=queue))
@@ -145,8 +145,8 @@ def _frexp(sig, expt, arg):
 
 
 def frexp(arg, queue=None):
-    """Return a tuple `(significands, exponents)` such that
-    `arg == significand * 2**exponent`.
+    """Return a tuple ``(significands, exponents)`` such that
+    ``arg == significand * 2**exponent``.
     """
     sig = arg._new_like_me(queue=queue)
     expt = arg._new_like_me(queue=queue, dtype=np.int32)
@@ -169,8 +169,8 @@ def _ldexp(result, sig, exp):
 
 def ldexp(significand, exponent, queue=None):
     """Return a new array of floating point values composed from the
-    entries of `significand` and `exponent`, paired together as
-    `result = significand * 2**exponent`.
+    entries of ``significand`` and ``exponent``, paired together as
+    ``result = significand * 2**exponent``.
     """
     result = significand._new_like_me(queue=queue)
     result.add_event(_ldexp(result, significand, exponent))
@@ -198,8 +198,8 @@ def _modf(intpart, fracpart, arg):
 
 
 def modf(arg, queue=None):
-    """Return a tuple `(fracpart, intpart)` of arrays containing the
-    integer and fractional parts of `arg`.
+    """Return a tuple ``(fracpart, intpart)`` of arrays containing the
+    integer and fractional parts of ``arg``.
     """
     intpart = arg._new_like_me(queue=queue)
     fracpart = arg._new_like_me(queue=queue)

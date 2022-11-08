@@ -109,8 +109,8 @@ greater than 300::
 The value being scanned over is a number of flags indicating whether each array
 element is greater than 300. These flags are computed by *input_expr*. The
 prefix sum over this array gives a running count of array items greater than
-300. The *output_statement* the compares `prev_item` (the previous item's scan
-result, i.e. index) to `item` (the current item's scan result, i.e.
+300. The *output_statement* the compares ``prev_item`` (the previous item's scan
+result, i.e. index) to ``item`` (the current item's scan result, i.e.
 index). If they differ, i.e. if the predicate was satisfied at this
 position, then the item is stored in the output at the computed index.
 
@@ -166,8 +166,8 @@ Simple / Legacy Interface
     .. versionchanged:: 2013.1
         *neutral* is now always required.
 
-For the array `[1,2,3]`, inclusive scan results in `[1,3,6]`, and exclusive
-scan results in `[0,1,3]`.
+For the array ``[1, 2, 3]``, inclusive scan results in ``[1, 3, 6]``, and exclusive
+scan results in ``[0, 1, 3]``.
 
 Here's a usage example::
 

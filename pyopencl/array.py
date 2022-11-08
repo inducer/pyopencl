@@ -348,7 +348,7 @@ class Array:
     operators and many other niceties) are not desired, pass a
     :class:`~pyopencl.Context`.
 
-    *allocator* may be `None` or a callable that, upon being called with an
+    *allocator* may be *None* or a callable that, upon being called with an
     argument of the number of bytes to be allocated, returns a
     :class:`pyopencl.Buffer` object. (A :class:`pyopencl.tools.MemoryPool`
     instance is one useful example of an object to pass here.)
@@ -419,8 +419,8 @@ class Array:
 
     .. attribute :: flags
 
-        An object with attributes `c_contiguous`, `f_contiguous` and
-        `forc`, which may be used to query contiguity properties in analogy to
+        An object with attributes ``c_contiguous``, ``f_contiguous`` and
+        ``forc``, which may be used to query contiguity properties in analogy to
         :attr:`numpy.ndarray.flags`.
 
     .. rubric:: Methods
@@ -891,7 +891,7 @@ class Array:
 
         .. versionchanged:: 2019.1.2
 
-            Calling with `async_=True` was deprecated and replaced by
+            Calling with ``async_=True`` was deprecated and replaced by
             :meth:`get_async`.
             The event returned by :meth:`pyopencl.enqueue_copy` is now stored into
             :attr:`events` to ensure data is not modified before the copy is
@@ -910,7 +910,7 @@ class Array:
         """
 
         if async_:
-            warn("calling pyopencl.Array.get with `async_=True` is deprecated. "
+            warn("calling pyopencl.Array.get with 'async_=True' is deprecated. "
                     "Please use pyopencl.Array.get_async for asynchronous "
                     "device-to-host transfers",
                     DeprecationWarning, 2)
@@ -922,8 +922,8 @@ class Array:
     def get_async(self, queue=None, ary=None, **kwargs):
         """
         Asynchronous version of :meth:`get` which returns a tuple ``(ary, event)``
-        containing the host array `ary`
-        and the :class:`pyopencl.NannyEvent` `event` returned by
+        containing the host array ``ary``
+        and the :class:`pyopencl.NannyEvent` ``event`` returned by
         :meth:`pyopencl.enqueue_copy`.
 
         .. versionadded:: 2019.1.2
@@ -1190,7 +1190,7 @@ class Array:
     # {{{ operators
 
     def mul_add(self, selffac, other, otherfac, queue=None):
-        """Return `selffac * self + otherfac*other`.
+        """Return ``selffac * self + otherfac * other``.
         """
         queue = queue or self.queue
 
@@ -1589,7 +1589,7 @@ class Array:
             return TypeError("len() of unsized object")
 
     def __abs__(self):
-        """Return a `Array` of the absolute values of the elements
+        """Return an ``Array`` of the absolute values of the elements
         of *self*.
         """
 
@@ -2429,13 +2429,13 @@ def _arange_knl(result, start, step):
 
 def arange(queue, *args, **kwargs):
     """arange(queue, [start, ] stop [, step], **kwargs)
-    Create a :class:`Array` filled with numbers spaced `step` apart,
-    starting from `start` and ending at `stop`. If not given, *start*
+    Create a :class:`Array` filled with numbers spaced *step* apart,
+    starting from *start* and ending at *stop*. If not given, *start*
     defaults to 0, *step* defaults to 1.
 
     For floating point arguments, the length of the result is
-    `ceil((stop - start)/step)`.  This rule may result in the last
-    element of the result being greater than `stop`.
+    ``ceil((stop - start)/step)``.  This rule may result in the last
+    element of the result being greater than *stop*.
 
     *dtype* is a required keyword argument.
 

@@ -953,54 +953,54 @@ class GenericScanKernelBase(ABC):
             specified. All types used here must be known to PyOpenCL.
             (see :func:`pyopencl.tools.get_or_register_dtype`).
         :arg scan_expr: The associative, binary operation carrying out the scan,
-            represented as a C string. Its two arguments are available as `a`
-            and `b` when it is evaluated. `b` is guaranteed to be the
-            'element being updated', and `a` is the increment. Thus,
+            represented as a C string. Its two arguments are available as ``a``
+            and ``b`` when it is evaluated. ``b`` is guaranteed to be the
+            'element being updated', and ``a`` is the increment. Thus,
             if some data is supposed to just propagate along without being
-            modified by the scan, it should live in `b`.
+            modified by the scan, it should live in ``b``.
 
             This expression may call functions given in the *preamble*.
 
-            Another value available to this expression is `across_seg_boundary`,
+            Another value available to this expression is ``across_seg_boundary``,
             a C `bool` indicating whether this scan update is crossing a
-            segment boundary, as defined by `is_segment_start_expr`.
+            segment boundary, as defined by ``is_segment_start_expr``.
             The scan routine does not implement segmentation
-            semantics on its own. It relies on `scan_expr` to do this.
-            This value is available (but always `false`) even for a
+            semantics on its own. It relies on ``scan_expr`` to do this.
+            This value is available (but always ``false``) even for a
             non-segmented scan.
 
             .. note::
 
                 In early pre-releases of the segmented scan,
                 segmentation semantics were implemented *without*
-                relying on `scan_expr`.
+                relying on ``scan_expr``.
 
         :arg input_expr: A C expression, encoded as a string, resulting
             in the values to which the scan is applied. This may be used
             to apply a mapping to values stored in *arguments* before being
             scanned. The result of this expression must match *dtype*.
-            The index intended to be mapped is available as `i` in this
+            The index intended to be mapped is available as ``i`` in this
             expression. This expression may also use the variables defined
             by *input_fetch_expr*.
 
             This expression may also call functions given in the *preamble*.
         :arg output_statement: a C statement that writes
-            the output of the scan. It has access to the scan result as `item`,
-            the preceding scan result item as `prev_item`, and the current index
-            as `i`. `prev_item` in a segmented scan will be the neutral element
+            the output of the scan. It has access to the scan result as ``item``,
+            the preceding scan result item as ``prev_item``, and the current index
+            as ``i``. ``prev_item`` in a segmented scan will be the neutral element
             at a segment boundary, not the immediately preceding item.
 
             Using *prev_item* in output statement has a small run-time cost.
-            `prev_item` enables the construction of an exclusive scan.
+            ``prev_item`` enables the construction of an exclusive scan.
 
             For non-segmented scans, *output_statement* may also reference
-            `last_item`, which evaluates to the scan result of the last
+            ``last_item``, which evaluates to the scan result of the last
             array entry.
         :arg is_segment_start_expr: A C expression, encoded as a string,
-            resulting in a C `bool` value that determines whether a new
+            resulting in a C ``bool`` value that determines whether a new
             scan segments starts at index *i*.  If given, makes the scan a
-            segmented scan. Has access to the current index `i`, the result
-            of *input_expr* as `a`, and in addition may use *arguments* and
+            segmented scan. Has access to the current index ``i``, the result
+            of *input_expr* as ``a``, and in addition may use *arguments* and
             *input_fetch_expr* variables just like *input_expr*.
 
             If it returns true, then previous sums will not spill over into the
@@ -1011,8 +1011,8 @@ class GenericScanKernelBase(ABC):
 
                 ARG_NAME_TYPE NAME = ARG_NAME[i+OFFSET];
 
-            `OFFSET` is allowed to be 0 or -1, and `ARG_NAME_TYPE` is the type
-            of `ARG_NAME`.
+            ``OFFSET`` is allowed to be 0 or -1, and ``ARG_NAME_TYPE`` is the type
+            of ``ARG_NAME``.
         :arg preamble: |preamble|
 
         The first array in the argument list determines the size of the index

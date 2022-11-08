@@ -196,8 +196,8 @@ Kernel
 
         *arg* may be
 
-        * `None`: This may be passed for `__global` memory references
-          to pass a NULL pointer to the kernel.
+        * *None*: This may be passed for ``__global`` memory references
+          to pass a *NULL* pointer to the kernel.
         * Anything that satisfies the Python buffer interface,
           in particular :class:`numpy.ndarray`, :class:`str`,
           or :mod:`numpy`'s sized scalars, such as :class:`numpy.int32`
@@ -268,7 +268,7 @@ Kernel
             and then runs :func:`enqueue_nd_range_kernel`. Another thread could race it
             in doing the same things, with undefined outcome. This issue is inherited
             from the C-level OpenCL API. The recommended solution is to make a kernel
-            (i.e. access `prg.kernel_name`, which corresponds to making a new kernel)
+            (i.e. access ``prg.kernel_name``, which corresponds to making a new kernel)
             for every thread that may enqueue calls to the kernel.
 
             A solution involving implicit locks was discussed and decided against on the
@@ -282,7 +282,7 @@ Kernel
             be accepted with a warning throughout the 0.92 release cycle.
             This is a backward-compatible change (just barely!) because
             *local_size* as third positional argument can only be a
-            :class:`tuple` or *None*.  :class:`tuple` instances are never valid
+            :class:`tuple` or *None*. :class:`tuple` instances are never valid
             :class:`Kernel` arguments, and *None* is valid as an argument, but
             its treatment in the wrapper had a bug (now fixed) that prevented
             it from working.
@@ -327,7 +327,7 @@ Kernel
 
 .. class:: LocalMemory(size)
 
-    A helper class to pass `__local` memory arguments to kernels.
+    A helper class to pass ``__local`` memory arguments to kernels.
 
     .. versionadded:: 0.91.2
 

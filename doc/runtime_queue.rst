@@ -121,7 +121,7 @@ Event
    .. attribute:: info
 
         Lower case versions of the :class:`profiling_info` constants
-        may be used as attributes on the attribute `profile` of this
+        may be used as attributes on the attribute ``profile`` of this
         class to directly query profiling info.
 
         For example, you may use *evt.profile.end* instead of

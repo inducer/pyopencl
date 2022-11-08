@@ -99,7 +99,7 @@ class RanluxGenerator:
             >=24, in which case it directly sets the p-value of RANLUXCL.
         :param num_work_items: is the number of generators to initialize,
             usually corresponding to the number of work-items in the NDRange
-            RANLUXCL will be used with.  May be `None`, in which case a default
+            RANLUXCL will be used with.  May be *None*, in which case a default
             value is used.
         :param max_work_items: should reflect the maximum number of work-items
             that will be used on any parallel instance of RANLUXCL. So for
@@ -108,10 +108,11 @@ class RanluxGenerator:
             calling ranluxcl_intialization with numWorkitems = 5120 while
             GPU2's RANLUXCLTab would use numWorkitems = 10240. However
             maxWorkitems must be at least 10240 for both GPU1 and GPU2, and it
-            must be set to the same value for both. (may be `None`)
+            must be set to the same value for both. (may be *None*)
 
         .. versionchanged:: 2013.1
-            Added default value for `num_work_items`.
+
+            Added default value for ``num_work_items``.
         """
 
         from warnings import warn
@@ -738,7 +739,7 @@ def _get_generator(context):
 
 
 def fill_rand(result, queue=None, luxury=None, a=0, b=1):
-    """Fill *result* with random values of `dtype` in the range [0,1).
+    """Fill *result* with random values in the range :math:`[0, 1)`.
     """
     if luxury is not None:
         from warnings import warn
@@ -752,8 +753,8 @@ def fill_rand(result, queue=None, luxury=None, a=0, b=1):
 
 
 def rand(queue, shape, dtype, luxury=None, a=0, b=1):
-    """Return an array of `shape` filled with random values of `dtype`
-    in the range [a,b).
+    """Return an array of *shape* filled with random values of *dtype*
+    in the range :math:`[a, b)`.
     """
 
     if luxury is not None:

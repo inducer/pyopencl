@@ -87,14 +87,14 @@ _copy_if_template = ScanTemplate(
 def copy_if(ary, predicate, extra_args=None, preamble="", queue=None, wait_for=None):
     """Copy the elements of *ary* satisfying *predicate* to an output array.
 
-    :arg predicate: a C expression evaluating to a `bool`, represented as a string.
-        The value to test is available as `ary[i]`, and if the expression evaluates
-        to `true`, then this value ends up in the output.
+    :arg predicate: a C expression evaluating to a ``bool``, represented as a string.
+        The value to test is available as ``ary[i]``, and if the expression evaluates
+        to ``true``, then this value ends up in the output.
     :arg extra_args: |scan_extra_args|
     :arg preamble: |preamble|
     :arg wait_for: |explain-waitfor|
     :returns: a tuple *(out, count, event)* where *out* is the output array, *count*
-        is an on-device scalar (fetch to host with `count.get()`) indicating
+        is an on-device scalar (fetch to host with ``count.get()``) indicating
         how many elements satisfied *predicate*, and *event* is a
         :class:`pyopencl.Event` for dependency management. *out* is allocated
         to the same length as *ary*, but only the first *count* entries carry
@@ -136,14 +136,14 @@ def remove_if(ary, predicate, extra_args=None, preamble="",
         queue=None, wait_for=None):
     """Copy the elements of *ary* not satisfying *predicate* to an output array.
 
-    :arg predicate: a C expression evaluating to a `bool`, represented as a string.
-        The value to test is available as `ary[i]`, and if the expression evaluates
-        to `false`, then this value ends up in the output.
+    :arg predicate: a C expression evaluating to a ``bool``, represented as a string.
+        The value to test is available as ``ary[i]``, and if the expression evaluates
+        to ``false``, then this value ends up in the output.
     :arg extra_args: |scan_extra_args|
     :arg preamble: |preamble|
     :arg wait_for: |explain-waitfor|
     :returns: a tuple *(out, count, event)* where *out* is the output array, *count*
-        is an on-device scalar (fetch to host with `count.get()`) indicating
+        is an on-device scalar (fetch to host with ``count.get()``) indicating
         how many elements did not satisfy *predicate*, and *event* is a
         :class:`pyopencl.Event` for dependency management.
 
@@ -178,13 +178,13 @@ def partition(ary, predicate, extra_args=None, preamble="",
     """Copy the elements of *ary* into one of two arrays depending on whether
     they satisfy *predicate*.
 
-    :arg predicate: a C expression evaluating to a `bool`, represented as a string.
-        The value to test is available as `ary[i]`.
+    :arg predicate: a C expression evaluating to a ``bool``, represented as a string.
+        The value to test is available as ``ary[i]``.
     :arg extra_args: |scan_extra_args|
     :arg preamble: |preamble|
     :arg wait_for: |explain-waitfor|
     :returns: a tuple *(out_true, out_false, count, event)* where *count*
-        is an on-device scalar (fetch to host with `count.get()`) indicating
+        is an on-device scalar (fetch to host with ``count.get()``) indicating
         how many elements satisfied the predicate, and *event* is a
         :class:`pyopencl.Event` for dependency management.
 
@@ -247,15 +247,15 @@ def unique(ary, is_equal_expr="a == b", extra_args=None, preamble="",
     Works like the UNIX command :program:`uniq`, with a potentially custom
     comparison.  This operation is often used on sorted sequences.
 
-    :arg is_equal_expr: a C expression evaluating to a `bool`,
+    :arg is_equal_expr: a C expression evaluating to a ``bool``,
         represented as a string.  The elements being compared are
-        available as `a` and `b`. If this expression yields `false`, the
+        available as ``a`` and ``b``. If this expression yields ``false``, the
         two are considered distinct.
     :arg extra_args: |scan_extra_args|
     :arg preamble: |preamble|
     :arg wait_for: |explain-waitfor|
     :returns: a tuple *(out, count, event)* where *out* is the output array, *count*
-        is an on-device scalar (fetch to host with `count.get()`) indicating
+        is an on-device scalar (fetch to host with ``count.get()``) indicating
         how many elements satisfied the predicate, and *event* is a
         :class:`pyopencl.Event` for dependency management.
 
@@ -443,7 +443,7 @@ class RadixSort:
             (see :func:`pyopencl.tools.get_or_register_dtype`).
         :arg key_expr: An integer-valued C expression returning the
             key based on which the sort is performed. The array index
-            for which the key is to be computed is available as `i`.
+            for which the key is to be computed is available as ``i``.
             The expression may refer to any of the *arguments*.
         :arg sort_arg_names: A list of argument names whose corresponding
             array arguments will be sorted according to *key_expr*.
@@ -763,10 +763,10 @@ class ListOfListsBuilder:
         assert inf.count == 3000
         assert (inf.list.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
 
-    The function `generate` above is called once for each "input object".
+    The function ``generate`` above is called once for each "input object".
     Each input object can then generate zero or more list entries.
     The number of these input objects is given to :meth:`__call__` as *n_objects*.
-    List entries are generated by calls to `APPEND_<list name>(value)`.
+    List entries are generated by calls to ``APPEND_<list name>(value)``.
     Multiple lists may be generated at once.
 
     .. automethod:: __init__
@@ -779,34 +779,34 @@ class ListOfListsBuilder:
             eliminate_empty_output_lists=False):
         """
         :arg context: A :class:`pyopencl.Context`.
-        :arg list_names_and_dtypes: a list of `(name, dtype)` tuples
+        :arg list_names_and_dtypes: a list of ``(name, dtype)`` tuples
             indicating the lists to be built.
         :arg generate_template: a snippet of C as described below
         :arg arg_decls: A string of comma-separated C argument declarations.
-        :arg count_sharing: A mapping consisting of `(child, mother)`
-            indicating that `mother` and `child` will always have the
-            same number of indices, and the `APPEND` to `mother`
-            will always happen *before* the `APPEND` to the child.
+        :arg count_sharing: A mapping consisting of ``(child, mother)``
+            indicating that ``mother`` and ``child`` will always have the
+            same number of indices, and the ``APPEND`` to ``mother``
+            will always happen *before* the ``APPEND`` to the child.
         :arg name_prefix: the name prefix to use for the compiled kernels
         :arg options: OpenCL compilation options for kernels using
             *generate_template*.
-        :arg complex_kernel: If `True`, prevents vectorization on CPUs.
+        :arg complex_kernel: If *True*, prevents vectorization on CPUs.
         :arg eliminate_empty_output_lists: A Python list of list names
             for which the empty output lists are eliminated.
 
         *generate_template* may use the following C macros/identifiers:
 
-        * `index_type`: expands to C identifier for the index type used
+        * ``index_type``: expands to C identifier for the index type used
           for the calculation
-        * `USER_ARG_DECL`: expands to the C declarator for `arg_decls`
-        * `USER_ARGS`: a list of C argument values corresponding to
-          `user_arg_decl`
-        * `LIST_ARG_DECL`: expands to a C argument list representing the
+        * ``USER_ARG_DECL``: expands to the C declarator for ``arg_decls``
+        * ``USER_ARGS``: a list of C argument values corresponding to
+          ``user_arg_decl``
+        * ``LIST_ARG_DECL``: expands to a C argument list representing the
           data for the output lists. These are escaped prefixed with
-          `"plg_"` so as to not interfere with user-provided names.
-        * `LIST_ARGS`: a list of C argument values corresponding to
-          `LIST_ARG_DECL`
-        * `APPEND_name(entry)`: inserts `entry` into the list `name`.
+          ``"plg_"`` so as to not interfere with user-provided names.
+        * ``LIST_ARGS``: a list of C argument values corresponding to
+          ``LIST_ARG_DECL``
+        * ``APPEND_name(entry)``: inserts ``entry`` into the list ``name``.
           *entry* must be a valid C expression of the correct type.
 
         All argument-list related macros have a trailing comma included
@@ -821,16 +821,16 @@ class ListOfListsBuilder:
                 APPEND_mylist(5);
             }
 
-        Internally, the `kernel_template` is expanded (at least) twice. Once,
+        Internally, the ``kernel_template`` is expanded (at least) twice. Once,
         for a 'counting' stage where the size of all the lists is determined,
         and a second time, for a 'generation' stage where the lists are
-        actually filled. A `generate` function that has side effects beyond
-        calling `append` is therefore ill-formed.
+        actually filled. A ``generate`` function that has side effects beyond
+        calling ``append`` is therefore ill-formed.
 
         .. versionchanged:: 2018.1
 
-            Change *eliminate_empty_output_lists* argument type from `bool` to
-            `list`.
+            Change *eliminate_empty_output_lists* argument type from ``bool`` to
+            ``list``.
         """
         if devices is None:
             devices = context.devices
@@ -1062,28 +1062,26 @@ class ListOfListsBuilder:
 
     def __call__(self, queue, n_objects, *args, **kwargs):
         """
-        :arg args: arguments corresponding to arg_decls in the constructor.
-            Array-like arguments must be either
-            1D :class:`pyopencl.array.Array` objects or
-            :class:`pyopencl.MemoryObject` objects, of which the latter
+        :arg args: arguments corresponding to ``arg_decls`` in the constructor.
+            Array-like arguments must be either 1D :class:`pyopencl.array.Array`
+            objects or :class:`pyopencl.MemoryObject` objects, of which the latter
             can be obtained from a :class:`pyopencl.array.Array` using the
             :attr:`pyopencl.array.Array.data` attribute.
         :arg allocator: optionally, the allocator to use to allocate new
             arrays.
-        :arg omit_lists: An iterable of list names that should *not* be built
+        :arg omit_lists: an iterable of list names that should *not* be built
             with this invocation. The kernel code may *not* call ``APPEND_name``
             for these omitted lists. If it does, undefined behavior will result.
             The returned *lists* dictionary will not contain an entry for names
             in *omit_lists*.
         :arg wait_for: |explain-waitfor|
-        :returns: a tuple ``(lists, event)``, where
-            *lists* a mapping from (built) list names to objects which
-            have attributes
+        :returns: a tuple ``(lists, event)``, where ``lists`` is a mapping from
+            (built) list names to objects which have attributes
 
             * ``count`` for the total number of entries in all lists combined
             * ``lists`` for the array containing all lists.
-            * ``starts`` for the array of starting indices in `lists`.
-              `starts` is built so that it has n+1 entries, so that
+            * ``starts`` for the array of starting indices in ``lists``.
+              ``starts`` is built so that it has n+1 entries, so that
               the *i*'th entry is the start of the *i*'th list, and the
               *i*'th entry is the index one past the *i*'th list's end,
               even for the last list.
@@ -1097,9 +1095,9 @@ class ListOfListsBuilder:
             * ``num_nonempty_lists`` for the number of nonempty lists.
             * ``nonempty_indices`` for the index of nonempty list in input objects.
 
-            In this case, `starts` has `num_nonempty_lists` + 1 entries. The *i*'s
-            entry is the start of the *i*'th nonempty list, which is generated by
-            the object with index *nonempty_indices[i]*.
+            In this case, ``starts`` has ``num_nonempty_lists + 1`` entries.
+            The *i*'s entry is the start of the *i*'th nonempty list, which is
+            generated by the object with index ``nonempty_indices[i]``.
 
             *event* is a :class:`pyopencl.Event` for dependency management.
 
@@ -1348,12 +1346,12 @@ class KeyValueSorter:
     and a number *nkeys* of keys, returns a tuple `(starts,
     lists)`, as follows: *values* and *keys* are sorted
     by *keys*, and the sorted *values* is returned as
-    *lists*. Then for each index *i* in `range(nkeys)`,
+    *lists*. Then for each index *i* in ``range(nkeys)``,
     *starts[i]* is written to indicating where the
     group of *values* belonging to the key with index
     *i* begins. It implicitly ends at *starts[i+1]*.
 
-    `starts` is built so that it has `nkeys+1` entries, so that
+    ``starts`` is built so that it has ``nkeys + 1`` entries, so that
     the *i*'th entry is the start of the *i*'th list, and the
     *i*'th entry is the index one past the *i*'th list's end,
     even for the last list.
