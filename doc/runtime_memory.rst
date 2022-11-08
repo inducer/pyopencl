@@ -88,9 +88,9 @@ Buffer
 .. function:: enqueue_fill_buffer(queue, mem, pattern, offset, size, wait_for=None)
 
     :arg mem: the on device :class:`Buffer`
-    :arg pattern: a buffer object (likely a :class:`numpy.ndarray`, eg. `np.uint32(0)`)
-        The memory associated with *pattern* can be reused or freed once the function
-        completes.
+    :arg pattern: a buffer object (likely a :class:`numpy.ndarray`, eg.
+        ``np.uint32(0)``). The memory associated with *pattern* can be reused or
+        freed once the function completes.
     :arg size: The size in bytes of the region to be filled. Must be a multiple of the
         size of the pattern.
     :arg offset: The location in bytes of the region being filled in *mem*.

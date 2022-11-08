@@ -78,7 +78,8 @@ difficult to parallelize because of loop-carried dependencies.
         This article gives an overview of some surprising applications of scans.
 
     :ref:`predefined-scans`
-        These operations built into PyOpenCL are realized using :class:`GenericScanKernel`.
+        These operations built into PyOpenCL are realized using
+        :class:`GenericScanKernel`.
 
 Usage Example
 ^^^^^^^^^^^^^

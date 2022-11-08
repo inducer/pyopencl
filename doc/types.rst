@@ -8,9 +8,10 @@ OpenCL Type Mapping
 Scalar Types
 ------------
 
-For ease of use, a the cltypes module provides convenient mapping from OpenCL type names
-to their equivalent numpy types. This saves you from referring back to the OpenCL spec to
-see that a cl_long is 64 bit unsigned integer. Use the module as follows:
+For ease of use, a the :mod:`pyopencl.cltypes` module provides convenient mapping
+from OpenCL type names to their equivalent :mod:`numpy` types. This saves you
+from referring back to the OpenCL spec to see that a ``cl_long`` is 64 bit
+unsigned integer. Use the module as follows:
 
 .. doctest::
 
@@ -23,14 +24,16 @@ see that a cl_long is 64 bit unsigned integer. Use the module as follows:
 
 .. note::
 
-    The OpenCL type ``bool`` does not have a corresponding :mod:`numpy` type defined here,
-    because OpenCL does not specify the in-memory representation (or even the storage
-    size) for this type.
+    The OpenCL type ``bool`` does not have a corresponding :mod:`numpy` type
+    defined here, because OpenCL does not specify the in-memory representation
+    (or even the storage size) for this type.
 
 Vector Types
 ------------
-The corresponding vector types are also made available in the same package, allowing you to easily create
-numpy arrays with the appropriate memory layout.
+
+The corresponding vector types are also made available in the same package,
+allowing you to easily create :mod:`numpy` arrays with the appropriate memory
+layout.
 
 .. doctest::
 

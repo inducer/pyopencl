@@ -35,32 +35,38 @@ spirit of its sister project `PyCUDA <https://mathema.tician.de/software/pycuda>
   above are virtually free.
 
 * Helpful and complete `Documentation <https://documen.tician.de/pyopencl>`__
-  as well as a `Wiki <https://wiki.tiker.net/PyOpenCL>`_.
+  as well as a `Wiki <https://wiki.tiker.net/PyOpenCL>`__.
 
 * Liberal license. PyOpenCL is open-source under the
-  `MIT license <https://en.wikipedia.org/wiki/MIT_License>`_
+  `MIT license <https://en.wikipedia.org/wiki/MIT_License>`__
   and free for commercial, academic, and private use.
 
 * Broad support. PyOpenCL was tested and works with Apple's, AMD's, and Nvidia's
   CL implementations.
 
-Simple 4-step `install instructions <https://documen.tician.de/pyopencl/misc.html#installation>`_
+Simple 4-step `install instructions <https://documen.tician.de/pyopencl/misc.html#installation>`__
 using Conda on Linux and macOS (that also install a working OpenCL implementation!)
 can be found in the `documentation <https://documen.tician.de/pyopencl/>`__.
 
 What you'll need if you do *not* want to use the convenient instructions above and
 instead build from source:
 
-*   gcc/g++ new enough to be compatible with pybind11
-    (see their `FAQ <https://pybind11.readthedocs.io/en/stable/faq.html>`_)
-*   `numpy <https://numpy.org>`_, and
-*   an OpenCL implementation. (See this `howto <https://wiki.tiker.net/OpenCLHowTo>`_ for how to get one.)
+* gcc/g++ new enough to be compatible with pybind11
+  (see their `FAQ <https://pybind11.readthedocs.io/en/stable/faq.html>`__)
+* `numpy <https://numpy.org>`__, and
+* an OpenCL implementation. (See this `howto <https://wiki.tiker.net/OpenCLHowTo>`__
+  for how to get one.)
 
 Links
 -----
 
-* `Documentation <https://documen.tician.de/pyopencl>`__ (read how things work)
-* `Conda Forge <https://anaconda.org/conda-forge/pyopencl>`_ (download binary packages for Linux, macOS, Windows)
-* `Python package index <https://pypi.python.org/pypi/pyopencl>`_ (download releases)
-* `C. Gohlke's Windows binaries <https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`_ (download Windows binaries)
-* `Github <https://github.com/inducer/pyopencl>`_ (get latest source code, file bugs)
+* `Documentation <https://documen.tician.de/pyopencl>`__
+  (read how things work)
+* `Conda Forge <https://anaconda.org/conda-forge/pyopencl>`__
+  (download binary packages for Linux, macOS, Windows)
+* `Python package index <https://pypi.python.org/pypi/pyopencl>`__
+  (download releases)
+* `C. Gohlke's Windows binaries <https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`__
+  (download Windows binaries)
+* `Github <https://github.com/inducer/pyopencl>`__
+  (get latest source code, file bugs)
