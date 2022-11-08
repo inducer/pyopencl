@@ -21,25 +21,26 @@ Vector Types
 
 .. class :: vec
 
-    All of OpenCL's supported vector types, such as `float3` and `long4` are
+    All of OpenCL's supported vector types, such as ``float3`` and ``long4`` are
     available as :mod:`numpy` data types within this class. These
-    :class:`numpy.dtype` instances have field names of `x`, `y`, `z`, and `w`
+    :class:`numpy.dtype` instances have field names of ``x``, ``y``, ``z``, and ``w``
     just like their OpenCL counterparts. They will work both for parameter passing
     to kernels as well as for passing data back and forth between kernels and
-    Python code. For each type, a `make_type` function is also provided (e.g.
-    `make_float3(x,y,z)`).
+    Python code. For each type, a ``make_type`` function is also provided (e.g.
+    ``make_float3(x, y, z)``).
 
     If you want to construct a pre-initialized vector type you have three new
     functions to choose from:
 
-    * `zeros_type()`
-    * `ones_type()`
-    * `filled_type(fill_value)`
+    * ``zeros_type()``
+    * ``ones_type()``
+    * ``filled_type(fill_value)``
 
     .. versionadded:: 2014.1
 
     .. versionchanged:: 2014.1
-        The `make_type` functions have a default value (0) for each component.
+
+        The ``make_type`` functions have a default value (0) for each component.
         Relying on the default values has been deprecated. Either specify all
         components or use one of th new flavors mentioned above for constructing
         a vector.
@@ -96,8 +97,8 @@ support, PyOpenCL works around that deficiency. By saying::
 
     #include <pyopencl-complex.h>
 
-in your kernel, you get complex types `cfloat_t` and `cdouble_t`, along with
-functions defined on them such as `cfloat_mul(a, b)` or `cdouble_log(z)`.
+in your kernel, you get complex types ``cfloat_t`` and ``cdouble_t``, along with
+functions defined on them such as ``cfloat_mul(a, b)`` or ``cdouble_log(z)``.
 Elementwise kernels automatically include the header if your kernel has
 complex input or output.
 See the `source file
@@ -228,16 +229,16 @@ functions available in the OpenCL standard. (See table 6.8 in the spec.)
 
 .. function:: fmod(arg, mod, queue=None)
 
-    Return the floating point remainder of the division `arg/mod`,
-    for each element in `arg` and `mod`.
+    Return the floating point remainder of the division ``arg / mod``,
+    for each element in ``arg`` and ``mod``.
 
 .. TODO: fract
 
 
 .. function:: frexp(arg, queue=None)
 
-    Return a tuple `(significands, exponents)` such that
-    `arg == significand * 2**exponent`.
+    Return a tuple ``(significands, exponents)`` such that
+    ``arg == significand * 2**exponent``.
 
 .. TODO: hypot
 
@@ -245,8 +246,8 @@ functions available in the OpenCL standard. (See table 6.8 in the spec.)
 .. function:: ldexp(significand, exponent, queue=None)
 
     Return a new array of floating point values composed from the
-    entries of `significand` and `exponent`, paired together as
-    `result = significand * 2**exponent`.
+    entries of ``significand`` and ``exponent``, paired together as
+    ``result = significand * 2**exponent``.
 
 
 .. function:: lgamma(array, queue=None)
@@ -265,8 +266,8 @@ functions available in the OpenCL standard. (See table 6.8 in the spec.)
 
 .. function:: modf(arg, queue=None)
 
-    Return a tuple `(fracpart, intpart)` of arrays containing the
-    integer and fractional parts of `arg`.
+    Return a :class:`tuple` ``(fracpart, intpart)`` of arrays containing the
+    integer and fractional parts of ``arg``.
 
 .. function:: nan(array, queue=None)
 

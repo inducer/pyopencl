@@ -81,10 +81,10 @@ Device
             [ dpp.BY_NAMES, 5, 7, 9, dpp.PARTITION_BY_NAMES_LIST_END]
             [ dpp.BY_AFFINITY_DOMAIN, dad.L1_CACHE]
 
-        where `dpp` represents :class:`device_partition_property`
-        and `dad` represent :class:`device_affinity_domain`.
+        where ``dpp`` represents :class:`device_partition_property`
+        and ``dad`` represent :class:`device_affinity_domain`.
 
-        `PROPERTIES_LIST_END_EXT` is added automatically.
+        ``PROPERTIES_LIST_END_EXT`` is added automatically.
 
         Only available with CL 1.2.
 
@@ -111,13 +111,13 @@ Context
 
     Create a new context. *properties* is a list of key-value
     tuples, where each key must be one of :class:`context_properties`.
-    At most one of *devices* and *dev_type* may be not `None`, where
+    At most one of *devices* and *dev_type* may be not *None*, where
     *devices* is a list of :class:`Device` instances, and
     *dev_type* is one of the :class:`device_type` constants.
     If neither is specified, a context with a *dev_type* of
     :attr:`device_type.DEFAULT` is created.
 
-    If *cache_dir* is not `None` - it will be used as default *cache_dir*
+    If *cache_dir* is not *None* - it will be used as default *cache_dir*
     for all its' :class:`Program` instances builds (see also :meth:`Program.build`).
 
     .. note::

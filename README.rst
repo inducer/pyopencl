@@ -16,16 +16,15 @@ PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
 
 PyOpenCL lets you access GPUs and other massively parallel compute
 devices from Python. It tries to offer computing goodness in the
-spirit of its sister project `PyCUDA <https://mathema.tician.de/software/pycuda>`_:
+spirit of its sister project `PyCUDA <https://mathema.tician.de/software/pycuda>`__:
 
 * Object cleanup tied to lifetime of objects. This idiom, often
-  called
-  `RAII <https://en.wikipedia.org/wiki/Resource_Acquisition_Is_Initialization>`_
+  called `RAII <https://en.wikipedia.org/wiki/Resource_Acquisition_Is_Initialization>`__
   in C++, makes it much easier to write correct, leak- and
   crash-free code.
 
 * Completeness. PyOpenCL puts the full power of OpenCL's API at
-  your disposal, if you wish.  Every obscure `get_info()` query and
+  your disposal, if you wish.  Every obscure ``get_info()`` query and
   all CL calls are accessible.
 
 * Automatic Error Checking. All CL errors are automatically

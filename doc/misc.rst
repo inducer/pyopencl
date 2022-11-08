@@ -193,7 +193,7 @@ checking `this file
 <https://github.com/inducer/pyopencl/blob/main/contrib/pyopencl.vim>`__.
 
 Note that the triple-quoted strings containing the source must start with
-`"""//CL// ..."""`.
+``"""//CL// ..."""``.
 
 .. _ipython-integration:
 
@@ -252,7 +252,7 @@ Relation with OpenCL's C Bindings
 We've tried to follow these guidelines when binding the OpenCL's
 C interface to Python:
 
-* Remove the `cl_`, `CL_` and `cl` prefix from data types, macros and
+* Remove the ``cl_``, ``CL_`` and ``cl`` prefix from data types, macros and
   function names.
 * Follow :pep:`8`, i.e.
 
@@ -260,7 +260,7 @@ C interface to Python:
   * If a data type or function name is composed of more than one word,
     separate the words with a single underscore.
 
-* `get_info` functions become attributes.
+* ``get_info`` functions become attributes.
 * Object creation is done by constructors, to the extent possible.
   (i.e. minimize use of "factory functions")
 
@@ -630,15 +630,15 @@ Version 0.91
 
 * Add :ref:`gl-interop`.
 * Add a test suite.
-* Fix numerous `get_info` bugs. (reports by David Garcia and the test suite)
+* Fix numerous ``get_info`` bugs. (reports by David Garcia and the test suite)
 * Add :meth:`pyopencl.ImageFormat.__repr__`.
 * Add :meth:`pyopencl.addressing_mode.to_string` and colleagues.
-* The `pitch` arguments to
+* The ``pitch`` arguments to
   ``pyopencl.create_image_2d``,
   ``pyopencl.create_image_3d``,
   ``pyopencl.enqueue_read_image``, and
   ``pyopencl.enqueue_write_image``
-  are now defaulted to zero. The argument order of `enqueue_{read,write}_image`
+  are now defaulted to zero. The argument order of ``enqueue_{read,write}_image``
   has changed for this reason.
 * Deprecate
   ``pyopencl.create_image_2d``,

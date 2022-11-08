@@ -216,7 +216,7 @@ class ElementwiseKernel:
     :arg preamble: a piece of C source code that gets inserted outside of the
         function context in the elementwise operation's kernel source code.
 
-    .. warning :: Using a `return` statement in *operation* will lead to
+    .. warning :: Using a ``return`` statement in *operation* will lead to
         incorrect results, as some elements may never get processed. Use
         ``PYOPENCL_ELWISE_CONTINUE`` instead.
 
