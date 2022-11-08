@@ -235,6 +235,7 @@ _MEMPOOL_IFACE_DOCS = """
 
 
 def _monkeypatch_docstrings():
+    from pytools.codegen import remove_common_indentation
 
     PooledBuffer.__doc__ = """
     An object representing a :class:`MemoryPool`-based allocation of
@@ -315,7 +316,7 @@ def _monkeypatch_docstrings():
 
     # {{{ MemoryPool
 
-    MemoryPool.__doc__ = """
+    MemoryPool.__doc__ = remove_common_indentation("""
     A memory pool for OpenCL device memory in :class:`pyopencl.Buffer` form.
     *allocator* must be an instance of one of the above classes, and should be
     an :class:`ImmediateAllocator`.  The memory pool assumes that allocation
@@ -340,7 +341,7 @@ def _monkeypatch_docstrings():
         Synonym for :meth:`allocate` to match :class:`AllocatorBase`.
 
         .. versionadded:: 2011.2
-    """ + _MEMPOOL_IFACE_DOCS
+    """) + _MEMPOOL_IFACE_DOCS
 
     # }}}
 
@@ -349,6 +350,8 @@ _monkeypatch_docstrings()
 
 
 def _monkeypatch_svm_docstrings():
+    from pytools.codegen import remove_common_indentation
+
     # {{{ PooledSVM
 
     PooledSVM.__doc__ = """
@@ -430,7 +433,7 @@ def _monkeypatch_svm_docstrings():
 
     # {{{ SVMPool
 
-    SVMPool.__doc__ = """
+    SVMPool.__doc__ = remove_common_indentation("""
     A memory pool for OpenCL device memory in :ref:`SVM <svm>` form.
     *allocator* must be an instance of :class:`SVMAllocator`.
 
@@ -440,7 +443,7 @@ def _monkeypatch_svm_docstrings():
     .. automethod:: __call__
 
         Return a :class:`PooledSVM` of the given *size*.
-    """ + _MEMPOOL_IFACE_DOCS
+    """) + _MEMPOOL_IFACE_DOCS
 
     # }}}
 
