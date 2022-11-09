@@ -20,10 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-# avoid spurious: pytest.mark.parametrize is not callable
-# pylint: disable=not-callable
-
-
 import numpy as np
 import numpy.linalg as la
 import pytest
@@ -36,14 +32,6 @@ from pyopencl.tools import (  # noqa: F401
         pytest_generate_tests_for_pyopencl as pytest_generate_tests,
         ImmediateAllocator, DeferredAllocator)
 from pyopencl.characterize import get_pocl_version
-
-# Are CL implementations crashy? You be the judge. :)
-try:
-    import faulthandler  # noqa
-except ImportError:
-    pass
-else:
-    faulthandler.enable()
 
 
 def _xfail_if_pocl(plat, up_to_version, msg="unsupported by pocl"):

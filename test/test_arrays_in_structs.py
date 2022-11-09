@@ -92,7 +92,6 @@ def test_struct_with_array_fields(ctx_factory):
 
 
 if __name__ == "__main__":
-
     import sys
     if len(sys.argv) > 1:
         exec(sys.argv[1])
