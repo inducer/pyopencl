@@ -36,7 +36,7 @@ LOCAL_MEM_FACTOR = 1
 
 # {{{ defines
 
-defines = """//CL//  # noqa
+defines = """//CL//
 
 % if dtype == "double":
     #if __OPENCL_C_VERSION__ < 120
@@ -93,7 +93,7 @@ typedef ${idxtype} idx_t;
 % endif
 #define nsize ${nsize}   //Total next dimensions sizes sum. (Block size)
 #define dsize ${dsize}   //Dimension size
-"""
+"""         # noqa: E501
 
 # }}}
 
@@ -328,7 +328,7 @@ __kernel void run(__global data_t * data\\
 
 # IF YOU RE-ENABLE THIS, YOU NEED TO ADJUST LOCAL_MEM_FACTOR TO 4
 
-ParallelBitonic_C4 = """//CL//  # noqa
+ParallelBitonic_C4 = """//CL//
 //ParallelBitonic_C4
 __kernel void run\\
 % if argsort:
@@ -395,14 +395,14 @@ __kernel void run\\
 % endif
   for (int k=0;k<4;k++) data[i+k] = x[k];
 }
-"""
+"""         # noqa: E501
 
 # }}}
 
 
 # {{{ local merge
 
-ParallelMerge_Local = """//CL//  # noqa
+ParallelMerge_Local = """//CL//
 // N threads, WG is workgroup size. Sort WG input blocks in each workgroup.
 __kernel void run(__global const data_t * in,__global data_t * out,__local data_t * aux)
 {
@@ -443,14 +443,14 @@ __kernel void run(__global const data_t * in,__global data_t * out,__local data_
   // Write output
   out[i] = aux[i];
 }
-"""
+"""         # noqa: E501
 
 # }}}
 
 
 # {{{
 
-ParallelBitonic_Local = """//CL//  # noqa
+ParallelBitonic_Local = """//CL//
 // N threads, WG is workgroup size. Sort WG input blocks in each workgroup.
 __kernel void run(__global const data_t * in,__global data_t * out,__local data_t * aux)
 {
@@ -488,7 +488,7 @@ __kernel void run(__global const data_t * in,__global data_t * out,__local data_
   // Write output
   out[i] = aux[i];
 }
-"""
+"""         # noqa: E501
 
 # }}}
 
@@ -521,7 +521,7 @@ __kernel void ParallelBitonic_A(__global const data_t * in)
 
 # {{{ local optim
 
-ParallelBitonic_Local_Optim = """//CL//  # noqa
+ParallelBitonic_Local_Optim = """//CL//
 __kernel void run\\
 % if argsort:
 (__global data_t * data, __global idx_t * index, __local data_t * aux, __local idx_t * auy)
@@ -587,7 +587,7 @@ __kernel void run\\
   index[t*nsize] = iidx;
 % endif
 }
-"""
+"""         # noqa: E501
 
 # }}}
 

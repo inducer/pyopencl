@@ -1,5 +1,5 @@
 try:
-    import mako.template  # noqa
+    import mako.template  # noqa: F401
 except ImportError:
     raise ImportError(
             "Some of PyOpenCL's facilities require the Mako templating engine.\n"
@@ -11,4 +11,4 @@ except ImportError:
             "- aptitude install python-mako\n"
             "\nor whatever else is appropriate for your system.")
 
-from mako import *  # noqa
+from mako import *  # noqa: F401, F403
