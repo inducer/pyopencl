@@ -20,18 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-# avoid spurious: pytest.mark.parametrize is not callable
-# pylint: disable=not-callable
-
 import numpy as np
 import pytest
 
 import pyopencl as cl
 import pyopencl.cltypes as cltypes
 import pyopencl.clrandom as clrandom
-from pyopencl.tools import (  # noqa
-        pytest_generate_tests_for_pyopencl
-        as pytest_generate_tests)
+from pyopencl.tools import (  # noqa: F401
+        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support
 
 try:

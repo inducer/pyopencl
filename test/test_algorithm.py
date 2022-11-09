@@ -32,8 +32,8 @@ from test_array import general_clrand
 import pytest
 
 import pyopencl as cl
-import pyopencl.array as cl_array  # noqa
-from pyopencl.tools import (  # noqa
+import pyopencl.array
+from pyopencl.tools import (  # noqa: F401
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 from pyopencl.scan import (InclusiveScanKernel, ExclusiveScanKernel,

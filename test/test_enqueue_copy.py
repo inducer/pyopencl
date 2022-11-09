@@ -26,7 +26,7 @@ import numpy as np
 import pyopencl as cl
 import pytest
 
-from pyopencl.tools import (  # noqa
+from pyopencl.tools import (  # noqa: F401
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import get_pocl_version
 
@@ -214,9 +214,6 @@ def test_enqueue_copy_rect_3d(ctx_factory, honor_skip=True):
 
 
 if __name__ == "__main__":
-    # make sure that import failures get reported, instead of skipping the tests.
-    import pyopencl  # noqa
-
     import sys
     if len(sys.argv) > 1:
         exec(sys.argv[1])

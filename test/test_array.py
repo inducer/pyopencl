@@ -35,7 +35,7 @@ import pyopencl as cl
 import pyopencl.array as cl_array
 import pyopencl.cltypes as cltypes
 import pyopencl.tools as cl_tools
-from pyopencl.tools import (  # noqa
+from pyopencl.tools import (  # noqa: F401
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 
@@ -1431,7 +1431,8 @@ def test_skip_slicing(ctx_factory):
     a = cl_array.to_device(queue, a_host)
     b = a[::3]
     assert b.shape == b_host.shape
-    assert np.array_equal(b[1].get(), b_host[1])  # noqa pylint:disable=unsubscriptable-object
+    # pylint:disable=unsubscriptable-object
+    assert np.array_equal(b[1].get(), b_host[1])
 
 # }}}
 
