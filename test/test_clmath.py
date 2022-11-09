@@ -20,11 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-# avoid spurious: pytest.mark.parametrize is not callable
-# avoid spurious: Module 'scipy.special' has no 'jn' member; maybe 'jv'
-# pylint: disable=not-callable,no-member
-
-
 import math
 import numpy as np
 
