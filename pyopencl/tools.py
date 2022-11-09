@@ -139,7 +139,7 @@ from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
 
 import re
 
-from pyopencl.compyte.dtypes import (  # noqa
+from pyopencl.compyte.dtypes import (  # noqa: F401
         get_or_register_dtype, TypeNameNotKnown,
         register_dtype, dtype_to_ctype)
 
@@ -159,14 +159,14 @@ _register_types()
 
 # {{{ imported names
 
-from pyopencl._cl import (  # noqa
+from pyopencl._cl import (  # noqa: F401
         PooledBuffer, AllocatorBase, DeferredAllocator,
         ImmediateAllocator, MemoryPool,
         )
 
 
 if get_cl_header_version() >= (2, 0):
-    from pyopencl._cl import (  # noqa
+    from pyopencl._cl import (  # noqa: F401
             SVMPool,
             PooledSVM,
             SVMAllocator,
@@ -1123,7 +1123,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     prg = cl.Program(context, src)
     knl = prg.build(devices=[device]).get_size_and_offsets
 
-    import pyopencl.array  # noqa
+    import pyopencl.array  # noqa: F401
     result_buf = cl.array.empty(queue, 1+len(fields), np.uint32)
     knl(queue, (1,), (1,), result_buf.data)
     queue.finish()

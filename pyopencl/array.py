@@ -326,7 +326,7 @@ class ArrayHasOffsetError(ValueError):
         ValueError.__init__(self, val)
 
 
-class _copy_queue:  # noqa
+class _copy_queue:  # noqa: N801
     pass
 
 
@@ -1912,7 +1912,7 @@ class Array:
         # {{{ determine reshaped strides
 
         # copied and translated from
-        # https://github.com/numpy/numpy/blob/4083883228d61a3b571dec640185b5a5d983bf59/numpy/core/src/multiarray/shape.c  # noqa
+        # https://github.com/numpy/numpy/blob/4083883228d61a3b571dec640185b5a5d983bf59/numpy/core/src/multiarray/shape.c  # noqa: E501
 
         newdims = shape
         newnd = len(newdims)
@@ -2073,7 +2073,7 @@ class Array:
                 strides=tuple(new_strides))
 
     @property
-    def T(self):  # noqa
+    def T(self):  # noqa: N802
         """
         .. versionadded:: 2015.2
         """
@@ -2317,7 +2317,7 @@ def as_strided(ary, shape=None, strides=None):
             data=ary.data, strides=strides)
 
 
-class _same_as_transfer:  # noqa
+class _same_as_transfer:  # noqa: N801
     pass
 
 

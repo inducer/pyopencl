@@ -24,7 +24,7 @@ from sys import intern
 from warnings import warn
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa
+from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa: F401
 
 # must import, otherwise dtype registry will not be fully populated
 import pyopencl.cltypes  # noqa: F401
@@ -173,17 +173,17 @@ except ImportError:
 
 if not _PYPY:
     # FIXME: Add back to default set when pypy support catches up
-    from pyopencl._cl import (  # noqa
+    from pyopencl._cl import (  # noqa: F401
         enqueue_map_buffer,
         enqueue_map_image,
         )
 
 if get_cl_header_version() >= (1, 1):
-    from pyopencl._cl import (  # noqa
+    from pyopencl._cl import (  # noqa: F401
         UserEvent,
         )
 if get_cl_header_version() >= (1, 2):
-    from pyopencl._cl import (  # noqa
+    from pyopencl._cl import (  # noqa: F401
         _enqueue_marker_with_wait_list,
         _enqueue_barrier_with_wait_list,
 
@@ -198,14 +198,14 @@ if get_cl_header_version() >= (1, 2):
         )
 
 if get_cl_header_version() >= (2, 0):
-    from pyopencl._cl import (  # noqa
+    from pyopencl._cl import (  # noqa: F401
         SVMPointer,
         SVM,
         SVMAllocation,
         )
 
 if _cl.have_gl():
-    from pyopencl._cl import (  # noqa
+    from pyopencl._cl import (  # noqa: F401
         gl_object_type,
         gl_texture_info,
 
@@ -215,12 +215,12 @@ if _cl.have_gl():
         )
 
     try:
-        from pyopencl._cl import get_apple_cgl_share_group  # noqa
+        from pyopencl._cl import get_apple_cgl_share_group  # noqa: F401
     except ImportError:
         pass
 
     try:
-        from pyopencl._cl import (  # noqa
+        from pyopencl._cl import (  # noqa: F401
             enqueue_acquire_gl_objects,
             enqueue_release_gl_objects,
         )
