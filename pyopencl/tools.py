@@ -955,7 +955,7 @@ class _CDeclList:
     def add_dtype(self, dtype):
         dtype = np.dtype(dtype)
 
-        if dtype in [np.float64 or np.complex128]:
+        if dtype in (np.float64, np.complex128):
             self.saw_double = True
 
         if dtype.kind == "c":
@@ -988,7 +988,7 @@ class _CDeclList:
     def visit_arguments(self, arguments):
         for arg in arguments:
             dtype = arg.dtype
-            if dtype in [np.float64 or np.complex128]:
+            if dtype in (np.float64, np.complex128):
                 self.saw_double = True
 
             if dtype.kind == "c":
