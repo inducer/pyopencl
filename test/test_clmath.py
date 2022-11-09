@@ -33,9 +33,8 @@ import pytest
 import pyopencl.array as cl_array
 import pyopencl as cl
 import pyopencl.clmath as clmath
-from pyopencl.tools import (  # noqa
-        pytest_generate_tests_for_pyopencl
-        as pytest_generate_tests)
+from pyopencl.tools import (  # noqa: F401
+        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 
 try:

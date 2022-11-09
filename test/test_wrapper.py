@@ -32,7 +32,7 @@ import pyopencl as cl
 import pyopencl.array as cl_array
 import pyopencl.cltypes as cltypes
 import pyopencl.clrandom
-from pyopencl.tools import (  # noqa
+from pyopencl.tools import (  # noqa: F401
         pytest_generate_tests_for_pyopencl as pytest_generate_tests,
         ImmediateAllocator, DeferredAllocator)
 from pyopencl.characterize import get_pocl_version
@@ -81,7 +81,7 @@ def test_get_info(ctx_factory):
             (cl.Program, cl.program_info.KERNEL_NAMES),
             (cl.Program, cl.program_info.NUM_KERNELS),
         ])
-    CRASH_QUIRKS = [  # noqa
+    CRASH_QUIRKS = [  # noqa: N806
             (("NVIDIA Corporation", "NVIDIA CUDA",
                 "OpenCL 1.0 CUDA 3.0.1"),
                 [
@@ -116,7 +116,7 @@ def test_get_info(ctx_factory):
                     (cl.Program, cl.program_info.SOURCE),
                     ]),
             ]
-    QUIRKS = []  # noqa
+    QUIRKS = []  # noqa: N806
 
     def find_quirk(quirk_list, cl_obj, info):
         for (vendor, name, version), quirks in quirk_list:
@@ -1524,9 +1524,6 @@ def test_enqueue_copy_array_2(ctx_factory):
 
 
 if __name__ == "__main__":
-    # make sure that import failures get reported, instead of skipping the tests.
-    import pyopencl  # noqa
-
     import sys
     if len(sys.argv) > 1:
         exec(sys.argv[1])
