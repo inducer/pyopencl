@@ -612,12 +612,9 @@ class Array:
 
                 shape = (shape,)
 
-            size = 1
-            for dim in shape:
-                size *= dim
-                if dim < 0:
-                    raise ValueError(
-                        f"negative dimensions are not allowed: {shape}")
+            size = np.prod(shape)
+            if size < 0:
+                raise ValueError(f"negative dimensions are not allowed: {shape}")
 
             if isinstance(size, np.integer):
                 size = size.item()
