@@ -616,7 +616,7 @@ class Array:
             # However it can fail when using data types, eg., numpy.uint64(1) * 2  returns 2.0 !
             if np.any(np.array(shape) < 0):
                 raise ValueError(f"negative dimensions are not allowed: {shape}")
-            size = np.prod(shape)
+            size = np.prod(np.uint64(shape)).item()
 
             if strides is None:
                 if order in "cC":
