@@ -35,4 +35,4 @@ test-command = "pytest {project}/test/test_array.py" # same limitation as conda-
 skip = ["*-win32", "pp*", "cp36-*", "cp37-*"]
 test-command = ""
 before-all = "bash {package}/scripts/build-ocl-windows.sh"
-before-build = "python configure.py --cxxflags=-ID:/a/pyopencl/pyopencl/OpenCL-Headers/install/include --ldflags=\"/LIBPATH:C:/Program Files/OpenCL-ICD-Loader/lib\""
+before-build = "python configure.py --cxxflags=-ID:/a/pyopencl/pyopencl/OpenCL-Headers/install/include --cl-lib-dir=\"C:/Program Files/OpenCL-ICD-Loader/lib\""
