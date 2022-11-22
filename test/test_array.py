@@ -25,6 +25,7 @@ THE SOFTWARE.
 import numpy as np
 import numpy.linalg as la
 import sys
+from itertools import product
 
 import pytest
 
@@ -950,6 +951,33 @@ def test_numpy_integer_shape(ctx_factory):
 
     cl_array.empty(queue, np.int32(17), np.float32)
     cl_array.empty(queue, (np.int32(17), np.int32(17)), np.float32)
+
+# }}}
+
+
+# {{{ test_allocation_with_various_shape_scalar_types
+
+def test_allocation_with_various_shape_scalar_types(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    dims_ok = (2, np.int32(7), np.uint64(1))
+    dims_not_ok = (-1, 5.70, np.float32(7))
+
+    shapes_ok_1d = list(product(dims_ok))
+    shapes_ok_2d = list(product(dims_ok, dims_ok))
+    shapes_ok_3d = list(product(dims_ok, dims_ok, dims_ok))
+
+    shapes_not_ok_1d = list(product(dims_not_ok))
+    shapes_not_ok_2d = list(product(dims_ok, dims_not_ok))
+    shapes_not_ok_3d = list(product(dims_not_ok, dims_not_ok, dims_not_ok))
+
+    for shape in shapes_ok_1d + shapes_ok_2d + shapes_ok_3d:
+        cl_array.empty(queue, shape, np.float32)
+
+    for shape in shapes_not_ok_1d + shapes_not_ok_2d + shapes_not_ok_3d:
+        with pytest.raises(ValueError):
+            cl_array.empty(queue, shape, np.float32)
 
 # }}}
 
