@@ -618,7 +618,7 @@ class Array:
             # eg numpy.uint64(1) * 2  returns 2.0 !
             if np.any(np.array(shape) < 0):
                 raise ValueError(f"negative dimensions are not allowed: {shape}")
-            if any([np.array([s]).dtype.kind not in ["u", "i"] for s in shp]):
+            if any([np.array([s]).dtype.kind not in ["u", "i"] for s in shape]):
                 raise ValueError(
                     "Invalid shape %s ; dimensions, must be integer" % (str(shape))
                 )
