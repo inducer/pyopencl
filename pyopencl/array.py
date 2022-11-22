@@ -612,14 +612,16 @@ class Array:
 
                 shape = (shape,)
 
-            # Previously the size was computed as "size = 1; size *= dim for dim in shape
-            # However it can fail when using data types, eg., numpy.uint64(1) * 2  returns 2.0 !
+            # Previously the size was computed as
+            #   "size = 1; size *= dim for dim in shape"
+            # However it can fail when using data types,
+            # eg numpy.uint64(1) * 2  returns 2.0 !
             if np.any(np.array(shape) < 0):
                 raise ValueError(f"negative dimensions are not allowed: {shape}")
             if any([np.array([s]).dtype.kind not in ["u", "i"] for s in shp]):
                 raise ValueError(
-                "Invalid shape %s ; dimensions, must be integer" % (str(shape))
-            )
+                    "Invalid shape %s ; dimensions, must be integer" % (str(shape))
+                )
             size = np.prod(shape, dtype=np.uint64).item()
 
             if strides is None:
