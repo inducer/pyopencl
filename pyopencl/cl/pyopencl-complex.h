@@ -274,6 +274,7 @@
     } \
   } \
 
+// This is undocumented and may disappear at any time
 #if PYOPENCL_COMPLEX_ENABLE_EXTENDED_ALIGNMENT
 #define PYOPENCL_COMPLEX_ALIGNMENT(TYPE) 2*sizeof(TYPE)
 #else
