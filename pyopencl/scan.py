@@ -1552,7 +1552,7 @@ class GenericScanKernel(GenericScanKernelBase):
 
         if self.store_segment_start_flags:
             segment_start_flags = cl.array.empty(
-                    queue, n, dtype=np.bool8,
+                    queue, n, dtype=np.bool_,
                     allocator=allocator)
 
         # }}}
