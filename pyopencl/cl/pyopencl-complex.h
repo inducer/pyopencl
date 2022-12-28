@@ -274,11 +274,20 @@
     } \
   } \
 
+// This is undocumented and may disappear at any time
+#if PYOPENCL_COMPLEX_ENABLE_EXTENDED_ALIGNMENT
+#define PYOPENCL_COMPLEX_ALIGNMENT(TYPE) 2*sizeof(TYPE)
+#else
+#define PYOPENCL_COMPLEX_ALIGNMENT(TYPE) sizeof(TYPE)
+#endif
+
 #define PYOPENCL_DECLARE_COMPLEX_TYPE(BASE, BASE_3LTR) \
   typedef union \
   { \
-    struct { BASE x, y; }; \
-    struct { BASE real, imag; }; \
+    struct { BASE x, y; } \
+      __attribute__ ((aligned (PYOPENCL_COMPLEX_ALIGNMENT(BASE)))); \
+    struct { BASE real, imag; } \
+      __attribute__ ((aligned (PYOPENCL_COMPLEX_ALIGNMENT(BASE)))); \
   } c##BASE##_t; \
   \
   PYOPENCL_DECLARE_COMPLEX_TYPE_INT(BASE, BASE_3LTR, c##BASE, c##BASE##_t)
@@ -290,3 +299,5 @@ PYOPENCL_DECLARE_COMPLEX_TYPE(float, FLT);
 PYOPENCL_DECLARE_COMPLEX_TYPE(double, DBL);
 #define cdouble_cast(a) cdouble_new((a).real, (a).imag)
 #endif
+
+#undef PYOPENCL_COMPLEX_ALIGNMENT
