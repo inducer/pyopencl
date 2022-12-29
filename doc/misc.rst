@@ -53,6 +53,10 @@ to install a CPU-based OpenCL driver.
 On macOS, pocl can offer a marked robustness (and, sometimes, performance)
 improvement over the OpenCL drivers built into the operating system.
 
+On Linux, to run on NVIDIA's GPUs::
+
+    conda install opencl-nvidia
+
 On Linux and Windows, you can use Intel's CPU OpenCL runtime::
 
     conda install intel-opencl-rt
