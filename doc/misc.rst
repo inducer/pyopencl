@@ -29,6 +29,15 @@ Then run::
 You can install these pieces of software in your user account and
 do not need root/administrator privileges.
 
+.. note::
+
+   This installs a conda environment based on Conda Forge. This is not
+   interchangeable with a conda environment based on the (more common)
+   anaconda.  If you have an existing conda environment sitting around, just
+   following the instructions below will likely not work.  Instead, the
+   suggested approach is to create new environment from scratch, starting with
+   miniforge, above.
+
 Enabling access to CPUs and GPUs via (Py)OpenCL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
