@@ -184,7 +184,6 @@ def _get_full_machine_kernel_rate(queue, src, args, name="benchmark",
     while True:
         elapsed = _get_time(queue, f, timer_factory=timer_factory)
         rate = global_size/elapsed
-        print(global_size, rate, num_dips)
 
         keep_trying = not rates
 
@@ -231,7 +230,7 @@ def get_add_rate(queue, type="float", timer_factory=None):
             }
             tgt[get_local_id(0)] = val;
         }
-        """ % dict(op_t=type), ())
+        """ % {"op_t": type}, ())
 
 
 # vim: foldmethod=marker:filetype=pyopencl

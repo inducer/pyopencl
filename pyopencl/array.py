@@ -2671,9 +2671,9 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
             + builtins.sum((i.events for i in arrays[chunk_slice]), [])
             + builtins.sum((o.events for o in out[chunk_slice]), []))
         evt = knl(queue, gs, ls,
-                *([o for o in out[chunk_slice]]
+                *(list(out[chunk_slice])
                     + [dest_indices, src_indices]
-                    + [i for i in arrays[chunk_slice]]
+                    + list(arrays[chunk_slice])
                     + src_offsets_list[chunk_slice]
                     + [src_indices.size]), wait_for=wait_for_this)
         for o in out[chunk_slice]:
@@ -2749,9 +2749,9 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
             + builtins.sum([o.events for o in out[chunk_slice]], []))
         evt = knl(queue, gs, ls,
                 *(
-                    [o for o in out[chunk_slice]]
+                    list(out[chunk_slice])
                     + [dest_indices]
-                    + [i for i in arrays[chunk_slice]]
+                    + list(arrays[chunk_slice])
                     + [use_fill_cla, array_lengths_cla, dest_indices.size]),
                 wait_for=wait_for_this)
 

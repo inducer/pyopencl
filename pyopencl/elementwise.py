@@ -90,12 +90,12 @@ def get_elwise_program(
                 "PYOPENCL_ELWISE_CONTINUE instead.",
                 stacklevel=3)
 
-    source = ("""//CL//
+    source = (f"""//CL//
         {preamble}
 
         #define PYOPENCL_ELWISE_CONTINUE continue
 
-        __kernel void {name}({arguments})
+        __kernel void {name}({", ".join(arg.declarator() for arg in arguments)})
         {{
           int lid = get_local_id(0);
           int gsize = get_global_size(0);
@@ -103,17 +103,10 @@ def get_elwise_program(
           long i;
 
           {loop_prep};
-          {body}
+          {body % {"operation": operation}}
           {after_loop};
         }}
-        """.format(
-            arguments=", ".join(arg.declarator() for arg in arguments),
-            name=name,
-            preamble=preamble,
-            loop_prep=loop_prep,
-            after_loop=after_loop,
-            body=body % dict(operation=operation),
-            ))
+        """)
 
     return cl.Program(context, source).build(options)
 

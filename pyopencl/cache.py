@@ -209,7 +209,7 @@ def get_dependencies(src, include_path):
 
     _inner(src)
 
-    result = list((name,) + vals for name, vals in result.items())
+    result = [(name,) + vals for name, vals in result.items()]
     result.sort()
 
     return result
