@@ -1085,22 +1085,22 @@ class GenericScanKernelBase(ABC):
 
         from pyopencl.characterize import has_double_support
 
-        self.code_variables = dict(
-            np=np,
-            dtype_to_ctype=dtype_to_ctype,
-            preamble=preamble,
-            name_prefix=name_prefix,
-            index_dtype=self.index_dtype,
-            scan_dtype=dtype,
-            is_segmented=self.is_segmented,
-            arg_dtypes=arg_dtypes,
-            arg_ctypes=arg_ctypes,
-            scan_expr=_process_code_for_macro(scan_expr),
-            neutral=_process_code_for_macro(neutral),
-            is_gpu=bool(self.devices[0].type & cl.device_type.GPU),
-            double_support=all(
+        self.code_variables = {
+            "np": np,
+            "dtype_to_ctype": dtype_to_ctype,
+            "preamble": preamble,
+            "name_prefix": name_prefix,
+            "index_dtype": self.index_dtype,
+            "scan_dtype": dtype,
+            "is_segmented": self.is_segmented,
+            "arg_dtypes": arg_dtypes,
+            "arg_ctypes": arg_ctypes,
+            "scan_expr": _process_code_for_macro(scan_expr),
+            "neutral": _process_code_for_macro(neutral),
+            "is_gpu": bool(self.devices[0].type & cl.device_type.GPU),
+            "double_support": all(
                 has_double_support(dev) for dev in devices),
-            )
+            }
 
         index_typename = dtype_to_ctype(self.index_dtype)
         scan_typename = dtype_to_ctype(dtype)

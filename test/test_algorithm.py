@@ -1032,7 +1032,7 @@ def test_key_value_sorter(ctx_factory):
     starts = starts.get()
     lists = lists.get()
 
-    mydict = dict()
+    mydict = {}
     for k, v in zip(keys.get(), values.get()):
         mydict.setdefault(k, []).append(v)
 

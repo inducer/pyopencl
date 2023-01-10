@@ -487,17 +487,17 @@ class RadixSort:
                 get_count_branch(known_bits+"0"),
                 get_count_branch(known_bits+"1")))
 
-        codegen_args = dict(
-                bits=self.bits,
-                key_ctype=dtype_to_ctype(self.key_dtype),
-                key_expr=key_expr,
-                index_ctype=dtype_to_ctype(self.index_dtype),
-                index_type_max=np.iinfo(self.index_dtype).max,
-                padded_bin=_padded_bin,
-                scan_ctype=scan_ctype,
-                sort_arg_names=sort_arg_names,
-                get_count_branch=get_count_branch,
-                )
+        codegen_args = {
+                "bits": self.bits,
+                "key_ctype": dtype_to_ctype(self.key_dtype),
+                "key_expr": key_expr,
+                "index_ctype": dtype_to_ctype(self.index_dtype),
+                "index_type_max": np.iinfo(self.index_dtype).max,
+                "padded_bin": _padded_bin,
+                "scan_ctype": scan_ctype,
+                "sort_arg_names": sort_arg_names,
+                "get_count_branch": get_count_branch,
+                }
 
         preamble = scan_t_cdecl+RADIX_SORT_PREAMBLE_TPL.render(**codegen_args)
         scan_preamble = preamble \

@@ -903,9 +903,9 @@ def get_arg_offset_adjuster_code(arg_types):
             result.append("__global %(type)s *%(name)s = "
                     "(__global %(type)s *) "
                     "((__global char *) %(name)s__base + %(name)s__offset);"
-                    % dict(
-                        type=dtype_to_ctype(arg_type.dtype),
-                        name=arg_type.name))
+                    % {
+                        "type": dtype_to_ctype(arg_type.dtype),
+                        "name": arg_type.name})
 
     return "\n".join(result)
 
@@ -1097,26 +1097,22 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
             "result[%d] = pycl_offsetof(%s, %s);" % (i+1, name, field_name)
             for i, (field_name, _) in enumerate(fields))
 
-    src = r"""
+    src = rf"""
         #define pycl_offsetof(st, m) \
                  ((uint) ((__local char *) &(dummy.m) \
                  - (__local char *)&dummy ))
 
-        %(pre_decls)s
+        {pre_decls}
 
-        %(my_decl)s
+        {c_decl}
 
         __kernel void get_size_and_offsets(__global uint *result)
-        {
-            result[0] = sizeof(%(my_type)s);
-            __local %(my_type)s dummy;
-            %(offset_code)s
-        }
-    """ % dict(
-            pre_decls=pre_decls,
-            my_decl=c_decl,
-            my_type=name,
-            offset_code=offset_code)
+        {{
+            result[0] = sizeof({name});
+            __local {name} dummy;
+            {offset_code}
+        }}
+    """
 
     if context is None:
         context = cl.Context([device])
