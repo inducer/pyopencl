@@ -865,7 +865,8 @@ def _make_template(s: str):
     s = re.sub(r"\b([a-zA-Z0-9_]+)\b", replace_id, s)
     if leftovers:
         from warnings import warn
-        warn("leftover words in identifier prefixing: " + " ".join(leftovers))
+        warn("Leftover words in identifier prefixing: " + " ".join(leftovers),
+             stacklevel=3)
 
     return mako.template.Template(s, strict_undefined=True)     # type: ignore
 

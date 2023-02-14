@@ -663,9 +663,9 @@ def get_pyopencl_fixture_arg_names(metafunc, extra_arg_names=None):
 
         if arg == "ctx_getter":
             from warnings import warn
-            warn("The 'ctx_getter' arg is deprecated in "
-                    "favor of 'ctx_factory'.",
-                    DeprecationWarning)
+            warn(
+                "The 'ctx_getter' arg is deprecated in favor of 'ctx_factory'.",
+                DeprecationWarning, stacklevel=2)
 
         arg_names.append(arg)
 

@@ -23,7 +23,9 @@ from pyopencl.tools import get_or_register_dtype
 import warnings
 
 if __file__.endswith("array.py"):
-    warnings.warn("pyopencl.array.vec is deprecated. Please use pyopencl.cltypes")
+    warnings.warn(
+        "pyopencl.array.vec is deprecated. Please use pyopencl.cltypes.",
+        stacklevel=2)
 
 """
 This file provides a type mapping from OpenCl type names to their numpy equivalents
@@ -98,7 +100,9 @@ def _create_vector_types():
                     from warnings import warn
                     warn("default values for make_xxx are deprecated;"
                          " instead specify all parameters or use"
-                         " cltypes.zeros_xxx", DeprecationWarning)
+                         " cltypes.zeros_xxx",
+                         DeprecationWarning, stacklevel=4)
+
                 padded_args = tuple(list(args) + [0] * (padded_count - len(args)))
                 array = eval("array(padded_args, dtype=dtype)",
                              {"array": np.array,
