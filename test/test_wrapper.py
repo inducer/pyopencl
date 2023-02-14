@@ -34,7 +34,7 @@ from pyopencl.tools import (  # noqa: F401
 from pyopencl.characterize import get_pocl_version
 
 
-def _xfail_if_pocl(plat, up_to_version, msg="unsupported by pocl"):
+def _xfail_if_pocl(plat, up_to_version, msg="unsupported by PoCL"):
     if plat.vendor == "The pocl project":
         if up_to_version is None or get_pocl_version(plat) <= up_to_version:
             pytest.xfail(msg)
@@ -43,8 +43,8 @@ def _xfail_if_pocl(plat, up_to_version, msg="unsupported by pocl"):
 def _xfail_if_pocl_gpu(device, what):
     if device.platform.vendor == "The pocl project" \
             and device.type & cl.device_type.GPU:
-        pytest.xfail(f"POCL's {what} support don't work right on Nvidia GPUs, "
-                "at least the Titan V, as of pocl 1.6, 2021-01-20")
+        pytest.xfail(f"PoCL's {what} support don't work right on Nvidia GPUs, "
+                "at least the Titan V, as of PoCL 1.6, 2021-01-20")
 
 
 # {{{ test_get_info
@@ -410,7 +410,7 @@ def test_image_2d(ctx_factory):
     if "Intel" in device.vendor and "31360.31426" in device.version:
         from pytest import skip
         skip("images crashy on %s" % device)
-    _xfail_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
+    _xfail_if_pocl(device.platform, None, "PoCL does not support CL_ADDRESS_CLAMP")
 
     prg = cl.Program(context, """
         __kernel void copy_image(
@@ -488,7 +488,7 @@ def test_image_3d(ctx_factory):
     if device.platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("images crashy on %s" % device)
-    _xfail_if_pocl(device.platform, None, "pocl does not support CL_ADDRESS_CLAMP")
+    _xfail_if_pocl(device.platform, None, "PoCL does not support CL_ADDRESS_CLAMP")
 
     prg = cl.Program(context, """
         __kernel void copy_image_plane(
@@ -754,9 +754,9 @@ def test_can_build_and_run_binary(ctx_factory):
 
 def test_enqueue_barrier_marker(ctx_factory):
     ctx = ctx_factory()
-    # Still relevant on pocl 1.0RC1.
+    # Still relevant on PoCL 1.0RC1.
     _xfail_if_pocl(
-            ctx.devices[0].platform, (1, 0), "pocl crashes on enqueue_barrier")
+            ctx.devices[0].platform, (1, 0), "PoCL crashes on enqueue_barrier")
 
     queue = cl.CommandQueue(ctx)
 
@@ -791,7 +791,7 @@ def test_unload_compiler(platform):
             or cl.get_cl_header_version() < (1, 2)):
         from pytest import skip
         skip("clUnloadPlatformCompiler is only available in OpenCL 1.2")
-    _xfail_if_pocl(platform, (0, 13), "pocl does not support unloading compiler")
+    _xfail_if_pocl(platform, (0, 13), "PoCL does not support unloading compiler")
     if platform.vendor == "Intel(R) Corporation":
         from pytest import skip
         skip("Intel proprietary driver does not support unloading compiler")
@@ -841,7 +841,7 @@ def test_user_event(ctx_factory):
 
     # https://github.com/pocl/pocl/issues/201
     _xfail_if_pocl(ctx.devices[0].platform, (0, 13),
-            "pocl's user events don't work right")
+            "PoCL's user events don't work right")
 
     status = {}
 
@@ -1138,7 +1138,7 @@ def test_coarse_grain_svm(ctx_factory, use_opaque_style):
     if (dev.platform.vendor == "The pocl project"
             and dev.type & cl.device_type.GPU
             and "k40" in dev.name.lower()):
-        pytest.xfail("Crashes on K40s via POCL-CUDA")
+        pytest.xfail("Crashes on K40s via PoCL-CUDA")
 
     dtype = np.dtype(np.float32)
     n = 3000
