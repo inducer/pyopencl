@@ -1067,7 +1067,7 @@ def test_bitonic_sort(ctx_factory, size, dtype):
     if (dev.platform.name == "Portable Computing Language"
             and dtype == np.float64
             and get_pocl_version(dev.platform) < (1, 0)):
-        pytest.xfail("Double precision bitonic sort doesn't work on POCL < 1.0")
+        pytest.xfail("Double precision bitonic sort doesn't work on PoCL < 1.0")
 
     if dtype == np.float64 and not has_double_support(dev):
         from pytest import skip
@@ -1117,22 +1117,22 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
     device = queue.device
     if device.platform.vendor == "The pocl project" \
             and device.type & cl.device_type.GPU:
-        pytest.xfail("bitonic argsort fails on POCL + Nvidia,"
-                "at least the K40, as of pocl 1.6, 2021-01-20")
+        pytest.xfail("bitonic argsort fails on PoCL + Nvidia,"
+                "at least the K40, as of PoCL 1.6, 2021-01-20")
     # Requires https://github.com/intel/llvm/releases/tag/2022-WW50 or newer to pass
     # on Intel CL.
 
     dev = ctx.devices[0]
     if (dev.platform.name == "Portable Computing Language"
             and sys.platform == "darwin"):
-        pytest.xfail("Bitonic sort crashes on Apple POCL")
+        pytest.xfail("Bitonic sort crashes on Apple PoCL")
     if (dev.platform.name == "Apple" and dev.type & cl.device_type.CPU):
         pytest.xfail("Bitonic sort won't work on Apple CPU: no workgroup "
             "parallelism")
     if (dev.platform.name == "Portable Computing Language"
             and dtype == np.float64
             and get_pocl_version(dev.platform) < (1, 0)):
-        pytest.xfail("Double precision bitonic sort doesn't work on POCL < 1.0")
+        pytest.xfail("Double precision bitonic sort doesn't work on PoCL < 1.0")
     if (dev.platform.name == "Intel(R) OpenCL" and size == 0):
         pytest.xfail("size-0 arange fails on Intel CL")
 
@@ -1149,7 +1149,7 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
     sorterm = BitonicSort(ctx)
 
     ms = m.copy()
-    # enqueue_marker crashes under CL 1.1 pocl if there is anything to wait for
+    # enqueue_marker crashes under CL 1.1 PoCL if there is anything to wait for
     # (no clEnqueueWaitForEvents) https://github.com/inducer/pyopencl/pull/237
     if (dev.platform.name == "Portable Computing Language"
             and cl.get_cl_header_version() < (1, 2)):

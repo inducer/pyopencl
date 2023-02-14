@@ -309,13 +309,13 @@ def _generate_enqueue_and_set_args_module(function_name,
 # {{{ Helper functions related to argument sizes and device limits
 
 def _get_max_parameter_size(dev):
-    """Return the device's maximum parameter size adjusted for pocl."""
+    """Return the device's maximum parameter size adjusted for PoCL."""
     from pyopencl.characterize import get_pocl_version
 
     dev_limit = dev.max_parameter_size
     pocl_version = get_pocl_version(dev.platform, fallback_value=(1, 8))
     if pocl_version is not None and pocl_version < (3, 0):
-        # Current pocl versions (as of 04/2022) have an incorrect parameter
+        # Current PoCL versions (as of 04/2022) have an incorrect parameter
         # size limit of 1024; see e.g. https://github.com/pocl/pocl/pull/1046
         if dev_limit == 1024:
             if dev.type & cl.device_type.CPU:

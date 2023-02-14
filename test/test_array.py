@@ -838,8 +838,8 @@ def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False
     if device.platform.vendor == "The pocl project" \
             and device.type & cl.device_type.GPU \
             and rng_class is RanluxGenerator:
-        pytest.xfail("ranlux test fails on POCL + Nvidia,"
-                "at least the Titan V, as of pocl 1.6, 2021-01-20")
+        pytest.xfail("ranlux test fails on PoCL + Nvidia,"
+                "at least the Titan V, as of PoCL 1.6, 2021-01-20")
 
     if device.platform.vendor == "Intel(R) Corporation" \
             and rng_class is RanluxGenerator:
@@ -905,8 +905,8 @@ def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
     if queue.device.platform.vendor == "The pocl project" \
             and queue.device.type & cl.device_type.GPU \
             and rng_class is RanluxGenerator:
-        pytest.xfail("ranlux test fails on POCL + Nvidia,"
-                "at least the Titan V, as of pocl 1.6, 2021-01-20")
+        pytest.xfail("ranlux test fails on PoCL + Nvidia,"
+                "at least the Titan V, as of PoCL 1.6, 2021-01-20")
 
     if rng_class is RanluxGenerator:
         gen = rng_class(queue, 5120)
@@ -1639,8 +1639,8 @@ def test_get_async(ctx_factory):
     device = queue.device
     if device.platform.vendor == "The pocl project" \
             and device.type & cl.device_type.GPU:
-        pytest.xfail("the async get test fails on POCL + Nvidia,"
-                "at least the K40, as of pocl 1.6, 2021-01-20")
+        pytest.xfail("the async get test fails on PoCL + Nvidia,"
+                "at least the K40, as of PoCL 1.6, 2021-01-20")
 
     rng = np.random.default_rng(seed=42)
     a = rng.random(10**6, dtype=np.float32)

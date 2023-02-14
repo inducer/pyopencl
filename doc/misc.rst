@@ -59,7 +59,7 @@ On Linux or macOS, type::
     conda install pocl
 
 to install a CPU-based OpenCL driver.
-On macOS, pocl can offer a marked robustness (and, sometimes, performance)
+On macOS, PoCL can offer a marked robustness (and, sometimes, performance)
 improvement over the OpenCL drivers built into the operating system.
 
 On Linux and Windows, you can use Intel's CPU OpenCL runtime::
@@ -163,7 +163,7 @@ You can also install the following CPU based OpenCL implementation using pip
 shipped as binary wheels. Note that pyopencl has to be installed using a wheel
 for pyopencl to recognize these wheels.
 
-To install pyopencl with pocl, a CPU based implementation do::
+To install pyopencl with PoCL, a CPU based implementation do::
 
     pip install pyopencl[pocl]
 
@@ -403,7 +403,7 @@ Version 2015.2
 * Rewrite of the wrapper layer to be based on CFFI
 * Pypy compatibility
 * Faster kernel invocation through Python launcher code generation
-* POCL compatibility
+* PoCL compatibility
 
 Version 2015.1
 --------------
