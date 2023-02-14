@@ -111,8 +111,9 @@ class CacheLockManager(CleanupBase):
 
                 if attempts % warn_attempts == 0:
                     from warnings import warn
-                    warn("could not obtain cache lock--delete '%s' if necessary"
-                            % self.lock_file)
+                    warn(
+                        f"Could not obtain cache lock--delete '{self.lock_file}' "
+                        "if necessary", stacklevel=2)
 
                 if attempts > exit_attempts:
                     raise RuntimeError("waited more than one minute "
@@ -300,8 +301,9 @@ def retrieve_from_cache(cache_dir, cache_key):
             except _InvalidInfoFile:
                 mod_cache_dir_m.reset()
                 from warnings import warn
-                warn("PyOpenCL encountered an invalid info file for cache key %s"
-                        % cache_key)
+                warn(
+                    "PyOpenCL encountered an invalid info file for "
+                    f"cache key '{cache_key}'", stacklevel=2)
                 return None
 
             # }}}
@@ -513,9 +515,10 @@ def create_built_program_from_source_cached(ctx, src, options_bytes, devices=Non
         if not build_program_failure:
             from warnings import warn
             from traceback import format_exc
-            warn("PyOpenCL compiler caching failed with an exception:\n"
-                    "[begin exception]\n%s[end exception]"
-                    % format_exc())
+            warn(
+                "PyOpenCL compiler caching failed with an exception:\n"
+                f"[begin exception]\n{format_exc()}[end exception]",
+                stacklevel=2)
 
         prg = _cl._Program(ctx, src)
         was_cached = False

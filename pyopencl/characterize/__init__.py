@@ -112,25 +112,25 @@ def simultaneous_work_items_on_local_access(dev):
         else:
             if nv_compute_cap >= (3, 0):
                 from warnings import warn
-                warn("wildly guessing conflicting local access size on '%s'"
-                        % dev,
-                        CLCharacterizationWarning)
+                warn(
+                    f"Wildly guessing conflicting local access size on '{dev}'",
+                    CLCharacterizationWarning, stacklevel=2)
 
             return 32
 
     if dev.type & cl.device_type.GPU:
         from warnings import warn
-        warn("wildly guessing conflicting local access size on '%s'"
-                % dev,
-                CLCharacterizationWarning)
+        warn(
+            f"Wildly guessing conflicting local access size on '{dev}'",
+            CLCharacterizationWarning, stacklevel=2)
         return 16
     elif dev.type & cl.device_type.CPU:
         return 1
     else:
         from warnings import warn
-        warn("wildly guessing conflicting local access size on '%s'"
-                % dev,
-                CLCharacterizationWarning)
+        warn(
+            f"Wildly guessing conflicting local access size on '{dev}'",
+            CLCharacterizationWarning, stacklevel=2)
         return 16
 
 
@@ -150,17 +150,17 @@ def local_memory_bank_count(dev):
         else:
             if nv_compute_cap >= (3, 0):
                 from warnings import warn
-                warn("wildly guessing local memory bank count on '%s'"
-                        % dev,
-                        CLCharacterizationWarning)
+                warn(
+                    f"Wildly guessing local memory bank count on '{dev}'",
+                    CLCharacterizationWarning, stacklevel=2)
 
             return 32
 
     if dev.type & cl.device_type.GPU:
         from warnings import warn
-        warn("wildly guessing local memory bank count on '%s'"
-                % dev,
-                CLCharacterizationWarning)
+        warn(
+            f"Wildly guessing local memory bank count on '{dev}'",
+            CLCharacterizationWarning, stacklevel=2)
         return 16
     elif dev.type & cl.device_type.CPU:
         if dev.local_mem_type == cl.device_local_mem_type.GLOBAL:
@@ -168,9 +168,9 @@ def local_memory_bank_count(dev):
                     "meaningless for cache-based lmem")
 
     from warnings import warn
-    warn("wildly guessing conflicting local access size on '%s'"
-            % dev,
-            CLCharacterizationWarning)
+    warn(
+        f"Wildly guessing conflicting local access size on '{dev}'",
+        CLCharacterizationWarning, stacklevel=2)
     return 16
 
 
@@ -198,9 +198,9 @@ def why_not_local_access_conflict_free(dev, itemsize,
     gran = local_memory_access_granularity(dev)
     if itemsize != gran:
         from warnings import warn
-        warn("local conflict info might be inaccurate "
-                "for itemsize != %d" % gran,
-                CLCharacterizationWarning)
+        warn(
+            f"Local conflict info might be inaccurate for itemsize != {gran}",
+            CLCharacterizationWarning, stacklevel=2)
 
     sim_wi = simultaneous_work_items_on_local_access(dev)
     bank_count = local_memory_bank_count(dev)
@@ -332,9 +332,9 @@ def get_pocl_version(
             r"^OpenCL [0-9.]+ [Pp]o[Cc][Ll] ([0-9]+)\.([0-9]+)", version)
 
     if ver_match is None:
-        msg = f"pocl version number did not have expected format: '{version}'"
         from warnings import warn
-        warn(msg)
+        warn(f"PoCL version number did not have expected format: '{version}'",
+             stacklevel=2)
         return fallback_value
     else:
         return (int(ver_match.group(1)), int(ver_match.group(2)))

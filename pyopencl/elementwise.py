@@ -249,7 +249,7 @@ class ElementwiseKernel:
                         "that do not have offset support enabled. This usage is "
                         "deprecated. Just pass with_offset=True to VectorArg, "
                         "everything should sort itself out automatically.",
-                        DeprecationWarning)
+                        DeprecationWarning, stacklevel=2)
 
         if not any(isinstance(arg, VectorArg) for arg in arg_descrs):
             raise RuntimeError(

@@ -211,7 +211,7 @@ class VecLookupWarner:
     def __getattr__(self, name):
         warn("pyopencl.array.vec is deprecated. "
              "Please use pyopencl.cltypes for OpenCL vector and scalar types",
-             DeprecationWarning, 2)
+             DeprecationWarning, stacklevel=2)
 
         if name == "types":
             name = "vec_types"
@@ -303,7 +303,7 @@ class DefaultAllocator(cl.tools.DeferredAllocator):
         warn("pyopencl.array.DefaultAllocator is deprecated. "
                 "It will be continue to exist throughout the 2013.x "
                 "versions of PyOpenCL.",
-                DeprecationWarning, 2)
+                DeprecationWarning, stacklevel=2)
         cl.tools.DeferredAllocator.__init__(self, *args, **kwargs)
 
 # }}}
@@ -916,7 +916,7 @@ class Array:
             warn("calling pyopencl.Array.get with 'async_=True' is deprecated. "
                     "Please use pyopencl.Array.get_async for asynchronous "
                     "device-to-host transfers",
-                    DeprecationWarning, 2)
+                    DeprecationWarning, stacklevel=2)
 
         ary, event1 = self._get(queue=queue, ary=ary, async_=async_, **kwargs)
 
@@ -983,8 +983,10 @@ class Array:
         if result[:5] == "array":
             result = f"cl.{type(self).__name__}" + result[5:]
         else:
-            warn(f"{type(result).__name__}.__repr__ was expected to return a "
-                     f"string starting with 'array', got '{result[:10]!r}'")
+            warn(
+                f"{type(result).__name__}.__repr__ was expected to return a "
+                f"string starting with 'array', got '{result[:10]!r}'",
+                stacklevel=2)
 
         return result
 
