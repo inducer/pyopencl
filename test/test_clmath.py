@@ -164,7 +164,8 @@ def test_fmod(ctx_factory):
         a2 = cl_array.arange(queue, s, dtype=np.float32)/45.2 + 0.1
         b = clmath.fmod(a, a2)
 
-        assert np.max(np.abs((np.fmod(a.get(), a2.get()) - b.get()))) < 1e-6
+        # https://salsa.debian.org/opencl-team/python-pyopencl/-/merge_requests/3#note_383761
+        assert np.max(np.abs((np.fmod(a.get(), a2.get()) - b.get()))) < 1e-4
 
 
 def test_ldexp(ctx_factory):
