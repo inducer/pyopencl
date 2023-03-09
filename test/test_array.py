@@ -2296,6 +2296,60 @@ def test_arrays_with_svm_allocators(ctx_factory, use_mempool):
 # }}}
 
 
+def test_logical_and_or(ctx_factory):
+    # NOTE: Copied over from pycuda/test/test_gpuarray.py
+    rng = np.random.default_rng(seed=0)
+    ctx = ctx_factory()
+    cq = cl.CommandQueue(ctx)
+
+    for op in ["logical_and", "logical_or"]:
+        x_np = rng.random((10, 4))
+        y_np = rng.random((10, 4))
+        zeros_np = np.zeros((10, 4))
+        ones_np = np.ones((10, 4))
+
+        x_cl = cl_array.to_device(cq, x_np)
+        y_cl = cl_array.to_device(cq, y_np)
+        zeros_cl = cl_array.zeros(cq, (10, 4), np.float64)
+        ones_cl = cl_array.zeros(cq, (10, 4), np.float64) + 1
+
+        np.testing.assert_array_equal(
+            getattr(cl_array, op)(x_cl, y_cl).get(),
+            getattr(np, op)(x_np, y_np))
+        np.testing.assert_array_equal(
+            getattr(cl_array, op)(x_cl, ones_cl).get(),
+            getattr(np, op)(x_np, ones_np))
+        np.testing.assert_array_equal(
+            getattr(cl_array, op)(x_cl, zeros_cl).get(),
+            getattr(np, op)(x_np, zeros_np))
+        np.testing.assert_array_equal(
+            getattr(cl_array, op)(x_cl, 1.0).get(),
+            getattr(np, op)(x_np, ones_np))
+        np.testing.assert_array_equal(
+            getattr(cl_array, op)(x_cl, 0.0).get(),
+            getattr(np, op)(x_np, 0.0))
+
+
+def test_logical_not(ctx_factory):
+    # NOTE: Copied over from pycuda/test/test_gpuarray.py
+    ctx = ctx_factory()
+    cq = cl.CommandQueue(ctx)
+
+    rng = np.random.default_rng(seed=0)
+    x_np = rng.random((10, 4))
+    x_cl = cl_array.to_device(cq, x_np)
+
+    np.testing.assert_array_equal(
+        cl_array.logical_not(x_cl).get(),
+        np.logical_not(x_np))
+    np.testing.assert_array_equal(
+        cl_array.logical_not(cl_array.zeros(cq, 10, np.float64)).get(),
+        np.logical_not(np.zeros(10)))
+    np.testing.assert_array_equal(
+        cl_array.logical_not((cl_array.zeros(cq, 10, np.float64) + 1)).get(),
+        np.logical_not(np.ones(10)))
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
