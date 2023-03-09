@@ -1151,6 +1151,16 @@ def get_if_positive_kernel(
             f"result[i] = crit[i] > 0 ? {then_} : {else_}",
             name="if_positive")
 
+
+@context_dependent_memoize
+def get_logical_not_kernel(context, in_dtype):
+    return get_elwise_kernel(context, [
+        VectorArg(np.int8, "z", with_offset=True),
+        VectorArg(in_dtype, "y", with_offset=True),
+        ],
+        "z[i] = (y[i] == 0)",
+        name="logical_not_kernel")
+
 # }}}
 
 # vim: fdm=marker

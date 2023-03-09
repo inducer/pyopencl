@@ -3131,6 +3131,93 @@ def minimum(a, b, out=None, queue=None):
 # }}}
 
 
+# {{{ logical ops
+
+def _logical_op(x1, x2, out, operator, queue=None):
+    # NOTE: Copied from pycuda.gpuarray
+    assert operator in ["&&", "||"]
+
+    if np.isscalar(x1) and np.isscalar(x2):
+        if out is None:
+            out = empty(queue, shape=(), dtype=np.int8)
+
+        if operator == "&&":
+            out[:] = np.logical_and(x1, x2)
+        else:
+            out[:] = np.logical_or(x1, x2)
+    elif np.isscalar(x1) or np.isscalar(x2):
+        scalar_arg, = [x for x in (x1, x2) if np.isscalar(x)]
+        ary_arg, = [x for x in (x1, x2) if not np.isscalar(x)]
+        queue = queue or ary_arg.queue
+        allocator = ary_arg.allocator
+
+        if not isinstance(ary_arg, Array):
+            raise ValueError("logical_and can take either scalar or Array"
+                             " as inputs")
+
+        out = out or ary_arg._new_like_me(dtype=np.int8)
+
+        assert out.shape == ary_arg.shape and out.dtype == np.int8
+
+        knl = elementwise.get_array_scalar_binop_kernel(
+            queue.context,
+            operator,
+            out.dtype,
+            ary_arg.dtype,
+            np.dtype(type(scalar_arg))
+        )
+        elwise_kernel_runner(lambda *args, **kwargs: knl)(out, ary_arg, scalar_arg)
+    else:
+        if not (isinstance(x1, Array) and isinstance(x2, Array)):
+            raise ValueError("logical_or/logical_and can take either scalar"
+                             " or Arrays as inputs")
+        if x1.shape != x2.shape:
+            raise NotImplementedError("Broadcasting not supported")
+
+        queue = queue or x1.queue or x2.queue
+        allocator = x1.allocator or x2.allocator
+
+        if out is None:
+            out = empty(queue, allocator=allocator,
+                        shape=x1.shape, dtype=np.int8)
+
+        assert out.shape == x1.shape and out.dtype == np.int8
+
+        knl = elementwise.get_array_binop_kernel(
+            queue.context,
+            operator,
+            out.dtype,
+            x1.dtype, x2.dtype)
+        elwise_kernel_runner(lambda *args, **kwargs: knl)(out, x1, x2)
+
+    return out
+
+
+def logical_and(x1, x2, /, out=None, queue=None):
+    return _logical_op(x1, x2, out, "&&", queue=queue)
+
+
+def logical_or(x1, x2, /, out=None, queue=None):
+    return _logical_op(x1, x2, out, "||", queue=queue)
+
+
+def logical_not(x, /, out=None, queue=None):
+    if np.isscalar(x):
+        out = out or empty(queue, shape=(), dtype=np.int8)
+        out[:] = np.logical_not(x)
+    else:
+        queue = queue or x.queue
+        out = out or empty(queue, shape=x.shape, dtype=np.int8,
+                           allocator=x.allocator)
+        knl = elementwise.get_logical_not_kernel(queue.context,
+                                                 x.dtype)
+        elwise_kernel_runner(lambda *args, **kwargs: knl)(out, x)
+
+    return out
+
+# }}}
+
+
 # {{{ reductions
 
 def sum(a, dtype=None, queue=None, slice=None, initial=np._NoValue):
