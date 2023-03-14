@@ -3194,14 +3194,23 @@ def _logical_op(x1, x2, out, operator, queue=None):
 
 
 def logical_and(x1, x2, /, out=None, queue=None):
+    """
+    Returns the element-wise logical AND of *x1* and *x2*.
+    """
     return _logical_op(x1, x2, out, "&&", queue=queue)
 
 
 def logical_or(x1, x2, /, out=None, queue=None):
+    """
+    Returns the element-wise logical OR of *x1* and *x2*.
+    """
     return _logical_op(x1, x2, out, "||", queue=queue)
 
 
 def logical_not(x, /, out=None, queue=None):
+    """
+    Returns the element-wise logical NOT of *x*.
+    """
     if np.isscalar(x):
         out = out or empty(queue, shape=(), dtype=np.int8)
         out[:] = np.logical_not(x)

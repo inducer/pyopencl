@@ -165,6 +165,13 @@ Conditionals
 .. autofunction:: maximum
 .. autofunction:: minimum
 
+Logical Operations
+^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: logical_and
+.. autofunction:: logical_or
+.. autofunction:: logical_not
+
 .. _reductions:
 
 Reductions
