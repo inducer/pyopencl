@@ -1,10 +1,12 @@
-import pyopencl as cl
 import numpy as np
 from imageio import imread, imsave
+
+import pyopencl as cl
 
 # Read in image
 img = imread("noisyImage.jpg").astype(np.float32)
 print(img.shape)
+
 img = np.mean(img, axis=2)
 print(img.shape)
 
@@ -93,4 +95,4 @@ result = np.empty_like(img)
 cl.enqueue_copy(queue, result, result_g)
 
 # Show the blurred image
-imsave("medianFilter-OpenCL.jpg", result)
+imsave("medianFilter-OpenCL.jpg", result, mode="RGB")
