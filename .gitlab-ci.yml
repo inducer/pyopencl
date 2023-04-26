@@ -71,28 +71,6 @@ Python 3 Nvidia K40:
     reports:
       junit: test/pytest.xml
 
-Python 3 AMD GPU:
-  allow_failure: true
-  script: |
-    export PYOPENCL_TEST=amd:gfx803
-    export EXTRA_INSTALL="pybind11 numpy mako"
-
-    # https://andreask.cs.illinois.edu/MachineShop/UserNotes
-    export OCL_ICD_VENDORS=/etc/OpenCLwithAMD/vendors
-
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
-    build_py_project_in_venv
-    test_py_project
-  tags:
-  - python3
-  - amd-fiji
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
 Python 3 POCL:
   script: |
     export PYOPENCL_TEST=portable:pthread
