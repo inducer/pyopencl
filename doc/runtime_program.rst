@@ -92,7 +92,7 @@ Program
     .. attribute:: kernel_name
 
         You may use ``program.kernel_name`` to obtain a :class:`Kernel`
-        objects from a program. Note that every lookup of this type
+        object from a program. Note that every lookup of this type
         produces a new kernel object, so that this **won't** work::
 
             prg.sum.set_args(a_g, b_g, res_g)
