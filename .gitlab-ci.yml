@@ -258,6 +258,7 @@ Documentation:
     . ci-support-v0
     build_py_project_in_venv
     build_docs
+    maybe_upload_docs
   tags:
   - linux
 
