@@ -7,6 +7,7 @@ include test/*.py
 include test/*.h
 include test/*.spv
 include examples/*.py
+include experiments/*.py
 include examples/*.ipynb
 include examples/noisyImage.jpg
 
