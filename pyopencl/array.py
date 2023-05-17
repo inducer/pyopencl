@@ -199,8 +199,13 @@ def _get_broadcasted_binary_op_result(obj1, obj2, cq,
         return obj1._new_like_me(dtype_getter(obj1, obj2, cq),
                                  cq)
     else:
-        raise NotImplementedError("Broadcasting binary operator with shapes:"
-                                  f" {obj1.shape}, {obj2.shape}.")
+        new_shape = np.broadcast_shapes(obj1.shape, obj2.shape)
+        arr = obj1._new_with_changes(data=None, offset=0,
+                                     shape=new_shape,
+                                     dtype=dtype_getter(obj1, obj2, cq),
+                                     queue=cq)
+
+        return arr
 
 # }}}
 
@@ -1008,7 +1013,8 @@ class Array:
         out_shape = out.shape
         assert (a_shape == b_shape == out_shape
                 or (a_shape == () and b_shape == out_shape)
-                or (b_shape == () and a_shape == out_shape))
+                or (b_shape == () and a_shape == out_shape)
+                or np.broadcast_shapes(a_shape, b_shape) == out_shape)
         return elementwise.get_axpbyz_kernel(
                 out.context, a.dtype, b.dtype, out.dtype,
                 x_is_scalar=(a_shape == ()),
@@ -1032,7 +1038,8 @@ class Array:
         out_shape = out.shape
         assert (a_shape == b_shape == out_shape
                 or (a_shape == () and b_shape == out_shape)
-                or (b_shape == () and a_shape == out_shape))
+                or (b_shape == () and a_shape == out_shape)
+                or np.broadcast_shapes(a_shape, b_shape) == out_shape)
         return elementwise.get_multiply_kernel(
                 a.context, a.dtype, b.dtype, out.dtype,
                 x_is_scalar=(a_shape == ()),
@@ -1053,7 +1060,8 @@ class Array:
         """Divides an array by another array."""
         assert (self.shape == other.shape == out.shape
                 or (self.shape == () and other.shape == out.shape)
-                or (other.shape == () and self.shape == out.shape))
+                or (other.shape == () and self.shape == out.shape)
+                or np.broadcast_shapes(self.shape, other.shape) == out.shape)
 
         return elementwise.get_divide_kernel(self.context,
                 self.dtype, other.dtype, out.dtype,
