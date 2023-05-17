@@ -44,7 +44,7 @@ def main(ctx, tmp_dir, cl_str, output=None, build_options=[]):
     elif platform.name == "Portable Computing Language":
         if device.name.startswith("NVIDIA"):
             supported_outputs = ["ptx", "sass"]
-        elif device.name.startswith("pthread-"):
+        elif device.name.startswith("pthread"):
             supported_outputs = ["asm"]
         else:
             raise NotImplementedError(f"Unknown pocl device '{device.name}'")
@@ -74,7 +74,7 @@ def main(ctx, tmp_dir, cl_str, output=None, build_options=[]):
         elif output == "asm" and platform.name == "Portable Computing Language":
             so = glob.glob(f"{tmp_dir}/**/*.so", recursive=True)[0]
             res = subprocess.check_output(["objdump", "-d", so]).decode("utf-8")
-        
+
         print(res)
 
 
