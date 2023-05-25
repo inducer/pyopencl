@@ -101,10 +101,12 @@ Program
         Instead, either use the (recommended, stateless) calling interface::
 
             sum_knl = prg.sum
+            sum_knl(queue, a_np.shape, None, a_g, b_g, res_g)    
+            
+        or the long, stateful way around, if you prefer::
+
             sum_knl.set_args(a_g, b_g, res_g)
             ev = cl.enqueue_nd_range_kernel(queue, sum_knl, a_np.shape, None)
-            # or:
-            sum_knl(queue, a_np.shape, None, a_g, b_g, res_g)    
 
         The following will also work, however note that a number of caches that
         are important for efficient kernel enqueue are attached to the :class:`Kernel`
