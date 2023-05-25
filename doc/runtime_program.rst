@@ -100,13 +100,15 @@ Program
 
         Instead, either use the (recommended, stateless) calling interface::
 
-            prg.sum(queue, prg.sum, a_np.shape, None)
+            prg.sum(queue, a_np.shape, None, a_g, b_g, res_g)
 
         or keep the kernel in a temporary variable::
 
             sum_knl = prg.sum
             sum_knl.set_args(a_g, b_g, res_g)
             ev = cl.enqueue_nd_range_kernel(queue, sum_knl, a_np.shape, None)
+            # or:
+            sum_knl(queue, a_np.shape, None, a_g, b_g, res_g)    
 
         Note that the :class:`Program` has to be built (see :meth:`build`) in
         order for this to work simply by attribute lookup.
