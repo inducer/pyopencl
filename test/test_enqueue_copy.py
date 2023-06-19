@@ -77,8 +77,8 @@ def test_enqueue_copy_rect_2d(ctx_factory, honor_skip=True):
     h_ary_in = rng.integers(0, 256, ary_in_shp, dtype=np.uint8)
 
     # Create device buffers
-    d_in_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY, size=np.product(buf_in_shp))
-    d_out_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY, size=np.product(buf_out_shp))
+    d_in_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY, size=np.prod(buf_in_shp))
+    d_out_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY, size=np.prod(buf_out_shp))
 
     # Copy sub-array (rectangular buffer) from host to device
     cl.enqueue_copy(
@@ -166,8 +166,8 @@ def test_enqueue_copy_rect_3d(ctx_factory, honor_skip=True):
     h_ary_in = rng.integers(0, 256, ary_in_shp, dtype=np.uint8)
 
     # Create device buffers
-    d_in_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY, size=np.product(buf_in_shp))
-    d_out_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY, size=np.product(buf_out_shp))
+    d_in_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY, size=np.prod(buf_in_shp))
+    d_out_buf = cl.Buffer(ctx, cl.mem_flags.READ_ONLY, size=np.prod(buf_out_shp))
 
     # Copy sub-array (rectangular buffer) from host to device
     cl.enqueue_copy(
