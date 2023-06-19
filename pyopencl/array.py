@@ -132,18 +132,18 @@ def _get_common_dtype(obj1, obj2, queue):
         result = (obj1 + obj2).dtype
     else:
         array_types = []
-        scalar_types = []
+        scalars = []
 
         if o1_is_array:
             array_types.append(o1_dtype)
         else:
-            scalar_types.append(o1_dtype)
+            scalars.append(obj1)
         if o2_is_array:
             array_types.append(o2_dtype)
         else:
-            scalar_types.append(o2_dtype)
+            scalars.append(obj2)
 
-        result = np.find_common_type(array_types, scalar_types)
+        result = np.result_type(*array_types, *scalars)
 
     if not allow_double:
         if result == np.float64:
@@ -2803,7 +2803,7 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
     # }}}
 
     shape = tuple(shape)
-    dtype = np.find_common_type([ary.dtype for ary in arrays], [])
+    dtype = np.result_type(*[ary.dtype for ary in arrays])
 
     if __debug__:
         if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
