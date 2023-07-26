@@ -288,7 +288,7 @@ Downstream:
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
 
-    export TEST_ENV_ROOT="$(pwd)/$DOWNSTREAM_PROJECT/.miniforge3/envs/testing"
+    export TEST_ENV_ROOT="$(pwd)/$DOWNSTREAM_PROJECT/.conda-root/envs/testing"
     ./configure.py --cl-inc-dir="$TEST_ENV_ROOT/include" --cl-lib-dir="$TEST_ENV_ROOT/lib"
     git add -f siteconf.py
 
