@@ -68,3 +68,6 @@ cffi_build.py
 .idea
 
 wheelhouse
+
+memray-*.bin
+memray-*.html
