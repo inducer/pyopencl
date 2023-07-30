@@ -757,7 +757,7 @@ class DtypedArgument(Argument):
                 self.dtype)
 
     def __eq__(self, other: Any) -> bool:
-        return (type(self) == type(other)
+        return (type(self) is type(other)
                 and self.dtype == other.dtype
                 and self.name == other.name)
 
@@ -812,7 +812,7 @@ class OtherArg(Argument):
         return self.decl
 
     def __eq__(self, other) -> bool:
-        return (type(self) == type(other)
+        return (type(self) is type(other)
                 and self.decl == other.decl
                 and self.name == other.name)
 
