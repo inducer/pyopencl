@@ -2574,6 +2574,47 @@ namespace pyopencl
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
+#ifdef CL_DEVICE_P2P_DEVICES_AMD
+  inline
+  event *enqueue_copy_buffer_p2p_amd(
+      platform &plat,
+      command_queue &cq,
+      memory_object_holder &src,
+      memory_object_holder &dst,
+      ptrdiff_t byte_count,
+      py::object py_wait_for)
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    if (byte_count < 0)
+    {
+      size_t byte_count_src = 0;
+      size_t byte_count_dst = 0;
+      PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+          (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_src, 0));
+      PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+          (dst.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_dst, 0));
+      byte_count = std::min(byte_count_src, byte_count_dst);
+    }
+
+    clEnqueueCopyBufferP2PAMD_fn fn = (clEnqueueCopyBufferP2PAMD_fn)clGetExtensionFunctionAddressForPlatform(plat.data(), "clEnqueueCopyBufferP2PAMD");
+
+    cl_event evt;
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(fn, (
+        cq.data(),
+        src.data(), dst.data(),
+        0, 0,
+        byte_count,
+        PYOPENCL_WAITLIST_ARGS,
+        &evt
+        ))
+      );
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+#endif
+
   // }}}
 
   // {{{ rectangular transfers
