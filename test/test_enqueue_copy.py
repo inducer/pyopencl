@@ -213,6 +213,49 @@ def test_enqueue_copy_rect_3d(ctx_factory, honor_skip=True):
     assert np.array_equal(h_ary_in[ary_in_slice], h_ary_out[ary_out_slice])
 
 
+def test_enqueue_copy_buffer_p2p_amd(honor_skip=True):
+    platform = cl.get_platforms()[0]
+    if honor_skip and platform.vendor != "Advanced Micro Devices, Inc.":
+        pytest.skip("AMD-specific test")
+
+    devices = platform.get_devices()
+    if len(devices) < 2:
+        pytest.skip("Need at least two devices")
+
+    ctx1 = cl.Context([devices[0]])
+    ctx2 = cl.Context([devices[1]])
+
+    queue1 = cl.CommandQueue(ctx1)
+    queue2 = cl.CommandQueue(ctx2)
+
+    ary_shp = 256, 128, 32  # array shape
+
+    # Create host array of random values.
+    rng = np.random.default_rng(seed=42)
+    h_ary = rng.integers(0, 256, ary_shp, dtype=np.uint8)
+
+    # Create device buffers
+    d_buf1 = cl.Buffer(ctx1, cl.mem_flags.READ_WRITE, size=np.prod(ary_shp))
+    d_buf2 = cl.Buffer(ctx2, cl.mem_flags.READ_WRITE, size=np.prod(ary_shp))
+
+    # Copy array from host to device
+    cl.enqueue_copy(queue1, d_buf1, h_ary)
+
+    # Copy array from device to device
+    cl.enqueue_copy_buffer_p2p_amd(platform, queue1, d_buf1, d_buf2, np.prod(ary_shp))
+    queue1.finish()
+
+    # Create zero-initialised array to receive array from device
+    h_ary_out = np.zeros(ary_shp, dtype=h_ary.dtype)
+
+    # Copy array from device to host
+    cl.enqueue_copy(queue2, h_ary_out, d_buf2)
+    queue2.finish()
+
+    # Check that the array copied to device is the same as the array received from device.
+    assert np.array_equal(h_ary, h_ary_out)
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
