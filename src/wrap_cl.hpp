@@ -2581,12 +2581,13 @@ namespace pyopencl
       command_queue &cq,
       memory_object_holder &src,
       memory_object_holder &dst,
-      ptrdiff_t byte_count,
+      py::object py_byte_count,
       py::object py_wait_for)
   {
     PYOPENCL_PARSE_WAIT_FOR;
 
-    if (byte_count < 0)
+    ptrdiff_t byte_count = 0;
+    if (py_byte_count.ptr() == Py_None)
     {
       size_t byte_count_src = 0;
       size_t byte_count_dst = 0;
@@ -2596,8 +2597,15 @@ namespace pyopencl
           (dst.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_dst, 0));
       byte_count = std::min(byte_count_src, byte_count_dst);
     }
+    else
+    {
+      byte_count = py::cast<ptrdiff_t>(py_byte_count);
+    }
 
     clEnqueueCopyBufferP2PAMD_fn fn = (clEnqueueCopyBufferP2PAMD_fn)clGetExtensionFunctionAddressForPlatform(plat.data(), "clEnqueueCopyBufferP2PAMD");
+    if (!fn)
+      throw pyopencl::error("clGetExtensionFunctionAddressForPlatform", CL_INVALID_VALUE,
+          "clEnqueueCopyBufferP2PAMD is not available");
 
     cl_event evt;
     PYOPENCL_RETRY_IF_MEM_ERROR(

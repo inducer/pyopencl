@@ -315,7 +315,7 @@ void pyopencl_expose_part_1(py::module_ &m)
       py::arg("queue"),
       py::arg("src"),
       py::arg("dst"),
-      py::arg("byte_count")=-1,
+      py::arg("byte_count").none(true)=py::none(),
       py::arg("wait_for").none(true)=py::none()
       );
 #endif
