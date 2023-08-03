@@ -242,7 +242,13 @@ def test_enqueue_copy_buffer_p2p_amd(honor_skip=True):
     cl.enqueue_copy(queue1, d_buf1, h_ary)
 
     # Copy array from device to device
-    cl.enqueue_copy_buffer_p2p_amd(platform, queue1, d_buf1, d_buf2, np.prod(ary_shp))
+    cl.enqueue_copy_buffer_p2p_amd(
+        platform,
+        queue1,
+        d_buf1,
+        d_buf2,
+        np.prod(ary_shp)
+    )
     queue1.finish()
 
     # Create zero-initialised array to receive array from device
@@ -252,7 +258,7 @@ def test_enqueue_copy_buffer_p2p_amd(honor_skip=True):
     cl.enqueue_copy(queue2, h_ary_out, d_buf2)
     queue2.finish()
 
-    # Check that the array copied to device is the same as the array received from device.
+    # Check that the arrays are the same
     assert np.array_equal(h_ary, h_ary_out)
 
 
