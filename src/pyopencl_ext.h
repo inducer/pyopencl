@@ -40,7 +40,7 @@ typedef CL_API_ENTRY cl_int
                                              size_t /*cb*/,
                                              cl_uint /*num_events_in_wait_list*/,
                                              const cl_event* /*event_wait_list*/,
-                                             cl_event* /*event*/) CL_EXT_SUFFIX__VERSION_1_2;
+                                             cl_event* /*event*/);
 #endif
 
 /* {{{ these NV defines are often missing from the system headers */
