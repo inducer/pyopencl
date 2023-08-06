@@ -390,7 +390,7 @@ Transfers
 
     Only available on AMD platforms.
 
-    .. versionadded:: 2023.8
+    .. versionadded:: 2023.1.2
 
 Mapping Memory into Host Address Space
 --------------------------------------
