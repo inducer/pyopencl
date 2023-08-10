@@ -1,6 +1,12 @@
 [build-system]
 # Minimum requirements for the build system to execute.
-requires = ["setuptools>=42.0.0", "wheel>=0.34.2", "oldest-supported-numpy", "pybind11>=2.5.0"]  # PEP 508 specifications.
+requires = [
+        "setuptools>=42.0.0",
+        "wheel>=0.34.2",
+        "numpy;python_version >= '3.9' and platform_python_implementation == 'PyPy'",
+        "oldest-supported-numpy;python_version < '3.9' or platform_python_implementation != 'PyPy'",
+        "pybind11>=2.5.0"
+        ]
 build-backend = "setuptools.build_meta"
 
 
