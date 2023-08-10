@@ -2574,6 +2574,55 @@ namespace pyopencl
     PYOPENCL_RETURN_NEW_EVENT(evt);
   }
 
+#ifdef CL_DEVICE_P2P_DEVICES_AMD
+  inline
+  event *enqueue_copy_buffer_p2p_amd(
+      platform &plat,
+      command_queue &cq,
+      memory_object_holder &src,
+      memory_object_holder &dst,
+      py::object py_byte_count,
+      py::object py_wait_for)
+  {
+    PYOPENCL_PARSE_WAIT_FOR;
+
+    ptrdiff_t byte_count = 0;
+    if (py_byte_count.ptr() == Py_None)
+    {
+      size_t byte_count_src = 0;
+      size_t byte_count_dst = 0;
+      PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+          (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_src, 0));
+      PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+          (dst.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_dst, 0));
+      byte_count = std::min(byte_count_src, byte_count_dst);
+    }
+    else
+    {
+      byte_count = py::cast<ptrdiff_t>(py_byte_count);
+    }
+
+    clEnqueueCopyBufferP2PAMD_fn fn = (clEnqueueCopyBufferP2PAMD_fn)clGetExtensionFunctionAddressForPlatform(plat.data(), "clEnqueueCopyBufferP2PAMD");
+    if (!fn)
+      throw pyopencl::error("clGetExtensionFunctionAddressForPlatform", CL_INVALID_VALUE,
+          "clEnqueueCopyBufferP2PAMD is not available");
+
+    cl_event evt;
+    PYOPENCL_RETRY_IF_MEM_ERROR(
+      PYOPENCL_CALL_GUARDED(fn, (
+        cq.data(),
+        src.data(), dst.data(),
+        0, 0,
+        byte_count,
+        PYOPENCL_WAITLIST_ARGS,
+        &evt
+        ))
+      );
+
+    PYOPENCL_RETURN_NEW_EVENT(evt);
+  }
+#endif
+
   // }}}
 
   // {{{ rectangular transfers

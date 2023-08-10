@@ -170,6 +170,7 @@ from pyopencl._cl import (  # noqa: F401
 
 try:
     from pyopencl._cl import DeviceTopologyAmd  # noqa: F401
+    from pyopencl._cl import enqueue_copy_buffer_p2p_amd  # noqa: F401
 except ImportError:
     pass
 

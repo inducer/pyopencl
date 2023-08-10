@@ -309,6 +309,17 @@ void pyopencl_expose_part_1(py::module_ &m)
       py::arg("wait_for").none(true)=py::none()
       );
 
+#ifdef CL_DEVICE_P2P_DEVICES_AMD
+  m.def("enqueue_copy_buffer_p2p_amd", enqueue_copy_buffer_p2p_amd,
+      py::arg("platform"),
+      py::arg("queue"),
+      py::arg("src"),
+      py::arg("dst"),
+      py::arg("byte_count").none(true)=py::none(),
+      py::arg("wait_for").none(true)=py::none()
+      );
+#endif
+
   // }}}
 
   // {{{ rectangular

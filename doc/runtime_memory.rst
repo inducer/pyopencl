@@ -373,6 +373,25 @@ Transfers
 
 .. autofunction:: enqueue_fill(queue, dest, src, **kwargs)
 
+.. function:: enqueue_copy_buffer_p2p_amd(platform, queue, src, dest, size=None, wait_for=None)
+
+    AMD extension to perform a peer-to-peer copy between two buffers on two different devices.
+    The two devices must be in different contexts. The queue must be where the source
+    buffer is located.
+
+    :arg platform: a :class:`Platform` instance
+    :arg queue: a :class:`CommandQueue` instance
+    :arg src: a :class:`Buffer` instance
+    :arg dest: a :class:`Buffer` instance
+
+    :param size: the number of bytes to copy. If *None*, the minimum of the sizes of the two buffers is used.
+
+    |std-enqueue-blurb|
+
+    Only available on AMD platforms.
+
+    .. versionadded:: 2023.1.2
+
 Mapping Memory into Host Address Space
 --------------------------------------
 
