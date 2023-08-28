@@ -50,6 +50,7 @@ def get_numpy_incpath():
         raise RuntimeError("origin of numpy package not found")
 
     pathname = basename(origin)
+    print("NUMPYPATH", pathname)
     return join(pathname, "core", "include")
 
 
