@@ -43,10 +43,13 @@ def setup(*args, **kwargs):
 
 
 def get_numpy_incpath():
-    from imp import find_module
-    # avoid actually importing numpy, it screws up distutils
-    file, pathname, descr = find_module("numpy")
-    from os.path import join
+    from os.path import join, basename
+    from importlib.util import find_spec
+    origin = find_spec("numpy").origin
+    if origin is None:
+        raise RuntimeError("origin of numpy package not found")
+
+    pathname = basename(origin)
     return join(pathname, "core", "include")
 
 
@@ -937,7 +940,7 @@ def has_flag(compiler, flagname):
 def cpp_flag(compiler):
     """Return the -std=c++[11/14] compiler flag.
 
-    The c++14 is preferred over c++11 (when it is available).
+    C++14 is preferred over C++11 (when it is available).
     """
     if has_flag(compiler, "-std=gnu++14"):
         return "-std=gnu++14"
