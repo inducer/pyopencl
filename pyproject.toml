@@ -14,14 +14,16 @@ build-backend = "setuptools.build_meta"
 test-command = "pytest {project}/test"
 test-extras = ["test"]
 
-# Skipping 3.12 for now because of
-# https://github.com/numpy/numpy/issues/22623
+# Skipping pypy 3.10 because there's no numpy wheel
 [tool.cibuildwheel.linux]
-skip = ["pp37*", "cp36-*", "cp37-*", "cp312-*"]
+skip = ["pp37*", "cp36-*", "cp37-*"]
 test-command = ""
 before-all = [
     "yum install -y git openssl-devel ruby",
     "bash {package}/scripts/build-ocl.sh",
+]
+before-build = [
+    "pip install numpy -Csetup-args=-Dallow-noblas=true",
 ]
 repair-wheel-command = "auditwheel repair -w {dest_dir} --lib-sdir=/.libs {wheel}"
 
