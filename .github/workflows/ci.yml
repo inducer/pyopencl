@@ -24,7 +24,6 @@ jobs:
             run: |
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                build_py_project_in_conda_env
                 install_and_run_flake8 "$(get_proj_name)" examples/*.py test/*.py
 
     pylint:
