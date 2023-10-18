@@ -750,7 +750,7 @@ void pyopencl_expose_constants(py::module_ &m)
     ADD_ATTR( , UNSIGNED_INT32);
     ADD_ATTR( , HALF_FLOAT);
     ADD_ATTR( , FLOAT);
-#if PYOPENCL_CL_VERSION >= 0x1020
+#if PYOPENCL_CL_VERSION >= 0x1020 && defined(cl_khr_gl_sharing)
     ADD_ATTR( , UNORM_INT24);
 #endif
 #if PYOPENCL_CL_VERSION >= 0x2010
