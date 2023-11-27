@@ -15,7 +15,7 @@ test-command = "pytest {project}/test"
 test-extras = ["test"]
 
 [tool.cibuildwheel.linux]
-skip = ["pp37*", "cp36-*", "cp37-*"]
+skip = ["pp37*", "cp36-*", "cp37-*", "*_i686"]
 test-command = ""
 before-all = [
     "yum install -y git openssl-devel ruby",
