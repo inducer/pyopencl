@@ -18,11 +18,9 @@ test-extras = ["test"]
 skip = ["pp37*", "cp36-*", "cp37-*"]
 test-command = ""
 before-all = [
-    "yum install -y git openssl-devel ruby",
+    "sudo yum install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm",
+    "sudo yum install -y git openssl-devel ruby blas-devel lapack-devel openblas-devel",
     "bash {package}/scripts/build-ocl.sh",
-]
-before-build = [
-    "pip install numpy -Csetup-args=-Dallow-noblas=true",
 ]
 repair-wheel-command = "auditwheel repair -w {dest_dir} --lib-sdir=/.libs {wheel}"
 
