@@ -225,11 +225,6 @@ def main():
                     ),
                 ],
 
-            setup_requires=[
-                "pybind11>=2.5.0",
-                "numpy",
-                ],
-
             python_requires="~=3.8",
             install_requires=[
                 "numpy",
