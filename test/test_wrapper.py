@@ -1303,6 +1303,11 @@ def test_compile_link(ctx_factory):
     if platform.name == "Apple":
         pytest.skip("Apple doesn't like our compile/link test")
 
+    if platform.name.lower().startswith("nvidia"):
+        pytest.skip("Nvidia seems to no longer support compile/link "
+                    "as of driver 525.147.05, results in BUILD_PROGRAM_FAILURE "
+                    "during clCompileProgram")
+
     queue = cl.CommandQueue(ctx)
     vsink_prg = cl.Program(ctx, """//CL//
         void value_sink(float x)
