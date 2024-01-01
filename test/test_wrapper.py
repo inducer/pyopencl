@@ -1304,7 +1304,7 @@ def test_compile_link(ctx_factory):
         pytest.skip("Apple doesn't like our compile/link test")
 
     if platform.name.lower().startswith("nvidia"):
-        pytest.skip("Nvidia seems to no longer support compile/link "
+        pytest.xfail("Nvidia seems to no longer support compile/link "
                     "as of driver 525.147.05, results in BUILD_PROGRAM_FAILURE "
                     "during clCompileProgram")
 
