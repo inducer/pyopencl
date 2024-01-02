@@ -1303,10 +1303,8 @@ def test_compile_link(ctx_factory):
     if platform.name == "Apple":
         pytest.skip("Apple doesn't like our compile/link test")
 
-    if platform.name.lower().startswith("nvidia"):
-        pytest.xfail("Nvidia seems to no longer support compile/link "
-                    "as of driver 525.147.05, results in BUILD_PROGRAM_FAILURE "
-                    "during clCompileProgram")
+    # as of pocl 5.0
+    _xfail_if_pocl_gpu(ctx.devices[0], "compile/link")
 
     queue = cl.CommandQueue(ctx)
     vsink_prg = cl.Program(ctx, """//CL//
