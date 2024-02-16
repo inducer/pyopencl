@@ -71,3 +71,4 @@ version: 2022.1.3
 doi: 10.5281/zenodo.6533956
 date-released: 2022-03-10
 url: "https://github.com/inducer/pyopencl"
+license: MIT
