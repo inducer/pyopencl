@@ -14,9 +14,9 @@ jobs:
         name: Flake8
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -
-            uses: actions/setup-python@v4
+            uses: actions/setup-python@v5
             with:
                 # matches compat target in setup.py
                 python-version: '3.8'
@@ -30,7 +30,7 @@ jobs:
         name: Pylint
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -   name: "Main Script"
             run: |
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
@@ -47,7 +47,7 @@ jobs:
         name: Mypy
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -   name: "Main Script"
             run: |
                 curl -L -O https://tiker.net/ci-support-v0
@@ -61,7 +61,7 @@ jobs:
         name: Pytest Linux POCL
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -   name: "Main Script"
             run: |
                 curl -L -O https://tiker.net/ci-support-v0
@@ -74,7 +74,7 @@ jobs:
         name: Pytest Linux Intel CL
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -   name: "Main Script"
             run: |
                 export CONDA_ENVIRONMENT=.test-conda-env-py3.yml
@@ -90,7 +90,7 @@ jobs:
         name: Pytest Windows Intel CL
         runs-on: windows-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -   name: "Main Script"
             shell: bash
             run: |
@@ -112,7 +112,7 @@ jobs:
         name: Pytest Mac POCL
         runs-on: macos-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -   name: "Main Script"
             run: |
                 export CC=gcc
@@ -129,9 +129,9 @@ jobs:
         name: Documentation
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -
-            uses: actions/setup-python@v4
+            uses: actions/setup-python@v5
             with:
                 python-version: '3.x'
         -   name: "Main Script"
@@ -148,7 +148,7 @@ jobs:
         name: Examples
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -   name: "Main Script"
             run: |
                 EXTRA_INSTALL="pillow cgen mako imageio"
@@ -166,7 +166,7 @@ jobs:
         name: Tests for downstream project ${{ matrix.downstream_project }}
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v3
+        -   uses: actions/checkout@v4
         -   name: "Main Script"
             env:
                 DOWNSTREAM_PROJECT: ${{ matrix.downstream_project }}
