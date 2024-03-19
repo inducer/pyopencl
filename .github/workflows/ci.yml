@@ -119,6 +119,10 @@ jobs:
                 CONDA_ENVIRONMENT=.test-conda-env.yml
                 grep -v ocl-icd .test-conda-env-py3.yml > $CONDA_ENVIRONMENT
 
+                # FIXME: workaround until we address
+                # https://github.com/conda-forge/pocl-feedstock/pull/96
+                echo "- ld64=609" >> $CONDA_ENVIRONMENT
+
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
                 ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
