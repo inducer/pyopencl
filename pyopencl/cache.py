@@ -348,20 +348,20 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
         except ImportError:
             import appdirs
 
-        cache_dir = join(appdirs.user_cache_dir("pyopencl", "pyopencl"),
+        # Determine the cache directory in the same way as pytools.PersistentDict,
+        # which PyOpenCL uses for invoker caches.
+        if sys.platform == "darwin" and os.getenv("XDG_CACHE_HOME") is not None:
+            # appdirs and platformdirs do not handle XDG_CACHE_HOME on macOS
+            # https://github.com/platformdirs/platformdirs/issues/269
+            cache_dir = join(os.getenv("XDG_CACHE_HOME"), "pyopencl")
+        else:
+            cache_dir = appdirs.user_cache_dir("pyopencl", "pyopencl")
+
+        cache_dir = join(cache_dir,
                 "pyopencl-compiler-cache-v2-py{}".format(
                     ".".join(str(i) for i in sys.version_info)))
 
-    # {{{ ensure cache directory exists
-
-    try:
-        os.makedirs(cache_dir)
-    except OSError as e:
-        from errno import EEXIST
-        if e.errno != EEXIST:
-            raise
-
-    # }}}
+    os.makedirs(cache_dir, exist_ok=True)
 
     if devices is None:
         devices = ctx.devices
