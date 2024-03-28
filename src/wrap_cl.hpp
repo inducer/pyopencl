@@ -139,6 +139,10 @@
 
 // {{{ macros and typedefs for wrappers
 
+#if NPY_ABI_VERSION < 0x02000000
+  #define PyDataType_ELSIZE(descr) ((descr)->elsize)
+#endif
+
 #if PY_VERSION_HEX >= 0x02050000
   typedef Py_ssize_t PYOPENCL_BUFFER_SIZE_T;
 #else
@@ -3477,11 +3481,12 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
     PYOPENCL_PARSE_NUMPY_ARRAY_SPEC;
 
-    npy_uintp size_in_bytes = tp_descr->elsize;
+    npy_uintp size_in_bytes = PyDataType_ELSIZE(tp_descr);
     for (npy_intp sdim: shape)
       size_in_bytes *= sdim;
 
     py::object result;
+    PyArrayObject *result_arr;
 
     cl_event evt;
     cl_int status_code;
@@ -3506,6 +3511,7 @@ namespace pyopencl
     event evt_handle(evt, false);
 
     std::unique_ptr<memory_map> map;
+
     try
     {
       result = py::object(py::reinterpret_steal<py::object>(PyArray_NewFromDescr(
@@ -3515,7 +3521,8 @@ namespace pyopencl
           strides.empty() ? nullptr : &strides.front(),
           mapped, ary_flags, /*obj*/nullptr)));
 
-      if (size_in_bytes != (npy_uintp) PyArray_NBYTES(result.ptr()))
+      result_arr = (PyArrayObject *) result.ptr();
+      if (size_in_bytes != (npy_uintp) PyArray_NBYTES(result_arr))
         throw pyopencl::error("enqueue_map_buffer", CL_INVALID_VALUE,
             "miscalculated numpy array size (not contiguous?)");
 
@@ -3529,7 +3536,7 @@ namespace pyopencl
     }
 
     py::object map_py(handle_from_new_ptr(map.release()));
-    PyArray_BASE(result.ptr()) = map_py.ptr();
+    PyArray_SetBaseObject(result_arr, map_py.ptr());
     Py_INCREF(map_py.ptr());
 
     return py::make_tuple(
@@ -3601,9 +3608,10 @@ namespace pyopencl
         shape.empty() ? nullptr : &shape.front(),
         strides.empty() ? nullptr : &strides.front(),
         mapped, ary_flags, /*obj*/nullptr));
+    PyArrayObject *result_arr = (PyArrayObject *) result.ptr();
 
     py::object map_py(handle_from_new_ptr(map.release()));
-    PyArray_BASE(result.ptr()) = map_py.ptr();
+    PyArray_SetBaseObject(result_arr, map_py.ptr());
     Py_INCREF(map_py.ptr());
 
     return py::make_tuple(
@@ -5762,13 +5770,13 @@ namespace pyopencl
         dims.push_back(py::cast<npy_intp>(it));
     }
 
-    NPY_ORDER order = PyArray_CORDER;
+    NPY_ORDER order = NPY_CORDER;
     PyArray_OrderConverter(order_py.ptr(), &order);
 
     int ary_flags = 0;
-    if (order == PyArray_FORTRANORDER)
+    if (order == NPY_FORTRANORDER)
       ary_flags |= NPY_FARRAY;
-    else if (order == PyArray_CORDER)
+    else if (order == NPY_CORDER)
       ary_flags |= NPY_CARRAY;
     else
       throw std::runtime_error("unrecognized order specifier");
@@ -5786,13 +5794,14 @@ namespace pyopencl
         &PyArray_Type, tp_descr,
         dims.size(), &dims.front(), /*strides*/ nullptr,
         host_ptr, ary_flags, /*obj*/nullptr));
+    PyArrayObject *result_arr = (PyArrayObject *) result.ptr();
 
-    if ((size_t) PyArray_NBYTES(result.ptr()) > mem_obj_size)
+    if ((size_t) PyArray_NBYTES(result_arr) > mem_obj_size)
       throw pyopencl::error("MemoryObject.get_host_array",
           CL_INVALID_VALUE,
           "Resulting array is larger than memory object.");
 
-    PyArray_BASE(result.ptr()) = mem_obj_py.ptr();
+    PyArray_SetBaseObject(result_arr, mem_obj_py.ptr());
     Py_INCREF(mem_obj_py.ptr());
 
     return result;
