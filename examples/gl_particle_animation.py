@@ -1,16 +1,23 @@
 # Visualization of particles with gravity
 # Source: http://enja.org/2010/08/27/adventures-in-opencl-part-2-particles-with-opengl/
 
-import pyopencl as cl  # OpenCL - GPU computing interface
+import sys
+
+import numpy as np
+
+from OpenGL import GL, GLU, GLUT
+from OpenGL.arrays import vbo
+from OpenGL.GL import (GL_ARRAY_BUFFER, GL_BLEND, GL_COLOR_ARRAY,
+                       GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT,
+                       GL_DYNAMIC_DRAW, GL_FLOAT, GL_MODELVIEW,
+                       GL_ONE_MINUS_SRC_ALPHA, GL_POINT_SMOOTH, GL_POINTS,
+                       GL_PROJECTION, GL_SRC_ALPHA, GL_VERTEX_ARRAY)
+from OpenGL.GLUT import GLUT_DEPTH, GLUT_DOUBLE, GLUT_RGBA
+
+import pyopencl as cl
+from pyopencl.tools import get_gl_sharing_context_properties
 
 mf = cl.mem_flags
-from pyopencl.tools import get_gl_sharing_context_properties
-from OpenGL.GL import *  # OpenGL - GPU rendering interface
-from OpenGL.GLU import *  # OpenGL tools (mipmaps, NURBS, perspective projection, shapes)
-from OpenGL.GLUT import *  # OpenGL tool to make a visualization window
-from OpenGL.arrays import vbo
-import numpy  # Number tools
-import sys  # System tools (path, modules, maxint)
 
 width = 800
 height = 600
@@ -24,39 +31,41 @@ initial_translate = {"x": 0.0, "y": 0.0, "z": -2.5}
 
 
 def glut_window():
-    glutInit(sys.argv)
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
-    glutInitWindowSize(width, height)
-    glutInitWindowPosition(0, 0)
-    window = glutCreateWindow("Particle Simulation")
+    GLUT.glutInit(sys.argv)
+    GLUT.glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
+    GLUT.glutInitWindowSize(width, height)
+    GLUT.glutInitWindowPosition(0, 0)
+    window = GLUT.glutCreateWindow("Particle Simulation")
 
-    glutDisplayFunc(on_display)  # Called by GLUT every frame
-    glutKeyboardFunc(on_key)
-    glutMouseFunc(on_click)
-    glutMotionFunc(on_mouse_move)
-    glutTimerFunc(10, on_timer, 10)  # Call draw every 30 ms
+    GLUT.glutDisplayFunc(on_display)  # Called by GLUT every frame
+    GLUT.glutKeyboardFunc(on_key)
+    GLUT.glutMouseFunc(on_click)
+    GLUT.glutMotionFunc(on_mouse_move)
+    GLUT.glutTimerFunc(10, on_timer, 10)  # Call draw every 30 ms
 
-    glViewport(0, 0, width, height)
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    gluPerspective(60.0, width / float(height), 0.1, 1000.0)
+    GL.glViewport(0, 0, width, height)
+    GL.glMatrixMode(GL_PROJECTION)
+    GL.glLoadIdentity()
+    GLU.gluPerspective(60.0, width / float(height), 0.1, 1000.0)
 
     return window
 
 
 def initial_buffers(num_particles):
-    np_position = numpy.ndarray((num_particles, 4), dtype=numpy.float32)
-    np_color = numpy.ndarray((num_particles, 4), dtype=numpy.float32)
-    np_velocity = numpy.ndarray((num_particles, 4), dtype=numpy.float32)
+    rng = np.random.default_rng()
 
-    np_position[:, 0] = numpy.sin(
-        numpy.arange(0.0, num_particles) * 2.001 * numpy.pi / num_particles
+    np_position = np.empty((num_particles, 4), dtype=np.float32)
+    np_color = np.empty((num_particles, 4), dtype=np.float32)
+    np_velocity = np.empty((num_particles, 4), dtype=np.float32)
+
+    np_position[:, 0] = np.sin(
+        np.arange(0.0, num_particles) * 2.001 * np.pi / num_particles
     )
-    np_position[:, 0] *= numpy.random.random_sample((num_particles,)) / 3.0 + 0.2
-    np_position[:, 1] = numpy.cos(
-        numpy.arange(0.0, num_particles) * 2.001 * numpy.pi / num_particles
+    np_position[:, 0] *= rng.integers(num_particles) / 3.0 + 0.2
+    np_position[:, 1] = np.cos(
+        np.arange(0.0, num_particles) * 2.001 * np.pi / num_particles
     )
-    np_position[:, 1] *= numpy.random.random_sample((num_particles,)) / 3.0 + 0.2
+    np_position[:, 1] *= rng.integers(num_particles) / 3.0 + 0.2
     np_position[:, 2] = 0.0
     np_position[:, 3] = 1.0
 
@@ -65,7 +74,7 @@ def initial_buffers(num_particles):
     np_velocity[:, 0] = np_position[:, 0] * 2.0
     np_velocity[:, 1] = np_position[:, 1] * 2.0
     np_velocity[:, 2] = 3.0
-    np_velocity[:, 3] = numpy.random.random_sample((num_particles,))
+    np_velocity[:, 3] = rng.integers(num_particles)
 
     gl_position = vbo.VBO(
         data=np_position, usage=GL_DYNAMIC_DRAW, target=GL_ARRAY_BUFFER
@@ -78,8 +87,8 @@ def initial_buffers(num_particles):
 
 
 def on_timer(t):
-    glutTimerFunc(t, on_timer, t)
-    glutPostRedisplay()
+    GLUT.glutTimerFunc(t, on_timer, t)
+    GLUT.glutPostRedisplay()
 
 
 def on_key(*args):
@@ -110,46 +119,46 @@ def on_display():
         cl_velocity,
         cl_start_position,
         cl_start_velocity,
-        numpy.float32(time_step),
+        np.float32(time_step),
     )
     program.particle_fountain(queue, (num_particles,), None, *(kernelargs))
     cl.enqueue_release_gl_objects(queue, [cl_gl_position, cl_gl_color])
     queue.finish()
-    glFlush()
+    GL.glFlush()
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
+    GL.glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    GL.glMatrixMode(GL_MODELVIEW)
+    GL.glLoadIdentity()
 
     # Handle mouse transformations
-    glTranslatef(initial_translate["x"], initial_translate["y"], initial_translate["z"])
-    glRotatef(rotate["x"], 1, 0, 0)
-    glRotatef(rotate["y"], 0, 1, 0)  # we switched around the axis so make this rotate_z
-    glTranslatef(translate["x"], translate["y"], translate["z"])
+    GL.glTranslatef(initial_translate["x"], initial_translate["y"], initial_translate["z"])
+    GL.glRotatef(rotate["x"], 1, 0, 0)
+    GL.glRotatef(rotate["y"], 0, 1, 0)  # we switched around the axis so make this rotate_z
+    GL.glTranslatef(translate["x"], translate["y"], translate["z"])
 
     # Render the particles
-    glEnable(GL_POINT_SMOOTH)
-    glPointSize(2)
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+    GL.glEnable(GL_POINT_SMOOTH)
+    GL.glPointSize(2)
+    GL.glEnable(GL_BLEND)
+    GL.glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
     # Set up the VBOs
     gl_color.bind()
-    glColorPointer(4, GL_FLOAT, 0, gl_color)
+    GL.glColorPointer(4, GL_FLOAT, 0, gl_color)
     gl_position.bind()
-    glVertexPointer(4, GL_FLOAT, 0, gl_position)
-    glEnableClientState(GL_VERTEX_ARRAY)
-    glEnableClientState(GL_COLOR_ARRAY)
+    GL.glVertexPointer(4, GL_FLOAT, 0, gl_position)
+    GL.glEnableClientState(GL_VERTEX_ARRAY)
+    GL.glEnableClientState(GL_COLOR_ARRAY)
 
     # Draw the VBOs
-    glDrawArrays(GL_POINTS, 0, num_particles)
+    GL.glDrawArrays(GL_POINTS, 0, num_particles)
 
-    glDisableClientState(GL_COLOR_ARRAY)
-    glDisableClientState(GL_VERTEX_ARRAY)
+    GL.glDisableClientState(GL_COLOR_ARRAY)
+    GL.glDisableClientState(GL_VERTEX_ARRAY)
 
-    glDisable(GL_BLEND)
+    GL.glDisable(GL_BLEND)
 
-    glutSwapBuffers()
+    GLUT.glutSwapBuffers()
 
 
 window = glut_window()
@@ -206,4 +215,4 @@ kernel = """__kernel void particle_fountain(__global float4* position,
 }"""
 program = cl.Program(context, kernel).build()
 
-glutMainLoop()
+GLUT.glutMainLoop()
