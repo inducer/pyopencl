@@ -1428,8 +1428,9 @@ def test_capture_call(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
-    a_np = np.random.rand(500).astype(np.float32)
-    b_np = np.random.rand(500).astype(np.float32)
+    rng = np.random.default_rng()
+    a_np = rng.random(500, dtype=np.float32)
+    b_np = rng.random(500, dtype=np.float32)
 
     ctx = cl.create_some_context()
     queue = cl.CommandQueue(ctx)

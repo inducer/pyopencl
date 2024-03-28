@@ -1,10 +1,12 @@
-import pyopencl as cl
-import pyopencl.array as cl_array
-import numpy
+import numpy as np
 import numpy.linalg as la
 
-a = numpy.random.rand(50000).astype(numpy.float32)
-b = numpy.random.rand(50000).astype(numpy.float32)
+import pyopencl as cl
+import pyopencl.array as cl_array
+
+rng = np.random.default_rng()
+a = rng.random(50000, dtype=np.float32)
+b = rng.random(50000, dtype=np.float32)
 
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
@@ -26,3 +28,4 @@ knl = prg.sum  # Use this Kernel object for repeated calls
 knl(queue, a.shape, None, a_dev.data, b_dev.data, dest_dev.data)
 
 print(la.norm((dest_dev - (a_dev+b_dev)).get()))
+assert np.allclose(dest_dev.get(), (a_dev + b_dev).get())

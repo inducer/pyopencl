@@ -1,13 +1,14 @@
-#!/usr/bin/env python
-
 import numpy as np
+
 import pyopencl as cl
 import pyopencl.array
 from pyopencl.elementwise import ElementwiseKernel
 
 n = 10
-a_np = np.random.randn(n).astype(np.float32)
-b_np = np.random.randn(n).astype(np.float32)
+
+rng = np.random.default_rng()
+a_np = rng.random(n, dtype=np.float32)
+b_np = rng.random(n, dtype=np.float32)
 
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
