@@ -138,7 +138,7 @@ def generate_specific_arg_handling_body(function_name, num_cl_args, arg_types, *
                 cl_arg_idx += 1
 
             if in_enqueue:
-                wait_for_parts .append(f"{arg_var}.events")
+                wait_for_parts.append(f"{arg_var}.write_events")
 
             continue
 
@@ -374,7 +374,7 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
 
 
 invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v41",
+        "pyopencl-invoker-cache-v42",
         key_builder=_NumpyTypesKeyBuilder(),
         in_mem_cache_size=0)
 
