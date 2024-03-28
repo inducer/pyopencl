@@ -683,7 +683,6 @@ def test_divide_inplace_scalar(ctx_factory):
     from itertools import product
 
     for dtype_a, dtype_s in product(dtypes, repeat=2):
-
         a = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]).astype(dtype_a)
         s = dtype_s(40)
         a_gpu = cl_array.to_device(queue, a)
@@ -785,15 +784,23 @@ def test_bitwise(ctx_factory):
 
             assert (res_dev.get() == res).all()
 
-            res_dev = op(a_dev, s)
-            res = op(a, s)
+            try:
+                res = op(a, s)
+            except OverflowError:
+                pass
+            else:
+                res_dev = op(a_dev, s)
 
-            assert (res_dev.get() == res).all()
+                assert (res_dev.get() == res).all()
 
-            res_dev = op(s, b_dev)
-            res = op(s, b)
+            try:
+                res = op(s, b)
+            except OverflowError:
+                pass
+            else:
+                res_dev = op(s, b_dev)
 
-            assert (res_dev.get() == res).all()
+                assert (res_dev.get() == res).all()
 
         for op in [o.iand, o.ior, o.ixor]:
             res_dev = a_dev.copy()
@@ -801,17 +808,25 @@ def test_bitwise(ctx_factory):
             assert op_res is res_dev
 
             res = a.copy()
-            op(res, b)
+            try:
+                op(res, b)
+            except OverflowError:
+                pass
+            else:
 
-            assert (res_dev.get() == res).all()
+                assert (res_dev.get() == res).all()
 
-            res_dev = a_dev.copy()
-            op_res = op(res_dev, s)
-            assert op_res is res_dev
             res = a.copy()
-            op(res, s)
+            try:
+                op(res, s)
+            except OverflowError:
+                pass
+            else:
+                res_dev = a_dev.copy()
+                op_res = op(res_dev, s)
+                assert op_res is res_dev
 
-            assert (res_dev.get() == res).all()
+                assert (res_dev.get() == res).all()
 
         # Test unary ~
         res_dev = ~a_dev

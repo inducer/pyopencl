@@ -132,13 +132,13 @@ namespace py = pybind11;
       COPY_PY_LIST(npy_intp, shape); \
     } \
     \
-    NPY_ORDER order = PyArray_CORDER; \
+    NPY_ORDER order = NPY_CORDER; \
     PyArray_OrderConverter(py_order.ptr(), &order); \
     \
     int ary_flags = 0; \
-    if (order == PyArray_FORTRANORDER) \
+    if (order == NPY_FORTRANORDER) \
       ary_flags |= NPY_FARRAY; \
-    else if (order == PyArray_CORDER) \
+    else if (order == NPY_CORDER) \
       ary_flags |= NPY_CARRAY; \
     else \
       throw std::runtime_error("unrecognized order specifier"); \
