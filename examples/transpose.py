@@ -1,10 +1,10 @@
 # Transposition of a matrix
 # originally for PyCUDA by Hendrik Riedmann <riedmann@dam.brown.edu>
 
-import pyopencl as cl
-import numpy
+import numpy as np
 import numpy.linalg as la
 
+import pyopencl as cl
 
 block_size = 16
 
@@ -40,8 +40,8 @@ class NaiveTranspose:
             (block_size, block_size),
             tgt,
             src,
-            numpy.uint32(w),
-            numpy.uint32(h),
+            np.uint32(w),
+            np.uint32(h),
         )
 
 
@@ -52,7 +52,7 @@ class SillyTranspose(NaiveTranspose):
         assert h % block_size == 0
 
         return self.kernel(
-            queue, (w, h), None, tgt, src, numpy.uint32(w), numpy.uint32(h)
+            queue, (w, h), None, tgt, src, np.uint32(w), np.uint32(h)
         )
 
 
@@ -108,8 +108,8 @@ class TransposeWithLocal:
             (block_size, block_size),
             tgt,
             src,
-            numpy.uint32(w),
-            numpy.uint32(h),
+            np.uint32(w),
+            np.uint32(h),
             cl.LocalMemory(4 * block_size * (block_size + 1)),
         )
 
@@ -121,7 +121,7 @@ def transpose_using_cl(ctx, queue, cpu_src, cls):
     cls(ctx)(queue, a_t_buf, a_buf, cpu_src.shape)
 
     w, h = cpu_src.shape
-    result = numpy.empty((h, w), dtype=cpu_src.dtype)
+    result = np.empty((h, w), dtype=cpu_src.dtype)
     cl.enqueue_copy(queue, result, a_t_buf).wait()
 
     a_buf.release()
@@ -140,11 +140,12 @@ def check_transpose():
 
         queue = cl.CommandQueue(ctx)
 
-        for i in numpy.arange(10, 13, 0.125):
+        for i in np.arange(10, 13, 0.125):
             size = int(((2 ** i) // 32) * 32)
             print(size)
 
-            source = numpy.random.rand(size, size).astype(numpy.float32)
+            rng = np.random.default_rng()
+            source = rng.random((size, size), dtype=np.float32)
             result = transpose_using_cl(ctx, queue, source, NaiveTranspose)
 
             err = source.T - result
@@ -163,8 +164,8 @@ def benchmark_transpose():
         ctx, properties=cl.command_queue_properties.PROFILING_ENABLE
     )
 
-    sizes = [int(((2 ** i) // 32) * 32) for i in numpy.arange(10, 13, 0.125)]
-    # for i in numpy.arange(10, 10.5, 0.125)]
+    sizes = [int(((2 ** i) // 32) * 32) for i in np.arange(10, 13, 0.125)]
+    # for i in np.arange(10, 10.5, 0.125)]
 
     mem_bandwidths = {}
 
@@ -175,8 +176,8 @@ def benchmark_transpose():
         mem_bandwidths[cls] = meth_mem_bws = []
 
         for size in sizes:
-
-            source = numpy.random.rand(size, size).astype(numpy.float32)
+            rng = np.random.default_rng()
+            source = rng.random((size, size), dtype=np.float32)
 
             mf = cl.mem_flags
             a_buf = cl.Buffer(ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=source)
@@ -219,7 +220,7 @@ def benchmark_transpose():
             for j in range(i + 1):
                 method = methods[j]
                 name = method.__name__.replace("Transpose", "")
-                plot(sizes, numpy.array(mem_bandwidths[method]) / 1e9, "o-",
+                plot(sizes, np.array(mem_bandwidths[method]) / 1e9, "o-",
                         label=name)
 
             xlabel("Matrix width/height $N$")

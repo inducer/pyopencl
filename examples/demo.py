@@ -3,8 +3,9 @@
 import numpy as np
 import pyopencl as cl
 
-a_np = np.random.rand(50000).astype(np.float32)
-b_np = np.random.rand(50000).astype(np.float32)
+rng = np.random.default_rng()
+a_np = rng.random(50000, dtype=np.float32)
+b_np = rng.random(50000, dtype=np.float32)
 
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
@@ -30,6 +31,7 @@ res_np = np.empty_like(a_np)
 cl.enqueue_copy(queue, res_np, res_g)
 
 # Check on CPU with Numpy:
-print(res_np - (a_np + b_np))
-print(np.linalg.norm(res_np - (a_np + b_np)))
+error_np = res_np - (a_np + b_np)
+print(f"Error:\n{error_np}")
+print(f"Norm: {np.linalg.norm(error_np):.16e}")
 assert np.allclose(res_np, a_np + b_np)

@@ -17,10 +17,11 @@ http://mathema.tician.de/software/pyopencl
 import getopt
 import sys
 import time
+
 import numpy as np
+
 import pyopencl as cl
 import pyopencl.array
-from numpy.random import randint as nprnd
 
 
 def DictionariesAPI():
@@ -871,8 +872,9 @@ if __name__ == "__main__":
 
     # Set particles to RNG points
     if InitialRandom:
-        seed_w = np.uint32(nprnd(2 ** 32))
-        seed_z = np.uint32(nprnd(2 ** 32))
+        rng = np.random.default_rng()
+        seed_w = np.uint32(rng.integers(2 ** 32))
+        seed_z = np.uint32(rng.integers(2 ** 32))
     else:
         seed_w = np.uint32(19710211)
         seed_z = np.uint32(20081010)
