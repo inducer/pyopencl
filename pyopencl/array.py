@@ -56,6 +56,9 @@ else:
     _SVMPointer_or_nothing = ()
 
 
+_NUMPY_PRE_2 = np.__version__.startswith("1.")
+
+
 # {{{ _get_common_dtype
 
 _COMMON_DTYPE_CACHE: Dict[Tuple[Hashable, ...], np.dtype] = {}
@@ -123,7 +126,9 @@ def _get_common_dtype(obj1, obj2, queue):
     # Note that np.find_common_type, while appealing, won't be able to tell
     # the full story.
 
-    if not (o1_is_array and o2_is_array) and o1_is_integral and o2_is_integral:
+    if (_NUMPY_PRE_2
+            and not (o1_is_array and o2_is_array)
+            and o1_is_integral and o2_is_integral):
         if o1_is_array:
             obj1 = np.zeros(1, dtype=o1_dtype)
         if o2_is_array:
@@ -1413,7 +1418,7 @@ class Array:
     def __itruediv__(self, other):
         # raise an error if the result cannot be cast to self
         common_dtype = _get_truedivide_dtype(self, other, self.queue)
-        if not np.can_cast(common_dtype, self.dtype.type):
+        if not np.can_cast(common_dtype, self.dtype.type, "same_kind"):
             raise TypeError(
                 "Cannot cast {!r} to {!r}".format(self.dtype, common_dtype))
 

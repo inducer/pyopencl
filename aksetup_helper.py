@@ -43,14 +43,21 @@ def setup(*args, **kwargs):
 
 
 def get_numpy_incpath():
-    from os.path import join, dirname
+    from os.path import join, dirname, exists
     from importlib.util import find_spec
     origin = find_spec("numpy").origin
     if origin is None:
         raise RuntimeError("origin of numpy package not found")
 
     pathname = dirname(origin)
-    return join(pathname, "core", "include")
+    for p in [
+        join(pathname, "_core", "include"),  # numpy 2 onward
+        join(pathname, "core", "include"),  # numpy prior to 2
+    ]:
+        if exists(join(p, "numpy", "arrayobject.h")):
+            return p
+
+    raise RuntimeError("no valid path for numpy found")
 
 
 class NumpyExtension(Extension):
