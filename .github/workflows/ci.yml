@@ -54,7 +54,8 @@ jobs:
                 . ci-support-v0
                 ./configure.py --cl-use-shipped-ext
                 build_py_project_in_conda_env
-                python -m pip install mypy types-setuptools
+
+                python -m pip install mypy importlib-resources
                 python -m mypy --show-error-codes pyopencl test
 
     pytest:
