@@ -216,7 +216,7 @@ Pylint:
 
 Mypy:
   script: |
-    export EXTRA_INSTALL="pybind11 numpy mako mypy types-setuptools"
+    export EXTRA_INSTALL="pybind11 numpy mako mypy importlib-resources"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
