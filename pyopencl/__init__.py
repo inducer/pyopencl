@@ -1552,10 +1552,10 @@ if get_cl_header_version() >= (2, 0):
 
 # {{{ create_some_context
 
-def create_some_context(interactive: Optional[bool] = None,
-                        answers: Optional[List[str]] = None) -> Context:
+def choose_device(interactive: Optional[bool] = None,
+                  answers: Optional[List[str]] = None) -> List[Device]:
     """
-    Create a :class:`Context` 'somehow'.
+    Choose :class:`Device` instances 'somehow'.
 
     :arg interactive: If multiple choices for platform and/or device exist,
         *interactive* is ``True`` (or ``None`` and ``sys.stdin.isatty()``
@@ -1565,8 +1565,9 @@ def create_some_context(interactive: Optional[bool] = None,
     :arg answers: A sequence of strings that will be used to answer the
         platform/device selection questions.
 
-    :returns: an instance of :class:`Context`.
+    :returns: a list of :class:`Device` instances.
     """
+
     if answers is None:
         if "PYOPENCL_CTX" in os.environ:
             ctx_spec = os.environ["PYOPENCL_CTX"]
@@ -1688,7 +1689,27 @@ def create_some_context(interactive: Optional[bool] = None,
 
     if answers:
         raise RuntimeError("not all provided choices were used by "
-                "create_some_context. (left over: '%s')" % ":".join(answers))
+                "choose_device. (left over: '%s')" % ":".join(answers))
+
+    return devices
+
+
+def create_some_context(interactive: Optional[bool] = None,
+                        answers: Optional[List[str]] = None) -> Context:
+    """
+    Create a :class:`Context` 'somehow'.
+
+    :arg interactive: If multiple choices for platform and/or device exist,
+        *interactive* is ``True`` (or ``None`` and ``sys.stdin.isatty()``
+        returns ``True``), then the user is queried about which device should be
+        chosen. Otherwise, a device is chosen in an implementation-defined
+        manner.
+    :arg answers: A sequence of strings that will be used to answer the
+        platform/device selection questions.
+
+    :returns: an instance of :class:`Context`.
+    """
+    devices = choose_device(interactive, answers)
 
     return Context(devices)
 
