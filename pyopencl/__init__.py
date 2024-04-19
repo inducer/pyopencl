@@ -1553,7 +1553,7 @@ if get_cl_header_version() >= (2, 0):
 # {{{ create_some_context
 
 def create_some_context(interactive: Optional[bool] = None,
-                        answers: Sequence[str] = None) -> Context:
+                        answers: Optional[List[str]] = None) -> Context:
     """
     Create a :class:`Context` 'somehow'.
 
