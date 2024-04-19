@@ -104,7 +104,7 @@ Device
 
         .. versionadded:: 2020.3
 
-.. autofunction:: choose_device
+.. autofunction:: choose_devices
 
 Context
 -------

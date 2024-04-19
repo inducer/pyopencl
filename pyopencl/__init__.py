@@ -1552,8 +1552,8 @@ if get_cl_header_version() >= (2, 0):
 
 # {{{ create_some_context
 
-def choose_device(interactive: Optional[bool] = None,
-                  answers: Optional[List[str]] = None) -> List[Device]:
+def choose_devices(interactive: Optional[bool] = None,
+                   answers: Optional[List[str]] = None) -> List[Device]:
     """
     Choose :class:`Device` instances 'somehow'.
 
@@ -1709,7 +1709,7 @@ def create_some_context(interactive: Optional[bool] = None,
 
     :returns: an instance of :class:`Context`.
     """
-    devices = choose_device(interactive, answers)
+    devices = choose_devices(interactive, answers)
 
     return Context(devices)
 
