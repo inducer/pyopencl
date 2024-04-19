@@ -122,9 +122,9 @@ Context
 
     .. note::
 
-        Calling the constructor with no arguments will fail for recent
-        CL drivers that support the OpenCL ICD. If you want similar,
-        just-give-me-a-context-already behavior, we recommend
+        Calling the constructor with no arguments will fail for
+        CL drivers that support the OpenCL ICD (which applies to most modern drivers).
+        If you want similar, just-give-me-a-context-already behavior, we recommend
         :func:`create_some_context`. See, e.g. this
         `explanation by AMD
         <https://web.archive.org/web/20101114195033/https://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=71>`__.
