@@ -71,3 +71,6 @@ wheelhouse
 
 memray-*.bin
 memray-*.html
+
+.pylintrc.yml
+.run-pylint.py
