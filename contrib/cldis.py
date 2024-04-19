@@ -28,12 +28,12 @@ A script to compile and print the native code for a OpenCL kernel.
 Usage: python cldis.py prog.cl <ptx/sass/asm> <build options>
 """
 
-import os
-import tempfile
-import subprocess
-import re
-import sys
 import glob
+import os
+import re
+import subprocess
+import sys
+import tempfile
 
 
 def main(ctx, tmp_dir, cl_str, output=None, build_options=[]):

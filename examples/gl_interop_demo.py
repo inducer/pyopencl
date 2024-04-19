@@ -1,6 +1,7 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.raw.GL.VERSION.GL_1_5 import glBufferData as rawGlBufferData
+
 import pyopencl as cl
 
 
@@ -23,8 +24,9 @@ __kernel void generate_sin(__global float2* a)
 def initialize():
     platform = cl.get_platforms()[0]
 
-    from pyopencl.tools import get_gl_sharing_context_properties
     import sys
+
+    from pyopencl.tools import get_gl_sharing_context_properties
     if sys.platform == "darwin":
         ctx = cl.Context(properties=get_gl_sharing_context_properties(),
                 devices=[])

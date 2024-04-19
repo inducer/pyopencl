@@ -1,9 +1,11 @@
 import os
 import sys
+
+
 try:
     from setuptools import Extension
-    from setuptools.command.build_ext import (  # noqa: N812
-            build_ext as BaseBuildExtCommand)
+    from setuptools.command.build_ext import \
+        build_ext as BaseBuildExtCommand  # noqa: N812
 
 except ImportError:
     class Extension:
@@ -43,8 +45,8 @@ def setup(*args, **kwargs):
 
 
 def get_numpy_incpath():
-    from os.path import join, dirname, exists
     from importlib.util import find_spec
+    from os.path import dirname, exists, join
     origin = find_spec("numpy").origin
     if origin is None:
         raise RuntimeError("origin of numpy package not found")
@@ -769,7 +771,7 @@ def substitute(substitutions, fname):
     with open(fname, "w") as outf:
         outf.write("".join(new_lines))
 
-    from os import stat, chmod
+    from os import chmod, stat
     infile_stat_res = stat(fname_in)
     chmod(fname, infile_stat_res.st_mode)
 
@@ -778,7 +780,7 @@ def substitute(substitutions, fname):
 
 def _run_git_command(cmd):
     git_error = None
-    from subprocess import Popen, PIPE
+    from subprocess import PIPE, Popen
     stdout = None
     try:
         popen = Popen(["git"] + cmd, stdout=PIPE)

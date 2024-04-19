@@ -4,6 +4,7 @@ import pyopencl as cl
 import pyopencl.array as cl_array
 from pyopencl.tools import SVMAllocator, SVMPool
 
+
 n = 50000
 
 rng = np.random.default_rng()

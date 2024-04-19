@@ -31,14 +31,12 @@ import enum
 from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
+from pytools import memoize_method
 
 import pyopencl as cl
-from pyopencl.tools import context_dependent_memoize
 from pyopencl.tools import (
-        dtype_to_ctype, DtypedArgument, VectorArg, ScalarArg,
-        KernelTemplateBase, dtype_to_c_struct)
-
-from pytools import memoize_method
+    DtypedArgument, KernelTemplateBase, ScalarArg, VectorArg,
+    context_dependent_memoize, dtype_to_c_struct, dtype_to_ctype)
 
 
 # {{{ elementwise kernel code generator
@@ -121,7 +119,7 @@ def get_elwise_kernel_and_types(
         use_range: bool = False,
         **kwargs: Any) -> Tuple[cl.Kernel, List[DtypedArgument]]:
 
-    from pyopencl.tools import parse_arg_list, get_arg_offset_adjuster_code
+    from pyopencl.tools import get_arg_offset_adjuster_code, parse_arg_list
     parsed_args = parse_arg_list(arguments, with_offset=True)
 
     auto_preamble = kwargs.pop("auto_preamble", True)

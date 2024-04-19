@@ -1,4 +1,5 @@
 import numpy as np
+
 import pyopencl as cl
 
 
@@ -55,10 +56,14 @@ preamble = mmc_c_decl + r"""//CL//
     """
 
 from pyopencl.clrandom import rand as clrand
+
+
 a_gpu = clrand(queue, (20000,), dtype=np.int32, a=0, b=10**6)
 a = a_gpu.get()
 
 from pyopencl.reduction import ReductionKernel
+
+
 red = ReductionKernel(ctx, mmc_dtype,
         neutral="mmc_neutral()",
         reduce_expr="agg_mmc(a, b)", map_expr="mmc_from_scalar(x[i])",

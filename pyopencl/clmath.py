@@ -22,10 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+import numpy as np
+
 import pyopencl.array as cl_array
 import pyopencl.elementwise as elementwise
 from pyopencl.array import _get_common_dtype
-import numpy as np
 
 
 def _make_unary_array_func(name):

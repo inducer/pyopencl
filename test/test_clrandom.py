@@ -24,11 +24,12 @@ import numpy as np
 import pytest
 
 import pyopencl as cl
-import pyopencl.cltypes as cltypes
 import pyopencl.clrandom as clrandom
-from pyopencl.tools import (  # noqa: F401
-        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
+import pyopencl.cltypes as cltypes
 from pyopencl.characterize import has_double_support
+from pyopencl.tools import \
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
+
 
 try:
     import faulthandler

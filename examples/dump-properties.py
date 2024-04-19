@@ -1,5 +1,7 @@
-import pyopencl as cl
 from optparse import OptionParser
+
+import pyopencl as cl
+
 
 parser = OptionParser()
 parser.add_option("-s", "--short", action="store_true",

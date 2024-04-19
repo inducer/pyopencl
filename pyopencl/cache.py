@@ -23,24 +23,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import re
+import logging
 import os
+import re
 import sys
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
 import pyopencl._cl as _cl
 
-import logging
+
 logger = logging.getLogger(__name__)
 
 
 import hashlib
+
+
 new_hash = hashlib.md5
 
 
 def _erase_dir(dir):
-    from os import listdir, unlink, rmdir
+    from os import listdir, rmdir, unlink
     from os.path import join
     for name in listdir(dir):
         unlink(join(dir, name))
@@ -168,7 +171,7 @@ C_INCLUDE_RE = re.compile(r'^\s*\#\s*include\s+[<"](.+)[">]\s*$',
 def get_dependencies(src, include_path):
     result = {}
 
-    from os.path import realpath, join
+    from os.path import join, realpath
 
     def _inner(src):
         for match in C_INCLUDE_RE.finditer(src):
@@ -266,7 +269,7 @@ def retrieve_from_cache(cache_dir, cache_key):
     class _InvalidInfoFile(RuntimeError):
         pass
 
-    from os.path import join, isdir
+    from os.path import isdir, join
     module_cache_dir = join(cache_dir, cache_key)
     if not isdir(module_cache_dir):
         return None
@@ -510,8 +513,8 @@ def create_built_program_from_source_cached(ctx, src, options_bytes, devices=Non
             raise
 
         if not build_program_failure:
-            from warnings import warn
             from traceback import format_exc
+            from warnings import warn
             warn(
                 "PyOpenCL compiler caching failed with an exception:\n"
                 f"[begin exception]\n{format_exc()}[end exception]",

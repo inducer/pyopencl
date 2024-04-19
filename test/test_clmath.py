@@ -21,16 +21,17 @@ THE SOFTWARE.
 """
 
 import math
-import numpy as np
 
+import numpy as np
 import pytest
 
-import pyopencl.array as cl_array
 import pyopencl as cl
+import pyopencl.array as cl_array
 import pyopencl.clmath as clmath
-from pyopencl.tools import (  # noqa: F401
-        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
+from pyopencl.tools import \
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
+
 
 try:
     import faulthandler
@@ -240,7 +241,7 @@ def test_bessel(ctx_factory):
     nterms = 30
 
     try:
-        from pyfmmlib import jfuns2d, hank103_vec
+        from pyfmmlib import hank103_vec, jfuns2d
     except ImportError:
         use_pyfmmlib = False
     else:
@@ -302,6 +303,7 @@ def test_bessel(ctx_factory):
 
             if 0 and n == 15:
                 import matplotlib.pyplot as pt
+
                 #pt.plot(scipy_bessel)
                 #pt.plot(cl_bessel)
 

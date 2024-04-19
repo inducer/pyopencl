@@ -58,13 +58,13 @@ for some documentation if you're planning on using Random123 directly.
 
 # }}}
 
+import numpy as np
+from pytools import memoize_method
+
 import pyopencl as cl
 import pyopencl.array as cl_array
 import pyopencl.cltypes as cltypes
 from pyopencl.tools import first_arg_dependent_memoize
-from pytools import memoize_method
-
-import numpy as np
 
 
 # {{{ RanluxGenerator (deprecated)
@@ -164,8 +164,8 @@ class RanluxGenerator:
 
         wg_size = None
 
-        import sys
         import platform
+        import sys
         if ("darwin" in sys.platform
                 and "Apple" in queue.device.platform.vendor
                 and platform.mac_ver()[0].startswith("10.7")

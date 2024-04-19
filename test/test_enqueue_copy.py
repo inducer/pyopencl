@@ -23,12 +23,12 @@ THE SOFTWARE.
 """
 
 import numpy as np
-import pyopencl as cl
 import pytest
 
-from pyopencl.tools import (  # noqa: F401
-        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
+import pyopencl as cl
 from pyopencl.characterize import get_pocl_version
+from pyopencl.tools import \
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
 
 
 def generate_slice(start, shape):

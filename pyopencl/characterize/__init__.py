@@ -20,9 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import pyopencl as cl
-from pytools import memoize
 from typing import Dict, Optional, Tuple
+
+from pytools import memoize
+
+import pyopencl as cl
 
 
 class CLCharacterizationWarning(UserWarning):

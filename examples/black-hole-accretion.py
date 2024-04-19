@@ -32,12 +32,14 @@
 # export CL_CONFIG_USE_VECTORIZER=True
 # export CL_CONFIG_CPU_VECTORIZER_MODE=16
 
-import pyopencl as cl
-import numpy
-import time
-import sys
 import getopt
+import sys
+import time
 from socket import gethostname
+
+import numpy
+
+import pyopencl as cl
 
 
 def DictionariesAPI():

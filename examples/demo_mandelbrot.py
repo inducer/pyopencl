@@ -20,10 +20,10 @@
 import time
 
 import numpy as np
+from PIL import Image
 
 import pyopencl as cl
 
-from PIL import Image
 
 # You can choose a calculation routine below (calc_fractal), uncomment
 # one of the three lines to test the three variations

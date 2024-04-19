@@ -18,9 +18,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import numpy as np
-from pyopencl.tools import get_or_register_dtype
 import warnings
+
+import numpy as np
+
+from pyopencl.tools import get_or_register_dtype
+
 
 if __file__.endswith("array.py"):
     warnings.warn(

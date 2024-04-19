@@ -3,6 +3,7 @@ from imageio import imread, imsave
 
 import pyopencl as cl
 
+
 # Read in image
 img = imread("noisyImage.jpg").astype(np.float32)
 print(img.shape)

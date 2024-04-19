@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import numpy as np
+
 import pyopencl as cl
+
 
 rng = np.random.default_rng()
 a_np = rng.random(50000, dtype=np.float32)

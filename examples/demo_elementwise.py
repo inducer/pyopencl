@@ -4,6 +4,7 @@ import pyopencl as cl
 import pyopencl.array
 from pyopencl.elementwise import ElementwiseKernel
 
+
 n = 10
 
 rng = np.random.default_rng()

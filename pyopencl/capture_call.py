@@ -21,9 +21,10 @@ THE SOFTWARE.
 """
 
 
-import pyopencl as cl
 import numpy as np
-from pytools.py_codegen import PythonCodeGenerator, Indentation
+from pytools.py_codegen import Indentation, PythonCodeGenerator
+
+import pyopencl as cl
 
 
 def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwargs):
@@ -138,8 +139,8 @@ def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwa
 
     # {{{ data
 
-    from zlib import compress
     from base64 import b64encode
+    from zlib import compress
     cg("")
     line_len = 70
 

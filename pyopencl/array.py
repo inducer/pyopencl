@@ -30,23 +30,22 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 import builtins
 from dataclasses import dataclass
-from warnings import warn
-from numbers import Number
 from functools import reduce
+from numbers import Number
 from typing import Any, Dict, Hashable, List, Optional, Tuple, Union
+from warnings import warn
 
 import numpy as np
-import pyopencl.elementwise as elementwise
 
 import pyopencl as cl
-from pyopencl.compyte.array import (
-        as_strided as _as_strided,
-        f_contiguous_strides as _f_contiguous_strides,
-        c_contiguous_strides as _c_contiguous_strides,
-        equal_strides as _equal_strides,
-        ArrayFlags as _ArrayFlags)
-from pyopencl.characterize import has_double_support
+import pyopencl.elementwise as elementwise
 from pyopencl import cltypes
+from pyopencl.characterize import has_double_support
+from pyopencl.compyte.array import (
+    ArrayFlags as _ArrayFlags, as_strided as _as_strided,
+    c_contiguous_strides as _c_contiguous_strides, equal_strides as _equal_strides,
+    f_contiguous_strides as _f_contiguous_strides)
+
 
 SCALAR_CLASSES = (Number, np.bool_, bool)
 

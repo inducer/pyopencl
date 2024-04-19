@@ -35,9 +35,8 @@ import numpy as np
 
 import pyopencl as cl
 from pyopencl.tools import (
-        DtypedArgument, KernelTemplateBase,
-        context_dependent_memoize, dtype_to_ctype,
-        _process_code_for_macro)
+    DtypedArgument, KernelTemplateBase, _process_code_for_macro,
+    context_dependent_memoize, dtype_to_ctype)
 
 
 # {{{ kernel source
@@ -177,6 +176,7 @@ def _get_reduction_source(
     # }}}
 
     from mako.template import Template
+
     from pyopencl.characterize import has_double_support
 
     arguments = ", ".join(arg.declarator() for arg in parsed_args)
@@ -219,8 +219,8 @@ def get_reduction_kernel(
         map_expr = "pyopencl_reduction_inp[i]" if stage == 2 else "in[i]"
 
     from pyopencl.tools import (
-            parse_arg_list, get_arg_list_scalar_arg_dtypes,
-            get_arg_offset_adjuster_code, VectorArg)
+        VectorArg, get_arg_list_scalar_arg_dtypes, get_arg_offset_adjuster_code,
+        parse_arg_list)
 
     if arguments is None:
         raise ValueError("arguments must not be None")

@@ -4,6 +4,7 @@ import numpy.linalg as la
 import pyopencl as cl
 import pyopencl.array as cl_array
 
+
 rng = np.random.default_rng()
 a = rng.random(50000, dtype=np.float32)
 b = rng.random(50000, dtype=np.float32)

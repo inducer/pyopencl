@@ -22,24 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import numpy as np
-import numpy.linalg as la
+import operator
+import platform
 import sys
 from itertools import product
 
+import numpy as np
+import numpy.linalg as la
 import pytest
 
 import pyopencl as cl
 import pyopencl.array as cl_array
 import pyopencl.cltypes as cltypes
 import pyopencl.tools as cl_tools
-from pyopencl.tools import (  # noqa: F401
-        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
+from pyopencl.clrandom import PhiloxGenerator, RanluxGenerator, ThreefryGenerator
+from pyopencl.tools import \
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
 
-from pyopencl.clrandom import RanluxGenerator, PhiloxGenerator, ThreefryGenerator
-import operator
-import platform
 
 _PYPY = cl._PYPY
 
