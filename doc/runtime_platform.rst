@@ -179,7 +179,7 @@ Context
 
     |comparable|
 
-.. function:: create_some_context(interactive=True, answers=None, cache_dir=None)
+.. function:: create_some_context(interactive=True, answers=None)
 
     Create a :class:`Context` 'somehow'.
 
