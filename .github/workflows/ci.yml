@@ -56,7 +56,7 @@ jobs:
                 build_py_project_in_conda_env
 
                 python -m pip install mypy importlib-resources
-                python -m mypy --show-error-codes pyopencl test
+                ./run-mypy.sh
 
     pytest:
         name: Pytest Linux POCL
