@@ -122,9 +122,9 @@ Context
 
     .. note::
 
-        Calling the constructor with no arguments will fail for recent
-        CL drivers that support the OpenCL ICD. If you want similar,
-        just-give-me-a-context-already behavior, we recommend
+        Calling the constructor with no arguments will fail for
+        CL drivers that support the OpenCL ICD (which applies to most modern systems).
+        If you want similar, just-give-me-a-context-already behavior, we recommend
         :func:`create_some_context`. See, e.g. this
         `explanation by AMD
         <https://web.archive.org/web/20101114195033/https://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=71>`__.
@@ -179,13 +179,4 @@ Context
 
     |comparable|
 
-.. function:: create_some_context(interactive=True, answers=None, cache_dir=None)
-
-    Create a :class:`Context` 'somehow'.
-
-    If multiple choices for platform and/or device exist, *interactive*
-    is True, and *sys.stdin.isatty()* is also True,
-    then the user is queried about which device should be chosen.
-    Otherwise, a device is chosen in an implementation-defined manner.
-
-
+.. autofunction:: create_some_context
