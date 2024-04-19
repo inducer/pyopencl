@@ -180,12 +180,3 @@ Context
     |comparable|
 
 .. autofunction:: create_some_context
-
-    Create a :class:`Context` 'somehow'.
-
-    If multiple choices for platform and/or device exist, *interactive*
-    is ``True`` (or ``None`` and ``sys.stdin.isatty()`` returns ``True``),
-    then the user is queried about which device should be chosen.
-    Otherwise, a device is chosen in an implementation-defined manner.
-
-

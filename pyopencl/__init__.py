@@ -1552,7 +1552,21 @@ if get_cl_header_version() >= (2, 0):
 
 # {{{ create_some_context
 
-def create_some_context(interactive=None, answers=None):
+def create_some_context(interactive: Optional[bool] = None,
+                        answers: Sequence[str] = None) -> Context:
+    """
+    Create a :class:`Context` 'somehow'.
+
+    :arg interactive: If multiple choices for platform and/or device exist,
+        *interactive* is ``True`` (or ``None`` and ``sys.stdin.isatty()``
+        returns ``True``), then the user is queried about which device should be
+        chosen. Otherwise, a device is chosen in an implementation-defined
+        manner.
+    :arg answers: A sequence of strings that will be used to answer the
+        platform/device selection questions.
+
+    :returns: an instance of :class:`Context`.
+    """
     if answers is None:
         if "PYOPENCL_CTX" in os.environ:
             ctx_spec = os.environ["PYOPENCL_CTX"]
