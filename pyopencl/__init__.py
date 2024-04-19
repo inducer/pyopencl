@@ -1577,7 +1577,7 @@ def choose_device(interactive: Optional[bool] = None,
             from pyopencl.tools import get_test_platforms_and_devices
             for _plat, devs in get_test_platforms_and_devices():
                 for dev in devs:
-                    return Context([dev])
+                    return [dev]
 
     if answers is not None:
         pre_provided_answers = answers
