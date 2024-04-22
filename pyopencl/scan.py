@@ -1141,7 +1141,8 @@ class GenericScanKernelBase(ABC):
         pass
 
 
-generic_scan_kernel_cache = WriteOncePersistentDict(
+if not cl._PYOPENCL_NO_CACHE:
+    generic_scan_kernel_cache = WriteOncePersistentDict(
         "pyopencl-generated-scan-kernel-cache-v1",
         key_builder=_NumpyTypesKeyBuilder(),
         in_mem_cache_size=0)
@@ -1199,7 +1200,8 @@ class GenericScanKernel(GenericScanKernelBase):
                       self.second_level_scan_gen_info,
                       self.final_update_gen_info)
 
-            generic_scan_kernel_cache.store_if_not_present(cache_key, result)
+            if not cl._PYOPENCL_NO_CACHE:
+                generic_scan_kernel_cache.store_if_not_present(cache_key, result)
 
         # Build the kernels.
         self.first_level_scan_info = self.first_level_scan_gen_info.build(
