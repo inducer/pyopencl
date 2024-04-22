@@ -373,7 +373,8 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
 # }}}
 
 
-invoker_cache = WriteOncePersistentDict(
+if not cl._PYOPENCL_NO_CACHE:
+    invoker_cache = WriteOncePersistentDict(
         "pyopencl-invoker-cache-v41",
         key_builder=_NumpyTypesKeyBuilder(),
         in_mem_cache_size=0)
@@ -400,7 +401,8 @@ def generate_enqueue_and_set_args(function_name,
 
     if not from_cache:
         pmod, enqueue_name = _generate_enqueue_and_set_args_module(*cache_key)
-        invoker_cache.store_if_not_present(cache_key, (pmod, enqueue_name))
+        if not cl._PYOPENCL_NO_CACHE:
+            invoker_cache.store_if_not_present(cache_key, (pmod, enqueue_name))
 
     return (
             pmod.mod_globals[enqueue_name],
