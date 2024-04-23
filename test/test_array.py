@@ -2377,6 +2377,11 @@ def test_xdg_cache_home(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
+    from pyopencl.characterize import get_pocl_version
+    if get_pocl_version(context.devices[0].platform) is not None:
+        from pytest import skip
+        skip("caching disabled for pocl")
+
     a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
     a_gpu = cl_array.to_device(queue, a)
 
