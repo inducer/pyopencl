@@ -15,10 +15,10 @@ Program
     constructed with source. (It will depend on the ICD in use how much
     compilation work is saved by this.)
     By setting the environment variable :envvar:`PYOPENCL_NO_CACHE` to any
-    non-empty value, this caching is suppressed. No additional in-memory
-    caching is performed. To retain the compiled version of a kernel
-    in memory, simply retain the :class:`Program` and/or :class:`Kernel`
-    objects.
+    string that :func:`pytools.strtobool` evaluates as ``True``, this caching
+    is suppressed. No additional in-memory caching is performed. To retain the
+    compiled version of a kernel in memory, simply retain the :class:`Program`
+    and/or :class:`Kernel` objects.
 
     PyOpenCL will also cache "invokers", which are short snippets of Python
     that are generated to accelerate passing arguments to and enqueuing
@@ -101,8 +101,8 @@ Program
         Instead, either use the (recommended, stateless) calling interface::
 
             sum_knl = prg.sum
-            sum_knl(queue, a_np.shape, None, a_g, b_g, res_g)    
-            
+            sum_knl(queue, a_np.shape, None, a_g, b_g, res_g)
+
         or the long, stateful way around, if you prefer::
 
             sum_knl.set_args(a_g, b_g, res_g)
