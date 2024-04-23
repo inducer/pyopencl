@@ -228,7 +228,7 @@ def main():
             python_requires="~=3.8",
             install_requires=[
                 "numpy",
-                "pytools>=2021.2.7",
+                "pytools>=2022.1.13",
                 "platformdirs>=2.2.0",
                 "importlib-resources; python_version<'3.9'",
                 # "Mako>=0.3.6",

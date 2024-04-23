@@ -21,4 +21,5 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "mako": ("https://docs.makotemplates.org/en/latest", None),
+    "pytools": ("https://documen.tician.de/pytools", None),
 }

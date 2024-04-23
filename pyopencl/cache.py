@@ -189,7 +189,7 @@ def get_dependencies(src, include_path):
                     finally:
                         src_file.close()
 
-                    # jrevent infinite recursion if some header file appears to
+                    # prevent infinite recursion if some header file appears to
                     # include itself
                     result[included_file_name] = None
 

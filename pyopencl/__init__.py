@@ -359,7 +359,8 @@ def _options_to_bytestring(options):
 
 # {{{ Program (wrapper around _Program, adds caching support)
 
-_PYOPENCL_NO_CACHE: bool = "PYOPENCL_NO_CACHE" in os.environ
+from pytools import strtobool
+_PYOPENCL_NO_CACHE = strtobool(os.environ.get("PYOPENCL_NO_CACHE", "false"))
 
 _DEFAULT_BUILD_OPTIONS: List[str] = []
 _DEFAULT_INCLUDE_OPTIONS: List[str] = ["-I", _find_pyopencl_include_path()]
