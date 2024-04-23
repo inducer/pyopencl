@@ -508,8 +508,16 @@ class Program:
             cache_dir = getattr(self._context, "cache_dir", None)
 
         build_descr = None
-        if _PYOPENCL_NO_CACHE and self._prg is None:
-            build_descr = "uncached source build (cache disabled by user)"
+        no_cache = _PYOPENCL_NO_CACHE
+        # Turn off caching when using pocl to avoid extra compile from
+        # get_info(BINARIES). See https://github.com/inducer/pyopencl/issues/731.
+        from pyopencl.characterize import get_pocl_version
+        no_cache |= get_pocl_version(self._context.devices[0].platform) is not None
+        if no_cache and self._prg is None:
+            if _PYOPENCL_NO_CACHE:
+                build_descr = "uncached source build (cache disabled by user)"
+            else:
+                build_descr = "uncached source build (cache disabled for pocl)"
             self._prg = _cl._Program(self._context, self._source)
 
         from time import time
