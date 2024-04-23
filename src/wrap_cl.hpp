@@ -3884,7 +3884,7 @@ namespace pyopencl
     PYOPENCL_GET_SVM_SIZE(src);
     PYOPENCL_GET_SVM_SIZE(dst);
 
-    size_t size;
+    size_t size = 0;
     bool have_size = false;
 
     if (src_has_size)
@@ -3965,7 +3965,7 @@ namespace pyopencl
 
     PYOPENCL_GET_SVM_SIZE(dst);
 
-    size_t size;
+    size_t size = 0;
     bool have_size = false;
     if (dst_has_size)
     {
@@ -4020,7 +4020,7 @@ namespace pyopencl
 
     PYOPENCL_GET_SVM_SIZE(svm);
 
-    size_t size;
+    size_t size = 0;
     bool have_size = false;
     if (svm_has_size)
     {
