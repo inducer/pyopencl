@@ -429,3 +429,13 @@ def has_fine_grain_buffer_svm_atomics(dev):
 def has_fine_grain_system_svm_atomics(dev):
     return has_fine_grain_system_svm(dev) and bool(dev.svm_capabilities
                 & cl.device_svm_capabilities.ATOMICS)
+
+
+def has_src_build_cache(dev):
+    """
+    Return *True* if *dev* has internal support for caching builds from source,
+    *False* if it doesn't, and *None* if unknown.
+    """
+    if get_pocl_version(dev.platform) is not None:
+        return True
+    return None
