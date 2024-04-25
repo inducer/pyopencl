@@ -171,6 +171,8 @@ jobs:
         -   name: "Main Script"
             env:
                 DOWNSTREAM_PROJECT: ${{ matrix.downstream_project }}
+                PYOPENCL_COMPILER_OUTPUT: 1
+                PYTEST_FLAGS: "-sv"
             run: |
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
