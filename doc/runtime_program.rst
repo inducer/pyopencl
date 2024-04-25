@@ -30,8 +30,7 @@ Program
 
     When setting the environment variable :envvar:`PYOPENCL_COMPILER_OUTPUT`
     to any string that :func:`pytools.strtobool` evaluates as ``True``,
-    PyOpenCL will show compiler warnings emitted during program build.
-
+    PyOpenCL will show compiler messages emitted during program build.
 
 .. envvar:: PYOPENCL_BUILD_OPTIONS
 
