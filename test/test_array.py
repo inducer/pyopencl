@@ -861,6 +861,14 @@ def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False
         pytest.xfail("compiling ranlux kernel causes a segfault on "
                 "Intel CPU runtime as of 2022-02-13")
 
+    import os
+    if device.platform.vendor == "The pocl project" \
+            and os.uname().sysname == "Darwin" \
+            and os.uname().machine == "arm64" \
+            and rng_class is RanluxGenerator:
+        pytest.xfail("ranlux test fails on PoCL + Mac ARM CI,"
+                "as of PoCL 5.0, 2024-05-01")
+
     if has_double_support(context.devices[0]):
         dtypes = [np.float32, np.float64]
     else:
@@ -922,6 +930,14 @@ def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
             and rng_class is RanluxGenerator:
         pytest.xfail("ranlux test fails on PoCL + Nvidia,"
                 "at least the Titan V, as of PoCL 1.6, 2021-01-20")
+
+    import os
+    if queue.device.platform.vendor == "The pocl project" \
+            and os.uname().sysname == "Darwin" \
+            and os.uname().machine == "arm64" \
+            and rng_class is RanluxGenerator:
+        pytest.xfail("ranlux test fails on PoCL + Mac ARM CI,"
+                "as of PoCL 5.0, 2024-05-01")
 
     if rng_class is RanluxGenerator:
         gen = rng_class(queue, 5120)
