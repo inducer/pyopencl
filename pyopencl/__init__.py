@@ -246,8 +246,9 @@ class CommandQueueUsedAfterExit(UserWarning):
     pass
 
 
-def compiler_output(text):
-    if int(os.environ.get("PYOPENCL_COMPILER_OUTPUT", "0")):
+def compiler_output(text: str) -> None:
+    from pytools import strtobool
+    if strtobool(os.environ.get("PYOPENCL_COMPILER_OUTPUT", "False")):
         warn(text, CompilerWarning, stacklevel=3)
     else:
         warn("Non-empty compiler output encountered. Set the "

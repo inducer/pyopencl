@@ -31,6 +31,7 @@ from pytools.py_codegen import Indentation, PythonCodeGenerator
 import pyopencl as cl
 import pyopencl._cl as _cl
 from pyopencl.tools import VectorArg, _NumpyTypesKeyBuilder
+from typing import Any, Tuple
 
 
 # {{{ arg packing helpers
@@ -375,10 +376,12 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
 
 
 if not cl._PYOPENCL_NO_CACHE:
-    invoker_cache = WriteOncePersistentDict(
-        "pyopencl-invoker-cache-v41",
-        key_builder=_NumpyTypesKeyBuilder(),
-        in_mem_cache_size=0)
+    from pytools.py_codegen import PicklableModule
+    invoker_cache: WriteOncePersistentDict[Any, Tuple[PicklableModule, str]] \
+        = WriteOncePersistentDict(
+            "pyopencl-invoker-cache-v41",
+            key_builder=_NumpyTypesKeyBuilder(),
+            in_mem_cache_size=0)
 
 
 def generate_enqueue_and_set_args(function_name,
