@@ -124,6 +124,7 @@ jobs:
                 . ci-support-v0
                 ./configure.py --cxxflags= --ldflags= --cl-libname=OpenCL
                 build_py_project_in_conda_env
+                export CISUPPORT_PYTEST_NRUNNERS=2
                 test_py_project
 
     docs:
