@@ -1,10 +1,12 @@
 import numpy as np
 import numpy.linalg as la
-from cgen import (POD, Assign, Block, Const, FunctionBody, FunctionDeclaration,
-                  Initializer, Module, Pointer, Value)
+from cgen import (
+    POD, Assign, Block, Const, FunctionBody, FunctionDeclaration, Initializer,
+    Module, Pointer, Value)
 from cgen.opencl import CLGlobal, CLKernel, CLRequiredWorkGroupSize
 
 import pyopencl as cl
+
 
 local_size = 256
 thread_strides = 32

@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-from pyopencl.characterize import (has_coarse_grain_buffer_svm,
-                                   has_fine_grain_buffer_svm,
-                                   has_fine_grain_system_svm)
 import numpy as np
+
 import pyopencl as cl
+from pyopencl.characterize import (
+    has_coarse_grain_buffer_svm, has_fine_grain_buffer_svm,
+    has_fine_grain_system_svm)
+
 
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)

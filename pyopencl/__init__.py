@@ -20,16 +20,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+import logging
 from sys import intern
-from warnings import warn
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
-
-from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa: F401
+from warnings import warn
 
 # must import, otherwise dtype registry will not be fully populated
 import pyopencl.cltypes  # noqa: F401
+from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa: F401
 
-import logging
+
 logger = logging.getLogger(__name__)
 
 # This supports ocl-icd find shipped OpenCL ICDs, cf.
@@ -37,6 +37,8 @@ logger = logging.getLogger(__name__)
 # via
 # https://github.com/inducer/pyopencl/blob/0b3d0ef92497e6838eea300b974f385f94cb5100/scripts/build-wheels.sh#L43-L44
 import os
+
+
 os.environ["PYOPENCL_HOME"] = os.path.dirname(os.path.abspath(__file__))
 
 try:
@@ -50,7 +52,7 @@ except ImportError:
             stacklevel=2)
     raise
 
-import numpy as np
+import numpy as np  # noqa: I003
 
 import sys
 
@@ -168,6 +170,7 @@ from pyopencl._cl import (  # noqa: F401
         Pipe,
         )
 
+
 try:
     from pyopencl._cl import DeviceTopologyAmd  # noqa: F401
     from pyopencl._cl import enqueue_copy_buffer_p2p_amd  # noqa: F401
@@ -176,46 +179,24 @@ except ImportError:
 
 if not _PYPY:
     # FIXME: Add back to default set when pypy support catches up
-    from pyopencl._cl import (  # noqa: F401
-        enqueue_map_buffer,
-        enqueue_map_image,
-        )
+    from pyopencl._cl import enqueue_map_buffer  # noqa: F401
+    from pyopencl._cl import enqueue_map_image  # noqa: F401
 
 if get_cl_header_version() >= (1, 1):
-    from pyopencl._cl import (  # noqa: F401
-        UserEvent,
-        )
+    from pyopencl._cl import UserEvent  # noqa: F401
 if get_cl_header_version() >= (1, 2):
+    from pyopencl._cl import ImageDescriptor  # noqa: F401
     from pyopencl._cl import (  # noqa: F401
-        _enqueue_marker_with_wait_list,
-        _enqueue_barrier_with_wait_list,
-
-        unload_platform_compiler,
-
-
-        enqueue_migrate_mem_objects,
-        _enqueue_fill_buffer,
-        enqueue_fill_image,
-
-        ImageDescriptor,
-        )
+        _enqueue_barrier_with_wait_list, _enqueue_fill_buffer,
+        _enqueue_marker_with_wait_list, enqueue_fill_image,
+        enqueue_migrate_mem_objects, unload_platform_compiler)
 
 if get_cl_header_version() >= (2, 0):
-    from pyopencl._cl import (  # noqa: F401
-        SVMPointer,
-        SVM,
-        SVMAllocation,
-        )
+    from pyopencl._cl import SVM, SVMAllocation, SVMPointer  # noqa: F401
 
 if _cl.have_gl():
     from pyopencl._cl import (  # noqa: F401
-        gl_object_type,
-        gl_texture_info,
-
-        GLBuffer,
-        GLRenderBuffer,
-        GLTexture,
-        )
+        GLBuffer, GLRenderBuffer, GLTexture, gl_object_type, gl_texture_info)
 
     try:
         from pyopencl._cl import get_apple_cgl_share_group  # noqa: F401
@@ -223,14 +204,13 @@ if _cl.have_gl():
         pass
 
     try:
-        from pyopencl._cl import (  # noqa: F401
-            enqueue_acquire_gl_objects,
-            enqueue_release_gl_objects,
-        )
+        from pyopencl._cl import enqueue_acquire_gl_objects  # noqa: F401
+        from pyopencl._cl import enqueue_release_gl_objects  # noqa: F401
     except ImportError:
         pass
 
 import inspect as _inspect
+
 
 CONSTANT_CLASSES = tuple(
         getattr(_cl, name) for name in dir(_cl)
@@ -281,7 +261,7 @@ def compiler_output(text: str) -> None:
 # {{{ find pyopencl shipped source code
 
 def _find_pyopencl_include_path() -> str:
-    from os.path import join, abspath, dirname, exists
+    from os.path import abspath, dirname, exists, join
 
     # Try to find the include path in the same directory as this file
     include_path = join(abspath(dirname(__file__)), "cl")
@@ -361,6 +341,8 @@ def _options_to_bytestring(options):
 # {{{ Program (wrapper around _Program, adds caching support)
 
 from pytools import strtobool
+
+
 _PYOPENCL_NO_CACHE = strtobool(os.environ.get("PYOPENCL_NO_CACHE", "false"))
 
 _DEFAULT_BUILD_OPTIONS: List[str] = []

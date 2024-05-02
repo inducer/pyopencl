@@ -49,13 +49,13 @@ for some documentation if you're planning on using Random123 directly.
 
 # }}}
 
+import numpy as np
+from pytools import memoize_method
+
 import pyopencl as cl
 import pyopencl.array as cl_array
 import pyopencl.cltypes as cltypes
 from pyopencl.tools import first_arg_dependent_memoize
-from pytools import memoize_method
-
-import numpy as np
 
 
 # {{{ Random123 generators

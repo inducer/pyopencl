@@ -22,15 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import numpy as np
-
+from typing import Any, Tuple
 from warnings import warn
-import pyopencl._cl as _cl
+
+import numpy as np
 from pytools.persistent_dict import WriteOncePersistentDict
 from pytools.py_codegen import Indentation, PythonCodeGenerator
-from pyopencl.tools import _NumpyTypesKeyBuilder, VectorArg
+
 import pyopencl as cl
-from typing import Any, Tuple
+import pyopencl._cl as _cl
+from pyopencl.tools import VectorArg, _NumpyTypesKeyBuilder
 
 
 # {{{ arg packing helpers

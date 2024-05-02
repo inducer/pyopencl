@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 import pyopencl as cl
 
+
 fission = ("cl_ext_device_fission", "2011.1")
 nv_devattr = ("cl_nv_device_attribute_query", "0.92")
 gl_sharing = ("cl_khr_gl_sharing", "0.92")
@@ -547,6 +548,7 @@ if not cl.have_gl():
     print()
 
 import inspect
+
 
 CONSTANT_CLASSES = [
         getattr(cl, name) for name in dir(cl)

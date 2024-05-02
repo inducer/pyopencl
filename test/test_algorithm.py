@@ -20,22 +20,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+import sys
+
 import numpy as np
 import numpy.linalg as la
-import sys
+import pytest
 from pytools import memoize
 from test_array import general_clrand
 
-import pytest
-
 import pyopencl as cl
 import pyopencl.array
-from pyopencl.tools import (  # noqa: F401
-        pytest_generate_tests_for_pyopencl as pytest_generate_tests)
-from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
-from pyopencl.scan import (InclusiveScanKernel, ExclusiveScanKernel,
-        GenericScanKernel, GenericDebugScanKernel)
-from pyopencl.characterize import get_pocl_version
+from pyopencl.characterize import (
+    get_pocl_version, has_double_support, has_struct_arg_count_bug)
+from pyopencl.scan import (
+    ExclusiveScanKernel, GenericDebugScanKernel, GenericScanKernel,
+    InclusiveScanKernel)
+from pyopencl.tools import \
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
 
 
 # {{{ elementwise
@@ -765,6 +766,7 @@ def test_segmented_scan(ctx_factory):
 
         np.set_printoptions(threshold=2000)
         from random import randrange
+
         from pyopencl.clrandom import rand as clrand
         for n in scan_test_counts:
             a_dev = clrand(queue, (n,), dtype=dtype, a=0, b=10)

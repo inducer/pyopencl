@@ -26,12 +26,12 @@ import pytest
 
 import pyopencl as cl
 import pyopencl.array as cl_array
-import pyopencl.cltypes as cltypes
 import pyopencl.clrandom
-from pyopencl.tools import (  # noqa: F401
-        pytest_generate_tests_for_pyopencl as pytest_generate_tests,
-        ImmediateAllocator, DeferredAllocator)
+import pyopencl.cltypes as cltypes
 from pyopencl.characterize import get_pocl_version
+from pyopencl.tools import \
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
+from pyopencl.tools import DeferredAllocator, ImmediateAllocator
 
 
 def _xfail_if_pocl(plat, up_to_version, msg="unsupported by PoCL"):
@@ -581,7 +581,7 @@ def test_copy_buffer(ctx_factory):
 # {{{ test_mempool_*
 
 def test_mempool(ctx_factory):
-    from pyopencl.tools import MemoryPool, ImmediateAllocator
+    from pyopencl.tools import ImmediateAllocator, MemoryPool
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -601,8 +601,9 @@ def test_mempool(ctx_factory):
 
 
 def test_mempool_2(ctx_factory):
-    from pyopencl.tools import MemoryPool, ImmediateAllocator
     from random import randrange
+
+    from pyopencl.tools import ImmediateAllocator, MemoryPool
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -684,7 +685,7 @@ def test_vector_args(ctx_factory):
 def test_header_dep_handling(ctx_factory):
     context = ctx_factory()
 
-    from os.path import exists, dirname, join
+    from os.path import dirname, exists, join
     assert exists(join(dirname(__file__), "empty-header.h"))
 
     kernel_src = """
@@ -1124,8 +1125,9 @@ def test_coarse_grain_svm(ctx_factory, use_opaque_style):
 
     dev = ctx.devices[0]
 
-    from pyopencl.characterize import has_coarse_grain_buffer_svm
     from pytest import skip
+
+    from pyopencl.characterize import has_coarse_grain_buffer_svm
     if not has_coarse_grain_buffer_svm(queue.device):
         skip("device does not support coarse-grain SVM")
 
@@ -1232,8 +1234,9 @@ def test_fine_grain_svm(ctx_factory):
 
     _xfail_if_pocl_gpu(queue.device, "GPU SVM")
 
-    from pyopencl.characterize import has_fine_grain_buffer_svm
     from pytest import skip
+
+    from pyopencl.characterize import has_fine_grain_buffer_svm
     if not has_fine_grain_buffer_svm(queue.device):
         skip("device does not support fine-grain SVM")
 
@@ -1518,8 +1521,9 @@ def test_enqueue_copy_array_2(ctx_factory):
 def test_zero_size_svm_allocations(ctx_factory):
     ctx = ctx_factory()
 
-    from pyopencl.characterize import has_coarse_grain_buffer_svm
     from pytest import skip
+
+    from pyopencl.characterize import has_coarse_grain_buffer_svm
     if not has_coarse_grain_buffer_svm(ctx.devices[0]):
         skip("device does not support coarse-grain SVM")
 

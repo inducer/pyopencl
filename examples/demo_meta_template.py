@@ -1,9 +1,9 @@
 import numpy as np
 import numpy.linalg as la
-
 from mako.template import Template
 
 import pyopencl as cl
+
 
 local_size = 256
 thread_strides = 32

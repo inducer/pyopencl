@@ -1,4 +1,4 @@
-from IPython.core.magic import (magics_class, Magics, cell_magic, line_magic)
+from IPython.core.magic import Magics, cell_magic, line_magic, magics_class
 
 import pyopencl as cl
 

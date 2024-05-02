@@ -33,16 +33,14 @@ from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
+from mako.template import Template
+from pytools import memoize, memoize_method
 
 import pyopencl as cl
 import pyopencl.array
-
 from pyopencl.elementwise import ElementwiseKernel
-from pyopencl.scan import ScanTemplate, GenericScanKernel
+from pyopencl.scan import GenericScanKernel, ScanTemplate
 from pyopencl.tools import dtype_to_ctype, get_arg_offset_adjuster_code
-
-from pytools import memoize, memoize_method
-from mako.template import Template
 
 
 # {{{ "extra args" handling utility
@@ -50,7 +48,7 @@ from mako.template import Template
 def _extract_extra_args_types_values(extra_args):
     if extra_args is None:
         extra_args = []
-    from pyopencl.tools import VectorArg, ScalarArg
+    from pyopencl.tools import ScalarArg, VectorArg
 
     extra_args_types = []
     extra_args_values = []
@@ -469,7 +467,7 @@ class RadixSort:
         scan_ctype, scan_dtype, scan_t_cdecl = \
                 _make_sort_scan_type(context.devices[0], self.bits, self.index_dtype)
 
-        from pyopencl.tools import VectorArg, ScalarArg
+        from pyopencl.tools import ScalarArg, VectorArg
         scan_arguments = (
                 list(self.arguments)
                 + [VectorArg(arg.dtype, "sorted_"+arg.name) for arg in self.arguments
@@ -927,7 +925,7 @@ class ListOfListsBuilder:
     @memoize_method
     def get_count_kernel(self, index_dtype):
         index_ctype = dtype_to_ctype(index_dtype)
-        from pyopencl.tools import VectorArg, OtherArg
+        from pyopencl.tools import OtherArg, VectorArg
         kernel_list_args = [
                 VectorArg(index_dtype, "plb_%s_count" % name)
                 for name, dtype in self.list_names_and_dtypes
@@ -986,7 +984,7 @@ class ListOfListsBuilder:
     @memoize_method
     def get_write_kernel(self, index_dtype):
         index_ctype = dtype_to_ctype(index_dtype)
-        from pyopencl.tools import VectorArg, OtherArg
+        from pyopencl.tools import OtherArg, VectorArg
         kernel_list_args = []
         kernel_list_arg_values = ""
         user_list_args = []
@@ -1369,7 +1367,7 @@ class KeyValueSorter:
 
     @memoize_method
     def get_kernels(self, key_dtype, value_dtype, starts_dtype):
-        from pyopencl.tools import VectorArg, ScalarArg
+        from pyopencl.tools import ScalarArg, VectorArg
 
         by_target_sorter = RadixSort(
                 self.context, [

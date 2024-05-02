@@ -4,18 +4,18 @@
 import sys
 
 import numpy as np
-
 from OpenGL import GL, GLU, GLUT
 from OpenGL.arrays import vbo
-from OpenGL.GL import (GL_ARRAY_BUFFER, GL_BLEND, GL_COLOR_ARRAY,
-                       GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT,
-                       GL_DYNAMIC_DRAW, GL_FLOAT, GL_MODELVIEW,
-                       GL_ONE_MINUS_SRC_ALPHA, GL_POINT_SMOOTH, GL_POINTS,
-                       GL_PROJECTION, GL_SRC_ALPHA, GL_VERTEX_ARRAY)
+from OpenGL.GL import (
+    GL_ARRAY_BUFFER, GL_BLEND, GL_COLOR_ARRAY, GL_COLOR_BUFFER_BIT,
+    GL_DEPTH_BUFFER_BIT, GL_DYNAMIC_DRAW, GL_FLOAT, GL_MODELVIEW,
+    GL_ONE_MINUS_SRC_ALPHA, GL_POINT_SMOOTH, GL_POINTS, GL_PROJECTION, GL_SRC_ALPHA,
+    GL_VERTEX_ARRAY)
 from OpenGL.GLUT import GLUT_DEPTH, GLUT_DOUBLE, GLUT_RGBA
 
 import pyopencl as cl
 from pyopencl.tools import get_gl_sharing_context_properties
+
 
 mf = cl.mem_flags
 

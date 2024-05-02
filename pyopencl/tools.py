@@ -126,27 +126,27 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
+import re
 from abc import ABC, abstractmethod
 from sys import intern
 from typing import Any, List, Optional, Union
 
-# Do not add a pyopencl import here: This will add an import cycle.
-
 import numpy as np
 from pytools import memoize, memoize_method
-from pyopencl._cl import bitlog2, get_cl_header_version  # noqa: F401
 from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
 
-import re
-
+from pyopencl._cl import bitlog2, get_cl_header_version  # noqa: F401
+from pyopencl.compyte.dtypes import TypeNameNotKnown  # noqa: F401
 from pyopencl.compyte.dtypes import (  # noqa: F401
-        get_or_register_dtype, TypeNameNotKnown,
-        register_dtype, dtype_to_ctype)
+    dtype_to_ctype, get_or_register_dtype, register_dtype)
+
+
+# Do not add a pyopencl import here: This will add an import cycle.
 
 
 def _register_types():
     from pyopencl.compyte.dtypes import (
-            TYPE_REGISTRY, fill_registry_with_opencl_c_types)
+        TYPE_REGISTRY, fill_registry_with_opencl_c_types)
 
     fill_registry_with_opencl_c_types(TYPE_REGISTRY)
 
@@ -160,17 +160,11 @@ _register_types()
 # {{{ imported names
 
 from pyopencl._cl import (  # noqa: F401
-        PooledBuffer, AllocatorBase, DeferredAllocator,
-        ImmediateAllocator, MemoryPool,
-        )
+    AllocatorBase, DeferredAllocator, ImmediateAllocator, MemoryPool, PooledBuffer)
 
 
 if get_cl_header_version() >= (2, 0):
-    from pyopencl._cl import (  # noqa: F401
-            SVMPool,
-            PooledSVM,
-            SVMAllocator,
-            )
+    from pyopencl._cl import PooledSVM, SVMAllocator, SVMPool  # noqa: F401
 
 # }}}
 
@@ -518,6 +512,7 @@ def first_arg_dependent_memoize_nested(nested_func):
                 nested_func.__code__.co_firstlineno))
 
     from inspect import currentframe
+
     # prevent ref cycle
     try:
         caller_frame = currentframe().f_back
@@ -560,6 +555,8 @@ def clear_first_arg_caches():
 
 
 import atexit
+
+
 atexit.register(clear_first_arg_caches)
 
 # }}}

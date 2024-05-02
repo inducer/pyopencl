@@ -33,14 +33,15 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-import pyopencl as cl
-from pyopencl.tools import dtype_to_ctype
-from operator import mul
 from functools import reduce
-from pytools import memoize_method
-from mako.template import Template
+from operator import mul
 
+from mako.template import Template
+from pytools import memoize_method
+
+import pyopencl as cl
 import pyopencl.bitonic_sort_templates as _tmpl
+from pyopencl.tools import dtype_to_ctype
 
 
 def _is_power_of_2(n):

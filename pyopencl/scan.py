@@ -22,33 +22,24 @@ limitations under the License.
 Derived from code within the Thrust project, https://github.com/NVIDIA/thrust
 """
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import numpy as np
-
-import pyopencl as cl
-import pyopencl.array
-from pyopencl.tools import (
-        KernelTemplateBase,
-        DtypedArgument,
-        bitlog2,
-        context_dependent_memoize,
-        dtype_to_ctype,
-        get_arg_list_scalar_arg_dtypes,
-        get_arg_offset_adjuster_code,
-        _process_code_for_macro,
-        _NumpyTypesKeyBuilder,
-        )
-
-import pyopencl._mymako as mako
-from pyopencl._cluda import CLUDA_PREAMBLE
-
 from pytools.persistent_dict import WriteOncePersistentDict
 
+import pyopencl as cl
+import pyopencl._mymako as mako
+import pyopencl.array
+from pyopencl._cluda import CLUDA_PREAMBLE
+from pyopencl.tools import (
+    DtypedArgument, KernelTemplateBase, _NumpyTypesKeyBuilder,
+    _process_code_for_macro, bitlog2, context_dependent_memoize, dtype_to_ctype,
+    get_arg_list_scalar_arg_dtypes, get_arg_offset_adjuster_code)
 
-import logging
+
 logger = logging.getLogger(__name__)
 
 

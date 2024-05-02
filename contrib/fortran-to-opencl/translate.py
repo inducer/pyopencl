@@ -20,18 +20,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import cgen
-import numpy as np
 import re
-from pymbolic.parser import Parser as ExpressionParserBase
-from pymbolic.mapper import CombineMapper
-import pymbolic.primitives as p
-from pymbolic.mapper.c_code import CCodeMapper as CCodeMapperBase
 from sys import intern
-
 from warnings import warn
 
+import cgen
+import numpy as np
+import pymbolic.primitives as p
 import pytools.lex
+from pymbolic.mapper import CombineMapper
+from pymbolic.mapper.c_code import CCodeMapper as CCodeMapperBase
+from pymbolic.parser import Parser as ExpressionParserBase
 
 
 class TranslatorWarning(UserWarning):
@@ -154,8 +153,7 @@ class FortranExpressionParser(ExpressionParserBase):
     def parse_terminal(self, pstate):
         scope = self.tree_walker.scope_stack[-1]
 
-        from pymbolic.parser import (
-            _identifier, _openpar, _closepar, _float)
+        from pymbolic.parser import _closepar, _float, _identifier, _openpar
 
         next_tag = pstate.next_tag()
         if next_tag is _float:
@@ -221,8 +219,8 @@ class FortranExpressionParser(ExpressionParserBase):
             }
 
     def parse_prefix(self, pstate, min_precedence=0):
-        from pymbolic.parser import _PREC_UNARY
         import pymbolic.primitives as primitives
+        from pymbolic.parser import _PREC_UNARY
 
         pstate.expect_not_end()
 
@@ -235,10 +233,9 @@ class FortranExpressionParser(ExpressionParserBase):
 
     def parse_postfix(self, pstate, min_precedence, left_exp):
         from pymbolic.parser import (
-                _PREC_CALL, _PREC_COMPARISON, _openpar,
-                _PREC_LOGICAL_OR, _PREC_LOGICAL_AND)
-        from pymbolic.primitives import (
-                Comparison, LogicalAnd, LogicalOr)
+            _PREC_CALL, _PREC_COMPARISON, _PREC_LOGICAL_AND, _PREC_LOGICAL_OR,
+            _openpar)
+        from pymbolic.primitives import Comparison, LogicalAnd, LogicalOr
 
         next_tag = pstate.next_tag()
         if next_tag is _openpar and _PREC_CALL > min_precedence:
@@ -351,7 +348,7 @@ class ComplexCCodeMapper(CCodeMapperBase):
             complexes = [child for child in expr.children
                     if "c" == self.infer_type(child).kind]
 
-            from pymbolic.mapper.stringifier import PREC_SUM, PREC_NONE
+            from pymbolic.mapper.stringifier import PREC_NONE, PREC_SUM
             real_sum = self.join_rec(" + ", reals, PREC_SUM)
 
             if len(complexes) == 1:
@@ -387,7 +384,7 @@ class ComplexCCodeMapper(CCodeMapperBase):
             complexes = [child for child in expr.children
                     if "c" == self.infer_type(child).kind]
 
-            from pymbolic.mapper.stringifier import PREC_PRODUCT, PREC_NONE
+            from pymbolic.mapper.stringifier import PREC_NONE, PREC_PRODUCT
             real_prd = self.join_rec("*", reals, PREC_PRODUCT)
 
             if len(complexes) == 1:
@@ -489,7 +486,7 @@ class CCodeMapper(ComplexCCodeMapper):
         if isinstance(idx, tuple) and len(idx) == 1:
             idx, = idx
 
-        from pymbolic.mapper.stringifier import PREC_NONE, PREC_CALL
+        from pymbolic.mapper.stringifier import PREC_CALL, PREC_NONE
         return self.parenthesize_if_needed(
                 self.format("%s[%s%s]",
                     self.scope.translate_var_name(expr.aggregate.name),

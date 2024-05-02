@@ -5,6 +5,7 @@ import pyopencl as cl
 import pyopencl.array as cl_array
 from pyopencl.elementwise import ElementwiseKernel
 
+
 ctx = cl.create_some_context()
 queue = cl.CommandQueue(ctx)
 

@@ -1,6 +1,8 @@
 # example by Roger Pau Monn'e
-import pyopencl as cl
 import numpy as np
+
+import pyopencl as cl
+
 
 demo_r = np.empty((500, 5), dtype=np.uint32)
 ctx = cl.create_some_context()

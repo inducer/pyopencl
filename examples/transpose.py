@@ -6,6 +6,7 @@ import numpy.linalg as la
 
 import pyopencl as cl
 
+
 block_size = 16
 
 
@@ -204,14 +205,7 @@ def benchmark_transpose():
 
     try:
         from matplotlib.pyplot import (
-            clf,
-            plot,
-            xlabel,
-            ylabel,
-            savefig,
-            legend,
-            grid,
-        )
+            clf, grid, legend, plot, savefig, xlabel, ylabel)
     except ModuleNotFoundError:
         pass
     else:

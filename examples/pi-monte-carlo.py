@@ -23,13 +23,14 @@
 # http://stackoverflow.com/questions/497685/how-do-you-get-around-the-maximum-cuda-run-time
 # Option "Interactive" "0" in /etc/X11/xorg.conf
 
+import getopt
+import itertools
+import sys
+import time
+from socket import gethostname
+
 # Common tools
 import numpy
-import sys
-import getopt
-import time
-import itertools
-from socket import gethostname
 
 
 class PenStacle:
@@ -653,8 +654,8 @@ def MetropolisOpenCL(InputCL):
 
 def FitAndPrint(N, D, Curves):
 
-    from scipy.optimize import curve_fit
     import matplotlib.pyplot as plt
+    from scipy.optimize import curve_fit
 
     try:
         coeffs_Amdahl, matcov_Amdahl = curve_fit(Amdahl, N, D)

@@ -31,13 +31,14 @@ import os
 import sys
 from os.path import exists
 
+
 sys.path.append(os.path.dirname(__file__))
 
 
 def get_config_schema():
-    from aksetup_helper import (ConfigSchema, Option,
-            IncludeDir, LibraryDir, Libraries,
-            Switch, StringListOption)
+    from aksetup_helper import (
+        ConfigSchema, IncludeDir, Libraries, LibraryDir, Option, StringListOption,
+        Switch)
 
     default_cxxflags = [
             # Required for pybind11:
@@ -116,9 +117,10 @@ SEPARATOR = "-"*75
 
 def main():
     from setuptools import find_packages
-    from aksetup_helper import (hack_distutils, get_config, setup,
-            check_pybind11, check_git_submodules, ExtensionUsingNumpy,
-            get_pybind_include, PybindBuildExtCommand)
+
+    from aksetup_helper import (
+        ExtensionUsingNumpy, PybindBuildExtCommand, check_git_submodules,
+        check_pybind11, get_config, get_pybind_include, hack_distutils, setup)
     check_pybind11()
     check_git_submodules()
 
