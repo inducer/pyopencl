@@ -849,8 +849,8 @@ def test_sort(ctx_factory, scan_kernel):
     sort = RadixSort(context, "int *ary", key_expr="ary[i]",
             sort_arg_names=["ary"], scan_kernel=scan_kernel)
 
-    from pyopencl.clrandom import RanluxGenerator
-    rng = RanluxGenerator(queue, seed=15)
+    from pyopencl.clrandom import PhiloxGenerator
+    rng = PhiloxGenerator(context, seed=15)
 
     from time import time
 

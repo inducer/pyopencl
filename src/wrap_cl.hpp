@@ -3706,22 +3706,25 @@ namespace pyopencl
                 "supplying an out-of-order queue to SVMAllocation is invalid");
         }
 
-        int try_count = 0;
-        while (try_count < 2)
+        if (size)
         {
-          PYOPENCL_PRINT_CALL_TRACE("clSVMalloc");
-          m_allocation = clSVMAlloc(
-              ctx->data(),
-              flags, size, alignment);
-          if (m_allocation)
-            return;
+          int try_count = 0;
+          while (try_count < 2)
+          {
+            PYOPENCL_PRINT_CALL_TRACE("clSVMalloc");
+            m_allocation = clSVMAlloc(
+                ctx->data(),
+                flags, size, alignment);
+            if (m_allocation)
+              return;
 
-          ++try_count;
-          run_python_gc();
+            ++try_count;
+            run_python_gc();
+          }
+
+          if (!m_allocation)
+            throw pyopencl::error("clSVMAlloc", CL_OUT_OF_RESOURCES);
         }
-
-        if (!m_allocation)
-          throw pyopencl::error("clSVMAlloc", CL_OUT_OF_RESOURCES);
       }
 
       svm_allocation(std::shared_ptr<context> const &ctx, void *allocation, size_t size,
@@ -3751,6 +3754,9 @@ namespace pyopencl
 
       void release()
       {
+        if (m_size == 0)
+          return;
+
         if (!m_allocation)
           throw error("SVMAllocation.release", CL_INVALID_VALUE,
               "trying to double-unref svm allocation");
@@ -3775,7 +3781,7 @@ namespace pyopencl
       {
         PYOPENCL_PARSE_WAIT_FOR;
 
-        if (!m_allocation)
+        if (m_size && !m_allocation)
           throw error("SVMAllocation.enqueue_release", CL_INVALID_VALUE,
               "trying to enqueue_release on an already-freed allocation");
 
@@ -3793,10 +3799,20 @@ namespace pyopencl
 
         cl_event evt;
 
-        PYOPENCL_CALL_GUARDED_CLEANUP(clEnqueueSVMFree, (
-              use_queue, 1, &m_allocation,
-              nullptr, nullptr,
-              PYOPENCL_WAITLIST_ARGS, &evt));
+        if (m_size == 0)
+        {
+          // We need to get an event from somewhere...
+          // We're using SVM, we must have 2.0 > 1.2.
+          PYOPENCL_CALL_GUARDED_CLEANUP(clEnqueueMarkerWithWaitList,
+                      (use_queue, PYOPENCL_WAITLIST_ARGS, &evt));
+        }
+        else
+        {
+          PYOPENCL_CALL_GUARDED_CLEANUP(clEnqueueSVMFree, (
+                use_queue, 1, &m_allocation,
+                nullptr, nullptr,
+                PYOPENCL_WAITLIST_ARGS, &evt));
+        }
 
         m_allocation = nullptr;
 

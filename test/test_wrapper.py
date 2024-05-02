@@ -1518,6 +1518,30 @@ def test_enqueue_copy_array_2(ctx_factory):
 # }}}
 
 
+def test_zero_size_svm_allocations(ctx_factory):
+    ctx = ctx_factory()
+
+    from pyopencl.characterize import has_coarse_grain_buffer_svm
+    from pytest import skip
+    if not has_coarse_grain_buffer_svm(ctx.devices[0]):
+        skip("device does not support coarse-grain SVM")
+
+    # Go back to svm_empty once
+    # https://github.com/numpy/numpy/issues/26366 is solved.
+    # zero_sized_svm = cl.svm_empty(ctx, cl.svm_mem_flags.READ_WRITE, 0, np.float64)
+    zero_sized_svm = cl.SVMAllocation(ctx, 0, 0, cl.svm_mem_flags.READ_WRITE)
+    zero_sized_svm.release()
+
+    from pyopencl.tools import SVMAllocator, SVMPool
+    svm_alloc = SVMAllocator(ctx)
+    zero_sized_svm = svm_alloc(0)
+    zero_sized_svm.release()
+
+    svm_pool = SVMPool(svm_alloc)
+    zero_sized_svm = svm_pool(0)
+    zero_sized_svm.release()
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
