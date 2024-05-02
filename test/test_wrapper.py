@@ -1521,8 +1521,9 @@ def test_enqueue_copy_array_2(ctx_factory):
 def test_zero_size_svm_allocations(ctx_factory):
     ctx = ctx_factory()
 
-    from pyopencl.characterize import has_coarse_grain_buffer_svm
     from pytest import skip
+
+    from pyopencl.characterize import has_coarse_grain_buffer_svm
     if not has_coarse_grain_buffer_svm(ctx.devices[0]):
         skip("device does not support coarse-grain SVM")
 

@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+from typing import Any, Tuple
 from warnings import warn
 
 import numpy as np
@@ -31,7 +32,6 @@ from pytools.py_codegen import Indentation, PythonCodeGenerator
 import pyopencl as cl
 import pyopencl._cl as _cl
 from pyopencl.tools import VectorArg, _NumpyTypesKeyBuilder
-from typing import Any, Tuple
 
 
 # {{{ arg packing helpers
