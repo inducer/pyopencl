@@ -37,7 +37,7 @@ from pyopencl.tools import (  # noqa: F401
         pytest_generate_tests_for_pyopencl as pytest_generate_tests)
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 
-from pyopencl.clrandom import RanluxGenerator, PhiloxGenerator, ThreefryGenerator
+from pyopencl.clrandom import PhiloxGenerator, ThreefryGenerator
 import operator
 import platform
 
@@ -843,33 +843,18 @@ def test_bitwise(ctx_factory):
 # {{{ test_random_float_in_range
 
 @pytest.mark.parametrize("rng_class",
-        [RanluxGenerator, PhiloxGenerator, ThreefryGenerator])
+        [PhiloxGenerator, ThreefryGenerator])
 @pytest.mark.parametrize("ary_size", [300, 301, 302, 303, 10007, 1000000])
 def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
-
-    device = queue.device
-    if device.platform.vendor == "The pocl project" \
-            and device.type & cl.device_type.GPU \
-            and rng_class is RanluxGenerator:
-        pytest.xfail("ranlux test fails on PoCL + Nvidia,"
-                "at least the Titan V, as of PoCL 1.6, 2021-01-20")
-
-    if device.platform.vendor == "Intel(R) Corporation" \
-            and rng_class is RanluxGenerator:
-        pytest.xfail("compiling ranlux kernel causes a segfault on "
-                "Intel CPU runtime as of 2022-02-13")
 
     if has_double_support(context.devices[0]):
         dtypes = [np.float32, np.float64]
     else:
         dtypes = [np.float32]
 
-    if rng_class is RanluxGenerator:
-        gen = rng_class(queue, 5120)
-    else:
-        gen = rng_class(context)
+    gen = rng_class(context)
 
     for dtype in dtypes:
         print(dtype)
@@ -883,9 +868,6 @@ def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False
 
         assert (0 <= ran.get()).all()
         assert (ran.get() <= 1).all()
-
-        if rng_class is RanluxGenerator:
-            gen.synchronize(queue)
 
         ran = cl_array.zeros(queue, ary_size, dtype)
         gen.fill_uniform(ran, a=4, b=7)
@@ -912,21 +894,12 @@ def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64])
 @pytest.mark.parametrize("rng_class",
-        [RanluxGenerator, PhiloxGenerator, ThreefryGenerator])
+        [PhiloxGenerator, ThreefryGenerator])
 def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    if queue.device.platform.vendor == "The pocl project" \
-            and queue.device.type & cl.device_type.GPU \
-            and rng_class is RanluxGenerator:
-        pytest.xfail("ranlux test fails on PoCL + Nvidia,"
-                "at least the Titan V, as of PoCL 1.6, 2021-01-20")
-
-    if rng_class is RanluxGenerator:
-        gen = rng_class(queue, 5120)
-    else:
-        gen = rng_class(context)
+    gen = rng_class(context)
 
     # if (dtype == np.int64
     #         and context.devices[0].platform.vendor.startswith("Advanced Micro")):

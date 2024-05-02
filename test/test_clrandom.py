@@ -38,13 +38,7 @@ else:
     faulthandler.enable()
 
 
-def make_ranlux_generator(cl_ctx):
-    queue = cl.CommandQueue(cl_ctx)
-    return clrandom.RanluxGenerator(queue)
-
-
 @pytest.mark.parametrize("rng_class", [
-    make_ranlux_generator,
     clrandom.PhiloxGenerator,
     clrandom.ThreefryGenerator])
 @pytest.mark.parametrize("dtype", [
@@ -65,13 +59,6 @@ def test_clrandom_dtypes(ctx_factory, rng_class, dtype):
     size = 10
 
     with cl.CommandQueue(cl_ctx) as queue:
-        device = queue.device
-        if device.platform.vendor == "The pocl project" \
-                and device.type & cl.device_type.GPU \
-                and rng_class is make_ranlux_generator:
-            pytest.xfail("ranlux test fails on PoCL + Nvidia,"
-                    "at least the K40, as of PoCL 1.6, 2021-01-20")
-
         rng.uniform(queue, size, dtype)
 
         if dtype not in (np.int32, np.int64):
