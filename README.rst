@@ -1,18 +1,20 @@
 PyOpenCL: Pythonic Access to OpenCL, with Arrays and Algorithms
 ===============================================================
 
-.. image:: https://gitlab.tiker.net/inducer/pyopencl/badges/main/pipeline.svg
+.. |badge-gitlab-ci| image:: https://gitlab.tiker.net/inducer/pyopencl/badges/main/pipeline.svg
     :alt: Gitlab Build Status
     :target: https://gitlab.tiker.net/inducer/pyopencl/commits/main
-.. image:: https://github.com/inducer/pyopencl/workflows/CI/badge.svg?branch=main&event=push
+.. |badge-github-ci| image:: https://github.com/inducer/pyopencl/workflows/CI/badge.svg?branch=main&event=push
     :alt: Github Build Status
     :target: https://github.com/inducer/pyopencl/actions?query=branch%3Amain+workflow%3ACI+event%3Apush
-.. image:: https://badge.fury.io/py/pyopencl.svg
+.. |badge-pypi| image:: https://badge.fury.io/py/pyopencl.svg
     :alt: Python Package Index Release Page
     :target: https://pypi.org/project/pyopencl/
-.. image:: https://zenodo.org/badge/1575307.svg
+.. |badge-zenodo| image:: https://zenodo.org/badge/1575307.svg
     :alt: Zenodo DOI for latest release
     :target: https://zenodo.org/badge/latestdoi/1575307
+
+|badge-gitlab-ci| |badge-github-ci| |badge-pypi| |badge-zenodo|
 
 PyOpenCL lets you access GPUs and other massively parallel compute
 devices from Python. It tries to offer computing goodness in the
