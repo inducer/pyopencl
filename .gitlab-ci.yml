@@ -183,11 +183,12 @@ Pylint:
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
 
+    build_py_project_in_venv
+
     # Avoid linting local directory, where native module
     # cannot be imported.
     rm -Rf "$(get_proj_name)"
 
-    build_py_project_in_venv
     run_pylint "$(get_proj_name)" test/*.py
   tags:
   - python3
