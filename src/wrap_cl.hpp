@@ -1337,7 +1337,7 @@ namespace pyopencl
 #endif
            )
        {
-          py::object ctypes = py::module_::import("ctypes");
+          py::object ctypes = py::module_::import_("ctypes");
           py::object prop = prop_tuple[1], c_void_p = ctypes.attr("c_void_p");
           py::object ptr = ctypes.attr("cast")(prop, c_void_p);
           props.push_back(py::cast<cl_context_properties>(ptr.attr("value")));
