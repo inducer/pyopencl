@@ -73,7 +73,7 @@ Python 3 Nvidia K40:
 
 Python 3 POCL:
   script: |
-    export PYOPENCL_TEST=portable:pthread
+    export PYOPENCL_TEST=portable:cpu
     export EXTRA_INSTALL="pybind11 numpy mako"
 
     curl -L -O https://tiker.net/ci-support-v0
@@ -91,7 +91,7 @@ Python 3 POCL:
 
 Python 3 POCL CL 1.1:
   script: |
-    export PYOPENCL_TEST=portable:pthread
+    export PYOPENCL_TEST=portable:cpu
     export EXTRA_INSTALL="pybind11 numpy mako"
     echo "CL_PRETEND_VERSION = '1.1'" > siteconf.py
 
@@ -148,7 +148,7 @@ Python 3 POCL Titan V:
 
 Python 3 POCL (+GL and special functions):
   script: |
-    export PYOPENCL_TEST=portable:pthread
+    export PYOPENCL_TEST=portable:cpu
     export EXTRA_INSTALL="pybind11 numpy mako scipy pyfmmlib"
     echo "CL_ENABLE_GL = True" > siteconf.py
 
