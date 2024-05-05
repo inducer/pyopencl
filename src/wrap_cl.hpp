@@ -1410,16 +1410,6 @@ namespace pyopencl
     }
   }
 
-
-  inline
-  void create_context(context *self, py::object py_devices, py::object py_properties,
-      py::object py_dev_type)
-  {
-    PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
-      create_context_inner(self, py_devices, py_properties, py_dev_type);
-    )
-  }
-
   // }}}
 
 

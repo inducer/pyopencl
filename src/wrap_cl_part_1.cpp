@@ -85,7 +85,7 @@ void pyopencl_expose_part_1(py::module_ &m)
           [](cls *self, py::object py_devices, py::object py_properties,
             py::object py_dev_type)
           {
-            PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
+            PYOPENCL_RETRY_IF_MEM_ERROR(
                 create_context_inner(
                   self,
                   py_devices,
