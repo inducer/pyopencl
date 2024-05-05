@@ -2,7 +2,7 @@ Python 3 Intel CPU:
   script: |
     source /opt/enable-intel-cl.sh
     export PYOPENCL_TEST="intel(r):pu"
-    export EXTRA_INSTALL="pybind11 numpy mako"
+    export EXTRA_INSTALL="numpy mako"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
@@ -20,7 +20,7 @@ Python 3 Intel CPU:
 Python 3 Nvidia Titan X:
   script: |
     export PYOPENCL_TEST=nvi:titan
-    export EXTRA_INSTALL="pybind11 numpy mako"
+    export EXTRA_INSTALL="numpy mako"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
@@ -38,7 +38,7 @@ Python 3 Nvidia Titan X:
 Python 3 Nvidia Titan V:
   script: |
     export PYOPENCL_TEST=nvi:titan
-    export EXTRA_INSTALL="pybind11 numpy mako"
+    export EXTRA_INSTALL="numpy mako"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
@@ -56,7 +56,7 @@ Python 3 Nvidia Titan V:
 Python 3 Nvidia K40:
   script: |
     export PYOPENCL_TEST=nvi:k40
-    export EXTRA_INSTALL="pybind11 numpy mako"
+    export EXTRA_INSTALL="numpy mako"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
@@ -74,7 +74,7 @@ Python 3 Nvidia K40:
 Python 3 POCL:
   script: |
     export PYOPENCL_TEST=portable:cpu
-    export EXTRA_INSTALL="pybind11 numpy mako"
+    export EXTRA_INSTALL="numpy mako"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
@@ -92,7 +92,7 @@ Python 3 POCL:
 Python 3 POCL CL 1.1:
   script: |
     export PYOPENCL_TEST=portable:cpu
-    export EXTRA_INSTALL="pybind11 numpy mako"
+    export EXTRA_INSTALL="numpy mako"
     echo "CL_PRETEND_VERSION = '1.1'" > siteconf.py
 
     curl -L -O https://tiker.net/ci-support-v0
@@ -111,7 +111,7 @@ Python 3 POCL CL 1.1:
 Python 3 POCL K40:
   script: |
     export PYOPENCL_TEST=portable:k40
-    export EXTRA_INSTALL="pybind11 numpy mako"
+    export EXTRA_INSTALL="numpy mako"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
@@ -130,7 +130,7 @@ Python 3 POCL K40:
 Python 3 POCL Titan V:
   script: |
     export PYOPENCL_TEST=portable:titan
-    export EXTRA_INSTALL="pybind11 numpy mako"
+    export EXTRA_INSTALL="numpy mako"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
@@ -149,7 +149,7 @@ Python 3 POCL Titan V:
 Python 3 POCL (+GL and special functions):
   script: |
     export PYOPENCL_TEST=portable:cpu
-    export EXTRA_INSTALL="pybind11 numpy mako scipy pyfmmlib"
+    export EXTRA_INSTALL="numpy mako scipy pyfmmlib"
     echo "CL_ENABLE_GL = True" > siteconf.py
 
     curl -L -O https://tiker.net/ci-support-v0
@@ -178,7 +178,7 @@ Flake8:
 
 Pylint:
   script: |
-    export EXTRA_INSTALL="pybind11 numpy mako matplotlib PyOpenGl IPython"
+    export EXTRA_INSTALL="numpy mako matplotlib PyOpenGl IPython"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
@@ -197,7 +197,7 @@ Pylint:
 
 Mypy:
   script: |
-    export EXTRA_INSTALL="pybind11 numpy mako mypy importlib-resources"
+    export EXTRA_INSTALL="numpy mako mypy importlib-resources"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
@@ -210,7 +210,7 @@ Mypy:
 
 Documentation:
   script: |
-    export EXTRA_INSTALL="pybind11 numpy mako"
+    export EXTRA_INSTALL="numpy mako"
 
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
