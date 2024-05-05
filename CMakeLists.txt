@@ -70,6 +70,10 @@ if (PYOPENCL_ENABLE_GL)
   target_compile_definitions(_cl PRIVATE HAVE_GL=1)
 endif()
 
+if (PYOPENCL_TRACE)
+  target_compile_definitions(_cl PRIVATE PYOPENCL_TRACE=1)
+endif()
+
 if (PYOPENCL_USE_SHIPPED_EXT)
   target_compile_definitions(_cl PRIVATE PYOPENCL_USE_SHIPPED_EXT=1)
 endif()
