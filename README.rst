@@ -62,11 +62,9 @@ Links
 
 * `Documentation <https://documen.tician.de/pyopencl>`__
   (read how things work)
+* `Python package index <https://pypi.python.org/pypi/pyopencl>`__
+  (download releases, including binary wheels for Linux, macOS, Windows)
 * `Conda Forge <https://anaconda.org/conda-forge/pyopencl>`__
   (download binary packages for Linux, macOS, Windows)
-* `Python package index <https://pypi.python.org/pypi/pyopencl>`__
-  (download releases)
-* `C. Gohlke's Windows binaries <https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`__
-  (download Windows binaries)
 * `Github <https://github.com/inducer/pyopencl>`__
   (get latest source code, file bugs)
