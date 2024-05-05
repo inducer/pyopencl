@@ -52,8 +52,7 @@ can be found in the `documentation <https://documen.tician.de/pyopencl/>`__.
 What you'll need if you do *not* want to use the convenient instructions above and
 instead build from source:
 
-* gcc/g++ new enough to be compatible with pybind11
-  (see their `FAQ <https://pybind11.readthedocs.io/en/stable/faq.html>`__)
+* g++/clang new enough to be compatible with nanobind (specifically, full support of C++17 is needed)
 * `numpy <https://numpy.org>`__, and
 * an OpenCL implementation. (See this `howto <https://wiki.tiker.net/OpenCLHowTo>`__
   for how to get one.)
