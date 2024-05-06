@@ -28,3 +28,5 @@ include CITATION.cff
 recursive-exclude _skbuild *
 
 recursive-include contrib *.vim *.py README
+
+include CMakeLists.txt
