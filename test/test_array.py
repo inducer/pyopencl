@@ -2362,8 +2362,14 @@ def test_xdg_cache_home(ctx_factory):
     assert not os.path.exists(xdg_dir)
 
     old_xdg_cache_home = None
+    old_characterize_has_src_build_cache = None
 
     try:
+        # Make sure that the source build cache is enabled
+        old_characterize_has_src_build_cache = \
+            cl.characterize.has_src_build_cache
+        cl.characterize.has_src_build_cache = lambda dev: False
+
         old_xdg_cache_home = os.getenv("XDG_CACHE_HOME")
         os.environ["XDG_CACHE_HOME"] = xdg_dir
 
@@ -2372,6 +2378,9 @@ def test_xdg_cache_home(ctx_factory):
 
         assert os.path.exists(xdg_pyopencl_dir)
     finally:
+        cl.characterize.has_src_build_cache = \
+            old_characterize_has_src_build_cache
+
         if old_xdg_cache_home is not None:
             os.environ["XDG_CACHE_HOME"] = old_xdg_cache_home
         else:

@@ -393,6 +393,8 @@ def has_struct_arg_count_bug(dev, ctx=None):
     return False
 
 
+# {{{ SVM capabilities
+
 def _may_have_svm(dev):
     has_svm = (dev.platform._get_cl_version() >= (2, 0)
             and cl.get_cl_header_version() >= (2, 0))
@@ -431,3 +433,24 @@ def has_fine_grain_buffer_svm_atomics(dev):
 def has_fine_grain_system_svm_atomics(dev):
     return has_fine_grain_system_svm(dev) and bool(dev.svm_capabilities
                 & cl.device_svm_capabilities.ATOMICS)
+
+# }}}
+
+
+def has_src_build_cache(dev: cl.Device) -> Optional[bool]:
+    """
+    Return *True* if *dev* has internal support for caching builds from source,
+    *False* if it doesn't, and *None* if unknown.
+    """
+    if get_pocl_version(dev.platform) is not None:
+        return True
+
+    if nv_compute_capability(dev) is not None:
+        return True
+
+    if dev.platform == "AMD Accelerated Parallel Processing":
+        return False
+
+    return None
+
+# vim: foldmethod=marker
