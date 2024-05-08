@@ -555,8 +555,8 @@ namespace pyopencl
     private:
       bool m_initialized;
 
-      public:
-        Py_buffer m_buf;
+    public:
+      Py_buffer m_buf;
 
     py_buffer_wrapper()
       : m_initialized(false)
