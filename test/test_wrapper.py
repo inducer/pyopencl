@@ -1543,6 +1543,17 @@ def test_zero_size_svm_allocations(ctx_factory):
     zero_sized_svm.release()
 
 
+def test_buffer_release(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    mem_pool = cl.tools.MemoryPool(cl.tools.ImmediateAllocator(queue))
+
+    b = mem_pool.allocate(1000)
+    print(type(b))
+    b.release()
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
