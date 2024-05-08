@@ -243,6 +243,13 @@ namespace pyopencl {
       {
         return m_size;
       }
+
+      // This shouldn't be necessary, but somehow nanobind gets unhappy if
+      // it's not there.
+      void free()
+      {
+        super::free();
+      }
   };
 
   // }}}
