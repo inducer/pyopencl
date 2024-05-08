@@ -44,7 +44,7 @@ def main(ctx, tmp_dir, cl_str, output=None, build_options=[]):
     elif platform.name == "Portable Computing Language":
         if device.name.startswith("NVIDIA"):
             supported_outputs = ["ptx", "sass"]
-        elif device.name.startswith("pthread") or device.name.startswith("cpu")
+        elif device.name.startswith("pthread") or device.name.startswith("cpu"):
             supported_outputs = ["asm"]
         else:
             raise NotImplementedError(f"Unknown pocl device '{device.name}'")
