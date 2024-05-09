@@ -30,6 +30,8 @@ import pyopencl.cltypes  # noqa: F401
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa: F401
 
 
+__version__ = VERSION_TEXT
+
 logger = logging.getLogger(__name__)
 
 # This supports ocl-icd find shipped OpenCL ICDs, cf.
