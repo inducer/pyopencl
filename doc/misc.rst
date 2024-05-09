@@ -196,10 +196,6 @@ For PyOpenCL, the process is as follows:
     # editable install - make sure to disable build isolation:
     $ pip install --no-build-isolation -ve .
 
-    # editable install with automatic recompilation if needed:
-    $ pip install --no-build-isolation -Ceditable.rebuild=true -ve .
-
-
 Tips
 ====
 
