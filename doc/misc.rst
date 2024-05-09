@@ -177,19 +177,28 @@ To install pyopencl with oclgrind, an OpenCL debugger do::
     For example, installing PyOpenCL from pip followed by OCL-ICD from Conda Forge can
     redirect the ICD loader, removing access to system-wide ICDs.
 
-Installing via Christoph Gohlke's binary wheels (Windows)
----------------------------------------------------------
-
-Christoph Gohlke distributes `binary wheels for PyOpenCL on Windows
-<https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyopencl>`__.
-
 Installing from source
 ----------------------
 
-Information on how to install PyOpenCL *from source* is still available on the
-`Former PyOpenCL Wiki <https://wiki.tiker.net/PyOpenCL/Installation>`__, but that should
-mostly not be necessary unless you have very specific needs or would like to modify
-PyOpenCL yourself.
+Installing PyOpenCL *from source* should mostly not be necessary unless you
+have very specific needs or would like to modify PyOpenCL yourself.
+You can find generic installation instructions for ``nanobind``-based packages `here <https://nanobind.readthedocs.io/en/latest/packaging.html#step-4-install-the-package-locally>`__.
+
+For PyOpenCL, the process is as follows:
+
+.. code-block:: bash
+
+    $ cd pyopencl
+
+    # non-editable install:
+    $ pip install -v .
+
+    # editable install - make sure to disable build isolation:
+    $ pip install --no-build-isolation -ve .
+
+    # editable install with automatic recompilation if needed:
+    $ pip install --no-build-isolation -Ceditable.rebuild=true -ve .
+
 
 Tips
 ====
