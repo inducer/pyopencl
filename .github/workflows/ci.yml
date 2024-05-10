@@ -57,7 +57,7 @@ jobs:
             run: |
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                ./configure.py --cl-use-shipped-ext
+                # ./configure.py --cl-use-shipped-ext
                 build_py_project_in_conda_env
 
                 python -m pip install mypy importlib-resources
@@ -72,7 +72,7 @@ jobs:
             run: |
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                ./configure.py --cl-use-shipped-ext
+                # ./configure.py --cl-use-shipped-ext
                 build_py_project_in_conda_env
                 test_py_project
 
@@ -88,7 +88,7 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                ./configure.py --cl-use-shipped-ext
+                # ./configure.py --cl-use-shipped-ext
                 build_py_project_in_conda_env
                 test_py_project
 
@@ -110,7 +110,7 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                ./configure.py --cl-use-shipped-ext
+                # ./configure.py --cl-use-shipped-ext
                 build_py_project_in_conda_env
                 test_py_project
 
@@ -127,7 +127,7 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                ./configure.py --cl-libname=OpenCL
+                # ./configure.py --cl-libname=OpenCL
                 build_py_project_in_conda_env
                 test_py_project
 
@@ -146,7 +146,7 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                ./configure.py --cl-use-shipped-ext
+                # ./configure.py --cl-use-shipped-ext
                 build_py_project_in_conda_env
                 build_docs
 
@@ -181,7 +181,7 @@ jobs:
                 . ci-support-v0
 
                 TEST_ENV_ROOT="$(pwd)/$DOWNSTREAM_PROJECT/.conda-root/envs/testing"
-                ./configure.py --cl-inc-dir="$TEST_ENV_ROOT/include" --cl-lib-dir="$TEST_ENV_ROOT/lib"
+                # ./configure.py --cl-inc-dir="$TEST_ENV_ROOT/include" --cl-lib-dir="$TEST_ENV_ROOT/lib"
                 git add -f siteconf.py
 
                 prepare_downstream_build "https://github.com/inducer/$DOWNSTREAM_PROJECT.git"

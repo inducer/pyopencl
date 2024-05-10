@@ -7,6 +7,14 @@ requires = [
 ]
 build-backend = "scikit_build_core.build"
 
+[tool.scikit-build.cmake.define]
+PYOPENCL_TRACE = "OFF"
+PYOPENCL_ENABLE_GL = "OFF"
+PYOPENCL_USE_SHIPPED_EXT = "OFF"
+# OpenCL_INCLUDE_DIR =
+# PYOPENCL_CL_LIB_DIRS = ""
+# OpenCL_LIBRARY = ""
+
 [project]
 name = "pyopencl"
 version = "2024.2.2"
