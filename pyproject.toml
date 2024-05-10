@@ -1,5 +1,10 @@
 [build-system]
-requires = ["scikit-build-core >=0.9.3", "nanobind >=1.9.2", "numpy"]
+requires = [
+    "scikit-build-core >=0.9.3",
+    "nanobind >=1.9.2",
+    "numpy;python_version >= '3.9' and platform_python_implementation == 'PyPy'",
+    "oldest-supported-numpy;python_version < '3.9' or platform_python_implementation != 'PyPy'",
+]
 build-backend = "scikit_build_core.build"
 
 [project]
