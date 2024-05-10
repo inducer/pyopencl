@@ -8,12 +8,12 @@ requires = [
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build.cmake.define]
-PYOPENCL_TRACE = "OFF"
-PYOPENCL_ENABLE_GL = "OFF"
-PYOPENCL_USE_SHIPPED_EXT = "OFF"
-# OpenCL_INCLUDE_DIR =
-# PYOPENCL_CL_LIB_DIRS = ""
-# OpenCL_LIBRARY = ""
+PYOPENCL_TRACE = {env="CL_TRACE", default="OFF"}
+PYOPENCL_ENABLE_GL = {env="CL_ENABLE_GL", default="OFF"}
+PYOPENCL_USE_SHIPPED_EXT = {env="CL_USE_SHIPPED_EXT", default="OFF"}
+OpenCL_INCLUDE_DIR = {env="CL_INC_DIR"}
+PYOPENCL_CL_LIB_DIRS = {env="CL_LIB_DIR"}
+OpenCL_LIBRARY = {env="CL_LIBNAME"}
 
 [project]
 name = "pyopencl"
