@@ -19,7 +19,7 @@ if (SKBUILD)
   set(Python_INCLUDE_DIR "${PYTHON_INCLUDE_DIR}")
   set(Python_LIBRARIES "${PYTHON_LIBRARY}")
 endif()
-find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+find_package(Python COMPONENTS Interpreter Development.Module NumPy REQUIRED)
 
 # }}}
 
@@ -37,10 +37,9 @@ execute_process(
 link_directories(${PYOPENCL_CL_LIB_DIRS})
 
 find_package(nanobind CONFIG REQUIRED)
-find_package(NumPy REQUIRED)
 find_package(OpenCL REQUIRED)
 
-include_directories(${OpenCL_INCLUDE_DIR} ${NumPy_INCLUDE_DIRS})
+include_directories(${OpenCL_INCLUDE_DIR} ${Python_NumPy_INCLUDE_DIRS})
 
 nanobind_add_module(
   _cl
