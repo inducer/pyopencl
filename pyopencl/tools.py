@@ -347,7 +347,7 @@ def _monkeypatch_svm_docstrings():
     from pytools.codegen import remove_common_indentation
 
     # {{{ PooledSVM
-
+    # pylint: disable=E0606
     PooledSVM.__doc__ = """
     An object representing a :class:`SVMPool`-based allocation of
     :ref:`svm`.  Analogous to :class:`~pyopencl.SVMAllocation`, however once
@@ -1363,6 +1363,8 @@ class _TemplateRenderer:
                 parsed_arg = arg
             elif isinstance(arg, tuple):
                 parsed_arg = ScalarArg(self.parse_type(arg[0]), arg[1])
+            else:
+                raise TypeError("unexpected argument type: %s" % type(arg))
 
             parsed_args.append(parsed_arg)
 

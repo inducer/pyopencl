@@ -979,7 +979,7 @@ def _add_functionality():
             else:
                 raise ValueError("images cannot have more than three dimensions")
 
-            desc = ImageDescriptor()
+            desc = ImageDescriptor()  # pylint: disable=E0606
 
             desc.image_type = image_type
             desc.shape = shape  # also sets desc.array_size
@@ -1354,7 +1354,8 @@ def _add_functionality():
         svm_old_init = SVM.__init__
 
     def svm_init(self, mem):
-        svm_old_init(self, mem)
+        if get_cl_header_version() >= (2, 0):
+            svm_old_init(self, mem)
 
         self.mem = mem
 

@@ -1146,12 +1146,12 @@ def test_slice(ctx_factory):
     a = a_gpu.get()
     b = b_gpu.get()
 
+    start_offset = 0
+
     if queue.device.platform.name == "Intel(R) OpenCL":
         pytest.skip("Intel CL regularly crashes on this test case "
             "-- https://github.com/conda-forge/"
             "intel-compiler-repack-feedstock/issues/7")
-    else:
-        start_offset = 0
 
     from random import randrange
     for _i in range(20):
