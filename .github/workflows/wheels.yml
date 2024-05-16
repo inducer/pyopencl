@@ -33,7 +33,9 @@ jobs:
         run: python -m pip install cibuildwheel==2.17.0
 
       - name: Build wheels
+        shell: bash
         run: |
+          set -x
           if [[ "${{ matrix.os }}" == "windows-2019" ]]; then
             export CL_INC_DIR="D:/a/pyopencl/pyopencl/OpenCL-Headers/install/include"
             export CL_LIB_DIR="C:/Program Files/OpenCL-ICD-Loader/lib"
