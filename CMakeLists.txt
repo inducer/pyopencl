@@ -80,6 +80,6 @@ if (PYOPENCL_USE_SHIPPED_EXT)
   target_compile_definitions(_cl PRIVATE PYOPENCL_USE_SHIPPED_EXT=1)
 endif()
 
-install(TARGETS _cl LIBRARY DESTINATION .)
+install(TARGETS _cl LIBRARY DESTINATION pyopencl)
 
 # vim: foldmethod=marker:sw=2
