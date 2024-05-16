@@ -101,4 +101,4 @@ MACOSX_DEPLOYMENT_TARGET = "10.14"
 skip = ["*-win32", "pp*", "cp36-*", "cp37-*"]
 test-command = ""
 before-all = "bash {package}/scripts/build-ocl-windows.sh"
-before-build = "python configure.py --cl-inc-dir=D:/a/pyopencl/pyopencl/OpenCL-Headers/install/include --cl-lib-dir=\"C:/Program Files/OpenCL-ICD-Loader/lib\""
+before-build = "export CL_INC_DIR='D:/a/pyopencl/pyopencl/OpenCL-Headers/install/include'; export CL_LIB_DIR='C:/Program Files/OpenCL-ICD-Loader/lib'"
