@@ -93,7 +93,6 @@ jobs:
                 export CL_INC_DIR=$CONDA_PREFIX/include
                 export CL_LIB_DIR=$CONDA_PREFIX/lib
                 export CL_USE_SHIPPED_EXT=on
-                export PROJECT_INSTALL_FLAGS="-v"
 
                 pip_install_project
                 test_py_project
@@ -110,8 +109,14 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
+
+                install_conda_deps
+
+                export CL_INC_DIR=$CONDA_PREFIX/include
+                export CL_LIB_DIR=$CONDA_PREFIX/lib
                 export CL_USE_SHIPPED_EXT=on
-                build_py_project_in_conda_env
+
+                pip_install_project
                 test_py_project
 
     pytest_win:
@@ -149,8 +154,13 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                export CL_LIBNAME=OpenCL
-                build_py_project_in_conda_env
+                install_conda_deps
+
+                export CL_INC_DIR=$CONDA_PREFIX/include
+                export CL_LIB_DIR=$CONDA_PREFIX/lib
+                export CL_USE_SHIPPED_EXT=on
+
+                pip_install_project
                 test_py_project
 
     docs:
@@ -168,8 +178,13 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
+                install_conda_deps
+
+                export CL_INC_DIR=$CONDA_PREFIX/include
+                export CL_LIB_DIR=$CONDA_PREFIX/lib
                 export CL_USE_SHIPPED_EXT=on
-                build_py_project_in_conda_env
+
+                pip_install_project
                 build_docs
 
     examples:
@@ -183,7 +198,13 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                build_py_project_in_conda_env
+                install_conda_deps
+
+                export CL_INC_DIR=$CONDA_PREFIX/include
+                export CL_LIB_DIR=$CONDA_PREFIX/lib
+                export CL_USE_SHIPPED_EXT=on
+
+                pip_install_project
                 (cd examples; rm -f gl_*)
                 run_examples --no-require-main
 
@@ -202,13 +223,16 @@ jobs:
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
 
-                TEST_ENV_ROOT="$(pwd)/$DOWNSTREAM_PROJECT/.conda-root/envs/testing"
-                export CL_INC_DIR="$TEST_ENV_ROOT/include"
-                export CL_LIB_DIR="$TEST_ENV_ROOT/lib"
-
                 prepare_downstream_build "https://github.com/inducer/$DOWNSTREAM_PROJECT.git"
                 sed -i 's/pyopencl/ocl-icd/' .test-conda-env-py3.yml
-                build_py_project_in_conda_env
+
+                install_conda_deps
+
+                export CL_INC_DIR=$CONDA_PREFIX/include
+                export CL_LIB_DIR=$CONDA_PREFIX/lib
+                export CL_USE_SHIPPED_EXT=on
+
+                pip_install_project
                 test_py_project
 
 # vim: sw=4
