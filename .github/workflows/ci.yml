@@ -42,12 +42,13 @@ jobs:
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
 
-                TEST_ENV_ROOT="$(pwd)/pyopencl/.conda-root/envs/testing"
-                export CL_INC_DIR="$TEST_ENV_ROOT/include"
-                export CL_LIB_DIR="$TEST_ENV_ROOT/lib"
+                install_conda_deps
+
+                export CL_INC_DIR="$CONDA_PREFIX/include"
+                export CL_LIB_DIR="$CONDA_PREFIX/lib"
                 export CL_LIBNAME=OpenCL
 
-                build_py_project_in_conda_env
+                pip_install_project
 
                 # Avoid linting local directory, where native module
                 # cannot be imported.
