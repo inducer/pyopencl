@@ -20,6 +20,7 @@ if (SKBUILD)
   set(Python_EXECUTABLE "${PYTHON_EXECUTABLE}")
   set(Python_INCLUDE_DIR "${PYTHON_INCLUDE_DIR}")
   set(Python_LIBRARIES "${PYTHON_LIBRARY}")
+  set(OpenCL_ROOT "${PYOPENCL_CL_LIB_DIRS}")
 endif()
 find_package(Python COMPONENTS Interpreter Development.Module NumPy REQUIRED)
 
