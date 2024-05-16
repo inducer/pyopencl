@@ -1225,7 +1225,9 @@ class ListOfListsBuilder:
             info_record.compressed_indices = cl.array.empty(
                 queue, (n_objects + 1,), index_dtype, allocator=allocator)
             info_record.compressed_indices[0] = 0
-            compress_events[name] = compress_kernel(  # pylint: disable=E0606
+
+            compress_events[name] = compress_kernel( \
+                # pylint: disable=possibly-used-before-assignment
                 info_record.starts,
                 compressed_counts,
                 info_record.nonempty_indices,

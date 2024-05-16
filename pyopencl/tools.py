@@ -347,7 +347,7 @@ def _monkeypatch_svm_docstrings():
     from pytools.codegen import remove_common_indentation
 
     # {{{ PooledSVM
-    # pylint: disable=E0606
+    # pylint: disable=possibly-used-before-assignment
     PooledSVM.__doc__ = """
     An object representing a :class:`SVMPool`-based allocation of
     :ref:`svm`.  Analogous to :class:`~pyopencl.SVMAllocation`, however once

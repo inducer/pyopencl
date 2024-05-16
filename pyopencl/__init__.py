@@ -979,7 +979,8 @@ def _add_functionality():
             else:
                 raise ValueError("images cannot have more than three dimensions")
 
-            desc = ImageDescriptor()  # pylint: disable=E0606
+            desc = ImageDescriptor() \
+                # pylint: disable=possibly-used-before-assignment
 
             desc.image_type = image_type
             desc.shape = shape  # also sets desc.array_size
