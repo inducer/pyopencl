@@ -347,97 +347,99 @@ def _monkeypatch_svm_docstrings():
     from pytools.codegen import remove_common_indentation
 
     # {{{ PooledSVM
-    # pylint: disable=possibly-used-before-assignment
-    PooledSVM.__doc__ = """
-    An object representing a :class:`SVMPool`-based allocation of
-    :ref:`svm`.  Analogous to :class:`~pyopencl.SVMAllocation`, however once
-    this object is deleted, its associated device memory is returned to the
-    pool from which it came.
 
-    .. versionadded:: 2022.2
+    PooledSVM.__doc__ = (  # pylint: disable=possibly-used-before-assignment
+        """An object representing a :class:`SVMPool`-based allocation of
+        :ref:`svm`.  Analogous to :class:`~pyopencl.SVMAllocation`, however once
+        this object is deleted, its associated device memory is returned to the
+        pool from which it came.
 
-    .. note::
+        .. versionadded:: 2022.2
 
-        If the :class:`SVMAllocator` for the :class:`SVMPool` that allocated an
-        object of this type is associated with an (in-order)
-        :class:`~pyopencl.CommandQueue`, sufficient synchronization is provided
-        to ensure operations enqueued before deallocation complete before
-        operations from a different use (possibly in a different queue) are
-        permitted to start. This applies when :class:`release` is called and
-        also when the object is freed automatically by the garbage collector.
+        .. note::
 
-    Is a :class:`pyopencl.SVMPointer`.
+            If the :class:`SVMAllocator` for the :class:`SVMPool` that allocated an
+            object of this type is associated with an (in-order)
+            :class:`~pyopencl.CommandQueue`, sufficient synchronization is provided
+            to ensure operations enqueued before deallocation complete before
+            operations from a different use (possibly in a different queue) are
+            permitted to start. This applies when :class:`release` is called and
+            also when the object is freed automatically by the garbage collector.
 
-    Supports structural equality and hashing.
+        Is a :class:`pyopencl.SVMPointer`.
 
-    .. automethod:: release
+        Supports structural equality and hashing.
 
-        Return the held memory to the pool. See the note about synchronization
-        behavior during deallocation above.
+        .. automethod:: release
 
-    .. automethod:: enqueue_release
+            Return the held memory to the pool. See the note about synchronization
+            behavior during deallocation above.
 
-        Synonymous to :meth:`release`, for consistency with
-        :class:`~pyopencl.SVMAllocation`. Note that, unlike
-        :meth:`pyopencl.SVMAllocation.enqueue_release`, specifying a queue
-        or events to be waited for is not supported.
+        .. automethod:: enqueue_release
 
-    .. automethod:: bind_to_queue
+            Synonymous to :meth:`release`, for consistency with
+            :class:`~pyopencl.SVMAllocation`. Note that, unlike
+            :meth:`pyopencl.SVMAllocation.enqueue_release`, specifying a queue
+            or events to be waited for is not supported.
 
-        Analogous to :meth:`pyopencl.SVMAllocation.bind_to_queue`.
+        .. automethod:: bind_to_queue
 
-    .. automethod:: unbind_from_queue
+            Analogous to :meth:`pyopencl.SVMAllocation.bind_to_queue`.
 
-        Analogous to :meth:`pyopencl.SVMAllocation.unbind_from_queue`.
-    """
+        .. automethod:: unbind_from_queue
+
+            Analogous to :meth:`pyopencl.SVMAllocation.unbind_from_queue`.
+        """)
 
     # }}}
 
     # {{{ SVMAllocator
 
-    SVMAllocator.__doc__ = """
-    .. versionadded:: 2022.2
+    SVMAllocator.__doc__ = (  # pylint: disable=possibly-used-before-assignment
+        """
+        .. versionadded:: 2022.2
 
-    .. automethod:: __init__
+        .. automethod:: __init__
 
-        :arg flags: See :class:`~pyopencl.svm_mem_flags`.
-        :arg queue: If not specified, allocations will be freed
-            eagerly, irrespective of whether pending/enqueued operations
-            are still using the memory.
+            :arg flags: See :class:`~pyopencl.svm_mem_flags`.
+            :arg queue: If not specified, allocations will be freed
+                eagerly, irrespective of whether pending/enqueued operations
+                are still using the memory.
 
-            If specified, deallocation of memory will be enqueued
-            with the given queue, and will only be performed
-            after previously-enqueue operations in the queue have
-            completed.
+                If specified, deallocation of memory will be enqueued
+                with the given queue, and will only be performed
+                after previously-enqueue operations in the queue have
+                completed.
 
-            It is an error to specify an out-of-order queue.
+                It is an error to specify an out-of-order queue.
 
-            .. warning::
+                .. warning::
 
-                Not specifying a queue will typically lead to undesired
-                behavior, including crashes and memory corruption.
-                See the warning in :ref:`svm`.
+                    Not specifying a queue will typically lead to undesired
+                    behavior, including crashes and memory corruption.
+                    See the warning in :ref:`svm`.
 
-    .. automethod:: __call__
+        .. automethod:: __call__
 
-        Return a :class:`~pyopencl.SVMAllocation` of the given *size*.
-    """
+            Return a :class:`~pyopencl.SVMAllocation` of the given *size*.
+        """)
 
     # }}}
 
     # {{{ SVMPool
 
-    SVMPool.__doc__ = remove_common_indentation("""
-    A memory pool for OpenCL device memory in :ref:`SVM <svm>` form.
-    *allocator* must be an instance of :class:`SVMAllocator`.
+    SVMPool.__doc__ = (  # pylint: disable=possibly-used-before-assignment
+        remove_common_indentation("""
+        A memory pool for OpenCL device memory in :ref:`SVM <svm>` form.
+        *allocator* must be an instance of :class:`SVMAllocator`.
 
-    .. versionadded:: 2022.2
+        .. versionadded:: 2022.2
 
-    .. automethod:: __init__
-    .. automethod:: __call__
+        .. automethod:: __init__
+        .. automethod:: __call__
 
-        Return a :class:`PooledSVM` of the given *size*.
-    """) + _MEMPOOL_IFACE_DOCS
+            Return a :class:`PooledSVM` of the given *size*.
+        """) + _MEMPOOL_IFACE_DOCS)
 
     # }}}
 

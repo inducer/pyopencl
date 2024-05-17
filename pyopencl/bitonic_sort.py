@@ -226,7 +226,7 @@ class BitonicSort:
                     letter = "B2"
                     ninc = 1
                 else:
-                    raise ValueError("Should not happen")
+                    raise AssertionError("Should not happen")
 
                 nthreads = size >> ninc
 
