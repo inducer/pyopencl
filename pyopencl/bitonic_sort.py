@@ -225,6 +225,8 @@ class BitonicSort:
                 elif inc >= 0:
                     letter = "B2"
                     ninc = 1
+                else:
+                    raise AssertionError("Should not happen")
 
                 nthreads = size >> ninc
 
