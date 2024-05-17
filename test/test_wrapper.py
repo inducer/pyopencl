@@ -163,6 +163,9 @@ def test_get_info(ctx_factory):
             & cl.command_queue_properties.PROFILING_ENABLE):
         profiling = True
         props = cl.command_queue_properties.PROFILING_ENABLE
+    else:
+        profiling = False
+
     queue = cl.CommandQueue(ctx,
             properties=props)
     do_test(queue, cl.command_queue_info)
