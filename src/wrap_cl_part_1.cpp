@@ -79,7 +79,13 @@ void pyopencl_expose_part_1(py::module_ &m)
 
   {
     typedef context cls;
-    py::class_<cls>(m, "Context", py::dynamic_attr(), py::is_weak_referenceable())
+    py::class_<cls>(
+           m, "Context",
+           py::dynamic_attr(),
+           py::is_weak_referenceable(),
+           py::intrusive_ptr<cls>(
+              [](cls *o, PyObject *po) noexcept { o->set_self_py(po); })
+         )
       .def(
           "__init__",
           [](cls *self, py::object py_devices, py::object py_properties,
@@ -112,7 +118,11 @@ void pyopencl_expose_part_1(py::module_ &m)
   // {{{ command queue
   {
     typedef command_queue cls;
-    py::class_<cls>(m, "CommandQueue", py::dynamic_attr())
+    py::class_<cls>(
+              m, "CommandQueue",
+              py::dynamic_attr(),
+              py::intrusive_ptr<cls>(
+                        [](cls *o, PyObject *po) noexcept { o->set_self_py(po); })            )
       .def(
         py::init<const context &, const device *, py::object>(),
         py::arg("context"),

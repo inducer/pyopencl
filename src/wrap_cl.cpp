@@ -27,6 +27,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL pyopencl_ARRAY_API
 
 #include "wrap_cl.hpp"
+#include <nanobind/intrusive/counter.inl>
 
 
 
@@ -49,6 +50,16 @@ static bool import_numpy_helper()
 
 NB_MODULE(_cl, m)
 {
+  py::intrusive_init(
+    [](PyObject *o) noexcept {
+        py::gil_scoped_acquire guard;
+        Py_INCREF(o);
+    },
+    [](PyObject *o) noexcept {
+        py::gil_scoped_acquire guard;
+        Py_DECREF(o);
+    });
+
   if (!import_numpy_helper())
     throw py::python_error();
 
