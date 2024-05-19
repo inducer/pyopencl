@@ -1143,7 +1143,7 @@ namespace pyopencl
 
   // {{{ context
 
-  class context : public noncopyable
+  class context : public noncopyable, public py::intrusive_base
   {
     private:
       cl_context m_context;
@@ -1415,7 +1415,7 @@ namespace pyopencl
 
   // {{{ command_queue
 
-  class command_queue
+  class command_queue: public py::intrusive_base
   {
     private:
       cl_command_queue m_queue;
@@ -1625,13 +1625,12 @@ namespace pyopencl
         }
       }
 
-      std::unique_ptr<context> get_context() const
+      py::ref<context> get_context() const
       {
         cl_context param_value;
         PYOPENCL_CALL_GUARDED(clGetCommandQueueInfo,
             (data(), CL_QUEUE_CONTEXT, sizeof(param_value), &param_value, 0));
-        return std::unique_ptr<context>(
-            new context(param_value, /*retain*/ true));
+        return py::ref<context>(new context(param_value, /*retain*/ true));
       }
 
 #if PYOPENCL_CL_VERSION < 0x1010
@@ -3437,12 +3436,12 @@ namespace pyopencl
   {
     private:
       bool m_valid;
-      std::shared_ptr<command_queue> m_queue;
+      py::ref<command_queue> m_queue;
       memory_object m_mem;
       void *m_ptr;
 
     public:
-      memory_map(std::shared_ptr<command_queue> cq, memory_object const &mem, void *ptr)
+      memory_map(py::ref<command_queue> cq, memory_object const &mem, void *ptr)
         : m_valid(true), m_queue(cq), m_mem(mem), m_ptr(ptr)
       {
       }
@@ -3479,7 +3478,7 @@ namespace pyopencl
 #ifndef PYPY_VERSION
   inline
   py::object enqueue_map_buffer(
-      std::shared_ptr<command_queue> cq,
+      py::ref<command_queue> cq,
       memory_object_holder &buf,
       cl_map_flags flags,
       size_t offset,
@@ -3563,7 +3562,7 @@ namespace pyopencl
 #ifndef PYPY_VERSION
   inline
   py::object enqueue_map_image(
-      std::shared_ptr<command_queue> cq,
+      py::ref<command_queue> cq,
       memory_object_holder &img,
       cl_map_flags flags,
       py::object py_origin,
@@ -3697,7 +3696,7 @@ namespace pyopencl
   class svm_allocation : public svm_pointer
   {
     private:
-      std::shared_ptr<context> m_context;
+      py::ref<context> m_context;
       void *m_allocation;
       size_t m_size;
       command_queue_ref m_queue;
@@ -3705,7 +3704,7 @@ namespace pyopencl
       // wait for users to finish in the case of out-of-order queues.
 
     public:
-      svm_allocation(std::shared_ptr<context> const &ctx, size_t size, cl_uint alignment,
+      svm_allocation(py::ref<context> const &ctx, size_t size, cl_uint alignment,
           cl_svm_mem_flags flags, const command_queue *queue = nullptr)
         : m_context(ctx), m_size(size)
       {
@@ -3738,7 +3737,7 @@ namespace pyopencl
         }
       }
 
-      svm_allocation(std::shared_ptr<context> const &ctx, void *allocation, size_t size,
+      svm_allocation(py::ref<context> const &ctx, void *allocation, size_t size,
            const cl_command_queue queue)
         : m_context(ctx), m_allocation(allocation), m_size(size)
       {
