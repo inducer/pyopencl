@@ -359,7 +359,7 @@ void pyopencl_expose_part_2(py::module_ &m)
   {
     typedef svm_allocation cls;
     py::class_<cls, svm_pointer>(m, "SVMAllocation", py::dynamic_attr())
-      .def(py::init<std::shared_ptr<context>, size_t, cl_uint, cl_svm_mem_flags, const command_queue *>(),
+      .def(py::init<py::ref<context>, size_t, cl_uint, cl_svm_mem_flags, const command_queue *>(),
           py::arg("context"),
           py::arg("size"),
           py::arg("alignment"),
