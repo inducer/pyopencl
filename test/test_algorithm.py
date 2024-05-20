@@ -1059,7 +1059,7 @@ def test_key_value_sorter(ctx_factory):
     ])
 @pytest.mark.bitonic
 def test_bitonic_sort(ctx_factory, size, dtype):
-    ctx = cl.create_some_context()
+    ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
     dev = ctx.devices[0]
@@ -1113,7 +1113,7 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
         pytest.xfail("pypy doesn't seem to handle as_strided "
                 "on zero-sized arrays very well")
 
-    ctx = cl.create_some_context()
+    ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
     device = queue.device
