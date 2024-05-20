@@ -36,6 +36,14 @@
 #include <iostream>
 #include "bitlog.hpp"
 
+#ifndef PYGPU_PYCUDA
+#include <nanobind/intrusive/ref.h>
+#include <nanobind/intrusive/counter.h>
+
+
+namespace nb = nanobind;
+#endif
+
 
 namespace PYGPU_PACKAGE
 {
@@ -53,7 +61,7 @@ namespace PYGPU_PACKAGE
 #ifdef PYGPU_PYCUDA
 #define PYGPU_SHARED_PTR boost::shared_ptr
 #else
-#define PYGPU_SHARED_PTR std::shared_ptr
+#define PYGPU_SHARED_PTR nb::ref
 #endif
 
   template <class T>
@@ -89,6 +97,9 @@ namespace PYGPU_PACKAGE
 
   template<class Allocator>
   class memory_pool : mp_noncopyable
+  #ifndef PYGPU_PYCUDA
+  , public nb::intrusive_base
+  #endif
   {
     public:
       typedef typename Allocator::pointer_type pointer_type;
@@ -102,7 +113,7 @@ namespace PYGPU_PACKAGE
       container_t m_container;
       typedef typename container_t::value_type bin_pair_t;
 
-      std::shared_ptr<Allocator> m_allocator;
+      PYGPU_SHARED_PTR<Allocator> m_allocator;
 
       // A held block is one that's been released by the application, but that
       // we are keeping around to dish out again.
@@ -125,7 +136,7 @@ namespace PYGPU_PACKAGE
       unsigned m_leading_bits_in_bin_id;
 
     public:
-      memory_pool(std::shared_ptr<Allocator> alloc, unsigned leading_bits_in_bin_id=4)
+      memory_pool(PYGPU_SHARED_PTR<Allocator> alloc, unsigned leading_bits_in_bin_id=4)
         : m_allocator(alloc),
         m_held_blocks(0), m_active_blocks(0),
         m_managed_bytes(0), m_active_bytes(0),
