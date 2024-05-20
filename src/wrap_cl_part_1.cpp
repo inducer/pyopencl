@@ -118,7 +118,10 @@ void pyopencl_expose_part_1(py::module_ &m)
   // {{{ command queue
   {
     typedef command_queue cls;
-    py::class_<cls>(m, "CommandQueue", py::dynamic_attr())
+    py::class_<cls>(m, "CommandQueue",
+                    py::dynamic_attr(),
+                    py::intrusive_ptr<cls>(
+              [](cls *o, PyObject *po) noexcept { o->set_self_py(po); }))
       .def(
         py::init<const context &, const device *, py::object>(),
         py::arg("context"),

@@ -1415,7 +1415,7 @@ namespace pyopencl
 
   // {{{ command_queue
 
-  class command_queue
+  class command_queue : public py::intrusive_base
   {
     private:
       cl_command_queue m_queue;
@@ -3436,12 +3436,12 @@ namespace pyopencl
   {
     private:
       bool m_valid;
-      std::shared_ptr<command_queue> m_queue;
+      py::ref<command_queue> m_queue;
       memory_object m_mem;
       void *m_ptr;
 
     public:
-      memory_map(std::shared_ptr<command_queue> cq, memory_object const &mem, void *ptr)
+      memory_map(py::ref<command_queue> cq, memory_object const &mem, void *ptr)
         : m_valid(true), m_queue(cq), m_mem(mem), m_ptr(ptr)
       {
       }
@@ -3478,7 +3478,7 @@ namespace pyopencl
 #ifndef PYPY_VERSION
   inline
   py::object enqueue_map_buffer(
-      std::shared_ptr<command_queue> cq,
+      py::ref<command_queue> cq,
       memory_object_holder &buf,
       cl_map_flags flags,
       size_t offset,
@@ -3562,7 +3562,7 @@ namespace pyopencl
 #ifndef PYPY_VERSION
   inline
   py::object enqueue_map_image(
-      std::shared_ptr<command_queue> cq,
+      py::ref<command_queue> cq,
       memory_object_holder &img,
       cl_map_flags flags,
       py::object py_origin,
