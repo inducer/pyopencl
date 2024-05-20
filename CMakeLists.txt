@@ -16,6 +16,14 @@ set(CL_INC_DIR CACHE STRING "OpenCL include directory")
 set(CL_LIB_DIR CACHE STRING "OpenCL library directory")
 set(CL_LIBNAME CACHE STRING "OpenCL library name")
 
+if(DEFINED ENV{CONDA_PREFIX})
+  if(EXISTS $ENV{CONDA_PREFIX}/lib/libOpenCL${CMAKE_SHARED_LIBRARY_SUFFIX})
+    set(CL_INC_DIR $ENV{CONDA_PREFIX}/include)
+    set(CL_LIB_DIR $ENV{CONDA_PREFIX}/lib)
+    set(CL_LIBNAME OpenCL)
+  endif()
+endif()
+
 include(siteconf.cmake OPTIONAL)
 
 if(DEFINED ENV{CL_INC_DIR})
