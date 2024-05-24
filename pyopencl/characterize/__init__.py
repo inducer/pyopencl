@@ -20,15 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-import logging
 from typing import Dict, Optional, Tuple
 
 from pytools import memoize
 
 import pyopencl as cl
-
-
-logger = logging.getLogger(__name__)
 
 
 class CLCharacterizationWarning(UserWarning):
@@ -456,18 +452,5 @@ def has_src_build_cache(dev: cl.Device) -> Optional[bool]:
         return False
 
     return None
-
-
-def setup_pocl_cache_dirs() -> None:
-    """Make sure there are PID-local PoCL cache directories set up."""
-    import os
-    if os.getenv("POCL_CACHE_DIR") is None and os.getenv("XDG_CACHE_HOME") is None:
-
-        import tempfile
-        tempdir = tempfile.mkdtemp(prefix="pocl_cache_")
-        logger.info("POCL_CACHE_DIR and XDG_CACHE_HOME are not set,"
-                    " setting POCL_CACHE_DIR to a PID-private directory " + tempdir)
-        os.environ["POCL_CACHE_DIR"] = tempdir
-
 
 # vim: foldmethod=marker

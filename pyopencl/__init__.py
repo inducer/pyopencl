@@ -1550,10 +1550,6 @@ def choose_devices(interactive: Optional[bool] = None,
     :returns: a list of :class:`Device` instances.
     """
 
-    # This must be done before PoCL is actually loaded
-    from pyopencl.characterize import setup_pocl_cache_dirs
-    setup_pocl_cache_dirs()
-
     if answers is None:
         if "PYOPENCL_CTX" in os.environ:
             ctx_spec = os.environ["PYOPENCL_CTX"]
