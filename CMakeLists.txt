@@ -19,20 +19,12 @@ set(CL_LIBNAME CACHE STRING "OpenCL library name")
 if(NOT CL_INC_DIR)
   message(STATUS "CL_INC_DIR not set, trying to guess it from conda environment and environment variables")
   if(DEFINED ENV{CONDA_PREFIX})
-    # Linux/MacOS:
     if(EXISTS $ENV{CONDA_PREFIX}/lib/libOpenCL${CMAKE_SHARED_LIBRARY_SUFFIX})
       message(STATUS "Found OpenCL in conda environment '$ENV{CONDA_PREFIX}'")
       set(CL_INC_DIR $ENV{CONDA_PREFIX}/include)
       set(CL_LIB_DIR $ENV{CONDA_PREFIX}/lib)
       set(CL_LIBNAME OpenCL)
-    # Windows:
-    elseif(EXISTS $ENV{CONDA_PREFIX}/Library/lib/libOpenCL${CMAKE_SHARED_LIBRARY_SUFFIX})
-      message(STATUS "Found OpenCL in conda environment '$ENV{CONDA_PREFIX}'")
-      set(CL_INC_DIR $ENV{CONDA_PREFIX}/Library/include)
-      set(CL_LIB_DIR $ENV{CONDA_PREFIX}/Library/lib)
-      set(CL_LIBNAME OpenCL)
     endif()
-
   endif()
 
   if(DEFINED ENV{CL_INC_DIR})
