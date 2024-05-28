@@ -110,15 +110,8 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-
-                install_conda_deps
-
                 export CL_USE_SHIPPED_EXT=on
-                export CL_INC_DIR="$CONDA_PREFIX/Library/include"
-                export CL_LIB_DIR="$CONDA_PREFIX/Library/lib"
-
-                pip_install_project
-
+                build_py_project_in_conda_env
                 test_py_project
 
     pytest_mac:
