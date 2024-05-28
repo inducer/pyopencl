@@ -24,8 +24,6 @@ if(DEFINED ENV{CONDA_PREFIX})
   endif()
 endif()
 
-include(siteconf.cmake OPTIONAL)
-
 if(DEFINED ENV{CL_INC_DIR})
   set(CL_INC_DIR $ENV{CL_INC_DIR})
 endif()
