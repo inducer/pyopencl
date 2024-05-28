@@ -44,7 +44,7 @@ if(NOT CL_INC_DIR)
       set(CL_LIB_DIR $ENV{CONDA_PREFIX}/lib)
       set(CL_LIBNAME OpenCL)
     # Windows:
-    elseif(EXISTS $ENV{CONDA_PREFIX}/Library/lib/libOpenCL${CMAKE_SHARED_LIBRARY_SUFFIX})
+    elseif(EXISTS $ENV{CONDA_PREFIX}/Library/lib/OpenCL${CMAKE_STATIC_LIBRARY_SUFFIX})
       message(STATUS "Found OpenCL in conda environment '$ENV{CONDA_PREFIX}'")
       set(CL_INC_DIR $ENV{CONDA_PREFIX}/Library/include)
       set(CL_LIB_DIR $ENV{CONDA_PREFIX}/Library/lib)
