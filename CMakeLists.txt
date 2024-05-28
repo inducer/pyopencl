@@ -18,6 +18,7 @@ set(CL_LIBNAME CACHE STRING "OpenCL library name")
 
 if(DEFINED ENV{CONDA_PREFIX})
   if(EXISTS $ENV{CONDA_PREFIX}/lib/libOpenCL${CMAKE_SHARED_LIBRARY_SUFFIX})
+    message(STATUS "Found OpenCL in conda environment '$ENV{CONDA_PREFIX}'")
     set(CL_INC_DIR $ENV{CONDA_PREFIX}/include)
     set(CL_LIB_DIR $ENV{CONDA_PREFIX}/lib)
     set(CL_LIBNAME OpenCL)
@@ -25,15 +26,44 @@ if(DEFINED ENV{CONDA_PREFIX})
 endif()
 
 if(DEFINED ENV{CL_INC_DIR})
+  message(STATUS "Using OpenCL include directory from environment '$ENV{CL_INC_DIR}'")
   set(CL_INC_DIR $ENV{CL_INC_DIR})
 endif()
 
 if(DEFINED ENV{CL_LIB_DIR})
+  message(STATUS "Using OpenCL library directory from environment '$ENV{CL_INC_DIR}'")
   set(CL_LIB_DIR $ENV{CL_LIB_DIR})
 endif()
 
 if(DEFINED ENV{CL_LIBNAME})
+  message(STATUS "Using OpenCL library name from environment '$ENV{CL_LIBNAME}'")
   set(CL_LIBNAME $ENV{CL_LIBNAME})
+endif()
+
+# }}}
+
+# {{{ Get version information
+
+find_program(GIT git)
+
+if(GIT AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
+  execute_process(COMMAND git describe --exact-match --dirty=*
+             OUTPUT_VARIABLE PYOPENCL_VERSION_GIT
+             RESULT_VARIABLE git_result
+             OUTPUT_STRIP_TRAILING_WHITESPACE
+             ERROR_QUIET
+             )
+  if(NOT ${git_result} EQUAL 0)
+    execute_process(COMMAND git describe --long --always --dirty=*
+             OUTPUT_VARIABLE PYOPENCL_VERSION_GIT
+             OUTPUT_STRIP_TRAILING_WHITESPACE
+             )
+    set(PYOPENCL_REL "(dev)")
+  else()
+    set(PYOPENCL_REL "(release)")
+  endif()
+else()
+  set(PYOPENCL_VERSION_GIT "v${PROJECT_VERSION}")
 endif()
 
 # }}}
@@ -64,6 +94,12 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # {{{ Detect nanobind and import it
+
+execute_process(
+  COMMAND
+  "${PYTHON_EXECUTABLE}" -c "import nanobind; print(nanobind.__version__)"
+  OUTPUT_VARIABLE NANOBIND_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
 
 execute_process(
   COMMAND
@@ -121,5 +157,21 @@ if (PYOPENCL_USE_SHIPPED_EXT)
 endif()
 
 install(TARGETS _cl LIBRARY DESTINATION pyopencl)
+
+
+# {{{ Print configuration
+
+message("==============================")
+message("PyOpenCL ${PYOPENCL_VERSION_GIT} ${PYOPENCL_REL} configuration: ")
+message("  PyOpenCL options: PYOPENCL_TRACE=${PYOPENCL_TRACE} PYOPENCL_ENABLE_GL=${PYOPENCL_ENABLE_GL} PYOPENCL_USE_SHIPPED_EXT=${PYOPENCL_USE_SHIPPED_EXT}")
+message("  OpenCL:           ${OpenCL_LIBRARIES} [${OpenCL_VERSION_STRING}]")
+message("  Python:           ${Python_VERSION} [${Python_EXECUTABLE}]")
+message("  Build type:       ${CMAKE_BUILD_TYPE}")
+message("  C++ compiler:     ${CMAKE_CXX_COMPILER} [${CMAKE_CXX_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}]")
+message("  CMake:            ${CMAKE_COMMAND} [${CMAKE_VERSION}]")
+message("  Nanobind:         ${NANOBIND_VERSION}")
+message("==============================")
+
+# }}}
 
 # vim: foldmethod=marker:sw=2
