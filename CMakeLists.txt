@@ -93,20 +93,7 @@ endif()
 
 # }}}
 
-# {{{ Constrain FindPython to find the Python version used by scikit-build-core
-
-message(STATUS "Python_VERSION ${PYTHON_VERSION_STRING}")
-message(STATUS "Python_EXECUTABLE ${PYTHON_EXECUTABLE}")
-message(STATUS "Python_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
-message(STATUS "Python_LIBRARIES ${PYTHON_LIBRARY}")
-set(Python_VERSION "${PYTHON_VERSION_STRING}")
-set(Python_EXECUTABLE "${PYTHON_EXECUTABLE}")
-set(Python_INCLUDE_DIR "${PYTHON_INCLUDE_DIR}")
-set(Python_LIBRARIES "${PYTHON_LIBRARY}")
-
 find_package(Python COMPONENTS Interpreter Development.Module NumPy REQUIRED)
-
-# }}}
 
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
