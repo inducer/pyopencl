@@ -75,7 +75,7 @@ endif()
 
 # }}}
 
-# {{{ Constrain FindPython to find the Python version used by scikit-build
+# {{{ Constrain FindPython to find the Python version used by scikit-build-core
 
 message(STATUS "Python_VERSION ${PYTHON_VERSION_STRING}")
 message(STATUS "Python_EXECUTABLE ${PYTHON_EXECUTABLE}")
