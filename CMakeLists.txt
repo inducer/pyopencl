@@ -35,24 +35,7 @@ set(CL_LIB_DIR CACHE STRING "OpenCL library directory")
 set(CL_LIBNAME CACHE STRING "OpenCL library name")
 
 if(NOT CL_INC_DIR)
-  message(STATUS "CL_INC_DIR not set, trying to guess it from conda environment and environment variables")
-  if(DEFINED ENV{CONDA_PREFIX})
-    # Linux/MacOS:
-    if(EXISTS $ENV{CONDA_PREFIX}/lib/libOpenCL${CMAKE_SHARED_LIBRARY_SUFFIX})
-      message(STATUS "Found OpenCL in conda environment '$ENV{CONDA_PREFIX}'")
-      set(CL_INC_DIR $ENV{CONDA_PREFIX}/include)
-      set(CL_LIB_DIR $ENV{CONDA_PREFIX}/lib)
-      set(CL_LIBNAME OpenCL)
-    # Windows:
-    elseif(EXISTS $ENV{CONDA_PREFIX}/Library/lib/OpenCL${CMAKE_STATIC_LIBRARY_SUFFIX})
-      message(STATUS "Found OpenCL in conda environment '$ENV{CONDA_PREFIX}'")
-      set(CL_INC_DIR $ENV{CONDA_PREFIX}/Library/include)
-      set(CL_LIB_DIR $ENV{CONDA_PREFIX}/Library/lib)
-      set(CL_LIBNAME OpenCL)
-    endif()
-
-  endif()
-
+  message(STATUS "CL_INC_DIR not set, trying to guess it from environment variables.")
   if(DEFINED ENV{CL_INC_DIR})
     message(STATUS "Using OpenCL include directory from environment '$ENV{CL_INC_DIR}'")
     set(CL_INC_DIR $ENV{CL_INC_DIR})
@@ -69,6 +52,26 @@ if(NOT CL_INC_DIR)
   endif()
 endif(NOT CL_INC_DIR)
 
+if(NOT CL_INC_DIR)
+  message(STATUS "CL_INC_DIR not set, trying to guess it from conda environment.")
+  if(DEFINED ENV{CONDA_PREFIX})
+    # Linux/MacOS:
+    if(EXISTS $ENV{CONDA_PREFIX}/lib/libOpenCL${CMAKE_SHARED_LIBRARY_SUFFIX})
+      message(STATUS "Found OpenCL in conda environment '$ENV{CONDA_PREFIX}'")
+      set(CL_INC_DIR $ENV{CONDA_PREFIX}/include)
+      set(CL_LIB_DIR $ENV{CONDA_PREFIX}/lib)
+      set(CL_LIBNAME OpenCL)
+    # Windows:
+    elseif(EXISTS $ENV{CONDA_PREFIX}/Library/lib/OpenCL${CMAKE_STATIC_LIBRARY_SUFFIX})
+      message(STATUS "Found OpenCL in conda environment '$ENV{CONDA_PREFIX}'")
+      set(CL_INC_DIR $ENV{CONDA_PREFIX}/Library/include)
+      set(CL_LIB_DIR $ENV{CONDA_PREFIX}/Library/lib)
+      set(CL_LIBNAME OpenCL)
+    endif()
+
+  endif(DEFINED ENV{CONDA_PREFIX})
+endif(NOT CL_INC_DIR)
+
 message(STATUS "CL_INC_DIR ${CL_INC_DIR}")
 message(STATUS "CL_LIB_DIR ${CL_LIB_DIR}")
 message(STATUS "CL_LIBNAME ${CL_LIBNAME}")
@@ -80,6 +83,7 @@ message(STATUS "CL_LIBNAME ${CL_LIBNAME}")
 find_program(GIT git)
 
 if(GIT AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
+  # Exact tag match => released version
   execute_process(COMMAND git describe --exact-match --dirty=*
              OUTPUT_VARIABLE PYOPENCL_VERSION_GIT
              RESULT_VARIABLE git_result
@@ -87,6 +91,7 @@ if(GIT AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
              ERROR_QUIET
              )
   if(NOT ${git_result} EQUAL 0)
+    # No exact tag match => development version
     execute_process(COMMAND git describe --long --always --dirty=*
              OUTPUT_VARIABLE PYOPENCL_VERSION_GIT
              OUTPUT_STRIP_TRAILING_WHITESPACE
