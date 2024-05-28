@@ -493,8 +493,16 @@ class Program:
             cache_dir = getattr(self._context, "cache_dir", None)
 
         build_descr = None
-        if _PYOPENCL_NO_CACHE and self._prg is None:
-            build_descr = "uncached source build (cache disabled by user)"
+        from pyopencl.characterize import has_src_build_cache
+
+        if (
+                (_PYOPENCL_NO_CACHE or has_src_build_cache(self._context.devices[0]))
+                and self._prg is None):
+            if _PYOPENCL_NO_CACHE:
+                build_descr = "uncached source build (cache disabled by user)"
+            else:
+                build_descr = "uncached source build (assuming cached by ICD)"
+
             self._prg = _cl._Program(self._context, self._source)
 
         from time import time
