@@ -33,7 +33,6 @@ jobs:
         -   uses: actions/checkout@v4
         -   name: "Main Script"
             run: |
-                set -x
                 CONDA_ENVIRONMENT=.test-conda-env-py3.yml
                 echo "- matplotlib" >> $CONDA_ENVIRONMENT
                 echo "- pyopengl" >> $CONDA_ENVIRONMENT
@@ -41,14 +40,7 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-
-                install_conda_deps
-
-                export CL_INC_DIR="$CONDA_PREFIX/include"
-                export CL_LIB_DIR="$CONDA_PREFIX/lib"
-                export CL_LIBNAME=OpenCL
-
-                pip_install_project
+                build_py_project_in_conda_env
 
                 # Avoid linting local directory, where native module
                 # cannot be imported.
@@ -63,18 +55,10 @@ jobs:
         -   uses: actions/checkout@v4
         -   name: "Main Script"
             run: |
-                set -x
                 curl -L -O https://tiker.net/ci-support-v0
-
                 . ci-support-v0
-
-                install_conda_deps
-
-                export CL_INC_DIR=$CONDA_PREFIX/include
-                export CL_LIB_DIR=$CONDA_PREFIX/lib
                 export CL_USE_SHIPPED_EXT=on
-
-                pip_install_project
+                build_py_project_in_conda_env
 
                 python -m pip install mypy importlib-resources
                 ./run-mypy.sh
@@ -88,13 +72,8 @@ jobs:
             run: |
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                install_conda_deps
-
-                export CL_INC_DIR=$CONDA_PREFIX/include
-                export CL_LIB_DIR=$CONDA_PREFIX/lib
                 export CL_USE_SHIPPED_EXT=on
-
-                pip_install_project
+                build_py_project_in_conda_env
                 test_py_project
 
     pytest_intel:
@@ -109,14 +88,8 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-
-                install_conda_deps
-
-                export CL_INC_DIR=$CONDA_PREFIX/include
-                export CL_LIB_DIR=$CONDA_PREFIX/lib
                 export CL_USE_SHIPPED_EXT=on
-
-                pip_install_project
+                build_py_project_in_conda_env
                 test_py_project
 
     pytest_win:
@@ -137,15 +110,8 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-
-                install_conda_deps
-
                 export CL_USE_SHIPPED_EXT=on
-                export CL_INC_DIR="$CONDA_PREFIX/Library/include"
-                export CL_LIB_DIR="$CONDA_PREFIX/Library/lib"
-
-                pip_install_project
-
+                build_py_project_in_conda_env
                 test_py_project
 
     pytest_mac:
@@ -161,14 +127,7 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                install_conda_deps
-
-                export CL_INC_DIR=$CONDA_PREFIX/include
-                export CL_LIB_DIR=$CONDA_PREFIX/lib
-                export CL_USE_SHIPPED_EXT=on
-                export CL_LIBNAME=OpenCL
-
-                pip_install_project
+                build_py_project_in_conda_env
                 test_py_project
 
     docs:
@@ -186,13 +145,8 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                install_conda_deps
-
-                export CL_INC_DIR=$CONDA_PREFIX/include
-                export CL_LIB_DIR=$CONDA_PREFIX/lib
                 export CL_USE_SHIPPED_EXT=on
-
-                pip_install_project
+                build_py_project_in_conda_env
                 build_docs
 
     examples:
@@ -206,13 +160,7 @@ jobs:
 
                 curl -L -O https://tiker.net/ci-support-v0
                 . ci-support-v0
-                install_conda_deps
-
-                export CL_INC_DIR=$CONDA_PREFIX/include
-                export CL_LIB_DIR=$CONDA_PREFIX/lib
-                export CL_USE_SHIPPED_EXT=on
-
-                pip_install_project
+                build_py_project_in_conda_env
                 (cd examples; rm -f gl_*)
                 run_examples --no-require-main
 
@@ -233,14 +181,7 @@ jobs:
 
                 prepare_downstream_build "https://github.com/inducer/$DOWNSTREAM_PROJECT.git"
                 sed -i 's/pyopencl/ocl-icd/' .test-conda-env-py3.yml
-
-                install_conda_deps
-
-                export CL_INC_DIR=$CONDA_PREFIX/include
-                export CL_LIB_DIR=$CONDA_PREFIX/lib
-                export CL_USE_SHIPPED_EXT=on
-
-                pip_install_project
+                build_py_project_in_conda_env
                 test_py_project
 
 # vim: sw=4
