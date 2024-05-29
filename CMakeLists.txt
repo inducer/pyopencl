@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17...3.26)
 
-project(pyopencl LANGUAGES CXX)
+project(pyopencl LANGUAGES CXX VERSION ${SKBUILD_PROJECT_VERSION})
 
 if(NOT SKBUILD)
   message(WARNING "\
