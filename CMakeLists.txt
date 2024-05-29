@@ -102,6 +102,7 @@ if(GIT AND EXISTS ${CMAKE_SOURCE_DIR}/.git)
   endif()
 else()
   set(PYOPENCL_VERSION_GIT "v${PROJECT_VERSION}")
+  set(PYOPENCL_REL "(non-git)")
 endif()
 
 # }}}
