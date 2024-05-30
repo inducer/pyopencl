@@ -81,6 +81,20 @@ if(NOT PYOPENCL_PRETEND_CL_VERSION)
   endif()
 endif()
 
+if(PYOPENCL_PRETEND_CL_VERSION)
+  # Split the version string into a list
+  string(REPLACE "." ";" VERSION_LIST ${PYOPENCL_PRETEND_CL_VERSION})
+
+  # Get the major and minor version numbers
+  list(GET VERSION_LIST 0 MAJOR)
+  list(GET VERSION_LIST 1 MINOR)
+
+  # Calculate the numerical value
+  math(EXPR ARG "0x1000*${MAJOR} + 0x10*${MINOR}")
+  message(STATUS "Pretending to use OpenCL version ${PYOPENCL_PRETEND_CL_VERSION} (${ARG})")
+  set(PYOPENCL_PRETEND_CL_VERSION ${ARG})
+endif()
+
 message(STATUS "CL_INC_DIR ${CL_INC_DIR}")
 message(STATUS "CL_LIB_DIR ${CL_LIB_DIR}")
 message(STATUS "CL_LIBNAME ${CL_LIBNAME}")
