@@ -194,11 +194,11 @@ For PyOpenCL, the basic process is as follows:
     $ pip install -v .
 
     # editable install - make sure to disable build isolation:
-    $ pip install nanobind scikit-build-core[pyproject] numpy
+    $ pip install nanobind scikit-build-core[pyproject] numpy ninja
     $ pip install --no-build-isolation -ve .
 
-    # editable install with automatic recompilation if needed:
-    $ pip install --no-build-isolation -Ceditable.rebuild=true -ve .
+    # editable install with automatic recompilation if needed (somewhat experimental):
+    $ pip install --no-build-isolation -Ceditable.rebuild=true -Cbuild-dir=build -ve .
 
 PyOpenCL will attempt to automatically find and use the OpenCL headers and libraries
 while building. You can also specify the paths to the OpenCL headers and libraries manually:
