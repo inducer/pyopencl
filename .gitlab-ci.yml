@@ -246,10 +246,6 @@ Downstream:
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0
 
-    export TEST_ENV_ROOT="$(pwd)/$DOWNSTREAM_PROJECT/.conda-root/envs/testing"
-    ./configure.py --cl-inc-dir="$TEST_ENV_ROOT/include" --cl-lib-dir="$TEST_ENV_ROOT/lib"
-    git add -f siteconf.py
-
     prepare_downstream_build "https://github.com/inducer/$DOWNSTREAM_PROJECT.git"
     sed -i 's/pyopencl/ocl-icd/' .test-conda-env-py3.yml
     build_py_project_in_conda_env
