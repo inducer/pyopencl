@@ -27,9 +27,9 @@ endif()
 
 # {{{ Options
 
-option(PYOPENCL_TRACE "Enable OpenCL tracing" OFF)
-option(PYOPENCL_ENABLE_GL "Enable OpenGL interoperability" OFF)
-option(PYOPENCL_USE_SHIPPED_EXT "Use shipped CL extension header" OFF)
+option(PYOPENCL_TRACE "Enable OpenCL tracing" $ENV{PYOPENCL_TRACE})
+option(PYOPENCL_ENABLE_GL "Enable OpenGL interoperability" $ENV{PYOPENCL_ENABLE_GL})
+option(PYOPENCL_USE_SHIPPED_EXT "Use shipped CL extension header" $ENV{PYOPENCL_USE_SHIPPED_EXT})
 set(CL_INC_DIR CACHE STRING "OpenCL include directory")
 set(CL_LIB_DIR CACHE STRING "OpenCL library directory")
 set(CL_LIBNAME CACHE STRING "OpenCL library name")
