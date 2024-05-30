@@ -52,6 +52,8 @@ test = [
 
 [project.urls]
 Homepage = "https://mathema.tician.de/software/pyopencl"
+Documentation = "https://documen.tician.de/pyopencl"
+Repository = "https://github.com/inducer/pyopencl"
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/test"
