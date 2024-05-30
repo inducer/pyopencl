@@ -30,9 +30,12 @@ endif()
 option(PYOPENCL_TRACE "Enable OpenCL tracing" $ENV{PYOPENCL_TRACE})
 option(PYOPENCL_ENABLE_GL "Enable OpenGL interoperability" $ENV{PYOPENCL_ENABLE_GL})
 option(PYOPENCL_USE_SHIPPED_EXT "Use shipped CL extension header" $ENV{PYOPENCL_USE_SHIPPED_EXT})
+
 set(CL_INC_DIR CACHE STRING "OpenCL include directory")
 set(CL_LIB_DIR CACHE STRING "OpenCL library directory")
 set(CL_LIBNAME CACHE STRING "OpenCL library name")
+
+set(PYOPENCL_PRETEND_CL_VERSION CACHE STRING "Pretend to be a different OpenCL version")
 
 if(NOT CL_INC_DIR)
   message(STATUS "CL_INC_DIR not set, trying to guess it from environment variables.")
@@ -71,6 +74,12 @@ if(NOT CL_INC_DIR)
 
   endif(DEFINED ENV{CONDA_PREFIX})
 endif(NOT CL_INC_DIR)
+
+if(NOT PYOPENCL_PRETEND_CL_VERSION)
+  if(DEFINED ENV{PYOPENCL_PRETEND_CL_VERSION})
+    set(PYOPENCL_PRETEND_CL_VERSION $ENV{PYOPENCL_PRETEND_CL_VERSION})
+  endif()
+endif()
 
 message(STATUS "CL_INC_DIR ${CL_INC_DIR}")
 message(STATUS "CL_LIB_DIR ${CL_LIB_DIR}")
@@ -184,7 +193,7 @@ install(TARGETS _cl LIBRARY DESTINATION pyopencl)
 
 message("==============================")
 message("PyOpenCL ${PYOPENCL_VERSION_GIT} ${PYOPENCL_REL} configuration: ")
-message("  PyOpenCL options: PYOPENCL_TRACE=${PYOPENCL_TRACE} PYOPENCL_ENABLE_GL=${PYOPENCL_ENABLE_GL} PYOPENCL_USE_SHIPPED_EXT=${PYOPENCL_USE_SHIPPED_EXT}")
+message("  PyOpenCL options: PYOPENCL_TRACE=${PYOPENCL_TRACE} PYOPENCL_ENABLE_GL=${PYOPENCL_ENABLE_GL} PYOPENCL_USE_SHIPPED_EXT=${PYOPENCL_USE_SHIPPED_EXT} PYOPENCL_PRETEND_CL_VERSION=${PYOPENCL_PRETEND_CL_VERSION}")
 message("  OpenCL:           ${OpenCL_LIBRARIES} [${OpenCL_VERSION_STRING}]")
 message("  Python:           ${Python_VERSION} [${Python_EXECUTABLE}]")
 message("  Build type:       ${CMAKE_BUILD_TYPE}")
