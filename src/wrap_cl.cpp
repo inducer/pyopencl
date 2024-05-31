@@ -67,6 +67,11 @@ NB_MODULE(_cl, m)
   pyopencl_expose_part_1(m);
   pyopencl_expose_part_2(m);
   pyopencl_expose_mempool(m);
+
+#ifdef NDEBUG
+  // See https://github.com/inducer/pyopencl/issues/758 for context.
+  py::set_leak_warnings(false);
+#endif
 }
 
 // vim: foldmethod=marker
