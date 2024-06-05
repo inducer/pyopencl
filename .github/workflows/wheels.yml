@@ -27,19 +27,26 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.x' 
+          python-version: '3.x'
 
       - name: Install cibuildwheel
         run: python -m pip install cibuildwheel==2.17.0
 
       - name: Build wheels
-        run: python -m cibuildwheel --output-dir wheelhouse
+        shell: bash
+        run: |
+          set -x
+          if [[ "${{ matrix.os }}" == "windows-2019" ]]; then
+            export CL_INC_DIR="D:/a/pyopencl/pyopencl/OpenCL-Headers/install/include"
+            export CL_LIB_DIR="C:/Program Files/OpenCL-ICD-Loader/lib"
+          fi
+          python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v4
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
-          
+
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest

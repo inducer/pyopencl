@@ -10,7 +10,6 @@ _skbuild
 *.pyc
 build
 *.prof
-siteconf.py
 doc/hedge-notes.pdf
 *.vtk
 *.silo

@@ -184,7 +184,7 @@ Installing PyOpenCL *from source* should mostly not be necessary unless you
 have very specific needs or would like to modify PyOpenCL yourself.
 You can find generic installation instructions for ``nanobind``-based packages `here <https://nanobind.readthedocs.io/en/latest/packaging.html#step-4-install-the-package-locally>`__.
 
-For PyOpenCL, the process is as follows:
+For PyOpenCL, the basic process is as follows:
 
 .. code-block:: bash
 
@@ -194,7 +194,24 @@ For PyOpenCL, the process is as follows:
     $ pip install -v .
 
     # editable install - make sure to disable build isolation:
+    $ pip install nanobind scikit-build-core[pyproject] numpy ninja
     $ pip install --no-build-isolation -ve .
+
+    # editable install with automatic recompilation if needed (somewhat experimental):
+    $ pip install --no-build-isolation -Ceditable.rebuild=true -Cbuild-dir=build -ve .
+
+PyOpenCL will attempt to automatically find and use the OpenCL headers and libraries
+while building. You can also specify the paths to the OpenCL headers and libraries manually:
+
+.. code-block:: bash
+
+    # Option 1: specify the paths via environment variables:
+    $ export CL_INC_DIR=</path/to/OpenCL/include>
+    $ export CL_LIB_DIR=</path/to/OpenCL/lib>
+    $ export CL_LIBNAME=<OpenCL libname>
+
+    # Option 2: specify the paths via arguments to pip install:
+    $ pip install -v . --config-settings='cmake.args=-DCL_INC_DIR=/path/to/OpenCL/include;-DCL_LIB_DIR=/path/to/OpenCL/lib'
 
 Tips
 ====

@@ -1,16 +1,59 @@
 [build-system]
-# Minimum requirements for the build system to execute.
 requires = [
-        "setuptools>=42.0.0",
-        "wheel>=0.34.2",
-        "numpy;python_version >= '3.9' and platform_python_implementation == 'PyPy'",
-        "oldest-supported-numpy;python_version < '3.9' or platform_python_implementation != 'PyPy'",
-        "scikit-build",
-        "cmake>=3.17",
-        "nanobind>=1.9.2",
-        "ninja; platform_system!='Windows'",
-        ]
-build-backend = "setuptools.build_meta"
+    "scikit-build-core >=0.9.3",
+    "nanobind >=1.9.2",
+    "numpy;python_version >= '3.9' and platform_python_implementation == 'PyPy'",
+    "oldest-supported-numpy;python_version < '3.9' or platform_python_implementation != 'PyPy'",
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "pyopencl"
+version = "2024.2.2"
+description = "Python wrapper for OpenCL"
+readme = "README.rst"
+requires-python = "~=3.8"
+authors = [
+    { name = "Andreas Kloeckner", email = "inform@tiker.net" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: C++",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "importlib-resources; python_version<'3.9'",
+    "numpy",
+    "platformdirs>=2.2.0",
+    "pytools>=2022.1.13",
+]
+
+[project.optional-dependencies]
+oclgrind = [
+    "oclgrind_binary_distribution>=18.3",
+]
+pocl = [
+    "pocl_binary_distribution>=1.2",
+]
+test = [
+    "Mako",
+    "pytest>=7.0.0",
+]
+
+[project.urls]
+Homepage = "https://mathema.tician.de/software/pyopencl"
+Documentation = "https://documen.tician.de/pyopencl"
+Repository = "https://github.com/inducer/pyopencl"
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/test"
@@ -52,4 +95,3 @@ MACOSX_DEPLOYMENT_TARGET = "10.14"
 skip = ["*-win32", "pp*", "cp36-*", "cp37-*"]
 test-command = ""
 before-all = "bash {package}/scripts/build-ocl-windows.sh"
-before-build = "python configure.py --cl-inc-dir=D:/a/pyopencl/pyopencl/OpenCL-Headers/install/include --cl-lib-dir=\"C:/Program Files/OpenCL-ICD-Loader/lib\""
