@@ -95,3 +95,16 @@ MACOSX_DEPLOYMENT_TARGET = "10.14"
 skip = ["*-win32", "pp*", "cp36-*", "cp37-*"]
 test-command = ""
 before-all = "bash {package}/scripts/build-ocl-windows.sh"
+
+[tool.scikit-build]
+sdist.exclude = [
+    ".mypy_cache",
+    ".ci",
+    ".github",
+    ".conda-ci-build-configure.sh",
+    "doc/upload-docs.sh",
+    ".editorconfig",
+    "TODOs",
+    "run-*.sh",
+    "setup.cfg",
+]
