@@ -381,7 +381,8 @@ if not cl._PYOPENCL_NO_CACHE:
         = WriteOncePersistentDict(
             "pyopencl-invoker-cache-v42-nano",
             key_builder=_NumpyTypesKeyBuilder(),
-            in_mem_cache_size=0)
+            in_mem_cache_size=0,
+            safe_sync=False)
 
 
 def generate_enqueue_and_set_args(function_name,

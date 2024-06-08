@@ -35,7 +35,7 @@ dependencies = [
     "importlib-resources; python_version<'3.9'",
     "numpy",
     "platformdirs>=2.2.0",
-    "pytools>=2022.1.13",
+    "pytools>=2024.1.5",
 ]
 
 [project.optional-dependencies]
