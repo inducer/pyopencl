@@ -77,6 +77,11 @@ combine_as_imports = true
 multi_line_output = 4
 extend_skip = ["pyopencl/__init__.py", "pyopencl/compyte"]
 
+[tool.pytest.ini_options]
+markers = [
+    "bitonic: tests involving bitonic sort"
+]
+
 [tool.mypy]
 warn_unused_ignores = true
 exclude = ["pyopencl/compyte"]
