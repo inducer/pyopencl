@@ -48,7 +48,17 @@ pocl = [
     "pocl-binary-distribution>=1.2",
 ]
 test = [
+    "flake8",
+    "flake8-bugbear",
+    "flake8-comprehensions",
+    "flake8-isort",
+    "Flake8-pyproject",
+    "flake8-quotes",
+    "isort",
     "mako",
+    "mypy",
+    "pep8-naming",
+    "pylint",
     "pytest>=7",
 ]
 
