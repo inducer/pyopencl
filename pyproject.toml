@@ -1,4 +1,5 @@
 [build-system]
+build-backend = "scikit_build_core.build"
 requires = [
     "scikit-build-core >=0.9.3",
     "nanobind >=1.9.2",
@@ -7,17 +8,16 @@ requires = [
     # - Retrieved 2024-06-24, AK
     "numpy",
 ]
-build-backend = "scikit_build_core.build"
 
 [project]
 name = "pyopencl"
 version = "2024.2.7"
 description = "Python wrapper for OpenCL"
 readme = "README.rst"
-requires-python = "~=3.8"
 authors = [
     { name = "Andreas Kloeckner", email = "inform@tiker.net" },
 ]
+requires-python = "~=3.8"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
@@ -28,7 +28,7 @@ classifiers = [
     "Natural Language :: English",
     "Programming Language :: C++",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Topic :: Scientific/Engineering :: Physics",
@@ -36,33 +36,53 @@ classifiers = [
 dependencies = [
     "importlib-resources; python_version<'3.9'",
     "numpy",
-    "platformdirs>=2.2.0",
+    "platformdirs>=2.2",
     "pytools>=2024.1.5",
 ]
 
 [project.optional-dependencies]
 oclgrind = [
-    "oclgrind_binary_distribution>=18.3",
+    "oclgrind-binary-distribution>=18.3",
 ]
 pocl = [
-    "pocl_binary_distribution>=1.2",
+    "pocl-binary-distribution>=1.2",
 ]
 test = [
-    "Mako",
-    "pytest>=7.0.0",
+    "mako",
+    "pytest>=7",
 ]
 
 [project.urls]
-Homepage = "https://mathema.tician.de/software/pyopencl"
 Documentation = "https://documen.tician.de/pyopencl"
+Homepage = "https://mathema.tician.de/software/pyopencl"
 Repository = "https://github.com/inducer/pyopencl"
+
+[tool.scikit-build]
+sdist.exclude = [
+    ".mypy_cache",
+    ".ci",
+    ".github",
+    ".conda-ci-build-configure.sh",
+    "doc/upload-docs.sh",
+    ".editorconfig",
+    "TODOs",
+    "run-*.sh",
+    "setup.cfg",
+]
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/test"
-test-extras = ["test"]
+test-extras = [
+    "test",
+]
 
 [tool.cibuildwheel.linux]
-skip = ["pp*", "cp36-*", "cp37-*", "*_i686"]
+skip = [
+    "pp*",
+    "cp36-*",
+    "cp37-*",
+    "*_i686",
+]
 test-command = ""
 before-all = [
     "yum install -y git openssl-devel ruby",
@@ -82,7 +102,11 @@ before-all = [
 repair-wheel-command = "auditwheel repair -w {dest_dir} --lib-sdir=/.libs {wheel}"
 
 [tool.cibuildwheel.macos]
-skip = ["pp*", "cp36-*", "cp37-*"]
+skip = [
+    "pp*",
+    "cp36-*",
+    "cp37-*",
+]
 before-all = "bash {package}/scripts/build-ocl-macos.sh"
 test-command = "pytest {project}/test/test_array.py" # same limitation as conda-forge
 archs = "x86_64 arm64"
@@ -94,19 +118,11 @@ archs = "x86_64 arm64"
 MACOSX_DEPLOYMENT_TARGET = "10.14"
 
 [tool.cibuildwheel.windows]
-skip = ["*-win32", "pp*", "cp36-*", "cp37-*"]
+skip = [
+    "*-win32",
+    "pp*",
+    "cp36-*",
+    "cp37-*",
+]
 test-command = ""
 before-all = "bash {package}/scripts/build-ocl-windows.sh"
-
-[tool.scikit-build]
-sdist.exclude = [
-    ".mypy_cache",
-    ".ci",
-    ".github",
-    ".conda-ci-build-configure.sh",
-    "doc/upload-docs.sh",
-    ".editorconfig",
-    "TODOs",
-    "run-*.sh",
-    "setup.cfg",
-]
