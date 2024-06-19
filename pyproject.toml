@@ -70,6 +70,13 @@ sdist.exclude = [
     "setup.cfg",
 ]
 
+[tool.isort]
+line_length = 85
+lines_after_imports = 2
+combine_as_imports = true
+multi_line_output = 4
+extend_skip = ["pyopencl/__init__.py", "pyopencl/compyte"]
+
 [tool.mypy]
 warn_unused_ignores = true
 exclude = ["pyopencl/compyte"]
