@@ -9,7 +9,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "pyopencl"
-version = "2024.2.6"
+version = "2024.2.7"
 description = "Python wrapper for OpenCL"
 readme = "README.rst"
 requires-python = "~=3.8"
