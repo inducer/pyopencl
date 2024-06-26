@@ -77,7 +77,6 @@ sdist.exclude = [
     ".editorconfig",
     "TODOs",
     "run-*.sh",
-    "setup.cfg",
 ]
 
 [tool.inducer-ci-support]
