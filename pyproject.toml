@@ -70,6 +70,51 @@ sdist.exclude = [
     "setup.cfg",
 ]
 
+[tool.inducer-ci-support]
+disable-editable-pip-install = true
+enable-flake8-bugbear = true
+enable-flake8-isort = true
+
+[tool.flake8]
+max-line-length = 85
+inline-quotes = "double"
+docstring-quotes = "double"
+multiline-quotes = "double"
+select = [
+    "B",    # flake8-bugbear
+    "C",    # flake8-comprehensions
+    "D",    # pydocstyle
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # flake8-isort
+    "N",    # pep8-naming
+    "Q",    # flake8-quotes
+    "W",    # pycodestyle
+]
+extend-ignore = [
+    "E123", # closing bracket does not match indentation
+    "E126", # continuation line over-indented
+    "E127", # continuation line over-indented
+    "E128", # continuation line under-indented
+    "E226", # missing whitespace around arithmetic operator
+    "E241", # multiple spaces after comma
+    "E242", # tab after comma
+    "E265", # block comment should start with #
+    "E402", # module level import not at the top of file
+    "W503", # line break before a binary operator
+]
+exclude = [
+    "examples/gl_interop_demo.py",
+    "examples/gl_particle_animation.py",
+    "pyopencl/compyte",
+]
+per-file-ignores = [
+    "examples/pi-monte-carlo.py:N,B",
+    "examples/black-hole-accretion.py:N",
+    "examples/n-body.py:N",
+    "pyopencl/__init__.py:I001,I004,I005",
+]
+
 [tool.isort]
 line_length = 85
 lines_after_imports = 2
