@@ -42,9 +42,12 @@ import pyopencl.elementwise as elementwise
 from pyopencl import cltypes
 from pyopencl.characterize import has_double_support
 from pyopencl.compyte.array import (
-    ArrayFlags as _ArrayFlags, as_strided as _as_strided,
-    c_contiguous_strides as _c_contiguous_strides, equal_strides as _equal_strides,
-    f_contiguous_strides as _f_contiguous_strides)
+    ArrayFlags as _ArrayFlags,
+    as_strided as _as_strided,
+    c_contiguous_strides as _c_contiguous_strides,
+    equal_strides as _equal_strides,
+    f_contiguous_strides as _f_contiguous_strides,
+)
 
 
 SCALAR_CLASSES = (Number, np.bool_, bool)
@@ -608,11 +611,11 @@ class Array:
 
             try:
                 shape = tuple(shape)        # type: ignore[arg-type]
-            except TypeError:
+            except TypeError as err:
                 if not isinstance(shape, (int, np.integer)):
                     raise TypeError(
                         "shape must either be iterable or castable to an integer: "
-                        f"got a '{type(shape).__name__}'")
+                        f"got a '{type(shape).__name__}'") from err
 
                 shape = (shape,)
 
@@ -654,7 +657,7 @@ class Array:
             # }}}
 
             assert dtype != object, \
-                    "object arrays on the compute device are not allowed"
+                    "object arrays on the compute device are not allowed"  # noqa: E721
             assert isinstance(shape, tuple)
             assert isinstance(strides, tuple)
 
@@ -922,7 +925,7 @@ class Array:
                     "device-to-host transfers",
                     DeprecationWarning, stacklevel=2)
 
-        ary, event1 = self._get(queue=queue, ary=ary, async_=async_, **kwargs)
+        ary, _event1 = self._get(queue=queue, ary=ary, async_=async_, **kwargs)
 
         return ary
 
@@ -2370,7 +2373,7 @@ def to_device(queue, ary, allocator=None, async_=None,
 
     # }}}
 
-    if ary.dtype == object:
+    if ary.dtype == object:  # noqa: E721
         raise RuntimeError("to_device does not work on object arrays.")
 
     if array_queue is _same_as_transfer:
@@ -2874,7 +2877,7 @@ def hstack(arrays, queue=None):
 
     lead_shape = single_valued(ary.shape[:-1] for ary in arrays)
 
-    w = builtins.sum([ary.shape[-1] for ary in arrays])
+    w = builtins.sum(ary.shape[-1] for ary in arrays)
 
     if __debug__:
         if builtins.any(type(ary) != type(arrays[0])  # noqa: E721

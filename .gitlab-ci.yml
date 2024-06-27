@@ -168,14 +168,12 @@ Python 3 POCL (+GL and special functions):
     reports:
       junit: test/pytest.xml
 
-Flake8:
+Ruff:
   script: |
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
-    build_py_project_in_venv
-    install_and_run_flake8 "$(get_proj_name)" examples/*.py test/*.py
+    pipx install ruff
+    ruff check
   tags:
-  - python3
+  - docker-runner
   except:
   - tags
 
@@ -244,7 +242,7 @@ Downstream:
     - DOWNSTREAM_PROJECT: [loopy, boxtree, meshmode]
   tags:
   - large-node
-  - "docker-runner"
+  - docker-runner
   script: |
     curl -L -O https://tiker.net/ci-support-v0
     . ci-support-v0

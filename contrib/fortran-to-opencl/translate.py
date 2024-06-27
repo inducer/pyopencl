@@ -24,8 +24,9 @@ import re
 from sys import intern
 from warnings import warn
 
-import cgen
 import numpy as np
+
+import cgen
 import pymbolic.primitives as p
 import pytools.lex
 from pymbolic.mapper import CombineMapper
@@ -233,8 +234,12 @@ class FortranExpressionParser(ExpressionParserBase):
 
     def parse_postfix(self, pstate, min_precedence, left_exp):
         from pymbolic.parser import (
-            _PREC_CALL, _PREC_COMPARISON, _PREC_LOGICAL_AND, _PREC_LOGICAL_OR,
-            _openpar)
+            _PREC_CALL,
+            _PREC_COMPARISON,
+            _PREC_LOGICAL_AND,
+            _PREC_LOGICAL_OR,
+            _openpar,
+        )
         from pymbolic.primitives import Comparison, LogicalAnd, LogicalOr
 
         next_tag = pstate.next_tag()
@@ -941,7 +946,7 @@ class F2CLTranslator(FTreeWalkerBase):
 
             if shape is not None:
                 dim_stmt = cgen.Statement(
-                    'dimension \"fortran\" {}[{}]'.format(
+                    'dimension "fortran" {}[{}]'.format(
                         scope.translate_var_name(name),
                         ", ".join(gen_shape(s) for s in shape)
                         ))

@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 
 import numpy as np
+
 from pytools.py_codegen import Indentation, PythonCodeGenerator
 
 import pyopencl as cl
@@ -30,8 +31,8 @@ import pyopencl as cl
 def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwargs):
     try:
         source = kernel._source
-    except AttributeError:
-        raise RuntimeError("cannot capture call, kernel source not available")
+    except AttributeError as err:
+        raise RuntimeError("cannot capture call, kernel source not available") from err
 
     if source is None:
         raise RuntimeError("cannot capture call, kernel source not available")
@@ -91,9 +92,9 @@ def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwa
             else:
                 try:
                     arg_buf = memoryview(arg)
-                except Exception:
+                except Exception as err:
                     raise RuntimeError("cannot capture: "
-                            "unsupported arg nr %d (0-based)" % i)
+                            "unsupported arg nr %d (0-based)" % i) from err
 
                 arg_data.append(("arg%d_data" % i, arg_buf))
                 kernel_args.append("decompress(b64decode(arg%d_data))" % i)

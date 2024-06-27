@@ -26,6 +26,7 @@ from typing import Any, Tuple
 from warnings import warn
 
 import numpy as np
+
 from pytools.persistent_dict import WriteOncePersistentDict
 from pytools.py_codegen import Indentation, PythonCodeGenerator
 

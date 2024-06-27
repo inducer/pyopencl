@@ -37,6 +37,7 @@ from functools import reduce
 from operator import mul
 
 from mako.template import Template
+
 from pytools import memoize_method
 
 import pyopencl as cl

@@ -132,21 +132,24 @@ from sys import intern
 from typing import Any, List, Optional, Union
 
 import numpy as np
+
 from pytools import memoize, memoize_method
 from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
 
 from pyopencl._cl import bitlog2, get_cl_header_version  # noqa: F401
-from pyopencl.compyte.dtypes import TypeNameNotKnown  # noqa: F401
 from pyopencl.compyte.dtypes import (  # noqa: F401
-    dtype_to_ctype, get_or_register_dtype, register_dtype)
+    TypeNameNotKnown,  # noqa: F401
+    dtype_to_ctype,
+    get_or_register_dtype,
+    register_dtype,
+)
 
 
 # Do not add a pyopencl import here: This will add an import cycle.
 
 
 def _register_types():
-    from pyopencl.compyte.dtypes import (
-        TYPE_REGISTRY, fill_registry_with_opencl_c_types)
+    from pyopencl.compyte.dtypes import TYPE_REGISTRY, fill_registry_with_opencl_c_types
 
     fill_registry_with_opencl_c_types(TYPE_REGISTRY)
 
@@ -159,8 +162,13 @@ _register_types()
 
 # {{{ imported names
 
-from pyopencl._cl import (  # noqa: F401
-    AllocatorBase, DeferredAllocator, ImmediateAllocator, MemoryPool, PooledBuffer)
+from pyopencl._cl import (
+    AllocatorBase,
+    DeferredAllocator,
+    ImmediateAllocator,
+    MemoryPool,
+    PooledBuffer,
+)
 
 
 if get_cl_header_version() >= (2, 0):
@@ -978,7 +986,7 @@ class _CDeclList:
             return
 
         for _name, field_data in sorted(dtype.fields.items()):
-            field_dtype, offset = field_data[:2]
+            field_dtype, _offset = field_data[:2]
             self.add_dtype(field_dtype)
 
         _, cdecl = match_dtype_to_c_struct(
@@ -1062,7 +1070,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     c_fields = []
     for field_name, dtype_and_offset in fields:
-        field_dtype, offset = dtype_and_offset[:2]
+        field_dtype, _offset = dtype_and_offset[:2]
         if hasattr(field_dtype, "subdtype") and field_dtype.subdtype is not None:
             array_dtype = field_dtype.subdtype[0]
             if hasattr(array_dtype, "subdtype") and array_dtype.subdtype is not None:
@@ -1087,7 +1095,7 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
 
     cdl = _CDeclList(device)
     for _field_name, dtype_and_offset in fields:
-        field_dtype, offset = dtype_and_offset[:2]
+        field_dtype, _offset = dtype_and_offset[:2]
         cdl.add_dtype(field_dtype)
 
     pre_decls = cdl.get_declarations()

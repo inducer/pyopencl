@@ -35,8 +35,12 @@ import numpy as np
 
 import pyopencl as cl
 from pyopencl.tools import (
-    DtypedArgument, KernelTemplateBase, _process_code_for_macro,
-    context_dependent_memoize, dtype_to_ctype)
+    DtypedArgument,
+    KernelTemplateBase,
+    _process_code_for_macro,
+    context_dependent_memoize,
+    dtype_to_ctype,
+)
 
 
 # {{{ kernel source
@@ -219,8 +223,11 @@ def get_reduction_kernel(
         map_expr = "pyopencl_reduction_inp[i]" if stage == 2 else "in[i]"
 
     from pyopencl.tools import (
-        VectorArg, get_arg_list_scalar_arg_dtypes, get_arg_offset_adjuster_code,
-        parse_arg_list)
+        VectorArg,
+        get_arg_list_scalar_arg_dtypes,
+        get_arg_offset_adjuster_code,
+        parse_arg_list,
+    )
 
     if arguments is None:
         raise ValueError("arguments must not be None")

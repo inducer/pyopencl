@@ -31,12 +31,19 @@ import enum
 from typing import Any, List, Optional, Tuple, Union
 
 import numpy as np
+
 from pytools import memoize_method
 
 import pyopencl as cl
 from pyopencl.tools import (
-    DtypedArgument, KernelTemplateBase, ScalarArg, VectorArg,
-    context_dependent_memoize, dtype_to_c_struct, dtype_to_ctype)
+    DtypedArgument,
+    KernelTemplateBase,
+    ScalarArg,
+    VectorArg,
+    context_dependent_memoize,
+    dtype_to_c_struct,
+    dtype_to_ctype,
+)
 
 
 # {{{ elementwise kernel code generator

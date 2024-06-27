@@ -266,7 +266,7 @@ def get_cache_key(device, options_bytes, src):
 
 
 def retrieve_from_cache(cache_dir, cache_key):
-    class _InvalidInfoFile(RuntimeError):
+    class _InvalidInfoFileError(RuntimeError):
         pass
 
     from os.path import isdir, join
@@ -290,18 +290,18 @@ def retrieve_from_cache(cache_dir, cache_key):
 
                 try:
                     info_file = open(info_path, "rb")
-                except OSError:
-                    raise _InvalidInfoFile()
+                except OSError as err:
+                    raise _InvalidInfoFileError() from err
 
                 try:
                     try:
                         info = load(info_file)
-                    except EOFError:
-                        raise _InvalidInfoFile()
+                    except EOFError as err:
+                        raise _InvalidInfoFileError() from err
                 finally:
                     info_file.close()
 
-            except _InvalidInfoFile:
+            except _InvalidInfoFileError:
                 mod_cache_dir_m.reset()
                 from warnings import warn
                 warn(

@@ -443,11 +443,11 @@ class Program:
             knl = Kernel(self, attr)
             # Nvidia does not raise errors even for invalid names,
             # but this will give an error if the kernel is invalid.
-            knl.num_args
+            knl.num_args  # noqa: B018
             knl._source = getattr(self, "_source", None)
 
             if self._build_duration_info is not None:
-                build_descr, was_cached, duration = self._build_duration_info
+                build_descr, _was_cached, duration = self._build_duration_info
                 if duration > 0.2:
                     logger.info("build program: kernel '%s' was part of a "
                             "lengthy %s (%.2f s)" % (attr, build_descr, duration))
@@ -456,9 +456,9 @@ class Program:
                 self._build_duration_info = None
 
             return knl
-        except LogicError:
+        except LogicError as err:
             raise AttributeError("'%s' was not found as a program "
-                    "info attribute or as a kernel name" % attr)
+                    "info attribute or as a kernel name" % attr) from err
 
     # {{{ build
 
@@ -780,9 +780,9 @@ def _add_functionality():
 
             try:
                 inf_attr = getattr(info_cls, name.upper())
-            except AttributeError:
+            except AttributeError as err:
                 raise AttributeError("%s has no attribute '%s'"
-                        % (type(self), name))
+                        % (type(self), name)) from err
             else:
                 return self.event.get_profiling_info(inf_attr)
 
@@ -1030,9 +1030,9 @@ def _add_functionality():
         def __getattr__(self, name):
             try:
                 inf_attr = getattr(_cl.image_info, name.upper())
-            except AttributeError:
+            except AttributeError as err:
                 raise AttributeError("%s has no attribute '%s'"
-                        % (type(self), name))
+                        % (type(self), name)) from err
             else:
                 return self.event.get_image_info(inf_attr)
 
@@ -1055,7 +1055,7 @@ def _add_functionality():
     def error_str(self):
         val = self.what
         try:
-            val.routine
+            val.routine  # noqa: B018
         except AttributeError:
             return str(val)
         else:
@@ -2097,7 +2097,7 @@ DTYPE_TO_CHANNEL_TYPE = {
     np.dtype(np.uint8): channel_type.UNSIGNED_INT8,
     }
 try:
-    np.float16
+    np.float16  # noqa: B018
 except Exception:
     pass
 else:
@@ -2272,12 +2272,12 @@ def svm_empty(ctx, flags, shape, dtype, order="C", alignment=None, queue=None):
         s = 1
         for dim in shape:
             s *= dim
-    except TypeError:
+    except TypeError as err:
         admissible_types = (int, np.integer)
 
         if not isinstance(shape, admissible_types):
             raise TypeError("shape must either be iterable or "
-                    "castable to an integer")
+                    "castable to an integer") from err
         s = shape
         shape = (shape,)
 

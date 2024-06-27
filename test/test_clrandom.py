@@ -27,8 +27,9 @@ import pyopencl as cl
 import pyopencl.clrandom as clrandom
 import pyopencl.cltypes as cltypes
 from pyopencl.characterize import has_double_support
-from pyopencl.tools import \
-    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
+from pyopencl.tools import (
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
+)
 
 
 try:

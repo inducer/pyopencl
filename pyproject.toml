@@ -48,16 +48,9 @@ pocl = [
     "pocl-binary-distribution>=1.2",
 ]
 test = [
-    "flake8",
-    "flake8-bugbear",
-    "flake8-comprehensions",
-    "flake8-isort",
-    "Flake8-pyproject",
-    "flake8-quotes",
-    "isort",
+    "ruff",
     "mako",
     "mypy",
-    "pep8-naming",
     "pylint",
     "pytest>=7",
 ]
@@ -81,15 +74,10 @@ sdist.exclude = [
 
 [tool.inducer-ci-support]
 disable-editable-pip-install = true
-enable-flake8-bugbear = true
-enable-flake8-isort = true
 
-[tool.flake8]
-max-line-length = 85
-inline-quotes = "double"
-docstring-quotes = "double"
-multiline-quotes = "double"
-select = [
+[tool.ruff.lint]
+preview = true
+extend-select = [
     "B",    # flake8-bugbear
     "C",    # flake8-comprehensions
     "D",    # pydocstyle
@@ -99,37 +87,40 @@ select = [
     "N",    # pep8-naming
     "Q",    # flake8-quotes
     "W",    # pycodestyle
+    "NPY"   # numpy
 ]
 extend-ignore = [
-    "E123", # closing bracket does not match indentation
-    "E126", # continuation line over-indented
-    "E127", # continuation line over-indented
-    "E128", # continuation line under-indented
     "E226", # missing whitespace around arithmetic operator
     "E241", # multiple spaces after comma
     "E242", # tab after comma
     "E265", # block comment should start with #
     "E402", # module level import not at the top of file
-    "W503", # line break before a binary operator
+    "D",    # pydocstyle
+    "C90",  # McCabe complexity
 ]
 exclude = [
     "examples/gl_interop_demo.py",
     "examples/gl_particle_animation.py",
-    "pyopencl/compyte",
-]
-per-file-ignores = [
-    "examples/pi-monte-carlo.py:N,B",
-    "examples/black-hole-accretion.py:N",
-    "examples/n-body.py:N",
-    "pyopencl/__init__.py:I001,I004,I005",
+    "pyopencl/compyte/**/*.py",
 ]
 
-[tool.isort]
-line_length = 85
-lines_after_imports = 2
-combine_as_imports = true
-multi_line_output = 4
-extend_skip = ["pyopencl/__init__.py", "pyopencl/compyte"]
+[tool.ruff.lint.per-file-ignores]
+"examples/pi-monte-carlo.py" = ["N", "B", "F841"]
+"examples/black-hole-accretion.py" = ["N", "E501", "B"]
+"examples/n-body.py" = ["N", "E501"]
+"pyopencl/__init__.py" = ["I001"]
+"contrib/fortran-to-opencl/translate.py" = ["N802", "N815", "B"]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+docstring-quotes = "double"
+multiline-quotes = "double"
+
+[tool.ruff.lint.isort]
+known-first-party = ["pytools", "pymbolic", "cgen"]
+known-local-folder = ["pyopencl"]
+lines-after-imports = 2
+combine-as-imports = true
 
 [tool.pytest.ini_options]
 markers = [
