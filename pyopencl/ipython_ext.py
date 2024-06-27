@@ -33,7 +33,7 @@ class PyOpenCLMagics(Magics):
     def cl_kernel(self, line, cell):
         kernel = cell
 
-        opts, args = self.parse_options(line, "o:")
+        opts, _args = self.parse_options(line, "o:")
         build_options = opts.get("o", "")
 
         self._run_kernel(kernel, build_options)

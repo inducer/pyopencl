@@ -204,8 +204,7 @@ def benchmark_transpose():
             a_t_buf.release()
 
     try:
-        from matplotlib.pyplot import (
-            clf, grid, legend, plot, savefig, xlabel, ylabel)
+        from matplotlib.pyplot import clf, grid, legend, plot, savefig, xlabel, ylabel
     except ModuleNotFoundError:
         pass
     else:

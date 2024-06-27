@@ -10,21 +10,18 @@ on:
         - cron:  '17 3 * * 0'
 
 jobs:
-    flake8:
-        name: Flake8
+    ruff:
+        name: Ruff
         runs-on: ubuntu-latest
         steps:
         -   uses: actions/checkout@v4
-        -
-            uses: actions/setup-python@v5
             with:
-                # matches compat target in setup.py
-                python-version: '3.8'
+                submodules: true
+        -   uses: actions/setup-python@v5
         -   name: "Main Script"
             run: |
-                curl -L -O https://tiker.net/ci-support-v0
-                . ci-support-v0
-                install_and_run_flake8 "$(get_proj_name)" examples/*.py test/*.py
+                pip install ruff
+                ruff check
 
     pylint:
         name: Pylint

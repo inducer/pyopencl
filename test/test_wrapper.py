@@ -29,9 +29,11 @@ import pyopencl.array as cl_array
 import pyopencl.clrandom
 import pyopencl.cltypes as cltypes
 from pyopencl.characterize import get_pocl_version
-from pyopencl.tools import \
-    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
-from pyopencl.tools import DeferredAllocator, ImmediateAllocator
+from pyopencl.tools import (
+    DeferredAllocator,
+    ImmediateAllocator,
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
+)
 
 
 def _xfail_if_pocl(plat, up_to_version, msg="unsupported by PoCL"):
@@ -55,8 +57,8 @@ def test_get_info(ctx_factory):
     platform = device.platform
 
     with pytest.deprecated_call():
-        device.persistent_unique_id
-    device.hashable_model_and_version_identifier
+        device.persistent_unique_id  # noqa: B018
+    device.hashable_model_and_version_identifier  # noqa: B018
 
     failure_count = [0]
 
@@ -225,8 +227,8 @@ def test_get_info(ctx_factory):
         img = cl.Image(ctx, cl.mem_flags.READ_ONLY, img_format, (128, 256))
         assert img.shape == (128, 256)
 
-        img.depth
-        img.image.depth
+        img.depth  # noqa: B018
+        img.image.depth  # noqa: B018
         do_test(img, cl.image_info,
                 lambda info: img.get_image_info(info))
 
@@ -297,7 +299,7 @@ def test_invalid_kernel_names_cause_failures(ctx_factory):
         """).build()
 
     try:
-        prg.sam
+        prg.sam  # noqa: B018
         raise RuntimeError("invalid kernel name did not cause error")
     except AttributeError:
         pass
@@ -1289,7 +1291,7 @@ def test_map_dtype(ctx_factory, dtype):
     b = pyopencl.Buffer(ctx,
                         pyopencl.mem_flags.READ_ONLY,
                         dt.itemsize)
-    array, ev = pyopencl.enqueue_map_buffer(queue, b, pyopencl.map_flags.WRITE, 0,
+    array, _ev = pyopencl.enqueue_map_buffer(queue, b, pyopencl.map_flags.WRITE, 0,
                                             (1,), dt)
     with array.base:
         print(array.dtype)

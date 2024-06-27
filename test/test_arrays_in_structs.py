@@ -26,8 +26,9 @@ import pyopencl as cl
 import pyopencl.cltypes as cltypes
 import pyopencl.tools as cl_tools
 from pyopencl import mem_flags
-from pyopencl.tools import \
-    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
+from pyopencl.tools import (
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
+)
 
 
 def test_struct_with_array_fields(ctx_factory):

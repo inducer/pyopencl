@@ -25,18 +25,26 @@ import sys
 import numpy as np
 import numpy.linalg as la
 import pytest
-from pytools import memoize
 from test_array import general_clrand
+
+from pytools import memoize
 
 import pyopencl as cl
 import pyopencl.array
 from pyopencl.characterize import (
-    get_pocl_version, has_double_support, has_struct_arg_count_bug)
+    get_pocl_version,
+    has_double_support,
+    has_struct_arg_count_bug,
+)
 from pyopencl.scan import (
-    ExclusiveScanKernel, GenericDebugScanKernel, GenericScanKernel,
-    InclusiveScanKernel)
-from pyopencl.tools import \
-    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
+    ExclusiveScanKernel,
+    GenericDebugScanKernel,
+    GenericScanKernel,
+    InclusiveScanKernel,
+)
+from pyopencl.tools import (
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
+)
 
 
 # {{{ elementwise
@@ -643,7 +651,7 @@ def test_copy_if(ctx_factory):
 
         crit = a_dev.dtype.type(300)
         selected = a[a > crit]
-        selected_dev, count_dev, evt = copy_if(
+        selected_dev, count_dev, _evt = copy_if(
                 a_dev, "ary[i] > myval", [("myval", crit)])
 
         assert (selected_dev.get()[:count_dev.get()] == selected).all()
@@ -670,7 +678,7 @@ def test_partition(ctx_factory):
         false_host = a[a <= crit]
 
         from pyopencl.algorithm import partition
-        true_dev, false_dev, count_true_dev, evt = partition(
+        true_dev, false_dev, count_true_dev, _evt = partition(
                 a_dev, "ary[i] > myval", [("myval", crit)])
 
         count_true_dev = count_true_dev.get()
@@ -696,7 +704,7 @@ def test_unique(ctx_factory):
         a_unique_host = np.unique(a)
 
         from pyopencl.algorithm import unique
-        a_unique_dev, count_unique_dev, evt = unique(a_dev)
+        a_unique_dev, count_unique_dev, _evt = unique(a_dev)
 
         count_unique_dev = count_unique_dev.get()
 
@@ -867,7 +875,7 @@ def test_sort(ctx_factory, scan_kernel):
 
         dev_start = time()
         print("  device")
-        (a_dev_sorted,), evt = sort(a_dev, key_bits=16)
+        (a_dev_sorted,), _evt = sort(a_dev, key_bits=16)
         queue.finish()
         dev_end = time()
         print("  numpy")
@@ -907,7 +915,7 @@ def test_list_builder(ctx_factory):
             }
             """, arg_decls=[])
 
-    result, evt = builder(queue, 2000)
+    result, _evt = builder(queue, 2000)
 
     inf = result["mylist"]
     assert inf.count == 3000
@@ -932,7 +940,7 @@ def test_list_builder_with_memoryobject(ctx_factory):
 
     n = 10000
     input_list = cl.array.zeros(queue, (n,), float)
-    result, evt = builder(queue, n, input_list.data)
+    result, _evt = builder(queue, n, input_list.data)
 
     inf = result["mylist"]
     assert inf.count == n
@@ -960,7 +968,7 @@ def test_list_builder_with_offset(ctx_factory):
     input_list = cl.array.zeros(queue, (n + 10,), float)
     input_list[10:] = 1
 
-    result, evt = builder(queue, n, input_list[10:])
+    result, _evt = builder(queue, n, input_list[10:])
 
     inf = result["mylist"]
     assert inf.count == n
@@ -996,7 +1004,7 @@ def test_list_builder_with_empty_elim(ctx_factory):
         arg_decls=[],
         eliminate_empty_output_lists=["mylist1", "mylist2"])
 
-    result, evt = builder(queue, 1000)
+    result, _evt = builder(queue, 1000)
 
     mylist1 = result["mylist1"]
     assert mylist1.count == 19900
@@ -1029,7 +1037,7 @@ def test_key_value_sorter(ctx_factory):
 
     from pyopencl.algorithm import KeyValueSorter
     kvs = KeyValueSorter(context)
-    starts, lists, evt = kvs(queue, keys, values, nkeys, starts_dtype=np.int32)
+    starts, lists, _evt = kvs(queue, keys, values, nkeys, starts_dtype=np.int32)
 
     starts = starts.get()
     lists = lists.get()
@@ -1088,7 +1096,7 @@ def test_bitonic_sort(ctx_factory, size, dtype):
             and cl.get_cl_header_version() < (1, 2)):
         sgs.finish()
     sorter = BitonicSort(ctx)
-    sgs, evt = sorter(sgs, axis=1)
+    sgs, _evt = sorter(sgs, axis=1)
     assert np.array_equal(np.sort(s.get(), axis=1), sgs.get())
 
 
@@ -1157,7 +1165,7 @@ def test_bitonic_argsort(ctx_factory, size, dtype):
             and cl.get_cl_header_version() < (1, 2)):
         ms.finish()
         index.finish()
-    ms, evt = sorterm(ms, idx=index, axis=0)
+    ms, _evt = sorterm(ms, idx=index, axis=0)
 
     assert np.array_equal(np.sort(m.get()), ms.get())
 

@@ -37,8 +37,9 @@ import pyopencl.cltypes as cltypes
 import pyopencl.tools as cl_tools
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 from pyopencl.clrandom import PhiloxGenerator, ThreefryGenerator
-from pyopencl.tools import \
-    pytest_generate_tests_for_pyopencl as pytest_generate_tests  # noqa: F401
+from pyopencl.tools import (
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
+)
 
 
 _PYPY = cl._PYPY
@@ -302,7 +303,7 @@ def test_custom_type_zeros(ctx_factory):
     from pyopencl.tools import get_or_register_dtype, match_dtype_to_c_struct
 
     name = "mmc_type"
-    dtype, c_decl = match_dtype_to_c_struct(queue.device, name, dtype)
+    dtype, _c_decl = match_dtype_to_c_struct(queue.device, name, dtype)
     dtype = get_or_register_dtype(name, dtype)
 
     n = 1000
@@ -334,7 +335,7 @@ def test_custom_type_fill(ctx_factory):
     from pyopencl.tools import get_or_register_dtype, match_dtype_to_c_struct
 
     name = "mmc_type"
-    dtype, c_decl = match_dtype_to_c_struct(queue.device, name, dtype)
+    dtype, _c_decl = match_dtype_to_c_struct(queue.device, name, dtype)
     dtype = get_or_register_dtype(name, dtype)
 
     n = 1000
@@ -362,7 +363,7 @@ def test_custom_type_take_put(ctx_factory):
     from pyopencl.tools import get_or_register_dtype, match_dtype_to_c_struct
 
     name = "tp_type"
-    dtype, c_decl = match_dtype_to_c_struct(queue.device, name, dtype)
+    dtype, _c_decl = match_dtype_to_c_struct(queue.device, name, dtype)
     dtype = get_or_register_dtype(name, dtype)
 
     n = 100

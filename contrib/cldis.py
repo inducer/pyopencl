@@ -36,7 +36,7 @@ import sys
 import tempfile
 
 
-def main(ctx, tmp_dir, cl_str, output=None, build_options=[]):
+def main(ctx, tmp_dir, cl_str, output=None, build_options=()):
     device = ctx.devices[0]
     platform = device.platform
     if platform.name == "NVIDIA CUDA":
@@ -86,6 +86,6 @@ if __name__ == "__main__":
         cl_file = sys.argv[1]
         with open(cl_file, "r") as f:
             cl_str = f.read()
-        output = sys.argv[2] if len(sys.argv) >=3 else None
-        build_options = sys.argv[3:] if len(sys.argv) >=4 else []
+        output = sys.argv[2] if len(sys.argv) >= 3 else None
+        build_options = sys.argv[3:] if len(sys.argv) >= 4 else []
         main(ctx, tmp_dir, cl_str, output, build_options)

@@ -50,6 +50,7 @@ for some documentation if you're planning on using Random123 directly.
 # }}}
 
 import numpy as np
+
 from pytools import memoize_method
 
 import pyopencl as cl
