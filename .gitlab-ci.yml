@@ -1,3 +1,6 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
 Python 3 Intel CPU:
   script: |
     source /opt/enable-intel-cl.sh
