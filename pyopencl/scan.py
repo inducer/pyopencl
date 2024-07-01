@@ -1186,7 +1186,7 @@ class GenericScanKernel(GenericScanKernelBase):
                 result = generic_scan_kernel_cache[cache_key]
                 from_cache = True
                 logger.debug(
-                    "cache hit for generated scan kernel '%s'" % self.name_prefix)
+                    "cache hit for generated scan kernel '%s'", self.name_prefix)
                 (
                     self.first_level_scan_gen_info,
                     self.second_level_scan_gen_info,
@@ -1196,7 +1196,7 @@ class GenericScanKernel(GenericScanKernelBase):
 
         if not from_cache:
             logger.debug(
-                    "cache miss for generated scan kernel '%s'" % self.name_prefix)
+                    "cache miss for generated scan kernel '%s'", self.name_prefix)
             self._finish_setup_impl()
 
             result = (self.first_level_scan_gen_info,

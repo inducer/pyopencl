@@ -79,15 +79,17 @@ disable-editable-pip-install = true
 preview = true
 extend-select = [
     "B",    # flake8-bugbear
-    "C",    # flake8-comprehensions
+    "C4",   # flake8-comprehensions
     "D",    # pydocstyle
     "E",    # pycodestyle
     "F",    # pyflakes
+    "G",    # flake8-logging-format
     "I",    # flake8-isort
     "N",    # pep8-naming
+    "NPY",  # numpy
     "Q",    # flake8-quotes
+    "RUF",  # ruff
     "W",    # pycodestyle
-    "NPY"   # numpy
 ]
 extend-ignore = [
     "E226", # missing whitespace around arithmetic operator

@@ -449,8 +449,9 @@ class Program:
             if self._build_duration_info is not None:
                 build_descr, _was_cached, duration = self._build_duration_info
                 if duration > 0.2:
-                    logger.info("build program: kernel '%s' was part of a "
-                            "lengthy %s (%.2f s)" % (attr, build_descr, duration))
+                    logger.info(
+                        "build program: kernel '%s' was part of a "
+                        "lengthy %s (%.2f s)", attr, build_descr, duration)
 
                 # don't whine about build times more than once.
                 self._build_duration_info = None

@@ -375,13 +375,13 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
         cache_result = retrieve_from_cache(cache_dir, cache_key)
 
         if cache_result is None:
-            logger.debug("build program: binary cache miss (key: %s)" % cache_key)
+            logger.debug("build program: binary cache miss (key: %s)", cache_key)
 
             to_be_built_indices.append(i)
             binaries.append(None)
             logs.append(None)
         else:
-            logger.debug("build program: binary cache hit (key: %s)" % cache_key)
+            logger.debug("build program: binary cache hit (key: %s)", cache_key)
 
             binary, log = cache_result
             binaries.append(binary)
@@ -410,8 +410,9 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
         src = src + "\n\n__constant int pyopencl_defeat_cache_%s = 0;" % (
                 uuid4().hex)
 
-        logger.debug("build program: start building program from source on %s"
-                % ", ".join(str(devices[i]) for i in to_be_built_indices))
+        logger.debug(
+                "build program: start building program from source on %s",
+                ", ".join(str(devices[i]) for i in to_be_built_indices))
 
         prg = _cl._Program(ctx, src)
         prg.build(options_bytes, [devices[i] for i in to_be_built_indices])
