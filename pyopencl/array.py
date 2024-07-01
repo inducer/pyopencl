@@ -295,7 +295,7 @@ def elwise_kernel_runner(kernel_getter):
             queue.device)
         gs, ls = out._get_sizes(queue, work_group_info)
 
-        args = (out,) + args + (out.size,)
+        args = (out, *args, out.size)
         if ARRAY_KERNEL_EXEC_HOOK is not None:
             return ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
                     knl, queue, gs, ls, *args, wait_for=wait_for)
@@ -2373,7 +2373,7 @@ def to_device(queue, ary, allocator=None, async_=None,
 
     # }}}
 
-    if ary.dtype == object:  # noqa: E721
+    if ary.dtype == object:
         raise RuntimeError("to_device does not work on object arrays.")
 
     if array_queue is _same_as_transfer:
@@ -2598,14 +2598,16 @@ def multi_take(arrays, indices, out=None, queue=None):
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
-        wait_for_this = (indices.events
-            + builtins.sum((i.events for i in arrays[chunk_slice]), [])
-            + builtins.sum((o.events for o in out[chunk_slice]), []))
+        wait_for_this = (
+            *indices.events,
+            *[evt for i in arrays[chunk_slice] for evt in i.events],
+            *[evt for o in out[chunk_slice] for evt in o.events])
         evt = knl(queue, gs, ls,
                 indices.data,
-                *([o.data for o in out[chunk_slice]]
-                    + [i.data for i in arrays[chunk_slice]]
-                    + [indices.size]), wait_for=wait_for_this)
+                *[o.data for o in out[chunk_slice]],
+                *[i.data for i in arrays[chunk_slice]],
+                *[indices.size],
+                wait_for=wait_for_this)
         for o in out[chunk_slice]:
             o.add_event(evt)
 
@@ -2676,15 +2678,19 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
-        wait_for_this = (dest_indices.events + src_indices.events
-            + builtins.sum((i.events for i in arrays[chunk_slice]), [])
-            + builtins.sum((o.events for o in out[chunk_slice]), []))
+        wait_for_this = (
+            *dest_indices.events,
+            *src_indices.events,
+            *[evt for i in arrays[chunk_slice] for evt in i.events],
+            *[evt for o in out[chunk_slice] for evt in o.events])
         evt = knl(queue, gs, ls,
-                *(list(out[chunk_slice])
-                    + [dest_indices, src_indices]
-                    + list(arrays[chunk_slice])
-                    + src_offsets_list[chunk_slice]
-                    + [src_indices.size]), wait_for=wait_for_this)
+                  *out[chunk_slice],
+                  dest_indices,
+                  src_indices,
+                  *arrays[chunk_slice],
+                  *src_offsets_list[chunk_slice],
+                  src_indices.size,
+                  wait_for=wait_for_this)
         for o in out[chunk_slice]:
             o.add_event(evt)
 
@@ -2753,16 +2759,16 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
                     cl.kernel_work_group_info.WORK_GROUP_SIZE,
                     queue.device))
 
-        wait_for_this = (wait_for
-            + builtins.sum([i.events for i in arrays[chunk_slice]], [])
-            + builtins.sum([o.events for o in out[chunk_slice]], []))
+        wait_for_this = (
+            *wait_for,
+            *[evt for i in arrays[chunk_slice] for evt in i.events],
+            *[evt for o in out[chunk_slice] for evt in o.events])
         evt = knl(queue, gs, ls,
-                *(
-                    list(out[chunk_slice])
-                    + [dest_indices]
-                    + list(arrays[chunk_slice])
-                    + [use_fill_cla, array_lengths_cla, dest_indices.size]),
-                wait_for=wait_for_this)
+                  *out[chunk_slice],
+                  dest_indices,
+                  *arrays[chunk_slice],
+                  use_fill_cla, array_lengths_cla, dest_indices.size,
+                  wait_for=wait_for_this)
 
         for o in out[chunk_slice]:
             o.add_event(evt)
@@ -2886,7 +2892,7 @@ def hstack(arrays, queue=None):
                  "an instance of the type of arrays[0]",
                  stacklevel=2)
 
-    result = arrays[0].__class__(queue, lead_shape+(w,), arrays[0].dtype,
+    result = arrays[0].__class__(queue, (*lead_shape, w), arrays[0].dtype,
                                  allocator=arrays[0].allocator)
     index = 0
     for ary in arrays:

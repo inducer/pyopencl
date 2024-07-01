@@ -42,12 +42,14 @@ import hashlib
 new_hash = hashlib.md5
 
 
-def _erase_dir(dir):
+def _erase_dir(directory):
     from os import listdir, rmdir, unlink
     from os.path import join
-    for name in listdir(dir):
-        unlink(join(dir, name))
-    rmdir(dir)
+
+    for name in listdir(directory):
+        unlink(join(directory, name))
+
+    rmdir(directory)
 
 
 def update_checksum(checksum, obj):
@@ -213,7 +215,7 @@ def get_dependencies(src, include_path):
 
     _inner(src)
 
-    result = [(name,) + vals for name, vals in result.items()]
+    result = [(name, *vals) for name, vals in result.items()]
     result.sort()
 
     return result
@@ -505,7 +507,7 @@ def create_built_program_from_source_cached(ctx, src, options_bytes, devices=Non
     except Exception as e:
         from pyopencl import Error
         build_program_failure = (isinstance(e, Error)
-                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE)  # noqa pylint:disable=no-member
+                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE)  # pylint:disable=no-member
 
         # Mac error on intel CPU driver: can't build from cached version.
         # If we get a build_program_failure from the cached version then

@@ -492,8 +492,8 @@ def MetropolisCuda(InputCU):
     except Exception:
         print("Compilation seems to break")
 
-    MetropolisBlocksCU = mod.get_function("MainLoopBlocks")  # noqa: F841
-    MetropolisThreadsCU = mod.get_function("MainLoopThreads")  # noqa: F841
+    MetropolisBlocksCU = mod.get_function("MainLoopBlocks")
+    MetropolisThreadsCU = mod.get_function("MainLoopThreads")
     MetropolisHybridCU = mod.get_function("MainLoopHybrid")
 
     MyDuration = numpy.zeros(steps)
@@ -1163,4 +1163,5 @@ if __name__ == "__main__":
         )
 
     if Fit:
-        FitAndPrint(ExploredJobs, median, Curves)  # noqa: F821, E501 # FIXME: undefined var 'median'
+        # FIXME: undefined var 'median'
+        FitAndPrint(ExploredJobs, median, Curves)  # noqa: F821

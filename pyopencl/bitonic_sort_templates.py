@@ -488,7 +488,7 @@ __kernel void run(__global const data_t * in,__global data_t * out,__local data_
   // Write output
   out[i] = aux[i];
 }
-"""         # noqa: E501
+"""
 
 # }}}
 

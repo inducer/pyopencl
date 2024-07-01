@@ -22,6 +22,7 @@ THE SOFTWARE.
 
 import re
 from sys import intern
+from typing import ClassVar, Dict, List, Tuple
 from warnings import warn
 
 import numpy as np
@@ -133,7 +134,7 @@ def simplify_typed_literal(expr):
 class FortranExpressionParser(ExpressionParserBase):
     # FIXME double/single prec literals
 
-    lex_table = [
+    lex_table: ClassVar[List[Tuple[str, str]]] = [
         (_less_than, pytools.lex.RE(r"\.lt\.", re.I)),
         (_greater_than, pytools.lex.RE(r"\.gt\.", re.I)),
         (_less_equal, pytools.lex.RE(r"\.le\.", re.I)),
@@ -144,7 +145,7 @@ class FortranExpressionParser(ExpressionParserBase):
         (_not, pytools.lex.RE(r"\.not\.", re.I)),
         (_and, pytools.lex.RE(r"\.and\.", re.I)),
         (_or, pytools.lex.RE(r"\.or\.", re.I)),
-        ] + ExpressionParserBase.lex_table
+        *ExpressionParserBase.lex_table]
 
     def __init__(self, tree_walker):
         self.tree_walker = tree_walker
@@ -210,7 +211,7 @@ class FortranExpressionParser(ExpressionParserBase):
             return ExpressionParserBase.parse_terminal(
                     self, pstate)
 
-    COMP_MAP = {
+    COMP_MAP: ClassVar[Dict[str, str]] = {
             _less_than: "<",
             _less_equal: "<=",
             _greater_than: ">",
@@ -1022,7 +1023,7 @@ class F2CLTranslator(FTreeWalkerBase):
         body = self.map_statement_list(node.content)
 
         pre_func_decl, in_func_decl = self.get_declarations()
-        body = in_func_decl + [cgen.Line()] + body
+        body = [*in_func_decl, cgen.Line(), *body]
 
         if isinstance(body[-1], cgen.Statement) and body[-1].text == "return":
             body.pop()
@@ -1051,7 +1052,7 @@ class F2CLTranslator(FTreeWalkerBase):
 
         self.scope_stack.pop()
         if pre_func_decl:
-            return pre_func_decl + [cgen.Line(), result]
+            return [*pre_func_decl, cgen.Line(), result]
         else:
             return result
 
@@ -1078,7 +1079,7 @@ class F2CLTranslator(FTreeWalkerBase):
     def map_Equivalence(self, node):
         raise NotImplementedError("equivalence")
 
-    TYPE_MAP = {
+    TYPE_MAP: ClassVar[Dict[Tuple[str, str], np.generic]] = {
             ("real", "4"): np.float32,
             ("real", "8"): np.float64,
             ("real", "16"): np.float128,
@@ -1387,7 +1388,7 @@ def f2cl(source, free_form=False, strict=True,
         if isinstance(entry, cgen.FunctionBody):
             func_decls.append(entry.fdecl)
 
-    mod = cgen.Module(func_decls + [cgen.Line()] + source)
+    mod = cgen.Module([*func_decls, cgen.Line(), *source])
 
     #open("pre-cnd.cl", "w").write(str(mod))
 
