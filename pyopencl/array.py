@@ -3159,8 +3159,8 @@ def _logical_op(x1, x2, out, operator, queue=None):
         else:
             out[:] = np.logical_or(x1, x2)
     elif np.isscalar(x1) or np.isscalar(x2):
-        scalar_arg, = [x for x in (x1, x2) if np.isscalar(x)]
-        ary_arg, = [x for x in (x1, x2) if not np.isscalar(x)]
+        scalar_arg, = (x for x in (x1, x2) if np.isscalar(x))
+        ary_arg, = (x for x in (x1, x2) if not np.isscalar(x))
         queue = queue or ary_arg.queue
         allocator = ary_arg.allocator
 
