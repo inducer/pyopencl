@@ -11,4 +11,4 @@ except ImportError as err:
             "- aptitude install python-mako\n"
             "\nor whatever else is appropriate for your system.") from err
 
-from mako import *  # noqa: F401, F403
+from mako import *  # noqa: F403

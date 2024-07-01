@@ -236,9 +236,9 @@ def get_reduction_kernel(
     arg_prep = get_arg_offset_adjuster_code(arguments)
 
     if stage == 2 and arguments is not None:
-        arguments = (
-                [VectorArg(dtype_out, "pyopencl_reduction_inp")]
-                + arguments)
+        arguments = [
+                VectorArg(dtype_out, "pyopencl_reduction_inp"),
+                *arguments]
 
     source, group_size = _get_reduction_source(
             ctx, dtype_to_ctype(dtype_out), dtype_out.itemsize,
@@ -519,8 +519,7 @@ class ReductionKernel:
                     use_queue,
                     (group_count*stage_inf.group_size,),
                     (stage_inf.group_size,),
-                    *([result.base_data, result.offset]
-                        + invocation_args + size_args),
+                    *([result.base_data, result.offset, *invocation_args, *size_args]),
                     wait_for=wait_for)
             wait_for = [last_evt]
 
@@ -533,7 +532,7 @@ class ReductionKernel:
                     return result
             else:
                 stage_inf = self.stage_2_inf
-                args = (result,) + stage1_args
+                args = (result, *stage1_args)
 
                 range_ = slice_ = None
 

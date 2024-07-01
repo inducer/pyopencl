@@ -1055,9 +1055,9 @@ class GenericScanKernelBase(ABC):
         from pyopencl.tools import parse_arg_list
         self.parsed_args = parse_arg_list(arguments)
         from pyopencl.tools import VectorArg
-        self.first_array_idx = [
+        self.first_array_idx = next(
                 i for i, arg in enumerate(self.parsed_args)
-                if isinstance(arg, VectorArg)][0]
+                if isinstance(arg, VectorArg))
 
         self.input_expr = input_expr
 
@@ -1324,8 +1324,10 @@ class GenericScanKernel(GenericScanKernelBase):
         # {{{ build second-level scan
 
         from pyopencl.tools import VectorArg
-        second_level_arguments = self.parsed_args + [
-                VectorArg(self.dtype, "interval_sums")]
+        second_level_arguments = [
+            *self.parsed_args,
+            VectorArg(self.dtype, "interval_sums"),
+            ]
 
         second_level_build_kwargs: Dict[str, Optional[str]] = {}
         if self.is_segmented:
@@ -1372,9 +1374,10 @@ class GenericScanKernel(GenericScanKernelBase):
             use_lookbehind_update=self.use_lookbehind_update,
             **self.code_variables))
 
-        update_scalar_arg_dtypes = (
-                get_arg_list_scalar_arg_dtypes(self.parsed_args)
-                + [self.index_dtype, self.index_dtype, None, None])
+        update_scalar_arg_dtypes = [
+                *get_arg_list_scalar_arg_dtypes(self.parsed_args),
+                self.index_dtype, self.index_dtype, None, None]
+
         if self.is_segmented:
             # g_first_segment_start_in_interval
             update_scalar_arg_dtypes.append(None)
@@ -1566,7 +1569,8 @@ class GenericScanKernel(GenericScanKernelBase):
 
         # {{{ first level scan of interval (one interval per block)
 
-        scan1_args = data_args + [
+        scan1_args = [
+                *data_args,
                 partial_scan_buffer.data, n, interval_size, interval_results.data,
                 ]
 
@@ -1590,12 +1594,15 @@ class GenericScanKernel(GenericScanKernelBase):
         # can scan at most one interval
         assert interval_size >= num_intervals
 
-        scan2_args = data_args + [
+        scan2_args = [
+                *data_args,
                 interval_results.data,  # interval_sums
                 ]
+
         if self.is_segmented:
             scan2_args.append(first_segment_start_in_interval.data)
-        scan2_args = scan2_args + [
+        scan2_args = [
+                *scan2_args,
                 interval_results.data,  # partial_scan_buffer
                 num_intervals, interval_size]
 
@@ -1607,7 +1614,8 @@ class GenericScanKernel(GenericScanKernelBase):
 
         # {{{ update intervals with result of interval scan
 
-        upd_args = data_args + [
+        upd_args = [
+                *data_args,
                 n, interval_size, interval_results.data, partial_scan_buffer.data]
         if self.is_segmented:
             upd_args.append(first_segment_start_in_interval.data)
@@ -1713,10 +1721,11 @@ class GenericDebugScanKernel(GenericScanKernelBase):
 
         scan_prg = cl.Program(self.context, scan_src).build(self.options)
         self.kernel = getattr(scan_prg, f"{self.name_prefix}_debug_scan")
-        scalar_arg_dtypes = (
-                [None]
-                + get_arg_list_scalar_arg_dtypes(self.parsed_args)
-                + [self.index_dtype])
+        scalar_arg_dtypes = [
+                None,
+                *get_arg_list_scalar_arg_dtypes(self.parsed_args),
+                self.index_dtype,
+                ]
         self.kernel.set_scalar_arg_dtypes(scalar_arg_dtypes)
 
     def __call__(self, *args: Any, **kwargs: Any) -> cl.Event:
@@ -1763,8 +1772,7 @@ class GenericDebugScanKernel(GenericScanKernelBase):
 
         # }}}
 
-        return self.kernel(queue, (1,), (1,),
-                *(data_args + [n]), wait_for=wait_for)
+        return self.kernel(queue, (1,), (1,), *([*data_args, n]), wait_for=wait_for)
 
 # }}}
 

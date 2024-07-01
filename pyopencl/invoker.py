@@ -262,13 +262,13 @@ def _generate_enqueue_and_set_args_module(function_name,
     enqueue_name = "enqueue_knl_%s" % function_name
     gen("def %s(%s):"
             % (enqueue_name,
-                ", ".join(
-                    ["self", "queue", "global_size", "local_size"]
-                    + arg_names
-                    + ["global_offset=None",
-                        "g_times_l=False",
-                        "allow_empty_ndrange=False",
-                        "wait_for=None"])))
+                ", ".join([
+                    "self", "queue", "global_size", "local_size",
+                    *arg_names,
+                    "global_offset=None",
+                    "g_times_l=False",
+                    "allow_empty_ndrange=False",
+                    "wait_for=None"])))
 
     with Indentation(gen):
         subgen, wait_for_parts = gen_arg_setting(in_enqueue=True)
@@ -296,7 +296,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
     gen("")
     gen("def set_args(%s):"
-            % (", ".join(["self"] + arg_names)))
+            % (", ".join(["self", *arg_names])))
 
     with Indentation(gen):
         gen.extend(gen_arg_setting(in_enqueue=False))

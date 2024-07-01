@@ -676,7 +676,7 @@ if __name__ == "__main__":
     # Type of Interaction
     InterType = "Force"
 
-    HowToUse = "%s -h [Help] -r [InitialRandom] -g [OpenGL] -e [VirielStress] -o [Verbose] -p [Potential] -x <None|NegExp|CorRad> -d <DeviceId> -n <NumberOfParticules> -i <Iterations> -z <SizeOfBoxOrBall> -v <Velocity> -s <Step> -b <Ball|Box> -m <ImplicitEuler|RungeKutta|ExplicitEuler|Heun> -t <FP32|FP64>"  # noqa: E501
+    HowToUse = "%s -h [Help] -r [InitialRandom] -g [OpenGL] -e [VirielStress] -o [Verbose] -p [Potential] -x <None|NegExp|CorRad> -d <DeviceId> -n <NumberOfParticules> -i <Iterations> -z <SizeOfBoxOrBall> -v <Velocity> -s <Step> -b <Ball|Box> -m <ImplicitEuler|RungeKutta|ExplicitEuler|Heun> -t <FP32|FP64>"
 
     try:
         opts, args = getopt.getopt(
@@ -833,8 +833,8 @@ if __name__ == "__main__":
 
     # Build all routines used for the computing
 
-    # BuildOptions="-cl-mad-enable -cl-kernel-arg-info -cl-fast-relaxed-math -cl-std=CL1.2 -DTRNG=%i -DTYPE=%i" % (Marsaglia[RNG],Computing[ValueType])  # noqa: E501
-    BuildOptions = "-cl-mad-enable -cl-fast-relaxed-math -DTRNG=%i -DTYPE=%i -DINTERACTION=%i -DARTEVASION=%i" % (  # noqa: E501
+    # BuildOptions="-cl-mad-enable -cl-kernel-arg-info -cl-fast-relaxed-math -cl-std=CL1.2 -DTRNG=%i -DTYPE=%i" % (Marsaglia[RNG],Computing[ValueType])
+    BuildOptions = "-cl-mad-enable -cl-fast-relaxed-math -DTRNG=%i -DTYPE=%i -DINTERACTION=%i -DARTEVASION=%i" % (
         Marsaglia[RNG],
         Computing[ValueType],
         Interaction[InterType],
@@ -864,7 +864,7 @@ if __name__ == "__main__":
     # Write/HostPointer approach for buffering
     # clDataX = cl.Buffer(ctx, mf.WRITE_ONLY|mf.COPY_HOST_PTR,hostbuf=MyDataX)
     # clDataV = cl.Buffer(ctx, mf.WRITE_ONLY|mf.COPY_HOST_PTR,hostbuf=MyDataV)
-    # clPotential = cl.Buffer(ctx, mf.WRITE_ONLY|mf.COPY_HOST_PTR,hostbuf=MyPotential)  # noqa: E501
+    # clPotential = cl.Buffer(ctx, mf.WRITE_ONLY|mf.COPY_HOST_PTR,hostbuf=MyPotential)
     # clKinetic = cl.Buffer(ctx, mf.WRITE_ONLY|mf.COPY_HOST_PTR,hostbuf=MyKinetic)
     # clCoM = cl.Buffer(ctx, mf.WRITE_ONLY|mf.COPY_HOST_PTR,hostbuf=MyCoM)
 
@@ -1011,7 +1011,7 @@ if __name__ == "__main__":
     )
 
     print(
-        "Duration stats on device %s with %s iterations :\n\tMean:\t%s\n\tMedian:\t%s\n\tStddev:\t%s\n\tMin:\t%s\n\tMax:\t%s\n\n\tVariability:\t%s\n"  # noqa: E501
+        "Duration stats on device %s with %s iterations :\n\tMean:\t%s\n\tMedian:\t%s\n\tStddev:\t%s\n\tMin:\t%s\n\tMax:\t%s\n\n\tVariability:\t%s\n"
         % (
             Device,
             Iterations,
@@ -1029,7 +1029,7 @@ if __name__ == "__main__":
     FPS /= Durations
 
     print(
-        "FPS stats on device %s with %s iterations :\n\tMean:\t%s\n\tMedian:\t%s\n\tStddev:\t%s\n\tMin:\t%s\n\tMax:\t%s\n"  # noqa: E501
+        "FPS stats on device %s with %s iterations :\n\tMean:\t%s\n\tMedian:\t%s\n\tStddev:\t%s\n\tMin:\t%s\n\tMax:\t%s\n"
         % (
             Device,
             Iterations,
@@ -1047,7 +1047,7 @@ if __name__ == "__main__":
     Squertz /= Durations
 
     print(
-        "Squertz in log10 & complete stats on device %s with %s iterations :\n\tMean:\t%s\t%s\n\tMedian:\t%s\t%s\n\tStddev:\t%s\t%s\n\tMin:\t%s\t%s\n\tMax:\t%s\t%s\n"  # noqa: E501
+        "Squertz in log10 & complete stats on device %s with %s iterations :\n\tMean:\t%s\t%s\n\tMedian:\t%s\t%s\n\tStddev:\t%s\t%s\n\tMin:\t%s\t%s\n\tMax:\t%s\t%s\n"
         % (
             Device,
             Iterations,

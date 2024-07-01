@@ -522,7 +522,7 @@ def test_image_3d(ctx_factory):
     shape = (3, 4, 2)
 
     rng = np.random.default_rng(seed=42)
-    a = rng.random(size=shape + (num_channels,), dtype=np.float32)
+    a = rng.random(size=(*shape, num_channels), dtype=np.float32)
 
     queue = cl.CommandQueue(context)
     try:

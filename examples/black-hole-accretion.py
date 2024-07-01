@@ -2025,7 +2025,7 @@ if __name__ == "__main__":
     # Tracksave of trajectories
     TrackSave = False
 
-    HowToUse = "%s -h [Help] -b [BlackBodyEmission] -j [TrackSave] -n [NoImage] -p <Einstein/Newton> -s <SizeInPixels> -m <Mass> -i <DiscInternalRadius> -x <DiscExternalRadius> -a <AngleAboveDisc> -d <DeviceId> -c <Greyscale/Red2Yellow> -g <CUDA/OpenCL> -o <EachPixel/TrajectoCircle/TrajectoPixel/EachCircle/Original> -t <ThreadsInCuda> -v <FP32/FP64> -k <TrackPoints>"  # noqa: E501
+    HowToUse = "%s -h [Help] -b [BlackBodyEmission] -j [TrackSave] -n [NoImage] -p <Einstein/Newton> -s <SizeInPixels> -m <Mass> -i <DiscInternalRadius> -x <DiscExternalRadius> -a <AngleAboveDisc> -d <DeviceId> -c <Greyscale/Red2Yellow> -g <CUDA/OpenCL> -o <EachPixel/TrajectoCircle/TrajectoPixel/EachCircle/Original> -t <ThreadsInCuda> -v <FP32/FP64> -k <TrackPoints>"
 
     try:
         opts, args = getopt.getopt(
