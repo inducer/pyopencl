@@ -606,7 +606,7 @@ def test_divide_scalar(ctx_factory):
                   np.float32, np.complex64)
     from pyopencl.characterize import has_double_support
     if has_double_support(queue.device):
-        dtypes = dtypes + (np.float64, np.complex128)
+        dtypes = (*dtypes, np.float64, np.complex128)
 
     from itertools import product
 
@@ -639,7 +639,7 @@ def test_divide_array(ctx_factory):
     dtypes = (np.float32, np.complex64)
     from pyopencl.characterize import has_double_support
     if has_double_support(queue.device):
-        dtypes = dtypes + (np.float64, np.complex128)
+        dtypes = (*dtypes, np.float64, np.complex128)
 
     from itertools import product
 
@@ -679,7 +679,7 @@ def test_divide_inplace_scalar(ctx_factory):
                   np.float32, np.complex64)
     from pyopencl.characterize import has_double_support
     if has_double_support(queue.device):
-        dtypes = dtypes + (np.float64, np.complex128)
+        dtypes = (*dtypes, np.float64, np.complex128)
 
     from itertools import product
 
@@ -715,7 +715,7 @@ def test_divide_inplace_array(ctx_factory):
                   np.float32, np.complex64)
     from pyopencl.characterize import has_double_support
     if has_double_support(queue.device):
-        dtypes = dtypes + (np.float64, np.complex128)
+        dtypes = (*dtypes, np.float64, np.complex128)
 
     from itertools import product
 

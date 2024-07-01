@@ -977,8 +977,10 @@ class ListOfListsBuilder:
         knl = getattr(prg, kernel_name)
 
         from pyopencl.tools import get_arg_list_scalar_arg_dtypes
-        knl.set_scalar_arg_dtypes(get_arg_list_scalar_arg_dtypes(
-            kernel_list_args+self.arg_decls) + [index_dtype])
+        knl.set_scalar_arg_dtypes([
+            *get_arg_list_scalar_arg_dtypes([*kernel_list_args, *self.arg_decls]),
+            index_dtype
+            ])
 
         return knl
 
@@ -1050,8 +1052,9 @@ class ListOfListsBuilder:
         knl = getattr(prg, kernel_name)
 
         from pyopencl.tools import get_arg_list_scalar_arg_dtypes
-        knl.set_scalar_arg_dtypes(get_arg_list_scalar_arg_dtypes(
-            kernel_list_args+self.arg_decls) + [index_dtype])
+        knl.set_scalar_arg_dtypes([
+            *get_arg_list_scalar_arg_dtypes(kernel_list_args + self.arg_decls),
+            index_dtype])
 
         return knl
 
@@ -1233,7 +1236,7 @@ class ListOfListsBuilder:
                 info_record.nonempty_indices,
                 info_record.compressed_indices,
                 info_record.num_nonempty_lists,
-                wait_for=[count_event] + info_record.compressed_indices.events)
+                wait_for=[count_event, *info_record.compressed_indices.events])
 
             info_record.starts = compressed_counts
 
