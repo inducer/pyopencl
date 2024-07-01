@@ -462,13 +462,11 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
                     binary_path = mod_cache_dir_m.sub("binary")
                     source_path = mod_cache_dir_m.sub("source.cl")
 
-                    outf = open(source_path, "wt")
-                    outf.write(src)
-                    outf.close()
+                    with open(source_path, "w") as outf:
+                        outf.write(src)
 
-                    outf = open(binary_path, "wb")
-                    outf.write(binary)
-                    outf.close()
+                    with open(binary_path, "wb") as outf:
+                        outf.write(binary)
 
                     from pickle import dump
                     info_file = open(info_path, "wb")

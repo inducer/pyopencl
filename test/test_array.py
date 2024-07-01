@@ -2336,7 +2336,7 @@ def test_logical_not(ctx_factory):
         cl_array.logical_not(cl_array.zeros(cq, 10, np.float64)).get(),
         np.logical_not(np.zeros(10)))
     np.testing.assert_array_equal(
-        cl_array.logical_not((cl_array.zeros(cq, 10, np.float64) + 1)).get(),
+        cl_array.logical_not(cl_array.zeros(cq, 10, np.float64) + 1).get(),
         np.logical_not(np.ones(10)))
 
 

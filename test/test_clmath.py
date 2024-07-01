@@ -167,7 +167,7 @@ def test_fmod(ctx_factory):
         b = clmath.fmod(a, a2)
 
         # https://salsa.debian.org/opencl-team/python-pyopencl/-/merge_requests/3#note_383761
-        assert np.max(np.abs((np.fmod(a.get(), a2.get()) - b.get()))) < 1e-4
+        assert np.max(np.abs(np.fmod(a.get(), a2.get()) - b.get())) < 1e-4
 
 
 def test_ldexp(ctx_factory):
