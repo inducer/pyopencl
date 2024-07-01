@@ -89,6 +89,7 @@ extend-select = [
     "NPY",  # numpy
     "Q",    # flake8-quotes
     "RUF",  # ruff
+    "UP",   # pyupgrade
     "W",    # pycodestyle
 ]
 extend-ignore = [
@@ -99,6 +100,8 @@ extend-ignore = [
     "E402", # module level import not at the top of file
     "D",    # pydocstyle
     "C90",  # McCabe complexity
+    "UP031", # use f-strings instead of %
+    "UP032", # use f-strings instead of .format
 ]
 exclude = [
     "examples/gl_interop_demo.py",

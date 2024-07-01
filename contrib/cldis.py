@@ -84,7 +84,7 @@ if __name__ == "__main__":
         import pyopencl as cl
         ctx = cl.create_some_context()
         cl_file = sys.argv[1]
-        with open(cl_file, "r") as f:
+        with open(cl_file) as f:
             cl_str = f.read()
         output = sys.argv[2] if len(sys.argv) >= 3 else None
         build_options = sys.argv[3:] if len(sys.argv) >= 4 else []
