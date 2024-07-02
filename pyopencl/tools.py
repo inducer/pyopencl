@@ -138,7 +138,7 @@ from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
 
 from pyopencl._cl import bitlog2, get_cl_header_version  # noqa: F401
 from pyopencl.compyte.dtypes import (  # noqa: F401
-    TypeNameNotKnown,  # noqa: F401
+    TypeNameNotKnown,
     dtype_to_ctype,
     get_or_register_dtype,
     register_dtype,
@@ -172,7 +172,7 @@ from pyopencl._cl import (
 
 
 if get_cl_header_version() >= (2, 0):
-    from pyopencl._cl import PooledSVM, SVMAllocator, SVMPool  # noqa: F401
+    from pyopencl._cl import PooledSVM, SVMAllocator, SVMPool
 
 # }}}
 
@@ -661,7 +661,8 @@ def get_pyopencl_fixture_arg_names(metafunc, extra_arg_names=None):
     supported_arg_names = [
             "platform", "device",
             "ctx_factory", "ctx_getter",
-            ] + extra_arg_names
+            *extra_arg_names
+            ]
 
     arg_names = []
     for arg in supported_arg_names:
@@ -1129,7 +1130,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     prg = cl.Program(context, src)
     knl = prg.build(devices=[device]).get_size_and_offsets
 
-    import pyopencl.array  # noqa: F401
+    import pyopencl.array
+
     result_buf = cl.array.empty(queue, 1+len(fields), np.uint32)
     knl(queue, (1,), (1,), result_buf.data)
     queue.finish()

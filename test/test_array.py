@@ -606,7 +606,7 @@ def test_divide_scalar(ctx_factory):
                   np.float32, np.complex64)
     from pyopencl.characterize import has_double_support
     if has_double_support(queue.device):
-        dtypes = dtypes + (np.float64, np.complex128)
+        dtypes = (*dtypes, np.float64, np.complex128)
 
     from itertools import product
 
@@ -639,7 +639,7 @@ def test_divide_array(ctx_factory):
     dtypes = (np.float32, np.complex64)
     from pyopencl.characterize import has_double_support
     if has_double_support(queue.device):
-        dtypes = dtypes + (np.float64, np.complex128)
+        dtypes = (*dtypes, np.float64, np.complex128)
 
     from itertools import product
 
@@ -679,7 +679,7 @@ def test_divide_inplace_scalar(ctx_factory):
                   np.float32, np.complex64)
     from pyopencl.characterize import has_double_support
     if has_double_support(queue.device):
-        dtypes = dtypes + (np.float64, np.complex128)
+        dtypes = (*dtypes, np.float64, np.complex128)
 
     from itertools import product
 
@@ -715,7 +715,7 @@ def test_divide_inplace_array(ctx_factory):
                   np.float32, np.complex64)
     from pyopencl.characterize import has_double_support
     if has_double_support(queue.device):
-        dtypes = dtypes + (np.float64, np.complex128)
+        dtypes = (*dtypes, np.float64, np.complex128)
 
     from itertools import product
 
@@ -2336,7 +2336,7 @@ def test_logical_not(ctx_factory):
         cl_array.logical_not(cl_array.zeros(cq, 10, np.float64)).get(),
         np.logical_not(np.zeros(10)))
     np.testing.assert_array_equal(
-        cl_array.logical_not((cl_array.zeros(cq, 10, np.float64) + 1)).get(),
+        cl_array.logical_not(cl_array.zeros(cq, 10, np.float64) + 1).get(),
         np.logical_not(np.ones(10)))
 
 

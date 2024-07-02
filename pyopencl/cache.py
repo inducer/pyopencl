@@ -42,12 +42,14 @@ import hashlib
 new_hash = hashlib.md5
 
 
-def _erase_dir(dir):
+def _erase_dir(directory):
     from os import listdir, rmdir, unlink
     from os.path import join
-    for name in listdir(dir):
-        unlink(join(dir, name))
-    rmdir(dir)
+
+    for name in listdir(directory):
+        unlink(join(directory, name))
+
+    rmdir(directory)
 
 
 def update_checksum(checksum, obj):
@@ -213,7 +215,7 @@ def get_dependencies(src, include_path):
 
     _inner(src)
 
-    result = [(name,) + vals for name, vals in result.items()]
+    result = [(name, *vals) for name, vals in result.items()]
     result.sort()
 
     return result
@@ -375,13 +377,13 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
         cache_result = retrieve_from_cache(cache_dir, cache_key)
 
         if cache_result is None:
-            logger.debug("build program: binary cache miss (key: %s)" % cache_key)
+            logger.debug("build program: binary cache miss (key: %s)", cache_key)
 
             to_be_built_indices.append(i)
             binaries.append(None)
             logs.append(None)
         else:
-            logger.debug("build program: binary cache hit (key: %s)" % cache_key)
+            logger.debug("build program: binary cache hit (key: %s)", cache_key)
 
             binary, log = cache_result
             binaries.append(binary)
@@ -410,8 +412,9 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
         src = src + "\n\n__constant int pyopencl_defeat_cache_%s = 0;" % (
                 uuid4().hex)
 
-        logger.debug("build program: start building program from source on %s"
-                % ", ".join(str(devices[i]) for i in to_be_built_indices))
+        logger.debug(
+                "build program: start building program from source on %s",
+                ", ".join(str(devices[i]) for i in to_be_built_indices))
 
         prg = _cl._Program(ctx, src)
         prg.build(options_bytes, [devices[i] for i in to_be_built_indices])
@@ -459,13 +462,11 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
                     binary_path = mod_cache_dir_m.sub("binary")
                     source_path = mod_cache_dir_m.sub("source.cl")
 
-                    outf = open(source_path, "wt")
-                    outf.write(src)
-                    outf.close()
+                    with open(source_path, "w") as outf:
+                        outf.write(src)
 
-                    outf = open(binary_path, "wb")
-                    outf.write(binary)
-                    outf.close()
+                    with open(binary_path, "wb") as outf:
+                        outf.write(binary)
 
                     from pickle import dump
                     info_file = open(info_path, "wb")
@@ -504,7 +505,7 @@ def create_built_program_from_source_cached(ctx, src, options_bytes, devices=Non
     except Exception as e:
         from pyopencl import Error
         build_program_failure = (isinstance(e, Error)
-                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE)  # noqa pylint:disable=no-member
+                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE)  # pylint:disable=no-member
 
         # Mac error on intel CPU driver: can't build from cached version.
         # If we get a build_program_failure from the cached version then

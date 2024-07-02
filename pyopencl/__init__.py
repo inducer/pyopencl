@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from warnings import warn
 
 # must import, otherwise dtype registry will not be fully populated
-import pyopencl.cltypes  # noqa: F401
+import pyopencl.cltypes
 from pyopencl.version import VERSION, VERSION_STATUS, VERSION_TEXT  # noqa: F401
 
 
@@ -54,7 +54,7 @@ except ImportError:
             stacklevel=2)
     raise
 
-import numpy as np  # noqa: I003
+import numpy as np
 
 import sys
 
@@ -187,14 +187,14 @@ if not _PYPY:
 if get_cl_header_version() >= (1, 1):
     from pyopencl._cl import UserEvent  # noqa: F401
 if get_cl_header_version() >= (1, 2):
-    from pyopencl._cl import ImageDescriptor  # noqa: F401
+    from pyopencl._cl import ImageDescriptor
     from pyopencl._cl import (  # noqa: F401
         _enqueue_barrier_with_wait_list, _enqueue_fill_buffer,
         _enqueue_marker_with_wait_list, enqueue_fill_image,
         enqueue_migrate_mem_objects, unload_platform_compiler)
 
 if get_cl_header_version() >= (2, 0):
-    from pyopencl._cl import SVM, SVMAllocation, SVMPointer  # noqa: F401
+    from pyopencl._cl import SVM, SVMAllocation, SVMPointer
 
 if _cl.have_gl():
     from pyopencl._cl import (  # noqa: F401
@@ -449,8 +449,9 @@ class Program:
             if self._build_duration_info is not None:
                 build_descr, _was_cached, duration = self._build_duration_info
                 if duration > 0.2:
-                    logger.info("build program: kernel '%s' was part of a "
-                            "lengthy %s (%.2f s)" % (attr, build_descr, duration))
+                    logger.info(
+                        "build program: kernel '%s' was part of a "
+                        "lengthy %s (%.2f s)", attr, build_descr, duration)
 
                 # don't whine about build times more than once.
                 self._build_duration_info = None
@@ -2399,7 +2400,7 @@ _KERNEL_ARG_CLASSES: Tuple[type, ...] = (
         LocalMemory,
         )
 if get_cl_header_version() >= (2, 0):
-    _KERNEL_ARG_CLASSES = _KERNEL_ARG_CLASSES + (SVM,)
+    _KERNEL_ARG_CLASSES = (*_KERNEL_ARG_CLASSES, SVM)
 
 
 # vim: foldmethod=marker
