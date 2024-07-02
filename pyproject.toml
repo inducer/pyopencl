@@ -179,7 +179,7 @@ repair-wheel-command = "auditwheel repair -w {dest_dir} --lib-sdir=/.libs {wheel
 [[tool.cibuildwheel.overrides]]
 select = "*-musllinux*"
 before-all = [
-    "apk add ruby git openssl-dev",
+    "apk add ruby git openssl-dev libtool",
     "bash {package}/scripts/build-ocl.sh",
 ]
 repair-wheel-command = "auditwheel repair -w {dest_dir} --lib-sdir=/.libs {wheel}"
