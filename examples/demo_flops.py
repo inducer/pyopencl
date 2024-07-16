@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+
 import pyopencl as cl
 
 
@@ -10,6 +11,10 @@ src = """
         z[i] = x[i] + y[i];
     }
 """
+
+MAX_ALLOCATION_SIZE = 2 ** 30
+WARM_UP_RUNS = 4
+HOT_RUNS = 10
 
 
 # allocates buffers of increasing size, for each run do a parallel sum interpreting
@@ -33,7 +38,7 @@ if __name__ == "__main__":
         properties=cl.command_queue_properties.PROFILING_ENABLE
     )
 
-    buffer_size = [2 ** i for i in range(10, 31)]
+    buffer_size = [2 ** i for i in range(10, 31) if 2 ** i < MAX_ALLOCATION_SIZE]
     data = np.zeros((len(buffer_size), len(types)))
 
     for row, nbytes in enumerate(buffer_size):
@@ -46,10 +51,16 @@ if __name__ == "__main__":
             header = f"#define T {literal}\n"
             kernel = cl.Program(ctx, header + src).build().sum
 
-            event = kernel(queue, (sums,), None, x, y, z)
-            event.wait()
+            events = [
+                kernel(queue, (sums,), None, x, y, z)
+                for _ in range(WARM_UP_RUNS + HOT_RUNS)
+            ]
+            events[-1].wait()
+            events = events[WARM_UP_RUNS:]
 
-            FLOPS = 1e9 * sums / (event.profile.end - event.profile.start)
+            FLOPS = np.mean(
+                1e9 * sums / np.array([e.profile.end - e.profile.start for e in events])
+            )
             GFLOPS = FLOPS / 1e6
 
             data[row, col] = GFLOPS
