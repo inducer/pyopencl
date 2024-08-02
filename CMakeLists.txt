@@ -200,8 +200,15 @@ if (PYOPENCL_USE_SHIPPED_EXT)
   target_compile_definitions(_cl PRIVATE PYOPENCL_USE_SHIPPED_EXT=1)
 endif()
 
-install(TARGETS _cl LIBRARY DESTINATION pyopencl)
+nanobind_add_stub(
+  pyopencl_stub
+  MODULE pyopencl._cl
+  OUTPUT _cl.pyi
+  PYTHON_PATH $<TARGET_FILE_DIR:_cl>
+  DEPENDS _cl
+)
 
+install(TARGETS _cl LIBRARY DESTINATION pyopencl)
 
 # {{{ Print configuration
 
