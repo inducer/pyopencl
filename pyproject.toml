@@ -94,8 +94,6 @@ extend-select = [
 extend-ignore = [
     "E226", # missing whitespace around arithmetic operator
     "E241", # multiple spaces after comma
-    "E242", # tab after comma
-    "E265", # block comment should start with #
     "E402", # module level import not at the top of file
     "C90",  # McCabe complexity
     "UP031", # use f-strings instead of %

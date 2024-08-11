@@ -529,7 +529,7 @@ def first_arg_dependent_memoize_nested(nested_func):
         cache_context = caller_frame.f_globals[
                 caller_frame.f_code.co_name]
     finally:
-        #del caller_frame
+        # del caller_frame
         pass
 
     try:

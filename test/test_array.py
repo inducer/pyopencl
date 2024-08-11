@@ -112,7 +112,7 @@ def test_mix_complex(ctx_factory):
 
     dtypes = [
             (np.float32, np.complex64),
-            #(np.int32, np.complex64),
+            # (np.int32, np.complex64),
             ]
 
     dev = context.devices[0]
@@ -389,8 +389,8 @@ def test_custom_type_take_put(ctx_factory):
 # {{{ test_div_type_matches_numpy
 
 @pytest.mark.parametrize("dtype", [np.int8, np.int32, np.int64, np.float32])
-# FIXME Implement florodiv
-#@pytest.mark.parametrize("op", [operator.truediv, operator.floordiv])
+# FIXME Implement floordiv
+# @pytest.mark.parametrize("op", [operator.truediv, operator.floordiv])
 @pytest.mark.parametrize("op", [operator.truediv])
 def test_div_type_matches_numpy(ctx_factory, dtype, op):
     context = ctx_factory()
@@ -547,7 +547,7 @@ def test_addition_scalar(ctx_factory):
             ])
 def test_subtract_array(ctx_factory, dtype_a, dtype_b):
     """Test the subtraction of two arrays."""
-    #test data
+    # test data
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(dtype_a)
     b = np.array([10, 20, 30, 40, 50,
                   60, 70, 80, 90, 100]).astype(dtype_b)
@@ -575,10 +575,10 @@ def test_subtract_scalar(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
-    #test data
+    # test data
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(np.float32)
 
-    #convert a to a gpu object
+    # convert a to a gpu object
     a_gpu = cl_array.to_device(queue, a)
 
     result = (a_gpu - 7).get()
@@ -1166,7 +1166,7 @@ def test_slice(ctx_factory):
 
     for _i in range(20):
         start = randrange(ary_len-start_offset)
-        #end = randrange(start+start_offset, ary_len)
+        # end = randrange(start+start_offset, ary_len)
         end = start
 
         a_gpu[start:end] = tp(2)*b[start:end]
@@ -1466,7 +1466,7 @@ def test_transpose(ctx_factory):
     a = a_gpu.get()
 
     # FIXME: not contiguous
-    #assert np.allclose(a_gpu.transpose((1,2,0)).get(), a.transpose((1,2,0)))
+    # assert np.allclose(a_gpu.transpose((1,2,0)).get(), a.transpose((1,2,0)))
     assert np.array_equal(a_gpu.T.get(), a.T)
 
 # }}}
@@ -1516,7 +1516,7 @@ def test_squeeze(ctx_factory):
     assert a_gpu_squeezed_slice.flags.c_contiguous
 
     # Check that we get the original values out
-    #assert np.all(a_gpu_slice.get().ravel() == a_gpu_squeezed_slice.get().ravel())
+    # assert np.all(a_gpu_slice.get().ravel() == a_gpu_squeezed_slice.get().ravel())
 
     # Slice with length 1 on dimensions 2
     a_gpu_slice = a_gpu[:, :, 2:3, :]
@@ -1529,7 +1529,7 @@ def test_squeeze(ctx_factory):
     assert not a_gpu_squeezed_slice.flags.c_contiguous
 
     # Check that we get the original values out
-    #assert np.all(a_gpu_slice.get().ravel() == a_gpu_squeezed_slice.get().ravel())
+    # assert np.all(a_gpu_slice.get().ravel() == a_gpu_squeezed_slice.get().ravel())
 
 # }}}
 
