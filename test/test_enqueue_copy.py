@@ -33,7 +33,7 @@ from pyopencl.tools import (
 
 
 def generate_slice(start, shape):
-    return tuple([slice(start[i], start[i]+shape[i]) for i in range(len(start))])
+    return tuple(slice(start[i], start[i]+shape[i]) for i in range(len(start)))
 
 
 def test_enqueue_copy_rect_2d(ctx_factory, honor_skip=True):
