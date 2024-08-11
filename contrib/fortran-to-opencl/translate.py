@@ -1204,8 +1204,8 @@ class F2CLTranslator(FTreeWalkerBase):
         raise NotImplementedError("save")
 
     def map_Line(self, node):
-        #from warnings import warn
-        #warn("Encountered a 'line': %s" % node)
+        # from warnings import warn
+        # warn("Encountered a 'line': %s" % node)
         raise NotImplementedError
 
     def map_Program(self, node):
@@ -1390,7 +1390,7 @@ def f2cl(source, free_form=False, strict=True,
 
     mod = cgen.Module([*func_decls, cgen.Line(), *source])
 
-    #open("pre-cnd.cl", "w").write(str(mod))
+    # open("pre-cnd.cl", "w").write(str(mod))
 
     from cnd import transform_cl
     str_mod = transform_cl(str(mod))

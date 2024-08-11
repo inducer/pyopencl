@@ -262,7 +262,7 @@ def _splay(device, n, kernel_specific_max_wg_size=None):
         group_count = max_groups
         work_items_per_group = max_work_items
 
-    #print "n:%d gc:%d wipg:%d" % (n, group_count, work_items_per_group)
+    # print("n:%d gc:%d wipg:%d" % (n, group_count, work_items_per_group))
     return (group_count*work_items_per_group,), (work_items_per_group,)
 
 
@@ -590,7 +590,7 @@ class Array:
                 # FIXME It would be nice to check this. But it would require
                 # changing the allocator interface. Trust the user for now.
 
-                #assert allocator.context == context
+                # assert allocator.context == context
                 pass
 
             # Queue-less arrays do have a purpose in life.

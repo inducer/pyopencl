@@ -482,7 +482,7 @@ def test_image_2d(ctx_factory):
 # {{{ test_image_3d
 
 def test_image_3d(ctx_factory):
-    #test for image_from_array for 3d image of float2
+    # test for image_from_array for 3d image of float2
     context = ctx_factory()
 
     device, = context.devices
