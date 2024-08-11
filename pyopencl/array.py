@@ -2050,9 +2050,10 @@ class Array:
 
         .. versionadded:: 2015.2
         """
-        new_shape = tuple([dim for dim in self.shape if dim > 1])
-        new_strides = tuple([self.strides[i]
-            for i, dim in enumerate(self.shape) if dim > 1])
+        new_shape = tuple(dim for dim in self.shape if dim > 1)
+        new_strides = tuple(
+            self.strides[i] for i, dim in enumerate(self.shape)
+            if dim > 1)
 
         return self._new_with_changes(
                 self.base_data, self.offset,

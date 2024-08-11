@@ -1096,7 +1096,7 @@ class F2CLTranslator(FTreeWalkerBase):
     def dtype_from_stmt(self, stmt):
         length, kind = stmt.selector
         assert not kind
-        return np.dtype(self.TYPE_MAP[(type(stmt).__name__.lower(), length)])
+        return np.dtype(self.TYPE_MAP[type(stmt).__name__.lower(), length])
 
     def map_type_decl(self, node):
         scope = self.scope_stack[-1]
