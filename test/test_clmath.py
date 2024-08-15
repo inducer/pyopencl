@@ -305,8 +305,8 @@ def test_bessel(ctx_factory):
             if 0 and n == 15:
                 import matplotlib.pyplot as pt
 
-                #pt.plot(scipy_bessel)
-                #pt.plot(cl_bessel)
+                # pt.plot(scipy_bessel)
+                # pt.plot(cl_bessel)
 
                 pt.loglog(a, np.abs(cl_bessel-scipy_bessel), label="vs scipy")
                 if use_pyfmmlib:

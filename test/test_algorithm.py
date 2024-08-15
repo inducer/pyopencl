@@ -495,8 +495,8 @@ def test_struct_reduce(ctx_factory):
             arguments="__global int *x", preamble=preamble)
 
     minmax = red(a_gpu).get()
-    #print minmax["cur_min"], minmax["cur_max"]
-    #print np.min(a), np.max(a)
+    # print(minmax["cur_min"], minmax["cur_max"])
+    # print(np.min(a), np.max(a))
 
     assert abs(minmax["cur_min"] - np.min(a)) < 1e-5
     assert abs(minmax["cur_max"] - np.max(a)) < 1e-5
@@ -756,7 +756,7 @@ def test_segmented_scan(ctx_factory):
     dtype = np.int32
     ctype = dtype_to_ctype(dtype)
 
-    #for is_exclusive in [False, True]:
+    # for is_exclusive in [False, True]:
     for is_exclusive in [True, False]:
         if is_exclusive:
             output_statement = "out[i] = prev_item"
@@ -798,8 +798,8 @@ def test_segmented_scan(ctx_factory):
                     seg_boundaries_values.append(seg_boundaries)
 
             for seg_boundaries in seg_boundaries_values:
-                #print "BOUNDARIES", seg_boundaries
-                #print a
+                # print("BOUNDARIES", seg_boundaries)
+                # print(a)
 
                 seg_boundary_flags = np.zeros(n, dtype=np.uint8)
                 seg_boundary_flags[seg_boundaries] = 1
@@ -823,12 +823,12 @@ def test_segmented_scan(ctx_factory):
                         result_host[seg_start:seg_end] = np.cumsum(
                                 a[seg_start:seg_end])
 
-                #print "REF", result_host
+                # print("REF", result_host)
 
                 result_dev = cl.array.empty_like(a_dev)
                 knl(a_dev, seg_boundary_flags_dev, result_dev)
 
-                #print "RES", result_dev
+                # print("RES", result_dev)
                 is_correct = (result_dev.get() == result_host).all()
                 if not is_correct:
                     diff = result_dev.get() - result_host

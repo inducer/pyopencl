@@ -1096,7 +1096,7 @@ class F2CLTranslator(FTreeWalkerBase):
     def dtype_from_stmt(self, stmt):
         length, kind = stmt.selector
         assert not kind
-        return np.dtype(self.TYPE_MAP[(type(stmt).__name__.lower(), length)])
+        return np.dtype(self.TYPE_MAP[type(stmt).__name__.lower(), length])
 
     def map_type_decl(self, node):
         scope = self.scope_stack[-1]
@@ -1204,8 +1204,8 @@ class F2CLTranslator(FTreeWalkerBase):
         raise NotImplementedError("save")
 
     def map_Line(self, node):
-        #from warnings import warn
-        #warn("Encountered a 'line': %s" % node)
+        # from warnings import warn
+        # warn("Encountered a 'line': %s" % node)
         raise NotImplementedError
 
     def map_Program(self, node):
@@ -1390,7 +1390,7 @@ def f2cl(source, free_form=False, strict=True,
 
     mod = cgen.Module([*func_decls, cgen.Line(), *source])
 
-    #open("pre-cnd.cl", "w").write(str(mod))
+    # open("pre-cnd.cl", "w").write(str(mod))
 
     from cnd import transform_cl
     str_mod = transform_cl(str(mod))

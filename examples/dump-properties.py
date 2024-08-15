@@ -49,8 +49,8 @@ for platform in cl.get_platforms():
             ctx = cl.Context([device])
             for mf in [
                     cl.mem_flags.READ_ONLY,
-                    #cl.mem_flags.READ_WRITE,
-                    #cl.mem_flags.WRITE_ONLY
+                    # cl.mem_flags.READ_WRITE,
+                    # cl.mem_flags.WRITE_ONLY
                     ]:
                 for itype in [
                         cl.mem_object_type.IMAGE2D,
