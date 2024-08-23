@@ -259,7 +259,8 @@ def _generate_enqueue_and_set_args_module(function_name,
 
     # {{{ generate _enqueue
 
-    enqueue_name = "enqueue_knl_%s" % function_name
+    from pytools import to_identifier
+    enqueue_name = f"enqueue_knl_{to_identifier(function_name)}"
     gen("def %s(%s):"
             % (enqueue_name,
                 ", ".join([
