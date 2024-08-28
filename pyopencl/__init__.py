@@ -1648,7 +1648,8 @@ def choose_devices(interactive: Optional[bool] = None,
 
     if not devices:
         raise Error("no devices found")
-    elif len(devices) == 1:
+    elif len(devices) == 1 and not answers:
+        cc_print(f"Choosing only available device: {devices[0]}")
         pass
     else:
         if not answers:
@@ -1672,7 +1673,7 @@ def choose_devices(interactive: Optional[bool] = None,
 
     if answers:
         raise RuntimeError("not all provided choices were used by "
-                "choose_device. (left over: '%s')" % ":".join(answers))
+                "choose_devices. (left over: '%s')" % ":".join(answers))
 
     return devices
 
