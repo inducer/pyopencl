@@ -1649,6 +1649,7 @@ def choose_devices(interactive: Optional[bool] = None,
     if not devices:
         raise Error("no devices found")
     elif len(devices) == 1 and not answers:
+        print(f"Choosing only available device: {devices[0]}")
         pass
     else:
         if not answers:
