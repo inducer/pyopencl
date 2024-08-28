@@ -129,6 +129,14 @@ Program
             in the same name space and take precedence over
             :class:`Kernel` names.
 
+        .. note::
+
+            If you need to retrieve a kernel whose name includes non-identifier
+            characters, retrieving it as an attribute of
+            :class:`~pyopencl.Program` will
+            not work, for obvious reasons. In that case, you can use
+            the :class:`~pyopencl.Kernel` constructor directly.
+
     .. method:: all_kernels()
 
         Returns a list of all :class:`Kernel` objects in the :class:`Program`.
