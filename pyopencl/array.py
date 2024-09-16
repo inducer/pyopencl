@@ -342,6 +342,37 @@ _BOOL_DTYPE = np.dtype(np.int8)
 _NOT_PRESENT = object()
 
 
+# {{{ pickling support
+
+import threading
+from contextlib import contextmanager
+
+
+_QUEUE_FOR_PICKLING_TLS = threading.local()
+
+
+@contextmanager
+def queue_for_pickling(queue):
+    r"""A context manager that, for the current thread, sets the command queue
+    to be used for pickling and unpickling :class:`Array`\ s to *queue*."""
+    try:
+        existing_pickle_queue = _QUEUE_FOR_PICKLING_TLS.queue
+    except AttributeError:
+        existing_pickle_queue = None
+
+    if existing_pickle_queue is not None:
+        raise RuntimeError("array_context_for_pickling should not be called "
+                "inside the context of its own invocation.")
+
+    _QUEUE_FOR_PICKLING_TLS.queue = queue
+    try:
+        yield None
+    finally:
+        _QUEUE_FOR_PICKLING_TLS.queue = None
+
+# }}}
+
+
 class Array:
     """A :class:`numpy.ndarray` work-alike that stores its data and performs
     its computations on the compute device. :attr:`shape` and :attr:`dtype` work
@@ -704,6 +735,63 @@ class Array:
                          "This may lead to the array getting deallocated sooner "
                          "than expected, potentially leading to crashes.",
                          InconsistentOpenCLQueueWarning, stacklevel=2)
+
+    # {{{ Pickling
+
+    def __getstate__(self):
+        try:
+            queue = _QUEUE_FOR_PICKLING_TLS.queue
+        except AttributeError:
+            queue = None
+
+        if queue is None:
+            raise RuntimeError("CL Array instances can only be pickled while "
+                               "queue_for_pickling is active.")
+
+        d = {}
+        d["shape"] = self.shape
+        d["dtype"] = self.dtype
+        d["strides"] = self.strides
+        d["allocator"] = self.allocator
+        d["nbytes"] = self.nbytes
+        d["strides"] = self.strides
+        d["offset"] = self.offset
+        d["data"] = self.get(queue=queue)
+        d["_flags"] = self._flags
+        d["size"] = self.size
+
+        return d
+
+    def __setstate__(self, state):
+        try:
+            queue = _QUEUE_FOR_PICKLING_TLS.queue
+        except AttributeError:
+            queue = None
+
+        if queue is None:
+            raise RuntimeError("CL Array instances can only be pickled while "
+                               "queue_for_pickling is active.")
+
+        self.queue = queue
+        self.shape = state["shape"]
+        self.dtype = state["dtype"]
+        self.strides = state["strides"]
+        self.allocator = state["allocator"]
+        self.offset = state["offset"]
+        self._flags = state["_flags"]
+        self.size = state["size"]
+        self.nbytes = state["nbytes"]
+        self.events = []
+
+        if self.allocator is None:
+            context = queue.context
+            self.base_data = cl.Buffer(context, cl.mem_flags.READ_WRITE, self.nbytes)
+        else:
+            self.base_data = self.allocator(self.nbytes)
+
+        self.set(state["data"], queue=queue)
+
+    # }}}
 
     @property
     def ndim(self):

@@ -2393,6 +2393,26 @@ def test_xdg_cache_home(ctx_factory):
 # }}}
 
 
+# {{{ test pickling
+
+def test_array_pickling(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
+    a_gpu = cl_array.to_device(queue, a)
+
+    import pickle
+    with pytest.raises(RuntimeError):
+        pickle.dumps(a_gpu)
+
+    with cl.array.queue_for_pickling(queue):
+        a_gpu_pickled = pickle.loads(pickle.dumps(a_gpu))
+    assert np.all(a_gpu_pickled.get() == a)
+
+# }}}
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         exec(sys.argv[1])
