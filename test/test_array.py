@@ -2419,6 +2419,8 @@ def test_array_pickling(ctx_factory):
         a_gpu_pickled = pickle.loads(pickle.dumps(a_gpu))
     assert np.all(a_gpu_pickled.get() == a)
 
+    # {{{ subclass test
+
     a_gpu_tagged = TaggableCLArray(queue, a.shape, a.dtype, tags={"foo", "bar"})
     a_gpu_tagged.set(a)
 
@@ -2427,6 +2429,25 @@ def test_array_pickling(ctx_factory):
 
     assert np.all(a_gpu_tagged_pickled.get() == a)
     assert a_gpu_tagged_pickled.tags == a_gpu_tagged.tags
+
+    # }}}
+
+    # {{{ SVM test
+
+    from pyopencl.tools import SVMAllocator, SVMPool
+
+    alloc = SVMAllocator(context, alignment=0, queue=queue)
+    alloc = SVMPool(alloc)
+
+    a_dev = cl_array.to_device(queue, a, allocator=alloc)
+
+    with cl_array.queue_for_pickling(queue, alloc):
+        a_dev_pickled = pickle.loads(pickle.dumps(a_dev))
+
+    assert np.all(a_dev_pickled.get() == a)
+    assert a_dev_pickled.allocator is alloc
+
+    # }}}
 
 
 # }}}

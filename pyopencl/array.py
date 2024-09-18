@@ -352,7 +352,7 @@ _QUEUE_FOR_PICKLING_TLS = threading.local()
 
 
 @contextmanager
-def queue_for_pickling(queue):
+def queue_for_pickling(queue, alloc=None):
     r"""A context manager that, for the current thread, sets the command queue
     to be used for pickling and unpickling :class:`Array`\ s to *queue*."""
     try:
@@ -365,6 +365,7 @@ def queue_for_pickling(queue):
                 "inside the context of its own invocation.")
 
     _QUEUE_FOR_PICKLING_TLS.queue = queue
+    _QUEUE_FOR_PICKLING_TLS.alloc = alloc
     try:
         yield None
     finally:
@@ -749,6 +750,8 @@ class Array:
                                "queue_for_pickling is active.")
 
         state = self.__dict__.copy()
+
+        del state["allocator"]
         del state["context"]
         del state["events"]
         del state["queue"]
@@ -760,14 +763,18 @@ class Array:
     def __setstate__(self, state):
         try:
             queue = _QUEUE_FOR_PICKLING_TLS.queue
+            alloc = _QUEUE_FOR_PICKLING_TLS.alloc
         except AttributeError:
             queue = None
+            alloc = None
 
         if queue is None:
             raise RuntimeError("CL Array instances can only be pickled while "
                                "queue_for_pickling is active.")
 
         self.__dict__.update(state)
+
+        self.allocator = alloc
         self.context = queue.context
         self.events = []
         self.queue = queue
