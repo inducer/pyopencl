@@ -361,7 +361,7 @@ def queue_for_pickling(queue):
         existing_pickle_queue = None
 
     if existing_pickle_queue is not None:
-        raise RuntimeError("array_context_for_pickling should not be called "
+        raise RuntimeError("queue_for_pickling should not be called "
                 "inside the context of its own invocation.")
 
     _QUEUE_FOR_PICKLING_TLS.queue = queue
