@@ -2434,18 +2434,21 @@ def test_array_pickling(ctx_factory):
 
     # {{{ SVM test
 
-    from pyopencl.tools import SVMAllocator, SVMPool
+    from pyopencl.characterize import has_coarse_grain_buffer_svm
 
-    alloc = SVMAllocator(context, alignment=0, queue=queue)
-    alloc = SVMPool(alloc)
+    if has_coarse_grain_buffer_svm(queue.device):
+        from pyopencl.tools import SVMAllocator, SVMPool
 
-    a_dev = cl_array.to_device(queue, a, allocator=alloc)
+        alloc = SVMAllocator(context, alignment=0, queue=queue)
+        alloc = SVMPool(alloc)
 
-    with cl_array.queue_for_pickling(queue, alloc):
-        a_dev_pickled = pickle.loads(pickle.dumps(a_dev))
+        a_dev = cl_array.to_device(queue, a, allocator=alloc)
 
-    assert np.all(a_dev_pickled.get() == a)
-    assert a_dev_pickled.allocator is alloc
+        with cl_array.queue_for_pickling(queue, alloc):
+            a_dev_pickled = pickle.loads(pickle.dumps(a_dev))
+
+        assert np.all(a_dev_pickled.get() == a)
+        assert a_dev_pickled.allocator is alloc
 
     # }}}
 

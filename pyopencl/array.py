@@ -370,6 +370,7 @@ def queue_for_pickling(queue, alloc=None):
         yield None
     finally:
         _QUEUE_FOR_PICKLING_TLS.queue = None
+        _QUEUE_FOR_PICKLING_TLS.alloc = None
 
 # }}}
 
