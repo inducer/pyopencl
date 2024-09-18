@@ -2395,6 +2395,15 @@ def test_xdg_cache_home(ctx_factory):
 
 # {{{ test pickling
 
+from pytools.tag import Taggable
+
+
+class TaggableCLArray(cl_array.Array, Taggable):
+    def __init__(self, cq, shape, dtype, tags):
+        super().__init__(cq=cq, shape=shape, dtype=dtype)
+        self.tags = tags
+
+
 def test_array_pickling(ctx_factory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -2406,9 +2415,19 @@ def test_array_pickling(ctx_factory):
     with pytest.raises(RuntimeError):
         pickle.dumps(a_gpu)
 
-    with cl.array.queue_for_pickling(queue):
+    with cl_array.queue_for_pickling(queue):
         a_gpu_pickled = pickle.loads(pickle.dumps(a_gpu))
     assert np.all(a_gpu_pickled.get() == a)
+
+    a_gpu_tagged = TaggableCLArray(queue, a.shape, a.dtype, tags={"foo", "bar"})
+    a_gpu_tagged.set(a)
+
+    with cl_array.queue_for_pickling(queue):
+        a_gpu_tagged_pickled = pickle.loads(pickle.dumps(a_gpu_tagged))
+
+    assert np.all(a_gpu_tagged_pickled.get() == a)
+    assert a_gpu_tagged_pickled.tags == a_gpu_tagged.tags
+
 
 # }}}
 

@@ -71,7 +71,7 @@ class DoubleDowncastWarning(UserWarning):
 
 
 _DOUBLE_DOWNCAST_WARNING = (
-        "The operation you requested would result in a double-precisision "
+        "The operation you requested would result in a double-precision "
         "quantity according to numpy semantics. Since your device does not "
         "support double precision, a single-precision quantity is being returned.")
 
@@ -748,19 +748,14 @@ class Array:
             raise RuntimeError("CL Array instances can only be pickled while "
                                "queue_for_pickling is active.")
 
-        d = {}
-        d["shape"] = self.shape
-        d["dtype"] = self.dtype
-        d["strides"] = self.strides
-        d["allocator"] = self.allocator
-        d["nbytes"] = self.nbytes
-        d["strides"] = self.strides
-        d["offset"] = self.offset
-        d["data"] = self.get(queue=queue)
-        d["_flags"] = self._flags
-        d["size"] = self.size
+        state = self.__dict__.copy()
+        del state["context"]
+        del state["events"]
+        del state["queue"]
+        del state["base_data"]
+        state["data"] = self.get(queue=queue)
 
-        return d
+        return state
 
     def __setstate__(self, state):
         try:
@@ -772,20 +767,14 @@ class Array:
             raise RuntimeError("CL Array instances can only be pickled while "
                                "queue_for_pickling is active.")
 
-        self.queue = queue
-        self.shape = state["shape"]
-        self.dtype = state["dtype"]
-        self.strides = state["strides"]
-        self.allocator = state["allocator"]
-        self.offset = state["offset"]
-        self._flags = state["_flags"]
-        self.size = state["size"]
-        self.nbytes = state["nbytes"]
+        self.__dict__.update(state)
+        self.context = queue.context
         self.events = []
+        self.queue = queue
 
         if self.allocator is None:
-            context = queue.context
-            self.base_data = cl.Buffer(context, cl.mem_flags.READ_WRITE, self.nbytes)
+            self.base_data = cl.Buffer(self.context, cl.mem_flags.READ_WRITE,
+                                       self.nbytes)
         else:
             self.base_data = self.allocator(self.nbytes)
 
