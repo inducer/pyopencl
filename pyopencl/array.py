@@ -786,7 +786,13 @@ class Array:
         else:
             self.base_data = self.allocator(self.nbytes)
 
-        self.set(state["data"], queue=queue)
+        ary = state["data"]
+
+        # Mimics the stride update in _get() below
+        if ary.strides != self.strides:
+            ary = _as_strided(ary, strides=self.strides)
+
+        self.set(ary, queue=queue)
 
     # }}}
 
