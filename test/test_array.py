@@ -2453,6 +2453,26 @@ def test_array_pickling(ctx_factory):
     # }}}
 
 
+def test_buffer_pickling(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
+    a_gpu = cl.Buffer(context, cl.mem_flags.READ_WRITE, a.nbytes)
+    cl.enqueue_copy(queue, a_gpu, a)
+
+    import pickle
+
+    with pytest.raises(cl.RuntimeError):
+        pickle.dumps(a_gpu)
+
+    with cl.queue_for_pickling(queue):
+        a_gpu_pickled = pickle.loads(pickle.dumps(a_gpu))
+
+    a_new = np.empty_like(a)
+    cl.enqueue_copy(queue, a_new, a_gpu_pickled)
+    assert np.all(a_new == a)
+
 # }}}
 
 

@@ -2407,4 +2407,80 @@ if get_cl_header_version() >= (2, 0):
     _KERNEL_ARG_CLASSES = (*_KERNEL_ARG_CLASSES, SVM)
 
 
+# {{{ pickling support
+
+import threading
+from contextlib import contextmanager
+
+
+_QUEUE_FOR_PICKLING_TLS = threading.local()
+
+
+@contextmanager
+def queue_for_pickling(queue):
+    r"""A context manager that, for the current thread, sets the command queue
+    to be used for pickling and unpickling :class:`Buffer`\ s to *queue*."""
+    try:
+        existing_pickle_queue = _QUEUE_FOR_PICKLING_TLS.queue
+    except AttributeError:
+        existing_pickle_queue = None
+
+    if existing_pickle_queue is not None:
+        raise RuntimeError("queue_for_pickling should not be called "
+                "inside the context of its own invocation.")
+
+    _QUEUE_FOR_PICKLING_TLS.queue = queue
+    try:
+        yield None
+    finally:
+        _QUEUE_FOR_PICKLING_TLS.queue = None
+
+
+def _getstate_buffer(self):
+    import pyopencl as cl
+    state = {}
+    state["size"] = self.size
+    state["flags"] = self.flags
+
+    try:
+        queue = _QUEUE_FOR_PICKLING_TLS.queue
+    except AttributeError:
+        queue = None
+
+    if queue is None:
+        raise RuntimeError("CL Buffer instances can only be pickled while "
+                            "queue_for_pickling is active.")
+
+    a = bytearray(self.size)
+    cl.enqueue_copy(queue, a, self)
+
+    state["_pickle_data"] = a
+
+    return state
+
+
+def _setstate_buffer(self, state):
+    try:
+        queue = _QUEUE_FOR_PICKLING_TLS.queue
+    except AttributeError:
+        queue = None
+
+    if queue is None:
+        raise RuntimeError("CL Buffer instances can only be unpickled while "
+                            "queue_for_pickling is active.")
+
+    size = state["size"]
+    flags = state["flags"]
+
+    import pyopencl as cl
+
+    a = state["_pickle_data"]
+    Buffer.__init__(self, queue.context, flags | cl.mem_flags.COPY_HOST_PTR, size, a)
+
+
+Buffer.__getstate__ = _getstate_buffer
+Buffer.__setstate__ = _setstate_buffer
+
+# }}}
+
 # vim: foldmethod=marker
