@@ -137,6 +137,7 @@ from pyopencl._cl import (  # noqa: F401
         MemoryObject,
         MemoryMap,
         Buffer,
+        PooledBuffer,
 
         _Program,
         Kernel,
@@ -197,7 +198,7 @@ if get_cl_header_version() >= (1, 2):
         enqueue_migrate_mem_objects, unload_platform_compiler)
 
 if get_cl_header_version() >= (2, 0):
-    from pyopencl._cl import SVM, SVMAllocation, SVMPointer
+    from pyopencl._cl import SVM, SVMAllocation, SVMPointer, PooledSVM
 
 if _cl.have_gl():
     from pyopencl._cl import (  # noqa: F401
@@ -2439,20 +2440,27 @@ def queue_for_pickling(queue, alloc=None):
         _QUEUE_FOR_PICKLING_TLS.alloc = None
 
 
-def _getstate_buffer(self):
-    import pyopencl as cl
-    state = {}
-    state["size"] = self.size
-    state["flags"] = self.flags
-
+def _get_queue_for_pickling(obj):
     try:
         queue = _QUEUE_FOR_PICKLING_TLS.queue
+        alloc = _QUEUE_FOR_PICKLING_TLS.alloc
     except AttributeError:
         queue = None
 
     if queue is None:
-        raise RuntimeError("CL Buffer instances can only be pickled while "
+        raise RuntimeError(f"{type(obj).__name__} instances can only be pickled while "
                             "queue_for_pickling is active.")
+
+    return queue, alloc
+
+
+def _getstate_buffer(self):
+    import pyopencl as cl
+    queue, _alloc = _get_queue_for_pickling(self)
+
+    state = {}
+    state["size"] = self.size
+    state["flags"] = self.flags
 
     a = bytearray(self.size)
     cl.enqueue_copy(queue, a, self)
@@ -2463,19 +2471,11 @@ def _getstate_buffer(self):
 
 
 def _setstate_buffer(self, state):
-    try:
-        queue = _QUEUE_FOR_PICKLING_TLS.queue
-    except AttributeError:
-        queue = None
-
-    if queue is None:
-        raise RuntimeError("CL Buffer instances can only be unpickled while "
-                            "queue_for_pickling is active.")
+    import pyopencl as cl
+    queue, _alloc = _get_queue_for_pickling(self)
 
     size = state["size"]
     flags = state["flags"]
-
-    import pyopencl as cl
 
     a = state["_pickle_data"]
     Buffer.__init__(self, queue.context, flags | cl.mem_flags.COPY_HOST_PTR, size, a)
@@ -2484,21 +2484,44 @@ def _setstate_buffer(self, state):
 Buffer.__getstate__ = _getstate_buffer
 Buffer.__setstate__ = _setstate_buffer
 
+
+def _getstate_pooledbuffer(self):
+    import pyopencl as cl
+    queue, _alloc = _get_queue_for_pickling(self)
+
+    state = {}
+    state["size"] = self.size
+    state["flags"] = self.flags
+
+    a = bytearray(self.size)
+    cl.enqueue_copy(queue, a, self)
+    state["_pickle_data"] = a
+
+    return state
+
+
+def _setstate_pooledbuffer(self, state):
+    _queue, _alloc = _get_queue_for_pickling(self)
+
+    _size = state["size"]
+    _flags = state["flags"]
+
+    _a = state["_pickle_data"]
+    # FIXME: Unclear what to do here - PooledBuffer does not have __init__
+
+
+PooledBuffer.__getstate__ = _getstate_pooledbuffer
+PooledBuffer.__setstate__ = _setstate_pooledbuffer
+
+
 if get_cl_header_version() >= (2, 0):
-    def _getstate_svm(self):
+    def _getstate_svmallocation(self):
         import pyopencl as cl
 
         state = {}
         state["size"] = self.size
 
-        try:
-            queue = _QUEUE_FOR_PICKLING_TLS.queue
-        except AttributeError:
-            queue = None
-
-        if queue is None:
-            raise RuntimeError(f"{self.__class__.__name__} instances can only be "
-                               "pickled while queue_for_pickling is active.")
+        queue, _alloc = _get_queue_for_pickling(self)
 
         a = bytearray(self.size)
         cl.enqueue_copy(queue, a, self)
@@ -2507,17 +2530,10 @@ if get_cl_header_version() >= (2, 0):
 
         return state
 
-    def _setstate_svm(self, state):
+    def _setstate_svmallocation(self, state):
         import pyopencl as cl
 
-        try:
-            queue = _QUEUE_FOR_PICKLING_TLS.queue
-        except AttributeError:
-            queue = None
-
-        if queue is None:
-            raise RuntimeError(f"{self.__class__.__name__} instances can only be "
-                               "unpickled while queue_for_pickling is active.")
+        queue, _alloc = _get_queue_for_pickling(self)
 
         size = state["size"]
 
@@ -2526,8 +2542,33 @@ if get_cl_header_version() >= (2, 0):
                                queue=queue)
         cl.enqueue_copy(queue, self, a)
 
-    SVMAllocation.__getstate__ = _getstate_svm
-    SVMAllocation.__setstate__ = _setstate_svm
+    SVMAllocation.__getstate__ = _getstate_svmallocation
+    SVMAllocation.__setstate__ = _setstate_svmallocation
+
+    def _getstate_pooled_svm(self):
+        import pyopencl as cl
+
+        state = {}
+        state["size"] = self.size
+
+        queue, _alloc = _get_queue_for_pickling(self)
+
+        a = bytearray(self.size)
+        cl.enqueue_copy(queue, a, self)
+
+        state["_pickle_data"] = a
+
+        return state
+
+    def _setstate_pooled_svm(self, state):
+        _queue, _alloc = _get_queue_for_pickling(self)
+        _size = state["size"]
+        _data = state["_pickle_data"]
+
+        # FIXME: Unclear what to do here - PooledSVM does not have __init__
+
+    PooledSVM.__getstate__ = _getstate_pooled_svm
+    PooledSVM.__setstate__ = _setstate_pooled_svm
 
 # }}}
 

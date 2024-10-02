@@ -2404,12 +2404,18 @@ class TaggableCLArray(cl_array.Array, Taggable):
         self.tags = tags
 
 
-def test_array_pickling(ctx_factory):
+@pytest.mark.parametrize("use_mempool", [False, True])
+def test_array_pickling(ctx_factory, use_mempool):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
+    if use_mempool:
+        alloc = cl_tools.MemoryPool(cl_tools.ImmediateAllocator(queue))
+    else:
+        alloc = None
+
     a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
-    a_gpu = cl_array.to_device(queue, a)
+    a_gpu = cl_array.to_device(queue, a, allocator=alloc)
 
     import pickle
     with pytest.raises(RuntimeError):
@@ -2437,11 +2443,11 @@ def test_array_pickling(ctx_factory):
     from pyopencl.characterize import has_coarse_grain_buffer_svm
 
     if has_coarse_grain_buffer_svm(queue.device):
-        from pyopencl.tools import SVMAllocator
+        from pyopencl.tools import SVMAllocator, SVMPool
 
         alloc = SVMAllocator(context, alignment=0, queue=queue)
-        # FIXME: SVMPool is not picklable
-        # alloc = SVMPool(alloc)
+        if use_mempool:
+            alloc = SVMPool(alloc)
 
         a_dev = cl_array.to_device(queue, a, allocator=alloc)
 
