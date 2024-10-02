@@ -2417,9 +2417,10 @@ _QUEUE_FOR_PICKLING_TLS = threading.local()
 
 
 @contextmanager
-def queue_for_pickling(queue):
+def queue_for_pickling(queue, alloc=None):
     r"""A context manager that, for the current thread, sets the command queue
-    to be used for pickling and unpickling :class:`Buffer`\ s to *queue*."""
+    to be used for pickling and unpickling :class:`Array`\ s and :class:`Buffer`\ s
+    to *queue*."""
     try:
         existing_pickle_queue = _QUEUE_FOR_PICKLING_TLS.queue
     except AttributeError:
@@ -2430,10 +2431,12 @@ def queue_for_pickling(queue):
                 "inside the context of its own invocation.")
 
     _QUEUE_FOR_PICKLING_TLS.queue = queue
+    _QUEUE_FOR_PICKLING_TLS.alloc = alloc
     try:
         yield None
     finally:
         _QUEUE_FOR_PICKLING_TLS.queue = None
+        _QUEUE_FOR_PICKLING_TLS.alloc = None
 
 
 def _getstate_buffer(self):
@@ -2480,6 +2483,51 @@ def _setstate_buffer(self, state):
 
 Buffer.__getstate__ = _getstate_buffer
 Buffer.__setstate__ = _setstate_buffer
+
+if get_cl_header_version() >= (2, 0):
+    def _getstate_svm(self):
+        import pyopencl as cl
+
+        state = {}
+        state["size"] = self.size
+
+        try:
+            queue = _QUEUE_FOR_PICKLING_TLS.queue
+        except AttributeError:
+            queue = None
+
+        if queue is None:
+            raise RuntimeError(f"{self.__class__.__name__} instances can only be "
+                               "pickled while queue_for_pickling is active.")
+
+        a = bytearray(self.size)
+        cl.enqueue_copy(queue, a, self)
+
+        state["_pickle_data"] = a
+
+        return state
+
+    def _setstate_svm(self, state):
+        import pyopencl as cl
+
+        try:
+            queue = _QUEUE_FOR_PICKLING_TLS.queue
+        except AttributeError:
+            queue = None
+
+        if queue is None:
+            raise RuntimeError(f"{self.__class__.__name__} instances can only be "
+                               "unpickled while queue_for_pickling is active.")
+
+        size = state["size"]
+
+        a = state["_pickle_data"]
+        SVMAllocation.__init__(self, queue.context, size, alignment=0, flags=0,
+                               queue=queue)
+        cl.enqueue_copy(queue, self, a)
+
+    SVMAllocation.__getstate__ = _getstate_svm
+    SVMAllocation.__setstate__ = _setstate_svm
 
 # }}}
 

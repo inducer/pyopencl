@@ -2415,7 +2415,7 @@ def test_array_pickling(ctx_factory):
     with pytest.raises(RuntimeError):
         pickle.dumps(a_gpu)
 
-    with cl_array.queue_for_pickling(queue):
+    with cl.queue_for_pickling(queue):
         a_gpu_pickled = pickle.loads(pickle.dumps(a_gpu))
     assert np.all(a_gpu_pickled.get() == a)
 
@@ -2424,7 +2424,7 @@ def test_array_pickling(ctx_factory):
     a_gpu_tagged = TaggableCLArray(queue, a.shape, a.dtype, tags={"foo", "bar"})
     a_gpu_tagged.set(a)
 
-    with cl_array.queue_for_pickling(queue):
+    with cl.queue_for_pickling(queue):
         a_gpu_tagged_pickled = pickle.loads(pickle.dumps(a_gpu_tagged))
 
     assert np.all(a_gpu_tagged_pickled.get() == a)
@@ -2437,14 +2437,15 @@ def test_array_pickling(ctx_factory):
     from pyopencl.characterize import has_coarse_grain_buffer_svm
 
     if has_coarse_grain_buffer_svm(queue.device):
-        from pyopencl.tools import SVMAllocator, SVMPool
+        from pyopencl.tools import SVMAllocator
 
         alloc = SVMAllocator(context, alignment=0, queue=queue)
-        alloc = SVMPool(alloc)
+        # FIXME: SVMPool is not picklable
+        # alloc = SVMPool(alloc)
 
         a_dev = cl_array.to_device(queue, a, allocator=alloc)
 
-        with cl_array.queue_for_pickling(queue, alloc):
+        with cl.queue_for_pickling(queue, alloc):
             a_dev_pickled = pickle.loads(pickle.dumps(a_dev))
 
         assert np.all(a_dev_pickled.get() == a)

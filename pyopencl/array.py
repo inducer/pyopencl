@@ -342,39 +342,6 @@ _BOOL_DTYPE = np.dtype(np.int8)
 _NOT_PRESENT = object()
 
 
-# {{{ pickling support
-
-import threading
-from contextlib import contextmanager
-
-
-_QUEUE_FOR_PICKLING_TLS = threading.local()
-
-
-@contextmanager
-def queue_for_pickling(queue, alloc=None):
-    r"""A context manager that, for the current thread, sets the command queue
-    to be used for pickling and unpickling :class:`Array`\ s to *queue*."""
-    try:
-        existing_pickle_queue = _QUEUE_FOR_PICKLING_TLS.queue
-    except AttributeError:
-        existing_pickle_queue = None
-
-    if existing_pickle_queue is not None:
-        raise RuntimeError("queue_for_pickling should not be called "
-                "inside the context of its own invocation.")
-
-    _QUEUE_FOR_PICKLING_TLS.queue = queue
-    _QUEUE_FOR_PICKLING_TLS.alloc = alloc
-    try:
-        yield None
-    finally:
-        _QUEUE_FOR_PICKLING_TLS.queue = None
-        _QUEUE_FOR_PICKLING_TLS.alloc = None
-
-# }}}
-
-
 class Array:
     """A :class:`numpy.ndarray` work-alike that stores its data and performs
     its computations on the compute device. :attr:`shape` and :attr:`dtype` work
@@ -742,13 +709,13 @@ class Array:
 
     def __getstate__(self):
         try:
-            queue = _QUEUE_FOR_PICKLING_TLS.queue
+            queue = cl._QUEUE_FOR_PICKLING_TLS.queue
         except AttributeError:
             queue = None
 
         if queue is None:
             raise RuntimeError("CL Array instances can only be pickled while "
-                               "queue_for_pickling is active.")
+                               "cl.queue_for_pickling is active.")
 
         state = self.__dict__.copy()
 
@@ -756,22 +723,19 @@ class Array:
         del state["context"]
         del state["events"]
         del state["queue"]
-        del state["base_data"]
-        state["data"] = self.get(queue=queue)
-
         return state
 
     def __setstate__(self, state):
         try:
-            queue = _QUEUE_FOR_PICKLING_TLS.queue
-            alloc = _QUEUE_FOR_PICKLING_TLS.alloc
+            queue = cl._QUEUE_FOR_PICKLING_TLS.queue
+            alloc = cl._QUEUE_FOR_PICKLING_TLS.alloc
         except AttributeError:
             queue = None
             alloc = None
 
         if queue is None:
-            raise RuntimeError("CL Array instances can only be pickled while "
-                               "queue_for_pickling is active.")
+            raise RuntimeError("CL Array instances can only be unpickled while "
+                               "cl.queue_for_pickling is active.")
 
         self.__dict__.update(state)
 
@@ -779,20 +743,6 @@ class Array:
         self.context = queue.context
         self.events = []
         self.queue = queue
-
-        if self.allocator is None:
-            self.base_data = cl.Buffer(self.context, cl.mem_flags.READ_WRITE,
-                                       self.nbytes)
-        else:
-            self.base_data = self.allocator(self.nbytes)
-
-        ary = state["data"]
-
-        # Mimics the stride update in _get() below
-        if ary.strides != self.strides:
-            ary = _as_strided(ary, strides=self.strides)
-
-        self.set(ary, queue=queue)
 
     # }}}
 
