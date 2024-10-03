@@ -2,7 +2,7 @@
 build-backend = "scikit_build_core.build"
 requires = [
     "scikit-build-core >=0.9.3",
-    "nanobind >=1.9.2",
+    "nanobind >=1.9.2,<2.2.0",
     # https://numpy.org/doc/stable/dev/depending_on_numpy.html#build-time-dependency
     # Just depending on numpy will automatically expose the oldest supported ABI.
     # - Retrieved 2024-06-24, AK
