@@ -76,8 +76,8 @@ def _get_common_dtype(obj1, obj2, queue):
                 "add one in order to be able to perform operations")
 
     # Note: We are calling np.result_type with pyopencl arrays here.
-    # Luckily, np.result_type only looks at the dtype of input arrays as of
-    # numpy v2.1.
+    # Luckily, np.result_type only looks at the dtype of input arrays up until
+    # at least numpy v2.1.
     result = np.result_type(obj1, obj2)
 
     if not has_double_support(queue.device):
