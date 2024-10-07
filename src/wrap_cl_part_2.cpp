@@ -538,7 +538,8 @@ void pyopencl_expose_part_2(py::module_ &m)
   {
     typedef kernel cls;
     py::class_<cls>(m, "Kernel", py::dynamic_attr())
-      .def(py::init<const program &, std::string const &>())
+      .def(py::init<py::object, std::string const &>())
+      .def_prop_ro("_source", &cls::source)
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
 #if PYOPENCL_CL_VERSION >= 0x2010
@@ -585,6 +586,9 @@ void pyopencl_expose_part_2(py::module_ &m)
           py::arg("input_value").none(true)=py::none()
           )
 #endif
+      .def("__call__", &cls::enqueue)
+      .def("set_args", &cls::set_args)
+      .def("_set_enqueue_and_set_args", &cls::set_enqueue_and_set_args)
       ;
   }
 

@@ -423,10 +423,7 @@ class Program:
         return self._get_prg().get_build_info(*args, **kwargs)
 
     def all_kernels(self):
-        result = self._get_prg().all_kernels()
-        for knl in result:
-            knl._setup(self)
-        return result
+        return self._get_prg().all_kernels()
 
     @property
     def int_ptr(self):
@@ -444,7 +441,6 @@ class Program:
             # Nvidia does not raise errors even for invalid names,
             # but this will give an error if the kernel is invalid.
             knl.num_args  # noqa: B018
-            knl._source = getattr(self, "_source", None)
 
             if self._build_duration_info is not None:
                 build_descr, _was_cached, duration = self._build_duration_info
@@ -793,29 +789,8 @@ def _add_functionality():
 
     # {{{ Kernel
 
-    kernel_old_init = Kernel.__init__
     kernel_old_get_info = Kernel.get_info
     kernel_old_get_work_group_info = Kernel.get_work_group_info
-
-    def kernel_init(self, prg, name):
-        if not isinstance(prg, _cl._Program):
-            prg = prg._get_prg()
-
-        kernel_old_init(self, prg, name)
-
-        self._setup(prg)
-
-    def kernel__setup(self, prg):
-        self._source = getattr(prg, "_source", None)
-
-        from pyopencl.invoker import generate_enqueue_and_set_args
-        self._enqueue, self._set_args = generate_enqueue_and_set_args(
-                self.function_name, self.num_args, self.num_args,
-                None,
-                warn_about_arg_count_bug=None,
-                work_around_arg_count_bug=None, devs=self.context.devices)
-
-        return self
 
     def kernel_set_arg_types(self, arg_types):
         arg_types = tuple(arg_types)
@@ -845,14 +820,14 @@ def _add_functionality():
         # }}}
 
         from pyopencl.invoker import generate_enqueue_and_set_args
-        self._enqueue, self.set_args = \
-                generate_enqueue_and_set_args(
+        self._set_enqueue_and_set_args(
+                *generate_enqueue_and_set_args(
                         self.function_name,
                         len(arg_types), self.num_args,
                         arg_types,
                         warn_about_arg_count_bug=warn_about_arg_count_bug,
                         work_around_arg_count_bug=work_around_arg_count_bug,
-                        devs=self.context.devices)
+                        devs=self.context.devices))
 
     def kernel_get_work_group_info(self, param, device):
         try:
@@ -870,18 +845,6 @@ def _add_functionality():
         wg_info_cache[cache_key] = result
         return result
 
-    def kernel_set_args(self, *args, **kwargs):
-        # Need to duplicate the 'self' argument for dynamically generated  method
-        return self._set_args(self, *args, **kwargs)
-
-    def kernel_call(self, queue, global_size, local_size, *args, **kwargs):
-        # __call__ can't be overridden directly, so we need this
-        # trampoline hack.
-
-        # Note: This is only used for the generic __call__, before
-        # kernel_set_scalar_arg_dtypes is called.
-        return self._enqueue(self, queue, global_size, local_size, *args, **kwargs)
-
     def kernel_capture_call(self, output_file, queue, global_size, local_size,
             *args, **kwargs):
         from pyopencl.capture_call import capture_kernel_call
@@ -896,16 +859,12 @@ def _add_functionality():
         else:
             return val
 
-    Kernel.__init__ = kernel_init
-    Kernel._setup = kernel__setup
     Kernel.get_work_group_info = kernel_get_work_group_info
 
     # FIXME: Possibly deprecate this version
     Kernel.set_scalar_arg_dtypes = kernel_set_arg_types
     Kernel.set_arg_types = kernel_set_arg_types
 
-    Kernel.set_args = kernel_set_args
-    Kernel.__call__ = kernel_call
     Kernel.capture_call = kernel_capture_call
     Kernel.get_info = kernel_get_info
 
