@@ -32,7 +32,6 @@
 
 
 
-void *dummy_fn() {}
 
 namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1020
@@ -536,14 +535,9 @@ void pyopencl_expose_part_2(py::module_ &m)
 
   // {{{ kernel
 
-  PyType_Slot slots[] = {
-      {Py_tp_init, (void*) dummy_fn},
-      { 0, nullptr }
-  };
-
   {
     typedef kernel cls;
-    py::class_<cls>(m, "Kernel", py::dynamic_attr(), py::type_slots(slots))
+    py::class_<cls>(m, "Kernel", py::dynamic_attr())
       .def(py::init<const program &, std::string const &>())
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_work_group_info)
