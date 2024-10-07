@@ -455,6 +455,8 @@
 
 namespace pyopencl
 {
+  using namespace py::literals;
+
   class program;
   class command_queue;
 
@@ -4773,24 +4775,51 @@ namespace pyopencl
       cl_kernel m_kernel;
       bool m_set_arg_prefer_svm;
 
+      // Source is a Python object so that we can hold a reference to the source object
+      // without a need to copy it.
+      //
+      // Not implementing GC traversals for this because (IMO) it's
+      // unlikely the source string is involved in a cycle with the
+      // kernel object.
+      py::object m_source;
+
+      // These are generated code, unlikely to hold a reference back to the
+      // kernel, therefore also not implementing GC traversal for this.
+      py::object m_enqueue_func;
+      py::object m_set_args_func;
+
     public:
       kernel(cl_kernel knl, bool retain)
         : m_kernel(knl), m_set_arg_prefer_svm(false)
       {
         if (retain)
           PYOPENCL_CALL_GUARDED(clRetainKernel, (knl));
+
+        set_up_basic_invokers();
       }
 
-      kernel(program const &prg, std::string const &kernel_name)
+      kernel(py::object prg_py, std::string const &kernel_name)
         : m_set_arg_prefer_svm(false)
       {
+        program const *prg = nullptr;
+        try
+        {
+          prg = py::cast<program const *>(prg_py);
+        }
+        catch (py::cast_error) {
+          prg = py::cast<program const *>(prg_py.attr("_get_prg")());
+        }
+
         cl_int status_code;
 
         PYOPENCL_PRINT_CALL_TRACE("clCreateKernel");
-        m_kernel = clCreateKernel(prg.data(), kernel_name.c_str(),
-            &status_code);
+        m_kernel = clCreateKernel(prg->data(), kernel_name.c_str(), &status_code);
         if (status_code != CL_SUCCESS)
           throw pyopencl::error("clCreateKernel", status_code);
+
+        m_source = py::getattr(prg_py, "_source", py::object());
+
+        set_up_basic_invokers();
       }
 
       ~kernel()
@@ -4801,6 +4830,11 @@ namespace pyopencl
       cl_kernel data() const
       {
         return m_kernel;
+      }
+
+      py::object source() const
+      {
+        return m_source;
       }
 
       PYOPENCL_EQUALITY_TESTS(kernel);
@@ -5167,8 +5201,49 @@ namespace pyopencl
         default:
           throw error("Kernel.get_sub_group_info", CL_INVALID_VALUE);
       }
-  }
+    }
 #endif
+
+    void set_up_basic_invokers()
+    {
+      py::module_ invoker = py::module_::import_("pyopencl.invoker");
+
+      py::tuple res = py::cast<py::tuple>(invoker.attr("generate_enqueue_and_set_args")(
+                get_info(CL_KERNEL_FUNCTION_NAME),
+                num_args(), num_args(),
+                py::none(),
+                "warn_about_arg_count_bug"_a=py::none(),
+                "work_around_arg_count_bug"_a=py::none(),
+                "devs"_a=get_info(CL_KERNEL_CONTEXT).attr("devices")
+              ));
+
+      m_enqueue_func = res[0];
+      m_set_args_func = res[1];
+    }
+
+    void set_enqueue_and_set_args(py::object enqueue_func, py::object set_args_func)
+    {
+      m_enqueue_func = enqueue_func;
+      m_set_args_func = set_args_func;
+    }
+
+    py::object enqueue(py::args args, py::kwargs kwargs) const
+    {
+      return m_enqueue_func(py::cast(this), *args, **kwargs);
+    }
+
+    void set_args(py::args args, py::kwargs kwargs) const
+    {
+      m_set_args_func(py::cast(this), *args, **kwargs);
+    }
+
+    cl_uint num_args() const
+    {
+      cl_uint param_value;
+      PYOPENCL_CALL_GUARDED(clGetKernelInfo,
+          (m_kernel, CL_KERNEL_NUM_ARGS, sizeof(param_value), &param_value, 0));
+      return param_value;
+    }
   };
 
 #define PYOPENCL_KERNEL_SET_ARG_MULTI_ERROR_HANDLER \
