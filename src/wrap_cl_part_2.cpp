@@ -32,11 +32,7 @@
 
 
 
-void dummy_fn() {}
-PyType_Slot slots[] = {
-      {Py_tp_init, (void*) dummy_fn},
-      { 0, nullptr }
-  };
+void *dummy_fn() {}
 
 namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1020
@@ -104,7 +100,7 @@ void pyopencl_expose_part_2(py::module_ &m)
 
   {
     typedef image cls;
-    py::class_<cls, memory_object>(m, "Image", py::dynamic_attr(), py::type_slots(slots))
+    py::class_<cls, memory_object>(m, "Image", py::dynamic_attr())
       .def(
           "__init__",
           [](
@@ -352,7 +348,7 @@ void pyopencl_expose_part_2(py::module_ &m)
 
   {
     typedef svm_arg_wrapper cls;
-    py::class_<cls, svm_pointer>(m, "SVM", py::dynamic_attr(), py::type_slots(slots))
+    py::class_<cls, svm_pointer>(m, "SVM", py::dynamic_attr())
       .def(py::init<py::object>())
       ;
   }
@@ -539,6 +535,11 @@ void pyopencl_expose_part_2(py::module_ &m)
   // }}}
 
   // {{{ kernel
+
+  PyType_Slot slots[] = {
+      {Py_tp_init, (void*) dummy_fn},
+      { 0, nullptr }
+  };
 
   {
     typedef kernel cls;
