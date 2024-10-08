@@ -73,6 +73,19 @@ namespace pyopencl {
 using namespace pyopencl;
 
 
+static PyCFunctionWithKeywords dummy_init = [](PyObject *, PyObject *,
+                                        PyObject *) -> PyObject * {
+    PyErr_SetString(PyExc_RuntimeError, "This should never be called!");
+    return nullptr;
+};
+
+static PyType_Slot init_slots[] {
+    // the presence of this slot enables normal object construction via __init__ and __new__
+    // instead of an optimized codepath within nanobind that skips these. That in turn
+    // makes it possible to intercept calls and implement custom logic.
+    { Py_tp_init, (void *) dummy_init },
+    { 0, nullptr }
+};
 
 
 void pyopencl_expose_part_2(py::module_ &m)
@@ -99,11 +112,12 @@ void pyopencl_expose_part_2(py::module_ &m)
 
   {
     typedef image cls;
-    py::class_<cls, memory_object>(m, "Image", py::dynamic_attr())
-      .def(
-          "__init__",
+    // https://github.com/wjakob/nanobind/issues/750
+    py::class_<cls, memory_object>(m, "Image", py::dynamic_attr(), py::type_slots(init_slots))
+      .def_static(
+          "_custom_init",
           [](
-            cls *self,
+            py::handle_t<cls> h,
             context const &ctx,
             cl_mem_flags flags,
             cl_image_format const &fmt,
@@ -111,8 +125,13 @@ void pyopencl_expose_part_2(py::module_ &m)
             py::sequence pitches,
             py::object buffer)
           {
-            return create_image(self, ctx, flags, fmt, shape, pitches, buffer);
+            if (py::inst_ready(h))
+              py::raise_type_error("Image is already initialized!");
+            image *self = py::inst_ptr<cls>(h);
+            create_image(self, ctx, flags, fmt, shape, pitches, buffer);
+            py::inst_mark_ready(h);
           },
+          py::arg("h"),
           py::arg("context"),
           py::arg("flags"),
           py::arg("format"),
@@ -121,18 +140,23 @@ void pyopencl_expose_part_2(py::module_ &m)
           py::arg("hostbuf")=py::none()
           )
 #if PYOPENCL_CL_VERSION >= 0x1020
-      .def(
-          "__init__",
+      .def_static(
+          "_custom_init",
           [](
-            cls *self,
+            py::handle_t<cls> h,
             context const &ctx,
             cl_mem_flags flags,
             cl_image_format const &fmt,
             cl_image_desc &desc,
             py::object buffer)
           {
+            if (py::inst_ready(h))
+              py::raise_type_error("Image is already initialized!");
+            image *self = py::inst_ptr<cls>(h);
             create_image_from_desc(self, ctx, flags, fmt, desc, buffer);
+            py::inst_mark_ready(h);
           },
+          py::arg("h"),
           py::arg("context"),
           py::arg("flags"),
           py::arg("format"),

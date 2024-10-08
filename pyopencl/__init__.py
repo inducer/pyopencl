@@ -889,10 +889,30 @@ def _add_functionality():
 
     # {{{ Image
 
-    image_old_init = Image.__init__
+    def image_init(
+                self, context, flags, format, shape=None, pitches=None,
+                hostbuf=None, is_array=False, buffer=None, *,
+                desc: ImageDescriptor | None = None,
+                _through_create_image: bool = False,
+            ) -> None:
+        if hostbuf is not None and not \
+                (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
+            warn("'hostbuf' was passed, but no memory flags to make use of it.",
+                 stacklevel=2)
 
-    def image_init(self, context, flags, format, shape=None, pitches=None,
-            hostbuf=None, is_array=False, buffer=None):
+        if desc is not None:
+            if shape is not None:
+                raise TypeError("shape may not be passed when using descriptor")
+            if pitches is not None:
+                raise TypeError("pitches may not be passed when using descriptor")
+            if is_array:
+                raise TypeError("is_array may not be passed when using descriptor")
+            if buffer is not None:
+                raise TypeError("is_array may not be passed when using descriptor")
+
+            Image._custom_init(self, context, flags, format, desc, hostbuf)
+
+            return
 
         if shape is None and hostbuf is None:
             raise Error("'shape' must be passed if 'hostbuf' is not given")
@@ -900,15 +920,16 @@ def _add_functionality():
         if shape is None and hostbuf is not None:
             shape = hostbuf.shape
 
-        if hostbuf is not None and not \
-                (flags & (mem_flags.USE_HOST_PTR | mem_flags.COPY_HOST_PTR)):
-            warn("'hostbuf' was passed, but no memory flags to make use of it.",
-                 stacklevel=2)
-
         if hostbuf is None and pitches is not None:
             raise Error("'pitches' may only be given if 'hostbuf' is given")
 
         if context._get_cl_version() >= (1, 2) and get_cl_header_version() >= (1, 2):
+            if not _through_create_image:
+                warn("Non-descriptor Image constructor called. "
+                     "This will stop working in 2026. "
+                     "Use create_image instead (with the same arguments).",
+                     DeprecationWarning, stacklevel=2)
+
             if buffer is not None and is_array:
                 raise ValueError(
                         "'buffer' and 'is_array' are mutually exclusive")
@@ -957,7 +978,7 @@ def _add_functionality():
             desc.num_samples = 0  # per CL 1.2 spec
             desc.buffer = buffer
 
-            image_old_init(self, context, flags, format, desc, hostbuf)
+            Image._custom_init(self, context, flags, format, desc, hostbuf)
         else:
             # legacy init for CL 1.1 and older
             if is_array:
@@ -971,7 +992,7 @@ def _add_functionality():
             if buffer is not None:
                 raise TypeError("'buffer' argument is not supported for CL < 1.2")
 
-            image_old_init(self, context, flags, format, shape,
+            Image._custom_init(self, context, flags, format, shape,
                     pitches, hostbuf)
 
     class _ImageInfoGetter:
@@ -1473,6 +1494,44 @@ if get_cl_header_version() >= (2, 0):
             _interface["data"] = (int(self.svm_ptr), not read_write)
 
             self.__array_interface__ = _interface
+
+# }}}
+
+
+# {{{ create_image
+
+def create_image(context, flags, format, shape=None, pitches=None,
+        hostbuf=None, is_array=False, buffer=None) -> Image:
+    """
+    See :class:`mem_flags` for values of *flags*.
+    *shape* is a 2- or 3-tuple. *format* is an instance of :class:`ImageFormat`.
+    *pitches* is a 1-tuple for 2D images and a 2-tuple for 3D images, indicating
+    the distance in bytes from one scan line to the next, and from one 2D image
+    slice to the next.
+
+    If *hostbuf* is given and *shape* is *None*, then *hostbuf.shape* is
+    used as the *shape* parameter.
+
+    :class:`Image` inherits from :class:`MemoryObject`.
+
+    .. note::
+
+        If you want to load images from :class:`numpy.ndarray` instances or read images
+        back into them, be aware that OpenCL images expect the *x* dimension to vary
+        fastest, whereas in the default (C) order of :mod:`numpy` arrays, the last index
+        varies fastest. If your array is arranged in the wrong order in memory,
+        there are two possible fixes for this:
+
+        * Convert the array to Fortran (column-major) order using :func:`numpy.asarray`.
+
+        * Pass *ary.T.copy()* to the image creation function.
+
+    .. versionadded:: 2024.3
+    """
+
+    return Image(context, flags, format, shape=shape, pitches=pitches,
+        hostbuf=hostbuf, is_array=is_array, buffer=buffer,
+        _through_create_image=True)
 
 # }}}
 
@@ -2105,7 +2164,7 @@ def image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False):
     else:
         channel_type = DTYPE_TO_CHANNEL_TYPE[dtype]
 
-    return Image(ctx, mode_flags | mem_flags.COPY_HOST_PTR,
+    return create_image(ctx, mode_flags | mem_flags.COPY_HOST_PTR,
             ImageFormat(img_format, channel_type),
             shape=shape[::-1], pitches=strides[::-1][1:],
             hostbuf=ary)

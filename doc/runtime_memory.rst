@@ -281,35 +281,10 @@ Image
     See :class:`mem_flags` for possible values of *flags*
     and :class:`mem_object_type` for possible values of *image_type*.
 
-.. class:: Image(context, flags, format, shape=None, pitches=None, hostbuf=None, is_array=False, buffer=None)
-
-    See :class:`mem_flags` for values of *flags*.
-    *shape* is a 2- or 3-tuple. *format* is an instance of :class:`ImageFormat`.
-    *pitches* is a 1-tuple for 2D images and a 2-tuple for 3D images, indicating
-    the distance in bytes from one scan line to the next, and from one 2D image
-    slice to the next.
-
-    If *hostbuf* is given and *shape* is *None*, then *hostbuf.shape* is
-    used as the *shape* parameter.
-
-    :class:`Image` inherits from :class:`MemoryObject`.
-
-    .. note::
-
-        If you want to load images from :class:`numpy.ndarray` instances or read images
-        back into them, be aware that OpenCL images expect the *x* dimension to vary
-        fastest, whereas in the default (C) order of :mod:`numpy` arrays, the last index
-        varies fastest. If your array is arranged in the wrong order in memory,
-        there are two possible fixes for this:
-
-        * Convert the array to Fortran (column-major) order using :func:`numpy.asarray`.
-
-        * Pass *ary.T.copy()* to the image creation function.
+.. class:: Image
+    Use :func:`create_image` to create images.
 
     .. versionadded:: 0.91
-
-    .. versionchanged:: 2011.2
-        Added *is_array* and *buffer*, which are only available on CL 1.2 and newer.
 
     .. attribute:: info
 
@@ -329,6 +304,8 @@ Image
     .. method:: release()
 
     |comparable|
+
+.. autofunction:: create_image
 
 .. function:: image_from_array(ctx, ary, num_channels=None, mode="r", norm_int=False)
 
@@ -525,3 +502,7 @@ Type aliases
 .. class:: Buffer
 
    See :class:`pyopencl.Buffer`.
+
+.. class:: Image
+
+   See :class:`pyopencl.Image`.
