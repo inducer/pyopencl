@@ -349,6 +349,7 @@ void pyopencl_expose_part_2(py::module_ &m)
     typedef svm_arg_wrapper cls;
     py::class_<cls, svm_pointer>(m, "SVM", py::dynamic_attr())
       .def(py::init<py::object>())
+      .def_prop_ro("mem", &cls::mem)
       ;
   }
 
