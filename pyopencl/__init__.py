@@ -1323,15 +1323,6 @@ def _add_functionality():
 
     # }}}
 
-    if get_cl_header_version() >= (2, 0):
-        svm_old_init = SVM.__init__
-
-    def svm_init(self, mem):
-        if get_cl_header_version() >= (2, 0):
-            svm_old_init(self, mem)
-
-        self.mem = mem
-
     def svm_map(self, queue, flags, is_blocking=True, wait_for=None):
         """
         :arg is_blocking: If *False*, subsequent code must wait on
@@ -1368,7 +1359,6 @@ def _add_functionality():
         return _cl._enqueue_svm_unmap(queue, self, wait_for)
 
     if get_cl_header_version() >= (2, 0):
-        SVM.__init__ = svm_init
         SVM.map = svm_map
         SVM.map_ro = svm_map_ro
         SVM.map_rw = svm_map_rw

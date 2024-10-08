@@ -593,8 +593,8 @@ namespace pyopencl
     }
   };
 
-
   // }}}
+
 
   inline
   py::tuple get_cl_header_version()
@@ -3663,9 +3663,11 @@ namespace pyopencl
       void *m_ptr;
       PYOPENCL_BUFFER_SIZE_T m_size;
       std::unique_ptr<py_buffer_wrapper> ward;
+      py::object m_mem;
 
     public:
       svm_arg_wrapper(py::object holder)
+      : m_mem(holder)
       {
         ward = std::unique_ptr<py_buffer_wrapper>(new py_buffer_wrapper);
 #ifdef PYPY_VERSION
@@ -3687,6 +3689,11 @@ namespace pyopencl
       size_t size() const
       {
         return m_size;
+      }
+
+      py::object mem() const
+      {
+        return m_mem;
       }
   };
 
