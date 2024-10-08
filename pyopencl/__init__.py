@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = "Copyright (C) 2009-15 Andreas Kloeckner"
 
 __license__ = """
@@ -22,7 +25,7 @@ THE SOFTWARE.
 
 import logging
 from sys import intern
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Sequence
 from warnings import warn
 
 # must import, otherwise dtype registry will not be fully populated
@@ -347,11 +350,11 @@ from pytools import strtobool
 
 _PYOPENCL_NO_CACHE = strtobool(os.environ.get("PYOPENCL_NO_CACHE", "false"))
 
-_DEFAULT_BUILD_OPTIONS: List[str] = []
-_DEFAULT_INCLUDE_OPTIONS: List[str] = ["-I", _find_pyopencl_include_path()]
+_DEFAULT_BUILD_OPTIONS: list[str] = []
+_DEFAULT_INCLUDE_OPTIONS: list[str] = ["-I", _find_pyopencl_include_path()]
 
 # map of platform.name to build options list
-_PLAT_BUILD_OPTIONS: Dict[str, List[str]] = {
+_PLAT_BUILD_OPTIONS: dict[str, list[str]] = {
         "Oclgrind": ["-D", "PYOPENCL_USING_OCLGRIND"],
         }
 
@@ -1103,8 +1106,8 @@ def _add_functionality():
             """
 
     def svmptr_map(self, queue: CommandQueue, *, flags: int, is_blocking: bool =
-                   True, wait_for: Optional[Sequence[Event]] = None,
-                   size: Optional[Event] = None) -> "SVMMap":
+                   True, wait_for: Sequence[Event] | None = None,
+                   size: Event | None = None) -> SVMMap:
         """
         :arg is_blocking: If *False*, subsequent code must wait on
             :attr:`SVMMap.event` in the returned object before accessing the
@@ -1122,8 +1125,8 @@ def _add_functionality():
                                     size=size))
 
     def svmptr_map_ro(self, queue: CommandQueue, *, is_blocking: bool = True,
-                      wait_for: Optional[Sequence[Event]] = None,
-                      size: Optional[int] = None) -> "SVMMap":
+                      wait_for: Sequence[Event] | None = None,
+                      size: int | None = None) -> SVMMap:
         """Like :meth:`map`, but with *flags* set for a read-only map.
         """
 
@@ -1131,8 +1134,8 @@ def _add_functionality():
                 is_blocking=is_blocking, wait_for=wait_for, size=size)
 
     def svmptr_map_rw(self, queue: CommandQueue, *, is_blocking: bool = True,
-                      wait_for: Optional[Sequence[Event]] = None,
-                      size: Optional[int] = None) -> "SVMMap":
+                      wait_for: Sequence[Event] | None = None,
+                      size: int | None = None) -> SVMMap:
         """Like :meth:`map`, but with *flags* set for a read-only map.
         """
 
@@ -1142,8 +1145,8 @@ def _add_functionality():
     def svmptr__enqueue_unmap(self, queue, wait_for=None):
         return _cl._enqueue_svm_unmap(queue, self, wait_for)
 
-    def svmptr_as_buffer(self, ctx: Context, *, flags: Optional[int] = None,
-                         size: Optional[int] = None) -> Buffer:
+    def svmptr_as_buffer(self, ctx: Context, *, flags: int | None = None,
+                         size: int | None = None) -> Buffer:
         """
         :arg ctx: a :class:`Context`
         :arg flags: a combination of :class:`pyopencl.map_flags`, defaults to
@@ -1476,8 +1479,8 @@ if get_cl_header_version() >= (2, 0):
 
 # {{{ create_some_context
 
-def choose_devices(interactive: Optional[bool] = None,
-                   answers: Optional[List[str]] = None) -> List[Device]:
+def choose_devices(interactive: bool | None = None,
+                   answers: list[str] | None = None) -> list[Device]:
     """
     Choose :class:`Device` instances 'somehow'.
 
@@ -1619,8 +1622,8 @@ def choose_devices(interactive: Optional[bool] = None,
     return devices
 
 
-def create_some_context(interactive: Optional[bool] = None,
-                        answers: Optional[List[str]] = None) -> Context:
+def create_some_context(interactive: bool | None = None,
+                        answers: list[str] | None = None) -> Context:
     """
     Create a :class:`Context` 'somehow'.
 
@@ -2009,9 +2012,9 @@ def enqueue_copy(queue, dest, src, **kwargs):
 # {{{ enqueue_fill
 
 def enqueue_fill(queue: CommandQueue,
-        dest: "Union[MemoryObject, SVMPointer]",
+        dest: MemoryObject | SVMPointer,
         pattern: Any, size: int, *, offset: int = 0,
-        wait_for: Optional[Sequence[Event]] = None) -> Event:
+        wait_for: Sequence[Event] | None = None) -> Event:
     """
     .. versionadded:: 2022.2
     """
@@ -2335,7 +2338,7 @@ def fsvm_empty_like(ctx, ary, alignment=None):
 # }}}
 
 
-_KERNEL_ARG_CLASSES: Tuple[type, ...] = (
+_KERNEL_ARG_CLASSES: tuple[type, ...] = (
         MemoryObjectHolder,
         Sampler,
         CommandQueue,
