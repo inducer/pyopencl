@@ -148,9 +148,9 @@ execute_process(
 execute_process(
   COMMAND
   "${PYTHON_EXECUTABLE}" -c "import nanobind; print(nanobind.cmake_dir())"
-  OUTPUT_VARIABLE _tmp_dir
+  OUTPUT_VARIABLE NANOBIND_DIR
   OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
-  list(APPEND CMAKE_PREFIX_PATH "${_tmp_dir}")
+  list(APPEND CMAKE_PREFIX_PATH "${NANOBIND_DIR}")
 
 # }}}
 
@@ -209,11 +209,12 @@ message("==============================")
 message("PyOpenCL ${PYOPENCL_VERSION_GIT} ${PYOPENCL_REL} configuration: ")
 message("  PyOpenCL options: PYOPENCL_TRACE=${PYOPENCL_TRACE} PYOPENCL_ENABLE_GL=${PYOPENCL_ENABLE_GL} PYOPENCL_USE_SHIPPED_EXT=${PYOPENCL_USE_SHIPPED_EXT} PYOPENCL_PRETEND_CL_VERSION=${PYOPENCL_PRETEND_CL_VERSION}")
 message("  OpenCL:           ${OpenCL_LIBRARIES} [${OpenCL_VERSION_STRING}]")
-message("  Python:           ${Python_VERSION} [${Python_EXECUTABLE}]")
+message("  Python:           ${Python_EXECUTABLE} [${Python_VERSION}]")
 message("  Build type:       ${CMAKE_BUILD_TYPE}")
-message("  C++ compiler:     ${CMAKE_CXX_COMPILER} [${CMAKE_CXX_COMPILER_ID} ${CMAKE_C_COMPILER_VERSION}]")
+message("  C++ compiler:     ${CMAKE_CXX_COMPILER} [${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}]")
 message("  CMake:            ${CMAKE_COMMAND} [${CMAKE_VERSION}]")
-message("  Nanobind:         ${NANOBIND_VERSION}")
+message("  Nanobind:         ${NANOBIND_DIR} [${NANOBIND_VERSION}]")
+message("  Build tool:       ${CMAKE_MAKE_PROGRAM}")
 message("==============================")
 
 # }}}
