@@ -167,6 +167,8 @@ find_package(OpenCL REQUIRED)
 nanobind_add_module(
   _cl
   NB_STATIC # Build static libnanobind (the extension module itself remains a shared library)
+  LTO
+  NOMINSIZE
   src/wrap_constants.cpp
   src/wrap_cl.cpp
   src/wrap_cl_part_1.cpp
