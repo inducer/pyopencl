@@ -205,3 +205,32 @@ skip = [
 ]
 test-command = ""
 before-all = "bash {package}/scripts/build-ocl-windows.sh"
+
+[tool.typos.default]
+extend-ignore-re = [
+  "(?Rm)^.*(#|//)\\s*spellchecker:\\s*disable-line$"
+]
+
+[tool.typos.default.extend-words]
+# for ND Range
+ND = "ND"
+nd = "nd"
+
+# level-of-detail
+LOD = "LOD"
+
+# short for 'series'
+ "ser" = "ser"
+
+# like the numpy function
+ "arange" = "arange"
+
+[tool.typos.files]
+extend-exclude = [
+# No thanks, hex IDs in JSON should not be spellchecked.
+"examples/*.ipynb",
+# Copied from upstream
+"pyopencl/cl/pyopencl-random123/*",
+# This one has comments in French
+"examples/black-hole-accretion.py"
+]

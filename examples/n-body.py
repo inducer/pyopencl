@@ -317,7 +317,7 @@ __kernel void InBallSplutterPoints(__global MYFLOAT4* clDataX,
         Heat=MWCfp;
     }
 
-// More accurate distribution based on spherical coordonates
+// More accurate distribution based on spherical coordinates
 // Disactivated because of AMD Oland GPU crash on launch
 //     private MYFLOAT Radius,Theta,Phi,PosX,PosY,PosZ,SinTheta;
 //     Radius=MWCfp*diameter/2.e0f;
@@ -375,7 +375,7 @@ __kernel void SplutterStress(__global MYFLOAT4* clDataX,__global MYFLOAT4* clDat
     }
 
     // cast to float for sin,cos are NEEDED by Mesa FP64 implementation!
-    // Implemention on AMD Oland are probably broken in float
+    // Implementation on AMD Oland are probably broken in float
 
     FromCoM=(MYFLOAT4)(clDataX[gid]-clCoM[0]);
     Length=length(FromCoM);
@@ -387,7 +387,7 @@ __kernel void SplutterStress(__global MYFLOAT4* clDataX,__global MYFLOAT4* clDat
     // Second tangential vector to sphere of length radius
     ThetaB=acos((float)(FromCoM.x/Length));
     PhiB=atan((float)(FromCoM.y/FromCoM.z))+5.e-1f*PI;
-    // (x,y) random coordonates to plane tangential to sphere
+    // (x,y) random coordinates to plane tangential to sphere
     Polar=MWCfp*2.e0f*PI;
     tA=cos((float)Polar);
     tB=sin((float)Polar);
@@ -781,7 +781,7 @@ if __name__ == "__main__":
     Velocity = MyFloat(Velocity)
     Step = MyFloat(Step)
 
-    print("Device choosed : %s" % Device)
+    print("Device chosen : %s" % Device)
     print("Number of particules : %s" % Number)
     print("Size of Shape : %s" % SizeOfShape)
     print("Initial velocity : %s" % Velocity)
