@@ -1402,7 +1402,7 @@ def test_empty_ndrange(ctx_factory, empty_shape):
     queue = cl.CommandQueue(ctx)
 
     if ctx._get_cl_version() < (1, 2) or cl.get_cl_header_version() < (1, 2):
-        pytest.skip("OpenCL 1.2 required for empty NDRange suuport")
+        pytest.skip("OpenCL 1.2 required for empty NDRange support")
 
     a = cl_array.zeros(queue, empty_shape, dtype=np.float32)
 
