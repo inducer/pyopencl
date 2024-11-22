@@ -64,7 +64,7 @@ def main(ctx, tmp_dir, cl_str, output=None, build_options=()):
             if output == "sass":
                 with open(os.path.join(tmp_dir, "cl.ptx"), "w") as f:
                     f.write(res)
-                tgt = re.findall(".target sm_[0-9]*", res, re.MULTILINE)[0]
+                tgt = re.findall(r".target sm_[0-9]*", res, re.MULTILINE)[0]
                 gpu_name = tgt[8:]
                 subprocess.check_call(["ptxas", "cl.ptx", "--verbose",
                     f"--gpu-name={gpu_name}", "--warn-on-spills"], cwd=tmp_dir)
