@@ -141,7 +141,7 @@ def generate_specific_arg_handling_body(function_name, num_cl_args, arg_types, *
                 cl_arg_idx += 1
 
             if in_enqueue:
-                wait_for_parts .append(f"{arg_var}.events")
+                wait_for_parts.append(f"{arg_var}.write_events")
 
             continue
 
@@ -381,7 +381,7 @@ if not cl._PYOPENCL_NO_CACHE:
     from pytools.py_codegen import PicklableModule
     invoker_cache: WriteOncePersistentDict[Any, Tuple[PicklableModule, str]] \
         = WriteOncePersistentDict(
-            "pyopencl-invoker-cache-v42-nano",
+            "pyopencl-invoker-cache-v43-nano",
             key_builder=_NumpyTypesKeyBuilder(),
             in_mem_cache_size=0,
             safe_sync=False)

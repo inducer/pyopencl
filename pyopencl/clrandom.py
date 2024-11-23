@@ -309,7 +309,7 @@ class Random123GeneratorBase:
         gsize, lsize = _splay(queue.device, ary.size)
 
         evt = knl(queue, gsize, lsize, *args)
-        ary.add_event(evt)
+        ary.add_write_event(evt)
 
         self.counter[0] += n * counter_multiplier
         c1_incr, self.counter[0] = divmod(self.counter[0], self.counter_max)
