@@ -2443,7 +2443,7 @@ def arange(queue, *args, **kwargs):
         raise TypeError("arange requires a dtype argument")
 
     from math import ceil
-    size = int(ceil((stop-start)/step))
+    size = ceil((stop-start)/step)
 
     result = Array(queue, (size,), dtype, allocator=inf.allocator)
     result.add_event(_arange_knl(result, start, step, queue=queue))
