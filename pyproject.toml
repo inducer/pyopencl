@@ -154,6 +154,14 @@ test-command = "pytest {project}/test"
 test-extras = [
     "test",
 ]
+environment-pass = [
+    "CL_INC_DIR",
+    "CL_LIB_DIR",
+]
+test-skip = [
+    "*-macosx_*:arm64",
+    "*-macosx_arm64",
+]
 
 [tool.cibuildwheel.linux]
 skip = [
