@@ -50,7 +50,7 @@ double = np.float64
 # {{{ vector types
 
 def _create_vector_types():
-    _mapping = [(k, globals()[k]) for k in
+    mapping = [(k, globals()[k]) for k in
                 ["char", "uchar", "short", "ushort", "int",
                  "uint", "long", "ulong", "float", "double"]]
 
@@ -64,7 +64,7 @@ def _create_vector_types():
 
     counts = [2, 3, 4, 8, 16]
 
-    for base_name, base_type in _mapping:
+    for base_name, base_type in mapping:
         for count in counts:
             name = "%s%d" % (base_name, count)
 
