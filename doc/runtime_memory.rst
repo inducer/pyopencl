@@ -238,7 +238,7 @@ Operations on SVM
 Image
 -----
 
-.. class:: ImageFormat([channel_order, channel_type])
+.. class:: ImageFormat(channel_order, channel_type)
 
     .. attribute:: channel_order
 
