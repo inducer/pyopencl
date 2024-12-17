@@ -95,7 +95,7 @@ class BitonicSort:
 
         if wait_for is None:
             wait_for = []
-        wait_for = wait_for + arr.events
+        wait_for = wait_for + arr.write_events
 
         last_evt = cl.enqueue_marker(queue, wait_for=wait_for)
 

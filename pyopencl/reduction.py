@@ -430,7 +430,7 @@ class ReductionKernel:
                     invocation_args.append(arg.base_data)
                     if arg_tp.with_offset:
                         invocation_args.append(arg.offset)
-                    wait_for.extend(arg.events)
+                    wait_for.extend(arg.write_events)
                 else:
                     invocation_args.append(arg)
 
@@ -523,7 +523,7 @@ class ReductionKernel:
                     wait_for=wait_for)
             wait_for = [last_evt]
 
-            result.add_event(last_evt)
+            result.add_write_event(last_evt)
 
             if group_count == 1:
                 if return_event:
