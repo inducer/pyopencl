@@ -865,22 +865,22 @@ def test_user_event(ctx_factory):
     evt = cl.UserEvent(ctx)
     Thread(target=event_waiter1, args=(evt, 1)).start()
     sleep(.05)
-    if status.get(1, False):
+    if status.get(1):
         raise RuntimeError("UserEvent triggered before set_status")
     evt.set_status(cl.command_execution_status.COMPLETE)
     sleep(.05)
-    if not status.get(1, False):
+    if not status.get(1):
         raise RuntimeError("UserEvent.wait timeout")
     assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
     evt = cl.UserEvent(ctx)
     Thread(target=event_waiter2, args=(evt, 2)).start()
     sleep(.05)
-    if status.get(2, False):
+    if status.get(2):
         raise RuntimeError("UserEvent triggered before set_status")
     evt.set_status(cl.command_execution_status.COMPLETE)
     sleep(.05)
-    if not status.get(2, False):
+    if not status.get(2):
         raise RuntimeError("cl.wait_for_events timeout on UserEvent")
     assert evt.command_execution_status == cl.command_execution_status.COMPLETE
 
