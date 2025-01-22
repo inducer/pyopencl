@@ -8,9 +8,31 @@
 # if brightness adjustment is chosen it will ask you for a scaler that will
 # determines how much to adjust it
 # this script was my homework that was given on course in Parallel Algorithms
-# for more info contact me on https://github.com/gybo03
-#
-# CC BY-NC-SA 2011 : Emmanuel QUEMENER <emmanuel.quemener@gmail.com>
+# for more info contact me at bbozic13023rn@raf.rs
+__copyright__ = "Copyright (C) 2025 Bogdan Bozic"
+
+__license__ = """
+Permission is hereby granted, free of charge, to any person
+obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without
+restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+"""
 import os
 import sys
 
@@ -52,7 +74,8 @@ def sum_arr(arr: np.array) -> int:
     reduce_buf = cl.Buffer(context, mf.READ_WRITE, size=reduce.nbytes)
     # in local buf, reduction is applied on local memory
     local_buf = cl.LocalMemory(4 * n_threads)
-    program.reduce_sum(queue, (n,), (n_threads,), arr_buf, reduce_buf, local_buf).wait()
+    program.reduce_sum(queue, (n,), (n_threads,), arr_buf,
+                       reduce_buf, local_buf).wait()
     cl.enqueue_copy(queue, reduce, reduce_buf)
     # this process could be applied more than once on an array but for
     # images applying reduction_sum once is more than enough
@@ -137,7 +160,8 @@ __kernel void gaussian_blur(read_only const image2d_t src,
 }
 """,
 ).build()
-image_path = input("Enter path to the image:")
+# image_path = input("Enter path to the image:")
+image_path = "./noisyImage.jpg"
 try:
     # intel-compile-runtime supports RGBA so im using that format
     image = np.array(Image.open(image_path).convert("RGBA"))
@@ -150,26 +174,29 @@ except EOFError:
 
 src_buf = cl.image_from_array(context, image, 4)
 
-image_format = cl.ImageFormat(cl.channel_order.RGBA, cl.channel_type.UNSIGNED_INT8)
+image_format = cl.ImageFormat(
+    cl.channel_order.RGBA, cl.channel_type.UNSIGNED_INT8)
 
 shape = (image.shape[1], image.shape[0])
 
-dest_buf = cl.create_image(context, cl.mem_flags.WRITE_ONLY, image_format, shape)
+dest_buf = cl.create_image(
+    context, cl.mem_flags.WRITE_ONLY, image_format, shape)
 sampler = cl.Sampler(
     context, False, cl.addressing_mode.CLAMP_TO_EDGE, cl.filter_mode.NEAREST
 )
 
 print("Enter one of the next values\n")
-i = int(input("Gray scale:1\nGaussian blur:2\nBrightenss adjustment:3\n"))
-
+# i = int(input("Gray scale:1\nGaussian blur:2\nBrightenss adjustment:3\n"))
+i = 2
 if i in range(1, 4):
     if i == 1:
         program.gray_scale(queue, shape, None, src_buf, dest_buf, sampler)
     elif i == 2:
-        ker = calc_kernel(
-            int(input("Enter kernel dimension:")),
-            int(input("Enter kernel sigma value:")),
-        )
+        # ker = calc_kernel(
+        #     int(input("Enter kernel dimension:")),
+        #     int(input("Enter kernel sigma value:")),
+        # )
+        ker = calc_kernel(7, 1)
         # line below creates a gauss kernel but stacks it in Z axis
         # so that it can be interpreted as an Image
         ker = np.array(
@@ -201,9 +228,11 @@ if i in range(1, 4):
             )
         )
 
-        scale = input("Enter the scale of brightness adjustment:")
+        # scale = input("Enter the scale of brightness adjustment:")
+        scale = 1.5
         program.brightness_adj(
-            queue, shape, None, src_buf, dest_buf, sampler, np.float32(scale), pixel
+            queue, shape, None, src_buf, dest_buf, sampler, np.float32(
+                scale), pixel
         )
     dest = np.empty_like(image)
     cl.enqueue_copy(queue, dest, dest_buf, origin=(0, 0), region=shape)
