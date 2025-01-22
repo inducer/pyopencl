@@ -22,7 +22,7 @@ queue = cl.CommandQueue(context)
 n_threads = device.max_work_group_size
 
 
-def calcKernel(size: int, sigma: float) -> np.ndarray:
+def calc_kernel(size: int, sigma: float) -> np.ndarray:
     x = np.linspace(- (size // 2), size // 2, size)
     x /= np.sqrt(2)*sigma
     x2 = x**2
@@ -32,21 +32,21 @@ def calcKernel(size: int, sigma: float) -> np.ndarray:
 
 def sum_arr(arr: np.array) -> int:
     # N is first bigger number that is multiple of n_threads
-    N = (np.ceil(len(arr)/n_threads)*n_threads).astype(np.int32)
+    n = (np.ceil(len(arr)/n_threads)*n_threads).astype(np.int32)
     # this fills the array with trailing zeros so that the kernel
     # doesnt access random memory
-    arr = np.concatenate((arr, np.zeros(N-len(arr))))
+    arr = np.concatenate((arr, np.zeros(n-len(arr))))
     mf = cl.mem_flags
     # creates a openCL buffer obj that has the copy of an array
     arr_buf = cl.Buffer(context, mf.READ_ONLY |
                         mf.COPY_HOST_PTR, hostbuf=arr.astype(np.int32))
     # in reduce var will be sum(arr[0:n_threads]) for 0th index and so on
-    reduce = np.empty(N//n_threads).astype(np.int32)
+    reduce = np.empty(n//n_threads).astype(np.int32)
     # same as prev openCL buf this one will be filled by kernel
     reduce_buf = cl.Buffer(context, mf.READ_WRITE, size=reduce.nbytes)
     # in local buf, reduction is applied on local memory
     local_buf = cl.LocalMemory(4*n_threads)
-    program.reduce_sum(queue, (N,), (n_threads,), arr_buf,
+    program.reduce_sum(queue, (n,), (n_threads,), arr_buf,
                        reduce_buf, local_buf).wait()
     cl.enqueue_copy(queue, reduce, reduce_buf)
     # this process could be applied more than once on an array but for
@@ -80,7 +80,8 @@ __kernel void brightness_adj(read_only const image2d_t src,
                                        const float4 mean_intensity){
   int2 pos = (int2)(get_global_id(0),get_global_id(1));
   uint4 pixel = read_imageui(src,sampler,pos);
-  uint4 new_pixel = convert_uint4((float4)scalar*(convert_float4(pixel)-mean_intensity)+mean_intensity);
+  uint4 new_pixel = convert_uint4((float4)scalar*(convert_float4(pixel)\
+                                        -mean_intensity)+mean_intensity);
   uint4 overflow = convert_uint4(new_pixel>(uint4)255);
   write_imageui(dest,pos,select(new_pixel,(uint4)255,overflow));
 }
@@ -151,8 +152,8 @@ if i in range(1, 4):
     if i == 1:
         program.gray_scale(queue, shape, None, src_buf, dest_buf, sampler)
     elif i == 2:
-        ker = calcKernel(int(input("Enter kernel dimension:")),
-                         int(input("Enter kernel sigma value:")))
+        ker = calc_kernel(int(input("Enter kernel dimension:")),
+                          int(input("Enter kernel sigma value:")))
         # line below creates a gauss kernel but stacks it in Z axis
         # so that it can be interpreted as an Image
         ker = np.array(np.stack((ker, ker, ker, np.ones((len(ker), len(ker)))), axis=2)
