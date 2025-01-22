@@ -1,4 +1,16 @@
+#!/usr/bin/env python3
+# this example shows how to blur, gray scale or brightness adjust the picture
+# using pyopencl and  image2d_t buffer objects
+# this python script will ask you for:
+# input image path
+# number of which filter you want to apply to
+# if gaussian blur is chosen it will ask you for parameters of gaussian kernel
+# if brightness adjustment is chosen it will ask you for a scaler that will
+# determen how much to adjust it
+# this script was my homework that was given in Parallel Algorithims
+# for more info contact me on https://github.com/gybo03
 import os
+import sys
 from PIL import Image
 import numpy as np
 import pyopencl as cl
@@ -28,11 +40,11 @@ def sum_arr(arr: np.array) -> int:
     # creates a openCL buffer obj that has the copy of an array
     arr_buf = cl.Buffer(context, mf.READ_ONLY |
                         mf.COPY_HOST_PTR, hostbuf=arr.astype(np.int32))
-    # in reduce will be sum(arr[0:n_threads]) for 0th index and so on
+    # in reduce var will be sum(arr[0:n_threads]) for 0th index and so on
     reduce = np.empty(N//n_threads).astype(np.int32)
     # same as prev openCL buf this one will be filled by kernel
     reduce_buf = cl.Buffer(context, mf.READ_WRITE, size=reduce.nbytes)
-    # in local buf reduction is applied on local memory
+    # in local buf, reduction is applied on local memory
     local_buf = cl.LocalMemory(4*n_threads)
     program.reduce_sum(queue, (N,), (n_threads,), arr_buf,
                        reduce_buf, local_buf).wait()
@@ -43,12 +55,16 @@ def sum_arr(arr: np.array) -> int:
 
 
 def sum_matrix(matrix: np.array) -> np.array:
+    # this function calculates avg values for every pixel value
+    # when you flatten a RGBA image every 4th index is red value
+    # starting at 0. For blue value it is every 4th index but
+    # starting from 1 and so on
     return np.array([sum_arr(np.array(matrix[::4])),
                      sum_arr(np.array(matrix[1::4])),
                      sum_arr(np.array(matrix[2::4]))])
 
 
-kernel = """
+program = cl.Program(context, """
 __kernel void gray_scale(read_only const image2d_t src,
                                   write_only image2d_t dest,
                                    const sampler_t sampler){
@@ -107,46 +123,61 @@ __kernel void gaussian_blur(read_only const image2d_t src,
   uint4 overflow = convert_uint4(pixel>(uint4)255);
   write_imageui(dest,pos,select(pixel,(uint4)255,overflow));
 }
-"""
-program = cl.Program(context, kernel).build()
+""").build()
 image_path = input("Enter path to the image:")
-# intel-compile-runtime supports RGBA so im using that format
-image = np.array(Image.open(image_path).convert("RGBA"))
+try:
+    # intel-compile-runtime supports RGBA so im using that format
+    image = np.array(Image.open(image_path).convert("RGBA"))
+except FileNotFoundError:
+    print("Image does not exist")
+    sys.exit()
+
 src_buf = cl.image_from_array(context, image, 4)
+
 image_format = cl.ImageFormat(
     cl.channel_order.RGBA, cl.channel_type.UNSIGNED_INT8)
+
 shape = (image.shape[1], image.shape[0])
+
 dest_buf = cl.create_image(context, cl.mem_flags.WRITE_ONLY,
                            image_format, shape)
 sampler = cl.Sampler(
     context, False, cl.addressing_mode.CLAMP_TO_EDGE, cl.filter_mode.NEAREST)
-input = int(input("gray scale:1\ngaussian blur:2\nbrightenss adjustment:3\n"))
-if input == 1:
-    program.gray_scale(queue, shape, None, src_buf, dest_buf, sampler)
-elif input == 2:
-    dim = input("Enter kernel dimension:")
-    sigma = input("Enter kernel sigma value:")
-    ker = calcKernel(dim, sigma)
-    # line below creates a gauss kernel but stacks it in Z axis
-    # so that it can be interpreted as an Image
-    ker = np.array(np.stack((ker, ker, ker, np.ones((dim, dim))), axis=2)
-                   * 255).astype(np.uint8)
-    gauss_buf = cl.image_from_array(context, ker, 4)
-    program.gaussian_blur(queue, shape, None, src_buf,
-                          dest_buf, sampler, gauss_buf, np.int32(dim))
-elif input == 3:
-    temp_image = image.flatten().astype(np.int32)
-    # concatenates [avg(red_pixel_val),avg(blue_pixel_val),avg(green_pixel_val)]
-    # with 255 for the alpha value
-    pixel = np.concatenate(((sum_matrix(temp_image) /
-                             (len(temp_image)//4)).astype(np.float32),
-                            np.array([255.0]).astype(np.float32)))
-    scale = input("Enter the scale of brightness adjustment:")
-    program.brightness_adj(queue, shape, None, src_buf,
-                           dest_buf, sampler, np.float32(scale), pixel)
-else:
-    print("wrong value shoud be 1, 2 or 3")
-dest = np.empty_like(image)
-cl.enqueue_copy(queue, dest, dest_buf, origin=(0, 0), region=shape)
 
-Image.fromarray(dest).save(r"edited/"+os.path.basename(image_path), "PNG")
+print("Enter one of the next values\n")
+i = int(input("Gray scale:1\nGaussian blur:2\nBrightenss adjustment:3\n"))
+
+if i in range(1, 4):
+    if i == 1:
+        program.gray_scale(queue, shape, None, src_buf, dest_buf, sampler)
+    elif i == 2:
+        ker = calcKernel(int(input("Enter kernel dimension:")),
+                         int(input("Enter kernel sigma value:")))
+        # line below creates a gauss kernel but stacks it in Z axis
+        # so that it can be interpreted as an Image
+        ker = np.array(np.stack((ker, ker, ker, np.ones((len(ker), len(ker)))), axis=2)
+                       * 255).astype(np.uint8)
+
+        gauss_buf = cl.image_from_array(context, ker, 4)
+
+        program.gaussian_blur(queue, shape, None, src_buf,
+                              dest_buf, sampler, gauss_buf, np.int32(len(ker)))
+    elif i == 3:
+        # turn the image into 1D array so that it can be sum reduced in opencl
+        # it could have been 2D or even 3D but this was simpler
+        temp_image = image.flatten().astype(np.int32)
+        # concatenates [avg(red_pixel_val),avg(blue_pixel_val),avg(green_pixel_val)]
+        # with 255 for the alpha value
+        pixel = np.concatenate(((sum_matrix(temp_image) /
+                                 (len(temp_image)//4)).astype(np.float32),
+                                np.array([255.0]).astype(np.float32)))
+
+        scale = input("Enter the scale of brightness adjustment:")
+        program.brightness_adj(queue, shape, None, src_buf,
+                               dest_buf, sampler, np.float32(scale), pixel)
+    dest = np.empty_like(image)
+    cl.enqueue_copy(queue, dest, dest_buf, origin=(0, 0), region=shape)
+    file_name, file_extension = os.path.splitext(image_path)
+    Image.fromarray(dest).save(file_name+"_edited"+file_extension, "PNG")
+else:
+    print("wrong value should be 1, 2 or 3")
