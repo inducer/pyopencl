@@ -243,8 +243,6 @@ def test_zeros_large_array(ctx_factory):
         # run a couple kernels to ensure no propagated runtime errors
         a_gpu[...] = 1.
         a_gpu = 2 * a_gpu - 3
-    else:
-        pass
 
 # }}}
 
