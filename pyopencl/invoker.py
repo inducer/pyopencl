@@ -319,7 +319,7 @@ def _get_max_parameter_size(dev):
     dev_limit = dev.max_parameter_size
     pocl_version = get_pocl_version(dev.platform, fallback_value=(1, 8))
     if pocl_version is not None and pocl_version < (3, 0):
-        # Current PoCL versions (as of 04/2022) have an incorrect parameter
+        # Older PoCL versions (<3.0) have an incorrect parameter
         # size limit of 1024; see e.g. https://github.com/pocl/pocl/pull/1046
         if dev_limit == 1024:
             if dev.type & cl.device_type.CPU:
@@ -336,8 +336,14 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
     """Check whether argument sizes exceed the OpenCL device limit."""
 
     for dev in devs:
-        dev_ptr_size = int(dev.address_bits / 8)
         dev_limit = _get_max_parameter_size(dev)
+        if dev_limit != 4352:
+            # Only warn if the limit is the default value for Nvidia GPUs
+            # (4352 bytes), because failures have been observed only on such
+            # devices.
+            continue
+
+        dev_ptr_size = int(dev.address_bits / 8)
 
         total_arg_size = 0
 
