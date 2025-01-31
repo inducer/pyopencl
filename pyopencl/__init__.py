@@ -276,7 +276,7 @@ def _find_pyopencl_include_path() -> str:
             # NOTE: only available in Python >=3.9
             from importlib.resources import files
         except ImportError:
-            from importlib_resources import files
+            from importlib_resources import files  # type: ignore[no-redef]
 
         include_path = str(files("pyopencl") / "cl")
         if not exists(include_path):

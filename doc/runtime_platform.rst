@@ -109,7 +109,7 @@ Device
 Context
 -------
 
-.. class:: Context(devices=None, properties=None, dev_type=None, cache_dir=None)
+.. class:: Context(devices=None, properties=None, dev_type=None)
 
     Create a new context. *properties* is a list of key-value
     tuples, where each key must be one of :class:`context_properties`.
@@ -119,17 +119,22 @@ Context
     If neither is specified, a context with a *dev_type* of
     :attr:`device_type.DEFAULT` is created.
 
-    If *cache_dir* is not *None* - it will be used as default *cache_dir*
-    for all its' :class:`Program` instances builds (see also :meth:`Program.build`).
-
     .. note::
 
-        Calling the constructor with no arguments will fail for
+        Calling the constructor with no arguments may fail for
         CL drivers that support the OpenCL ICD (which applies to most modern systems).
         If you want similar, just-give-me-a-context-already behavior, we recommend
-        :func:`create_some_context`. See, e.g. this
+        :func:`create_some_context`.
+
+        See e.g. this
         `explanation by AMD
-        <https://web.archive.org/web/20101114195033/https://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=71>`__.
+        <https://web.archive.org/web/20101114195033/https://developer.amd.com/support/KnowledgeBase/Lists/KnowledgeBase/DispForm.aspx?ID=71>`__:
+
+            **What has changed?**
+
+            In previous beta releases functions such as clGetDeviceIDs() and clCreateContext()
+            accepted a NULL value for the platform parameter. This release no longer
+            allows this - the platform must be a valid one obtained by using the platform API.
 
     .. note::
 

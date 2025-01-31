@@ -8,7 +8,7 @@
     (e.g. by being an :class:`numpy.ndarray`)
 .. |explain-waitfor| replace:: *wait_for*
     may either be *None* or a list of :class:`pyopencl.Event` instances for
-    whose completion this command waits before starting exeuction.
+    whose completion this command waits before starting execution.
 .. |std-enqueue-blurb| replace:: Returns a new :class:`pyopencl.Event`. |explain-waitfor|
 
 .. |copy-depr| replace:: **Note:** This function is deprecated as of PyOpenCL 2011.1.

@@ -624,7 +624,7 @@ class Scope:
 
             if self.implicit_types is None:
                 raise TranslationError(
-                        "no type for '%s' found in implict none routine"
+                        "no type for '%s' found in implicit none routine"
                         % name)
 
             return self.implicit_types.get(name[0], np.dtype(np.int32))

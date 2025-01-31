@@ -1893,7 +1893,7 @@ namespace pyopencl
         py::object m_py_event;
         py::object m_py_callback;
 
-        bool m_set_callback_suceeded;
+        bool m_set_callback_succeeded;
 
         bool m_notify_thread_wakeup_is_genuine;
 
@@ -1901,7 +1901,7 @@ namespace pyopencl
         cl_int m_command_exec_status;
 
         event_callback_info_t(py::object py_event, py::object py_callback)
-        : m_py_event(py_event), m_py_callback(py_callback), m_set_callback_suceeded(true),
+        : m_py_event(py_event), m_py_callback(py_callback), m_set_callback_succeeded(true),
         m_notify_thread_wakeup_is_genuine(false)
         {}
       };
@@ -1945,7 +1945,7 @@ namespace pyopencl
               {
                 py::gil_scoped_acquire acquire;
 
-                if (cb_info->m_set_callback_suceeded)
+                if (cb_info->m_set_callback_succeeded)
                 {
                   try {
                     cb_info->m_py_callback(
@@ -1982,7 +1982,7 @@ namespace pyopencl
           // be woken up. Wake it up to let it know that it can stop.
           {
             std::lock_guard<std::mutex> lg(cb_info->m_mutex);
-            cb_info->m_set_callback_suceeded = false;
+            cb_info->m_set_callback_succeeded = false;
             cb_info->m_notify_thread_wakeup_is_genuine = true;
           }
           cb_info->m_condvar.notify_one();
@@ -3673,7 +3673,7 @@ namespace pyopencl
 #ifdef PYPY_VERSION
         // FIXME: get a read-only buffer
         // Not quite honest, but Pypy doesn't consider numpy arrays
-        // created from objects with the __aray_interface__ writeable.
+        // created from objects with the __array_interface__ writeable.
         ward->get(holder.ptr(), PyBUF_ANY_CONTIGUOUS);
 #else
         ward->get(holder.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
@@ -4508,7 +4508,7 @@ namespace pyopencl
           py::tuple name_hdr_tup = py::borrow<py::tuple>(name_hdr_tup_py);
           if (py::len(name_hdr_tup) != 2)
             throw error("Program.compile", CL_INVALID_VALUE,
-                "epxected (name, header) tuple in headers list");
+                "expected (name, header) tuple in headers list");
           std::string name = py::cast<std::string>(name_hdr_tup[0]);
           program &prg = py::cast<program &>(name_hdr_tup[1]);
 

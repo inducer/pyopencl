@@ -243,8 +243,6 @@ def test_zeros_large_array(ctx_factory):
         # run a couple kernels to ensure no propagated runtime errors
         a_gpu[...] = 1.
         a_gpu = 2 * a_gpu - 3
-    else:
-        pass
 
 # }}}
 
@@ -2481,6 +2479,24 @@ def test_buffer_pickling(ctx_factory):
     assert np.all(a_new == a)
 
 # }}}
+
+
+def test_numpy_type_promotion_with_cl_arrays(ctx_factory):
+    ctx = ctx_factory()
+    queue = cl.CommandQueue(ctx)
+
+    class NotReallyAnArray:
+        @property
+        def dtype(self):
+            return np.dtype("float64")
+
+    # Make sure that np.result_type accesses only the dtype attribute of the
+    # class, not (e.g.) its data.
+    assert np.result_type(42, NotReallyAnArray()) == np.float64
+
+    from pyopencl.array import _get_common_dtype
+    assert _get_common_dtype(42, NotReallyAnArray(), queue) == np.float64
+    assert _get_common_dtype(42.0, NotReallyAnArray(), queue) == np.float64
 
 
 if __name__ == "__main__":
