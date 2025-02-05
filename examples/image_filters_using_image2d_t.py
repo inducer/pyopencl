@@ -34,8 +34,10 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 import os
+
 import numpy as np
 from PIL import Image
+
 import pyopencl as cl
 
 
@@ -180,24 +182,19 @@ sampler = cl.Sampler(
 program.gray_scale(queue, shape, None, src_buf, dest_buf, sampler)
 save("gray_scale")
 
+ker_dim = 7
+ker_sigma = 1
 ker = calc_kernel(7, 1)
 # line below creates a gauss kernel but stacks it in Z axis
 # so that it can be interpreted as an Image
 ker = np.array(
-    np.stack((ker, ker, ker, np.ones((len(ker), len(ker)))), axis=2) * 255
+    np.stack((ker, ker, ker, np.ones((ker_dim, ker_dim))), axis=2) * 255
 ).astype(np.uint8)
 
 gauss_buf = cl.image_from_array(context, ker, 4)
 
 program.gaussian_blur(
-    queue,
-    shape,
-    None,
-    src_buf,
-    dest_buf,
-    sampler,
-    gauss_buf,
-    np.int32(len(ker)),
+    queue, shape, None, src_buf, dest_buf, sampler, gauss_buf, np.short(ker_dim)
 )
 save("gauss")
 
