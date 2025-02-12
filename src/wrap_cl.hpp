@@ -5893,9 +5893,9 @@ namespace pyopencl
 
     int ary_flags = 0;
     if (order == NPY_FORTRANORDER)
-      ary_flags |= NPY_FARRAY;
+      ary_flags |= NPY_ARRAY_FARRAY;
     else if (order == NPY_CORDER)
-      ary_flags |= NPY_CARRAY;
+      ary_flags |= NPY_ARRAY_CARRAY;
     else
       throw std::runtime_error("unrecognized order specifier");
 
