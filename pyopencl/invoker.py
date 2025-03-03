@@ -336,12 +336,13 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
     """Check whether argument sizes exceed the OpenCL device limit."""
 
     for dev in devs:
-        dev_limit = _get_max_parameter_size(dev)
-        if dev_limit != 4352:
-            # Only warn if the limit is the default value for Nvidia GPUs
-            # (4352 bytes), because failures have been observed only on such
-            # devices.
+        from pyopencl.characterize import nv_compute_capability
+        if nv_compute_capability(dev) is None:
+            # Only warn on Nvidia GPUs, because actual failures related to
+            # the device limit have been observed only on such devices.
             continue
+
+        dev_limit = _get_max_parameter_size(dev)
 
         dev_ptr_size = int(dev.address_bits / 8)
 
