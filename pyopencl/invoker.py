@@ -342,9 +342,8 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
             # the device limit have been observed only on such devices.
             continue
 
-        dev_limit = _get_max_parameter_size(dev)
-
         dev_ptr_size = int(dev.address_bits / 8)
+        dev_limit = _get_max_parameter_size(dev)
 
         total_arg_size = 0
 
