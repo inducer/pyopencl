@@ -319,7 +319,7 @@ def _get_max_parameter_size(dev):
     dev_limit = dev.max_parameter_size
     pocl_version = get_pocl_version(dev.platform, fallback_value=(1, 8))
     if pocl_version is not None and pocl_version < (3, 0):
-        # Current PoCL versions (as of 04/2022) have an incorrect parameter
+        # Older PoCL versions (<3.0) have an incorrect parameter
         # size limit of 1024; see e.g. https://github.com/pocl/pocl/pull/1046
         if dev_limit == 1024:
             if dev.type & cl.device_type.CPU:
@@ -336,17 +336,20 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
     """Check whether argument sizes exceed the OpenCL device limit."""
 
     for dev in devs:
+        from pyopencl.characterize import nv_compute_capability
+        if nv_compute_capability(dev) is None:
+            # Only warn on Nvidia GPUs, because actual failures related to
+            # the device limit have been observed only on such devices.
+            continue
+
         dev_ptr_size = int(dev.address_bits / 8)
         dev_limit = _get_max_parameter_size(dev)
 
         total_arg_size = 0
 
-        is_estimate = False
-
         if arg_types:
             for arg_type in arg_types:
                 if arg_type is None:
-                    is_estimate = True
                     total_arg_size += dev_ptr_size
                 elif isinstance(arg_type, VectorArg):
                     total_arg_size += dev_ptr_size
@@ -354,22 +357,12 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
                     total_arg_size += np.dtype(arg_type).itemsize
         else:
             # Estimate that each argument has the size of a pointer on average
-            is_estimate = True
             total_arg_size = dev_ptr_size * num_cl_args
 
         if total_arg_size > dev_limit:
             from warnings import warn
             warn(f"Kernel '{function_name}' has {num_cl_args} arguments with "
                 f"a total size of {total_arg_size} bytes, which is higher than "
-                f"the limit of {dev_limit} bytes on {dev}. This might "
-                "lead to compilation errors, especially on GPU devices.",
-                stacklevel=3)
-        elif is_estimate and total_arg_size >= dev_limit * 0.75:
-            # Since total_arg_size is just an estimate, also warn in case we are
-            # just below the actual limit.
-            from warnings import warn
-            warn(f"Kernel '{function_name}' has {num_cl_args} arguments with "
-                f"a total size of {total_arg_size} bytes, which approaches "
                 f"the limit of {dev_limit} bytes on {dev}. This might "
                 "lead to compilation errors, especially on GPU devices.",
                 stacklevel=3)
