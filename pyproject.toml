@@ -106,7 +106,7 @@ exclude = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"examples/pi-monte-carlo.py" = ["N", "B", "F841"]
+"examples/pi-monte-carlo.py" = ["N", "B", "F841", "RUF059"]
 "examples/black-hole-accretion.py" = ["N", "E501", "B"]
 "examples/n-body.py" = ["N", "E501"]
 "pyopencl/__init__.py" = ["I001"]
