@@ -454,7 +454,7 @@ def MetropolisCuda(InputCU):
     ValueType = InputCU["ValueType"]
     Seeds = InputCU["Seeds"]
 
-    Marsaglia, Computing, Test = DictionariesAPI()
+    Marsaglia, Computing, _Test = DictionariesAPI()
 
     try:
         # For PyCUDA import
@@ -658,7 +658,7 @@ def FitAndPrint(N, D, Curves):
     from scipy.optimize import curve_fit
 
     try:
-        coeffs_Amdahl, matcov_Amdahl = curve_fit(Amdahl, N, D)
+        coeffs_Amdahl, _matcov_Amdahl = curve_fit(Amdahl, N, D)
 
         D_Amdahl = Amdahl(N, coeffs_Amdahl[0], coeffs_Amdahl[1], coeffs_Amdahl[2])
         coeffs_Amdahl[1] = coeffs_Amdahl[1] * coeffs_Amdahl[0] / D[0]
@@ -672,7 +672,7 @@ def FitAndPrint(N, D, Curves):
         print("Impossible to fit for Amdahl law : only %i elements" % len(D))
 
     try:
-        coeffs_AmdahlR, matcov_AmdahlR = curve_fit(AmdahlR, N, D)
+        coeffs_AmdahlR, _matcov_AmdahlR = curve_fit(AmdahlR, N, D)
 
         # D_AmdahlR = AmdahlR(N, coeffs_AmdahlR[0], coeffs_AmdahlR[1])
         coeffs_AmdahlR[1] = coeffs_AmdahlR[1] * coeffs_AmdahlR[0] / D[0]
@@ -686,7 +686,7 @@ def FitAndPrint(N, D, Curves):
         print("Impossible to fit for Reduced Amdahl law : only %i elements" % len(D))
 
     try:
-        coeffs_Mylq, matcov_Mylq = curve_fit(Mylq, N, D)
+        coeffs_Mylq, _matcov_Mylq = curve_fit(Mylq, N, D)
 
         coeffs_Mylq[1] = coeffs_Mylq[1] * coeffs_Mylq[0] / D[0]
         # coeffs_Mylq[2]=coeffs_Mylq[2]*coeffs_Mylq[0]/D[0]
@@ -702,7 +702,7 @@ def FitAndPrint(N, D, Curves):
         print("Impossible to fit for Mylq law : only %i elements" % len(D))
 
     try:
-        coeffs_Mylq2, matcov_Mylq2 = curve_fit(Mylq2, N, D)
+        coeffs_Mylq2, _matcov_Mylq2 = curve_fit(Mylq2, N, D)
 
         coeffs_Mylq2[1] = coeffs_Mylq2[1] * coeffs_Mylq2[0] / D[0]
         # coeffs_Mylq2[2]=coeffs_Mylq2[2]*coeffs_Mylq2[0]/D[0]
@@ -727,10 +727,10 @@ def FitAndPrint(N, D, Curves):
         plt.xlabel("Number of Threads/work Items")
         plt.ylabel("Total Elapsed Time")
 
-        (Experience,) = plt.plot(N, D, "ro")
+        plt.plot(N, D, "ro")
     try:
-        (pAmdahl,) = plt.plot(N, D_Amdahl, label="Loi de Amdahl")
-        (pMylq,) = plt.plot(N, D_Mylq, label="Loi de Mylq")
+        plt.plot(N, D_Amdahl, label="Loi de Amdahl")
+        plt.plot(N, D_Mylq, label="Loi de Mylq")
     except Exception:
         print("Fit curves seem not to be available")
 
