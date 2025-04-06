@@ -1956,13 +1956,13 @@ class Array:
             raise ValueError("new type not compatible with array")
 
         new_shape = (
-                self.shape[:min_stride_axis]
-                + (self.shape[min_stride_axis] * old_itemsize // itemsize,)
-                + self.shape[min_stride_axis+1:])
+                *self.shape[:min_stride_axis],
+                self.shape[min_stride_axis] * old_itemsize // itemsize,
+                *self.shape[min_stride_axis+1:])
         new_strides = (
-                self.strides[:min_stride_axis]
-                + (self.strides[min_stride_axis] * itemsize // old_itemsize,)
-                + self.strides[min_stride_axis+1:])
+                *self.strides[:min_stride_axis],
+                self.strides[min_stride_axis] * itemsize // old_itemsize,
+                *self.strides[min_stride_axis+1:])
 
         return self._new_with_changes(
                 self.base_data, self.offset,
@@ -2759,9 +2759,9 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
     for ary in arrays:
         my_len = ary.shape[axis]
         result.setitem(
-                full_slice[:axis]
-                + (slice(base_idx, base_idx+my_len),)
-                + full_slice[axis+1:],
+                (*full_slice[:axis],
+                    slice(base_idx, base_idx+my_len),
+                    *full_slice[axis+1:]),
                 ary)
 
         base_idx += my_len
@@ -2867,7 +2867,7 @@ def stack(arrays, axis=0, queue=None):
         # pyopencl.Array.__setitem__ does not support non-contiguous assignments
         raise NotImplementedError
 
-    result_shape = input_shape[:axis] + (len(arrays),) + input_shape[axis:]
+    result_shape = (*input_shape[:axis], len(arrays), *input_shape[axis:])
 
     if __debug__:
         if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
