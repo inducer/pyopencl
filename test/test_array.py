@@ -1350,7 +1350,7 @@ def test_meshmode_view(ctx_factory):
     result = cl.array.empty(queue, (2, n*6), np.float32)
 
     def view(z):
-        return z[..., n*3:n*6].reshape(z.shape[:-1] + (n, 3))
+        return z[..., n*3:n*6].reshape((*z.shape[:-1], n, 3))
 
     result = result.with_queue(queue)
     result.fill(0)
