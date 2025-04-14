@@ -2391,6 +2391,96 @@ def test_xdg_cache_home(ctx_factory):
 # }}}
 
 
+# {{{ test pickling
+
+from pytools.tag import Taggable
+
+
+class TaggableCLArray(cl_array.Array, Taggable):
+    def __init__(self, cq, shape, dtype, tags):
+        super().__init__(cq=cq, shape=shape, dtype=dtype)
+        self.tags = tags
+
+
+@pytest.mark.parametrize("use_mempool", [False, True])
+def test_array_pickling(ctx_factory, use_mempool):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    if use_mempool:
+        alloc = cl_tools.MemoryPool(cl_tools.ImmediateAllocator(queue))
+    else:
+        alloc = None
+
+    a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
+    a_gpu = cl_array.to_device(queue, a, allocator=alloc)
+
+    import pickle
+    with pytest.raises(RuntimeError):
+        pickle.dumps(a_gpu)
+
+    with cl.queue_for_pickling(queue):
+        a_gpu_pickled = pickle.loads(pickle.dumps(a_gpu))
+    assert np.all(a_gpu_pickled.get() == a)
+
+    # {{{ subclass test
+
+    a_gpu_tagged = TaggableCLArray(queue, a.shape, a.dtype, tags={"foo", "bar"})
+    a_gpu_tagged.set(a)
+
+    with cl.queue_for_pickling(queue):
+        a_gpu_tagged_pickled = pickle.loads(pickle.dumps(a_gpu_tagged))
+
+    assert np.all(a_gpu_tagged_pickled.get() == a)
+    assert a_gpu_tagged_pickled.tags == a_gpu_tagged.tags
+
+    # }}}
+
+    # {{{ SVM test
+
+    from pyopencl.characterize import has_coarse_grain_buffer_svm
+
+    if has_coarse_grain_buffer_svm(queue.device):
+        from pyopencl.tools import SVMAllocator, SVMPool
+
+        alloc = SVMAllocator(context, alignment=0, queue=queue)
+        if use_mempool:
+            alloc = SVMPool(alloc)
+
+        a_dev = cl_array.to_device(queue, a, allocator=alloc)
+
+        with cl.queue_for_pickling(queue, alloc):
+            a_dev_pickled = pickle.loads(pickle.dumps(a_dev))
+
+        assert np.all(a_dev_pickled.get() == a)
+        assert a_dev_pickled.allocator is alloc
+
+    # }}}
+
+
+def test_buffer_pickling(ctx_factory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
+    a_gpu = cl.Buffer(context, cl.mem_flags.READ_WRITE, a.nbytes)
+    cl.enqueue_copy(queue, a_gpu, a)
+
+    import pickle
+
+    with pytest.raises(cl.RuntimeError):
+        pickle.dumps(a_gpu)
+
+    with cl.queue_for_pickling(queue):
+        a_gpu_pickled = pickle.loads(pickle.dumps(a_gpu))
+
+    a_new = np.empty_like(a)
+    cl.enqueue_copy(queue, a_new, a_gpu_pickled)
+    assert np.all(a_new == a)
+
+# }}}
+
+
 def test_numpy_type_promotion_with_cl_arrays(ctx_factory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
