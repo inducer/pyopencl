@@ -20,24 +20,6 @@ Python 3 Intel CPU:
     reports:
       junit: test/pytest.xml
 
-Python 3 Nvidia Titan X:
-  script: |
-    export PYOPENCL_TEST=nvi:titan
-    export EXTRA_INSTALL="numpy mako"
-
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
-    build_py_project_in_venv
-    test_py_project
-  tags:
-  - python3
-  - nvidia-titan-x
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
 Python 3 Nvidia Titan V:
   script: |
     export PYOPENCL_TEST=nvi:titan
@@ -50,24 +32,6 @@ Python 3 Nvidia Titan V:
   tags:
   - python3
   - nvidia-titan-v
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
-Python 3 Nvidia K40:
-  script: |
-    export PYOPENCL_TEST=nvi:k40
-    export EXTRA_INSTALL="numpy mako"
-
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
-    build_py_project_in_venv
-    test_py_project
-  tags:
-  - python3
-  - nvidia-k40
   except:
   - tags
   artifacts:
@@ -105,25 +69,6 @@ Python 3 POCL CL 1.1:
   tags:
   - python3
   - pocl
-  except:
-  - tags
-  artifacts:
-    reports:
-      junit: test/pytest.xml
-
-Python 3 POCL K40:
-  script: |
-    export PYOPENCL_TEST=portable:k40
-    export EXTRA_INSTALL="numpy mako"
-
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
-    build_py_project_in_venv
-    test_py_project
-  tags:
-  - python3
-  - pocl
-  - nvidia-k40
   except:
   - tags
   artifacts:
