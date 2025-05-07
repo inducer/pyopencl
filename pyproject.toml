@@ -14,6 +14,7 @@ name = "pyopencl"
 version = "2025.1"
 description = "Python wrapper for OpenCL"
 readme = "README.rst"
+license = "MIT"
 authors = [
     { name = "Andreas Kloeckner", email = "inform@tiker.net" },
 ]
@@ -24,7 +25,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Other Audience",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Programming Language :: C++",
     "Programming Language :: Python",

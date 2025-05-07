@@ -1597,7 +1597,21 @@ def choose_devices(interactive: bool | None = None,
 
     # {{{ pick a platform
 
-    platforms = get_platforms()
+    try:
+        platforms = get_platforms()
+    except LogicError as e:
+        if "PLATFORM_NOT_FOUND_KHR" in str(e):
+            # With the cl_khr_icd extension, clGetPlatformIDs fails if no platform
+            # is available:
+            # https://registry.khronos.org/OpenCL/sdk/3.0/docs/man/html/clGetPlatformIDs.html
+            raise RuntimeError("no CL platforms available to ICD loader. "
+                               "Install a CL driver "
+                               "('ICD', such as pocl, rocm, Intel CL) to fix this. "
+                               "See pyopencl docs for help: "
+                               "https://documen.tician.de/pyopencl/"
+                               "misc.html#installation") from e
+        else:
+            raise
 
     if not platforms:
         raise Error("no platforms found")
