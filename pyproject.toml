@@ -242,3 +242,23 @@ extend-exclude = [
 # This one has comments in French
 "examples/black-hole-accretion.py"
 ]
+
+[tool.basedpyright]
+reportImplicitStringConcatenation = "none"
+reportUnnecessaryIsInstance = "none"
+reportUnusedCallResult = "none"
+reportExplicitAny = "none"
+reportUnreachable = "hint"
+
+# This reports even cycles that are qualified by 'if TYPE_CHECKING'. Not what
+# we care about at this moment.
+# https://github.com/microsoft/pyright/issues/746
+reportImportCycles = "none"
+pythonVersion = "3.10"
+pythonPlatform = "All"
+
+[[tool.basedpyright.executionEnvironments]]
+root = "test"
+reportUnknownArgumentType = "hint"
+reportPrivateUsage = "none"
+
