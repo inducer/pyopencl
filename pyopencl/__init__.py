@@ -379,8 +379,14 @@ def enable_debugging(platform_or_context):
              stacklevel=2)
 
 
+class RepeatedKernelRetrieval(UserWarning):
+    pass
+
+
 class Program:
     def __init__(self, arg1, arg2=None, arg3=None):
+        self._knl_retrieval_count: dict[str, int] = {}
+
         if arg2 is None:
             # 1-argument form: program
             self._prg = arg1
@@ -444,6 +450,19 @@ class Program:
             # Nvidia does not raise errors even for invalid names,
             # but this will give an error if the kernel is invalid.
             knl.num_args  # noqa: B018
+
+            count = self._knl_retrieval_count[attr] = (
+                self._knl_retrieval_count.get(attr, 0) + 1)
+
+            if count == 2:
+                # https://github.com/inducer/pyopencl/issues/831
+                # https://github.com/inducer/pyopencl/issues/830#issuecomment-2913538384
+                warn(f"Kernel '{attr}' has been retrieved more than once. "
+                     "Each retrieval creates a new, independent kernel, "
+                     "at possibly considerable expense. "
+                     "To avoid the expense, reuse the retrieved kernel instance. "
+                     "To avoid this warning, use cl.Kernel(prg, name).",
+                     RepeatedKernelRetrieval, stacklevel=2)
 
             if self._build_duration_info is not None:
                 build_descr, _was_cached, duration = self._build_duration_info
