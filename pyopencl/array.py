@@ -630,6 +630,47 @@ class Array:
                          "than expected, potentially leading to crashes.",
                          InconsistentOpenCLQueueWarning, stacklevel=2)
 
+    # {{{ Pickling
+
+    def __getstate__(self):
+        try:
+            queue = cl._QUEUE_FOR_PICKLING_TLS.queue
+        except AttributeError:
+            queue = None
+
+        if queue is None:
+            raise RuntimeError("CL Array instances can only be pickled while "
+                               "cl.queue_for_pickling is active.")
+
+        state = self.__dict__.copy()
+
+        del state["allocator"]
+        del state["context"]
+        del state["events"]
+        del state["queue"]
+        return state
+
+    def __setstate__(self, state):
+        try:
+            queue = cl._QUEUE_FOR_PICKLING_TLS.queue
+            alloc = cl._QUEUE_FOR_PICKLING_TLS.alloc
+        except AttributeError:
+            queue = None
+            alloc = None
+
+        if queue is None:
+            raise RuntimeError("CL Array instances can only be unpickled while "
+                               "cl.queue_for_pickling is active.")
+
+        self.__dict__.update(state)
+
+        self.allocator = alloc
+        self.context = queue.context
+        self.events = []
+        self.queue = queue
+
+    # }}}
+
     @property
     def ndim(self):
         return len(self.shape)
