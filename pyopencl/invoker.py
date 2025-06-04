@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from typing import Any, Tuple
+from typing import Any
 from warnings import warn
 
 import numpy as np
@@ -372,7 +372,7 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
 
 if not cl._PYOPENCL_NO_CACHE:
     from pytools.py_codegen import PicklableModule
-    invoker_cache: WriteOncePersistentDict[Any, Tuple[PicklableModule, str]] \
+    invoker_cache: WriteOncePersistentDict[Any, tuple[PicklableModule, str]] \
         = WriteOncePersistentDict(
             "pyopencl-invoker-cache-v42-nano",
             key_builder=_NumpyTypesKeyBuilder(),

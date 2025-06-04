@@ -30,7 +30,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 from mako.template import Template
@@ -574,7 +573,7 @@ class RadixSort:
             base_bit += self.bits
 
         return [arg_val
-                for arg_descr, arg_val in zip(self.arguments, args)
+                for arg_descr, arg_val in zip(self.arguments, args, strict=True)
                 if arg_descr.name in self.sort_arg_names], last_evt
 
         # }}}
@@ -725,12 +724,12 @@ def _get_arg_list(arg_list, prefix=""):
 
 @dataclass
 class BuiltList:
-    count: Optional[int]
-    starts: Optional[pyopencl.array.Array]
-    lists: Optional[pyopencl.array.Array] = None
-    num_nonempty_lists: Optional[int] = None
-    nonempty_indices: Optional[pyopencl.array.Array] = None
-    compressed_indices: Optional[pyopencl.array.Array] = None
+    count: int | None
+    starts: pyopencl.array.Array | None
+    lists: pyopencl.array.Array | None = None
+    num_nonempty_lists: int | None = None
+    nonempty_indices: pyopencl.array.Array | None = None
+    compressed_indices: pyopencl.array.Array | None = None
 
 
 class ListOfListsBuilder:
@@ -1139,7 +1138,8 @@ class ListOfListsBuilder:
             compress_kernel = self.get_compress_kernel(index_dtype)
 
         data_args = []
-        for i, (arg_descr, arg_val) in enumerate(zip(self.arg_decls, args)):
+        for i, (arg_descr, arg_val) in enumerate(
+                zip(self.arg_decls, args, strict=True)):
             from pyopencl.tools import VectorArg
             if isinstance(arg_descr, VectorArg):
                 from pyopencl import MemoryObject

@@ -129,7 +129,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 import re
 from abc import ABC, abstractmethod
 from sys import intern
-from typing import Any, List, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -850,8 +850,8 @@ def parse_c_arg(c_arg: str, with_offset: bool = False) -> DtypedArgument:
 
 
 def parse_arg_list(
-        arguments: Union[str, List[str], List[DtypedArgument]],
-        with_offset: bool = False) -> List[DtypedArgument]:
+        arguments: str | list[str] | list[DtypedArgument],
+        with_offset: bool = False) -> list[DtypedArgument]:
     """Parse a list of kernel arguments. *arguments* may be a comma-separate
     list of C declarators in a string, a list of strings representing C
     declarators, or :class:`Argument` objects.
@@ -860,7 +860,7 @@ def parse_arg_list(
     if isinstance(arguments, str):
         arguments = arguments.split(",")
 
-    def parse_single_arg(obj: Union[str, DtypedArgument]) -> DtypedArgument:
+    def parse_single_arg(obj: str | DtypedArgument) -> DtypedArgument:
         if isinstance(obj, str):
             from pyopencl.tools import parse_c_arg
             return parse_c_arg(obj, with_offset=with_offset)
@@ -886,9 +886,9 @@ def get_arg_list_arg_types(arg_types):
 
 
 def get_arg_list_scalar_arg_dtypes(
-        arg_types: List[DtypedArgument]
-        ) -> List[Optional[np.dtype]]:
-    result: List[Optional[np.dtype]] = []
+        arg_types: list[DtypedArgument]
+        ) -> list[np.dtype | None]:
+    result: list[np.dtype | None] = []
 
     for arg_type in arg_types:
         if isinstance(arg_type, ScalarArg):
@@ -1181,7 +1181,8 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
         def calc_field_type():
             total_size = 0
             padding_count = 0
-            for offset, (field_name, (field_dtype, _)) in zip(offsets, fields):
+            for offset, (field_name, (field_dtype, _)) in zip(
+                        offsets, fields, strict=True):
                 if offset > total_size:
                     padding_count += 1
                     yield ("__pycl_padding%d" % padding_count,

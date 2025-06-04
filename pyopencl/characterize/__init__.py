@@ -20,7 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from typing import Dict, Optional, Tuple
 
 from pytools import memoize
 
@@ -219,7 +218,7 @@ def why_not_local_access_conflict_free(dev, itemsize,
             idx = []
             left_over_idx = work_item_id
             for axis, (ax_size, ax_stor_size) in enumerate(
-                    zip(array_shape, array_stored_shape)):
+                    zip(array_shape, array_stored_shape, strict=True)):
 
                 if axis >= work_item_axis:
                     left_over_idx, ax_idx = divmod(left_over_idx, ax_size)
@@ -323,8 +322,8 @@ def get_simd_group_size(dev, type_size):
 
 def get_pocl_version(
         platform: cl.Platform,
-        fallback_value: Optional[Tuple[int, int]] = None
-        ) -> Optional[Tuple[int, int]]:
+        fallback_value: tuple[int, int] | None = None
+        ) -> tuple[int, int] | None:
     if platform.name != "Portable Computing Language":
         return None
 
@@ -342,12 +341,12 @@ def get_pocl_version(
         return (int(ver_match.group(1)), int(ver_match.group(2)))
 
 
-_CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE: Dict[cl.Device, bool] = {}
+_CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE: dict[cl.Device, bool] = {}
 
 
 def _check_for_pocl_arg_count_bug(
         dev: cl.Device,
-        ctx: Optional[cl.Context] = None) -> bool:
+        ctx: cl.Context | None = None) -> bool:
     try:
         return _CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE[dev]
     except KeyError:
@@ -437,7 +436,7 @@ def has_fine_grain_system_svm_atomics(dev):
 # }}}
 
 
-def has_src_build_cache(dev: cl.Device) -> Optional[bool]:
+def has_src_build_cache(dev: cl.Device) -> bool | None:
     """
     Return *True* if *dev* has internal support for caching builds from source,
     *False* if it doesn't, and *None* if unknown.

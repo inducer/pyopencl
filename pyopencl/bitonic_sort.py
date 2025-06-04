@@ -35,7 +35,7 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from functools import reduce
 from operator import mul
-from typing import ClassVar, Dict
+from typing import ClassVar
 
 from mako.template import Template
 
@@ -64,7 +64,7 @@ class BitonicSort:
     .. automethod:: __call__
     """
 
-    kernels_srcs: ClassVar[Dict[str, str]] = {
+    kernels_srcs: ClassVar[dict[str, str]] = {
             "B2": _tmpl.ParallelBitonic_B2,
             "B4": _tmpl.ParallelBitonic_B4,
             "B8": _tmpl.ParallelBitonic_B8,
