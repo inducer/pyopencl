@@ -100,6 +100,8 @@ Type aliases
    See :class:`pyopencl.tools.AllocatorBase`.
 """
 
+from __future__ import annotations
+
 
 __copyright__ = "Copyright (C) 2010 Andreas Kloeckner"
 
@@ -126,23 +128,38 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
+
 import re
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from sys import intern
-from typing import Any
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Concatenate,
+    ParamSpec,
+    TypeVar,
+)
 
 import numpy as np
+from typing_extensions import TypeIs, override
 
 from pytools import memoize, memoize_method
 from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
 
-from pyopencl._cl import bitlog2, get_cl_header_version  # noqa: F401
-from pyopencl.compyte.dtypes import (  # noqa: F401
+from pyopencl._cl import bitlog2, get_cl_header_version
+from pyopencl.compyte.dtypes import (
     TypeNameNotKnown,
     dtype_to_ctype,
     get_or_register_dtype,
     register_dtype,
 )
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Hashable, Sequence
+
+    from numpy.typing import DTypeLike
 
 
 # Do not add a pyopencl import here: This will add an import cycle.
@@ -460,11 +477,17 @@ if get_cl_header_version() >= (2, 0):
 
 # {{{ first-arg caches
 
-_first_arg_dependent_caches = []
+_first_arg_dependent_caches: list[dict[Hashable, object]] = []
 
 
-def first_arg_dependent_memoize(func):
-    def wrapper(cl_object, *args, **kwargs):
+RetT = TypeVar("RetT")
+P = ParamSpec("P")
+
+
+def first_arg_dependent_memoize(
+            func: Callable[Concatenate[object, P], RetT]
+        ) -> Callable[Concatenate[object, P], RetT]:
+    def wrapper(cl_object: Hashable, *args: P.args, **kwargs: P.kwargs) -> RetT:
         """Provides memoization for a function. Typically used to cache
         things that get created inside a :class:`pyopencl.Context`, e.g. programs
         and kernels. Assumes that the first argument of the decorated function is
@@ -479,12 +502,13 @@ def first_arg_dependent_memoize(func):
         else:
             cache_key = (args,)
 
+        ctx_dict: dict[Hashable, dict[Hashable, RetT]]
         try:
-            ctx_dict = func._pyopencl_first_arg_dep_memoize_dic
+            ctx_dict = func._pyopencl_first_arg_dep_memoize_dic  # pyright: ignore[reportFunctionMemberAccess]
         except AttributeError:
             # FIXME: This may keep contexts alive longer than desired.
             # But I guess since the memory in them is freed, who cares.
-            ctx_dict = func._pyopencl_first_arg_dep_memoize_dic = {}
+            ctx_dict = func._pyopencl_first_arg_dep_memoize_dic = {}  # pyright: ignore[reportFunctionMemberAccess]
             _first_arg_dependent_caches.append(ctx_dict)
 
         try:
@@ -512,8 +536,6 @@ def first_arg_dependent_memoize_nested(nested_func):
     :func:`clear_first_arg_caches`.
 
     .. versionadded:: 2013.1
-
-    Requires Python 2.5 or newer.
     """
 
     from functools import wraps
@@ -567,6 +589,10 @@ def clear_first_arg_caches():
 import atexit
 
 
+if TYPE_CHECKING:
+    import pyopencl as cl
+
+
 atexit.register(clear_first_arg_caches)
 
 # }}}
@@ -575,7 +601,9 @@ atexit.register(clear_first_arg_caches)
 # {{{ pytest fixtures
 
 class _ContextFactory:
-    def __init__(self, device):
+    device: cl.Device
+
+    def __init__(self, device: cl.Device):
         self.device = device
 
     def __call__(self):
@@ -590,14 +618,37 @@ class _ContextFactory:
         import pyopencl as cl
         return cl.Context([self.device])
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         # Don't show address, so that parallel test collection works
         return ("<context factory for <pyopencl.Device '%s' on '%s'>>" %
                 (self.device.name.strip(),
                  self.device.platform.name.strip()))
 
 
-def get_test_platforms_and_devices(plat_dev_string=None):
+DeviceOrPlatformT = TypeVar("DeviceOrPlatformT", "cl.Device", "cl.Platform")
+
+
+def _find_cl_obj(
+            objs: Sequence[DeviceOrPlatformT],
+            identifier: str
+        ) -> DeviceOrPlatformT:
+    try:
+        num = int(identifier)
+    except Exception:
+        pass
+    else:
+        return objs[num]
+
+    for obj in objs:
+        if identifier.lower() in (obj.name + " " + obj.vendor).lower():
+            return obj
+    raise RuntimeError("object '%s' not found" % identifier)
+
+
+def get_test_platforms_and_devices(
+            plat_dev_string: str | None = None
+        ):
     """Parse a string of the form 'PYOPENCL_TEST=0:0,1;intel:i5'.
 
     :return: list of tuples (platform, [device, device, ...])
@@ -609,29 +660,14 @@ def get_test_platforms_and_devices(plat_dev_string=None):
         import os
         plat_dev_string = os.environ.get("PYOPENCL_TEST", None)
 
-    def find_cl_obj(objs, identifier):
-        try:
-            num = int(identifier)
-        except Exception:
-            pass
-        else:
-            return objs[num]
-
-        found = False
-        for obj in objs:
-            if identifier.lower() in (obj.name + " " + obj.vendor).lower():
-                return obj
-        if not found:
-            raise RuntimeError("object '%s' not found" % identifier)
-
     if plat_dev_string:
-        result = []
+        result: list[tuple[cl.Platform, list[cl.Device]]] = []
 
         for entry in plat_dev_string.split(";"):
             lhsrhs = entry.split(":")
 
             if len(lhsrhs) == 1:
-                platform = find_cl_obj(cl.get_platforms(), lhsrhs[0])
+                platform = _find_cl_obj(cl.get_platforms(), lhsrhs[0])
                 result.append((platform, platform.get_devices()))
 
             elif len(lhsrhs) != 2:
@@ -639,11 +675,11 @@ def get_test_platforms_and_devices(plat_dev_string=None):
             else:
                 plat_str, dev_strs = lhsrhs
 
-                platform = find_cl_obj(cl.get_platforms(), plat_str)
+                platform = _find_cl_obj(cl.get_platforms(), plat_str)
                 devs = platform.get_devices()
                 result.append(
                         (platform,
-                            [find_cl_obj(devs, dev_id)
+                            [_find_cl_obj(devs, dev_id)
                                 for dev_id in dev_strs.split(",")]))
 
         return result
@@ -748,44 +784,33 @@ class Argument(ABC):
         pass
 
 
-class DtypedArgument(Argument):
+@dataclass(frozen=True, init=False)
+class DtypedArgument(Argument, ABC):
     """
-    .. attribute:: name
-    .. attribute:: dtype
+    .. autoattribute:: name
+    .. autoattribute:: dtype
     """
+    dtype: np.dtype[Any]
+    name: str
 
-    def __init__(self, dtype: Any, name: str) -> None:
-        self.dtype = np.dtype(dtype)
-        self.name = name
-
-    def __repr__(self) -> str:
-        return "{}({!r}, {})".format(
-                self.__class__.__name__,
-                self.name,
-                self.dtype)
-
-    def __eq__(self, other: Any) -> bool:
-        return (type(self) is type(other)
-                and self.dtype == other.dtype
-                and self.name == other.name)
-
-    def __hash__(self) -> int:
-        return (
-                hash(type(self))
-                ^ hash(self.dtype)
-                ^ hash(self.name))
+    def __init__(self, dtype: DTypeLike, name: str) -> None:
+        object.__setattr__(self, "name", name)
+        object.__setattr__(self, "dtype", np.dtype(dtype))
 
 
+@dataclass(frozen=True)
 class VectorArg(DtypedArgument):
     """Inherits from :class:`DtypedArgument`.
 
     .. automethod:: __init__
     """
+    with_offset: bool
 
-    def __init__(self, dtype: Any, name: str, with_offset: bool = False) -> None:
-        super().__init__(dtype, name)
-        self.with_offset = with_offset
+    def __init__(self, name: str, dtype: DTypeLike, with_offset: bool = False):
+        super().__init__(name, dtype)
+        object.__setattr__(self, "with_offset", with_offset)
 
+    @override
     def declarator(self) -> str:
         if self.with_offset:
             # Two underscores -> less likelihood of a name clash.
@@ -796,39 +821,24 @@ class VectorArg(DtypedArgument):
 
         return result
 
-    def __eq__(self, other) -> bool:
-        return (super().__eq__(other)
-                and self.with_offset == other.with_offset)
 
-    def __hash__(self) -> int:
-        return super().__hash__() ^ hash(self.with_offset)
-
-
+@dataclass(frozen=True, init=False)
 class ScalarArg(DtypedArgument):
     """Inherits from :class:`DtypedArgument`."""
 
-    def declarator(self):
+    @override
+    def declarator(self) -> str:
         return "{} {}".format(dtype_to_ctype(self.dtype), self.name)
 
 
+@dataclass(frozen=True)
 class OtherArg(Argument):
-    def __init__(self, declarator: str, name: str) -> None:
-        self.decl = declarator
-        self.name = name
+    decl: str
+    name: str
 
+    @override
     def declarator(self) -> str:
         return self.decl
-
-    def __eq__(self, other) -> bool:
-        return (type(self) is type(other)
-                and self.decl == other.decl
-                and self.name == other.name)
-
-    def __hash__(self) -> int:
-        return (
-                hash(type(self))
-                ^ hash(self.decl)
-                ^ hash(self.name))
 
 
 def parse_c_arg(c_arg: str, with_offset: bool = False) -> DtypedArgument:
@@ -886,7 +896,7 @@ def get_arg_list_arg_types(arg_types):
 
 
 def get_arg_list_scalar_arg_dtypes(
-        arg_types: list[DtypedArgument]
+        arg_types: Sequence[DtypedArgument]
         ) -> list[np.dtype | None]:
     result: list[np.dtype | None] = []
 
@@ -903,8 +913,8 @@ def get_arg_list_scalar_arg_dtypes(
     return result
 
 
-def get_arg_offset_adjuster_code(arg_types):
-    result = []
+def get_arg_offset_adjuster_code(arg_types: Sequence[Argument]) -> str:
+    result: list[str] = []
 
     for arg_type in arg_types:
         if isinstance(arg_type, VectorArg) and arg_type.with_offset:
@@ -1498,7 +1508,7 @@ def array_module(a):
 # }}}
 
 
-def is_spirv(s):
+def is_spirv(s: str | bytes) -> TypeIs[bytes]:
     spirv_magic = b"\x07\x23\x02\x03"
     return (
             isinstance(s, bytes)
@@ -1524,5 +1534,32 @@ class _NumpyTypesKeyBuilder(KeyBuilderBase):
                 % type(key))
 
 # }}}
+
+
+__all__ = [
+    "AllocatorBase",
+    "AllocatorBase",
+    "Argument",
+    "DeferredAllocator",
+    "DtypedArgument",
+    "ImmediateAllocator",
+    "MemoryPool",
+    "OtherArg",
+    "PooledBuffer",
+    "PooledSVM",
+    "SVMAllocator",
+    "SVMPool",
+    "ScalarArg",
+    "TypeNameNotKnown",
+    "VectorArg",
+    "bitlog2",
+    "clear_first_arg_caches",
+    "dtype_to_ctype",
+    "first_arg_dependent_memoize",
+    "get_or_register_dtype",
+    "parse_arg_list",
+    "pytest_generate_tests_for_pyopencl",
+    "register_dtype",
+]
 
 # vim: foldmethod=marker

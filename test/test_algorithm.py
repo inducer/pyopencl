@@ -49,7 +49,7 @@ from pyopencl.tools import (
 
 # {{{ elementwise
 
-def test_elwise_kernel(ctx_factory):
+def test_elwise_kernel(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -70,7 +70,7 @@ def test_elwise_kernel(ctx_factory):
     assert la.norm((c_gpu - (5 * a_gpu + 6 * b_gpu)).get()) < 1e-5
 
 
-def test_elwise_kernel_with_options(ctx_factory):
+def test_elwise_kernel_with_options(ctx_factory: cl.CtxFactory):
     from pyopencl.clrandom import rand as clrand
     from pyopencl.elementwise import ElementwiseKernel
 
@@ -101,7 +101,7 @@ def test_elwise_kernel_with_options(ctx_factory):
     assert la.norm(gv - gt) < 1e-5
 
 
-def test_ranged_elwise_kernel(ctx_factory):
+def test_ranged_elwise_kernel(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -125,7 +125,7 @@ def test_ranged_elwise_kernel(ctx_factory):
         assert (a_cpu == a_gpu.get()).all()
 
 
-def test_take(ctx_factory):
+def test_take(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -135,7 +135,7 @@ def test_take(ctx_factory):
     assert ((3 * idx).get() == result.get()).all()
 
 
-def test_arange(ctx_factory):
+def test_arange(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -144,7 +144,7 @@ def test_arange(ctx_factory):
     assert (np.arange(n, dtype=np.float32) == a.get()).all()
 
 
-def test_reverse(ctx_factory):
+def test_reverse(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -157,7 +157,7 @@ def test_reverse(ctx_factory):
     assert (a[::-1] == a_gpu.get()).all()
 
 
-def test_if_positive(ctx_factory):
+def test_if_positive(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -179,7 +179,7 @@ def test_if_positive(ctx_factory):
     assert la.norm(min_a_b_gpu.get() - np.minimum(a, b)) == 0
 
 
-def test_take_put(ctx_factory):
+def test_take_put(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -200,7 +200,7 @@ def test_take_put(ctx_factory):
                 dest_shape=(96,))
 
 
-def test_astype(ctx_factory):
+def test_astype(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -231,7 +231,7 @@ def test_astype(ctx_factory):
 
 # {{{ reduction
 
-def test_sum(ctx_factory):
+def test_sum(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -267,7 +267,7 @@ def test_sum(ctx_factory):
             assert abs(sum_a_gpu_2 - sum_a) / ref_divisor < 1e-4
 
 
-def test_sum_without_data(ctx_factory):
+def test_sum_without_data(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -288,7 +288,7 @@ def test_sum_without_data(ctx_factory):
     assert result_dev == result_ref
 
 
-def test_reduction_not_first_argument(ctx_factory):
+def test_reduction_not_first_argument(ctx_factory: cl.CtxFactory):
     # https://github.com/inducer/pyopencl/issues/535
     from pytest import importorskip
     importorskip("mako")
@@ -310,7 +310,7 @@ def test_reduction_not_first_argument(ctx_factory):
     assert abs(my_dot_prod - 0.1*np.sum(np.arange(n)**2)) < 1e-4
 
 
-def test_minmax(ctx_factory):
+def test_minmax(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -335,7 +335,7 @@ def test_minmax(ctx_factory):
             assert op_a_gpu == op_a, (op_a_gpu, op_a, dtype, what)
 
 
-def test_subset_minmax(ctx_factory):
+def test_subset_minmax(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -377,7 +377,7 @@ def test_subset_minmax(ctx_factory):
         assert min_a_gpu == min_a
 
 
-def test_dot(ctx_factory):
+def test_dot(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -440,7 +440,7 @@ def make_mmc_dtype(device):
     return dtype, c_decl
 
 
-def test_struct_reduce(ctx_factory):
+def test_struct_reduce(ctx_factory: cl.CtxFactory):
     pytest.importorskip("mako")
 
     context = ctx_factory()
@@ -568,7 +568,7 @@ scan_test_counts = [
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64])
 @pytest.mark.parametrize("scan_cls", [InclusiveScanKernel, ExclusiveScanKernel])
-def test_scan(ctx_factory, dtype, scan_cls):
+def test_scan(ctx_factory: cl.CtxFactory, dtype, scan_cls):
     from pytest import importorskip
     importorskip("mako")
 
@@ -603,7 +603,7 @@ def test_scan(ctx_factory, dtype, scan_cls):
 
 
 @pytest.mark.parametrize("scan_cls", (GenericScanKernel, GenericDebugScanKernel))
-def test_scan_with_vectorargs_with_offsets(ctx_factory, scan_cls):
+def test_scan_with_vectorargs_with_offsets(ctx_factory: cl.CtxFactory, scan_cls):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -635,7 +635,7 @@ def test_scan_with_vectorargs_with_offsets(ctx_factory, scan_cls):
     assert (dev_data.get() == np.cumsum(host_data)).all()
 
 
-def test_copy_if(ctx_factory):
+def test_copy_if(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -659,7 +659,7 @@ def test_copy_if(ctx_factory):
         collect()
 
 
-def test_partition(ctx_factory):
+def test_partition(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -687,7 +687,7 @@ def test_partition(ctx_factory):
         assert (false_dev.get()[:n-count_true_dev] == false_host).all()
 
 
-def test_unique(ctx_factory):
+def test_unique(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -713,7 +713,7 @@ def test_unique(ctx_factory):
         collect()
 
 
-def test_index_preservation(ctx_factory):
+def test_index_preservation(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -745,7 +745,7 @@ def test_index_preservation(ctx_factory):
             collect()
 
 
-def test_segmented_scan(ctx_factory):
+def test_segmented_scan(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -844,7 +844,7 @@ def test_segmented_scan(ctx_factory):
 
 
 @pytest.mark.parametrize("scan_kernel", [GenericScanKernel, GenericDebugScanKernel])
-def test_sort(ctx_factory, scan_kernel):
+def test_sort(ctx_factory: cl.CtxFactory, scan_kernel):
     from pytest import importorskip
     importorskip("mako")
 
@@ -896,7 +896,7 @@ def test_sort(ctx_factory, scan_kernel):
                     numpy_elapsed/dev_elapsed))
 
 
-def test_list_builder(ctx_factory):
+def test_list_builder(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -922,7 +922,7 @@ def test_list_builder(ctx_factory):
     assert (inf.lists.get()[-6:] == [1, 2, 2, 3, 3, 3]).all()
 
 
-def test_list_builder_with_memoryobject(ctx_factory):
+def test_list_builder_with_memoryobject(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -947,7 +947,7 @@ def test_list_builder_with_memoryobject(ctx_factory):
     assert (inf.lists.get() == 0).all()
 
 
-def test_list_builder_with_offset(ctx_factory):
+def test_list_builder_with_offset(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -975,7 +975,7 @@ def test_list_builder_with_offset(ctx_factory):
     assert (inf.lists.get() == 1).all()
 
 
-def test_list_builder_with_empty_elim(ctx_factory):
+def test_list_builder_with_empty_elim(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -1020,7 +1020,7 @@ def test_list_builder_with_empty_elim(ctx_factory):
     assert (mylist3.lists.get()[:6] == [0, 0, 1, 0, 1, 2]).all()
 
 
-def test_key_value_sorter(ctx_factory):
+def test_key_value_sorter(ctx_factory: cl.CtxFactory):
     from pytest import importorskip
     importorskip("mako")
 
@@ -1066,7 +1066,7 @@ def test_key_value_sorter(ctx_factory):
     np.float64
     ])
 @pytest.mark.bitonic
-def test_bitonic_sort(ctx_factory, size, dtype):
+def test_bitonic_sort(ctx_factory: cl.CtxFactory, size, dtype):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -1112,7 +1112,7 @@ def test_bitonic_sort(ctx_factory, size, dtype):
     np.float64
     ])
 @pytest.mark.bitonic
-def test_bitonic_argsort(ctx_factory, size, dtype):
+def test_bitonic_argsort(ctx_factory: cl.CtxFactory, size, dtype):
     import sys
     is_pypy = "__pypy__" in sys.builtin_module_names
 

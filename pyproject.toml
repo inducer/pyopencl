@@ -38,6 +38,9 @@ dependencies = [
     "numpy",
     "platformdirs>=2.2",
     "pytools>=2024.1.5",
+
+    # for Buffer
+    "typing_extensions>=4.6",
 ]
 
 [project.optional-dependencies]
@@ -90,6 +93,7 @@ extend-select = [
     "RUF",  # ruff
     "UP",   # pyupgrade
     "W",    # pycodestyle
+    "TC",
 ]
 extend-ignore = [
     "E226", # missing whitespace around arithmetic operator
@@ -111,6 +115,11 @@ exclude = [
 "examples/n-body.py" = ["N", "E501"]
 "pyopencl/__init__.py" = ["I001"]
 "contrib/fortran-to-opencl/translate.py" = ["N802", "N815", "B"]
+"doc/*.py" = ["I002"]
+"examples/*.py" = ["I002"]
+"test/*.py" = ["I002"]
+"contrib/**/*.py" = ["I002"]
+"*.ipynb" = ["I002"]
 
 [tool.ruff.lint.flake8-quotes]
 inline-quotes = "double"
@@ -122,6 +131,7 @@ known-first-party = ["pytools", "pymbolic", "cgen"]
 known-local-folder = ["pyopencl"]
 lines-after-imports = 2
 combine-as-imports = true
+required-imports = ["from __future__ import annotations"]
 
 [tool.pytest.ini_options]
 markers = [
@@ -261,4 +271,23 @@ pythonPlatform = "All"
 root = "test"
 reportUnknownArgumentType = "hint"
 reportPrivateUsage = "none"
+reportAny = "none"
+reportUnknownVariableType = "none"
+reportMissingParameterType = "hint"
+reportUnknownMemberType = "hint"
+reportUnknownParameterType = "hint"
+reportUnusedImport = "hint"
+reportUnknownLambdaType = "hint"
+reportPrivateImportUsage = "none"
+reportOperatorIssue = "hint"
+reportPossiblyUnboundVariable = "none"
+reportMissingImports = "none"
+reportOptionalMemberAccess = "hint"
 
+[[tool.basedpyright.executionEnvironments]]
+root = "pyopencl/_monkeypatch.py"
+reportPrivateUsage = "none"
+
+[[tool.basedpyright.executionEnvironments]]
+root = "pyopencl/__init__.py"
+reportPrivateUsage = "none"

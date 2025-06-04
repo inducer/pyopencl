@@ -2,6 +2,8 @@
 
 # NOTE: for elwise_kernel_runner which adds keyword arguments
 # pylint:disable=unexpected-keyword-arg
+from __future__ import annotations
+
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -32,7 +34,7 @@ import builtins
 from dataclasses import dataclass
 from functools import reduce
 from numbers import Number
-from typing import Any, Optional
+from typing import Any
 from warnings import warn
 
 import numpy as np
@@ -2355,7 +2357,7 @@ class _ArangeInfo:
     start: int | None = None
     stop: int | None = None
     step: int | None = None
-    dtype: Optional["np.dtype"] = None
+    dtype: np.dtype | None = None
     allocator: Any | None = None
 
 

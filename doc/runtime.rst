@@ -49,3 +49,41 @@ Error Reporting
 
 .. class:: RuntimeError
 
+References
+----------
+
+.. class:: WaitList
+
+    A :class:`Sequence` of :class:`Event`\ s, or None.
+
+.. class:: NDArray
+
+    See :data:`numpy.typing.NDArray`.
+
+.. class:: DTypeLike
+
+    See :data:`numpy.typing.DTypeLike`.
+
+.. class:: SVMInnerT
+
+    A type variable for the object wrapped by an :class:`SVM`.
+
+.. class:: RetT
+
+    A generic type variable, used for a return type.
+
+.. class:: P
+
+    A :class:`~typing.ParamSpec`.
+
+.. currentmodule:: pyopencl.typing
+
+.. class:: DTypeT
+
+    A type variable for a :class:`numpy.dtype`.
+
+.. currentmodule:: pyopencl._cl
+
+.. class:: svm_mem_flags
+
+    See :class:`pyopencl.svm_mem_flags`.

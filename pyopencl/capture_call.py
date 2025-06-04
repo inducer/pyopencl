@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = "Copyright (C) 2013 Andreas Kloeckner"
 
 __license__ = """
@@ -21,6 +24,8 @@ THE SOFTWARE.
 """
 
 
+from typing import TYPE_CHECKING, TextIO, cast
+
 import numpy as np
 
 from pytools.py_codegen import Indentation, PythonCodeGenerator
@@ -28,9 +33,26 @@ from pytools.py_codegen import Indentation, PythonCodeGenerator
 import pyopencl as cl
 
 
-def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwargs):
+if TYPE_CHECKING:
+    from numpy.typing import DTypeLike
+
+    from pyopencl.typing import KernelArg, WaitList
+
+
+def capture_kernel_call(
+            kernel: cl.Kernel,
+            output_file: str | TextIO,
+            queue: cl.CommandQueue,
+            g_size: tuple[int, ...],
+            l_size: tuple[int, ...] | None,
+            *args: KernelArg,
+            wait_for: WaitList = None,  # pyright: ignore[reportUnusedParameter]
+            g_times_l: bool = False,
+            allow_empty_ndrange: bool = False,
+            global_offset: tuple[int, ...] | None = None,
+        ) -> None:
     try:
-        source = kernel._source
+        source = cast("str | None", kernel._source)  # pyright: ignore[reportAttributeAccessIssue]
     except AttributeError as err:
         raise RuntimeError("cannot capture call, kernel source not available") from err
 
@@ -55,7 +77,7 @@ def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwa
 
     # {{{ invocation
 
-    arg_data = []
+    arg_data: list[tuple[str, memoryview | bytearray]] = []
 
     cg("")
     cg("")
@@ -65,7 +87,7 @@ def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwa
         cg("queue = cl.CommandQueue(ctx)")
         cg("")
 
-        kernel_args = []
+        kernel_args: list[str] = []
 
         for i, arg in enumerate(args):
             if isinstance(arg, cl.Buffer):
@@ -101,22 +123,23 @@ def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwa
 
         cg("")
 
-        g_times_l = kwargs.get("g_times_l", False)
         if g_times_l:
+            assert l_size is not None
             dim = max(len(g_size), len(l_size))
             l_size = l_size + (1,) * (dim-len(l_size))
             g_size = g_size + (1,) * (dim-len(g_size))
             g_size = tuple(
                     gs*ls for gs, ls in zip(g_size, l_size, strict=True))
 
-        global_offset = kwargs.get("global_offset", None)
         if global_offset is not None:
             kernel_args.append("global_offset=%s" % repr(global_offset))
+        if allow_empty_ndrange:
+            kernel_args.append("allow_empty_ndrange=%s" % repr(allow_empty_ndrange))
 
         cg("prg = cl.Program(ctx, CODE).build()")
         cg("knl = prg.%s" % kernel.function_name)
         if hasattr(kernel, "_scalar_arg_dtypes"):
-            def strify_dtype(d):
+            def strify_dtype(d: DTypeLike):
                 if d is None:
                     return "None"
 
