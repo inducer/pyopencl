@@ -1,4 +1,5 @@
 """Scan primitive."""
+from __future__ import annotations
 
 
 __copyright__ = """
@@ -848,7 +849,7 @@ def _make_template(s: str):
     import re
     leftovers = set()
 
-    def replace_id(match: "re.Match") -> str:
+    def replace_id(match: re.Match) -> str:
         # avoid name clashes with user code by adding 'psc_' prefix to
         # identifiers.
 
@@ -878,7 +879,7 @@ class _GeneratedScanKernelInfo:
     wg_size: int
     k_group_size: int
 
-    def build(self, context: cl.Context, options: Any) -> "_BuiltScanKernelInfo":
+    def build(self, context: cl.Context, options: Any) -> _BuiltScanKernelInfo:
         program = cl.Program(context, self.scan_src).build(options)
         kernel = getattr(program, self.kernel_name)
         kernel.set_scalar_arg_dtypes(self.scalar_arg_dtypes)
@@ -904,7 +905,7 @@ class _GeneratedFinalUpdateKernelInfo:
 
     def build(self,
               context: cl.Context,
-              options: Any) -> "_BuiltFinalUpdateKernelInfo":
+              options: Any) -> _BuiltFinalUpdateKernelInfo:
         program = cl.Program(context, self.source).build(options)
         kernel = getattr(program, self.kernel_name)
         kernel.set_scalar_arg_dtypes(self.scalar_arg_dtypes)

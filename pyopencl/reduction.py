@@ -1,4 +1,6 @@
 """Computation of reductions on vectors."""
+from __future__ import annotations
+
 
 __copyright__ = "Copyright (C) 2010 Andreas Kloeckner"
 

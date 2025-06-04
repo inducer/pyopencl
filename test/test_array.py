@@ -83,7 +83,7 @@ def make_random_array(queue, dtype, size):
 
 # {{{ test_basic_complex
 
-def test_basic_complex(ctx_factory):
+def test_basic_complex(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -104,7 +104,7 @@ def test_basic_complex(ctx_factory):
 
 # {{{ test_mix_complex
 
-def test_mix_complex(ctx_factory):
+def test_mix_complex(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -183,7 +183,7 @@ def test_mix_complex(ctx_factory):
 
 # {{{ test_pow_neg1_vs_inv
 
-def test_pow_neg1_vs_inv(ctx_factory):
+def test_pow_neg1_vs_inv(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -209,7 +209,7 @@ def test_pow_neg1_vs_inv(ctx_factory):
 
 # {{{ test_vector_fill
 
-def test_vector_fill(ctx_factory):
+def test_vector_fill(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -225,7 +225,7 @@ def test_vector_fill(ctx_factory):
 
 # {{{ test_zeros_large_array
 
-def test_zeros_large_array(ctx_factory):
+def test_zeros_large_array(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
     dev = queue.device
@@ -249,7 +249,7 @@ def test_zeros_large_array(ctx_factory):
 
 # {{{ test_absrealimag
 
-def test_absrealimag(ctx_factory):
+def test_absrealimag(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -283,7 +283,7 @@ def test_absrealimag(ctx_factory):
 
 # {{{ test_custom_type_zeros
 
-def test_custom_type_zeros(ctx_factory):
+def test_custom_type_zeros(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -316,7 +316,7 @@ def test_custom_type_zeros(ctx_factory):
 
 # {{{ test_custom_type_fill
 
-def test_custom_type_fill(ctx_factory):
+def test_custom_type_fill(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -349,7 +349,7 @@ def test_custom_type_fill(ctx_factory):
 
 # {{{ test_custom_type_take_put
 
-def test_custom_type_take_put(ctx_factory):
+def test_custom_type_take_put(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -390,7 +390,7 @@ def test_custom_type_take_put(ctx_factory):
 # FIXME Implement floordiv
 # @pytest.mark.parametrize("op", [operator.truediv, operator.floordiv])
 @pytest.mark.parametrize("op", [operator.truediv])
-def test_div_type_matches_numpy(ctx_factory, dtype, op):
+def test_div_type_matches_numpy(ctx_factory: cl.CtxFactory, dtype, op):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -406,7 +406,7 @@ def test_div_type_matches_numpy(ctx_factory, dtype, op):
 
 # {{{ test_rmul_yields_right_type
 
-def test_rmul_yields_right_type(ctx_factory):
+def test_rmul_yields_right_type(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -424,7 +424,7 @@ def test_rmul_yields_right_type(ctx_factory):
 
 # {{{ test_pow_array
 
-def test_pow_array(ctx_factory):
+def test_pow_array(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -442,7 +442,7 @@ def test_pow_array(ctx_factory):
 
 # {{{ test_pow_number
 
-def test_pow_number(ctx_factory):
+def test_pow_number(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -457,7 +457,7 @@ def test_pow_number(ctx_factory):
 
 # {{{ test_multiply
 
-def test_multiply(ctx_factory):
+def test_multiply(ctx_factory: cl.CtxFactory):
     """Test the muliplication of an array with a scalar. """
 
     context = ctx_factory()
@@ -480,7 +480,7 @@ def test_multiply(ctx_factory):
 
 # {{{ test_multiply_array
 
-def test_multiply_array(ctx_factory):
+def test_multiply_array(ctx_factory: cl.CtxFactory):
     """Test the multiplication of two arrays."""
 
     context = ctx_factory()
@@ -501,7 +501,7 @@ def test_multiply_array(ctx_factory):
 
 # {{{ test_addition_array
 
-def test_addition_array(ctx_factory):
+def test_addition_array(ctx_factory: cl.CtxFactory):
     """Test the addition of two arrays."""
 
     context = ctx_factory()
@@ -518,7 +518,7 @@ def test_addition_array(ctx_factory):
 
 # {{{ test_addition_scalar
 
-def test_addition_scalar(ctx_factory):
+def test_addition_scalar(ctx_factory: cl.CtxFactory):
     """Test the addition of an array and a scalar."""
 
     context = ctx_factory()
@@ -543,7 +543,7 @@ def test_addition_scalar(ctx_factory):
             (np.int64, np.int32),
             (np.int64, np.uint32),
             ])
-def test_subtract_array(ctx_factory, dtype_a, dtype_b):
+def test_subtract_array(ctx_factory: cl.CtxFactory, dtype_a, dtype_b):
     """Test the subtraction of two arrays."""
     # test data
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).astype(dtype_a)
@@ -567,7 +567,7 @@ def test_subtract_array(ctx_factory, dtype_a, dtype_b):
 
 # {{{ test_subtract_scalar
 
-def test_subtract_scalar(ctx_factory):
+def test_subtract_scalar(ctx_factory: cl.CtxFactory):
     """Test the subtraction of an array and a scalar."""
 
     context = ctx_factory()
@@ -590,7 +590,7 @@ def test_subtract_scalar(ctx_factory):
 
 # {{{ test_divide_scalar
 
-def test_divide_scalar(ctx_factory):
+def test_divide_scalar(ctx_factory: cl.CtxFactory):
     """Test the division of an array and a scalar."""
 
     context = ctx_factory()
@@ -628,7 +628,7 @@ def test_divide_scalar(ctx_factory):
 
 # {{{ test_divide_array
 
-def test_divide_array(ctx_factory):
+def test_divide_array(ctx_factory: cl.CtxFactory):
     """Test the division of an array and a scalar. """
 
     context = ctx_factory()
@@ -663,7 +663,7 @@ def test_divide_array(ctx_factory):
 
 # {{{ test_divide_inplace_scalar
 
-def test_divide_inplace_scalar(ctx_factory):
+def test_divide_inplace_scalar(ctx_factory: cl.CtxFactory):
     """Test inplace division of arrays and a scalar."""
 
     context = ctx_factory()
@@ -702,7 +702,7 @@ def test_divide_inplace_scalar(ctx_factory):
 
 # {{{ test_divide_inplace_array
 
-def test_divide_inplace_array(ctx_factory):
+def test_divide_inplace_array(ctx_factory: cl.CtxFactory):
     """Test inplace division of arrays."""
 
     context = ctx_factory()
@@ -744,7 +744,7 @@ def test_divide_inplace_array(ctx_factory):
 
 # {{{ test_bitwise
 
-def test_bitwise(ctx_factory):
+def test_bitwise(ctx_factory: cl.CtxFactory):
     if _PYPY:
         pytest.xfail("numpypy: missing bitwise ops")
 
@@ -844,7 +844,8 @@ def test_bitwise(ctx_factory):
 @pytest.mark.parametrize("rng_class",
         [PhiloxGenerator, ThreefryGenerator])
 @pytest.mark.parametrize("ary_size", [300, 301, 302, 303, 10007, 1000000])
-def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False):
+def test_random_float_in_range(ctx_factory: cl.CtxFactory,
+        rng_class, ary_size, plot_hist=False):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -894,7 +895,8 @@ def test_random_float_in_range(ctx_factory, rng_class, ary_size, plot_hist=False
 @pytest.mark.parametrize("dtype", [np.int32, np.int64])
 @pytest.mark.parametrize("rng_class",
         [PhiloxGenerator, ThreefryGenerator])
-def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
+def test_random_int_in_range(ctx_factory: cl.CtxFactory,
+        rng_class, dtype, plot_hist=False):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -925,7 +927,7 @@ def test_random_int_in_range(ctx_factory, rng_class, dtype, plot_hist=False):
 
 # {{{ test_numpy_integer_shape
 
-def test_numpy_integer_shape(ctx_factory):
+def test_numpy_integer_shape(ctx_factory: cl.CtxFactory):
     try:
         list(np.int32(17))
     except Exception:
@@ -944,7 +946,7 @@ def test_numpy_integer_shape(ctx_factory):
 
 # {{{ test_allocation_with_various_shape_scalar_types
 
-def test_allocation_with_various_shape_scalar_types(ctx_factory):
+def test_allocation_with_various_shape_scalar_types(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -971,7 +973,7 @@ def test_allocation_with_various_shape_scalar_types(ctx_factory):
 
 # {{{ test_len
 
-def test_len(ctx_factory):
+def test_len(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -984,7 +986,7 @@ def test_len(ctx_factory):
 
 # {{{ test_stride_preservation
 
-def test_stride_preservation(ctx_factory):
+def test_stride_preservation(ctx_factory: cl.CtxFactory):
     if _PYPY:
         pytest.xfail("numpypy: no array creation from __array_interface__")
 
@@ -1005,7 +1007,7 @@ def test_stride_preservation(ctx_factory):
 
 # {{{ test_nan_arithmetic
 
-def test_nan_arithmetic(ctx_factory):
+def test_nan_arithmetic(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
     rng = np.random.default_rng(seed=42)
@@ -1035,7 +1037,7 @@ def test_nan_arithmetic(ctx_factory):
 
 # {{{ test_mem_pool_with_arrays
 
-def test_mem_pool_with_arrays(ctx_factory):
+def test_mem_pool_with_arrays(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
     mem_pool = cl_tools.MemoryPool(cl_tools.ImmediateAllocator(queue))
@@ -1051,7 +1053,7 @@ def test_mem_pool_with_arrays(ctx_factory):
 
 # {{{ test_view
 
-def test_view(ctx_factory):
+def test_view(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1075,7 +1077,7 @@ def test_view(ctx_factory):
 
 # {{{ test_diff
 
-def test_diff(ctx_factory):
+def test_diff(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1094,7 +1096,7 @@ def test_diff(ctx_factory):
 
 # {{{ test_copy
 
-def test_copy(ctx_factory):
+def test_copy(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue1 = cl.CommandQueue(context)
     queue2 = cl.CommandQueue(context)
@@ -1128,7 +1130,7 @@ def test_copy(ctx_factory):
 
 # {{{ test_slice
 
-def test_slice(ctx_factory):
+def test_slice(ctx_factory: cl.CtxFactory):
     if _PYPY:
         pytest.xfail("numpypy: spurious as_strided failure")
 
@@ -1186,7 +1188,7 @@ def test_slice(ctx_factory):
 
 # {{{ test_concatenate
 
-def test_concatenate(ctx_factory):
+def test_concatenate(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1213,7 +1215,7 @@ def test_concatenate(ctx_factory):
 
 # {{{ test_comparisons
 
-def test_comparisons(ctx_factory):
+def test_comparisons(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1253,7 +1255,7 @@ def test_comparisons(ctx_factory):
 
 # {{{ test_any_all
 
-def test_any_all(ctx_factory):
+def test_any_all(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1280,7 +1282,7 @@ def test_any_all(ctx_factory):
 
 # {{{ test_map_to_host
 
-def test_map_to_host(ctx_factory):
+def test_map_to_host(ctx_factory: cl.CtxFactory):
     if _PYPY:
         pytest.skip("numpypy: no array creation from __array_interface__")
 
@@ -1314,7 +1316,7 @@ def test_map_to_host(ctx_factory):
 
 # {{{ test_view_and_strides
 
-def test_view_and_strides(ctx_factory):
+def test_view_and_strides(ctx_factory: cl.CtxFactory):
     if _PYPY:
         pytest.xfail("numpypy: no array creation from __array_interface__")
 
@@ -1338,7 +1340,7 @@ def test_view_and_strides(ctx_factory):
 
 # {{{ test_meshmode_view
 
-def test_meshmode_view(ctx_factory):
+def test_meshmode_view(ctx_factory: cl.CtxFactory):
     if _PYPY:
         # https://bitbucket.org/pypy/numpy/issue/28/indexerror-on-ellipsis-slice
         pytest.xfail("numpypy bug #28")
@@ -1364,7 +1366,7 @@ def test_meshmode_view(ctx_factory):
 
 # {{{ test_event_management
 
-def test_event_management(ctx_factory):
+def test_event_management(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1407,7 +1409,7 @@ def test_event_management(ctx_factory):
 
 # {{{ test_reshape
 
-def test_reshape(ctx_factory):
+def test_reshape(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1433,7 +1435,7 @@ def test_reshape(ctx_factory):
 
 # {{{ test_skip_slicing
 
-def test_skip_slicing(ctx_factory):
+def test_skip_slicing(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1451,7 +1453,7 @@ def test_skip_slicing(ctx_factory):
 
 # {{{ test_transpose
 
-def test_transpose(ctx_factory):
+def test_transpose(ctx_factory: cl.CtxFactory):
     if _PYPY:
         pytest.xfail("numpypy: no array creation from __array_interface__")
 
@@ -1472,7 +1474,7 @@ def test_transpose(ctx_factory):
 
 # {{{ test_newaxis
 
-def test_newaxis(ctx_factory):
+def test_newaxis(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1494,7 +1496,7 @@ def test_newaxis(ctx_factory):
 
 # {{{ test_squeeze
 
-def test_squeeze(ctx_factory):
+def test_squeeze(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
     rng = np.random.default_rng(seed=42)
@@ -1534,7 +1536,7 @@ def test_squeeze(ctx_factory):
 
 # {{{ test_fancy_fill
 
-def test_fancy_fill(ctx_factory):
+def test_fancy_fill(ctx_factory: cl.CtxFactory):
     if _PYPY:
         pytest.xfail("numpypy: multi value setting is not supported")
     context = ctx_factory()
@@ -1557,7 +1559,7 @@ def test_fancy_fill(ctx_factory):
 
 # {{{ test_fancy_indexing
 
-def test_fancy_indexing(ctx_factory):
+def test_fancy_indexing(ctx_factory: cl.CtxFactory):
     if _PYPY:
         pytest.xfail("numpypy: multi value setting is not supported")
     context = ctx_factory()
@@ -1589,7 +1591,7 @@ def test_fancy_indexing(ctx_factory):
 
 # {{{ test_multi_put
 
-def test_multi_put(ctx_factory):
+def test_multi_put(ctx_factory: cl.CtxFactory):
     if _PYPY:
         pytest.xfail("numpypy: multi value setting is not supported")
 
@@ -1619,7 +1621,7 @@ def test_multi_put(ctx_factory):
 
 # {{{ test_get_async
 
-def test_get_async(ctx_factory):
+def test_get_async(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1657,7 +1659,7 @@ def test_get_async(ctx_factory):
 
 # {{{ test_outoforderqueue_get
 
-def test_outoforderqueue_get(ctx_factory):
+def test_outoforderqueue_get(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     try:
         queue = cl.CommandQueue(context,
@@ -1678,7 +1680,7 @@ def test_outoforderqueue_get(ctx_factory):
 
 # {{{ test_outoforderqueue_copy
 
-def test_outoforderqueue_copy(ctx_factory):
+def test_outoforderqueue_copy(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     try:
         queue = cl.CommandQueue(context,
@@ -1703,7 +1705,7 @@ def test_outoforderqueue_copy(ctx_factory):
 
 # {{{ test_outoforderqueue_indexing
 
-def test_outoforderqueue_indexing(ctx_factory):
+def test_outoforderqueue_indexing(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     try:
         queue = cl.CommandQueue(context,
@@ -1733,7 +1735,7 @@ def test_outoforderqueue_indexing(ctx_factory):
 
 # {{{ test_outoforderqueue_reductions
 
-def test_outoforderqueue_reductions(ctx_factory):
+def test_outoforderqueue_reductions(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     try:
         queue = cl.CommandQueue(context,
@@ -1756,7 +1758,7 @@ def test_outoforderqueue_reductions(ctx_factory):
 
 # {{{ test_negative_dim_rejection
 
-def test_negative_dim_rejection(ctx_factory):
+def test_negative_dim_rejection(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1780,7 +1782,7 @@ def test_negative_dim_rejection(ctx_factory):
 # {{{ test_zero_size_array
 
 @pytest.mark.parametrize("empty_shape", [0, (), (3, 0, 2), (0, 5), (5, 0)])
-def test_zero_size_array(ctx_factory, empty_shape):
+def test_zero_size_array(ctx_factory: cl.CtxFactory, empty_shape):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1810,7 +1812,7 @@ def test_zero_size_array(ctx_factory, empty_shape):
 
 # {{{ test_str_without_queue
 
-def test_str_without_queue(ctx_factory):
+def test_str_without_queue(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1825,7 +1827,7 @@ def test_str_without_queue(ctx_factory):
 
 @pytest.mark.parametrize("order", ("F", "C"))
 @pytest.mark.parametrize("input_dims", (1, 2, 3))
-def test_stack(ctx_factory, input_dims, order):
+def test_stack(ctx_factory: cl.CtxFactory, input_dims, order):
     # Replicates pytato/test/test_codegen.py::test_stack
     import pyopencl.array as cla
     cl_ctx = ctx_factory()
@@ -1851,7 +1853,7 @@ def test_stack(ctx_factory, input_dims, order):
 
 # {{{ test_assign_different_strides
 
-def test_assign_different_strides(ctx_factory):
+def test_assign_different_strides(ctx_factory: cl.CtxFactory):
     cl_ctx = ctx_factory()
     queue = cl.CommandQueue(cl_ctx)
 
@@ -1900,7 +1902,8 @@ def test_branch_operations_on_pure_scalars():
     -np.inf,
     None
 ])
-def test_branch_operations_on_nans(ctx_factory, op, special_a, special_b):
+def test_branch_operations_on_nans(ctx_factory: cl.CtxFactory,
+        op, special_a, special_b):
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
 
@@ -1930,7 +1933,7 @@ def test_branch_operations_on_nans(ctx_factory, op, special_a, special_b):
 
 # {{{ test_slice_copy
 
-def test_slice_copy(ctx_factory):
+def test_slice_copy(ctx_factory: cl.CtxFactory):
     cl_ctx = ctx_factory()
     queue = cl.CommandQueue(cl_ctx)
 
@@ -1946,7 +1949,7 @@ def test_slice_copy(ctx_factory):
 # {{{{ test_ravel
 
 @pytest.mark.parametrize("order", ("C", "F"))
-def test_ravel(ctx_factory, order):
+def test_ravel(ctx_factory: cl.CtxFactory, order):
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
 
@@ -1970,7 +1973,7 @@ def test_ravel(ctx_factory, order):
 
 # {{{ test_arithmetic_on_non_scalars
 
-def test_arithmetic_on_non_scalars(ctx_factory):
+def test_arithmetic_on_non_scalars(ctx_factory: cl.CtxFactory):
     pytest.importorskip("dataclasses")
 
     from dataclasses import dataclass
@@ -1993,7 +1996,7 @@ def test_arithmetic_on_non_scalars(ctx_factory):
 # {{{ test_arithmetic_with_device_scalars
 
 @pytest.mark.parametrize("which", ("add", "sub", "mul", "truediv"))
-def test_arithmetic_with_device_scalars(ctx_factory, which):
+def test_arithmetic_with_device_scalars(ctx_factory: cl.CtxFactory, which):
     import operator
 
     ctx = ctx_factory()
@@ -2021,7 +2024,7 @@ def test_arithmetic_with_device_scalars(ctx_factory, which):
 
 @pytest.mark.parametrize("then_type", ["array", "host_scalar", "device_scalar"])
 @pytest.mark.parametrize("else_type", ["array", "host_scalar", "device_scalar"])
-def test_if_positive_with_scalars(ctx_factory, then_type, else_type):
+def test_if_positive_with_scalars(ctx_factory: cl.CtxFactory, then_type, else_type):
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
 
@@ -2058,7 +2061,7 @@ def test_if_positive_with_scalars(ctx_factory, then_type, else_type):
 
 # {{{ test_maximum_minimum_with_scalars
 
-def test_maximum_minimum_with_scalars(ctx_factory):
+def test_maximum_minimum_with_scalars(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
 
@@ -2111,7 +2114,8 @@ def test_maximum_minimum_with_scalars(ctx_factory):
     (cl_array.max, True),
     (cl_array.min, True),
     ])
-def test_empty_reductions_vs_numpy(ctx_factory, reduction, supports_initial):
+def test_empty_reductions_vs_numpy(ctx_factory: cl.CtxFactory,
+        reduction, supports_initial):
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
 
@@ -2177,7 +2181,8 @@ def test_empty_reductions_vs_numpy(ctx_factory, reduction, supports_initial):
     cl_array.max,
     cl_array.min,
     ])
-def test_reduction_nan_handling(ctx_factory, reduction, input_case, with_initial):
+def test_reduction_nan_handling(ctx_factory: cl.CtxFactory,
+        reduction, input_case, with_initial):
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
 
@@ -2207,7 +2212,7 @@ def test_reduction_nan_handling(ctx_factory, reduction, input_case, with_initial
 
 # {{{ test_reductions_dtype
 
-def test_dtype_conversions(ctx_factory):
+def test_dtype_conversions(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -2229,7 +2234,7 @@ def test_dtype_conversions(ctx_factory):
 # {{{ test_svm_mem_pool_with_arrays
 
 @pytest.mark.parametrize("use_mempool", [False, True])
-def test_arrays_with_svm_allocators(ctx_factory, use_mempool):
+def test_arrays_with_svm_allocators(ctx_factory: cl.CtxFactory, use_mempool):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
     queue2 = cl.CommandQueue(context)
@@ -2284,7 +2289,7 @@ def test_arrays_with_svm_allocators(ctx_factory, use_mempool):
 # }}}
 
 
-def test_logical_and_or(ctx_factory):
+def test_logical_and_or(ctx_factory: cl.CtxFactory):
     # NOTE: Copied over from pycuda/test/test_gpuarray.py
     rng = np.random.default_rng(seed=0)
     ctx = ctx_factory()
@@ -2318,7 +2323,7 @@ def test_logical_and_or(ctx_factory):
             getattr(np, op)(x_np, 0.0))
 
 
-def test_logical_not(ctx_factory):
+def test_logical_not(ctx_factory: cl.CtxFactory):
     # NOTE: Copied over from pycuda/test/test_gpuarray.py
     ctx = ctx_factory()
     cq = cl.CommandQueue(ctx)
@@ -2342,7 +2347,7 @@ def test_logical_not(ctx_factory):
 
 @pytest.mark.skipif(sys.platform == "win32",
                     reason="XDG_CACHE_HOME is not used on Windows")
-def test_xdg_cache_home(ctx_factory):
+def test_xdg_cache_home(ctx_factory: cl.CtxFactory):
     import os
     import shutil
     from os.path import join
@@ -2391,7 +2396,7 @@ def test_xdg_cache_home(ctx_factory):
 # }}}
 
 
-def test_numpy_type_promotion_with_cl_arrays(ctx_factory):
+def test_numpy_type_promotion_with_cl_arrays(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 

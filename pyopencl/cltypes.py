@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = "Copyright (C) 2016 Jonathan Mackenzie"
 
 __license__ = """
@@ -19,6 +22,7 @@ THE SOFTWARE.
 """
 
 import warnings
+from typing import Any
 
 import numpy as np
 
@@ -134,5 +138,65 @@ def _create_vector_types():
 vec_types, vec_type_to_scalar_and_count = _create_vector_types()
 
 # }}}
+
+char2: np.dtype[Any]
+char3: np.dtype[Any]
+char4: np.dtype[Any]
+char8: np.dtype[Any]
+char16: np.dtype[Any]
+
+uchar2: np.dtype[Any]
+uchar3: np.dtype[Any]
+uchar4: np.dtype[Any]
+uchar8: np.dtype[Any]
+uchar16: np.dtype[Any]
+
+short2: np.dtype[Any]
+short3: np.dtype[Any]
+short4: np.dtype[Any]
+short8: np.dtype[Any]
+short16: np.dtype[Any]
+
+ushort2: np.dtype[Any]
+ushort3: np.dtype[Any]
+ushort4: np.dtype[Any]
+ushort8: np.dtype[Any]
+ushort16: np.dtype[Any]
+
+int2: np.dtype[Any]
+int3: np.dtype[Any]
+int4: np.dtype[Any]
+int8: np.dtype[Any]
+int16: np.dtype[Any]
+
+uint2: np.dtype[Any]
+uint3: np.dtype[Any]
+uint4: np.dtype[Any]
+uint8: np.dtype[Any]
+uint16: np.dtype[Any]
+
+long2: np.dtype[Any]
+long3: np.dtype[Any]
+long4: np.dtype[Any]
+long8: np.dtype[Any]
+long16: np.dtype[Any]
+
+ulong2: np.dtype[Any]
+ulong3: np.dtype[Any]
+ulong4: np.dtype[Any]
+ulong8: np.dtype[Any]
+ulong16: np.dtype[Any]
+
+float2: np.dtype[Any]
+float3: np.dtype[Any]
+float4: np.dtype[Any]
+float8: np.dtype[Any]
+float16: np.dtype[Any]
+
+double2: np.dtype[Any]
+double3: np.dtype[Any]
+double4: np.dtype[Any]
+double8: np.dtype[Any]
+double16: np.dtype[Any]
 
 # vim: foldmethod=marker
