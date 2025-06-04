@@ -89,10 +89,11 @@ def _create_vector_types():
             except NotImplementedError:
                 try:
                     dtype = np.dtype([((n, title), base_type)
-                                      for (n, title) in zip(names, titles)])
+                                      for (n, title)
+                                      in zip(names, titles, strict=True)])
                 except TypeError:
                     dtype = np.dtype([(n, base_type) for (n, title)
-                                      in zip(names, titles)])
+                                      in zip(names, titles, strict=True)])
 
             get_or_register_dtype(name, dtype)
 

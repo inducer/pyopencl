@@ -28,7 +28,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 import enum
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 
@@ -50,7 +50,7 @@ from pyopencl.tools import (
 
 def get_elwise_program(
         context: cl.Context,
-        arguments: List[DtypedArgument],
+        arguments: list[DtypedArgument],
         operation: str, *,
         name: str = "elwise_kernel",
         options: Any = None,
@@ -118,13 +118,13 @@ def get_elwise_program(
 
 def get_elwise_kernel_and_types(
         context: cl.Context,
-        arguments: Union[str, List[DtypedArgument]],
+        arguments: str | list[DtypedArgument],
         operation: str, *,
         name: str = "elwise_kernel",
         options: Any = None,
         preamble: str = "",
         use_range: bool = False,
-        **kwargs: Any) -> Tuple[cl.Kernel, List[DtypedArgument]]:
+        **kwargs: Any) -> tuple[cl.Kernel, list[DtypedArgument]]:
 
     from pyopencl.tools import get_arg_offset_adjuster_code, parse_arg_list
     parsed_args = parse_arg_list(arguments, with_offset=True)
@@ -181,7 +181,7 @@ def get_elwise_kernel_and_types(
 
 def get_elwise_kernel(
         context: cl.Context,
-        arguments: Union[str, List[DtypedArgument]],
+        arguments: str | list[DtypedArgument],
         operation: str, *,
         name: str = "elwise_kernel",
         options: Any = None, **kwargs: Any) -> cl.Kernel:
@@ -228,7 +228,7 @@ class ElementwiseKernel:
     def __init__(
             self,
             context: cl.Context,
-            arguments: Union[str, List[DtypedArgument]],
+            arguments: str | list[DtypedArgument],
             operation: str,
             name: str = "elwise_kernel",
             options: Any = None, **kwargs: Any) -> None:
@@ -294,7 +294,9 @@ class ElementwiseKernel:
 
         repr_vec = None
         invocation_args = []
-        for arg, arg_descr in zip(args, arg_descrs):
+
+        # non-strict because length arg gets appended below
+        for arg, arg_descr in zip(args, arg_descrs, strict=False):
             if isinstance(arg_descr, VectorArg):
                 if repr_vec is None:
                     repr_vec = arg
@@ -358,11 +360,11 @@ class ElementwiseKernel:
 class ElementwiseTemplate(KernelTemplateBase):
     def __init__(
             self,
-            arguments: Union[str, List[DtypedArgument]],
+            arguments: str | list[DtypedArgument],
             operation: str,
             name: str = "elwise",
             preamble: str = "",
-            template_processor: Optional[str] = None) -> None:
+            template_processor: str | None = None) -> None:
         super().__init__(template_processor=template_processor)
         self.arguments = arguments
         self.operation = operation
@@ -411,7 +413,7 @@ def get_argument_kind(v: Any) -> ArgumentKind:
         return ArgumentKind.SCALAR
 
 
-def get_decl_and_access_for_kind(name: str, kind: ArgumentKind) -> Tuple[str, str]:
+def get_decl_and_access_for_kind(name: str, kind: ArgumentKind) -> tuple[str, str]:
     if kind == ArgumentKind.ARRAY:
         return f"*{name}", f"{name}[i]"
     elif kind == ArgumentKind.SCALAR:

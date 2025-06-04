@@ -22,7 +22,7 @@ THE SOFTWARE.
 
 import re
 from sys import intern
-from typing import ClassVar, Dict, List, Tuple
+from typing import ClassVar
 from warnings import warn
 
 import numpy as np
@@ -134,7 +134,7 @@ def simplify_typed_literal(expr):
 class FortranExpressionParser(ExpressionParserBase):
     # FIXME double/single prec literals
 
-    lex_table: ClassVar[List[Tuple[str, str]]] = [
+    lex_table: ClassVar[list[tuple[str, str]]] = [
         (_less_than, pytools.lex.RE(r"\.lt\.", re.I)),
         (_greater_than, pytools.lex.RE(r"\.gt\.", re.I)),
         (_less_equal, pytools.lex.RE(r"\.le\.", re.I)),
@@ -211,7 +211,7 @@ class FortranExpressionParser(ExpressionParserBase):
             return ExpressionParserBase.parse_terminal(
                     self, pstate)
 
-    COMP_MAP: ClassVar[Dict[str, str]] = {
+    COMP_MAP: ClassVar[dict[str, str]] = {
             _less_than: "<",
             _less_equal: "<=",
             _greater_than: ">",
@@ -1079,7 +1079,7 @@ class F2CLTranslator(FTreeWalkerBase):
     def map_Equivalence(self, node):
         raise NotImplementedError("equivalence")
 
-    TYPE_MAP: ClassVar[Dict[Tuple[str, str], np.generic]] = {
+    TYPE_MAP: ClassVar[dict[tuple[str, str], np.generic]] = {
             ("real", "4"): np.float32,
             ("real", "8"): np.float64,
             ("real", "16"): np.float128,

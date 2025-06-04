@@ -107,7 +107,7 @@ def capture_kernel_call(kernel, output_file, queue, g_size, l_size, *args, **kwa
             l_size = l_size + (1,) * (dim-len(l_size))
             g_size = g_size + (1,) * (dim-len(g_size))
             g_size = tuple(
-                    gs*ls for gs, ls in zip(g_size, l_size))
+                    gs*ls for gs, ls in zip(g_size, l_size, strict=True))
 
         global_offset = kwargs.get("global_offset", None)
         if global_offset is not None:

@@ -29,7 +29,7 @@ None of the original source code remains.
 """
 
 from dataclasses import dataclass
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 
@@ -133,7 +133,7 @@ class _ReductionInfo:
 
     program: cl.Program
     kernel: cl.Kernel
-    arg_types: List[DtypedArgument]
+    arg_types: list[DtypedArgument]
 
 
 def _get_reduction_source(
@@ -143,12 +143,12 @@ def _get_reduction_source(
         neutral: str,
         reduce_expr: str,
         map_expr: str,
-        parsed_args: List[DtypedArgument],
+        parsed_args: list[DtypedArgument],
         name: str = "reduce_kernel",
         preamble: str = "",
         arg_prep: str = "",
-        device: Optional[cl.Device] = None,
-        max_group_size: Optional[int] = None) -> Tuple[str, int]:
+        device: cl.Device | None = None,
+        max_group_size: int | None = None) -> tuple[str, int]:
 
     if device is not None:
         devices = [device]
@@ -209,13 +209,13 @@ def get_reduction_kernel(
         dtype_out: Any,
         neutral: str,
         reduce_expr: str,
-        map_expr: Optional[str] = None,
-        arguments: Optional[List[DtypedArgument]] = None,
+        map_expr: str | None = None,
+        arguments: list[DtypedArgument] | None = None,
         name: str = "reduce_kernel",
         preamble: str = "",
-        device: Optional[cl.Device] = None,
+        device: cl.Device | None = None,
         options: Any = None,
-        max_group_size: Optional[int] = None) -> _ReductionInfo:
+        max_group_size: int | None = None) -> _ReductionInfo:
     if stage not in (1, 2):
         raise ValueError(f"unknown stage index: '{stage}'")
 
@@ -308,8 +308,8 @@ class ReductionKernel:
             dtype_out: Any,
             neutral: str,
             reduce_expr: str,
-            map_expr: Optional[str] = None,
-            arguments: Optional[Union[str, List[DtypedArgument]]] = None,
+            map_expr: str | None = None,
+            arguments: str | list[DtypedArgument] | None = None,
             name: str = "reduce_kernel",
             options: Any = None,
             preamble: str = "") -> None:
@@ -418,7 +418,7 @@ class ReductionKernel:
             array_empty = empty
 
             from pyopencl.tools import VectorArg
-            for arg, arg_tp in zip(args, stage_inf.arg_types):
+            for arg, arg_tp in zip(args, stage_inf.arg_types, strict=True):
                 if isinstance(arg_tp, VectorArg):
                     array_empty = arg.__class__
                     if not arg.flags.forc:
@@ -544,12 +544,12 @@ class ReductionKernel:
 class ReductionTemplate(KernelTemplateBase):
     def __init__(
             self,
-            arguments: Union[str, List[DtypedArgument]],
+            arguments: str | list[DtypedArgument],
             neutral: str,
             reduce_expr: str,
-            map_expr: Optional[str] = None,
-            is_segment_start_expr: Optional[str] = None,
-            input_fetch_exprs: Optional[List[Tuple[str, str, int]]] = None,
+            map_expr: str | None = None,
+            is_segment_start_expr: str | None = None,
+            input_fetch_exprs: list[tuple[str, str, int]] | None = None,
             name_prefix: str = "reduce",
             preamble: str = "",
             template_processor: Any = None) -> None:
