@@ -1203,7 +1203,7 @@ void pyopencl_expose_constants(py::module_ &m)
             strncat(self->name, name.c_str(), CL_NAME_VERSION_MAX_NAME_SIZE-1);
           },
           py::arg("version")=0,
-          py::arg("name")=0
+          py::arg("name")=""
           )
 
       .def_prop_rw("version",

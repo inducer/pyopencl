@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = """
 Copyright (c) 2011, Eric Bainville
 Copyright (c) 2015, Ilya Efimoff

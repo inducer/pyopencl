@@ -75,3 +75,5 @@ memray-*.html
 
 .pylintrc.yml
 .run-pylint.py
+
+pyopencl/_cl_gen.pyi

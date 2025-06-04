@@ -1,4 +1,5 @@
 """Algorithms built on scans."""
+from __future__ import annotations
 
 
 __copyright__ = """
@@ -30,6 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 import numpy as np
 from mako.template import Template
@@ -38,9 +40,12 @@ from pytools import memoize, memoize_method
 
 import pyopencl as cl
 import pyopencl.array
-from pyopencl.elementwise import ElementwiseKernel
 from pyopencl.scan import GenericScanKernel, ScanTemplate
 from pyopencl.tools import dtype_to_ctype, get_arg_offset_adjuster_code
+
+
+if TYPE_CHECKING:
+    from pyopencl.elementwise import ElementwiseKernel
 
 
 # {{{ "extra args" handling utility

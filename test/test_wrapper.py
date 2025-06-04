@@ -51,7 +51,7 @@ def _xfail_if_pocl_gpu(device, what):
 
 # {{{ test_get_info
 
-def test_get_info(ctx_factory):
+def test_get_info(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     device, = ctx.devices
     platform = device.platform
@@ -237,7 +237,7 @@ def test_get_info(ctx_factory):
 
 # {{{ test_int_ptr
 
-def test_int_ptr(ctx_factory):
+def test_int_ptr(ctx_factory: cl.CtxFactory):
     def do_test(obj):
         new_obj = type(obj).from_int_ptr(obj.int_ptr)
         assert obj == new_obj
@@ -290,7 +290,7 @@ def test_int_ptr(ctx_factory):
 
 # {{{ test_invalid_kernel_names_cause_failures
 
-def test_invalid_kernel_names_cause_failures(ctx_factory):
+def test_invalid_kernel_names_cause_failures(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     device = ctx.devices[0]
     prg = cl.Program(ctx, """
@@ -348,7 +348,7 @@ def test_device_topology_amd_constructor():
 
 # {{{ test_nonempty_supported_image_formats
 
-def test_nonempty_supported_image_formats(ctx_factory):
+def test_nonempty_supported_image_formats(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
 
     device = context.devices[0]
@@ -365,7 +365,7 @@ def test_nonempty_supported_image_formats(ctx_factory):
 
 # {{{ test_that_python_args_fail
 
-def test_that_python_args_fail(ctx_factory):
+def test_that_python_args_fail(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
 
     prg = cl.Program(context, """
@@ -404,7 +404,7 @@ def test_that_python_args_fail(ctx_factory):
 
 # {{{ test_image_2d
 
-def test_image_2d(ctx_factory):
+def test_image_2d(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
 
     device, = context.devices
@@ -481,7 +481,7 @@ def test_image_2d(ctx_factory):
 
 # {{{ test_image_3d
 
-def test_image_3d(ctx_factory):
+def test_image_3d(ctx_factory: cl.CtxFactory):
     # test for image_from_array for 3d image of float2
     context = ctx_factory()
 
@@ -563,7 +563,7 @@ def test_image_3d(ctx_factory):
 
 # {{{ test_copy_buffer
 
-def test_copy_buffer(ctx_factory):
+def test_copy_buffer(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
 
     queue = cl.CommandQueue(context)
@@ -586,7 +586,7 @@ def test_copy_buffer(ctx_factory):
 
 # {{{ test_mempool_*
 
-def test_mempool(ctx_factory):
+def test_mempool(ctx_factory: cl.CtxFactory):
     from pyopencl.tools import ImmediateAllocator, MemoryPool
 
     context = ctx_factory()
@@ -606,7 +606,7 @@ def test_mempool(ctx_factory):
     pool.stop_holding()
 
 
-def test_mempool_2(ctx_factory):
+def test_mempool_2(ctx_factory: cl.CtxFactory):
     from random import randrange
 
     from pyopencl.tools import ImmediateAllocator, MemoryPool
@@ -644,7 +644,7 @@ def test_mempool_32bit_issues():
 # {{{ test_allocator
 
 @pytest.mark.parametrize("allocator_cls", [ImmediateAllocator, DeferredAllocator])
-def test_allocator(ctx_factory, allocator_cls):
+def test_allocator(ctx_factory: cl.CtxFactory, allocator_cls):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -664,7 +664,7 @@ def test_allocator(ctx_factory, allocator_cls):
 
 # {{{ test_vector_args
 
-def test_vector_args(ctx_factory):
+def test_vector_args(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -688,7 +688,7 @@ def test_vector_args(ctx_factory):
 
 
 # {{{ test_header_dep_handling
-def test_header_dep_handling(ctx_factory):
+def test_header_dep_handling(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
 
     from os.path import dirname, exists, join
@@ -710,7 +710,7 @@ def test_header_dep_handling(ctx_factory):
 
 # {{{ test_context_dep_memoize
 
-def test_context_dep_memoize(ctx_factory):
+def test_context_dep_memoize(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
 
     from pyopencl.tools import context_dependent_memoize
@@ -731,7 +731,7 @@ def test_context_dep_memoize(ctx_factory):
 
 # {{{ test_can_build_and_run_binary
 
-def test_can_build_and_run_binary(ctx_factory):
+def test_can_build_and_run_binary(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -759,7 +759,7 @@ def test_can_build_and_run_binary(ctx_factory):
 
 # {{{ test_enqueue_barrier_marker
 
-def test_enqueue_barrier_marker(ctx_factory):
+def test_enqueue_barrier_marker(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     # Still relevant on PoCL 1.0RC1.
     _xfail_if_pocl(
@@ -781,7 +781,7 @@ def test_enqueue_barrier_marker(ctx_factory):
 
 # {{{ test_wait_for_events
 
-def test_wait_for_events(ctx_factory):
+def test_wait_for_events(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
     evt1 = cl.enqueue_marker(queue)
@@ -809,7 +809,7 @@ def test_unload_compiler(platform):
 
 # {{{ test_platform_get_devices
 
-def test_platform_get_devices(ctx_factory):
+def test_platform_get_devices(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     platform = ctx.devices[0].platform
 
@@ -839,7 +839,7 @@ def test_platform_get_devices(ctx_factory):
 
 # {{{ test_user_event
 
-def test_user_event(ctx_factory):
+def test_user_event(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     if (ctx._get_cl_version() < (1, 1)
             and cl.get_cl_header_version() < (1, 1)):
@@ -889,7 +889,7 @@ def test_user_event(ctx_factory):
 
 # {{{ test_buffer_get_host_array
 
-def test_buffer_get_host_array(ctx_factory):
+def test_buffer_get_host_array(ctx_factory: cl.CtxFactory):
     if cl._PYPY:
         # FIXME
         pytest.xfail("Buffer.get_host_array not yet working on pypy")
@@ -928,7 +928,7 @@ def test_buffer_get_host_array(ctx_factory):
 
 # {{{ test_program_valued_get_info
 
-def test_program_valued_get_info(ctx_factory):
+def test_program_valued_get_info(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
 
     prg = cl.Program(ctx, """
@@ -949,7 +949,7 @@ def test_program_valued_get_info(ctx_factory):
 
 # {{{ test_event_set_callback
 
-def test_event_set_callback(ctx_factory):
+def test_event_set_callback(ctx_factory: cl.CtxFactory):
     import sys
     if sys.platform.startswith("win"):
         pytest.xfail("Event.set_callback not present on Windows")
@@ -1014,7 +1014,7 @@ def test_event_set_callback(ctx_factory):
 
 # {{{ test_global_offset
 
-def test_global_offset(ctx_factory):
+def test_global_offset(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -1048,7 +1048,7 @@ def test_global_offset(ctx_factory):
 
 # {{{ test_sub_buffers
 
-def test_sub_buffers(ctx_factory):
+def test_sub_buffers(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     if (ctx._get_cl_version() < (1, 1)
             or cl.get_cl_header_version() < (1, 1)):
@@ -1082,7 +1082,7 @@ def test_sub_buffers(ctx_factory):
 
 # {{{ test_spirv
 
-def test_spirv(ctx_factory):
+def test_spirv(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -1122,7 +1122,7 @@ def test_spirv(ctx_factory):
 # {{{ test_coarse_grain_svm
 
 @pytest.mark.parametrize("use_opaque_style", [False, True])
-def test_coarse_grain_svm(ctx_factory, use_opaque_style):
+def test_coarse_grain_svm(ctx_factory: cl.CtxFactory, use_opaque_style: bool):
     import sys
     is_pypy = "__pypy__" in sys.builtin_module_names
 
@@ -1231,7 +1231,7 @@ def test_coarse_grain_svm(ctx_factory, use_opaque_style):
 
 # {{{ test_fine_grain_svm
 
-def test_fine_grain_svm(ctx_factory):
+def test_fine_grain_svm(ctx_factory: cl.CtxFactory):
     import sys
     is_pypy = "__pypy__" in sys.builtin_module_names
 
@@ -1278,7 +1278,7 @@ def test_fine_grain_svm(ctx_factory):
     np.uint,
     cltypes.uint2,      # type: ignore[attr-defined]
     ])
-def test_map_dtype(ctx_factory, dtype):
+def test_map_dtype(ctx_factory: cl.CtxFactory, dtype):
     if cl._PYPY:
         # FIXME
         pytest.xfail("enqueue_map_buffer not yet working on pypy")
@@ -1302,7 +1302,7 @@ def test_map_dtype(ctx_factory, dtype):
 
 # {{{ test_compile_link
 
-def test_compile_link(ctx_factory):
+def test_compile_link(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
 
     if ctx._get_cl_version() < (1, 2) or cl.get_cl_header_version() < (1, 2):
@@ -1346,7 +1346,7 @@ def test_compile_link(ctx_factory):
 
 # {{{ test_copy_buffer_rect
 
-def test_copy_buffer_rect(ctx_factory):
+def test_copy_buffer_rect(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -1365,7 +1365,7 @@ def test_copy_buffer_rect(ctx_factory):
 
 # {{{ test_threaded_nanny_events
 
-def test_threaded_nanny_events(ctx_factory):
+def test_threaded_nanny_events(ctx_factory: cl.CtxFactory):
     # https://github.com/inducer/pyopencl/issues/296
 
     import gc
@@ -1397,7 +1397,7 @@ def test_threaded_nanny_events(ctx_factory):
 # {{{ test_empty_ndrange
 
 @pytest.mark.parametrize("empty_shape", [(0,), (3, 0, 2)])
-def test_empty_ndrange(ctx_factory, empty_shape):
+def test_empty_ndrange(ctx_factory: cl.CtxFactory, empty_shape):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -1420,7 +1420,7 @@ def test_empty_ndrange(ctx_factory, empty_shape):
 
 # {{{ test_command_queue_context_manager
 
-def test_command_queue_context_manager(ctx_factory):
+def test_command_queue_context_manager(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     with cl.CommandQueue(ctx) as queue:
         q = queue
@@ -1433,7 +1433,7 @@ def test_command_queue_context_manager(ctx_factory):
 
 # {{{ test_capture_call
 
-def test_capture_call(ctx_factory):
+def test_capture_call(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -1471,7 +1471,7 @@ def test_capture_call(ctx_factory):
 
 # {{{ test_enqueue_copy_array
 
-def test_enqueue_copy_array(ctx_factory):
+def test_enqueue_copy_array(ctx_factory: cl.CtxFactory):
     # https://github.com/inducer/pyopencl/issues/618
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
@@ -1491,7 +1491,7 @@ def test_enqueue_copy_array(ctx_factory):
             origin=(0, 0, 0), region=(image.shape[1], image.shape[0], 1))
 
 
-def test_enqueue_copy_array_2(ctx_factory):
+def test_enqueue_copy_array_2(ctx_factory: cl.CtxFactory):
     # https://github.com/inducer/pyopencl/issues/618
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
@@ -1524,7 +1524,7 @@ def test_enqueue_copy_array_2(ctx_factory):
 # }}}
 
 
-def test_zero_size_svm_allocations(ctx_factory):
+def test_zero_size_svm_allocations(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
 
     from pytest import skip
@@ -1549,7 +1549,7 @@ def test_zero_size_svm_allocations(ctx_factory):
     zero_sized_svm.release()
 
 
-def test_buffer_release(ctx_factory):
+def test_buffer_release(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 

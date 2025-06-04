@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-__copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
+__copyright__ = "Copyright (C) 2025 University of Illinois Board of Trustees"
 
 __license__ = """
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,35 +23,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-CLUDA_PREAMBLE = """
-#define local_barrier() barrier(CLK_LOCAL_MEM_FENCE);
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
-#define WITHIN_KERNEL /* empty */
-#define KERNEL __kernel
-#define GLOBAL_MEM __global
-#define LOCAL_MEM __local
-#define LOCAL_MEM_ARG __local
-#define REQD_WG_SIZE(X,Y,Z) __attribute__((reqd_work_group_size(X, Y, Z)))
+import numpy as np
+from numpy.typing import NDArray
+from typing_extensions import Buffer as abc_Buffer
 
-#define LID_0 ((ptrdiff_t) get_local_id(0))
-#define LID_1 ((ptrdiff_t) get_local_id(1))
-#define LID_2 ((ptrdiff_t) get_local_id(2))
 
-#define GID_0 ((ptrdiff_t) get_group_id(0))
-#define GID_1 ((ptrdiff_t) get_group_id(1))
-#define GID_2 ((ptrdiff_t) get_group_id(2))
+if TYPE_CHECKING:
+    import pyopencl as _cl
 
-#define LDIM_0 ((ptrdiff_t) get_local_size(0))
-#define LDIM_1 ((ptrdiff_t) get_local_size(1))
-#define LDIM_2 ((ptrdiff_t) get_local_size(2))
 
-#define GDIM_0 ((ptrdiff_t) get_num_groups(0))
-#define GDIM_1 ((ptrdiff_t) get_num_groups(1))
-#define GDIM_2 ((ptrdiff_t) get_num_groups(2))
+DTypeT = TypeVar("DTypeT", bound=np.dtype[Any])
 
-% if double_support:
-    #if __OPENCL_C_VERSION__ < 120
-    #pragma OPENCL EXTENSION cl_khr_fp64: enable
-    #endif
-% endif
-"""
+HasBufferInterface: TypeAlias = abc_Buffer | NDArray[Any]
+SVMInnerT = TypeVar("SVMInnerT", bound=HasBufferInterface)
+WaitList: TypeAlias = Sequence["_cl.Event"] | None
+KernelArg: TypeAlias = """
+    int
+    | float
+    | complex
+    | HasBufferInterface
+    | np.generic
+    | _cl.Buffer
+    | _cl.Image
+    | _cl.Sampler
+    | _cl.SVMPointer"""
