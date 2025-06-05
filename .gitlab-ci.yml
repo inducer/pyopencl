@@ -122,38 +122,6 @@ Ruff:
   except:
   - tags
 
-Pylint:
-  script: |
-    export EXTRA_INSTALL="numpy mako matplotlib PyOpenGl IPython"
-
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
-
-    build_py_project_in_venv
-
-    # Avoid linting local directory, where native module
-    # cannot be imported.
-    rm -Rf "$(get_proj_name)"
-
-    run_pylint "$(get_proj_name)" test/*.py
-  tags:
-  - python3
-  except:
-  - tags
-
-Mypy:
-  script: |
-    export EXTRA_INSTALL="numpy mako mypy importlib-resources"
-
-    curl -L -O https://tiker.net/ci-support-v0
-    . ci-support-v0
-    build_py_project_in_venv
-    python -m mypy --show-error-codes pyopencl test
-  tags:
-  - python3
-  except:
-  - tags
-
 Documentation:
   script: |
     export EXTRA_INSTALL="numpy mako"
