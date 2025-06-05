@@ -246,6 +246,17 @@ reportImportCycles = "none"
 pythonVersion = "3.10"
 pythonPlatform = "All"
 
+exclude = [
+    "contrib/*.py",
+    "contrib/*/*.py",
+    "doc",
+    "examples",
+    "pyopencl/_cl_gen.pyi",
+    ".conda-root",
+    "pyopencl/ipython_ext.py",
+    "stubgen/stubgen.py",
+]
+
 [[tool.basedpyright.executionEnvironments]]
 root = "test"
 reportUnknownArgumentType = "hint"
@@ -262,6 +273,7 @@ reportOperatorIssue = "hint"
 reportPossiblyUnboundVariable = "none"
 reportMissingImports = "none"
 reportOptionalMemberAccess = "hint"
+reportArgumentType = "hint"
 
 [[tool.basedpyright.executionEnvironments]]
 root = "pyopencl/_monkeypatch.py"
