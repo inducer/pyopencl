@@ -32,7 +32,7 @@ import builtins
 from dataclasses import dataclass
 from functools import reduce
 from numbers import Number
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from warnings import warn
 
 import numpy as np
@@ -56,6 +56,8 @@ if cl.get_cl_header_version() >= (2, 0):
     _SVMPointer_or_nothing = cl.SVMPointer
 else:
     _SVMPointer_or_nothing = ()
+
+_MAX_EVENT_CLEAR_COUNT = 4
 
 
 # {{{ _get_common_dtype
@@ -191,6 +193,38 @@ def _splay(device, n, kernel_specific_max_wg_size=None):
     return (group_count*work_items_per_group,), (work_items_per_group,)
 
 
+def get_wait_for_events(
+        *,
+        outputs: Iterable[Any], inputs: Iterable[Any]) -> List["cl.Event"]:
+    # NOTE:
+    # * outputs need to wait for all reads and writes to finish
+    # * inputs only need to wait on writes, but not reads
+
+    wait_for = []
+    for ary in outputs:
+        if isinstance(ary, Array):
+            wait_for.extend(ary.write_events)
+            wait_for.extend(ary.read_events)
+
+    for ary in inputs:
+        if isinstance(ary, Array):
+            wait_for.extend(ary.write_events)
+
+    return wait_for
+
+
+def add_read_write_event(
+        evt: "cl.Event", *,
+        outputs: Iterable[Any], inputs: Iterable[Any]) -> None:
+    for ary in outputs:
+        if isinstance(ary, Array):
+            ary.add_write_event(evt)
+
+    for ary in inputs:
+        if isinstance(ary, Array):
+            ary.add_read_event(evt)
+
+
 # deliberately undocumented for now
 ARRAY_KERNEL_EXEC_HOOK = None
 
@@ -204,28 +238,35 @@ def elwise_kernel_runner(kernel_getter):
     from functools import wraps
 
     @wraps(kernel_getter)
-    def kernel_runner(out, *args, **kwargs):
-        assert isinstance(out, Array)
+    def kernel_runner(*args, **kwargs):
+        assert isinstance(args[0], Array)
 
-        wait_for = kwargs.pop("wait_for", None)
         queue = kwargs.pop("queue", None)
-        if queue is None:
-            queue = out.queue
+        wait_for = kwargs.pop("wait_for", None) or []
+        noutputs = kwargs.pop("noutputs", 1)
 
+        if queue is None:
+            queue = args[0].queue
         assert queue is not None
 
-        knl = kernel_getter(out, *args, **kwargs)
+        outputs = args[:noutputs]
+        inputs = args[noutputs:]
+        wait_for.extend(get_wait_for_events(outputs=outputs, inputs=inputs))
+
+        knl = kernel_getter(*args, **kwargs)
         work_group_info = knl.get_work_group_info(
             cl.kernel_work_group_info.WORK_GROUP_SIZE,
             queue.device)
-        gs, ls = out._get_sizes(queue, work_group_info)
+        gs, ls = outputs[0]._get_sizes(queue, work_group_info)
 
-        args = (out, *args, out.size)
         if ARRAY_KERNEL_EXEC_HOOK is not None:
-            return ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
-                    knl, queue, gs, ls, *args, wait_for=wait_for)
+            evt = ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
+                    knl, queue, gs, ls, *args, outputs[0].size, wait_for=wait_for)
         else:
-            return knl(queue, gs, ls, *args, wait_for=wait_for)
+            evt = knl(queue, gs, ls, *args, outputs[0].size, wait_for=wait_for)
+        add_read_write_event(evt, outputs=outputs, inputs=inputs)
+
+        return evt
 
     return kernel_runner
 
@@ -443,13 +484,22 @@ class Array:
 
     .. versionadded:: 2014.1.1
 
-    .. attribute:: events
+    .. attribute:: write_events
 
-        A list of :class:`pyopencl.Event` instances that the current content of
-        this array depends on. User code may read, but should never modify this
-        list directly. To update this list, instead use the following methods.
+        A list of :class:`pyopencl.Event` instances that the current array
+        depends on for writes. User code should not modify this list directly,
+        but should use :meth:`add_write_event` to append and :meth:`finish` to
+        wait on the events.
 
-    .. automethod:: add_event
+    .. attribute:: read_events
+
+        A list of :class:`pyopencl.Event` instances that the current array
+        depends on for reads. User code should not modify this list directly, but
+        should use :meth:`add_read_event` to append and :meth:`finish` to wait
+        on the events.
+
+    .. automethod:: add_write_event
+    .. automethod:: add_read_event
     .. automethod:: finish
     """
 
@@ -465,6 +515,10 @@ class Array:
             data: Any = None,
             offset: int = 0,
             strides: Optional[Tuple[int, ...]] = None,
+            write_events: Optional[List[cl.Event]] = None,
+            read_events: Optional[List[cl.Event]] = None,
+
+            # NOTE: deprecated
             events: Optional[List[cl.Event]] = None,
 
             # NOTE: following args are used for the fast constructor
@@ -591,11 +645,20 @@ class Array:
             if alloc_nbytes < 0:
                 raise ValueError("cannot allocate CL buffer with negative size")
 
+        if events is not None:
+            warn("Passing 'events' is deprecated and will be removed in 2024. "
+                 "Pass either 'write_events' or 'read_events' explicitly.",
+                 DeprecationWarning, stacklevel=2)
+
+            if write_events is None:
+                write_events = events
+
         self.queue = queue
         self.shape = shape
         self.dtype = dtype
         self.strides = strides
-        self.events = [] if events is None else events
+        self.write_events = write_events or []
+        self.read_events = read_events or []
         self.nbytes = alloc_nbytes
         self.size = size
         self.allocator = allocator
@@ -629,6 +692,14 @@ class Array:
                          "This may lead to the array getting deallocated sooner "
                          "than expected, potentially leading to crashes.",
                          InconsistentOpenCLQueueWarning, stacklevel=2)
+
+    @property
+    def events(self):
+        warn("Using 'events' is deprecated and will be removed in 2024. Prefer "
+             "either 'write_events' or 'read_events' depending on the situation.",
+             DeprecationWarning, stacklevel=2)
+
+        return self.write_events
 
     @property
     def ndim(self):
@@ -675,14 +746,21 @@ class Array:
         # share the same events list.
 
         if data is None:
-            events = None
+            write_events = read_events = None
         else:
-            events = self.events
+            write_events = self.write_events
+            read_events = self.read_events
 
-        return self.__class__(None, shape, dtype, allocator=allocator,
-                strides=strides, data=data, offset=offset,
-                events=events,
+        result = self.__class__(None, shape, dtype, allocator=allocator,
+                strides=strides, data=data, offset=offset, events=None,
                 _fast=fast, _context=self.context, _queue=queue, _size=size)
+
+        # NOTE: these are set after the fact for backwards compatibility
+        # since subclasses may have overwritten __init__ and are missing them
+        result.write_events = write_events or []
+        result.read_events = read_events or []
+
+        return result
 
     def with_queue(self, queue):
         """Return a copy of *self* with the default queue set to *queue*.
@@ -695,8 +773,7 @@ class Array:
         if queue is not None:
             assert queue.context == self.context
 
-        return self._new_with_changes(self.base_data, self.offset,
-                queue=queue)
+        return self._new_with_changes(self.base_data, self.offset, queue=queue)
 
     def _get_sizes(self, queue, kernel_specific_max_wg_size=None):
         if not self.flags.forc:
@@ -759,11 +836,11 @@ class Array:
                     stacklevel=2)
 
         if self.size:
-            event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
+            evt = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
                     dst_offset=self.offset,
                     is_blocking=not async_)
 
-            self.add_event(event1)
+            self.add_write_event(evt)
 
     def _get(self, queue=None, ary=None, async_=None, **kwargs):
         # {{{ handle 'async' deprecation
@@ -796,7 +873,7 @@ class Array:
 
             if self.shape != ary.shape:
                 warn("get() between arrays of different shape is deprecated "
-                        "and will be removed in PyCUDA 2017.x",
+                        "and will be removed in PyOpenCL 2017.x",
                         DeprecationWarning, stacklevel=2)
 
         assert self.flags.forc, "Array in get() must be contiguous"
@@ -809,15 +886,15 @@ class Array:
                     "to associate one.")
 
         if self.size:
-            event1 = cl.enqueue_copy(queue, ary, self.base_data,
+            evt = cl.enqueue_copy(queue, ary, self.base_data,
                     src_offset=self.offset,
-                    wait_for=self.events, is_blocking=not async_)
+                    wait_for=self.write_events, is_blocking=not async_)
 
-            self.add_event(event1)
+            self.add_read_event(evt)
         else:
-            event1 = None
+            evt = None
 
-        return ary, event1
+        return ary, evt
 
     def get(self, queue=None, ary=None, async_=None, **kwargs):
         """Transfer the contents of *self* into *ary* or a newly allocated
@@ -827,10 +904,9 @@ class Array:
         .. versionchanged:: 2019.1.2
 
             Calling with ``async_=True`` was deprecated and replaced by
-            :meth:`get_async`.
-            The event returned by :meth:`pyopencl.enqueue_copy` is now stored into
-            :attr:`events` to ensure data is not modified before the copy is
-            complete.
+            :meth:`get_async`. The event returned by :meth:`pyopencl.enqueue_copy`
+            is now stored into :attr:`read_events` to ensure data is not modified
+            before the copy is complete.
 
         .. versionchanged:: 2015.2
 
@@ -857,9 +933,8 @@ class Array:
     def get_async(self, queue=None, ary=None, **kwargs):
         """
         Asynchronous version of :meth:`get` which returns a tuple ``(ary, event)``
-        containing the host array ``ary``
-        and the :class:`pyopencl.NannyEvent` ``event`` returned by
-        :meth:`pyopencl.enqueue_copy`.
+        containing the host array ``ary`` and the :class:`pyopencl.NannyEvent`
+        event returned by :meth:`pyopencl.enqueue_copy`.
 
         .. versionadded:: 2019.1.2
         """
@@ -891,11 +966,13 @@ class Array:
             raise RuntimeError("cannot copy non-contiguous array")
 
         if self.nbytes:
-            event1 = cl.enqueue_copy(queue or self.queue,
+            evt = cl.enqueue_copy(queue or self.queue,
                     result.base_data, self.base_data,
                     src_offset=self.offset, byte_count=self.nbytes,
-                    wait_for=self.events)
-            result.add_event(event1)
+                    wait_for=self.write_events)
+
+            self.add_read_event(evt)
+            result.add_write_event(evt)
 
         return result
 
@@ -913,7 +990,7 @@ class Array:
 
         result = repr(self.get())
         if result[:5] == "array":
-            result = f"cl.{type(self).__name__}" + result[5:]
+            result = f"cl.{type(self).__name__}{result[5:]}"
         else:
             warn(
                 f"{type(result).__name__}.__repr__ was expected to return a "
@@ -1008,7 +1085,7 @@ class Array:
         elif arg.dtype.kind in ["u", "i"]:
             fname = "abs"
         else:
-            raise TypeError("unsupported dtype in _abs()")
+            raise TypeError(f"unsupported dtype in 'abs': {arg.dtype!r}")
 
         return elementwise.get_unary_func_kernel(
                 arg.context, fname, arg.dtype, out_dtype=result.dtype)
@@ -1130,35 +1207,29 @@ class Array:
         """Return ``selffac * self + otherfac * other``.
         """
         queue = queue or self.queue
+        assert np.isscalar(selffac) and np.isscalar(otherfac)
 
         if isinstance(other, Array):
             result = _get_broadcasted_binary_op_result(self, other, queue)
-            result.add_event(
-                    self._axpbyz(
-                        result, selffac, self, otherfac, other,
-                        queue=queue))
+            self._axpbyz(result, selffac, self, otherfac, other, queue=queue)
             return result
         elif np.isscalar(other):
             common_dtype = _get_common_dtype(self, other, queue)
             result = self._new_like_me(common_dtype, queue=queue)
-            result.add_event(
-                    self._axpbz(result, selffac,
-                        self, common_dtype.type(otherfac * other),
-                        queue=queue))
+            self._axpbz(
+                result, selffac, self, common_dtype.type(otherfac * other),
+                queue=queue)
             return result
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"'mul_add' with '{type(other).__name__}'")
 
     def __add__(self, other):
         """Add an array with an array or an array with a scalar."""
 
         if isinstance(other, Array):
             result = _get_broadcasted_binary_op_result(self, other, self.queue)
-            result.add_event(
-                    self._axpbyz(result,
-                        self.dtype.type(1), self,
-                        other.dtype.type(1), other))
-
+            self._axpbyz(
+                result, self.dtype.type(1), self, other.dtype.type(1), other)
             return result
         elif np.isscalar(other):
             if other == 0:
@@ -1166,9 +1237,8 @@ class Array:
             else:
                 common_dtype = _get_common_dtype(self, other, self.queue)
                 result = self._new_like_me(common_dtype)
-                result.add_event(
-                        self._axpbz(result, self.dtype.type(1),
-                            self, common_dtype.type(other)))
+                self._axpbz(
+                    result, self.dtype.type(1), self, common_dtype.type(other))
                 return result
         else:
             return NotImplemented
@@ -1180,20 +1250,16 @@ class Array:
 
         if isinstance(other, Array):
             result = _get_broadcasted_binary_op_result(self, other, self.queue)
-            result.add_event(
-                    self._axpbyz(result,
-                        self.dtype.type(1), self,
-                        result.dtype.type(-1), other))
-
+            self._axpbyz(
+                result, self.dtype.type(1), self, result.dtype.type(-1), other)
             return result
         elif np.isscalar(other):
             if other == 0:
                 return self.copy()
             else:
                 result = self._new_like_me(
-                        _get_common_dtype(self, other, self.queue))
-                result.add_event(
-                        self._axpbz(result, self.dtype.type(1), self, -other))
+                    _get_common_dtype(self, other, self.queue))
+                self._axpbz(result, self.dtype.type(1), self, -other)
                 return result
         else:
             return NotImplemented
@@ -1206,10 +1272,8 @@ class Array:
         if np.isscalar(other):
             common_dtype = _get_common_dtype(self, other, self.queue)
             result = self._new_like_me(common_dtype)
-            result.add_event(
-                    self._axpbz(result, result.dtype.type(-1), self,
-                        common_dtype.type(other)))
-
+            self._axpbz(
+                result, result.dtype.type(-1), self, common_dtype.type(other))
             return result
         else:
             return NotImplemented
@@ -1219,15 +1283,11 @@ class Array:
             if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
-            self.add_event(
-                    self._axpbyz(self,
-                        self.dtype.type(1), self,
-                        other.dtype.type(1), other))
-
+            self._axpbyz(
+                self, self.dtype.type(1), self, other.dtype.type(1), other)
             return self
         elif np.isscalar(other):
-            self.add_event(
-                    self._axpbz(self, self.dtype.type(1), self, other))
+            self._axpbz(self, self.dtype.type(1), self, other)
             return self
         else:
             return NotImplemented
@@ -1237,9 +1297,8 @@ class Array:
             if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
-            self.add_event(
-                    self._axpbyz(self, self.dtype.type(1), self,
-                        other.dtype.type(-1), other))
+            self._axpbyz(
+                self, self.dtype.type(1), self, other.dtype.type(-1), other)
             return self
         elif np.isscalar(other):
             self._axpbz(self, self.dtype.type(1), self, -other)
@@ -1252,21 +1311,18 @@ class Array:
 
     def __neg__(self):
         result = self._new_like_me()
-        result.add_event(self._axpbz(result, -1, self, 0))
+        self._axpbz(result, -1, self, 0)
         return result
 
     def __mul__(self, other):
         if isinstance(other, Array):
             result = _get_broadcasted_binary_op_result(self, other, self.queue)
-            result.add_event(
-                    self._elwise_multiply(result, self, other))
+            self._elwise_multiply(result, self, other)
             return result
         elif np.isscalar(other):
             common_dtype = _get_common_dtype(self, other, self.queue)
             result = self._new_like_me(common_dtype)
-            result.add_event(
-                    self._axpbz(result,
-                        common_dtype.type(other), self, self.dtype.type(0)))
+            self._axpbz(result, common_dtype.type(other), self, self.dtype.type(0))
             return result
         else:
             return NotImplemented
@@ -1275,9 +1331,7 @@ class Array:
         if np.isscalar(other):
             common_dtype = _get_common_dtype(self, other, self.queue)
             result = self._new_like_me(common_dtype)
-            result.add_event(
-                    self._axpbz(result,
-                        common_dtype.type(other), self, self.dtype.type(0)))
+            self._axpbz(result, common_dtype.type(other), self, self.dtype.type(0))
             return result
         else:
             return NotImplemented
@@ -1287,25 +1341,20 @@ class Array:
             if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
-            self.add_event(
-                    self._elwise_multiply(self, self, other))
+            self._elwise_multiply(self, self, other)
             return self
         elif np.isscalar(other):
-            self.add_event(
-                    self._axpbz(self, other, self, self.dtype.type(0)))
+            self._axpbz(self, other, self, self.dtype.type(0))
             return self
         else:
             return NotImplemented
 
     def __div__(self, other):
-        """Divides an array by an array or a scalar, i.e. ``self / other``.
-        """
+        """Divides an array by an array or a scalar, i.e. ``self / other``."""
         if isinstance(other, Array):
             result = _get_broadcasted_binary_op_result(
-                            self, other, self.queue,
-                            dtype_getter=_get_truedivide_dtype)
-            result.add_event(self._div(result, self, other))
-
+                self, other, self.queue, dtype_getter=_get_truedivide_dtype)
+            self._div(result, self, other)
             return result
         elif np.isscalar(other):
             if other == 1:
@@ -1313,10 +1362,9 @@ class Array:
             else:
                 common_dtype = _get_truedivide_dtype(self, other, self.queue)
                 result = self._new_like_me(common_dtype)
-                result.add_event(
-                        self._axpbz(result,
-                                    np.true_divide(common_dtype.type(1), other),
-                                    self, self.dtype.type(0)))
+                self._axpbz(
+                    result, np.true_divide(common_dtype.type(1), other),
+                    self, self.dtype.type(0))
                 return result
         else:
             return NotImplemented
@@ -1324,18 +1372,16 @@ class Array:
     __truediv__ = __div__
 
     def __rdiv__(self, other):
-        """Divides an array by a scalar or an array, i.e. ``other / self``.
-        """
+        """Divides an array by a scalar or an array, i.e. ``other / self``."""
         common_dtype = _get_truedivide_dtype(self, other, self.queue)
 
         if isinstance(other, Array):
             result = self._new_like_me(common_dtype)
-            result.add_event(other._div(result, self))
+            other._div(result, self)
             return result
         elif np.isscalar(other):
             result = self._new_like_me(common_dtype)
-            result.add_event(
-                    self._rdiv_scalar(result, self, common_dtype.type(other)))
+            self._rdiv_scalar(result, self, common_dtype.type(other))
             return result
         else:
             return NotImplemented
@@ -1353,16 +1399,15 @@ class Array:
             if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
-            self.add_event(
-                self._div(self, self, other))
+            self._div(self, self, other)
             return self
         elif np.isscalar(other):
             if other == 1:
                 return self
             else:
-                self.add_event(
-                    self._axpbz(self, common_dtype.type(np.true_divide(1, other)),
-                                self, self.dtype.type(0)))
+                self._axpbz(
+                    self, common_dtype.type(np.true_divide(1, other)),
+                    self, self.dtype.type(0))
                 return self
         else:
             return NotImplemented
@@ -1375,12 +1420,11 @@ class Array:
 
         if isinstance(other, Array):
             result = _get_broadcasted_binary_op_result(self, other, self.queue)
-            result.add_event(self._array_binop(result, self, other, op="&"))
+            self._array_binop(result, self, other, op="&")
             return result
         elif np.isscalar(other):
             result = self._new_like_me(common_dtype)
-            result.add_event(
-                    self._scalar_binop(result, self, other, op="&"))
+            self._scalar_binop(result, self, other, op="&")
             return result
         else:
             return NotImplemented
@@ -1394,14 +1438,12 @@ class Array:
             raise TypeError("Integral types only")
 
         if isinstance(other, Array):
-            result = _get_broadcasted_binary_op_result(self, other,
-                                                       self.queue)
-            result.add_event(self._array_binop(result, self, other, op="|"))
+            result = _get_broadcasted_binary_op_result(self, other, self.queue)
+            self._array_binop(result, self, other, op="|")
             return result
         elif np.isscalar(other):
             result = self._new_like_me(common_dtype)
-            result.add_event(
-                    self._scalar_binop(result, self, other, op="|"))
+            self._scalar_binop(result, self, other, op="|")
             return result
         else:
             return NotImplemented
@@ -1416,12 +1458,11 @@ class Array:
 
         if isinstance(other, Array):
             result = _get_broadcasted_binary_op_result(self, other, self.queue)
-            result.add_event(self._array_binop(result, self, other, op="^"))
+            self._array_binop(result, self, other, op="^")
             return result
         elif np.isscalar(other):
             result = self._new_like_me(common_dtype)
-            result.add_event(
-                    self._scalar_binop(result, self, other, op="^"))
+            self._scalar_binop(result, self, other, op="^")
             return result
         else:
             return NotImplemented
@@ -1438,11 +1479,10 @@ class Array:
             if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
-            self.add_event(self._array_binop(self, self, other, op="&"))
+            self._array_binop(self, self, other, op="&")
             return self
         elif np.isscalar(other):
-            self.add_event(
-                    self._scalar_binop(self, self, other, op="&"))
+            self._scalar_binop(self, self, other, op="&")
             return self
         else:
             return NotImplemented
@@ -1457,11 +1497,10 @@ class Array:
             if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
-            self.add_event(self._array_binop(self, self, other, op="|"))
+            self._array_binop(self, self, other, op="|")
             return self
         elif np.isscalar(other):
-            self.add_event(
-                    self._scalar_binop(self, self, other, op="|"))
+            self._scalar_binop(self, self, other, op="|")
             return self
         else:
             return NotImplemented
@@ -1476,17 +1515,17 @@ class Array:
             if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
-            self.add_event(self._array_binop(self, self, other, op="^"))
+            self._array_binop(self, self, other, op="^")
             return self
         elif np.isscalar(other):
-            self.add_event(
-                    self._scalar_binop(self, self, other, op="^"))
+            self._scalar_binop(self, self, other, op="^")
             return self
         else:
             return NotImplemented
 
     def _zero_fill(self, queue=None, wait_for=None):
         queue = queue or self.queue
+        wait_for = wait_for or []
 
         if not self.size:
             return
@@ -1500,9 +1539,11 @@ class Array:
         # circumvent bug with large buffers on NVIDIA
         # https://github.com/inducer/pyopencl/issues/395
         if cl_version_gtr_1_2 and not (on_nvidia and self.nbytes >= 2**31):
-            self.add_event(
-                    cl.enqueue_fill(queue, self.base_data, np.int8(0),
-                        self.nbytes, offset=self.offset, wait_for=wait_for))
+            evt = cl.enqueue_fill(
+                queue, self.base_data, np.int8(0),
+                self.nbytes, offset=self.offset,
+                wait_for=wait_for + self.write_events + self.read_events)
+            self.add_write_event(evt)
         else:
             zero = np.zeros((), self.dtype)
             self.fill(zero, queue=queue)
@@ -1513,9 +1554,7 @@ class Array:
         :returns: *self*.
         """
 
-        self.add_event(
-                self._fill(self, value, queue=queue, wait_for=wait_for))
-
+        self._fill(self, value, queue=queue, wait_for=wait_for)
         return self
 
     def __len__(self):
@@ -1531,7 +1570,7 @@ class Array:
         """
 
         result = self._new_like_me(self.dtype.type(0).real.dtype)
-        result.add_event(self._abs(result, self))
+        self._abs(result, self)
         return result
 
     def __pow__(self, other):
@@ -1542,15 +1581,12 @@ class Array:
         if isinstance(other, Array):
             assert self.shape == other.shape
 
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
-            result.add_event(
-                    self._pow_array(result, self, other))
+            result = self._new_like_me(_get_common_dtype(self, other, self.queue))
+            self._pow_array(result, self, other)
             return result
         elif np.isscalar(other):
-            result = self._new_like_me(
-                    _get_common_dtype(self, other, self.queue))
-            result.add_event(self._pow_scalar(result, self, other))
+            result = self._new_like_me(_get_common_dtype(self, other, self.queue))
+            self._pow_scalar(result, self, other)
             return result
         else:
             return NotImplemented
@@ -1559,8 +1595,7 @@ class Array:
         if np.isscalar(other):
             common_dtype = _get_common_dtype(self, other, self.queue)
             result = self._new_like_me(common_dtype)
-            result.add_event(
-                    self._rpow_scalar(result, common_dtype.type(other), self))
+            self._rpow_scalar(result, common_dtype.type(other), self)
             return result
         else:
             return NotImplemented
@@ -1570,8 +1605,7 @@ class Array:
             raise TypeError(f"Integral types only: {self.dtype}")
 
         result = self._new_like_me()
-        result.add_event(self._unop(result, self, op="~"))
-
+        self._unop(result, self, op="~")
         return result
 
     # }}}
@@ -1582,7 +1616,7 @@ class Array:
         """
 
         result = self._new_like_me()
-        result.add_event(self._reverse(result, self))
+        self._reverse(result, self)
         return result
 
     def astype(self, dtype, queue=None):
@@ -1591,7 +1625,7 @@ class Array:
             return self.copy()
 
         result = self._new_like_me(dtype=dtype)
-        result.add_event(self._copy(result, self, queue=queue))
+        self._copy(result, self, queue=queue)
         return result
 
     # {{{ rich comparisons, any, all
@@ -1606,21 +1640,27 @@ class Array:
     def any(self, queue=None, wait_for=None):
         from pyopencl.reduction import get_any_kernel
         krnl = get_any_kernel(self.context, self.dtype)
-        if wait_for is None:
-            wait_for = []
-        result, event1 = krnl(self, queue=queue,
-               wait_for=wait_for + self.events, return_event=True)
-        result.add_event(event1)
+
+        queue = queue or self.queue
+        wait_for = wait_for or []
+        result, evt = krnl(
+            self, queue=queue, wait_for=wait_for + self.write_events,
+            return_event=True)
+        self.add_read_event(evt)
+
         return result
 
     def all(self, queue=None, wait_for=None):
         from pyopencl.reduction import get_all_kernel
         krnl = get_all_kernel(self.context, self.dtype)
-        if wait_for is None:
-            wait_for = []
-        result, event1 = krnl(self, queue=queue,
-               wait_for=wait_for + self.events, return_event=True)
-        result.add_event(event1)
+
+        queue = queue or self.queue
+        wait_for = wait_for or []
+        result, evt = krnl(
+            self, queue=queue, wait_for=wait_for + self.write_events,
+            return_event=True)
+        self.add_read_event(evt)
+
         return result
 
     @staticmethod
@@ -1640,13 +1680,11 @@ class Array:
     def __eq__(self, other):
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._array_comparison(result, self, other, op="=="))
+            self._array_comparison(result, self, other, op="==")
             return result
         elif np.isscalar(other):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._scalar_comparison(result, self, other, op="=="))
+            self._scalar_comparison(result, self, other, op="==")
             return result
         else:
             return NotImplemented
@@ -1654,13 +1692,11 @@ class Array:
     def __ne__(self, other):
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._array_comparison(result, self, other, op="!="))
+            self._array_comparison(result, self, other, op="!=")
             return result
         elif np.isscalar(other):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._scalar_comparison(result, self, other, op="!="))
+            self._scalar_comparison(result, self, other, op="!=")
             return result
         else:
             return NotImplemented
@@ -1668,8 +1704,7 @@ class Array:
     def __le__(self, other):
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._array_comparison(result, self, other, op="<="))
+            self._array_comparison(result, self, other, op="<=")
             return result
         elif np.isscalar(other):
             result = self._new_like_me(_BOOL_DTYPE)
@@ -1681,13 +1716,11 @@ class Array:
     def __ge__(self, other):
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._array_comparison(result, self, other, op=">="))
+            self._array_comparison(result, self, other, op=">=")
             return result
         elif np.isscalar(other):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._scalar_comparison(result, self, other, op=">="))
+            self._scalar_comparison(result, self, other, op=">=")
             return result
         else:
             return NotImplemented
@@ -1695,13 +1728,11 @@ class Array:
     def __lt__(self, other):
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._array_comparison(result, self, other, op="<"))
+            self._array_comparison(result, self, other, op="<")
             return result
         elif np.isscalar(other):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._scalar_comparison(result, self, other, op="<"))
+            self._scalar_comparison(result, self, other, op="<")
             return result
         else:
             return NotImplemented
@@ -1709,13 +1740,11 @@ class Array:
     def __gt__(self, other):
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._array_comparison(result, self, other, op=">"))
+            self._array_comparison(result, self, other, op=">")
             return result
         elif np.isscalar(other):
             result = self._new_like_me(_BOOL_DTYPE)
-            result.add_event(
-                    self._scalar_comparison(result, self, other, op=">"))
+            self._scalar_comparison(result, self, other, op=">")
             return result
         else:
             return NotImplemented
@@ -1731,8 +1760,7 @@ class Array:
         """
         if self.dtype.kind == "c":
             result = self._new_like_me(self.dtype.type(0).real.dtype)
-            result.add_event(
-                    self._real(result, self))
+            self._real(result, self)
             return result
         else:
             return self
@@ -1744,8 +1772,7 @@ class Array:
         """
         if self.dtype.kind == "c":
             result = self._new_like_me(self.dtype.type(0).real.dtype)
-            result.add_event(
-                    self._imag(result, self))
+            self._imag(result, self)
             return result
         else:
             return zeros_like(self)
@@ -1756,7 +1783,7 @@ class Array:
         """
         if self.dtype.kind == "c":
             result = self._new_like_me()
-            result.add_event(self._conj(result, self))
+            self._conj(result, self)
             return result
         else:
             return self
@@ -1768,25 +1795,46 @@ class Array:
     # {{{ event management
 
     def add_event(self, evt):
-        """Add *evt* to :attr:`events`. If :attr:`events` is too long, this method
-        may implicitly wait for a subset of :attr:`events` and clear them from the
-        list.
+        return self.add_write_event(evt)
+
+    def add_write_event(self, evt: "cl.Event") -> None:
+        """Add *evt* to :attr:`write_events`. If :attr:`write_events` is too
+        long, this method may implicitly wait for a subset of :attr:`write_events`
+        and clear them from the list.
         """
-        n_wait = 4
+        n = _MAX_EVENT_CLEAR_COUNT
 
-        self.events.append(evt)
-
-        if len(self.events) > 3*n_wait:
-            wait_events = self.events[:n_wait]
+        self.write_events.append(evt)
+        if len(self.write_events) > 3*n:
+            wait_events = self.write_events[:n]
             cl.wait_for_events(wait_events)
-            del self.events[:n_wait]
+            del self.write_events[:n]
+
+    def add_read_event(self, evt: "cl.Event") -> None:
+        """Add *evt* to :attr:`read_events`. If :attr:`read_events` is too
+        long, this method may implicitly wait for a subset of :attr:`read_events`
+        and clear them from the list.
+        """
+        n = _MAX_EVENT_CLEAR_COUNT
+
+        self.read_events.append(evt)
+        if len(self.read_events) > 3*n:
+            wait_events = self.read_events[:n]
+            cl.wait_for_events(wait_events)
+            del self.read_events[:n]
 
     def finish(self):
-        """Wait for the entire contents of :attr:`events`, clear it."""
+        """Wait for the entire contents of :attr:`write_events` and
+        :attr:`read_events` and clear the lists.
+        """
 
-        if self.events:
-            cl.wait_for_events(self.events)
-            del self.events[:]
+        if self.write_events:
+            cl.wait_for_events(self.write_events)
+            del self.write_events[:]
+
+        if self.read_events:
+            cl.wait_for_events(self.read_events)
+            del self.read_events[:]
 
     # }}}
 
@@ -2043,7 +2091,8 @@ class Array:
         ary, evt = cl.enqueue_map_buffer(
                 queue or self.queue, self.base_data, flags, self.offset,
                 self.shape, self.dtype, strides=self.strides,
-                wait_for=wait_for + self.events, is_blocking=is_blocking)
+                wait_for=wait_for + self.write_events, is_blocking=is_blocking)
+        self.add_read_event(evt)
 
         if is_blocking:
             return ary
@@ -2161,10 +2210,8 @@ class Array:
             Added *wait_for*.
         """
 
-        queue = queue or self.queue or value.queue
-        if wait_for is None:
-            wait_for = []
-        wait_for = wait_for + self.events
+        queue = queue or self.queue
+        wait_for = wait_for or []
 
         if isinstance(subscript, Array):
             if subscript.dtype.kind not in ("i", "u"):
@@ -2181,6 +2228,7 @@ class Array:
                     wait_for=wait_for)
             return
 
+        # NOTE: subarray shares the event lists with self
         subarray = self[subscript]
 
         if not subarray.size:
@@ -2190,9 +2238,10 @@ class Array:
 
         if isinstance(value, np.ndarray):
             if subarray.shape == value.shape and subarray.strides == value.strides:
-                self.add_event(
-                        cl.enqueue_copy(queue, subarray.base_data,
-                            value, dst_offset=subarray.offset, wait_for=wait_for))
+                evt = cl.enqueue_copy(
+                    queue, subarray.base_data, value, dst_offset=subarray.offset,
+                    wait_for=wait_for + subarray.write_events + subarray.read_events)
+                subarray.add_write_event(evt)
                 return
             else:
                 value = to_device(queue, value, self.allocator)
@@ -2208,11 +2257,9 @@ class Array:
                 raise NotImplementedError("cannot assign between arrays of "
                         "differing strides")
 
-            self.add_event(
-                    self._copy(subarray, value, queue=queue, wait_for=wait_for))
-
+            self._copy(subarray, value, queue=queue, wait_for=wait_for)
         else:
-            # Let's assume it's a scalar
+            assert np.isscalar(value)
             subarray.fill(value, queue=queue, wait_for=wait_for)
 
     def __setitem__(self, subscript, value):
@@ -2308,8 +2355,9 @@ def to_device(queue, ary, allocator=None, async_=None,
         first_arg = queue.context
 
     result = Array(first_arg, ary.shape, ary.dtype,
-                    allocator=allocator, strides=ary.strides)
+            allocator=allocator, strides=ary.strides)
     result.set(ary, async_=async_, queue=queue)
+
     return result
 
 
@@ -2328,6 +2376,7 @@ def zeros(queue, shape, dtype, order="C", allocator=None):
             order=order, allocator=allocator,
             _context=queue.context, _queue=queue)
     result._zero_fill()
+
     return result
 
 
@@ -2336,8 +2385,8 @@ def empty_like(ary, queue=_copy_queue, allocator=None):
     as *other_ary*.
     """
 
-    return ary._new_with_changes(data=None, offset=0, queue=queue,
-            allocator=allocator)
+    return ary._new_with_changes(
+        data=None, offset=0, queue=queue, allocator=allocator)
 
 
 def zeros_like(ary):
@@ -2361,8 +2410,7 @@ class _ArangeInfo:
 
 @elwise_kernel_runner
 def _arange_knl(result, start, step):
-    return elementwise.get_arange_kernel(
-            result.context, result.dtype)
+    return elementwise.get_arange_kernel(result.context, result.dtype)
 
 
 def arange(queue, *args, **kwargs):
@@ -2446,7 +2494,7 @@ def arange(queue, *args, **kwargs):
     size = ceil((stop-start)/step)
 
     result = Array(queue, (size,), dtype, allocator=inf.allocator)
-    result.add_event(_arange_knl(result, start, step, queue=queue))
+    _arange_knl(result, start, step, queue=queue)
 
     # }}}
 
@@ -2459,8 +2507,7 @@ def arange(queue, *args, **kwargs):
 
 @elwise_kernel_runner
 def _take(result, ary, indices):
-    return elementwise.get_take_kernel(
-            result.context, result.dtype, indices.dtype)
+    return elementwise.get_take_kernel(result.context, result.dtype, indices.dtype)
 
 
 def take(a, indices, out=None, queue=None, wait_for=None):
@@ -2473,8 +2520,7 @@ def take(a, indices, out=None, queue=None, wait_for=None):
         out = type(a)(queue, indices.shape, a.dtype, allocator=a.allocator)
 
     assert len(indices.shape) == 1
-    out.add_event(
-            _take(out, a, indices, queue=queue, wait_for=wait_for))
+    _take(out, a, indices, queue=queue, wait_for=wait_for)
     return out
 
 
@@ -2525,17 +2571,20 @@ def multi_take(arrays, indices, out=None, queue=None):
                     queue.device))
 
         wait_for_this = (
-            *indices.events,
-            *[evt for i in arrays[chunk_slice] for evt in i.events],
-            *[evt for o in out[chunk_slice] for evt in o.events])
+            *indices.write_events,
+            *[evt for i in arrays[chunk_slice] for evt in i.write_events],
+            *[evt for o in out[chunk_slice] for evt in o.write_events])
         evt = knl(queue, gs, ls,
                 indices.data,
                 *[o.data for o in out[chunk_slice]],
                 *[i.data for i in arrays[chunk_slice]],
                 *[indices.size],
                 wait_for=wait_for_this)
-        for o in out[chunk_slice]:
-            o.add_event(evt)
+
+        add_read_write_event(
+            evt,
+            outputs=out[chunk_slice],
+            inputs=arrays[chunk_size] + [indices])
 
     return out
 
@@ -2605,10 +2654,10 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
                     queue.device))
 
         wait_for_this = (
-            *dest_indices.events,
-            *src_indices.events,
-            *[evt for i in arrays[chunk_slice] for evt in i.events],
-            *[evt for o in out[chunk_slice] for evt in o.events])
+            *dest_indices.write_events,
+            *src_indices.write_events,
+            *[evt for i in arrays[chunk_slice] for evt in i.write_events],
+            *[evt for o in out[chunk_slice] for evt in o.write_events])
         evt = knl(queue, gs, ls,
                   *out[chunk_slice],
                   dest_indices,
@@ -2617,8 +2666,11 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
                   *src_offsets_list[chunk_slice],
                   src_indices.size,
                   wait_for=wait_for_this)
-        for o in out[chunk_slice]:
-            o.add_event(evt)
+
+        add_read_write_event(
+            evt,
+            outputs=out[chunk_slice],
+            inputs=arrays[chunk_slice] + [src_indices, dest_indices])
 
     return out
 
@@ -2633,9 +2685,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
     a_allocator = arrays[0].allocator
     context = dest_indices.context
     queue = queue or dest_indices.queue
-    if wait_for is None:
-        wait_for = []
-    wait_for = wait_for + dest_indices.events
+    wait_for = wait_for or []
 
     vec_count = len(arrays)
 
@@ -2687,8 +2737,8 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
 
         wait_for_this = (
             *wait_for,
-            *[evt for i in arrays[chunk_slice] for evt in i.events],
-            *[evt for o in out[chunk_slice] for evt in o.events])
+            *[evt for i in arrays[chunk_slice] for evt in i.write_events],
+            *[evt for o in out[chunk_slice] for evt in o.write_events])
         evt = knl(queue, gs, ls,
                   *out[chunk_slice],
                   dest_indices,
@@ -2696,8 +2746,10 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
                   use_fill_cla, array_lengths_cla, dest_indices.size,
                   wait_for=wait_for_this)
 
-        for o in out[chunk_slice]:
-            o.add_event(evt)
+        add_read_write_event(
+            evt,
+            outputs=out[chunk_slice],
+            inputs=arrays[chunk_slice] + [dest_indices])
 
     return out
 
@@ -2771,7 +2823,7 @@ def concatenate(arrays, axis=0, queue=None, allocator=None):
 
 @elwise_kernel_runner
 def _diff(result, array):
-    return elementwise.get_diff_kernel(array.context, array.dtype)
+    return elementwise.get_diff_kernel(result.context, result.dtype)
 
 
 def diff(array, queue=None, allocator=None):
@@ -2788,8 +2840,7 @@ def diff(array, queue=None, allocator=None):
     allocator = allocator or array.allocator
 
     result = array.__class__(queue, (n-1,), array.dtype, allocator=allocator)
-    event1 = _diff(result, array, queue=queue)
-    result.add_event(event1)
+    _diff(result, array, queue=queue)
     return result
 
 
@@ -2994,9 +3045,7 @@ def if_positive(criterion, then_, else_, out=None, queue=None):
                         allocator=criterion.allocator,
                         strides=out_strides)
 
-    event1 = _if_positive(out, criterion, then_, else_, queue=queue)
-    out.add_event(event1)
-
+    _if_positive(out, criterion, then_, else_, queue=queue)
     return out
 
 # }}}
@@ -3037,8 +3086,7 @@ def maximum(a, b, out=None, queue=None):
         elif not b_is_scalar:
             out = b._new_like_me(out_dtype, queue)
 
-    out.add_event(_minimum_maximum_backend(out, a, b, queue=queue, minmax="max"))
-
+    _minimum_maximum_backend(out, a, b, queue=queue, minmax="max")
     return out
 
 
@@ -3063,8 +3111,7 @@ def minimum(a, b, out=None, queue=None):
         elif not b_is_scalar:
             out = b._new_like_me(out_dtype, queue)
 
-    out.add_event(_minimum_maximum_backend(out,  a, b, queue=queue, minmax="min"))
-
+    _minimum_maximum_backend(out,  a, b, queue=queue, minmax="min")
     return out
 
 # }}}
@@ -3180,9 +3227,10 @@ def sum(a, dtype=None, queue=None, slice=None, initial=np._NoValue):
 
     from pyopencl.reduction import get_sum_kernel
     krnl = get_sum_kernel(a.context, dtype, a.dtype)
-    result, event1 = krnl(a, queue=queue, slice=slice, wait_for=a.events,
-            return_event=True)
-    result.add_event(event1)
+    result, evt = krnl(
+        a, queue=queue, slice=slice, wait_for=a.write_events,
+        return_event=True)
+    a.add_read_event(evt)
 
     # NOTE: neutral element in `get_sum_kernel` is 0 by default
     if initial is not np._NoValue:
@@ -3215,9 +3263,13 @@ def dot(a, b, dtype=None, queue=None, slice=None):
     from pyopencl.reduction import get_dot_kernel
     krnl = get_dot_kernel(a.context, dtype, a.dtype, b.dtype)
 
-    result, event1 = krnl(a, b, queue=queue, slice=slice,
-            wait_for=a.events + b.events, return_event=True)
-    result.add_event(event1)
+    result, evt = krnl(
+        a, b, queue=queue, slice=slice,
+        wait_for=a.write_events + b.write_events, return_event=True)
+
+    a.add_read_event(evt)
+    if b is not a:
+        b.add_read_event(evt)
 
     return result
 
@@ -3234,9 +3286,13 @@ def vdot(a, b, dtype=None, queue=None, slice=None):
     krnl = get_dot_kernel(a.context, dtype, a.dtype, b.dtype,
             conjugate_first=True)
 
-    result, event1 = krnl(a, b, queue=queue, slice=slice,
-            wait_for=a.events + b.events, return_event=True)
-    result.add_event(event1)
+    result, evt = krnl(
+        a, b, queue=queue, slice=slice,
+        wait_for=a.write_events + b.write_events, return_event=True)
+
+    a.add_read_event(evt)
+    if b is not a:
+        b.add_read_event(evt)
 
     return result
 
@@ -3252,9 +3308,15 @@ def subset_dot(subset, a, b, dtype=None, queue=None, slice=None):
     krnl = get_subset_dot_kernel(
             a.context, dtype, subset.dtype, a.dtype, b.dtype)
 
-    result, event1 = krnl(subset, a, b, queue=queue, slice=slice,
-            wait_for=subset.events + a.events + b.events, return_event=True)
-    result.add_event(event1)
+    result, evt = krnl(
+        subset, a, b, queue=queue, slice=slice,
+        wait_for=subset.write_events + a.write_events + b.write_events,
+        return_event=True)
+
+    subset.add_read_event(evt)
+    a.add_read_event(evt)
+    if b is not a:
+        b.add_read_event(evt)
 
     return result
 
@@ -3277,9 +3339,10 @@ def _make_minmax_kernel(what):
 
         from pyopencl.reduction import get_minmax_kernel
         krnl = get_minmax_kernel(a.context, what, a.dtype)
-        result, event1 = krnl(a, queue=queue, wait_for=a.events,
-                return_event=True)
-        result.add_event(event1)
+        result, evt = krnl(
+            a, queue=queue, wait_for=a.write_events,
+            return_event=True)
+        a.add_read_event(evt)
 
         if initial is not np._NoValue:
             initial = a.dtype.type(initial)
@@ -3312,10 +3375,16 @@ def _make_subset_minmax_kernel(what):
     def f(subset, a, queue=None, slice=None):
         from pyopencl.reduction import get_subset_minmax_kernel
         krnl = get_subset_minmax_kernel(a.context, what, a.dtype, subset.dtype)
-        result, event1 = krnl(subset, a,  queue=queue, slice=slice,
-                wait_for=a.events + subset.events, return_event=True)
-        result.add_event(event1)
+        result, evt = krnl(
+            subset, a,  queue=queue, slice=slice,
+            wait_for=a.write_events + subset.write_events,
+            return_event=True)
+
+        a.add_read_event(evt)
+        subset.add_read_event(evt)
+
         return result
+
     return f
 
 
@@ -3349,8 +3418,10 @@ def cumsum(a, output_dtype=None, queue=None,
 
     from pyopencl.scan import get_cumsum_kernel
     krnl = get_cumsum_kernel(a.context, a.dtype, output_dtype)
-    evt = krnl(a, result, queue=queue, wait_for=wait_for + a.events)
-    result.add_event(evt)
+    evt = krnl(a, result, queue=queue, wait_for=wait_for + a.write_events)
+
+    a.add_read_event(evt)
+    result.add_write_event(evt)
 
     if return_event:
         return evt, result
