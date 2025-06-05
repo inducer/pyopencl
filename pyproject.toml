@@ -138,27 +138,6 @@ markers = [
     "bitonic: tests involving bitonic sort"
 ]
 
-[tool.mypy]
-warn_unused_ignores = true
-exclude = ["pyopencl/compyte"]
-
-[[tool.mypy.overrides]]
-module = [
-    "IPython.*",
-    "OpenGL.*",
-    "mako.*",
-    "matplotlib.*",
-    "pyfmmlib.*",
-    "pyopencl._cl.*",
-    "pytest.*",
-    "scipy.*",
-]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["pyopencl.compyte.*"]
-follow_imports = "skip"
-
 [tool.cibuildwheel]
 test-command = "pytest {project}/test"
 test-extras = [
