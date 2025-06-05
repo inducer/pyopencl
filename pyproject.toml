@@ -37,7 +37,7 @@ dependencies = [
     "importlib-resources; python_version<'3.9'",
     "numpy",
     "platformdirs>=2.2",
-    "pytools>=2024.1.5",
+    "pytools>=2025.1.6",
 
     # for Buffer
     "typing_extensions>=4.6",
