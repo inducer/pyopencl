@@ -139,6 +139,7 @@ jobs:
         strategy:
             matrix:
                 downstream_project: [loopy, boxtree, meshmode]
+            fail-fast: false
         name: Tests for downstream project ${{ matrix.downstream_project }}
         runs-on: ubuntu-latest
         steps:
