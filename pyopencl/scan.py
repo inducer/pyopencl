@@ -34,7 +34,7 @@ from pytools.persistent_dict import WriteOncePersistentDict
 
 import pyopencl as cl
 import pyopencl._mymako as mako
-import pyopencl.array
+import pyopencl.array as cl_array
 from pyopencl._cluda import CLUDA_PREAMBLE
 from pyopencl.tools import (
     DtypedArgument,
@@ -1553,16 +1553,16 @@ class GenericScanKernel(GenericScanKernelBase):
 
         # {{{ allocate some buffers
 
-        interval_results = cl.array.empty(queue,
+        interval_results = cl_array.empty(queue,
                 num_intervals, dtype=self.dtype,
                 allocator=allocator)
 
-        partial_scan_buffer = cl.array.empty(
+        partial_scan_buffer = cl_array.empty(
                 queue, n, dtype=self.dtype,
                 allocator=allocator)
 
         if self.store_segment_start_flags:
-            segment_start_flags = cl.array.empty(
+            segment_start_flags = cl_array.empty(
                     queue, n, dtype=np.bool_,
                     allocator=allocator)
 
@@ -1576,7 +1576,7 @@ class GenericScanKernel(GenericScanKernelBase):
                 ]
 
         if self.is_segmented:
-            first_segment_start_in_interval = cl.array.empty(queue,
+            first_segment_start_in_interval = cl_array.empty(queue,
                     num_intervals, dtype=self.index_dtype,
                     allocator=allocator)
             scan1_args.append(first_segment_start_in_interval.data)
@@ -1756,7 +1756,7 @@ class GenericDebugScanKernel(GenericScanKernelBase):
         if n is None:
             n, = first_array.shape
 
-        scan_tmp = cl.array.empty(queue,
+        scan_tmp = cl_array.empty(queue,
                 n, dtype=self.dtype,
                 allocator=allocator)
 
@@ -1807,7 +1807,7 @@ class _LegacyScanKernelBase(GenericScanKernel):
             output_ary = input_ary
 
         if isinstance(output_ary, (str, str)) and output_ary == "new":
-            output_ary = cl.array.empty_like(input_ary, allocator=allocator)
+            output_ary = cl_array.empty_like(input_ary, allocator=allocator)
 
         if input_ary.shape != output_ary.shape:
             raise ValueError("input and output must have the same shape")

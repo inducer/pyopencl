@@ -26,12 +26,13 @@ import pytest
 
 import pyopencl as cl
 import pyopencl.array as cl_array
-import pyopencl.clrandom
+import pyopencl.clrandom as clrandom
 import pyopencl.cltypes as cltypes
 from pyopencl.characterize import get_pocl_version
 from pyopencl.tools import (
     DeferredAllocator,
     ImmediateAllocator,
+    MemoryPool,
     pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
 )
 
@@ -749,7 +750,7 @@ def test_can_build_and_run_binary(ctx_factory: cl.CtxFactory):
     foo.build()
 
     n = 256
-    a_dev = cl.clrandom.rand(queue, n, np.float32)
+    a_dev = clrandom.rand(queue, n, np.float32)
     dest_dev = cl_array.empty_like(a_dev)
 
     foo.simple(queue, (n,), (16,), a_dev.data, dest_dev.data)
@@ -1096,8 +1097,8 @@ def test_spirv(ctx_factory: cl.CtxFactory):
 
     n = 50000
 
-    a_dev = cl.clrandom.rand(queue, n, np.float32)
-    b_dev = cl.clrandom.rand(queue, n, np.float32)
+    a_dev = clrandom.rand(queue, n, np.float32)
+    b_dev = clrandom.rand(queue, n, np.float32)
     dest_dev = cl_array.empty_like(a_dev)
 
     from os.path import dirname, join
@@ -1288,10 +1289,10 @@ def test_map_dtype(ctx_factory: cl.CtxFactory, dtype):
 
     dt = np.dtype(dtype)
 
-    b = pyopencl.Buffer(ctx,
-                        pyopencl.mem_flags.READ_ONLY,
+    b = cl.Buffer(ctx,
+                        cl.mem_flags.READ_ONLY,
                         dt.itemsize)
-    array, _ev = pyopencl.enqueue_map_buffer(queue, b, pyopencl.map_flags.WRITE, 0,
+    array, _ev = cl.enqueue_map_buffer(queue, b, cl.map_flags.WRITE, 0,
                                             (1,), dt)
     with array.base:
         print(array.dtype)
@@ -1376,7 +1377,7 @@ def test_threaded_nanny_events(ctx_factory: cl.CtxFactory):
         queue = cl.CommandQueue(ctx)
         for _i1 in range(n2):
             for _i in range(n1):
-                acl = cl.array.zeros(queue, 10, dtype=np.float32)
+                acl = cl_array.zeros(queue, 10, dtype=np.float32)
                 acl.get()
             # Garbage collection triggers the error
             print("collected ", str(gc.collect()))
@@ -1553,7 +1554,7 @@ def test_buffer_release(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
-    mem_pool = cl.tools.MemoryPool(cl.tools.ImmediateAllocator(queue))
+    mem_pool = MemoryPool(ImmediateAllocator(queue))
 
     b = mem_pool.allocate(1000)
     print(type(b))
