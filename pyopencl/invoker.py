@@ -309,7 +309,7 @@ def _generate_enqueue_and_set_args_module(function_name,
 
     return (
             gen.get_picklable_module(
-                name=f"<pyopencl invoker for '{function_name}'>"),
+                name_prefix=f"pyopencl invoker for '{function_name}'"),
             enqueue_name)
 
 
