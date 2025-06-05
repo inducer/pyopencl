@@ -41,6 +41,7 @@ import numpy as np
 
 import pyopencl as cl
 import pyopencl.elementwise as elementwise
+import pyopencl.tools as cl_tools
 from pyopencl import cltypes
 from pyopencl.characterize import has_double_support
 from pyopencl.compyte.array import (
@@ -232,13 +233,13 @@ def elwise_kernel_runner(kernel_getter):
     return kernel_runner
 
 
-class DefaultAllocator(cl.tools.DeferredAllocator):
+class DefaultAllocator(cl_tools.DeferredAllocator):
     def __init__(self, *args, **kwargs):
         warn("pyopencl.array.DefaultAllocator is deprecated. "
                 "It will be continue to exist throughout the 2013.x "
                 "versions of PyOpenCL.",
                 DeprecationWarning, stacklevel=2)
-        cl.tools.DeferredAllocator.__init__(self, *args, **kwargs)
+        cl_tools.DeferredAllocator.__init__(self, *args, **kwargs)
 
 # }}}
 
@@ -463,7 +464,7 @@ class Array:
             shape: tuple[int, ...] | int,
             dtype: Any,
             order: str = "C",
-            allocator: cl.tools.AllocatorBase | None = None,
+            allocator: cl_tools.AllocatorBase | None = None,
             data: Any = None,
             offset: int = 0,
             strides: tuple[int, ...] | None = None,

@@ -39,7 +39,7 @@ from mako.template import Template
 from pytools import memoize, memoize_method
 
 import pyopencl as cl
-import pyopencl.array
+import pyopencl.array as cl_array
 from pyopencl.scan import GenericScanKernel, ScanTemplate
 from pyopencl.tools import dtype_to_ctype, get_arg_offset_adjuster_code
 
@@ -59,7 +59,7 @@ def _extract_extra_args_types_values(extra_args):
     extra_args_values = []
     extra_wait_for = []
     for name, val in extra_args:
-        if isinstance(val, cl.array.Array):
+        if isinstance(val, cl_array.Array):
             extra_args_types.append(VectorArg(val.dtype, name, with_offset=False))
             extra_args_values.append(val)
             extra_wait_for.extend(val.events)
@@ -121,7 +121,7 @@ def copy_if(ary, predicate, extra_args=None, preamble="", queue=None, wait_for=N
             type_aliases=(("scan_t", scan_dtype), ("item_t", ary.dtype)),
             var_values=(("predicate", predicate),),
             more_preamble=preamble, more_arguments=extra_args_types)
-    out = cl.array.empty_like(ary)
+    out = cl_array.empty_like(ary)
     count = ary._new_with_changes(data=None, offset=0,
             shape=(), strides=(), dtype=scan_dtype)
 
@@ -211,8 +211,8 @@ def partition(ary, predicate, extra_args=None, preamble="",
             var_values=(("predicate", predicate),),
             more_preamble=preamble, more_arguments=extra_args_types)
 
-    out_true = cl.array.empty_like(ary)
-    out_false = cl.array.empty_like(ary)
+    out_true = cl_array.empty_like(ary)
+    out_false = cl_array.empty_like(ary)
     count = ary._new_with_changes(data=None, offset=0,
             shape=(), strides=(), dtype=scan_dtype)
 
@@ -283,7 +283,7 @@ def unique(ary, is_equal_expr="a == b", extra_args=None, preamble="",
             var_values=(("macro_is_equal_expr", is_equal_expr),),
             more_preamble=preamble, more_arguments=extra_args_types)
 
-    out = cl.array.empty_like(ary)
+    out = cl_array.empty_like(ary)
     count = ary._new_with_changes(data=None, offset=0,
             shape=(), strides=(), dtype=scan_dtype)
 
@@ -560,7 +560,7 @@ class RadixSort:
         base_bit = 0
         while base_bit < key_bits:
             sorted_args = [
-                    cl.array.empty(queue, n, arg_descr.dtype, allocator=allocator)
+                    cl_array.empty(queue, n, arg_descr.dtype, allocator=allocator)
                     for arg_descr in self.arguments
                     if arg_descr.name in self.sort_arg_names]
 
@@ -730,11 +730,11 @@ def _get_arg_list(arg_list, prefix=""):
 @dataclass
 class BuiltList:
     count: int | None
-    starts: pyopencl.array.Array | None
-    lists: pyopencl.array.Array | None = None
+    starts: cl_array.Array | None
+    lists: cl_array.Array | None = None
     num_nonempty_lists: int | None = None
-    nonempty_indices: pyopencl.array.Array | None = None
-    compressed_indices: pyopencl.array.Array | None = None
+    nonempty_indices: cl_array.Array | None = None
+    compressed_indices: cl_array.Array | None = None
 
 
 class ListOfListsBuilder:
@@ -1184,7 +1184,7 @@ class ListOfListsBuilder:
                 count_list_args.append(None)
                 continue
 
-            counts = cl.array.empty(queue,
+            counts = cl_array.empty(queue,
                     (n_objects + 1), index_dtype, allocator=allocator)
             counts[-1] = 0
             wait_for = wait_for + counts.events
@@ -1224,14 +1224,14 @@ class ListOfListsBuilder:
             if name not in self.eliminate_empty_output_lists:
                 continue
 
-            compressed_counts = cl.array.empty(
+            compressed_counts = cl_array.empty(
                 queue, (n_objects + 1,), index_dtype, allocator=allocator)
             info_record = result[name]
-            info_record.nonempty_indices = cl.array.empty(
+            info_record.nonempty_indices = cl_array.empty(
                 queue, (n_objects + 1,), index_dtype, allocator=allocator)
-            info_record.num_nonempty_lists = cl.array.empty(
+            info_record.num_nonempty_lists = cl_array.empty(
                 queue, (1,), index_dtype, allocator=allocator)
-            info_record.compressed_indices = cl.array.empty(
+            info_record.compressed_indices = cl_array.empty(
                 queue, (n_objects + 1,), index_dtype, allocator=allocator)
             info_record.compressed_indices[0] = 0
 
@@ -1306,7 +1306,7 @@ class ListOfListsBuilder:
             else:
                 info_record = result[name]
 
-            info_record.lists = cl.array.empty(queue,
+            info_record.lists = cl_array.empty(queue,
                     info_record.count, dtype, allocator=allocator)
             write_list_args.append(info_record.lists.data)
 
@@ -1436,7 +1436,7 @@ class KeyValueSorter:
         (values_sorted_by_key, keys_sorted_by_key), evt = knl_info.by_target_sorter(
                 values, keys, queue=queue, wait_for=wait_for)
 
-        starts = (cl.array.empty(queue, (nkeys+1), starts_dtype, allocator=allocator)
+        starts = (cl_array.empty(queue, (nkeys+1), starts_dtype, allocator=allocator)
                 .fill(len(values_sorted_by_key), wait_for=[evt]))
         evt, = starts.events
 

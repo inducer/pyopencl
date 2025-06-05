@@ -33,6 +33,7 @@ import pytest
 
 import pyopencl as cl
 import pyopencl.array as cl_array
+import pyopencl.characterize as cl_characterize
 import pyopencl.cltypes as cltypes
 import pyopencl.tools as cl_tools
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
@@ -305,7 +306,7 @@ def test_custom_type_zeros(ctx_factory: cl.CtxFactory):
     dtype = get_or_register_dtype(name, dtype)
 
     n = 1000
-    z_dev = cl.array.zeros(queue, n, dtype=dtype)
+    z_dev = cl_array.zeros(queue, n, dtype=dtype)
 
     z = z_dev.get()
 
@@ -337,7 +338,7 @@ def test_custom_type_fill(ctx_factory: cl.CtxFactory):
     dtype = get_or_register_dtype(name, dtype)
 
     n = 1000
-    z_dev = cl.array.empty(queue, n, dtype=dtype)
+    z_dev = cl_array.empty(queue, n, dtype=dtype)
     z_dev.fill(np.zeros((), dtype))
 
     z = z_dev.get()
@@ -369,8 +370,8 @@ def test_custom_type_take_put(ctx_factory: cl.CtxFactory):
     z["cur_min"] = np.arange(n)
     z["cur_max"] = np.arange(n)**2
 
-    z_dev = cl.array.to_device(queue, z)
-    ind = cl.array.arange(queue, n, step=3, dtype=np.int32)
+    z_dev = cl_array.to_device(queue, z)
+    ind = cl_array.arange(queue, n, step=3, dtype=np.int32)
 
     z_ind_ref = z[ind.get()]
     z_ind = z_dev[ind]
@@ -1088,7 +1089,7 @@ def test_diff(ctx_factory: cl.CtxFactory):
     a = a_dev.get()
 
     err = la.norm(
-            cl.array.diff(a_dev).get() - np.diff(a))
+            cl_array.diff(a_dev).get() - np.diff(a))
     assert err < 1e-4
 
 # }}}
@@ -1103,7 +1104,7 @@ def test_copy(ctx_factory: cl.CtxFactory):
 
     # Test copy
 
-    arr = cl.array.zeros(queue1, 100, np.int32)
+    arr = cl_array.zeros(queue1, 100, np.int32)
     arr_copy = arr.copy()
 
     assert (arr == arr_copy).all().get()
@@ -1201,7 +1202,7 @@ def test_concatenate(ctx_factory: cl.CtxFactory):
     b = b_dev.get()
     c = c_dev.get()
 
-    cat_dev = cl.array.concatenate((a_dev, b_dev, c_dev))
+    cat_dev = cl_array.concatenate((a_dev, b_dev, c_dev))
     cat = np.concatenate((a, b, c))
 
     assert la.norm(cat - cat_dev.get()) == 0
@@ -1349,7 +1350,7 @@ def test_meshmode_view(ctx_factory: cl.CtxFactory):
     queue = cl.CommandQueue(context)
 
     n = 2
-    result = cl.array.empty(queue, (2, n*6), np.float32)
+    result = cl_array.empty(queue, (2, n*6), np.float32)
 
     def view(z):
         return z[..., n*3:n*6].reshape((*z.shape[:-1], n, 3))
@@ -1829,7 +1830,6 @@ def test_str_without_queue(ctx_factory: cl.CtxFactory):
 @pytest.mark.parametrize("input_dims", (1, 2, 3))
 def test_stack(ctx_factory: cl.CtxFactory, input_dims, order):
     # Replicates pytato/test/test_codegen.py::test_stack
-    import pyopencl.array as cla
     cl_ctx = ctx_factory()
     queue = cl.CommandQueue(cl_ctx)
 
@@ -1842,10 +1842,10 @@ def test_stack(ctx_factory: cl.CtxFactory, input_dims, order):
     x_in = x_in if order == "C" else np.asfortranarray(x_in)
     y_in = y_in if order == "C" else np.asfortranarray(y_in)
 
-    x = cla.to_device(queue, x_in)
-    y = cla.to_device(queue, y_in)
+    x = cl_array.to_device(queue, x_in)
+    y = cl_array.to_device(queue, y_in)
 
-    np.testing.assert_allclose(cla.stack((x, y), axis=axis).get(),
+    np.testing.assert_allclose(cl_array.stack((x, y), axis=axis).get(),
                                 np.stack((x_in, y_in), axis=axis))
 
 # }}}
@@ -1938,7 +1938,7 @@ def test_slice_copy(ctx_factory: cl.CtxFactory):
     queue = cl.CommandQueue(cl_ctx)
 
     rng = np.random.default_rng(seed=42)
-    x = cl.array.to_device(queue, rng.random(size=(96, 27)))
+    x = cl_array.to_device(queue, rng.random(size=(96, 27)))
     y = x[::8, ::3]
     with pytest.raises(RuntimeError):
         y.copy()
@@ -1963,7 +1963,7 @@ def test_ravel(ctx_factory: cl.CtxFactory, order):
     else:
         raise AssertionError
 
-    x_cl = cl.array.to_device(cq, x)
+    x_cl = cl_array.to_device(cq, x)
 
     np.testing.assert_allclose(x_cl.ravel(order=order).get(),
                                x.ravel(order=order))
@@ -1988,7 +1988,7 @@ def test_arithmetic_on_non_scalars(ctx_factory: cl.CtxFactory):
             return ArrayContainer(self._data == other)
 
     with pytest.raises(TypeError):
-        ArrayContainer(np.ones(100)) + cl.array.zeros(cq, (10,), dtype=np.float64)
+        ArrayContainer(np.ones(100)) + cl_array.zeros(cq, (10,), dtype=np.float64)
 
 # }}}
 
@@ -2216,13 +2216,13 @@ def test_dtype_conversions(ctx_factory: cl.CtxFactory):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
-    ary = cl.array.to_device(queue, np.linspace(0, 1, 32))
+    ary = cl_array.to_device(queue, np.linspace(0, 1, 32))
 
     for func, nargs, arg_name in [
-            (cl.array.sum, 1, "dtype"),
-            (cl.array.dot, 2, "dtype"),
-            (cl.array.vdot, 2, "dtype"),
-            (cl.array.cumsum, 1, "output_dtype"),
+            (cl_array.sum, 1, "dtype"),
+            (cl_array.dot, 2, "dtype"),
+            (cl_array.vdot, 2, "dtype"),
+            (cl_array.cumsum, 1, "output_dtype"),
             ]:
         for dtype in [np.float32, np.float64]:
             result = func(*((ary,) * nargs), **{arg_name: dtype})
@@ -2372,8 +2372,8 @@ def test_xdg_cache_home(ctx_factory: cl.CtxFactory):
     try:
         # Make sure that the source build cache is enabled
         old_characterize_has_src_build_cache = \
-            cl.characterize.has_src_build_cache
-        cl.characterize.has_src_build_cache = lambda dev: False
+            cl_characterize.has_src_build_cache
+        cl_characterize.has_src_build_cache = lambda dev: False
 
         old_xdg_cache_home = os.getenv("XDG_CACHE_HOME")
         os.environ["XDG_CACHE_HOME"] = xdg_dir
@@ -2383,7 +2383,7 @@ def test_xdg_cache_home(ctx_factory: cl.CtxFactory):
 
         assert os.path.exists(xdg_pyopencl_dir)
     finally:
-        cl.characterize.has_src_build_cache = \
+        cl_characterize.has_src_build_cache = \
             old_characterize_has_src_build_cache
 
         if old_xdg_cache_home is not None:
