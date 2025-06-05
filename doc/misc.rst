@@ -213,6 +213,9 @@ while building. You can also specify the paths to the OpenCL headers and librari
     # Option 2: specify the paths via arguments to pip install:
     $ pip install -v . --config-settings='cmake.args=-DCL_INC_DIR=/path/to/OpenCL/include;-DCL_LIB_DIR=/path/to/OpenCL/lib'
 
+When building from source, to enable GL interop, set the environment variable
+``PYOPENCL_ENABLE_GL`` to ``ON``.
+
 Tips
 ====
 
