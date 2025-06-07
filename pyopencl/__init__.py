@@ -1630,7 +1630,7 @@ def enqueue_svm_memfill(
             queue, dest, pattern, byte_count=byte_count, wait_for=wait_for)
 
 
-def enqueue_svm_migratemem(
+def enqueue_svm_migrate_mem(
             queue: CommandQueue,
             svms: Sequence[SVMPointer],
             flags: svm_mem_flags,
@@ -1648,7 +1648,7 @@ def enqueue_svm_migratemem(
     This function requires OpenCL 2.1.
     """
 
-    return _cl._enqueue_svm_migratemem(queue, svms, flags, wait_for)
+    return _cl._enqueue_svm_migrate_mem(queue, svms, flags, wait_for)
 
 
 def svm_empty(
@@ -1928,7 +1928,7 @@ __all__ = [
     "enqueue_nd_range_kernel",
     "enqueue_release_gl_objects",
     "enqueue_svm_memfill",
-    "enqueue_svm_migratemem",
+    "enqueue_svm_migrate_mem",
     "event_info",
     "filter_mode",
     "fsvm_empty",
