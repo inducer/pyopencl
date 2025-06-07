@@ -233,7 +233,7 @@ Operations on SVM
 (See also :ref:`mem-transfer`.)
 
 .. autofunction:: enqueue_svm_memfill
-.. autofunction:: enqueue_svm_migratemem
+.. autofunction:: enqueue_svm_migrate_mem
 
 Image
 -----
