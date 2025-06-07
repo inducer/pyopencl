@@ -9,6 +9,10 @@ on:
     schedule:
         - cron:  '17 3 * * 0'
 
+concurrency:
+    group: ${{ github.head_ref || github.ref_name }}
+    cancel-in-progress: true
+
 jobs:
     ruff:
         name: Ruff
@@ -30,30 +34,7 @@ jobs:
         -   uses: actions/checkout@v4
         -   uses: crate-ci/typos@master
 
-    pylint:
-        name: Pylint
-        runs-on: ubuntu-latest
-        steps:
-        -   uses: actions/checkout@v4
-        -   name: "Main Script"
-            run: |
-                CONDA_ENVIRONMENT=.test-conda-env-py3.yml
-                echo "- matplotlib" >> $CONDA_ENVIRONMENT
-                echo "- pyopengl" >> $CONDA_ENVIRONMENT
-                echo "- ipython" >> $CONDA_ENVIRONMENT
-
-                curl -L -O https://tiker.net/ci-support-v0
-                . ci-support-v0
-                build_py_project_in_conda_env
-
-                # Avoid linting local directory, where native module
-                # cannot be imported.
-                rm -Rf "$(get_proj_name)"
-
-                run_pylint "$(get_proj_name)" test/*.py
-
-    mypy:
-        name: Mypy
+    basedpyright:
         runs-on: ubuntu-latest
         steps:
         -   uses: actions/checkout@v4
@@ -64,8 +45,8 @@ jobs:
                 export CL_USE_SHIPPED_EXT=on
                 build_py_project_in_conda_env
 
-                python -m pip install mypy importlib-resources
-                ./run-mypy.sh
+                python -m pip install basedpyright pytest
+                basedpyright
 
     pytest:
         name: Pytest Linux POCL
@@ -172,6 +153,7 @@ jobs:
         strategy:
             matrix:
                 downstream_project: [loopy, boxtree, meshmode]
+            fail-fast: false
         name: Tests for downstream project ${{ matrix.downstream_project }}
         runs-on: ubuntu-latest
         steps:

@@ -37,7 +37,7 @@ jobs:
         run: |
           set -x
           if [[ ${{ matrix.os }} == windows-* ]]; then
-            export CL_INC_DIR="D:/a/pyopencl/pyopencl/OpenCL-Headers/install/include"
+            export CL_INC_DIR="C:/a/pyopencl/pyopencl/OpenCL-Headers/install/include"
             export CL_LIB_DIR="C:/Program Files/OpenCL-ICD-Loader/lib"
           fi
           python -m cibuildwheel --output-dir wheelhouse

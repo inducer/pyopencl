@@ -57,7 +57,7 @@ def make_unary_function_test(name, limits=(0, 1), threshold=0, use_complex=False
     a = float(a)
     b = float(b)
 
-    def test(ctx_factory):
+    def test(ctx_factory: cl.CtxFactory):
         context = ctx_factory()
         queue = cl.CommandQueue(context)
 
@@ -123,7 +123,7 @@ test_cosh = make_unary_function_test("cosh", (-3, 3), 3e-6, use_complex=2e-3)
 test_tanh = make_unary_function_test("tanh", (-3, 3), 2e-6, use_complex=True)
 
 
-def test_atan2(ctx_factory):
+def test_atan2(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -140,7 +140,7 @@ def test_atan2(ctx_factory):
             assert abs(math.atan2(a[i], a2[i]) - b[i]) < 1e-6
 
 
-def test_atan2pi(ctx_factory):
+def test_atan2pi(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -157,7 +157,7 @@ def test_atan2pi(ctx_factory):
             assert abs(math.atan2(a[i], a2[i]) / math.pi - b[i]) < 1e-6
 
 
-def test_fmod(ctx_factory):
+def test_fmod(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -170,7 +170,7 @@ def test_fmod(ctx_factory):
         assert np.max(np.abs(np.fmod(a.get(), a2.get()) - b.get())) < 1e-4
 
 
-def test_ldexp(ctx_factory):
+def test_ldexp(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -187,7 +187,7 @@ def test_ldexp(ctx_factory):
             assert math.ldexp(a[i], int(a2[i])) == b[i]
 
 
-def test_modf(ctx_factory):
+def test_modf(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -206,7 +206,7 @@ def test_modf(ctx_factory):
             assert abs(fracpart_true - fracpart[i]) < 1e-4
 
 
-def test_frexp(ctx_factory):
+def test_frexp(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     queue = cl.CommandQueue(context)
 
@@ -225,7 +225,7 @@ def test_frexp(ctx_factory):
             assert ex_true == exponents[i]
 
 
-def test_bessel(ctx_factory):
+def test_bessel(ctx_factory: cl.CtxFactory):
     try:
         import scipy.special as spec
     except ImportError:
@@ -316,7 +316,7 @@ def test_bessel(ctx_factory):
 
 
 @pytest.mark.parametrize("ref_src", ["pyfmmlib", "scipy"])
-def test_complex_bessel(ctx_factory, ref_src):
+def test_complex_bessel(ctx_factory: cl.CtxFactory, ref_src):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -389,7 +389,7 @@ def test_complex_bessel(ctx_factory, ref_src):
 
 
 @pytest.mark.parametrize("ref_src", ["pyfmmlib", "scipy"])
-def test_hankel_01_complex(ctx_factory, ref_src):
+def test_hankel_01_complex(ctx_factory: cl.CtxFactory, ref_src):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -441,7 +441,7 @@ def test_hankel_01_complex(ctx_factory, ref_src):
 
 
 @pytest.mark.parametrize("dtype", [np.complex64, np.complex128])
-def test_complex_muladd(ctx_factory, dtype):
+def test_complex_muladd(ctx_factory: cl.CtxFactory, dtype):
     ctx = ctx_factory()
     queue = cl.CommandQueue(ctx)
 
@@ -502,7 +502,7 @@ def test_complex_muladd(ctx_factory, dtype):
         assert np.max(rel_err) < 1e-12
 
 
-def test_outoforderqueue_clmath(ctx_factory):
+def test_outoforderqueue_clmath(ctx_factory: cl.CtxFactory):
     context = ctx_factory()
     try:
         queue = cl.CommandQueue(context,

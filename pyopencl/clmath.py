@@ -1,4 +1,6 @@
 # pylint:disable=unexpected-keyword-arg  # for @elwise_kernel_runner
+from __future__ import annotations
+
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 

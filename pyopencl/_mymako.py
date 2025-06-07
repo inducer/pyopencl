@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 try:
     import mako.template  # noqa: F401
 except ImportError as err:

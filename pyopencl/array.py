@@ -2,6 +2,8 @@
 
 # NOTE: for elwise_kernel_runner which adds keyword arguments
 # pylint:disable=unexpected-keyword-arg
+from __future__ import annotations
+
 
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
@@ -32,13 +34,14 @@ import builtins
 from dataclasses import dataclass
 from functools import reduce
 from numbers import Number
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 from warnings import warn
 
 import numpy as np
 
 import pyopencl as cl
 import pyopencl.elementwise as elementwise
+import pyopencl.tools as cl_tools
 from pyopencl import cltypes
 from pyopencl.characterize import has_double_support
 from pyopencl.compyte.array import (
@@ -230,13 +233,13 @@ def elwise_kernel_runner(kernel_getter):
     return kernel_runner
 
 
-class DefaultAllocator(cl.tools.DeferredAllocator):
+class DefaultAllocator(cl_tools.DeferredAllocator):
     def __init__(self, *args, **kwargs):
         warn("pyopencl.array.DefaultAllocator is deprecated. "
                 "It will be continue to exist throughout the 2013.x "
                 "versions of PyOpenCL.",
                 DeprecationWarning, stacklevel=2)
-        cl.tools.DeferredAllocator.__init__(self, *args, **kwargs)
+        cl_tools.DeferredAllocator.__init__(self, *args, **kwargs)
 
 # }}}
 
@@ -262,7 +265,7 @@ class _copy_queue:  # noqa: N801
     pass
 
 
-_ARRAY_GET_SIZES_CACHE: Dict[Tuple[int, int, int], Tuple[int, int]] = {}
+_ARRAY_GET_SIZES_CACHE: dict[tuple[int, int, int], tuple[int, int]] = {}
 _BOOL_DTYPE = np.dtype(np.int8)
 _NOT_PRESENT = object()
 
@@ -457,22 +460,22 @@ class Array:
 
     def __init__(
             self,
-            cq: Optional[Union[cl.Context, cl.CommandQueue]],
-            shape: Union[Tuple[int, ...], int],
+            cq: cl.Context | cl.CommandQueue | None,
+            shape: tuple[int, ...] | int,
             dtype: Any,
             order: str = "C",
-            allocator: Optional[cl.tools.AllocatorBase] = None,
+            allocator: cl_tools.AllocatorBase | None = None,
             data: Any = None,
             offset: int = 0,
-            strides: Optional[Tuple[int, ...]] = None,
-            events: Optional[List[cl.Event]] = None,
+            strides: tuple[int, ...] | None = None,
+            events: list[cl.Event] | None = None,
 
             # NOTE: following args are used for the fast constructor
             _flags: Any = None,
             _fast: bool = False,
-            _size: Optional[int] = None,
-            _context: Optional[cl.Context] = None,
-            _queue: Optional[cl.CommandQueue] = None) -> None:
+            _size: int | None = None,
+            _context: cl.Context | None = None,
+            _queue: cl.CommandQueue | None = None) -> None:
         if _fast:
             # Assumptions, should be disabled if not testing
             if 0:
@@ -2352,11 +2355,11 @@ def zeros_like(ary):
 
 @dataclass
 class _ArangeInfo:
-    start: Optional[int] = None
-    stop: Optional[int] = None
-    step: Optional[int] = None
-    dtype: Optional["np.dtype"] = None
-    allocator: Optional[Any] = None
+    start: int | None = None
+    stop: int | None = None
+    step: int | None = None
+    dtype: np.dtype | None = None
+    allocator: Any | None = None
 
 
 @elwise_kernel_runner

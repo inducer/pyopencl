@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -20,7 +23,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from typing import Dict, Optional, Tuple
+
+from typing import cast
 
 from pytools import memoize
 
@@ -32,14 +36,14 @@ class CLCharacterizationWarning(UserWarning):
 
 
 @memoize
-def has_double_support(dev):
+def has_double_support(dev: cl.Device):
     for ext in dev.extensions.split(" "):
         if ext == "cl_khr_fp64":
             return True
     return False
 
 
-def has_amd_double_support(dev):
+def has_amd_double_support(dev: cl.Device):
     """"Fix to allow incomplete amd double support in low end boards"""
 
     for ext in dev.extensions.split(" "):
@@ -48,7 +52,10 @@ def has_amd_double_support(dev):
     return False
 
 
-def reasonable_work_group_size_multiple(dev, ctx=None):
+def reasonable_work_group_size_multiple(
+            dev: cl.Device,
+            ctx: cl.Context | None = None
+        ):
     try:
         return dev.warp_size_nv
     except Exception:
@@ -63,12 +70,12 @@ def reasonable_work_group_size_multiple(dev, ctx=None):
         }
         """)
     prg.build()
-    return prg.knl.get_work_group_info(
+    return cast("int", prg.knl.get_work_group_info(
             cl.kernel_work_group_info.PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
-            dev)
+            dev))
 
 
-def nv_compute_capability(dev):
+def nv_compute_capability(dev: cl.Device):
     """If *dev* is an Nvidia GPU :class:`pyopencl.Device`, return a tuple
     *(major, minor)* indicating the device's compute capability.
     """
@@ -80,7 +87,7 @@ def nv_compute_capability(dev):
         return None
 
 
-def usable_local_mem_size(dev, nargs=None):
+def usable_local_mem_size(dev: cl.Device, nargs: int | None = None):
     """Return an estimate of the usable local memory size.
     :arg nargs: Number of 32-bit arguments passed.
     """
@@ -101,7 +108,7 @@ def usable_local_mem_size(dev, nargs=None):
     return usable_local_mem_size
 
 
-def simultaneous_work_items_on_local_access(dev):
+def simultaneous_work_items_on_local_access(dev: cl.Device):
     """Return the number of work items that access local
     memory simultaneously and thereby may conflict with
     each other.
@@ -136,12 +143,12 @@ def simultaneous_work_items_on_local_access(dev):
         return 16
 
 
-def local_memory_access_granularity(dev):
+def local_memory_access_granularity(dev: cl.Device):
     """Return the number of bytes per bank in local memory."""
     return 4
 
 
-def local_memory_bank_count(dev):
+def local_memory_bank_count(dev: cl.Device):
     """Return the number of banks present in local memory.
     """
     nv_compute_cap = nv_compute_capability(dev)
@@ -219,7 +226,7 @@ def why_not_local_access_conflict_free(dev, itemsize,
             idx = []
             left_over_idx = work_item_id
             for axis, (ax_size, ax_stor_size) in enumerate(
-                    zip(array_shape, array_stored_shape)):
+                    zip(array_shape, array_stored_shape, strict=True)):
 
                 if axis >= work_item_axis:
                     left_over_idx, ax_idx = divmod(left_over_idx, ax_size)
@@ -258,7 +265,7 @@ def why_not_local_access_conflict_free(dev, itemsize,
         return 1, None
 
 
-def get_fast_inaccurate_build_options(dev):
+def get_fast_inaccurate_build_options(dev: cl.Device):
     """Return a list of flags valid on device *dev* that enable fast, but
     potentially inaccurate floating point math.
     """
@@ -269,7 +276,7 @@ def get_fast_inaccurate_build_options(dev):
     return result
 
 
-def get_simd_group_size(dev, type_size):
+def get_simd_group_size(dev: cl.Device, type_size: int):
     """Return an estimate of how many work items will be executed across SIMD
     lanes. This returns the size of what Nvidia calls a warp and what AMD calls
     a wavefront.
@@ -323,8 +330,8 @@ def get_simd_group_size(dev, type_size):
 
 def get_pocl_version(
         platform: cl.Platform,
-        fallback_value: Optional[Tuple[int, int]] = None
-        ) -> Optional[Tuple[int, int]]:
+        fallback_value: tuple[int, int] | None = None
+        ) -> tuple[int, int] | None:
     if platform.name != "Portable Computing Language":
         return None
 
@@ -342,12 +349,12 @@ def get_pocl_version(
         return (int(ver_match.group(1)), int(ver_match.group(2)))
 
 
-_CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE: Dict[cl.Device, bool] = {}
+_CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE: dict[cl.Device, bool] = {}
 
 
 def _check_for_pocl_arg_count_bug(
         dev: cl.Device,
-        ctx: Optional[cl.Context] = None) -> bool:
+        ctx: cl.Context | None = None) -> bool:
     try:
         return _CHECK_FOR_POCL_ARG_COUNT_BUG_CACHE[dev]
     except KeyError:
@@ -437,7 +444,7 @@ def has_fine_grain_system_svm_atomics(dev):
 # }}}
 
 
-def has_src_build_cache(dev: cl.Device) -> Optional[bool]:
+def has_src_build_cache(dev: cl.Device) -> bool | None:
     """
     Return *True* if *dev* has internal support for caching builds from source,
     *False* if it doesn't, and *None* if unknown.

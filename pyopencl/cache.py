@@ -1,4 +1,5 @@
 """PyOpenCL compiler cache."""
+from __future__ import annotations
 
 
 __copyright__ = "Copyright (C) 2011 Andreas Kloeckner"
@@ -28,7 +29,6 @@ import os
 import re
 import sys
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 import pyopencl._cl as _cl
 
@@ -339,8 +339,8 @@ def retrieve_from_cache(cache_dir, cache_key):
 
 @dataclass(frozen=True)
 class _SourceInfo:
-    dependencies: List[Tuple[str, ...]]
-    log: Optional[str]
+    dependencies: list[tuple[str, ...]]
+    log: str | None
 
 
 def _create_built_program_from_source_cached(ctx, src, options_bytes,
@@ -373,7 +373,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
     binaries = []
     to_be_built_indices = []
     logs = []
-    for i, (_device, cache_key) in enumerate(zip(devices, cache_keys)):
+    for i, (_device, cache_key) in enumerate(zip(devices, cache_keys, strict=True)):
         cache_result = retrieve_from_cache(cache_dir, cache_key)
 
         if cache_result is None:
@@ -391,7 +391,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
 
     message = (75*"="+"\n").join(
             f"Build on {dev} succeeded, but said:\n\n{log}"
-            for dev, log in zip(devices, logs)
+            for dev, log in zip(devices, logs, strict=True)
             if log is not None and log.strip())
 
     if message:

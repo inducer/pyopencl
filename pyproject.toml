@@ -11,14 +11,14 @@ requires = [
 
 [project]
 name = "pyopencl"
-version = "2025.1"
+version = "2025.2"
 description = "Python wrapper for OpenCL"
 readme = "README.rst"
 license = "MIT"
 authors = [
     { name = "Andreas Kloeckner", email = "inform@tiker.net" },
 ]
-requires-python = "~=3.8"
+requires-python = "~=3.10"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
@@ -37,7 +37,10 @@ dependencies = [
     "importlib-resources; python_version<'3.9'",
     "numpy",
     "platformdirs>=2.2",
-    "pytools>=2024.1.5",
+    "pytools>=2025.1.6",
+
+    # for Buffer
+    "typing_extensions>=4.6",
 ]
 
 [project.optional-dependencies]
@@ -90,6 +93,7 @@ extend-select = [
     "RUF",  # ruff
     "UP",   # pyupgrade
     "W",    # pycodestyle
+    "TC",
 ]
 extend-ignore = [
     "E226", # missing whitespace around arithmetic operator
@@ -111,6 +115,11 @@ exclude = [
 "examples/n-body.py" = ["N", "E501"]
 "pyopencl/__init__.py" = ["I001"]
 "contrib/fortran-to-opencl/translate.py" = ["N802", "N815", "B"]
+"doc/*.py" = ["I002"]
+"examples/*.py" = ["I002"]
+"test/*.py" = ["I002"]
+"contrib/**/*.py" = ["I002"]
+"*.ipynb" = ["I002"]
 
 [tool.ruff.lint.flake8-quotes]
 inline-quotes = "double"
@@ -122,32 +131,12 @@ known-first-party = ["pytools", "pymbolic", "cgen"]
 known-local-folder = ["pyopencl"]
 lines-after-imports = 2
 combine-as-imports = true
+required-imports = ["from __future__ import annotations"]
 
 [tool.pytest.ini_options]
 markers = [
     "bitonic: tests involving bitonic sort"
 ]
-
-[tool.mypy]
-warn_unused_ignores = true
-exclude = ["pyopencl/compyte"]
-
-[[tool.mypy.overrides]]
-module = [
-    "IPython.*",
-    "OpenGL.*",
-    "mako.*",
-    "matplotlib.*",
-    "pyfmmlib.*",
-    "pyopencl._cl.*",
-    "pytest.*",
-    "scipy.*",
-]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["pyopencl.compyte.*"]
-follow_imports = "skip"
 
 [tool.cibuildwheel]
 test-command = "pytest {project}/test"
@@ -257,8 +246,39 @@ reportImportCycles = "none"
 pythonVersion = "3.10"
 pythonPlatform = "All"
 
+exclude = [
+    "contrib/*.py",
+    "contrib/*/*.py",
+    "doc",
+    "examples",
+    "pyopencl/_cl_gen.pyi",
+    ".conda-root",
+    "pyopencl/ipython_ext.py",
+    "stubgen/stubgen.py",
+]
+
 [[tool.basedpyright.executionEnvironments]]
 root = "test"
 reportUnknownArgumentType = "hint"
 reportPrivateUsage = "none"
+reportAny = "none"
+reportUnknownVariableType = "none"
+reportMissingParameterType = "hint"
+reportUnknownMemberType = "hint"
+reportUnknownParameterType = "hint"
+reportUnusedImport = "hint"
+reportUnknownLambdaType = "hint"
+reportPrivateImportUsage = "none"
+reportOperatorIssue = "hint"
+reportPossiblyUnboundVariable = "none"
+reportMissingImports = "none"
+reportOptionalMemberAccess = "hint"
+reportArgumentType = "hint"
 
+[[tool.basedpyright.executionEnvironments]]
+root = "pyopencl/_monkeypatch.py"
+reportPrivateUsage = "none"
+
+[[tool.basedpyright.executionEnvironments]]
+root = "pyopencl/__init__.py"
+reportPrivateUsage = "none"

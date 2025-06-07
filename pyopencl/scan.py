@@ -1,4 +1,5 @@
 """Scan primitive."""
+from __future__ import annotations
 
 
 __copyright__ = """
@@ -25,7 +26,7 @@ Derived from code within the Thrust project, https://github.com/NVIDIA/thrust
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any
 
 import numpy as np
 
@@ -33,7 +34,7 @@ from pytools.persistent_dict import WriteOncePersistentDict
 
 import pyopencl as cl
 import pyopencl._mymako as mako
-import pyopencl.array
+import pyopencl.array as cl_array
 from pyopencl._cluda import CLUDA_PREAMBLE
 from pyopencl.tools import (
     DtypedArgument,
@@ -848,7 +849,7 @@ def _make_template(s: str):
     import re
     leftovers = set()
 
-    def replace_id(match: "re.Match") -> str:
+    def replace_id(match: re.Match) -> str:
         # avoid name clashes with user code by adding 'psc_' prefix to
         # identifiers.
 
@@ -874,11 +875,11 @@ def _make_template(s: str):
 class _GeneratedScanKernelInfo:
     scan_src: str
     kernel_name: str
-    scalar_arg_dtypes: List[Optional[np.dtype]]
+    scalar_arg_dtypes: list[np.dtype | None]
     wg_size: int
     k_group_size: int
 
-    def build(self, context: cl.Context, options: Any) -> "_BuiltScanKernelInfo":
+    def build(self, context: cl.Context, options: Any) -> _BuiltScanKernelInfo:
         program = cl.Program(context, self.scan_src).build(options)
         kernel = getattr(program, self.kernel_name)
         kernel.set_scalar_arg_dtypes(self.scalar_arg_dtypes)
@@ -899,12 +900,12 @@ class _BuiltScanKernelInfo:
 class _GeneratedFinalUpdateKernelInfo:
     source: str
     kernel_name: str
-    scalar_arg_dtypes: List[Optional[np.dtype]]
+    scalar_arg_dtypes: list[np.dtype | None]
     update_wg_size: int
 
     def build(self,
               context: cl.Context,
-              options: Any) -> "_BuiltFinalUpdateKernelInfo":
+              options: Any) -> _BuiltFinalUpdateKernelInfo:
         program = cl.Program(context, self.source).build(options)
         kernel = getattr(program, self.kernel_name)
         kernel.set_scalar_arg_dtypes(self.scalar_arg_dtypes)
@@ -930,18 +931,18 @@ class GenericScanKernelBase(ABC):
             self,
             ctx: cl.Context,
             dtype: Any,
-            arguments: Union[str, List[DtypedArgument]],
+            arguments: str | list[DtypedArgument],
             input_expr: str,
             scan_expr: str,
-            neutral: Optional[str],
+            neutral: str | None,
             output_statement: str,
-            is_segment_start_expr: Optional[str] = None,
-            input_fetch_exprs: Optional[List[Tuple[str, str, int]]] = None,
+            is_segment_start_expr: str | None = None,
+            input_fetch_exprs: list[tuple[str, str, int]] | None = None,
             index_dtype: Any = None,
             name_prefix: str = "scan",
             options: Any = None,
             preamble: str = "",
-            devices: Optional[cl.Device] = None) -> None:
+            devices: cl.Device | None = None) -> None:
         """
         :arg ctx: a :class:`pyopencl.Context` within which the code
             for this scan kernel will be generated.
@@ -1142,7 +1143,7 @@ class GenericScanKernelBase(ABC):
 
 if not cl._PYOPENCL_NO_CACHE:
     generic_scan_kernel_cache: WriteOncePersistentDict[Any,
-                    Tuple[_GeneratedScanKernelInfo, _GeneratedScanKernelInfo,
+                    tuple[_GeneratedScanKernelInfo, _GeneratedScanKernelInfo,
                     _GeneratedFinalUpdateKernelInfo]] = \
         WriteOncePersistentDict(
             "pyopencl-generated-scan-kernel-cache-v1",
@@ -1329,7 +1330,7 @@ class GenericScanKernel(GenericScanKernelBase):
             VectorArg(self.dtype, "interval_sums"),
             ]
 
-        second_level_build_kwargs: Dict[str, Optional[str]] = {}
+        second_level_build_kwargs: dict[str, str | None] = {}
         if self.is_segmented:
             second_level_arguments.append(
                     VectorArg(self.index_dtype,
@@ -1401,7 +1402,7 @@ class GenericScanKernel(GenericScanKernelBase):
         for arg in self.parsed_args:
             arg_dtypes[arg.name] = arg.dtype
 
-        fetch_expr_offsets: Dict[str, Set] = {}
+        fetch_expr_offsets: dict[str, set] = {}
         for _name, arg_name, ife_offset in self.input_fetch_exprs:
             fetch_expr_offsets.setdefault(arg_name, set()).add(ife_offset)
 
@@ -1427,10 +1428,10 @@ class GenericScanKernel(GenericScanKernelBase):
     def generate_scan_kernel(
             self,
             max_wg_size: int,
-            arguments: List[DtypedArgument],
+            arguments: list[DtypedArgument],
             input_expr: str,
-            is_segment_start_expr: Optional[str],
-            input_fetch_exprs: List[Tuple[str, str, int]],
+            is_segment_start_expr: str | None,
+            input_fetch_exprs: list[tuple[str, str, int]],
             is_first_level: bool,
             store_segment_start_flags: bool,
             k_group_size: int,
@@ -1527,7 +1528,7 @@ class GenericScanKernel(GenericScanKernelBase):
             return cl.enqueue_marker(queue, wait_for=wait_for)
 
         data_args = []
-        for arg_descr, arg_val in zip(self.parsed_args, args):
+        for arg_descr, arg_val in zip(self.parsed_args, args, strict=True):
             from pyopencl.tools import VectorArg
             if isinstance(arg_descr, VectorArg):
                 data_args.append(arg_val.base_data)
@@ -1552,16 +1553,16 @@ class GenericScanKernel(GenericScanKernelBase):
 
         # {{{ allocate some buffers
 
-        interval_results = cl.array.empty(queue,
+        interval_results = cl_array.empty(queue,
                 num_intervals, dtype=self.dtype,
                 allocator=allocator)
 
-        partial_scan_buffer = cl.array.empty(
+        partial_scan_buffer = cl_array.empty(
                 queue, n, dtype=self.dtype,
                 allocator=allocator)
 
         if self.store_segment_start_flags:
-            segment_start_flags = cl.array.empty(
+            segment_start_flags = cl_array.empty(
                     queue, n, dtype=np.bool_,
                     allocator=allocator)
 
@@ -1575,7 +1576,7 @@ class GenericScanKernel(GenericScanKernelBase):
                 ]
 
         if self.is_segmented:
-            first_segment_start_in_interval = cl.array.empty(queue,
+            first_segment_start_in_interval = cl_array.empty(queue,
                     num_intervals, dtype=self.index_dtype,
                     allocator=allocator)
             scan1_args.append(first_segment_start_in_interval.data)
@@ -1755,13 +1756,13 @@ class GenericDebugScanKernel(GenericScanKernelBase):
         if n is None:
             n, = first_array.shape
 
-        scan_tmp = cl.array.empty(queue,
+        scan_tmp = cl_array.empty(queue,
                 n, dtype=self.dtype,
                 allocator=allocator)
 
         data_args = [scan_tmp.data]
         from pyopencl.tools import VectorArg
-        for arg_descr, arg_val in zip(self.parsed_args, args):
+        for arg_descr, arg_val in zip(self.parsed_args, args, strict=True):
             if isinstance(arg_descr, VectorArg):
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
@@ -1806,7 +1807,7 @@ class _LegacyScanKernelBase(GenericScanKernel):
             output_ary = input_ary
 
         if isinstance(output_ary, (str, str)) and output_ary == "new":
-            output_ary = cl.array.empty_like(input_ary, allocator=allocator)
+            output_ary = cl_array.empty_like(input_ary, allocator=allocator)
 
         if input_ary.shape != output_ary.shape:
             raise ValueError("input and output must have the same shape")
@@ -1841,13 +1842,13 @@ class ExclusiveScanKernel(_LegacyScanKernelBase):
 class ScanTemplate(KernelTemplateBase):
     def __init__(
             self,
-            arguments: Union[str, List[DtypedArgument]],
+            arguments: str | list[DtypedArgument],
             input_expr: str,
             scan_expr: str,
-            neutral: Optional[str],
+            neutral: str | None,
             output_statement: str,
-            is_segment_start_expr: Optional[str] = None,
-            input_fetch_exprs: Optional[List[Tuple[str, str, int]]] = None,
+            is_segment_start_expr: str | None = None,
+            input_fetch_exprs: list[tuple[str, str, int]] | None = None,
             name_prefix: str = "scan",
             preamble: str = "",
             template_processor: Any = None) -> None:
