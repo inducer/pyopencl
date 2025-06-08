@@ -155,8 +155,6 @@ test-skip = [
 [tool.cibuildwheel.linux]
 skip = [
     "pp*",
-    "cp36-*",
-    "cp37-*",
     "*_i686",
 ]
 test-command = ""
@@ -180,8 +178,6 @@ repair-wheel-command = "auditwheel repair -w {dest_dir} --lib-sdir=/.libs {wheel
 [tool.cibuildwheel.macos]
 skip = [
     "pp*",
-    "cp36-*",
-    "cp37-*",
 ]
 before-all = "bash {package}/scripts/build-ocl-macos.sh"
 test-command = "pytest {project}/test/test_array.py" # same limitation as conda-forge
@@ -196,8 +192,6 @@ MACOSX_DEPLOYMENT_TARGET = "10.14"
 skip = [
     "*-win32",
     "pp*",
-    "cp36-*",
-    "cp37-*",
 ]
 test-command = ""
 before-all = "bash {package}/scripts/build-ocl-windows.sh"
