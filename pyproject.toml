@@ -185,7 +185,6 @@ skip = [
 ]
 before-all = "bash {package}/scripts/build-ocl-macos.sh"
 test-command = "pytest {project}/test/test_array.py" # same limitation as conda-forge
-archs = "x86_64 arm64"
 
 # https://github.com/conda-forge/pyopencl-feedstock/blob/6f3c5de59b18c9518abba3cb94f6ae92964553f8/recipe/meta.yaml#L62-L63
 
