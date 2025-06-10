@@ -1638,12 +1638,6 @@ def test_get_async(ctx_factory: cl.CtxFactory):
     b = a + a**5 + 1
     b_gpu = a_gpu + a_gpu**5 + 1
 
-    # deprecated, but still test
-    with pytest.deprecated_call():
-        b1 = b_gpu.get(async_=True)  # testing that this waits for events
-    b_gpu.finish()
-    assert np.abs(b1 - b).mean() < 1e-5
-
     b1, evt = b_gpu.get_async()  # testing that this waits for events
     evt.wait()
     assert np.abs(b1 - b).mean() < 1e-5

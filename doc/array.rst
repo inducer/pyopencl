@@ -136,6 +136,11 @@ The :class:`Array` Class
 
 .. autoexception:: ArrayHasOffsetError
 
+.. class:: Allocator
+
+    A callable that takes a size parameter (an :class:`int`) and returns
+    a :class:`pyopencl.MemoryObjectHolder` or :class:`pyopencl.SVMPointer`.
+
 Constructing :class:`Array` Instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

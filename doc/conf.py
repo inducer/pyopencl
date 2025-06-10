@@ -18,6 +18,12 @@ version = ".".join(str(x) for x in ver_dic["VERSION"])
 # The full version, including alpha/beta/rc tags.
 release = ver_dic["VERSION_TEXT"]
 
+
+nitpick_ignore = [
+    ("py:class", r"numpy._typing._dtype_like._SupportsDType"),
+    ("py:class", r"numpy._typing._dtype_like._DTypeDict"),
+]
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),

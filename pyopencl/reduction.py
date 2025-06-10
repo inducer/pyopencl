@@ -30,12 +30,14 @@ Based on code/ideas by Mark Harris <mharris@nvidia.com>.
 None of the original source code remains.
 """
 
+import builtins
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 import numpy as np
 
 import pyopencl as cl
+import pyopencl.array as cl_array
 from pyopencl.tools import (
     DtypedArgument,
     KernelTemplateBase,
@@ -43,6 +45,10 @@ from pyopencl.tools import (
     context_dependent_memoize,
     dtype_to_ctype,
 )
+
+
+if TYPE_CHECKING:
+    from pyopencl.typing import Allocator
 
 
 # {{{ kernel source
@@ -351,7 +357,40 @@ class ReductionKernel:
                 name=f"{name}_stage2", options=options, preamble=preamble,
                 max_group_size=max_group_size)
 
-    def __call__(self, *args: Any, **kwargs: Any) -> cl.Event:
+    @overload
+    def __call__(self,
+                *args: object,
+                return_event: Literal[True],
+                queue: cl.CommandQueue | None = None,
+                allocator: Allocator | None = None,
+                wait_for: cl.WaitList = None,
+                out: cl_array.Array | None = None,
+                range: slice | None = None,
+                slice: slice | None = None
+            ) ->  tuple[cl_array.Array, cl.Event]: ...
+
+    @overload
+    def __call__(self,
+                *args: object,
+                return_event: Literal[False],
+                queue: cl.CommandQueue | None = None,
+                allocator: Allocator | None = None,
+                wait_for: cl.WaitList = None,
+                out: cl_array.Array | None = None,
+                range: slice | None = None,
+                slice: slice | None = None
+            ) -> cl_array.Array: ...
+
+    def __call__(self,
+                *args: object,
+                return_event: bool = False,
+                queue: cl.CommandQueue | None = None,
+                allocator: Allocator | None = None,
+                wait_for: cl.WaitList = None,
+                out: cl_array.Array | None = None,
+                range: slice | None = None,
+                slice: slice | None = None
+            ) -> cl_array.Array | tuple[cl_array.Array, cl.Event]:
         """Invoke the generated kernel.
 
         |explain-waitfor|
@@ -390,18 +429,6 @@ class ReductionKernel:
             ``(scalar_array, event)``.
         """
 
-        queue = kwargs.pop("queue", None)
-        allocator = kwargs.pop("allocator", None)
-        wait_for = kwargs.pop("wait_for", None)
-        return_event = kwargs.pop("return_event", False)
-        out = kwargs.pop("out", None)
-
-        range_ = kwargs.pop("range", None)
-        slice_ = kwargs.pop("slice", None)
-
-        if kwargs:
-            raise TypeError("invalid keyword argument to reduction kernel")
-
         if wait_for is None:
             wait_for = []
         else:
@@ -415,13 +442,14 @@ class ReductionKernel:
 
         while True:
             invocation_args = []
-            vectors = []
+            vectors: list[cl_array.Array] = []
 
             array_empty = empty
 
             from pyopencl.tools import VectorArg
             for arg, arg_tp in zip(args, stage_inf.arg_types, strict=True):
                 if isinstance(arg_tp, VectorArg):
+                    assert isinstance(arg, cl_array.Array)
                     array_empty = arg.__class__
                     if not arg.flags.forc:
                         raise RuntimeError(
@@ -443,31 +471,30 @@ class ReductionKernel:
 
             # {{{ range/slice processing
 
-            if range_ is not None:
-                if slice_ is not None:
+            if range is not None:
+                if slice is not None:
                     raise TypeError("may not specify both range and slice "
                             "keyword arguments")
 
             else:
-                if slice_ is None:
-                    slice_ = slice(None)
+                if slice is None:
+                    slice = builtins.slice(None)
 
                 if repr_vec is None:
                     raise TypeError(
                             "must have vector argument when range is not specified")
 
-                range_ = slice(*slice_.indices(repr_vec.size))
+                range = builtins.slice(*slice.indices(repr_vec.size))
 
-            assert range_ is not None
+            assert range is not None
 
-            start = range_.start
+            start = cast("int | None", range.start)
             if start is None:
                 start = 0
-            if range_.step is None:
+            step = cast("int | None", range.step)
+            if step is None:
                 step = 1
-            else:
-                step = range_.step
-            sz = abs(range_.stop - start)//step
+            sz = abs(cast("int", range.stop) - start) //step
 
             # }}}
 
@@ -504,7 +531,7 @@ class ReductionKernel:
                 macrogroup_size = group_count*stage_inf.group_size
                 seq_count = (sz + macrogroup_size - 1) // macrogroup_size
 
-            size_args = [start, step, range_.stop, seq_count, sz]
+            size_args = [start, step, range.stop, seq_count, sz]
 
             if group_count == 1 and out is not None:
                 result = out
@@ -536,7 +563,7 @@ class ReductionKernel:
                 stage_inf = self.stage_2_inf
                 args = (result, *stage1_args)
 
-                range_ = slice_ = None
+                range = slice = None
 
 # }}}
 

@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
 
 import numpy as np
@@ -33,6 +33,7 @@ from typing_extensions import Buffer as abc_Buffer
 
 if TYPE_CHECKING:
     import pyopencl as _cl
+    import pyopencl.array as _cl_array
 
 
 DTypeT = TypeVar("DTypeT", bound=np.dtype[Any])
@@ -49,4 +50,8 @@ KernelArg: TypeAlias = """
     | _cl.Buffer
     | _cl.Image
     | _cl.Sampler
-    | _cl.SVMPointer"""
+    | _cl.SVMPointer
+    | _cl_array.Array
+    | None"""
+
+Allocator: TypeAlias = "Callable[[int], _cl.MemoryObjectHolder | _cl.SVMPointer]"

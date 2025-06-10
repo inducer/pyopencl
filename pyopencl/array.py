@@ -34,14 +34,22 @@ import builtins
 from dataclasses import dataclass
 from functools import reduce
 from numbers import Number
-from typing import Any
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Concatenate,
+    Literal,
+    ParamSpec,
+    cast,
+)
 from warnings import warn
 
 import numpy as np
+from typing_extensions import Self, override
 
 import pyopencl as cl
 import pyopencl.elementwise as elementwise
-import pyopencl.tools as cl_tools
 from pyopencl import cltypes
 from pyopencl.characterize import has_double_support
 from pyopencl.compyte.array import (
@@ -53,12 +61,24 @@ from pyopencl.compyte.array import (
 )
 
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Hashable
+
+    from numpy.typing import DTypeLike, NDArray
+
+    from pyopencl.typing import Allocator
+
+
 SCALAR_CLASSES = (Number, np.bool_, bool)
 
 if cl.get_cl_header_version() >= (2, 0):
     _SVMPointer_or_nothing = cl.SVMPointer
 else:
     _SVMPointer_or_nothing = ()
+
+
+class _NoValue:
+    pass
 
 
 # {{{ _get_common_dtype
@@ -163,7 +183,11 @@ vec = VecLookupWarner()
 
 # {{{ helper functionality
 
-def _splay(device, n, kernel_specific_max_wg_size=None):
+def _splay(
+            device: cl.Device,
+            n: int,
+            kernel_specific_max_wg_size: int | None = None,
+        ):
     max_work_items = builtins.min(128, device.max_work_group_size)
 
     if kernel_specific_max_wg_size is not None:
@@ -198,7 +222,12 @@ def _splay(device, n, kernel_specific_max_wg_size=None):
 ARRAY_KERNEL_EXEC_HOOK = None
 
 
-def elwise_kernel_runner(kernel_getter):
+P = ParamSpec("P")
+
+
+def elwise_kernel_runner(
+            kernel_getter: Callable[Concatenate[Array, P], cl.Kernel]
+        ) -> Callable[Concatenate[Array, P], cl.Event]:
     """Take a kernel getter of the same signature as the kernel
     and return a function that invokes that kernel.
 
@@ -207,39 +236,30 @@ def elwise_kernel_runner(kernel_getter):
     from functools import wraps
 
     @wraps(kernel_getter)
-    def kernel_runner(out, *args, **kwargs):
+    def kernel_runner(out: Array, *args: P.args, **kwargs: P.kwargs) -> cl.Event:
         assert isinstance(out, Array)
 
-        wait_for = kwargs.pop("wait_for", None)
-        queue = kwargs.pop("queue", None)
+        wait_for = cast("cl.WaitList", kwargs.pop("wait_for", None))
+        queue = cast("cl.CommandQueue | None", kwargs.pop("queue", None))
         if queue is None:
             queue = out.queue
 
         assert queue is not None
 
         knl = kernel_getter(out, *args, **kwargs)
-        work_group_info = knl.get_work_group_info(
+        work_group_info = cast("int", knl.get_work_group_info(
             cl.kernel_work_group_info.WORK_GROUP_SIZE,
-            queue.device)
+            queue.device))
         gs, ls = out._get_sizes(queue, work_group_info)
 
-        args = (out, *args, out.size)
+        knl_args = (out, *args, out.size)
         if ARRAY_KERNEL_EXEC_HOOK is not None:
             return ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
-                    knl, queue, gs, ls, *args, wait_for=wait_for)
+                    knl, queue, gs, ls, *knl_args, wait_for=wait_for)
         else:
-            return knl(queue, gs, ls, *args, wait_for=wait_for)
+            return knl(queue, gs, ls, *knl_args, wait_for=wait_for)
 
     return kernel_runner
-
-
-class DefaultAllocator(cl_tools.DeferredAllocator):
-    def __init__(self, *args, **kwargs):
-        warn("pyopencl.array.DefaultAllocator is deprecated. "
-                "It will be continue to exist throughout the 2013.x "
-                "versions of PyOpenCL.",
-                DeprecationWarning, stacklevel=2)
-        cl_tools.DeferredAllocator.__init__(self, *args, **kwargs)
 
 # }}}
 
@@ -265,7 +285,8 @@ class _copy_queue:  # noqa: N801
     pass
 
 
-_ARRAY_GET_SIZES_CACHE: dict[tuple[int, int, int], tuple[int, int]] = {}
+_ARRAY_GET_SIZES_CACHE: \
+    dict[Hashable, tuple[tuple[int, ...], tuple[int, ...]]] = {}
 _BOOL_DTYPE = np.dtype(np.int8)
 _NOT_PRESENT = object()
 
@@ -456,15 +477,25 @@ class Array:
     .. automethod:: finish
     """
 
-    __array_priority__ = 100
+    __array_priority__: ClassVar[int] = 100
+
+    queue: cl.CommandQueue | None
+    shape: tuple[int, ...]
+    dtype: np.dtype[Any]
+    strides: tuple[int, ...]
+    events: list[cl.Event]
+    nbytes: int
+    size: int
+    allocator: Allocator | None
+    base_data: cl.MemoryObjectHolder | cl.SVMPointer | None
 
     def __init__(
             self,
             cq: cl.Context | cl.CommandQueue | None,
             shape: tuple[int, ...] | int,
-            dtype: Any,
+            dtype: DTypeLike,
             order: str = "C",
-            allocator: cl_tools.AllocatorBase | None = None,
+            allocator: Allocator | None = None,
             data: Any = None,
             offset: int = 0,
             strides: tuple[int, ...] | None = None,
@@ -478,7 +509,7 @@ class Array:
             _queue: cl.CommandQueue | None = None) -> None:
         if _fast:
             # Assumptions, should be disabled if not testing
-            if 0:
+            if TYPE_CHECKING:
                 assert cq is None
                 assert isinstance(_context, cl.Context)
                 assert _queue is None or isinstance(_queue, cl.CommandQueue)
@@ -651,8 +682,15 @@ class Array:
             self._flags = f = _ArrayFlags(self)
         return f
 
-    def _new_with_changes(self, data, offset, shape=None, dtype=None,
-            strides=None, queue=_copy_queue, allocator=None):
+    def _new_with_changes(self,
+                data: cl.MemoryObjectHolder | cl.SVMPointer | None,
+                offset: int | None,
+                shape: tuple[int, ...] | None = None,
+                dtype: np.dtype[Any] | None = None,
+                strides: tuple[int, ...] | None = None,
+                queue: cl.CommandQueue | type[_copy_queue] | None = _copy_queue,
+                allocator: Allocator | None = None,
+            ) -> Self:
         """
         :arg data: *None* means allocate a new array.
         """
@@ -672,6 +710,8 @@ class Array:
             queue = self.queue
         if allocator is None:
             allocator = self.allocator
+        if offset is None:
+            offset = self.offset
 
         # If we're allocating new data, then there's not likely to be
         # a data dependency. Otherwise, the two arrays should probably
@@ -687,7 +727,7 @@ class Array:
                 events=events,
                 _fast=fast, _context=self.context, _queue=queue, _size=size)
 
-    def with_queue(self, queue):
+    def with_queue(self, queue: cl.CommandQueue | None):
         """Return a copy of *self* with the default queue set to *queue*.
 
         *None* is allowed as a value for *queue*.
@@ -701,7 +741,10 @@ class Array:
         return self._new_with_changes(self.base_data, self.offset,
                 queue=queue)
 
-    def _get_sizes(self, queue, kernel_specific_max_wg_size=None):
+    def _get_sizes(self,
+                queue: cl.CommandQueue,
+                kernel_specific_max_wg_size: int | None = None
+            ) -> tuple[tuple[int, ...], tuple[int, ...]]:
         if not self.flags.forc:
             raise NotImplementedError("cannot operate on non-contiguous array")
         cache_key = (queue.device.int_ptr, self.size, kernel_specific_max_wg_size)
@@ -713,7 +756,11 @@ class Array:
             _ARRAY_GET_SIZES_CACHE[cache_key] = sizes
             return sizes
 
-    def set(self, ary, queue=None, async_=None, **kwargs):
+    def set(self,
+                ary: NDArray[Any],
+                queue: cl.CommandQueue | None = None,
+                async_: bool = False,
+            ):
         """Transfer the contents the :class:`numpy.ndarray` object *ary*
         onto the device.
 
@@ -723,31 +770,7 @@ class Array:
         *async_* is a Boolean indicating whether the function is allowed
         to return before the transfer completes. To avoid synchronization
         bugs, this defaults to *False*.
-
-        .. versionchanged:: 2017.2.1
-
-            Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
-            we will continue to  accept *async* as a parameter, however this
-            should be considered deprecated. *async_* is the new, official
-            spelling.
         """
-
-        # {{{ handle 'async' deprecation
-
-        async_arg = kwargs.pop("async", None)
-        if async_arg is not None:
-            if async_ is not None:
-                raise TypeError("may not specify both 'async' and 'async_'")
-            async_ = async_arg
-
-        if async_ is None:
-            async_ = False
-
-        if kwargs:
-            raise TypeError("extra keyword arguments specified: %s"
-                    % ", ".join(kwargs))
-
-        # }}}
 
         assert ary.size == self.size
         assert ary.dtype == self.dtype
@@ -756,36 +779,23 @@ class Array:
             raise RuntimeError("cannot set from non-contiguous array")
 
         if not _equal_strides(ary.strides, self.strides, self.shape):
-            warn("Setting array from one with different "
-                    "strides/storage order. This will cease to work "
-                    "in 2013.x.",
-                    stacklevel=2)
+            raise RuntimeError("Setting array from one with different "
+                    "strides/storage order.")
 
         if self.size:
+            queue = queue or self.queue
+            assert queue is not None
             event1 = cl.enqueue_copy(queue or self.queue, self.base_data, ary,
                     dst_offset=self.offset,
                     is_blocking=not async_)
 
             self.add_event(event1)
 
-    def _get(self, queue=None, ary=None, async_=None, **kwargs):
-        # {{{ handle 'async' deprecation
-
-        async_arg = kwargs.pop("async", None)
-        if async_arg is not None:
-            if async_ is not None:
-                raise TypeError("may not specify both 'async' and 'async_'")
-            async_ = async_arg
-
-        if async_ is None:
-            async_ = False
-
-        if kwargs:
-            raise TypeError("extra keyword arguments specified: %s"
-                    % ", ".join(kwargs))
-
-        # }}}
-
+    def _get(self,
+             queue: cl.CommandQueue | None = None,
+             ary: NDArray[Any] | None = None,
+             async_: bool = False,
+             ):
         if ary is None:
             ary = np.empty(self.shape, self.dtype)
 
@@ -812,52 +822,36 @@ class Array:
                     "to associate one.")
 
         if self.size:
-            event1 = cl.enqueue_copy(queue, ary, self.base_data,
+            assert self.base_data is not None
+            event1 = cast("cl.Event", cl.enqueue_copy(queue, ary, self.base_data,
                     src_offset=self.offset,
-                    wait_for=self.events, is_blocking=not async_)
+                    wait_for=self.events, is_blocking=not async_))
 
             self.add_event(event1)
         else:
-            event1 = None
+            event1 = cl.enqueue_marker(queue, wait_for=self.events)
+            if not async_:
+                event1.wait()
 
         return ary, event1
 
-    def get(self, queue=None, ary=None, async_=None, **kwargs):
+    def get(self,
+                queue: cl.CommandQueue | None = None,
+                ary: NDArray[Any] | None = None,
+            ) -> NDArray[Any]:
         """Transfer the contents of *self* into *ary* or a newly allocated
         :class:`numpy.ndarray`. If *ary* is given, it must have the same
         shape and dtype.
-
-        .. versionchanged:: 2019.1.2
-
-            Calling with ``async_=True`` was deprecated and replaced by
-            :meth:`get_async`.
-            The event returned by :meth:`pyopencl.enqueue_copy` is now stored into
-            :attr:`events` to ensure data is not modified before the copy is
-            complete.
-
-        .. versionchanged:: 2015.2
-
-            *ary* with different shape was deprecated.
-
-        .. versionchanged:: 2017.2.1
-
-            Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
-            we will continue to  accept *async* as a parameter, however this
-            should be considered deprecated. *async_* is the new, official
-            spelling.
         """
 
-        if async_:
-            warn("calling pyopencl.Array.get with 'async_=True' is deprecated. "
-                    "Please use pyopencl.Array.get_async for asynchronous "
-                    "device-to-host transfers",
-                    DeprecationWarning, stacklevel=2)
-
-        ary, _event1 = self._get(queue=queue, ary=ary, async_=async_, **kwargs)
+        ary, _event1 = self._get(queue=queue, ary=ary)
 
         return ary
 
-    def get_async(self, queue=None, ary=None, **kwargs):
+    def get_async(self,
+                queue: cl.CommandQueue | None = None,
+                ary: NDArray[Any] | None = None,
+            ) -> tuple[NDArray[Any], cl.Event]:
         """
         Asynchronous version of :meth:`get` which returns a tuple ``(ary, event)``
         containing the host array ``ary``
@@ -867,9 +861,9 @@ class Array:
         .. versionadded:: 2019.1.2
         """
 
-        return self._get(queue=queue, ary=ary, async_=True, **kwargs)
+        return self._get(queue=queue, ary=ary, async_=True)
 
-    def copy(self, queue=_copy_queue):
+    def copy(self, queue: cl.CommandQueue | type[_copy_queue] | None = _copy_queue):
         """
         :arg queue: The :class:`~pyopencl.CommandQueue` for the returned array.
 
@@ -881,20 +875,24 @@ class Array:
         """
 
         if queue is _copy_queue:
-            queue = self.queue
+            queue_san = self.queue
+        else:
+            queue_san = cast("cl.CommandQueue | None", queue)
 
-        result = self._new_like_me(queue=queue)
+        result = self._new_like_me(queue=queue_san)
 
         # result.queue won't be the same as queue if queue is None.
         # We force them to be the same here.
         if result.queue is not queue:
-            result = result.with_queue(queue)
+            result = result.with_queue(queue_san)
 
         if not self.flags.forc:
             raise RuntimeError("cannot copy non-contiguous array")
 
         if self.nbytes:
-            event1 = cl.enqueue_copy(queue or self.queue,
+            queue_san = queue_san or self.queue
+            assert queue_san is not None
+            event1 = cl.enqueue_copy(queue_san,
                     result.base_data, self.base_data,
                     src_offset=self.offset, byte_count=self.nbytes,
                     wait_for=self.events)
@@ -935,7 +933,7 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _axpbyz(out, afac, a, bfac, b, queue=None):
+    def _axpbyz(out, afac, a, bfac, b, queue: cl.CommandQueue | None = None):
         """Compute ``out = selffac * self + otherfac*other``,
         where *other* is an array."""
         a_shape = a.shape
@@ -951,7 +949,7 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _axpbz(out, a, x, b, queue=None):
+    def _axpbz(out, a, x, b, queue: cl.CommandQueue | None = None):
         """Compute ``z = a * x + b``, where *b* is a scalar."""
         a = np.array(a)
         b = np.array(b)
@@ -961,7 +959,7 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _elwise_multiply(out, a, b, queue=None):
+    def _elwise_multiply(out, a, b, queue: cl.CommandQueue | None = None):
         a_shape = a.shape
         b_shape = b.shape
         out_shape = out.shape
@@ -976,7 +974,7 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _rdiv_scalar(out, ary, other, queue=None):
+    def _rdiv_scalar(out, ary, other, queue: cl.CommandQueue | None = None):
         other = np.array(other)
         assert out.shape == ary.shape
         return elementwise.get_rdivide_elwise_kernel(
@@ -984,7 +982,7 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _div(out, self, other, queue=None):
+    def _div(out, self, other, queue: cl.CommandQueue | None = None):
         """Divides an array by another array."""
         assert (self.shape == other.shape == out.shape
                 or (self.shape == () and other.shape == out.shape)
@@ -1074,7 +1072,7 @@ class Array:
         return elementwise.get_copy_kernel(
                 dest.context, dest.dtype, src.dtype)
 
-    def _new_like_me(self, dtype=None, queue=None):
+    def _new_like_me(self, dtype=None, queue: cl.CommandQueue | None = None):
         if dtype is None:
             dtype = self.dtype
             strides = self.strides
@@ -1098,14 +1096,14 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _scalar_binop(out, a, b, queue=None, op=None):
+    def _scalar_binop(out, a, b, queue: cl.CommandQueue | None = None, op=None):
         return elementwise.get_array_scalar_binop_kernel(
                 out.context, op, out.dtype, a.dtype,
                 np.array(b).dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _array_binop(out, a, b, queue=None, op=None):
+    def _array_binop(out, a, b, queue: cl.CommandQueue | None = None, op=None):
         a_shape = a.shape
         b_shape = b.shape
         out_shape = out.shape
@@ -1119,7 +1117,7 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _unop(out, a, queue=None, op=None):
+    def _unop(out, a, queue: cl.CommandQueue | None = None, op=None):
         if out.shape != a.shape:
             raise ValueError("shapes of arguments do not match")
         return elementwise.get_unop_kernel(
@@ -1129,7 +1127,7 @@ class Array:
 
     # {{{ operators
 
-    def mul_add(self, selffac, other, otherfac, queue=None):
+    def mul_add(self, selffac, other, otherfac, queue: cl.CommandQueue | None = None):
         """Return ``selffac * self + otherfac * other``.
         """
         queue = queue or self.queue
@@ -1152,7 +1150,7 @@ class Array:
         else:
             raise NotImplementedError
 
-    def __add__(self, other):
+    def __add__(self, other) -> Self:
         """Add an array with an array or an array with a scalar."""
 
         if isinstance(other, Array):
@@ -1178,7 +1176,7 @@ class Array:
 
     __radd__ = __add__
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> Self:
         """Subtract an array from an array or a scalar from an array."""
 
         if isinstance(other, Array):
@@ -1201,7 +1199,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __rsub__(self, other):
+    def __rsub__(self, other) -> Self:
         """Subtracts an array by a scalar or an array::
 
            x = n - self
@@ -1217,7 +1215,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __iadd__(self, other):
+    def __iadd__(self, other) -> Self:
         if isinstance(other, Array):
             if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
@@ -1235,7 +1233,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __isub__(self, other):
+    def __isub__(self, other) -> Self:
         if isinstance(other, Array):
             if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
@@ -1250,15 +1248,15 @@ class Array:
         else:
             return NotImplemented
 
-    def __pos__(self):
+    def __pos__(self) -> Self:
         return self
 
-    def __neg__(self):
+    def __neg__(self) -> Self:
         result = self._new_like_me()
         result.add_event(self._axpbz(result, -1, self, 0))
         return result
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> Self:
         if isinstance(other, Array):
             result = _get_broadcasted_binary_op_result(self, other, self.queue)
             result.add_event(
@@ -1274,7 +1272,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __rmul__(self, other):
+    def __rmul__(self, other) -> Self:
         if np.isscalar(other):
             common_dtype = _get_common_dtype(self, other, self.queue)
             result = self._new_like_me(common_dtype)
@@ -1285,7 +1283,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __imul__(self, other):
+    def __imul__(self, other) -> Self:
         if isinstance(other, Array):
             if other.shape != self.shape and other.shape != ():
                 raise NotImplementedError("Broadcasting binary op with shapes:"
@@ -1300,7 +1298,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __div__(self, other):
+    def __div__(self, other) -> Self:
         """Divides an array by an array or a scalar, i.e. ``self / other``.
         """
         if isinstance(other, Array):
@@ -1326,7 +1324,7 @@ class Array:
 
     __truediv__ = __div__
 
-    def __rdiv__(self, other):
+    def __rdiv__(self, other) -> Self:
         """Divides an array by a scalar or an array, i.e. ``other / self``.
         """
         common_dtype = _get_truedivide_dtype(self, other, self.queue)
@@ -1345,7 +1343,7 @@ class Array:
 
     __rtruediv__ = __rdiv__
 
-    def __itruediv__(self, other):
+    def __itruediv__(self, other) -> Self:
         # raise an error if the result cannot be cast to self
         common_dtype = _get_truedivide_dtype(self, other, self.queue)
         if not np.can_cast(common_dtype, self.dtype.type, "same_kind"):
@@ -1370,7 +1368,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __and__(self, other):
+    def __and__(self, other) -> Self:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
@@ -1390,7 +1388,7 @@ class Array:
 
     __rand__ = __and__  # commutes
 
-    def __or__(self, other):
+    def __or__(self, other) -> Self:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
@@ -1411,7 +1409,7 @@ class Array:
 
     __ror__ = __or__  # commutes
 
-    def __xor__(self, other):
+    def __xor__(self, other) -> Self:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
@@ -1431,7 +1429,7 @@ class Array:
 
     __rxor__ = __xor__  # commutes
 
-    def __iand__(self, other):
+    def __iand__(self, other) -> Self:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
@@ -1450,7 +1448,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __ior__(self, other):
+    def __ior__(self, other) -> Self:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
@@ -1469,7 +1467,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __ixor__(self, other):
+    def __ixor__(self, other) -> Self:
         common_dtype = _get_common_dtype(self, other, self.queue)
 
         if not np.issubdtype(common_dtype, np.integer):
@@ -1488,7 +1486,9 @@ class Array:
         else:
             return NotImplemented
 
-    def _zero_fill(self, queue=None, wait_for=None):
+    def _zero_fill(self,
+                queue: cl.CommandQueue | None = None,
+                wait_for: cl.WaitList = None) -> None:
         queue = queue or self.queue
 
         if not self.size:
@@ -1510,7 +1510,10 @@ class Array:
             zero = np.zeros((), self.dtype)
             self.fill(zero, queue=queue)
 
-    def fill(self, value, queue=None, wait_for=None):
+    def fill(self,
+                value: object,
+                queue: cl.CommandQueue | None = None,
+                wait_for: cl.WaitList = None) -> Self:
         """Fill the array with *scalar*.
 
         :returns: *self*.
@@ -1521,14 +1524,14 @@ class Array:
 
         return self
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns the size of the leading dimension of *self*."""
         if len(self.shape):
             return self.shape[0]
         else:
             return TypeError("len() of unsized object")
 
-    def __abs__(self):
+    def __abs__(self) -> Self:
         """Return an ``Array`` of the absolute values of the elements
         of *self*.
         """
@@ -1537,7 +1540,7 @@ class Array:
         result.add_event(self._abs(result, self))
         return result
 
-    def __pow__(self, other):
+    def __pow__(self, other) -> Self:
         """Exponentiation by a scalar or elementwise by another
         :class:`Array`.
         """
@@ -1558,7 +1561,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __rpow__(self, other):
+    def __rpow__(self, other) -> Self:
         if np.isscalar(other):
             common_dtype = _get_common_dtype(self, other, self.queue)
             result = self._new_like_me(common_dtype)
@@ -1579,7 +1582,7 @@ class Array:
 
     # }}}
 
-    def reverse(self, queue=None):
+    def reverse(self, queue: cl.CommandQueue | None = None) -> Self:
         """Return this array in reversed order. The array is treated
         as one-dimensional.
         """
@@ -1588,7 +1591,7 @@ class Array:
         result.add_event(self._reverse(result, self))
         return result
 
-    def astype(self, dtype, queue=None):
+    def astype(self, dtype, queue: cl.CommandQueue | None = None):
         """Return a copy of *self*, cast to *dtype*."""
         if dtype == self.dtype:
             return self.copy()
@@ -1599,48 +1602,55 @@ class Array:
 
     # {{{ rich comparisons, any, all
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         if self.shape == ():
             return bool(self.get())
         else:
             raise ValueError("The truth value of an array with "
                     "more than one element is ambiguous. Use a.any() or a.all()")
 
-    def any(self, queue=None, wait_for=None):
+    def any(self,
+                queue: cl.CommandQueue | None = None,
+                wait_for: cl.WaitList = None
+            ) -> Self:
         from pyopencl.reduction import get_any_kernel
         krnl = get_any_kernel(self.context, self.dtype)
         if wait_for is None:
             wait_for = []
         result, event1 = krnl(self, queue=queue,
-               wait_for=wait_for + self.events, return_event=True)
+               wait_for=[*wait_for, *self.events], return_event=True)
         result.add_event(event1)
         return result
 
-    def all(self, queue=None, wait_for=None):
+    def all(self,
+                queue: cl.CommandQueue | None = None,
+                wait_for: cl.WaitList = None
+            ) -> Self:
         from pyopencl.reduction import get_all_kernel
         krnl = get_all_kernel(self.context, self.dtype)
         if wait_for is None:
             wait_for = []
         result, event1 = krnl(self, queue=queue,
-               wait_for=wait_for + self.events, return_event=True)
+               wait_for=[*wait_for, *self.events], return_event=True)
         result.add_event(event1)
         return result
 
     @staticmethod
     @elwise_kernel_runner
-    def _scalar_comparison(out, a, b, queue=None, op=None):
+    def _scalar_comparison(out, a, b, queue: cl.CommandQueue | None = None, op=None):
         return elementwise.get_array_scalar_comparison_kernel(
                 out.context, op, a.dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _array_comparison(out, a, b, queue=None, op=None):
+    def _array_comparison(out, a, b, queue: cl.CommandQueue | None = None, op=None):
         if a.shape != b.shape:
             raise ValueError("shapes of comparison arguments do not match")
         return elementwise.get_array_comparison_kernel(
                 out.context, op, a.dtype, b.dtype)
 
-    def __eq__(self, other):
+    @override
+    def __eq__(self, other: object) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
@@ -1654,7 +1664,8 @@ class Array:
         else:
             return NotImplemented
 
-    def __ne__(self, other):
+    @override
+    def __ne__(self, other: object) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
@@ -1668,7 +1679,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __le__(self, other):
+    def __le__(self, other) -> Self:
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
@@ -1681,7 +1692,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __ge__(self, other):
+    def __ge__(self, other) -> Self:
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
@@ -1695,7 +1706,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> Self:
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
@@ -1709,7 +1720,7 @@ class Array:
         else:
             return NotImplemented
 
-    def __gt__(self, other):
+    def __gt__(self, other) -> Self:
         if isinstance(other, Array):
             result = self._new_like_me(_BOOL_DTYPE)
             result.add_event(
@@ -1728,7 +1739,7 @@ class Array:
     # {{{ complex-valued business
 
     @property
-    def real(self):
+    def real(self) -> Self:
         """
         .. versionadded:: 2012.1
         """
@@ -1741,7 +1752,7 @@ class Array:
             return self
 
     @property
-    def imag(self):
+    def imag(self) -> Self:
         """
         .. versionadded:: 2012.1
         """
@@ -1753,7 +1764,7 @@ class Array:
         else:
             return zeros_like(self)
 
-    def conj(self):
+    def conj(self) -> Self:
         """
         .. versionadded:: 2012.1
         """
@@ -1770,7 +1781,7 @@ class Array:
 
     # {{{ event management
 
-    def add_event(self, evt):
+    def add_event(self, evt: cl.Event) -> None:
         """Add *evt* to :attr:`events`. If :attr:`events` is too long, this method
         may implicitly wait for a subset of :attr:`events` and clear them from the
         list.
@@ -1784,7 +1795,7 @@ class Array:
             cl.wait_for_events(wait_events)
             del self.events[:n_wait]
 
-    def finish(self):
+    def finish(self) -> None:
         """Wait for the entire contents of :attr:`events`, clear it."""
 
         if self.events:
@@ -2022,7 +2033,11 @@ class Array:
 
     # }}}
 
-    def map_to_host(self, queue=None, flags=None, is_blocking=True, wait_for=None):
+    def map_to_host(self,
+                queue: cl.CommandQueue | None = None,
+                flags=None,
+                is_blocking: bool = True,
+                wait_for: cl.WaitList = None):
         """If *is_blocking*, return a :class:`numpy.ndarray` corresponding to the
         same memory as *self*.
 
@@ -2046,7 +2061,7 @@ class Array:
         ary, evt = cl.enqueue_map_buffer(
                 queue or self.queue, self.base_data, flags, self.offset,
                 self.shape, self.dtype, strides=self.strides,
-                wait_for=wait_for + self.events, is_blocking=is_blocking)
+                wait_for=[*wait_for, *self.events], is_blocking=is_blocking)
 
         if is_blocking:
             return ary
@@ -2153,7 +2168,12 @@ class Array:
                 shape=tuple(new_shape),
                 strides=tuple(new_strides))
 
-    def setitem(self, subscript, value, queue=None, wait_for=None):
+    def setitem(self,
+                subscript: Array | slice | int,
+                value: object,
+                queue: cl.CommandQueue | None = None,
+                wait_for: cl.WaitList = None
+            ):
         """Like :meth:`__setitem__`, but with the ability to specify
         a *queue* and *wait_for*.
 
@@ -2164,10 +2184,11 @@ class Array:
             Added *wait_for*.
         """
 
-        queue = queue or self.queue or value.queue
+        queue = queue or self.queue
+        assert queue is not None
         if wait_for is None:
             wait_for = []
-        wait_for = wait_for + self.events
+        wait_for = [*wait_for, *self.events]
 
         if isinstance(subscript, Array):
             if subscript.dtype.kind not in ("i", "u"):
@@ -2193,6 +2214,7 @@ class Array:
 
         if isinstance(value, np.ndarray):
             if subarray.shape == value.shape and subarray.strides == value.strides:
+                assert subarray.base_data is not None
                 self.add_event(
                         cl.enqueue_copy(queue, subarray.base_data,
                             value, dst_offset=subarray.offset, wait_for=wait_for))
@@ -2262,8 +2284,13 @@ class _same_as_transfer:  # noqa: N801
     pass
 
 
-def to_device(queue, ary, allocator=None, async_=None,
-        array_queue=_same_as_transfer, **kwargs):
+def to_device(
+            queue: cl.CommandQueue,
+            ary: NDArray[Any],
+            allocator: Allocator | None = None,
+            async_: bool = False,
+            array_queue=_same_as_transfer,
+        ) -> Array:
     """Return a :class:`Array` that is an exact copy of the
     :class:`numpy.ndarray` instance *ary*.
 
@@ -2276,31 +2303,7 @@ def to_device(queue, ary, allocator=None, async_=None,
 
     .. versionchanged:: 2015.2
         *array_queue* argument was added.
-
-    .. versionchanged:: 2017.2.1
-
-        Python 3.7 makes ``async`` a reserved keyword. On older Pythons,
-        we will continue to  accept *async* as a parameter, however this
-        should be considered deprecated. *async_* is the new, official
-        spelling.
     """
-
-    # {{{ handle 'async' deprecation
-
-    async_arg = kwargs.pop("async", None)
-    if async_arg is not None:
-        if async_ is not None:
-            raise TypeError("may not specify both 'async' and 'async_'")
-        async_ = async_arg
-
-    if async_ is None:
-        async_ = False
-
-    if kwargs:
-        raise TypeError("extra keyword arguments specified: %s"
-                % ", ".join(kwargs))
-
-    # }}}
 
     if ary.dtype == object:
         raise RuntimeError("to_device does not work on object arrays.")
@@ -2319,7 +2322,13 @@ def to_device(queue, ary, allocator=None, async_=None,
 empty = Array
 
 
-def zeros(queue, shape, dtype, order="C", allocator=None):
+def zeros(
+            queue: cl.CommandQueue,
+            shape: int | tuple[int, ...],
+            dtype: DTypeLike,
+            order: Literal["C"] | Literal["F"] = "C",
+            allocator: Allocator | None = None,
+        ) -> Array:
     """Same as :func:`empty`, but the :class:`Array` is zero-initialized before
     being returned.
 
@@ -2334,7 +2343,11 @@ def zeros(queue, shape, dtype, order="C", allocator=None):
     return result
 
 
-def empty_like(ary, queue=_copy_queue, allocator=None):
+def empty_like(
+            ary: Array,
+            queue: cl.CommandQueue | type[_copy_queue] | None = _copy_queue,
+            allocator: Allocator | None = None,
+        ):
     """Make a new, uninitialized :class:`Array` having the same properties
     as *other_ary*.
     """
@@ -2466,7 +2479,13 @@ def _take(result, ary, indices):
             result.context, result.dtype, indices.dtype)
 
 
-def take(a, indices, out=None, queue=None, wait_for=None):
+def take(
+             a: Array,
+             indices: Array,
+             out: Array | None = None,
+             queue: cl.CommandQueue | None = None,
+             wait_for: cl.WaitList = None
+         ) -> Array:
     """Return the :class:`Array` ``[a[indices[0]], ..., a[indices[n]]]``.
     For the moment, *a* must be a type that can be bound to a texture.
     """
@@ -2481,7 +2500,7 @@ def take(a, indices, out=None, queue=None, wait_for=None):
     return out
 
 
-def multi_take(arrays, indices, out=None, queue=None):
+def multi_take(arrays, indices, out=None, queue: cl.CommandQueue | None = None):
     if not len(arrays):
         return []
 
@@ -2544,7 +2563,7 @@ def multi_take(arrays, indices, out=None, queue=None):
 
 
 def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
-        out=None, queue=None, src_offsets=None):
+        out=None, queue: cl.CommandQueue | None = None, src_offsets=None):
     if not len(arrays):
         return []
 
@@ -2626,8 +2645,14 @@ def multi_take_put(arrays, dest_indices, src_indices, dest_shape=None,
     return out
 
 
-def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
-        wait_for=None):
+def multi_put(
+            arrays,
+            dest_indices: Array,
+            dest_shape=None,
+            out=None,
+            queue: cl.CommandQueue | None = None,
+            wait_for: cl.WaitList = None
+        ):
     if not len(arrays):
         return []
 
@@ -2636,9 +2661,10 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
     a_allocator = arrays[0].allocator
     context = dest_indices.context
     queue = queue or dest_indices.queue
+    assert queue is not None
     if wait_for is None:
         wait_for = []
-    wait_for = wait_for + dest_indices.events
+    wait_for = [*wait_for, *dest_indices.events]
 
     vec_count = len(arrays)
 
@@ -2705,7 +2731,7 @@ def multi_put(arrays, dest_indices, dest_shape=None, out=None, queue=None,
     return out
 
 
-def concatenate(arrays, axis=0, queue=None, allocator=None):
+def concatenate(arrays, axis=0, queue: cl.CommandQueue | None = None, allocator=None):
     """
     .. versionadded:: 2013.1
 
@@ -2777,7 +2803,7 @@ def _diff(result, array):
     return elementwise.get_diff_kernel(array.context, array.dtype)
 
 
-def diff(array, queue=None, allocator=None):
+def diff(array, queue: cl.CommandQueue | None = None, allocator=None):
     """
     .. versionadded:: 2013.2
     """
@@ -2796,7 +2822,7 @@ def diff(array, queue=None, allocator=None):
     return result
 
 
-def hstack(arrays, queue=None):
+def hstack(arrays, queue: cl.CommandQueue | None = None):
     if len(arrays) == 0:
         raise ValueError("need at least one array to hstack")
 
@@ -2831,7 +2857,7 @@ def hstack(arrays, queue=None):
     return result
 
 
-def stack(arrays, axis=0, queue=None):
+def stack(arrays, axis=0, queue: cl.CommandQueue | None = None):
     """
     Join a sequence of arrays along a new axis.
 
@@ -2934,7 +2960,12 @@ def _if_positive(result, criterion, then_, else_):
             )
 
 
-def if_positive(criterion, then_, else_, out=None, queue=None):
+def if_positive(
+            criterion,
+            then_,
+            else_,
+            out=None,
+            queue: cl.CommandQueue | None = None):
     """Return an array like *then_*, which, for the element at index *i*,
     contains *then_[i]* if *criterion[i]>0*, else *else_[i]*.
     """
@@ -3018,7 +3049,7 @@ def _minimum_maximum_backend(out, a, b, minmax):
             elementwise.get_argument_kind(b))
 
 
-def maximum(a, b, out=None, queue=None):
+def maximum(a, b, out=None, queue: cl.CommandQueue | None = None):
     """Return the elementwise maximum of *a* and *b*."""
 
     a_is_scalar = np.isscalar(a)
@@ -3045,7 +3076,7 @@ def maximum(a, b, out=None, queue=None):
     return out
 
 
-def minimum(a, b, out=None, queue=None):
+def minimum(a, b, out=None, queue: cl.CommandQueue | None = None):
     """Return the elementwise minimum of *a* and *b*."""
     a_is_scalar = np.isscalar(a)
     b_is_scalar = np.isscalar(b)
@@ -3075,7 +3106,7 @@ def minimum(a, b, out=None, queue=None):
 
 # {{{ logical ops
 
-def _logical_op(x1, x2, out, operator, queue=None):
+def _logical_op(x1, x2, out, operator, queue: cl.CommandQueue | None = None):
     # NOTE: Copied from pycuda.gpuarray
     assert operator in ["&&", "||"]
 
@@ -3135,21 +3166,21 @@ def _logical_op(x1, x2, out, operator, queue=None):
     return out
 
 
-def logical_and(x1, x2, /, out=None, queue=None):
+def logical_and(x1, x2, /, out=None, queue: cl.CommandQueue | None = None):
     """
     Returns the element-wise logical AND of *x1* and *x2*.
     """
     return _logical_op(x1, x2, out, "&&", queue=queue)
 
 
-def logical_or(x1, x2, /, out=None, queue=None):
+def logical_or(x1, x2, /, out=None, queue: cl.CommandQueue | None = None):
     """
     Returns the element-wise logical OR of *x1* and *x2*.
     """
     return _logical_op(x1, x2, out, "||", queue=queue)
 
 
-def logical_not(x, /, out=None, queue=None):
+def logical_not(x, /, out=None, queue: cl.CommandQueue | None = None):
     """
     Returns the element-wise logical NOT of *x*.
     """
@@ -3171,11 +3202,16 @@ def logical_not(x, /, out=None, queue=None):
 
 # {{{ reductions
 
-def sum(a, dtype=None, queue=None, slice=None, initial=np._NoValue):
+def sum(
+        a,
+        dtype=None,
+        queue: cl.CommandQueue | None = None,
+        slice=None,
+        initial=_NoValue):
     """
     .. versionadded:: 2011.1
     """
-    if initial is not np._NoValue and not isinstance(initial, SCALAR_CLASSES):
+    if initial is not _NoValue and not isinstance(initial, SCALAR_CLASSES):
         raise ValueError("'initial' is not a scalar")
 
     if dtype is not None:
@@ -3188,27 +3224,27 @@ def sum(a, dtype=None, queue=None, slice=None, initial=np._NoValue):
     result.add_event(event1)
 
     # NOTE: neutral element in `get_sum_kernel` is 0 by default
-    if initial is not np._NoValue:
+    if initial is not _NoValue:
         result += a.dtype.type(initial)
 
     return result
 
 
-def any(a, queue=None, wait_for=None):
+def any(a, queue: cl.CommandQueue | None = None, wait_for: cl.WaitList = None):
     if len(a) == 0:
         return _BOOL_DTYPE.type(False)
 
     return a.any(queue=queue, wait_for=wait_for)
 
 
-def all(a, queue=None, wait_for=None):
+def all(a, queue: cl.CommandQueue | None = None, wait_for: cl.WaitList = None):
     if len(a) == 0:
         return _BOOL_DTYPE.type(True)
 
     return a.all(queue=queue, wait_for=wait_for)
 
 
-def dot(a, b, dtype=None, queue=None, slice=None):
+def dot(a, b, dtype=None, queue: cl.CommandQueue | None = None, slice=None):
     """
     .. versionadded:: 2011.1
     """
@@ -3225,7 +3261,7 @@ def dot(a, b, dtype=None, queue=None, slice=None):
     return result
 
 
-def vdot(a, b, dtype=None, queue=None, slice=None):
+def vdot(a, b, dtype=None, queue: cl.CommandQueue | None = None, slice=None):
     """Like :func:`numpy.vdot`.
 
     .. versionadded:: 2013.1
@@ -3244,7 +3280,13 @@ def vdot(a, b, dtype=None, queue=None, slice=None):
     return result
 
 
-def subset_dot(subset, a, b, dtype=None, queue=None, slice=None):
+def subset_dot(
+            subset,
+            a,
+            b,
+            dtype=None,
+            queue: cl.CommandQueue | None = None,
+            slice=None):
     """
     .. versionadded:: 2011.1
     """
@@ -3263,19 +3305,19 @@ def subset_dot(subset, a, b, dtype=None, queue=None, slice=None):
 
 
 def _make_minmax_kernel(what):
-    def f(a, queue=None, initial=np._NoValue):
+    def f(a, queue: cl.CommandQueue | None = None, initial=_NoValue):
         if isinstance(a, SCALAR_CLASSES):
             return np.array(a).dtype.type(a)
 
         if len(a) == 0:
-            if initial is np._NoValue:
+            if initial is _NoValue:
                 raise ValueError(
                         f"zero-size array to reduction '{what}' "
                         "which has no identity")
             else:
                 return initial
 
-        if initial is not np._NoValue and not isinstance(initial, SCALAR_CLASSES):
+        if initial is not _NoValue and not isinstance(initial, SCALAR_CLASSES):
             raise ValueError("'initial' is not a scalar")
 
         from pyopencl.reduction import get_minmax_kernel
@@ -3284,7 +3326,7 @@ def _make_minmax_kernel(what):
                 return_event=True)
         result.add_event(event1)
 
-        if initial is not np._NoValue:
+        if initial is not _NoValue:
             initial = a.dtype.type(initial)
             if what == "min":
                 result = minimum(result, initial, queue=queue)
@@ -3312,7 +3354,7 @@ max.__doc__ = """
 
 
 def _make_subset_minmax_kernel(what):
-    def f(subset, a, queue=None, slice=None):
+    def f(subset, a, queue: cl.CommandQueue | None = None, slice=None):
         from pyopencl.reduction import get_subset_minmax_kernel
         krnl = get_subset_minmax_kernel(a.context, what, a.dtype, subset.dtype)
         result, event1 = krnl(subset, a,  queue=queue, slice=slice,
@@ -3332,8 +3374,8 @@ subset_max.__doc__ = """.. versionadded:: 2011.1"""
 
 # {{{ scans
 
-def cumsum(a, output_dtype=None, queue=None,
-        wait_for=None, return_event=False):
+def cumsum(a, output_dtype=None, queue: cl.CommandQueue | None = None,
+        wait_for: cl.WaitList = None, return_event=False):
     # undocumented for now
 
     """
