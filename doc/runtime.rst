@@ -52,6 +52,9 @@ Error Reporting
 References
 ----------
 
+These are only here because Sphinx, our documentation tool, struggles to
+resolve them.
+
 .. class:: WaitList
 
     A :class:`Sequence` of :class:`Event`\ s, or None.
@@ -87,3 +90,28 @@ References
 .. class:: svm_mem_flags
 
     See :class:`pyopencl.svm_mem_flags`.
+
+.. currentmodule:: cl
+
+.. class:: WaitList
+
+    A :class:`Sequence` of :class:`Event`\ s, or None.
+
+.. class:: Context
+
+    See :class:`pyopencl.CommandQueue`.
+
+.. class:: CommandQueue
+
+    See :class:`pyopencl.CommandQueue`.
+
+.. class:: Event
+
+    See :class:`pyopencl.Event`.
+
+.. currentmodule:: cl_tools
+..
+.. class:: AllocatorBase
+
+    See :class:`pyopencl.tools.AllocatorBase`.
+

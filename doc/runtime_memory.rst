@@ -5,19 +5,25 @@ OpenCL Runtime: Memory
 
 .. currentmodule:: pyopencl
 
-.. class:: MemoryObject
-
+.. class:: MemoryObjectHolder
     .. attribute:: info
 
         Lower case versions of the :class:`mem_info` constants
         may be used as attributes on instances of this class
         to directly query info attributes.
 
-    .. attribute:: hostbuf
-
     .. method:: get_info(param)
 
         See :class:`mem_info` for values of *param*.
+
+    .. attribute:: int_ptr
+
+    |comparable|
+
+.. class:: MemoryObject
+    Inherits from :class:`MemoryObjectHolder`.
+
+    .. attribute:: hostbuf
 
     .. method:: release()
 
@@ -27,10 +33,9 @@ OpenCL Runtime: Memory
         area as a :class:`numpy.ndarray` of the given *shape*,
         *dtype* and *order*.
 
-    .. automethod:: from_int_ptr
     .. autoattribute:: int_ptr
 
-    |comparable|
+    .. automethod:: from_int_ptr
 
 Memory Migration
 ----------------

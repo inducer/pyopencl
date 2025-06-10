@@ -1004,6 +1004,7 @@ def enqueue_copy(
         src: HasBufferInterface,
         *,
         dst_offset: int = 0,
+        is_blocking: bool = True,
         wait_for: WaitList = None
     ) -> Event: ...
 
@@ -1014,6 +1015,7 @@ def enqueue_copy(
         src: Buffer,
         *,
         src_offset: int = 0,
+        is_blocking: bool = True,
         wait_for: WaitList = None
     ) -> Event: ...
 
@@ -1040,6 +1042,7 @@ def enqueue_copy(
         region: tuple[int, ...],
         buffer_pitches: tuple[int, ...] | None = None,
         host_pitches: tuple[int, ...] | None = None,
+        is_blocking: bool = True,
         wait_for: WaitList = None
     ) -> Event: ...
 
@@ -1054,6 +1057,7 @@ def enqueue_copy(
         region: tuple[int, ...],
         buffer_pitches: tuple[int, ...] | None = None,
         host_pitches: tuple[int, ...] | None = None,
+        is_blocking: bool = True,
         wait_for: WaitList = None
     ) -> Event: ...
 
@@ -1080,6 +1084,7 @@ def enqueue_copy(
         origin: tuple[int, ...],
         region: tuple[int, ...],
         pitches: tuple[int, ...] | None = None,
+        is_blocking: bool = True,
         wait_for: WaitList = None
     ) -> Event: ...
 
@@ -1092,6 +1097,7 @@ def enqueue_copy(
         origin: tuple[int, ...],
         region: tuple[int, ...],
         pitches: tuple[int, ...] | None = None,
+        is_blocking: bool = True,
         wait_for: WaitList = None
     ) -> Event: ...
 
@@ -1134,10 +1140,16 @@ def enqueue_copy(
 @overload
 def enqueue_copy(
         queue: CommandQueue,
-        dest: SVMPointer,
-        src: SVMPointer,
+        dest: SVMPointer | HasBufferInterface,
+        src: SVMPointer | HasBufferInterface,
         *,
         byte_count: int | None = None,
+
+        # do not use, must be zero
+        src_offset: int = 0,
+        dst_offset: int = 0,
+
+        is_blocking: bool = True,
         wait_for: WaitList = None
     ) -> Event: ...
 
@@ -1686,6 +1698,7 @@ def svm_empty(
     dtype = np.dtype(dtype)
 
     try:
+        shape = cast("tuple[int, ...]", shape)
         s = 1
         for dim in shape:
             s *= dim
@@ -1885,6 +1898,7 @@ __all__ = [
     "SVMPointer",
     "Sampler",
     "UserEvent",
+    "WaitList",
     "_csc",
     "addressing_mode",
     "channel_order",
