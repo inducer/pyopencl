@@ -57,7 +57,7 @@ resolve them.
 
 .. class:: WaitList
 
-    A :class:`Sequence` of :class:`Event`\ s, or None.
+    A :class:`Sequence` of :class:`Event`\ s or *None*.
 
 .. class:: NDArray
 
@@ -95,11 +95,11 @@ resolve them.
 
 .. class:: WaitList
 
-    A :class:`Sequence` of :class:`Event`\ s, or None.
+    A :class:`Sequence` of :class:`Event`\ s or *None*.
 
 .. class:: Context
 
-    See :class:`pyopencl.CommandQueue`.
+    See :class:`pyopencl.Context`.
 
 .. class:: CommandQueue
 
