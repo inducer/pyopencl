@@ -65,6 +65,7 @@ Repository = "https://github.com/inducer/pyopencl"
 
 [tool.scikit-build]
 sdist.exclude = [
+    ".basedpyright",
     ".mypy_cache",
     ".ci",
     ".github",
