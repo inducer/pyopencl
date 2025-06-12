@@ -32232,14 +32232,6 @@
         ],
         "./pyopencl/compyte/dtypes.py": [
             {
-                "code": "reportPossiblyUnboundVariable",
-                "range": {
-                    "startColumn": 47,
-                    "endColumn": 55,
-                    "lineCount": 1
-                }
-            },
-            {
                 "code": "reportUnusedFunction",
                 "range": {
                     "startColumn": 4,
@@ -39378,6 +39370,14 @@
             {
                 "code": "reportAny",
                 "range": {
+                    "startColumn": 38,
+                    "endColumn": 48,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportAny",
+                "range": {
                     "startColumn": 12,
                     "endColumn": 30,
                     "lineCount": 1
@@ -40288,7 +40288,7 @@
                 }
             },
             {
-                "code": "reportArgumentType",
+                "code": "reportUnknownArgumentType",
                 "range": {
                     "startColumn": 40,
                     "endColumn": 47,
@@ -40448,7 +40448,7 @@
                 }
             },
             {
-                "code": "reportArgumentType",
+                "code": "reportUnknownArgumentType",
                 "range": {
                     "startColumn": 40,
                     "endColumn": 47,
