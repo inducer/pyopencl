@@ -59,14 +59,13 @@ from pyopencl.compyte.array import (
     equal_strides as _equal_strides,
     f_contiguous_strides as _f_contiguous_strides,
 )
+from pyopencl.typing import Allocator
 
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Hashable
 
     from numpy.typing import DTypeLike, NDArray
-
-    from pyopencl.typing import Allocator
 
 
 SCALAR_CLASSES = (Number, np.bool_, bool)
@@ -3406,6 +3405,7 @@ def cumsum(a, output_dtype=None, queue: cl.CommandQueue | None = None,
 
 
 __all__ = [
+    "Allocator",
     "Array",
     "all",
     "any",
