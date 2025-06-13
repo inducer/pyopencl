@@ -3404,4 +3404,38 @@ def cumsum(a, output_dtype=None, queue: cl.CommandQueue | None = None,
 
 # }}}
 
+
+__all__ = [
+    "Array",
+    "all",
+    "any",
+    "arange",
+    "as_strided",
+    "concatenate",
+    "cumsum",
+    "diff",
+    "dot",
+    "empty_like",
+    "hstack",
+    "if_positive",
+    "logical_and",
+    "logical_not",
+    "logical_or",
+    "maximum",
+    "minimum",
+    "multi_put",
+    "multi_take",
+    "multi_take_put",
+    "reshape",
+    "stack",
+    "subset_dot",
+    "sum",
+    "take",
+    "to_device",
+    "transpose",
+    "vdot",
+    "zeros",
+    "zeros_like",
+]
+
 # vim: foldmethod=marker
