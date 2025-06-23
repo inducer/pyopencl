@@ -149,13 +149,11 @@ environment-pass = [
     "CL_LIB_DIR",
 ]
 test-skip = [
-    "*-macosx_*:arm64",
     "*-macosx_arm64",
 ]
 
 [tool.cibuildwheel.linux]
 skip = [
-    "pp*",
     "*_i686",
 ]
 test-command = ""
