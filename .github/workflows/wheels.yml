@@ -36,7 +36,7 @@ jobs:
         uses: pypa/cibuildwheel@v3.0.0
         env:
             CIBW_ENVIRONMENT_WINDOWS: >
-                CL_INC_DIR=C:/a/pyopencl/pyopencl/OpenCL-Headers/install/include
+                CL_INC_DIR='${{github.workspace}}/OpenCL-Headers/install/include'
                 CL_LIB_DIR="C:/Program Files/OpenCL-ICD-Loader/lib"
       - uses: actions/upload-artifact@v4
         with:
