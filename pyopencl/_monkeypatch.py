@@ -196,6 +196,12 @@ class ProfilingInfoGetter:
     def __getattr__(self, name: str):
         info_cls = _cl.profiling_info
 
+        if not name.islower():
+            warn(f"Using non-lower-case attributes with Event.profile "
+                 f"is deprecated. Got: '{name}', expected: '{name.lower()}'. "
+                 "This will stop working in 2026.",
+                 DeprecationWarning, stacklevel=2)
+
         try:
             inf_attr = getattr(info_cls, name.upper())
         except AttributeError as err:
@@ -204,11 +210,11 @@ class ProfilingInfoGetter:
         else:
             return self.event.get_profiling_info(inf_attr)
 
-    QUEUED: int  # pyright: ignore[reportUninitializedInstanceVariable]
-    SUBMIT: int  # pyright: ignore[reportUninitializedInstanceVariable]
-    START: int  # pyright: ignore[reportUninitializedInstanceVariable]
-    END: int  # pyright: ignore[reportUninitializedInstanceVariable]
-    COMPLETE: int  # pyright: ignore[reportUninitializedInstanceVariable]
+    queued: int  # pyright: ignore[reportUninitializedInstanceVariable]
+    submit: int  # pyright: ignore[reportUninitializedInstanceVariable]
+    start: int  # pyright: ignore[reportUninitializedInstanceVariable]
+    end: int  # pyright: ignore[reportUninitializedInstanceVariable]
+    complete: int  # pyright: ignore[reportUninitializedInstanceVariable]
 
 
 kernel_old_get_info = _cl.Kernel.get_info
