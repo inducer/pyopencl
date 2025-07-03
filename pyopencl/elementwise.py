@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 import enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -45,6 +45,10 @@ from pyopencl.tools import (
     dtype_to_c_struct,
     dtype_to_ctype,
 )
+
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 # {{{ elementwise kernel code generator
@@ -119,7 +123,7 @@ def get_elwise_program(
 
 def get_elwise_kernel_and_types(
         context: cl.Context,
-        arguments: str | list[DtypedArgument],
+        arguments: str | Sequence[DtypedArgument],
         operation: str, *,
         name: str = "elwise_kernel",
         options: Any = None,
@@ -229,7 +233,7 @@ class ElementwiseKernel:
     def __init__(
             self,
             context: cl.Context,
-            arguments: str | list[DtypedArgument],
+            arguments: str | Sequence[DtypedArgument],
             operation: str,
             name: str = "elwise_kernel",
             options: Any = None, **kwargs: Any) -> None:
