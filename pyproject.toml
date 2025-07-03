@@ -238,6 +238,8 @@ reportImportCycles = "none"
 pythonVersion = "3.10"
 pythonPlatform = "All"
 
+reportAny = "none"
+
 exclude = [
     "contrib/*.py",
     "contrib/*/*.py",
