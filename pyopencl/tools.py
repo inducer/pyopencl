@@ -806,8 +806,8 @@ class VectorArg(DtypedArgument):
     """
     with_offset: bool
 
-    def __init__(self, name: str, dtype: DTypeLike, with_offset: bool = False):
-        super().__init__(name, dtype)
+    def __init__(self, dtype: DTypeLike, name: str, with_offset: bool = False):
+        super().__init__(dtype, name)
         object.__setattr__(self, "with_offset", with_offset)
 
     @override
