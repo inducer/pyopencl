@@ -2380,7 +2380,7 @@ def _arange_knl(result, start, step):
             result.context, result.dtype)
 
 
-def arange(queue, *args, **kwargs):
+def arange(queue: cl.CommandQueue, *args: Any, **kwargs: Any) -> Array:
     """arange(queue, [start, ] stop [, step], **kwargs)
     Create a :class:`Array` filled with numbers spaced *step* apart,
     starting from *start* and ending at *stop*. If not given, *start*
