@@ -830,7 +830,7 @@ def test_bitwise(ctx_factory: cl.CtxFactory):
 
         # Test unary ~
         res_dev = ~a_dev
-        res = ~a  # pylint:disable=invalid-unary-operand-type
+        res = ~a
         assert (res_dev.get() == res).all()
 
 # }}}
@@ -1446,7 +1446,6 @@ def test_skip_slicing(ctx_factory: cl.CtxFactory):
     a = cl_array.to_device(queue, a_host)
     b = a[::3]
     assert b.shape == b_host.shape
-    # pylint:disable=unsubscriptable-object
     assert np.array_equal(b[1].get(), b_host[1])
 
 # }}}

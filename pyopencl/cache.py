@@ -505,7 +505,7 @@ def create_built_program_from_source_cached(ctx, src, options_bytes, devices=Non
     except Exception as e:
         from pyopencl import Error
         build_program_failure = (isinstance(e, Error)
-                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE)  # pylint:disable=no-member
+                and e.code == _cl.status_code.BUILD_PROGRAM_FAILURE)
 
         # Mac error on intel CPU driver: can't build from cached version.
         # If we get a build_program_failure from the cached version then

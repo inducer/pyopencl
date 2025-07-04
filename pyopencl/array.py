@@ -1,7 +1,5 @@
 """CL device arrays."""
 
-# NOTE: for elwise_kernel_runner which adds keyword arguments
-# pylint:disable=unexpected-keyword-arg
 from __future__ import annotations
 
 
@@ -253,7 +251,7 @@ def elwise_kernel_runner(
 
         knl_args = (out, *args, out.size)
         if ARRAY_KERNEL_EXEC_HOOK is not None:
-            return ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
+            return ARRAY_KERNEL_EXEC_HOOK(
                     knl, queue, gs, ls, *knl_args, wait_for=wait_for)
         else:
             return knl(queue, gs, ls, *knl_args, wait_for=wait_for)
@@ -2764,7 +2762,6 @@ def concatenate(arrays, axis=0, queue: cl.CommandQueue | None = None, allocator=
                 raise ValueError(
                     f"{i_ary}-th array has residual not matching other arrays")
 
-            # pylint: disable=unsupported-assignment-operation
             shape[axis] += ary.shape[axis]
 
     # }}}
