@@ -51,11 +51,10 @@ pocl = [
     "pocl-binary-distribution>=1.2",
 ]
 test = [
-    "ruff",
+    "basedpyright",
     "mako",
-    "mypy",
-    "pylint",
     "pytest>=7",
+    "ruff",
 ]
 
 [project.urls]
@@ -66,14 +65,12 @@ Repository = "https://github.com/inducer/pyopencl"
 [tool.scikit-build]
 sdist.exclude = [
     ".basedpyright",
-    ".mypy_cache",
     ".ci",
-    ".github",
     ".conda-ci-build-configure.sh",
-    "doc/upload-docs.sh",
     ".editorconfig",
+    ".github",
     "TODOs",
-    "run-*.sh",
+    "doc/upload-docs.sh",
 ]
 
 [tool.inducer-ci-support]
