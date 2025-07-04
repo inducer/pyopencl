@@ -373,7 +373,7 @@ def _monkeypatch_svm_docstrings():
 
     # {{{ PooledSVM
 
-    PooledSVM.__doc__ = (  # pylint: disable=possibly-used-before-assignment
+    PooledSVM.__doc__ = (
         """An object representing a :class:`SVMPool`-based allocation of
         :ref:`svm`.  Analogous to :class:`~pyopencl.SVMAllocation`, however once
         this object is deleted, its associated device memory is returned to the
@@ -420,7 +420,7 @@ def _monkeypatch_svm_docstrings():
 
     # {{{ SVMAllocator
 
-    SVMAllocator.__doc__ = (  # pylint: disable=possibly-used-before-assignment
+    SVMAllocator.__doc__ = (
         """
         .. versionadded:: 2022.2
 
@@ -453,7 +453,7 @@ def _monkeypatch_svm_docstrings():
 
     # {{{ SVMPool
 
-    SVMPool.__doc__ = (  # pylint: disable=possibly-used-before-assignment
+    SVMPool.__doc__ = (
         remove_common_indentation("""
         A memory pool for OpenCL device memory in :ref:`SVM <svm>` form.
         *allocator* must be an instance of :class:`SVMAllocator`.

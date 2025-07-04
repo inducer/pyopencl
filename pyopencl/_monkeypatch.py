@@ -411,9 +411,7 @@ def image_init(self: _cl.Image,
         else:
             raise ValueError("images cannot have more than three dimensions")
 
-        desc = _cl.ImageDescriptor() \
-            # pylint: disable=possibly-used-before-assignment
-
+        desc = _cl.ImageDescriptor()
         desc.image_type = image_type
         desc.shape = shape  # also sets desc.array_size
 
