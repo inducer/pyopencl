@@ -62,7 +62,7 @@ def _extract_extra_args_types_values(extra_args):
         if isinstance(val, cl_array.Array):
             extra_args_types.append(VectorArg(val.dtype, name, with_offset=False))
             extra_args_values.append(val)
-            extra_wait_for.extend(val.events)
+            extra_wait_for.extend(val.write_events)
         elif isinstance(val, np.generic):
             extra_args_types.append(ScalarArg(val.dtype, name))
             extra_args_values.append(val)
@@ -1168,7 +1168,7 @@ class ListOfListsBuilder:
                 data_args.append(arg_val.base_data)
                 if arg_descr.with_offset:
                     data_args.append(arg_val.offset)
-                wait_for.extend(arg_val.events)
+                wait_for.extend(arg_val.write_events)
             else:
                 data_args.append(arg_val)
 
@@ -1187,7 +1187,7 @@ class ListOfListsBuilder:
             counts = cl_array.empty(queue,
                     (n_objects + 1), index_dtype, allocator=allocator)
             counts[-1] = 0
-            wait_for = wait_for + counts.events
+            wait_for = wait_for + counts.write_events
 
             # The scan will turn the "counts" array into the "starts" array
             # in-place.
@@ -1241,7 +1241,7 @@ class ListOfListsBuilder:
                 info_record.nonempty_indices,
                 info_record.compressed_indices,
                 info_record.num_nonempty_lists,
-                wait_for=[count_event, *info_record.compressed_indices.events])
+                wait_for=[count_event, *info_record.compressed_indices.write_events])
 
             info_record.starts = compressed_counts
 
@@ -1270,13 +1270,13 @@ class ListOfListsBuilder:
                 evt = scan_kernel(
                         starts_ary,
                         size=info_record.num_nonempty_lists,
-                        wait_for=starts_ary.events)
+                        wait_for=starts_ary.write_events)
             else:
                 evt = scan_kernel(starts_ary, wait_for=[count_event],
                         size=n_objects)
 
             starts_ary.setitem(0, 0, queue=queue, wait_for=[evt])
-            scan_events.extend(starts_ary.events)
+            scan_events.extend(starts_ary.write_events)
 
             # retrieve count
             info_record.count = int(starts_ary[-1].get())
@@ -1438,7 +1438,7 @@ class KeyValueSorter:
 
         starts = (cl_array.empty(queue, (nkeys+1), starts_dtype, allocator=allocator)
                 .fill(len(values_sorted_by_key), wait_for=[evt]))
-        evt, = starts.events
+        evt, = starts.write_events
 
         evt = knl_info.start_finder(starts, keys_sorted_by_key,
                 range=slice(len(keys_sorted_by_key)),
