@@ -38,7 +38,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
-    Concatenate,
     Literal,
     ParamSpec,
     cast,
@@ -221,12 +220,12 @@ def _splay(
 
 def get_wait_for_events(
         *,
-        outputs: Iterable[Any], inputs: Iterable[Any]) -> list[cl.Event]:
+        outputs: Iterable[Any], inputs: Iterable[Any]) -> cl.WaitList:
     # NOTE:
     # * outputs need to wait for all reads and writes to finish
     # * inputs only need to wait on writes, but not reads
 
-    wait_for = []
+    wait_for: cl.WaitList = []
     for ary in outputs:
         if isinstance(ary, Array):
             wait_for.extend(ary.write_events)
@@ -259,12 +258,18 @@ P = ParamSpec("P")
 
 
 def elwise_kernel_runner(
-            kernel_getter: Callable[Concatenate[Array, P], cl.Kernel]
-        ) -> Callable[Concatenate[Array, P], cl.Event]:
+            kernel_getter: Callable[P, cl.Kernel]
+        ) -> Callable[P, cl.Event]:
     """Take a kernel getter of the same signature as the kernel
     and return a function that invokes that kernel.
 
-    Assumes that the zeroth entry in *args* is an :class:`Array`.
+    The returned callable always takes additional keyword arguments:
+
+    * ``wait_for``: a sequence of events the kernel should wait for.
+    * ``queue``: the queue to execute the kernel on.
+    * ``noutputs``: the number of arguments that are considered outputs, e.g. if
+        the kernel takes 3 positional arguments and the first two are outputs,
+        this should be set to "2" (see ``frexp``).
     """
     from functools import wraps
 
@@ -285,22 +290,27 @@ def elwise_kernel_runner(
 
         outputs = args[:noutputs]
         inputs = args[noutputs:]
-        wait_for.extend(get_wait_for_events(outputs=outputs, inputs=inputs))
+
+        wait_from_args = get_wait_for_events(outputs=outputs, inputs=inputs)
+        if wait_from_args:
+            wait_for: cl.WaitList = [*wait_for, *wait_from_args]
 
         knl = kernel_getter(*args, **kwargs)
         work_group_info = knl.get_work_group_info(
             cl.kernel_work_group_info.WORK_GROUP_SIZE,
             queue.device)
-        gs, ls = outputs[0]._get_sizes(queue, work_group_info)
+        gs, ls = args[0]._get_sizes(queue, work_group_info)  # pyright: ignore[reportPrivateUsage]
+        size = args[0].size
 
         if ARRAY_KERNEL_EXEC_HOOK is not None:
             evt = ARRAY_KERNEL_EXEC_HOOK(  # pylint: disable=not-callable
-                    knl, queue, gs, ls, *args, outputs[0].size, wait_for=wait_for)
+                    knl, queue, gs, ls, *args, size, wait_for=wait_for)
         else:
-            evt = knl(queue, gs, ls, *args, outputs[0].size, wait_for=wait_for)
+            evt = knl(queue, gs, ls, *args, size, wait_for=wait_for)
 
         add_write_event(outputs, evt)
         add_read_event(inputs, evt)
+
         return evt
 
     return kernel_runner
@@ -532,16 +542,6 @@ class Array:
 
     __array_priority__: ClassVar[int] = 100
 
-    queue: cl.CommandQueue | None
-    shape: tuple[int, ...]
-    dtype: np.dtype[Any]
-    strides: tuple[int, ...]
-    events: list[cl.Event]
-    nbytes: int
-    size: int
-    allocator: Allocator | None
-    base_data: cl.MemoryObjectHolder | cl.SVMPointer | None
-
     def __init__(
             self,
             cq: cl.Context | cl.CommandQueue | None,
@@ -690,35 +690,33 @@ class Array:
             if write_events is None:
                 write_events = events
 
-        self.queue = queue
-        self.shape = shape
-        self.dtype = dtype
-        self.strides = strides
-        self.write_events = write_events or []
-        self.read_events = read_events or []
-        self.nbytes = alloc_nbytes
-        self.size = size
-        self.allocator = allocator
-
+        base_data = None
         if data is None:
-            if alloc_nbytes == 0:
-                self.base_data = None
-
-            else:
-                if self.allocator is None:
+            if alloc_nbytes > 0:
+                if allocator is None:
                     if context is None and queue is not None:
                         context = queue.context
 
-                    self.base_data = cl.Buffer(
+                    base_data = cl.Buffer(
                             context, cl.mem_flags.READ_WRITE, alloc_nbytes)
                 else:
-                    self.base_data = self.allocator(alloc_nbytes)
+                    base_data = allocator(alloc_nbytes)
         else:
-            self.base_data = data
+            base_data = data
 
-        self.offset = offset
-        self.context = context
-        self._flags = _flags
+        self.queue: cl.CommandQueue | None = queue
+        self.context: cl.Context | None = context
+        self.shape: tuple[int, ...] = shape
+        self.dtype: np.dtype[Any] = dtype
+        self.strides: tuple[int, ...] = strides
+        self.write_events: list[cl.Event] = write_events or []
+        self.read_events: list[cl.Event] = read_events or []
+        self.nbytes: int = alloc_nbytes
+        self.size: int = size
+        self.allocator: Allocator | None = allocator
+        self.base_data: cl.MemoryObjectHolder | cl.SVMPointer | None = base_data
+        self.offset: int = offset
+        self._flags: Any = _flags
 
         if __debug__:
             if queue is not None and isinstance(
@@ -1154,7 +1152,7 @@ class Array:
         return elementwise.get_copy_kernel(
                 dest.context, dest.dtype, src.dtype)
 
-    def _new_like_me(self, dtype=None, queue: cl.CommandQueue | None = None):
+    def _new_like_me(self, dtype=None, queue: cl.CommandQueue | None = None) -> Self:
         if dtype is None:
             dtype = self.dtype
             strides = self.strides
@@ -2433,7 +2431,7 @@ class _ArangeInfo:
 
 
 @elwise_kernel_runner
-def _arange_knl(result, start, step):
+def _arange_knl(result: Array, start: int, step: int) -> cl.Kernel:
     return elementwise.get_arange_kernel(result.context, result.dtype)
 
 
@@ -3446,8 +3444,12 @@ subset_max.__doc__ = """.. versionadded:: 2011.1"""
 
 # {{{ scans
 
-def cumsum(a, output_dtype=None, queue: cl.CommandQueue | None = None,
-        wait_for: cl.WaitList = None, return_event=False):
+def cumsum(
+        a: Array,
+        output_dtype: Any = None,
+        queue: cl.CommandQueue | None = None,
+        wait_for: cl.WaitList = None,
+        return_event: bool = False) -> Array | tuple[cl.Event, Array]:
     # undocumented for now
 
     """
@@ -3462,11 +3464,12 @@ def cumsum(a, output_dtype=None, queue: cl.CommandQueue | None = None,
     if wait_for is None:
         wait_for = []
 
-    result = a._new_like_me(output_dtype)
+    result = a._new_like_me(output_dtype)  # pyright: ignore[reportPrivateUsage]
 
     from pyopencl.scan import get_cumsum_kernel
+
     krnl = get_cumsum_kernel(a.context, a.dtype, output_dtype)
-    evt = krnl(a, result, queue=queue, wait_for=wait_for + a.write_events)
+    evt = krnl(a, result, queue=queue, wait_for=[*wait_for, *a.write_events])
 
     a.add_read_event(evt)
     result.add_write_event(evt)
