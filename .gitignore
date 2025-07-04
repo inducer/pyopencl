@@ -10,7 +10,6 @@ _skbuild
 *.pyc
 build
 *.prof
-doc/hedge-notes.pdf
 *.vtk
 *.silo
 *.session
@@ -72,8 +71,5 @@ wheelhouse
 
 memray-*.bin
 memray-*.html
-
-.pylintrc.yml
-.run-pylint.py
 
 pyopencl/_cl_gen.pyi
