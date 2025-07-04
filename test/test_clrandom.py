@@ -48,9 +48,9 @@ else:
     np.int64,
     np.float32,
     np.float64,
-    cltypes.float2,         # type: ignore[attr-defined]
-    cltypes.float3,         # type: ignore[attr-defined]
-    cltypes.float4,         # type: ignore[attr-defined]
+    cltypes.float2,
+    cltypes.float3,
+    cltypes.float4,
     ])
 def test_clrandom_dtypes(ctx_factory, rng_class, dtype):
     cl_ctx = ctx_factory()

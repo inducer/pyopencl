@@ -868,7 +868,7 @@ def _make_template(s: str):
         warn("Leftover words in identifier prefixing: " + " ".join(leftovers),
              stacklevel=3)
 
-    return mako.template.Template(s, strict_undefined=True)     # type: ignore
+    return mako.template.Template(s, strict_undefined=True)
 
 
 @dataclass(frozen=True)
