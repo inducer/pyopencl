@@ -566,7 +566,7 @@ class Array:
             dtype = np.dtype(dtype)
 
             try:
-                shape = tuple(shape)        # type: ignore[arg-type]
+                shape = tuple(shape)
             except TypeError as err:
                 if not isinstance(shape, (int, np.integer)):
                     raise TypeError(

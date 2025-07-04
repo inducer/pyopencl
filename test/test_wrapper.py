@@ -1277,7 +1277,7 @@ def test_fine_grain_svm(ctx_factory: cl.CtxFactory):
 
 @pytest.mark.parametrize("dtype", [
     np.uint,
-    cltypes.uint2,      # type: ignore[attr-defined]
+    cltypes.uint2,
     ])
 def test_map_dtype(ctx_factory: cl.CtxFactory, dtype):
     if cl._PYPY:
