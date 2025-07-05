@@ -22,12 +22,16 @@ THE SOFTWARE.
 """
 
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
 from pyopencl.tools import get_or_register_dtype
 
+
+if TYPE_CHECKING:
+    import builtins
+    from collections.abc import MutableSequence
 
 if __file__.endswith("array.py"):
     warnings.warn(
@@ -53,16 +57,19 @@ double = np.float64
 
 # {{{ vector types
 
-def _create_vector_types():
+def _create_vector_types() -> tuple[
+        dict[tuple[np.dtype[Any], builtins.int], np.dtype[Any]],
+        dict[np.dtype[Any], tuple[np.dtype[Any], builtins.int]]]:
     mapping = [(k, globals()[k]) for k in
                 ["char", "uchar", "short", "ushort", "int",
                  "uint", "long", "ulong", "float", "double"]]
 
-    def set_global(key, val):
+    def set_global(key: str, val: np.dtype[Any]) -> None:
         globals()[key] = val
 
-    vec_types = {}
-    vec_type_to_scalar_and_count = {}
+    vec_types: dict[tuple[np.dtype[Any], builtins.int], np.dtype[Any]] = {}
+    vec_type_to_scalar_and_count: dict[np.dtype[Any],
+                                       tuple[np.dtype[Any], builtins.int]] = {}
 
     field_names = ["x", "y", "z", "w"]
 
@@ -70,20 +77,21 @@ def _create_vector_types():
 
     for base_name, base_type in mapping:
         for count in counts:
-            name = "%s%d" % (base_name, count)
-
-            titles = field_names[:count]
+            name = f"{base_name}{count}"
+            titles = cast("MutableSequence[str | None]", field_names[:count])
 
             padded_count = count
             if count == 3:
                 padded_count = 4
 
-            names = ["s%d" % i for i in range(count)]
+            names = [f"s{i}" for i in range(count)]
             while len(names) < padded_count:
-                names.append("padding%d" % (len(names) - count))
+                pad = len(names) - count
+                names.append(f"padding{pad}")
 
             if len(titles) < len(names):
-                titles.extend((len(names) - len(titles)) * [None])
+                pad = len(names) - len(titles)
+                titles.extend([None] * pad)
 
             try:
                 dtype = np.dtype({
@@ -96,14 +104,16 @@ def _create_vector_types():
                                       for (n, title)
                                       in zip(names, titles, strict=True)])
                 except TypeError:
-                    dtype = np.dtype([(n, base_type) for (n, title)
-                                      in zip(names, titles, strict=True)])
+                    dtype = np.dtype([(n, base_type) for n in names])
 
+            assert isinstance(dtype, np.dtype)
             get_or_register_dtype(name, dtype)
-
             set_global(name, dtype)
 
-            def create_array(dtype, count, padded_count, *args, **kwargs):
+            def create_array(dtype: np.dtype[Any],
+                             count: int,
+                             padded_count: int,
+                             *args: Any, **kwargs: Any) -> dict[str, Any]:
                 if len(args) < count:
                     from warnings import warn
                     warn("default values for make_xxx are deprecated;"
@@ -116,21 +126,26 @@ def _create_vector_types():
                              {"array": np.array,
                               "padded_args": padded_args,
                               "dtype": dtype})
-                for key, val in list(kwargs.items()):
+
+                for key, val in kwargs.items():
                     array[key] = val
+
                 return array
 
-            set_global("make_" + name, eval(
-                "lambda *args, **kwargs: create_array(dtype, %i, %i, "
-                "*args, **kwargs)" % (count, padded_count),
-                {"create_array": create_array, "dtype": dtype}))
-            set_global("filled_" + name, eval(
-                "lambda val: make_%s(*[val]*%i)" % (name, count)))
-            set_global("zeros_" + name, eval("lambda: filled_%s(0)" % (name)))
-            set_global("ones_" + name, eval("lambda: filled_%s(1)" % (name)))
+            set_global(
+                f"make_{name}",
+                eval("lambda *args, **kwargs: "
+                     f"create_array(dtype, {count}, {padded_count}, *args, **kwargs)",
+                     {"create_array": create_array, "dtype": dtype}))
+            set_global(
+                f"filled_{name}",
+                eval(f"lambda val: make_{name}(*[val]*{count})"))
+            set_global(f"zeros_{name}", eval(f"lambda: filled_{name}(0)"))
+            set_global(f"ones_{name}", eval(f"lambda: filled_{name}(1)"))
 
-            vec_types[np.dtype(base_type), count] = dtype
-            vec_type_to_scalar_and_count[dtype] = np.dtype(base_type), count
+            base_dtype = np.dtype(base_type)
+            vec_types[base_dtype, count] = dtype
+            vec_type_to_scalar_and_count[dtype] = base_dtype, count
 
     return vec_types, vec_type_to_scalar_and_count
 
