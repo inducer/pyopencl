@@ -128,7 +128,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-
+import atexit
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -136,15 +136,20 @@ from sys import intern
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Concatenate,
     ParamSpec,
+    TypeAlias,
+    TypedDict,
     TypeVar,
+    cast,
+    overload,
 )
 
 import numpy as np
 from typing_extensions import TypeIs, override
 
-from pytools import memoize, memoize_method
+from pytools import Hash, memoize, memoize_method
 from pytools.persistent_dict import KeyBuilder as KeyBuilderBase
 
 from pyopencl._cl import bitlog2, get_cl_header_version
@@ -157,10 +162,10 @@ from pyopencl.compyte.dtypes import (
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Hashable, Sequence
+    from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 
-    from numpy.typing import DTypeLike
-
+    from numpy.typing import DTypeLike, NDArray
+    from pytest import Metafunc
 
 # Do not add a pyopencl import here: This will add an import cycle.
 
@@ -373,7 +378,7 @@ def _monkeypatch_svm_docstrings():
 
     # {{{ PooledSVM
 
-    PooledSVM.__doc__ = (
+    PooledSVM.__doc__ = (  # pyright: ignore[reportPossiblyUnboundVariable]
         """An object representing a :class:`SVMPool`-based allocation of
         :ref:`svm`.  Analogous to :class:`~pyopencl.SVMAllocation`, however once
         this object is deleted, its associated device memory is returned to the
@@ -420,7 +425,7 @@ def _monkeypatch_svm_docstrings():
 
     # {{{ SVMAllocator
 
-    SVMAllocator.__doc__ = (
+    SVMAllocator.__doc__ = (  # pyright: ignore[reportPossiblyUnboundVariable]
         """
         .. versionadded:: 2022.2
 
@@ -453,7 +458,7 @@ def _monkeypatch_svm_docstrings():
 
     # {{{ SVMPool
 
-    SVMPool.__doc__ = (
+    SVMPool.__doc__ = (  # pyright: ignore[reportPossiblyUnboundVariable]
         remove_common_indentation("""
         A memory pool for OpenCL device memory in :ref:`SVM <svm>` form.
         *allocator* must be an instance of :class:`SVMAllocator`.
@@ -477,7 +482,7 @@ if get_cl_header_version() >= (2, 0):
 
 # {{{ first-arg caches
 
-_first_arg_dependent_caches: list[dict[Hashable, object]] = []
+_first_arg_dependent_caches: list[Mapping[Hashable, object]] = []
 
 
 RetT = TypeVar("RetT")
@@ -485,8 +490,8 @@ P = ParamSpec("P")
 
 
 def first_arg_dependent_memoize(
-            func: Callable[Concatenate[object, P], RetT]
-        ) -> Callable[Concatenate[object, P], RetT]:
+            func: Callable[Concatenate[Hashable, P], RetT]
+        ) -> Callable[Concatenate[Hashable, P], RetT]:
     def wrapper(cl_object: Hashable, *args: P.args, **kwargs: P.kwargs) -> RetT:
         """Provides memoization for a function. Typically used to cache
         things that get created inside a :class:`pyopencl.Context`, e.g. programs
@@ -527,33 +532,41 @@ def first_arg_dependent_memoize(
 context_dependent_memoize = first_arg_dependent_memoize
 
 
-def first_arg_dependent_memoize_nested(nested_func):
-    """Provides memoization for nested functions. Typically used to cache
-    things that get created inside a :class:`pyopencl.Context`, e.g. programs
-    and kernels. Assumes that the first argument of the decorated function is
-    an OpenCL object that might go away, such as a :class:`pyopencl.Context` or
-    a :class:`pyopencl.CommandQueue`, and will therefore respond to
-    :func:`clear_first_arg_caches`.
+def first_arg_dependent_memoize_nested(
+        nested_func: Callable[Concatenate[Hashable, P], RetT]
+        ) -> Callable[Concatenate[Hashable, P], RetT]:
+    """Provides memoization for nested functions.
+
+    Typically used to cache things that get created inside a
+    :class:`pyopencl.Context`, e.g. programs and kernels. Assumes that the first
+    argument of the decorated function is an OpenCL object that might go away,
+    such as a :class:`pyopencl.Context` or a :class:`pyopencl.CommandQueue`, and
+    will therefore respond to :func:`clear_first_arg_caches`.
 
     .. versionadded:: 2013.1
     """
 
     from functools import wraps
-    cache_dict_name = intern("_memoize_inner_dic_%s_%s_%d"
-            % (nested_func.__name__, nested_func.__code__.co_filename,
-                nested_func.__code__.co_firstlineno))
+    cache_dict_name = intern(
+        f"_memoize_inner_dic_{nested_func.__name__}_"
+        f"{nested_func.__code__.co_filename}_"
+        f"{nested_func.__code__.co_firstlineno}")
 
     from inspect import currentframe
 
     # prevent ref cycle
-    try:
-        caller_frame = currentframe().f_back
-        cache_context = caller_frame.f_globals[
-                caller_frame.f_code.co_name]
-    finally:
-        # del caller_frame
-        pass
+    frame = currentframe()
+    cache_context = None
+    if frame:
+        try:
+            caller_frame = frame.f_back
+            if caller_frame:
+                cache_context = caller_frame.f_globals[caller_frame.f_code.co_name]
+        finally:
+            # del caller_frame
+            pass
 
+    cache_dict: dict[Hashable, dict[Hashable, RetT]]
     try:
         cache_dict = getattr(cache_context, cache_dict_name)
     except AttributeError:
@@ -562,12 +575,14 @@ def first_arg_dependent_memoize_nested(nested_func):
         setattr(cache_context, cache_dict_name, cache_dict)
 
     @wraps(nested_func)
-    def new_nested_func(cl_object, *args):
+    def new_nested_func(cl_object: Hashable, *args: P.args, **kwargs: P.kwargs) -> RetT:
+        assert not kwargs
+
         try:
             return cache_dict[cl_object][args]
         except KeyError:
             arg_dict = cache_dict.setdefault(cl_object, {})
-            result = nested_func(cl_object, *args)
+            result = nested_func(cl_object, *args, **kwargs)
             arg_dict[args] = result
             return result
 
@@ -575,23 +590,24 @@ def first_arg_dependent_memoize_nested(nested_func):
 
 
 def clear_first_arg_caches():
-    """Empties all first-argument-dependent memoization caches. Also releases
-    all held reference contexts. If it is important to you that the
-    program detaches from its context, you might need to call this
-    function to free all remaining references to your context.
+    """Empties all first-argument-dependent memoization caches.
+
+    Also releases all held reference contexts. If it is important to you that the
+    program detaches from its context, you might need to call this function to
+    free all remaining references to your context.
 
     .. versionadded:: 2011.2
     """
     for cache in _first_arg_dependent_caches:
-        cache.clear()
-
-
-import atexit
+        # NOTE: this could be fixed by making the caches a MutableMapping, but
+        # that doesn't seem to be correctly covariant in its values, so other
+        # parts fail to work nicely..
+        cache.clear()  # pyright: ignore[reportAttributeAccessIssue,reportUnknownMemberType]
 
 
 if TYPE_CHECKING:
     import pyopencl as cl
-
+    from pyopencl.array import Array as CLArray
 
 atexit.register(clear_first_arg_caches)
 
@@ -690,7 +706,9 @@ def get_test_platforms_and_devices(
                 for platform in cl.get_platforms()]
 
 
-def get_pyopencl_fixture_arg_names(metafunc, extra_arg_names=None):
+def get_pyopencl_fixture_arg_names(
+        metafunc: Metafunc,
+        extra_arg_names: list[str] | None = None) -> list[str]:
     if extra_arg_names is None:
         extra_arg_names = []
 
@@ -700,7 +718,7 @@ def get_pyopencl_fixture_arg_names(metafunc, extra_arg_names=None):
             *extra_arg_names
             ]
 
-    arg_names = []
+    arg_names: list[str] = []
     for arg in supported_arg_names:
         if arg not in metafunc.fixturenames:
             continue
@@ -716,10 +734,11 @@ def get_pyopencl_fixture_arg_names(metafunc, extra_arg_names=None):
     return arg_names
 
 
-def get_pyopencl_fixture_arg_values():
+def get_pyopencl_fixture_arg_values() -> tuple[list[dict[str, Any]],
+                                               Callable[[Any], str]]:
     import pyopencl as cl
 
-    arg_values = []
+    arg_values: list[dict[str, Any]] = []
     for platform, devices in get_test_platforms_and_devices():
         for device in devices:
             arg_dict = {
@@ -730,7 +749,7 @@ def get_pyopencl_fixture_arg_values():
             }
             arg_values.append(arg_dict)
 
-    def idfn(val):
+    def idfn(val: Any) -> str:
         if isinstance(val, cl.Platform):
             # Don't show address, so that parallel test collection works
             return f"<pyopencl.Platform '{val.name}'>"
@@ -740,7 +759,7 @@ def get_pyopencl_fixture_arg_values():
     return arg_values, idfn
 
 
-def pytest_generate_tests_for_pyopencl(metafunc):
+def pytest_generate_tests_for_pyopencl(metafunc: Metafunc) -> None:
     """Using the line::
 
         from pyopencl.tools import pytest_generate_tests_for_pyopencl
@@ -773,6 +792,10 @@ def pytest_generate_tests_for_pyopencl(metafunc):
 
 
 # {{{ C argument lists
+
+ArgType: TypeAlias = "np.dtype[Any] | VectorArg"
+ArgDType: TypeAlias = "np.dtype[Any] | None"
+
 
 class Argument(ABC):
     """
@@ -850,18 +873,19 @@ def parse_c_arg(c_arg: str, with_offset: bool = False) -> DtypedArgument:
     c_arg = c_arg.replace("__global", "")
 
     if with_offset:
-        def vec_arg_factory(dtype, name):
+        def vec_arg_factory(dtype: DTypeLike, name: str) -> VectorArg:
             return VectorArg(dtype, name, with_offset=True)
     else:
         vec_arg_factory = VectorArg
 
     from pyopencl.compyte.dtypes import parse_c_arg_backend
+
     return parse_c_arg_backend(c_arg, ScalarArg, vec_arg_factory)
 
 
 def parse_arg_list(
-        arguments: str | list[str] | Sequence[DtypedArgument],
-        with_offset: bool = False) -> list[DtypedArgument]:
+        arguments: str | Sequence[str] | Sequence[Argument],
+        with_offset: bool = False) -> Sequence[DtypedArgument]:
     """Parse a list of kernel arguments. *arguments* may be a comma-separate
     list of C declarators in a string, a list of strings representing C
     declarators, or :class:`Argument` objects.
@@ -870,7 +894,7 @@ def parse_arg_list(
     if isinstance(arguments, str):
         arguments = arguments.split(",")
 
-    def parse_single_arg(obj: str | DtypedArgument) -> DtypedArgument:
+    def parse_single_arg(obj: str | Argument) -> DtypedArgument:
         if isinstance(obj, str):
             from pyopencl.tools import parse_c_arg
             return parse_c_arg(obj, with_offset=with_offset)
@@ -881,8 +905,8 @@ def parse_arg_list(
     return [parse_single_arg(arg) for arg in arguments]
 
 
-def get_arg_list_arg_types(arg_types):
-    result = []
+def get_arg_list_arg_types(arg_types: Sequence[Argument]) -> tuple[ArgType, ...]:
+    result: list[ArgType] = []
 
     for arg_type in arg_types:
         if isinstance(arg_type, ScalarArg):
@@ -890,15 +914,15 @@ def get_arg_list_arg_types(arg_types):
         elif isinstance(arg_type, VectorArg):
             result.append(arg_type)
         else:
-            raise RuntimeError("arg type not understood: %s" % type(arg_type))
+            raise RuntimeError(f"arg type not understood: {type(arg_type)}")
 
     return tuple(result)
 
 
 def get_arg_list_scalar_arg_dtypes(
-        arg_types: Sequence[DtypedArgument]
-        ) -> list[np.dtype | None]:
-    result: list[np.dtype | None] = []
+        arg_types: Sequence[Argument]
+        ) -> Sequence[ArgDType]:
+    result: list[ArgDType] = []
 
     for arg_type in arg_types:
         if isinstance(arg_type, ScalarArg):
@@ -930,14 +954,14 @@ def get_arg_offset_adjuster_code(arg_types: Sequence[Argument]) -> str:
 # }}}
 
 
-def get_gl_sharing_context_properties():
+def get_gl_sharing_context_properties() -> list[tuple[cl.context_properties, Any]]:
     import pyopencl as cl
 
     ctx_props = cl.context_properties
 
     from OpenGL import platform as gl_platform
 
-    props = []
+    props: list[tuple[cl.context_properties, Any]] = []
 
     import sys
     if sys.platform in ["linux", "linux2"]:
@@ -959,24 +983,23 @@ def get_gl_sharing_context_properties():
             (ctx_props.CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,
                 cl.get_apple_cgl_share_group()))
     else:
-        raise NotImplementedError("platform '%s' not yet supported"
-                % sys.platform)
+        raise NotImplementedError(f"platform '{sys.platform}' not yet supported")
 
     return props
 
 
 class _CDeclList:
-    def __init__(self, device):
-        self.device = device
-        self.declared_dtypes = set()
-        self.declarations = []
-        self.saw_double = False
-        self.saw_complex = False
+    def __init__(self, device: cl.Device) -> None:
+        self.device: cl.Device = device
+        self.declared_dtypes: set[np.dtype[Any]] = set()
+        self.declarations: list[str] = []
+        self.saw_double: bool = False
+        self.saw_complex: bool = False
 
-    def add_dtype(self, dtype):
+    def add_dtype(self, dtype: DTypeLike) -> None:
         dtype = np.dtype(dtype)
 
-        if dtype in (np.float64, np.complex128):
+        if dtype.type in (np.float64, np.complex128):
             self.saw_double = True
 
         if dtype.kind == "c":
@@ -988,17 +1011,20 @@ class _CDeclList:
         if dtype in self.declared_dtypes:
             return
 
-        import pyopencl.cltypes
-        if dtype in pyopencl.cltypes.vec_type_to_scalar_and_count:
+        from pyopencl.cltypes import vec_type_to_scalar_and_count
+
+        if dtype in vec_type_to_scalar_and_count:
             return
 
         if hasattr(dtype, "subdtype") and dtype.subdtype is not None:
             self.add_dtype(dtype.subdtype[0])
             return
 
-        for _name, field_data in sorted(dtype.fields.items()):
-            field_dtype, _offset = field_data[:2]
-            self.add_dtype(field_dtype)
+        fields = cast("Mapping[str, tuple[np.dtype[Any], int]] | None", dtype.fields)
+        if fields is not None:
+            for _name, field_data in sorted(fields.items()):
+                field_dtype, _offset = field_data[:2]
+                self.add_dtype(field_dtype)
 
         _, cdecl = match_dtype_to_c_struct(
                 self.device, dtype_to_ctype(dtype), dtype)
@@ -1006,16 +1032,19 @@ class _CDeclList:
         self.declarations.append(cdecl)
         self.declared_dtypes.add(dtype)
 
-    def visit_arguments(self, arguments):
+    def visit_arguments(self, arguments: Sequence[Argument]) -> None:
         for arg in arguments:
+            if not isinstance(arg, DtypedArgument):
+                continue
+
             dtype = arg.dtype
-            if dtype in (np.float64, np.complex128):
+            if dtype.type in (np.float64, np.complex128):
                 self.saw_double = True
 
             if dtype.kind == "c":
                 self.saw_complex = True
 
-    def get_declarations(self):
+    def get_declarations(self) -> str:
         result = "\n\n".join(self.declarations)
 
         if self.saw_complex:
@@ -1036,8 +1065,19 @@ class _CDeclList:
         return result
 
 
+class _DTypeDict(TypedDict):
+    names: list[str]
+    formats: list[np.dtype[Any]]
+    offsets: list[int]
+    itemsize: int
+
+
 @memoize
-def match_dtype_to_c_struct(device, name, dtype, context=None):
+def match_dtype_to_c_struct(
+        device: cl.Device,
+        name: str,
+        dtype: np.dtype[Any],
+        context: cl.Context | None = None) -> tuple[np.dtype[Any], str]:
     """Return a tuple ``(dtype, c_decl)`` such that the C struct declaration
     in ``c_decl`` and the structure :class:`numpy.dtype` instance ``dtype``
     have the same memory layout.
@@ -1073,14 +1113,18 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     :func:`get_or_register_dtype` on the modified ``dtype`` returned by this
     function, not the original one.
     """
+    fields = cast("Mapping[str, tuple[np.dtype[Any], int]] | None", dtype.fields)
+    if not fields:
+        raise ValueError(f"dtype has no fields: '{dtype}'")
 
     import pyopencl as cl
 
-    fields = sorted(dtype.fields.items(),
+    sorted_fields = sorted(
+            fields.items(),
             key=lambda name_dtype_offset: name_dtype_offset[1][1])
 
-    c_fields = []
-    for field_name, dtype_and_offset in fields:
+    c_fields: list[str] = []
+    for field_name, dtype_and_offset in sorted_fields:
         field_dtype, _offset = dtype_and_offset[:2]
         if hasattr(field_dtype, "subdtype") and field_dtype.subdtype is not None:
             array_dtype = field_dtype.subdtype[0]
@@ -1105,15 +1149,15 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
             name)
 
     cdl = _CDeclList(device)
-    for _field_name, dtype_and_offset in fields:
+    for _field_name, dtype_and_offset in sorted_fields:
         field_dtype, _offset = dtype_and_offset[:2]
         cdl.add_dtype(field_dtype)
 
     pre_decls = cdl.get_declarations()
 
     offset_code = "\n".join(
-            "result[%d] = pycl_offsetof(%s, %s);" % (i+1, name, field_name)
-            for i, (field_name, _) in enumerate(fields))
+            f"result[{i + 1}] = pycl_offsetof({name}, {field_name});"
+            for i, (field_name, _) in enumerate(sorted_fields))
 
     src = rf"""
         #define pycl_offsetof(st, m) \
@@ -1140,30 +1184,29 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     prg = cl.Program(context, src)
     knl = prg.build(devices=[device]).get_size_and_offsets
 
-    import pyopencl.array
+    import pyopencl.array as cl_array
 
-    result_buf = cl.array.empty(queue, 1+len(fields), np.uint32)
+    result_buf = cl_array.empty(queue, 1+len(sorted_fields), np.uint32)
+    assert result_buf.data is not None
+
     knl(queue, (1,), (1,), result_buf.data)
     queue.finish()
     size_and_offsets = result_buf.get()
 
     size = int(size_and_offsets[0])
-
     offsets = size_and_offsets[1:]
+
     if any(ofs >= size for ofs in offsets):
         # offsets not plausible
 
         if dtype.itemsize == size:
             # If sizes match, use numpy's idea of the offsets.
-            offsets = [dtype_and_offset[1]
-                    for field_name, dtype_and_offset in fields]
+            offsets = [dtype_and_offset[1] for _name, dtype_and_offset in sorted_fields]
         else:
             raise RuntimeError(
-                    "OpenCL compiler reported offsetof() past sizeof() "
-                    "for struct layout on '%s'. "
-                    "This makes no sense, and it's usually indicates a "
-                    "compiler bug. "
-                    "Refusing to discover struct layout." % device)
+                    "OpenCL compiler reported offsetof() past sizeof() for struct "
+                    f"layout on '{device}'. This makes no sense, and it usually "
+                    "indicates a compiler bug. Refusing to discover struct layout.")
 
     result_buf.data.release()
     del knl
@@ -1172,58 +1215,66 @@ def match_dtype_to_c_struct(device, name, dtype, context=None):
     del context
 
     try:
-        dtype_arg_dict = {
-            "names": [field_name
-                      for field_name, (field_dtype, offset) in fields],
-            "formats": [field_dtype
-                        for field_name, (field_dtype, offset) in fields],
-            "offsets": [int(x) for x in offsets],
-            "itemsize": int(size_and_offsets[0]),
-            }
-        dtype = np.dtype(dtype_arg_dict)
-        if dtype.itemsize != size_and_offsets[0]:
+        dtype_arg_dict = _DTypeDict(
+            names=[name for name, _ in sorted_fields],
+            formats=[dtype_and_offset[0] for _, dtype_and_offset in sorted_fields],
+            offsets=[int(x) for x in offsets],
+            itemsize=int(size_and_offsets[0]),
+            )
+        arg_dtype = np.dtype(dtype_arg_dict)
+
+        if arg_dtype.itemsize != size_and_offsets[0]:
             # "Old" versions of numpy (1.6.x?) silently ignore "itemsize". Boo.
             dtype_arg_dict["names"].append("_pycl_size_fixer")
-            dtype_arg_dict["formats"].append(np.uint8)
-            dtype_arg_dict["offsets"].append(int(size_and_offsets[0])-1)
-            dtype = np.dtype(dtype_arg_dict)
+            dtype_arg_dict["formats"].append(np.dtype(np.uint8))
+            dtype_arg_dict["offsets"].append(int(size_and_offsets[0]) - 1)
+
+            arg_dtype = np.dtype(dtype_arg_dict)
     except NotImplementedError:
-        def calc_field_type():
+        def calc_field_type() -> Iterator[tuple[str, str | np.dtype[Any]]]:
             total_size = 0
             padding_count = 0
-            for offset, (field_name, (field_dtype, _)) in zip(
-                        offsets, fields, strict=True):
+            for offset, (field_name, dtype_and_offset) in zip(
+                    offsets, sorted_fields, strict=True):
+                field_dtype, _ = dtype_and_offset[:2]
                 if offset > total_size:
                     padding_count += 1
-                    yield ("__pycl_padding%d" % padding_count,
-                           "V%d" % offset - total_size)
+                    yield f"__pycl_padding{padding_count}", f"V{offset - total_size}"
+
                 yield field_name, field_dtype
                 total_size = field_dtype.itemsize + offset
-        dtype = np.dtype(list(calc_field_type()))
 
-    assert dtype.itemsize == size_and_offsets[0]
+        arg_dtype = np.dtype(list(calc_field_type()))
 
-    return dtype, c_decl
+    assert arg_dtype.itemsize == size_and_offsets[0]
+
+    return arg_dtype, c_decl
 
 
 @memoize
-def dtype_to_c_struct(device, dtype):
-    if dtype.fields is None:
+def dtype_to_c_struct(device: cl.Device, dtype: np.dtype[Any]) -> str:
+    fields = cast("Mapping[str, tuple[np.dtype[Any], int]] | None", dtype.fields)
+    if fields is None:
         return ""
 
-    import pyopencl.cltypes
-    if dtype in pyopencl.cltypes.vec_type_to_scalar_and_count:
+    from pyopencl.cltypes import vec_type_to_scalar_and_count
+
+    if dtype in vec_type_to_scalar_and_count:
         # Vector types are built-in. Don't try to redeclare those.
         return ""
 
     matched_dtype, c_decl = match_dtype_to_c_struct(
             device, dtype_to_ctype(dtype), dtype)
 
-    def dtypes_match():
-        result = len(dtype.fields) == len(matched_dtype.fields)
+    matched_fields = cast("Mapping[str, tuple[np.dtype[Any], int]] | None",
+                          matched_dtype.fields)
+    assert matched_fields is not None
 
-        for name, val in dtype.fields.items():
-            result = result and matched_dtype.fields[name] == val
+    def dtypes_match() -> bool:
+        result = len(fields) == len(matched_fields)
+
+        for name, val in fields.items():
+            result = result and matched_fields[name] == val
 
         return result
 
@@ -1234,38 +1285,48 @@ def dtype_to_c_struct(device, dtype):
 
 # {{{ code generation/templating helper
 
-def _process_code_for_macro(code):
+def _process_code_for_macro(code: str) -> str:
     code = code.replace("//CL//", "\n")
 
     if "//" in code:
-        raise RuntimeError("end-of-line comments ('//') may not be used in "
-                "code snippets")
+        raise RuntimeError(
+            "end-of-line comments ('//') may not be used in code snippets")
 
     return code.replace("\n", " \\\n")
 
 
-class _SimpleTextTemplate:
-    def __init__(self, txt):
-        self.txt = txt
+class _TextTemplate(ABC):
+    @abstractmethod
+    def render(self, context: dict[str, Any]) -> str:
+        pass
 
-    def render(self, context):
+
+class _SimpleTextTemplate(_TextTemplate):
+    def __init__(self, txt: str) -> None:
+        self.txt: str = txt
+
+    @override
+    def render(self, context: dict[str, Any]) -> str:
         return self.txt
 
 
-class _PrintfTextTemplate:
-    def __init__(self, txt):
-        self.txt = txt
+class _PrintfTextTemplate(_TextTemplate):
+    def __init__(self, txt: str) -> None:
+        self.txt: str = txt
 
-    def render(self, context):
+    @override
+    def render(self, context: dict[str, Any]) -> str:
         return self.txt % context
 
 
-class _MakoTextTemplate:
-    def __init__(self, txt):
+class _MakoTextTemplate(_TextTemplate):
+    def __init__(self, txt: str) -> None:
         from mako.template import Template
-        self.template = Template(txt, strict_undefined=True)
 
-    def render(self, context):
+        self.template: Template = Template(txt, strict_undefined=True)
+
+    @override
+    def render(self, context: dict[str, Any]) -> str:
         return self.template.render(**context)
 
 
@@ -1279,36 +1340,52 @@ class _ArgumentPlaceholder:
     See also :class:`_TemplateRenderer.render_arg`.
     """
 
-    def __init__(self, typename, name, **extra_kwargs):
-        self.typename = typename
-        self.name = name
-        self.extra_kwargs = extra_kwargs
+    target_class: ClassVar[type[DtypedArgument]]
+
+    def __init__(self,
+                 typename: DTypeLike,
+                 name: str,
+                 **extra_kwargs: Any) -> None:
+        self.typename: DTypeLike = typename
+        self.name: str = name
+        self.extra_kwargs: dict[str, Any] = extra_kwargs
 
 
 class _VectorArgPlaceholder(_ArgumentPlaceholder):
-    target_class = VectorArg
+    target_class: ClassVar[type[DtypedArgument]] = VectorArg
 
 
 class _ScalarArgPlaceholder(_ArgumentPlaceholder):
-    target_class = ScalarArg
+    target_class: ClassVar[type[DtypedArgument]] = ScalarArg
 
 
 class _TemplateRenderer:
-    def __init__(self, template, type_aliases, var_values, context=None,
-            options=None):
-        self.template = template
-        self.type_aliases = dict(type_aliases)
-        self.var_dict = dict(var_values)
+    def __init__(self,
+                 template: KernelTemplateBase,
+                 type_aliases: (
+                     dict[str, np.dtype[Any]]
+                     | Sequence[tuple[str, np.dtype[Any]]]),
+                 var_values: dict[str, str] | Sequence[tuple[str, str]],
+                 context: cl.Context | None = None,
+                 options: Any = None) -> None:
+        self.template: KernelTemplateBase = template
+        self.type_aliases: dict[str, np.dtype[Any]] = dict(type_aliases)
+        self.var_dict: dict[str, str] = dict(var_values)
 
         for name in self.var_dict:
             if name.startswith("macro_"):
-                self.var_dict[name] = _process_code_for_macro(
-                        self.var_dict[name])
+                self.var_dict[name] = _process_code_for_macro(self.var_dict[name])
 
-        self.context = context
-        self.options = options
+        self.context: cl.Context | None = context
+        self.options: Any = options
 
-    def __call__(self, txt):
+    @overload
+    def __call__(self, txt: None) -> None: ...
+
+    @overload
+    def __call__(self, txt: str) -> str: ...
+
+    def __call__(self, txt: str | None) -> str | None:
         if txt is None:
             return txt
 
@@ -1316,7 +1393,10 @@ class _TemplateRenderer:
 
         return str(result)
 
-    def get_rendered_kernel(self, txt, kernel_name):
+    def get_rendered_kernel(self, txt: str, kernel_name: str) -> cl.Kernel:
+        if self.context is None:
+            raise ValueError("context not provided -- cannot render kernel")
+
         import pyopencl as cl
         prg = cl.Program(self.context, self(txt)).build(self.options)
 
@@ -1326,7 +1406,7 @@ class _TemplateRenderer:
 
         return getattr(prg, kernel_name)
 
-    def parse_type(self, typename):
+    def parse_type(self, typename: Any) -> np.dtype[Any]:
         if isinstance(typename, str):
             try:
                 return self.type_aliases[typename]
@@ -1336,21 +1416,22 @@ class _TemplateRenderer:
         else:
             return np.dtype(typename)
 
-    def render_arg(self, arg_placeholder):
+    def render_arg(self, arg_placeholder: _ArgumentPlaceholder) -> DtypedArgument:
         return arg_placeholder.target_class(
                 self.parse_type(arg_placeholder.typename),
                 arg_placeholder.name,
                 **arg_placeholder.extra_kwargs)
 
-    _C_COMMENT_FINDER = re.compile(r"/\*.*?\*/")
+    _C_COMMENT_FINDER: ClassVar[re.Pattern[str]] = re.compile(r"/\*.*?\*/")
 
-    def render_argument_list(self, *arg_lists, **kwargs):
-        with_offset = kwargs.pop("with_offset", False)
+    def render_argument_list(self,
+                             *arg_lists: Any,
+                             with_offset: bool = False,
+                             **kwargs: Any) -> list[Argument]:
         if kwargs:
             raise TypeError("unrecognized kwargs: " + ", ".join(kwargs))
 
-        all_args = []
-
+        all_args: list[Any] = []
         for arg_list in arg_lists:
             if isinstance(arg_list, str):
                 arg_list = str(
@@ -1364,13 +1445,16 @@ class _TemplateRenderer:
                 all_args.extend(arg_list)
 
         if with_offset:
-            def vec_arg_factory(typename, name):
+            def vec_arg_factory(
+                    typename: DTypeLike,
+                    name: str) -> _VectorArgPlaceholder:
                 return _VectorArgPlaceholder(typename, name, with_offset=True)
         else:
             vec_arg_factory = _VectorArgPlaceholder
 
         from pyopencl.compyte.dtypes import parse_c_arg_backend
-        parsed_args = []
+
+        parsed_args: list[Argument] = []
         for arg in all_args:
             if isinstance(arg, str):
                 arg = arg.strip()
@@ -1379,12 +1463,13 @@ class _TemplateRenderer:
 
                 ph = parse_c_arg_backend(arg,
                         _ScalarArgPlaceholder, vec_arg_factory,
-                        name_to_dtype=lambda x: x)
+                        name_to_dtype=lambda x: x)  # pyright: ignore[reportArgumentType]
                 parsed_arg = self.render_arg(ph)
-
             elif isinstance(arg, Argument):
                 parsed_arg = arg
             elif isinstance(arg, tuple):
+                assert isinstance(arg[0], str)
+                assert isinstance(arg[1], str)
                 parsed_arg = ScalarArg(self.parse_type(arg[0]), arg[1])
             else:
                 raise TypeError("unexpected argument type: %s" % type(arg))
@@ -1393,7 +1478,11 @@ class _TemplateRenderer:
 
         return parsed_args
 
-    def get_type_decl_preamble(self, device, decl_type_names, arguments=None):
+    def get_type_decl_preamble(self,
+                               device: cl.Device,
+                               decl_type_names: Sequence[DTypeLike],
+                               arguments: Sequence[Argument] | None = None,
+                               ) -> str:
         cdl = _CDeclList(device)
 
         for typename in decl_type_names:
@@ -1413,20 +1502,19 @@ class _TemplateRenderer:
         return cdl.get_declarations() + "\n" + "\n".join(type_alias_decls)
 
 
-class KernelTemplateBase:
-    def __init__(self, template_processor=None):
-        self.template_processor = template_processor
+class KernelTemplateBase(ABC):
+    def __init__(self, template_processor: str | None = None) -> None:
+        self.template_processor: str | None = template_processor
 
-        self.build_cache = {}
+        self.build_cache: dict[Hashable, Any] = {}
         _first_arg_dependent_caches.append(self.build_cache)
 
-    def get_preamble(self):
-        pass
-
-    _TEMPLATE_PROCESSOR_PATTERN = re.compile(r"^//CL(?::([a-zA-Z0-9_]+))?//")
+    _TEMPLATE_PROCESSOR_PATTERN: ClassVar[re.Pattern[str]] = (
+        re.compile(r"^//CL(?::([a-zA-Z0-9_]+))?//")
+    )
 
     @memoize_method
-    def get_text_template(self, txt):
+    def get_text_template(self, txt: str) -> _TextTemplate:
         proc_match = self._TEMPLATE_PROCESSOR_PATTERN.match(txt)
         tpl_processor = None
 
@@ -1434,6 +1522,7 @@ class KernelTemplateBase:
             tpl_processor = proc_match.group(1)
             # chop off //CL// mark
             txt = txt[len(proc_match.group(0)):]
+
         if tpl_processor is None:
             tpl_processor = self.template_processor
 
@@ -1444,16 +1533,27 @@ class KernelTemplateBase:
         elif tpl_processor == "mako":
             return _MakoTextTemplate(txt)
         else:
-            raise RuntimeError(
-                    "unknown template processor '%s'" % proc_match.group(1))
+            raise RuntimeError(f"unknown template processor '{tpl_processor}'")
 
-    def get_renderer(self, type_aliases, var_values, context=None, options=None):
+    # TODO: this does not seem to be used anywhere -> deprecate / remove
+    def get_preamble(self) -> str:
+        return ""
+
+    def get_renderer(self,
+                     type_aliases: (
+                         dict[str, np.dtype[Any]]
+                         | Sequence[tuple[str, np.dtype[Any]]]),
+                     var_values: dict[str, str] | Sequence[tuple[str, str]],
+                     context: cl.Context | None = None,  # pyright: ignore[reportUnusedParameter]
+                     options: Any = None,  # pyright: ignore[reportUnusedParameter]
+                     ) -> _TemplateRenderer:
         return _TemplateRenderer(self, type_aliases, var_values)
 
-    def build_inner(self, context, *args, **kwargs):
-        raise NotImplementedError
+    @abstractmethod
+    def build_inner(self, context: cl.Context, *args: Any, **kwargs: Any) -> Any:
+        pass
 
-    def build(self, context, *args, **kwargs):
+    def build(self, context: cl.Context, *args: Any, **kwargs: Any) -> Any:
         """Provide caching for an :meth:`build_inner`."""
 
         cache_key = (context, args, tuple(sorted(kwargs.items())))
@@ -1469,41 +1569,47 @@ class KernelTemplateBase:
 
 # {{{ array_module
 
+# TODO: this is not used anywhere: deprecate + remove
+
 class _CLFakeArrayModule:
-    def __init__(self, queue):
-        self.queue = queue
+    def __init__(self, queue: cl.CommandQueue | None = None) -> None:
+        self.queue: cl.CommandQueue | None = queue
 
     @property
-    def ndarray(self):
+    def ndarray(self) -> type[CLArray]:
         from pyopencl.array import Array
         return Array
 
-    def dot(self, x, y):
+    def dot(self, x: CLArray, y: CLArray) -> NDArray[Any]:
         from pyopencl.array import dot
         return dot(x, y, queue=self.queue).get()
 
-    def vdot(self, x, y):
+    def vdot(self, x: CLArray, y: CLArray) -> NDArray[Any]:
         from pyopencl.array import vdot
         return vdot(x, y, queue=self.queue).get()
 
-    def empty(self, shape, dtype, order="C"):
+    def empty(self,
+              shape: int | tuple[int, ...],
+              dtype: DTypeLike,
+              order: str = "C") -> CLArray:
         from pyopencl.array import empty
         return empty(self.queue, shape, dtype, order=order)
 
-    def hstack(self, arrays):
+    def hstack(self, arrays: Sequence[CLArray]) -> CLArray:
         from pyopencl.array import hstack
         return hstack(arrays, self.queue)
 
 
-def array_module(a):
+def array_module(a: Any) -> Any:
     if isinstance(a, np.ndarray):
         return np
     else:
         from pyopencl.array import Array
+
         if isinstance(a, Array):
             return _CLFakeArrayModule(a.queue)
         else:
-            raise TypeError("array type not understood: %s" % type(a))
+            raise TypeError(f"array type not understood: {type(a)}")
 
 # }}}
 
@@ -1519,19 +1625,19 @@ def is_spirv(s: str | bytes) -> TypeIs[bytes]:
 
 # {{{ numpy key types builder
 
-class _NumpyTypesKeyBuilder(KeyBuilderBase):
-    def update_for_VectorArg(self, key_hash, key):  # noqa: N802
+class _NumpyTypesKeyBuilder(KeyBuilderBase):  # pyright: ignore[reportUnusedClass]
+    def update_for_VectorArg(self, key_hash: Hash, key: VectorArg) -> None:  # noqa: N802
         self.rec(key_hash, key.dtype)
         self.update_for_str(key_hash, key.name)
         self.rec(key_hash, key.with_offset)
 
-    def update_for_type(self, key_hash, key):
+    @override
+    def update_for_type(self, key_hash: Hash, key: type) -> None:
         if issubclass(key, np.generic):
             self.update_for_str(key_hash, key.__name__)
             return
 
-        raise TypeError("unsupported type for persistent hash keying: %s"
-                % type(key))
+        raise TypeError(f"unsupported type for persistent hash keying: {key}")
 
 # }}}
 
