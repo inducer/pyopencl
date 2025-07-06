@@ -223,7 +223,7 @@ kernel_old_get_info = _cl.Kernel.get_info
 kernel_old_get_work_group_info = _cl.Kernel.get_work_group_info
 
 
-def kernel_set_arg_types(self: _cl.Kernel, arg_types):
+def kernel_set_arg_types(self: _cl.Kernel, arg_types) -> None:
     arg_types = tuple(arg_types)
 
     # {{{ arg counting bug handling

@@ -37,6 +37,7 @@ from pytools import memoize_method
 
 import pyopencl as cl
 from pyopencl.tools import (
+    Argument,
     DtypedArgument,
     KernelTemplateBase,
     ScalarArg,
@@ -55,7 +56,7 @@ if TYPE_CHECKING:
 
 def get_elwise_program(
         context: cl.Context,
-        arguments: list[DtypedArgument],
+        arguments: Sequence[Argument],
         operation: str, *,
         name: str = "elwise_kernel",
         options: Any = None,
@@ -123,27 +124,27 @@ def get_elwise_program(
 
 def get_elwise_kernel_and_types(
         context: cl.Context,
-        arguments: str | Sequence[DtypedArgument],
+        arguments: str | Sequence[Argument],
         operation: str, *,
         name: str = "elwise_kernel",
         options: Any = None,
         preamble: str = "",
         use_range: bool = False,
-        **kwargs: Any) -> tuple[cl.Kernel, list[DtypedArgument]]:
+        **kwargs: Any) -> tuple[cl.Kernel, Sequence[Argument]]:
 
     from pyopencl.tools import get_arg_offset_adjuster_code, parse_arg_list
     parsed_args = parse_arg_list(arguments, with_offset=True)
 
     auto_preamble = kwargs.pop("auto_preamble", True)
 
-    pragmas = []
-    includes = []
+    pragmas: list[str] = []
+    includes: list[str] = []
     have_double_pragma = False
     have_complex_include = False
 
     if auto_preamble:
         for arg in parsed_args:
-            if arg.dtype in [np.float64, np.complex128]:
+            if arg.dtype.type in [np.float64, np.complex128]:
                 if not have_double_pragma:
                     pragmas.append("""
                         #if __OPENCL_C_VERSION__ < 120
@@ -186,14 +187,14 @@ def get_elwise_kernel_and_types(
 
 def get_elwise_kernel(
         context: cl.Context,
-        arguments: str | list[DtypedArgument],
+        arguments: str | Sequence[Argument],
         operation: str, *,
         name: str = "elwise_kernel",
         options: Any = None, **kwargs: Any) -> cl.Kernel:
     """Return a L{pyopencl.Kernel} that performs the same scalar operation
     on one or several vectors.
     """
-    func, arguments = get_elwise_kernel_and_types(
+    func, _arguments = get_elwise_kernel_and_types(
         context, arguments, operation,
         name=name, options=options, **kwargs)
 
@@ -233,7 +234,7 @@ class ElementwiseKernel:
     def __init__(
             self,
             context: cl.Context,
-            arguments: str | Sequence[DtypedArgument],
+            arguments: str | Sequence[Argument],
             operation: str,
             name: str = "elwise_kernel",
             options: Any = None, **kwargs: Any) -> None:
