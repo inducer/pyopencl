@@ -308,3 +308,10 @@ Generating Arrays of Random Numbers
 -----------------------------------
 
 .. automodule:: pyopencl.clrandom
+
+Type Aliases
+------------
+
+.. class:: cl.Device
+
+    See :class:`pyopencl.Device`.

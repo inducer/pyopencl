@@ -22,6 +22,7 @@ release = ver_dic["VERSION_TEXT"]
 nitpick_ignore = [
     ("py:class", r"numpy._typing._dtype_like._SupportsDType"),
     ("py:class", r"numpy._typing._dtype_like._DTypeDict"),
+    ("py:class", r"pytest.Metafunc"),
 ]
 
 intersphinx_mapping = {
