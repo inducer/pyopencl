@@ -164,9 +164,9 @@ from pyopencl.compyte.dtypes import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 
+    import pytest
     from mako.template import Template
     from numpy.typing import DTypeLike, NDArray
-    from pytest import Metafunc
 
 # Do not add a pyopencl import here: This will add an import cycle.
 
@@ -708,7 +708,7 @@ def get_test_platforms_and_devices(
 
 
 def get_pyopencl_fixture_arg_names(
-        metafunc: Metafunc,
+        metafunc: pytest.Metafunc,
         extra_arg_names: list[str] | None = None) -> list[str]:
     if extra_arg_names is None:
         extra_arg_names = []
@@ -760,7 +760,7 @@ def get_pyopencl_fixture_arg_values() -> tuple[list[dict[str, Any]],
     return arg_values, idfn
 
 
-def pytest_generate_tests_for_pyopencl(metafunc: Metafunc) -> None:
+def pytest_generate_tests_for_pyopencl(metafunc: pytest.Metafunc) -> None:
     """Using the line::
 
         from pyopencl.tools import pytest_generate_tests_for_pyopencl
