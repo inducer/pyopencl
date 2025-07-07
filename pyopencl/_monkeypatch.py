@@ -27,9 +27,11 @@ from sys import intern
 from typing import (
     TYPE_CHECKING,
     Any,
+    Literal,
     TextIO,
     TypeVar,
     cast,
+    overload,
 )
 from warnings import warn
 
@@ -259,7 +261,42 @@ def kernel_set_arg_types(self: _cl.Kernel, arg_types):
                     devs=self.context.devices))
 
 
-def kernel_get_work_group_info(self: _cl.Kernel, param: int, device: _cl.Device):
+@overload
+def kernel_get_work_group_info(
+            self: _cl.Kernel,
+            param: Literal[
+                    _cl.kernel_work_group_info.WORK_GROUP_SIZE,
+                    _cl.kernel_work_group_info.PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
+                    _cl.kernel_work_group_info.LOCAL_MEM_SIZE,
+                    _cl.kernel_work_group_info.PRIVATE_MEM_SIZE,
+                ],
+            device: _cl.Device
+        ) -> int: ...
+
+@overload
+def kernel_get_work_group_info(
+            self: _cl.Kernel,
+            param: Literal[
+                    _cl.kernel_work_group_info.COMPILE_WORK_GROUP_SIZE,
+                    _cl.kernel_work_group_info.GLOBAL_WORK_SIZE,
+                ],
+            device: _cl.Device
+        ) -> Sequence[int]: ...
+
+
+@overload
+def kernel_get_work_group_info(
+            self: _cl.Kernel,
+            param: int,
+            device: _cl.Device
+        ) -> object: ...
+
+
+def kernel_get_work_group_info(
+            self: _cl.Kernel,
+            param: int,
+            device: _cl.Device
+        ) -> object:
     try:
         wg_info_cache = self._wg_info_cache
     except AttributeError:

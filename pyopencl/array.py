@@ -244,10 +244,9 @@ def elwise_kernel_runner(
         assert queue is not None
 
         knl = kernel_getter(out, *args, **kwargs)
-        work_group_info = cast("int", knl.get_work_group_info(
+        gs, ls = out._get_sizes(queue, knl.get_work_group_info(
             cl.kernel_work_group_info.WORK_GROUP_SIZE,
             queue.device))
-        gs, ls = out._get_sizes(queue, work_group_info)
 
         knl_args = (out, *args, out.size)
         if ARRAY_KERNEL_EXEC_HOOK is not None:
