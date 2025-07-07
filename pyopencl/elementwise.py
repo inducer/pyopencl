@@ -29,7 +29,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 import enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -50,6 +50,8 @@ from pyopencl.tools import (
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from pyopencl.array import Array
 
 
 # {{{ elementwise kernel code generator
@@ -269,7 +271,7 @@ class ElementwiseKernel:
 
         return knl, arg_descrs
 
-    def __call__(self, *args, **kwargs) -> cl.Event:
+    def __call__(self, *args, **kwargs: Any) -> cl.Event:
         """
         Invoke the generated scalar kernel.
 
@@ -281,7 +283,7 @@ class ElementwiseKernel:
         range_ = kwargs.pop("range", None)
         slice_ = kwargs.pop("slice", None)
         capture_as = kwargs.pop("capture_as", None)
-        queue = kwargs.pop("queue", None)
+        queue: cl.CommandQueue | None = kwargs.pop("queue", None)
         wait_for = kwargs.pop("wait_for", None)
 
         if kwargs:
@@ -298,14 +300,14 @@ class ElementwiseKernel:
 
         # {{{ assemble arg array
 
-        repr_vec = None
+        repr_vec: Array | None = None
         invocation_args = []
 
         # non-strict because length arg gets appended below
         for arg, arg_descr in zip(args, arg_descrs, strict=False):
             if isinstance(arg_descr, VectorArg):
                 if repr_vec is None:
-                    repr_vec = arg
+                    repr_vec = cast("Array", arg)
 
                 invocation_args.append(arg)
             else:
@@ -324,6 +326,8 @@ class ElementwiseKernel:
                     "may not specify both range and slice keyword arguments")
 
             range_ = slice(*slice_.indices(repr_vec.size))
+
+        assert queue is not None
 
         max_wg_size = kernel.get_work_group_info(
                 cl.kernel_work_group_info.WORK_GROUP_SIZE,
