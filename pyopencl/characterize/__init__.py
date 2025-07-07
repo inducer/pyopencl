@@ -24,8 +24,6 @@ THE SOFTWARE.
 """
 
 
-from typing import cast
-
 from pytools import memoize
 
 import pyopencl as cl
@@ -70,9 +68,9 @@ def reasonable_work_group_size_multiple(
         }
         """)
     prg.build()
-    return cast("int", prg.knl.get_work_group_info(
+    return prg.knl.get_work_group_info(
             cl.kernel_work_group_info.PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
-            dev))
+            dev)
 
 
 def nv_compute_capability(dev: cl.Device):

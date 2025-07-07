@@ -591,12 +591,12 @@ class kernel_arg_type_qualifier(IntEnum):  # noqa: N801
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
 class kernel_work_group_info(IntEnum):  # noqa: N801
-    WORK_GROUP_SIZE = auto()
-    COMPILE_WORK_GROUP_SIZE = auto()
-    LOCAL_MEM_SIZE = auto()
-    PREFERRED_WORK_GROUP_SIZE_MULTIPLE = auto()
-    PRIVATE_MEM_SIZE = auto()
-    GLOBAL_WORK_SIZE = auto()
+    WORK_GROUP_SIZE = 0x11B0
+    COMPILE_WORK_GROUP_SIZE = 0x11B1
+    LOCAL_MEM_SIZE = 0x11B2
+    PREFERRED_WORK_GROUP_SIZE_MULTIPLE = 0x11B3
+    PRIVATE_MEM_SIZE = 0x11B4
+    GLOBAL_WORK_SIZE = 0x11B5
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
 class kernel_sub_group_info(IntEnum):  # noqa: N801
