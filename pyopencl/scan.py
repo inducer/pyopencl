@@ -26,7 +26,7 @@ Derived from code within the Thrust project, https://github.com/NVIDIA/thrust
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
 
@@ -47,6 +47,10 @@ from pyopencl.tools import (
     get_arg_list_scalar_arg_dtypes,
     get_arg_offset_adjuster_code,
 )
+
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 logger = logging.getLogger(__name__)
@@ -900,7 +904,7 @@ class _BuiltScanKernelInfo:
 class _GeneratedFinalUpdateKernelInfo:
     source: str
     kernel_name: str
-    scalar_arg_dtypes: list[np.dtype | None]
+    scalar_arg_dtypes: Sequence[np.dtype | None]
     update_wg_size: int
 
     def build(self,
@@ -942,7 +946,7 @@ class GenericScanKernelBase(ABC):
             name_prefix: str = "scan",
             options: Any = None,
             preamble: str = "",
-            devices: cl.Device | None = None) -> None:
+            devices: Sequence[cl.Device] | None = None) -> None:
         """
         :arg ctx: a :class:`pyopencl.Context` within which the code
             for this scan kernel will be generated.
@@ -1031,7 +1035,8 @@ class GenericScanKernelBase(ABC):
         if input_fetch_exprs is None:
             input_fetch_exprs = []
 
-        self.context = ctx
+        self.context: cl.Context = ctx
+        self.dtype: np.dtype[Any]
         dtype = self.dtype = np.dtype(dtype)
 
         if neutral is None:
@@ -1044,35 +1049,35 @@ class GenericScanKernelBase(ABC):
         if dtype.itemsize % 4 != 0:
             raise TypeError("scan value type must have size divisible by 4 bytes")
 
-        self.index_dtype = np.dtype(index_dtype)
+        self.index_dtype: np.dtype[np.integer] = np.dtype(index_dtype)
         if np.iinfo(self.index_dtype).min >= 0:
             raise TypeError("index_dtype must be signed")
 
         if devices is None:
             devices = ctx.devices
-        self.devices = devices
+        self.devices: Sequence[cl.Device] = devices
         self.options = options
 
         from pyopencl.tools import parse_arg_list
-        self.parsed_args = parse_arg_list(arguments)
+        self.parsed_args: Sequence[DtypedArgument] = parse_arg_list(arguments)
         from pyopencl.tools import VectorArg
-        self.first_array_idx = next(
+        self.first_array_idx: int = next(
                 i for i, arg in enumerate(self.parsed_args)
                 if isinstance(arg, VectorArg))
 
-        self.input_expr = input_expr
+        self.input_expr: str = input_expr
 
-        self.is_segment_start_expr = is_segment_start_expr
-        self.is_segmented = is_segment_start_expr is not None
-        if self.is_segmented:
+        self.is_segment_start_expr: str | None = is_segment_start_expr
+        self.is_segmented: bool = is_segment_start_expr is not None
+        if is_segment_start_expr is not None:
             is_segment_start_expr = _process_code_for_macro(is_segment_start_expr)
 
-        self.output_statement = output_statement
+        self.output_statement: str = output_statement
 
         for _name, _arg_name, ife_offset in input_fetch_exprs:
             if ife_offset not in [0, -1]:
                 raise RuntimeError("input_fetch_expr offsets must either be 0 or -1")
-        self.input_fetch_exprs = input_fetch_exprs
+        self.input_fetch_exprs: Sequence[tuple[str, str, int]] = input_fetch_exprs
 
         arg_dtypes = {}
         arg_ctypes = {}
@@ -1080,7 +1085,7 @@ class GenericScanKernelBase(ABC):
             arg_dtypes[arg.name] = arg.dtype
             arg_ctypes[arg.name] = dtype_to_ctype(arg.dtype)
 
-        self.name_prefix = name_prefix
+        self.name_prefix: str = name_prefix
 
         # {{{ set up shared code dict
 
@@ -1128,8 +1133,8 @@ class GenericScanKernelBase(ABC):
 
         # }}}
 
-        self.use_lookbehind_update = "prev_item" in self.output_statement
-        self.store_segment_start_flags = (
+        self.use_lookbehind_update: bool = "prev_item" in self.output_statement
+        self.store_segment_start_flags: bool = (
                 self.is_segmented and self.use_lookbehind_update)
 
         self.finish_setup()
@@ -1233,8 +1238,8 @@ class GenericScanKernel(GenericScanKernelBase):
             # not sure where these go, but roughly this much seems unavailable.
             avail_local_mem -= 0x400
 
-        is_cpu = self.devices[0].type & cl.device_type.CPU
-        is_gpu = self.devices[0].type & cl.device_type.GPU
+        is_cpu = bool(self.devices[0].type & cl.device_type.CPU)
+        is_gpu = bool(self.devices[0].type & cl.device_type.GPU)
 
         if is_cpu:
             # (about the widest vector a CPU can support, also taking
@@ -1260,7 +1265,7 @@ class GenericScanKernel(GenericScanKernelBase):
         # k_group_size should be a power of two because of in-kernel
         # division by that number.
 
-        solutions = []
+        solutions: list[tuple[int, int, int]] = []
         for k_exp in range(0, 9):
             for wg_size in range(wg_size_multiples, max_scan_wg_size+1,
                     wg_size_multiples):
@@ -1402,7 +1407,7 @@ class GenericScanKernel(GenericScanKernelBase):
         for arg in self.parsed_args:
             arg_dtypes[arg.name] = arg.dtype
 
-        fetch_expr_offsets: dict[str, set] = {}
+        fetch_expr_offsets: dict[str, set[int]] = {}
         for _name, arg_name, ife_offset in self.input_fetch_exprs:
             fetch_expr_offsets.setdefault(arg_name, set()).add(ife_offset)
 
@@ -1428,10 +1433,10 @@ class GenericScanKernel(GenericScanKernelBase):
     def generate_scan_kernel(
             self,
             max_wg_size: int,
-            arguments: list[DtypedArgument],
+            arguments: Sequence[DtypedArgument],
             input_expr: str,
             is_segment_start_expr: str | None,
-            input_fetch_exprs: list[tuple[str, str, int]],
+            input_fetch_exprs: Sequence[tuple[str, str, int]],
             is_first_level: bool,
             store_segment_start_flags: bool,
             k_group_size: int,
@@ -1442,7 +1447,7 @@ class GenericScanKernel(GenericScanKernelBase):
         wg_size = _round_down_to_power_of_2(
                 min(max_wg_size, 256))
 
-        kernel_name = self.code_variables["name_prefix"]
+        kernel_name = cast("str", self.code_variables["name_prefix"])
         if is_first_level:
             kernel_name += "_lev1"
         else:
