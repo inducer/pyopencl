@@ -5085,6 +5085,7 @@ namespace pyopencl
             PYOPENCL_GET_TYPED_INFO(KernelWorkGroup,
                 PYOPENCL_FIRST_ARG, param_name,
                 size_t);
+          case CL_KERNEL_GLOBAL_WORK_SIZE:
           case CL_KERNEL_COMPILE_WORK_GROUP_SIZE:
             {
               std::vector<size_t> result;
