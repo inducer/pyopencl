@@ -638,9 +638,9 @@ class _ContextFactory:
     @override
     def __str__(self) -> str:
         # Don't show address, so that parallel test collection works
-        return ("<context factory for <pyopencl.Device '%s' on '%s'>>" %
-                (self.device.name.strip(),
-                 self.device.platform.name.strip()))
+        device = self.device.name.strip()
+        platform = self.device.platform.name.strip()
+        return f"<context factory for <pyopencl.Device '{device}' on '{platform}'>>"
 
 
 DeviceOrPlatformT = TypeVar("DeviceOrPlatformT", "cl.Device", "cl.Platform")
@@ -660,7 +660,7 @@ def _find_cl_obj(
     for obj in objs:
         if identifier.lower() in (obj.name + " " + obj.vendor).lower():
             return obj
-    raise RuntimeError("object '%s' not found" % identifier)
+    raise RuntimeError(f"object '{identifier}' not found")
 
 
 def get_test_platforms_and_devices(
@@ -943,12 +943,12 @@ def get_arg_offset_adjuster_code(arg_types: Sequence[Argument]) -> str:
 
     for arg_type in arg_types:
         if isinstance(arg_type, VectorArg) and arg_type.with_offset:
-            result.append("__global %(type)s *%(name)s = "
-                    "(__global %(type)s *) "
-                    "((__global char *) %(name)s__base + %(name)s__offset);"
-                    % {
-                        "type": dtype_to_ctype(arg_type.dtype),
-                        "name": arg_type.name})
+            name = arg_type.name
+            ctype = dtype_to_ctype(arg_type.dtype)
+            result.append(
+                    f"__global {ctype} *{name} = "
+                    f"(__global {ctype} *) "
+                    f"((__global char *) {name}__base + {name}__offset);")
 
     return "\n".join(result)
 
@@ -1135,9 +1135,9 @@ def match_dtype_to_c_struct(
             dims_str = ""
             try:
                 for dim in array_dims:
-                    dims_str += "[%d]" % dim
+                    dims_str += f"[{dim}]"
             except TypeError:
-                dims_str = "[%d]" % array_dims
+                dims_str = f"[{array_dims}]"
             c_fields.append("  {} {}{};".format(
                 dtype_to_ctype(array_dtype), field_name, dims_str)
             )
@@ -1477,7 +1477,7 @@ class _TemplateRenderer:
                 assert isinstance(arg[1], str)
                 parsed_arg = ScalarArg(self.parse_type(arg[0]), arg[1])
             else:
-                raise TypeError("unexpected argument type: %s" % type(arg))
+                raise TypeError(f"unexpected argument type: {type(arg)}")
 
             parsed_args.append(parsed_arg)
 
