@@ -131,7 +131,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 import atexit
 import re
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from sys import intern
 from typing import (
     TYPE_CHECKING,
@@ -164,6 +164,7 @@ from pyopencl.compyte.dtypes import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 
+    from mako.template import Template
     from numpy.typing import DTypeLike, NDArray
     from pytest import Metafunc
 
@@ -1301,29 +1302,33 @@ class _TextTemplate(ABC):
         pass
 
 
+@dataclass(frozen=True)
 class _SimpleTextTemplate(_TextTemplate):
-    def __init__(self, txt: str) -> None:
-        self.txt: str = txt
+    txt: str
 
     @override
     def render(self, context: dict[str, Any]) -> str:
         return self.txt
 
 
+@dataclass(frozen=True)
 class _PrintfTextTemplate(_TextTemplate):
-    def __init__(self, txt: str) -> None:
-        self.txt: str = txt
+    txt: str
 
     @override
     def render(self, context: dict[str, Any]) -> str:
         return self.txt % context
 
 
+@dataclass(frozen=True)
 class _MakoTextTemplate(_TextTemplate):
-    def __init__(self, txt: str) -> None:
+    txt: str
+    template: Template = field(init=False)
+
+    def __post_init__(self) -> None:
         from mako.template import Template
 
-        self.template: Template = Template(txt, strict_undefined=True)
+        object.__setattr__(self, "template", Template(self.txt, strict_undefined=True))
 
     @override
     def render(self, context: dict[str, Any]) -> str:
