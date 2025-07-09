@@ -18,8 +18,8 @@ version = ".".join(str(x) for x in ver_dic["VERSION"])
 # The full version, including alpha/beta/rc tags.
 release = ver_dic["VERSION_TEXT"]
 
-
 nitpick_ignore = [
+    ("py:class", r"builtins.slice"),
     ("py:class", r"numpy._typing._dtype_like._SupportsDType"),
     ("py:class", r"numpy._typing._dtype_like._DTypeDict"),
     ("py:class", r"pytest.Metafunc"),

@@ -55,10 +55,6 @@ References
 These are only here because Sphinx, our documentation tool, struggles to
 resolve them.
 
-.. class:: WaitList
-
-    A :class:`Sequence` of :class:`Event`\ s or *None*.
-
 .. class:: NDArray
 
     See :data:`numpy.typing.NDArray`.
@@ -74,6 +70,10 @@ resolve them.
 .. class:: RetT
 
     A generic type variable, used for a return type.
+
+.. class:: HashableT
+
+   An invariant type variable that is bound to :class:`Hashable`.
 
 .. class:: P
 
@@ -108,6 +108,10 @@ resolve them.
 .. class:: Event
 
     See :class:`pyopencl.Event`.
+
+.. class:: KernelArg
+
+    A union of allowed kernel arguments.
 
 .. currentmodule:: cl_tools
 ..
