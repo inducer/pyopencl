@@ -1142,9 +1142,8 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _scalar_binop(out: Array, a: Array, b: ScalarLike,
-                      queue: cl.CommandQueue | None = None,
-                      op: str | None = None) -> cl.Kernel:
+    def _scalar_binop(out: Array, a: Array, b: ScalarLike, op: str,
+                      queue: cl.CommandQueue | None = None) -> cl.Kernel:
         assert out.context is not None
         return elementwise.get_array_scalar_binop_kernel(
                 out.context, op, out.dtype, a.dtype,
@@ -1152,9 +1151,8 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _array_binop(out: Array, a: Array, b: Array,
-                     queue: cl.CommandQueue | None = None,
-                     op: str | None = None) -> cl.Kernel:
+    def _array_binop(out: Array, a: Array, b: Array, op: str,
+                     queue: cl.CommandQueue | None = None) -> cl.Kernel:
         a_shape = a.shape
         b_shape = b.shape
         out_shape = out.shape
@@ -1171,9 +1169,8 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _unop(out: Array, a: Array,
-              queue: cl.CommandQueue | None = None,
-              op: str | None = None) -> cl.Kernel:
+    def _unop(out: Array, a: Array, op: str,
+              queue: cl.CommandQueue | None = None) -> cl.Kernel:
         assert out.context is not None
         if out.shape != a.shape:
             raise ValueError("shapes of arguments do not match")
@@ -1698,8 +1695,8 @@ class Array:
     def _scalar_comparison(out: Array,
                            a: Array,
                            b: ScalarLike,
-                           queue: cl.CommandQueue | None = None,
-                           op: str | None = None) -> cl.Kernel:
+                           op: str,
+                           queue: cl.CommandQueue | None = None) -> cl.Kernel:
         assert out.context is not None
         return elementwise.get_array_scalar_comparison_kernel(
                 out.context, op, a.dtype)
@@ -1709,8 +1706,8 @@ class Array:
     def _array_comparison(out: Array,
                           a: Array,
                           b: Array,
-                          queue: cl.CommandQueue | None = None,
-                          op: str | None = None) -> cl.Kernel:
+                          op: str,
+                          queue: cl.CommandQueue | None = None) -> cl.Kernel:
         assert out.context is not None
         if a.shape != b.shape:
             raise ValueError("shapes of comparison arguments do not match")
