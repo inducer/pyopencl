@@ -212,7 +212,7 @@ def _splay(
         group_count = max_groups
         work_items_per_group = max_work_items
 
-    # print("n:%d gc:%d wipg:%d" % (n, group_count, work_items_per_group))
+    # print(f"n:{n} gc:{group_count} wipg:{work_items_per_group}")
     return (group_count*work_items_per_group,), (work_items_per_group,)
 
 
@@ -577,7 +577,7 @@ class Array:
                 raise ValueError(f"negative dimensions are not allowed: {shape}")
             if np.any([np.array([s]).dtype.kind not in ["u", "i"] for s in shape]):
                 raise ValueError(
-                    "Invalid shape %s ; dimensions, must be integer" % (str(shape)))
+                    f"invalid shape {shape} (all dimensions must be integers)")
             size = np.prod(shape_array, dtype=np.uint64).item()
 
             if strides is None:
@@ -1029,7 +1029,7 @@ class Array:
 
         if arg.dtype.kind == "c":
             from pyopencl.elementwise import complex_dtype_to_name
-            fname = "%s_abs" % complex_dtype_to_name(arg.dtype)
+            fname = f"{complex_dtype_to_name(arg.dtype)}_abs"
         elif arg.dtype.kind == "f":
             fname = "fabs"
         elif arg.dtype.kind in ["u", "i"]:
@@ -1046,7 +1046,7 @@ class Array:
         from pyopencl.elementwise import complex_dtype_to_name
 
         assert arg.context is not None
-        fname = "%s_real" % complex_dtype_to_name(arg.dtype)
+        fname = f"{complex_dtype_to_name(arg.dtype)}_real"
 
         return elementwise.get_unary_func_kernel(
                 arg.context, fname, arg.dtype, out_dtype=result.dtype)
@@ -1057,7 +1057,7 @@ class Array:
         from pyopencl.elementwise import complex_dtype_to_name
 
         assert arg.context is not None
-        fname = "%s_imag" % complex_dtype_to_name(arg.dtype)
+        fname = f"{complex_dtype_to_name(arg.dtype)}_imag"
 
         return elementwise.get_unary_func_kernel(
                 arg.context, fname, arg.dtype, out_dtype=result.dtype)
@@ -1068,7 +1068,7 @@ class Array:
         from pyopencl.elementwise import complex_dtype_to_name
 
         assert arg.context is not None
-        fname = "%s_conj" % complex_dtype_to_name(arg.dtype)
+        fname = f"{complex_dtype_to_name(arg.dtype)}_conj"
 
         return elementwise.get_unary_func_kernel(
                 arg.context, fname, arg.dtype, out_dtype=result.dtype)
@@ -1877,8 +1877,7 @@ class Array:
 
         order = kwargs.pop("order", "C")
         if kwargs:
-            raise TypeError("unexpected keyword arguments: %s"
-                    % list(kwargs.keys()))
+            raise TypeError(f"unexpected keyword arguments: {list(kwargs)}")
 
         if order not in "CF":
             raise ValueError("order must be either 'C' or 'F'")
@@ -2190,8 +2189,7 @@ class Array:
                     index_entry += array_shape
 
                 if not (0 <= index_entry < array_shape):
-                    raise IndexError(
-                            "subindex in axis %d out of range" % index_axis)
+                    raise IndexError(f"subindex in axis {index_axis} out of range")
 
                 new_offset += self.strides[array_axis]*index_entry
 
@@ -2221,7 +2219,7 @@ class Array:
                 index_axis += 1
 
             else:
-                raise IndexError("invalid subindex in axis %d" % index_axis)
+                raise IndexError(f"invalid subindex in axis {index_axis}")
 
         while array_axis < len(self.shape):
             new_shape.append(self.shape[array_axis])
