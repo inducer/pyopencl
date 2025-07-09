@@ -486,14 +486,15 @@ if get_cl_header_version() >= (2, 0):
 _first_arg_dependent_caches: list[Mapping[Hashable, object]] = []
 
 
+HashableT = TypeVar("HashableT", bound="Hashable")
 RetT = TypeVar("RetT")
 P = ParamSpec("P")
 
 
 def first_arg_dependent_memoize(
-            func: Callable[Concatenate[Hashable, P], RetT]
-        ) -> Callable[Concatenate[Hashable, P], RetT]:
-    def wrapper(cl_object: Hashable, *args: P.args, **kwargs: P.kwargs) -> RetT:
+            func: Callable[Concatenate[HashableT, P], RetT]
+        ) -> Callable[Concatenate[HashableT, P], RetT]:
+    def wrapper(cl_object: HashableT, *args: P.args, **kwargs: P.kwargs) -> RetT:
         """Provides memoization for a function. Typically used to cache
         things that get created inside a :class:`pyopencl.Context`, e.g. programs
         and kernels. Assumes that the first argument of the decorated function is

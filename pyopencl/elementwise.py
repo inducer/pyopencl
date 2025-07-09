@@ -27,18 +27,18 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-
+import builtins
 import enum
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, TextIO, cast
 
 import numpy as np
+from typing_extensions import override
 
 from pytools import memoize_method
 
 import pyopencl as cl
 from pyopencl.tools import (
     Argument,
-    DtypedArgument,
     KernelTemplateBase,
     ScalarArg,
     VectorArg,
@@ -49,9 +49,12 @@ from pyopencl.tools import (
 
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
+
+    from numpy.typing import DTypeLike
 
     from pyopencl.array import Array
+    from pyopencl.typing import KernelArg, WaitList
 
 
 # {{{ elementwise kernel code generator
@@ -135,7 +138,7 @@ def get_elwise_kernel_and_types(
         **kwargs: Any) -> tuple[cl.Kernel, Sequence[Argument]]:
 
     from pyopencl.tools import get_arg_offset_adjuster_code, parse_arg_list
-    parsed_args = parse_arg_list(arguments, with_offset=True)
+    parsed_args = list(parse_arg_list(arguments, with_offset=True))
 
     auto_preamble = kwargs.pop("auto_preamble", True)
 
@@ -193,8 +196,9 @@ def get_elwise_kernel(
         operation: str, *,
         name: str = "elwise_kernel",
         options: Any = None, **kwargs: Any) -> cl.Kernel:
-    """Return a L{pyopencl.Kernel} that performs the same scalar operation
-    on one or several vectors.
+    """
+    :returns: a :class:`pyopencl.Kernel` that performs the same scalar operation
+        on one or several vectors.
     """
     func, _arguments = get_elwise_kernel_and_types(
         context, arguments, operation,
@@ -240,15 +244,15 @@ class ElementwiseKernel:
             operation: str,
             name: str = "elwise_kernel",
             options: Any = None, **kwargs: Any) -> None:
-        self.context = context
-        self.arguments = arguments
-        self.operation = operation
-        self.name = name
-        self.options = options
-        self.kwargs = kwargs
+        self.context: cl.Context = context
+        self.arguments: str | Sequence[Argument] = arguments
+        self.operation: str = operation
+        self.name: str = name
+        self.options: Any = options
+        self.kwargs: dict[str, Any] = kwargs
 
     @memoize_method
-    def get_kernel(self, use_range: bool):
+    def get_kernel(self, use_range: bool) -> tuple[cl.Kernel, Sequence[Argument]]:
         knl, arg_descrs = get_elwise_kernel_and_types(
             self.context, self.arguments, self.operation,
             name=self.name, options=self.options,
@@ -271,7 +275,14 @@ class ElementwiseKernel:
 
         return knl, arg_descrs
 
-    def __call__(self, *args, **kwargs: Any) -> cl.Event:
+    def __call__(self,
+                 *args: KernelArg,
+                 range: builtins.slice | None = None,
+                 slice: builtins.slice | None = None,
+                 capture_as: str | TextIO | None = None,
+                 queue: cl.CommandQueue | None = None,
+                 wait_for: WaitList = None,
+                 **kwargs: Any) -> cl.Event:
         """
         Invoke the generated scalar kernel.
 
@@ -280,16 +291,10 @@ class ElementwiseKernel:
 
         |std-enqueue-blurb|
         """
-        range_ = kwargs.pop("range", None)
-        slice_ = kwargs.pop("slice", None)
-        capture_as = kwargs.pop("capture_as", None)
-        queue: cl.CommandQueue | None = kwargs.pop("queue", None)
-        wait_for = kwargs.pop("wait_for", None)
-
         if kwargs:
             raise TypeError(f"unknown keyword arguments: '{', '.join(kwargs)}'")
 
-        use_range = range_ is not None or slice_ is not None
+        use_range = range is not None or slice is not None
         kernel, arg_descrs = self.get_kernel(use_range)
 
         if wait_for is None:
@@ -301,7 +306,7 @@ class ElementwiseKernel:
         # {{{ assemble arg array
 
         repr_vec: Array | None = None
-        invocation_args = []
+        invocation_args: list[KernelArg] = []
 
         # non-strict because length arg gets appended below
         for arg, arg_descr in zip(args, arg_descrs, strict=False):
@@ -320,12 +325,12 @@ class ElementwiseKernel:
         if queue is None:
             queue = repr_vec.queue
 
-        if slice_ is not None:
-            if range_ is not None:
+        if slice is not None:
+            if range is not None:
                 raise TypeError(
                     "may not specify both range and slice keyword arguments")
 
-            range_ = slice(*slice_.indices(repr_vec.size))
+            range = builtins.slice(*slice.indices(repr_vec.size))
 
         assert queue is not None
 
@@ -333,22 +338,22 @@ class ElementwiseKernel:
                 cl.kernel_work_group_info.WORK_GROUP_SIZE,
                 queue.device)
 
-        if range_ is not None:
-            start = range_.start
+        if range is not None:
+            start = range.start
             if start is None:
                 start = 0
             invocation_args.append(start)
-            invocation_args.append(range_.stop)
-            if range_.step is None:
+            invocation_args.append(range.stop)
+            if range.step is None:
                 step = 1
             else:
-                step = range_.step
+                step = range.step
 
             invocation_args.append(step)
 
             from pyopencl.array import _splay
             gs, ls = _splay(queue.device,
-                    abs(range_.stop - start)//step,
+                    abs(range.stop - start)//step,
                     max_wg_size)
         else:
             invocation_args.append(repr_vec.size)
@@ -370,20 +375,28 @@ class ElementwiseKernel:
 class ElementwiseTemplate(KernelTemplateBase):
     def __init__(
             self,
-            arguments: str | list[DtypedArgument],
+            arguments: str | list[Argument],
             operation: str,
             name: str = "elwise",
             preamble: str = "",
             template_processor: str | None = None) -> None:
         super().__init__(template_processor=template_processor)
-        self.arguments = arguments
-        self.operation = operation
-        self.name = name
-        self.preamble = preamble
+        self.arguments: str | list[Argument] = arguments
+        self.operation: str = operation
+        self.name: str = name
+        self.preamble: str = preamble
 
-    def build_inner(self, context, type_aliases=(), var_values=(),
-            more_preamble="", more_arguments=(), declare_types=(),
-            options=None):
+    @override
+    def build_inner(self,
+                    context: cl.Context,
+                    type_aliases: (
+                        dict[str, np.dtype[Any]]
+                        | Sequence[tuple[str, np.dtype[Any]]]) = (),
+                    var_values: dict[str, str] | Sequence[tuple[str, str]] = (),
+                    more_preamble: str = "",
+                    more_arguments: str | Sequence[Any] = (),
+                    declare_types: Sequence[DTypeLike] = (),
+                    options: Any = None) -> Callable[..., cl.Event]:
         renderer = self.get_renderer(
                 type_aliases, var_values, context, options)
 
@@ -392,9 +405,12 @@ class ElementwiseTemplate(KernelTemplateBase):
         type_decl_preamble = renderer.get_type_decl_preamble(
                 context.devices[0], declare_types, arg_list)
 
-        return ElementwiseKernel(context,
-            arg_list, renderer(self.operation),
-            name=renderer(self.name), options=options,
+        return ElementwiseKernel(
+            context,
+            arg_list,
+            renderer(self.operation),
+            name=renderer(self.name),
+            options=options,
             preamble=(
                 type_decl_preamble
                 + "\n"
@@ -431,7 +447,7 @@ def get_decl_and_access_for_kind(name: str, kind: ArgumentKind) -> tuple[str, st
     elif kind == ArgumentKind.DEV_SCALAR:
         return f"*{name}", f"{name}[0]"
     else:
-        raise AssertionError()
+        raise AssertionError
 
 # }}}
 
@@ -439,7 +455,10 @@ def get_decl_and_access_for_kind(name: str, kind: ArgumentKind) -> tuple[str, st
 # {{{ kernels supporting array functionality
 
 @context_dependent_memoize
-def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
+def get_take_kernel(context: cl.Context,
+                    dtype: np.dtype[Any],
+                    idx_dtype: np.dtype[Any],
+                    vec_count: int = 1) -> cl.Kernel:
     idx_tp = dtype_to_ctype(idx_dtype)
 
     args = ([VectorArg(dtype, f"dest{i}", with_offset=True)
@@ -454,13 +473,18 @@ def get_take_kernel(context, dtype, idx_dtype, vec_count=1):
                 for i in range(vec_count))
             )
 
-    return get_elwise_kernel(context, args, body,
+    return get_elwise_kernel(
+            context, args, body,
             preamble=dtype_to_c_struct(context.devices[0], dtype),
             name="take")
 
 
 @context_dependent_memoize
-def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
+def get_take_put_kernel(context: cl.Context,
+                        dtype: np.dtype[Any],
+                        idx_dtype: np.dtype[Any],
+                        with_offsets: bool,
+                        vec_count: int = 1) -> cl.Kernel:
     idx_tp = dtype_to_ctype(idx_dtype)
 
     args = [
@@ -478,23 +502,27 @@ def get_take_put_kernel(context, dtype, idx_dtype, with_offsets, vec_count=1):
             ]
 
     if with_offsets:
-        def get_copy_insn(i):
+        def get_copy_insn(i: int) -> str:
             return f"dest{i}[dest_idx] = src{i}[src_idx + offset{i}];"
     else:
-        def get_copy_insn(i):
+        def get_copy_insn(i: int) -> str:
             return f"dest{i}[dest_idx] = src{i}[src_idx];"
 
     body = ((f"{idx_tp} src_idx = gmem_src_idx[i];\n"
                 f"{idx_tp} dest_idx = gmem_dest_idx[i];\n")
             + "\n".join(get_copy_insn(i) for i in range(vec_count)))
 
-    return get_elwise_kernel(context, args, body,
+    return get_elwise_kernel(
+            context, args, body,
             preamble=dtype_to_c_struct(context.devices[0], dtype),
             name="take_put")
 
 
 @context_dependent_memoize
-def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
+def get_put_kernel(context: cl.Context,
+                   dtype: np.dtype[Any],
+                   idx_dtype: np.dtype[Any],
+                   vec_count: int = 1) -> cl.Kernel:
     idx_tp = dtype_to_ctype(idx_dtype)
 
     args = [
@@ -526,7 +554,9 @@ def get_put_kernel(context, dtype, idx_dtype, vec_count=1):
 
 
 @context_dependent_memoize
-def get_copy_kernel(context, dtype_dest, dtype_src):
+def get_copy_kernel(context: cl.Context,
+                    dtype_dest: np.dtype[Any],
+                    dtype_src: np.dtype[Any]) -> cl.Kernel:
     src = "src[i]"
     if dtype_dest.kind == "c" != dtype_src.kind:
         name = complex_dtype_to_name(dtype_dest)
@@ -540,17 +570,17 @@ def get_copy_kernel(context, dtype_dest, dtype_src):
             dtype_dest.kind == "V" or dtype_src.kind == "V"):
         raise TypeError("copying between non-identical struct types")
 
-    return get_elwise_kernel(context,
-            "{tp_dest} *dest, {tp_src} *src".format(
-                tp_dest=dtype_to_ctype(dtype_dest),
-                tp_src=dtype_to_ctype(dtype_src),
-                ),
+    ctype_dst = dtype_to_ctype(dtype_dest)
+    ctype_src = dtype_to_ctype(dtype_src)
+    return get_elwise_kernel(
+            context,
+            f"{ctype_dst} *dest, {ctype_src} *src",
             f"dest[i] = {src}",
             preamble=dtype_to_c_struct(context.devices[0], dtype_dest),
             name="copy")
 
 
-def complex_dtype_to_name(dtype) -> str:
+def complex_dtype_to_name(dtype: DTypeLike) -> str:
     if dtype == np.complex128:
         return "cdouble"
     elif dtype == np.complex64:
@@ -559,13 +589,17 @@ def complex_dtype_to_name(dtype) -> str:
         raise RuntimeError(f"invalid complex type: {dtype}")
 
 
-def real_dtype(dtype):
+def real_dtype(dtype: np.dtype[Any]) -> np.dtype[Any]:
     return dtype.type(0).real.dtype
 
 
 @context_dependent_memoize
-def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z,
-                      x_is_scalar=False, y_is_scalar=False):
+def get_axpbyz_kernel(context: cl.Context,
+                      dtype_x: np.dtype[Any],
+                      dtype_y: np.dtype[Any],
+                      dtype_z: np.dtype[Any],
+                      x_is_scalar: bool = False,
+                      y_is_scalar: bool = False) -> cl.Kernel:
     result_t = dtype_to_ctype(dtype_z)
 
     x_is_complex = dtype_x.kind == "c"
@@ -608,7 +642,11 @@ def get_axpbyz_kernel(context, dtype_x, dtype_y, dtype_z,
 
 
 @context_dependent_memoize
-def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
+def get_axpbz_kernel(context: cl.Context,
+                     dtype_a: np.dtype[Any],
+                     dtype_x: np.dtype[Any],
+                     dtype_b: np.dtype[Any],
+                     dtype_z: np.dtype[Any]):
     a_is_complex = dtype_a.kind == "c"
     x_is_complex = dtype_x.kind == "c"
     b_is_complex = dtype_b.kind == "c"
@@ -669,8 +707,12 @@ def get_axpbz_kernel(context, dtype_a, dtype_x, dtype_b, dtype_z):
 
 
 @context_dependent_memoize
-def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z,
-                        x_is_scalar=False, y_is_scalar=False):
+def get_multiply_kernel(context: cl.Context,
+                        dtype_x: np.dtype[Any],
+                        dtype_y: np.dtype[Any],
+                        dtype_z: np.dtype[Any],
+                        x_is_scalar: bool = False,
+                        y_is_scalar: bool = False) -> cl.Kernel:
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
 
@@ -702,8 +744,12 @@ def get_multiply_kernel(context, dtype_x, dtype_y, dtype_z,
 
 
 @context_dependent_memoize
-def get_divide_kernel(context, dtype_x, dtype_y, dtype_z,
-                      x_is_scalar=False, y_is_scalar=False):
+def get_divide_kernel(context: cl.Context,
+                      dtype_x: np.dtype[Any],
+                      dtype_y: np.dtype[Any],
+                      dtype_z: np.dtype[Any],
+                      x_is_scalar: bool = False,
+                      y_is_scalar: bool = False) -> cl.Kernel:
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
     z_is_complex = dtype_z.kind == "c"
@@ -745,7 +791,10 @@ def get_divide_kernel(context, dtype_x, dtype_y, dtype_z,
 
 
 @context_dependent_memoize
-def get_rdivide_elwise_kernel(context, dtype_x, dtype_y, dtype_z):
+def get_rdivide_elwise_kernel(context: cl.Context,
+                              dtype_x: np.dtype[Any],
+                              dtype_y: np.dtype[Any],
+                              dtype_z: np.dtype[Any]) -> cl.Kernel:
     # implements y / x!
     x_is_complex = dtype_x.kind == "c"
     y_is_complex = dtype_y.kind == "c"
@@ -780,7 +829,7 @@ def get_rdivide_elwise_kernel(context, dtype_x, dtype_y, dtype_z):
 
 
 @context_dependent_memoize
-def get_fill_kernel(context, dtype):
+def get_fill_kernel(context: cl.Context, dtype: np.dtype[Any]) -> cl.Kernel:
     return get_elwise_kernel(context,
             "{tp} *z, {tp} a".format(tp=dtype_to_ctype(dtype)),
             "z[i] = a",
@@ -789,7 +838,7 @@ def get_fill_kernel(context, dtype):
 
 
 @context_dependent_memoize
-def get_reverse_kernel(context, dtype):
+def get_reverse_kernel(context: cl.Context, dtype: np.dtype[Any]):
     return get_elwise_kernel(context,
             "{tp} *z, {tp} *y".format(tp=dtype_to_ctype(dtype)),
             "z[i] = y[n-1-i]",
@@ -797,7 +846,7 @@ def get_reverse_kernel(context, dtype):
 
 
 @context_dependent_memoize
-def get_arange_kernel(context, dtype):
+def get_arange_kernel(context: cl.Context, dtype: np.dtype[Any]) -> cl.Kernel:
     if dtype.kind == "c":
         expr = (
                 "{root}_add(start, {root}_rmul(i, step))"
@@ -815,8 +864,12 @@ def get_arange_kernel(context, dtype):
 
 
 @context_dependent_memoize
-def get_pow_kernel(context, dtype_x, dtype_y, dtype_z,
-        is_base_array, is_exp_array):
+def get_pow_kernel(context: cl.Context,
+                   dtype_x: np.dtype[Any],
+                   dtype_y: np.dtype[Any],
+                   dtype_z: np.dtype[Any],
+                   is_base_array: bool,
+                   is_exp_array: bool) -> cl.Kernel:
     if is_base_array:
         x = "x[i]"
         x_ctype = "{tp_x} *x"
@@ -866,7 +919,10 @@ def get_pow_kernel(context, dtype_x, dtype_y, dtype_z,
 
 
 @context_dependent_memoize
-def get_unop_kernel(context, operator, res_dtype, in_dtype):
+def get_unop_kernel(context: cl.Context,
+                    operator: str,
+                    res_dtype: np.dtype[Any],
+                    in_dtype: np.dtype[Any]) -> cl.Kernel:
     return get_elwise_kernel(context, [
         VectorArg(res_dtype, "z", with_offset=True),
         VectorArg(in_dtype, "y", with_offset=True),
@@ -876,7 +932,11 @@ def get_unop_kernel(context, operator, res_dtype, in_dtype):
 
 
 @context_dependent_memoize
-def get_array_scalar_binop_kernel(context, operator, dtype_res, dtype_a, dtype_b):
+def get_array_scalar_binop_kernel(context: cl.Context,
+                                  operator: str,
+                                  dtype_res: np.dtype[Any],
+                                  dtype_a: np.dtype[Any],
+                                  dtype_b: np.dtype[Any]) -> cl.Kernel:
     return get_elwise_kernel(context, [
         VectorArg(dtype_res, "out", with_offset=True),
         VectorArg(dtype_a, "a", with_offset=True),
@@ -887,8 +947,13 @@ def get_array_scalar_binop_kernel(context, operator, dtype_res, dtype_a, dtype_b
 
 
 @context_dependent_memoize
-def get_array_binop_kernel(context, operator, dtype_res, dtype_a, dtype_b,
-                           a_is_scalar=False, b_is_scalar=False):
+def get_array_binop_kernel(context: cl.Context,
+                           operator: str,
+                           dtype_res: np.dtype[Any],
+                           dtype_a: np.dtype[Any],
+                           dtype_b: np.dtype[Any],
+                           a_is_scalar: bool = False,
+                           b_is_scalar: bool = False) -> cl.Kernel:
     a = "a[0]" if a_is_scalar else "a[i]"
     b = "b[0]" if b_is_scalar else "b[i]"
     return get_elwise_kernel(context, [
@@ -901,7 +966,9 @@ def get_array_binop_kernel(context, operator, dtype_res, dtype_a, dtype_b,
 
 
 @context_dependent_memoize
-def get_array_scalar_comparison_kernel(context, operator, dtype_a):
+def get_array_scalar_comparison_kernel(context: cl.Context,
+                                       operator: str,
+                                       dtype_a: np.dtype[Any]) -> cl.Kernel:
     return get_elwise_kernel(context, [
         VectorArg(np.int8, "out", with_offset=True),
         VectorArg(dtype_a, "a", with_offset=True),
@@ -912,7 +979,10 @@ def get_array_scalar_comparison_kernel(context, operator, dtype_a):
 
 
 @context_dependent_memoize
-def get_array_comparison_kernel(context, operator, dtype_a, dtype_b):
+def get_array_comparison_kernel(context: cl.Context,
+                                operator: str,
+                                dtype_a: np.dtype[Any],
+                                dtype_b: np.dtype[Any]) -> cl.Kernel:
     return get_elwise_kernel(context, [
         VectorArg(np.int8, "out", with_offset=True),
         VectorArg(dtype_a, "a", with_offset=True),
@@ -923,7 +993,10 @@ def get_array_comparison_kernel(context, operator, dtype_a, dtype_b):
 
 
 @context_dependent_memoize
-def get_unary_func_kernel(context, func_name, in_dtype, out_dtype=None):
+def get_unary_func_kernel(context: cl.Context,
+                          func_name: str,
+                          in_dtype: np.dtype[Any],
+                          out_dtype: np.dtype[Any] | None = None) -> cl.Kernel:
     if out_dtype is None:
         out_dtype = in_dtype
 
@@ -936,8 +1009,13 @@ def get_unary_func_kernel(context, func_name, in_dtype, out_dtype=None):
 
 
 @context_dependent_memoize
-def get_binary_func_kernel(context, func_name, x_dtype, y_dtype, out_dtype,
-                           preamble="", name=None):
+def get_binary_func_kernel(context: cl.Context,
+                           func_name: str,
+                           x_dtype: np.dtype[Any],
+                           y_dtype: np.dtype[Any],
+                           out_dtype: np.dtype[Any],
+                           preamble: str = "",
+                           name: str | None = None) -> cl.Kernel:
     if name is None:
         name = func_name
 
@@ -952,8 +1030,13 @@ def get_binary_func_kernel(context, func_name, x_dtype, y_dtype, out_dtype,
 
 
 @context_dependent_memoize
-def get_float_binary_func_kernel(context, func_name, x_dtype, y_dtype,
-                                 out_dtype, preamble="", name=None):
+def get_float_binary_func_kernel(context: cl.Context,
+                                 func_name: str,
+                                 x_dtype: np.dtype[Any],
+                                 y_dtype: np.dtype[Any],
+                                 out_dtype: np.dtype[Any],
+                                 preamble: str = "",
+                                 name: str | None = None) -> cl.Kernel:
     if name is None:
         name = func_name
 
@@ -979,15 +1062,19 @@ def get_float_binary_func_kernel(context, func_name, x_dtype, y_dtype,
 
 
 @context_dependent_memoize
-def get_fmod_kernel(context, out_dtype=np.float32, arg_dtype=np.float32,
-                    mod_dtype=np.float32):
+def get_fmod_kernel(context: cl.Context,
+                    out_dtype: np.dtype[Any],
+                    arg_dtype: np.dtype[Any],
+                    mod_dtype: np.dtype[Any]) -> cl.Kernel:
     return get_float_binary_func_kernel(context, "fmod", arg_dtype,
                                         mod_dtype, out_dtype)
 
 
 @context_dependent_memoize
-def get_modf_kernel(context, int_dtype=np.float32,
-                    frac_dtype=np.float32, x_dtype=np.float32):
+def get_modf_kernel(context: cl.Context,
+                    int_dtype: np.dtype[Any],
+                    frac_dtype: np.dtype[Any],
+                    x_dtype: np.dtype[Any]):
     return get_elwise_kernel(context, [
         VectorArg(int_dtype, "intpart", with_offset=True),
         VectorArg(frac_dtype, "fracpart", with_offset=True),
@@ -1000,8 +1087,10 @@ def get_modf_kernel(context, int_dtype=np.float32,
 
 
 @context_dependent_memoize
-def get_frexp_kernel(context, sign_dtype=np.float32, exp_dtype=np.float32,
-                     x_dtype=np.float32):
+def get_frexp_kernel(context: cl.Context,
+                     sign_dtype: np.dtype[Any],
+                     exp_dtype: np.dtype[Any],
+                     x_dtype: np.dtype[Any]) -> cl.Kernel:
     return get_elwise_kernel(context, [
         VectorArg(sign_dtype, "significand", with_offset=True),
         VectorArg(exp_dtype, "exponent", with_offset=True),
@@ -1016,8 +1105,10 @@ def get_frexp_kernel(context, sign_dtype=np.float32, exp_dtype=np.float32,
 
 
 @context_dependent_memoize
-def get_ldexp_kernel(context, out_dtype=np.float32, sig_dtype=np.float32,
-                     expt_dtype=np.float32):
+def get_ldexp_kernel(context: cl.Context,
+                     out_dtype: np.dtype[Any],
+                     sig_dtype: np.dtype[Any],
+                     expt_dtype: np.dtype[Any]) -> cl.Kernel:
     return get_binary_func_kernel(
         context, "_PYOCL_LDEXP", sig_dtype, expt_dtype, out_dtype,
         preamble="#define _PYOCL_LDEXP(x, y) ldexp(x, (int)(y))",
@@ -1025,8 +1116,13 @@ def get_ldexp_kernel(context, out_dtype=np.float32, sig_dtype=np.float32,
 
 
 @context_dependent_memoize
-def get_minmaximum_kernel(context, minmax, dtype_z, dtype_x, dtype_y,
-        kind_x: ArgumentKind, kind_y: ArgumentKind):
+def get_minmaximum_kernel(context: cl.Context,
+                          minmax: str,
+                          dtype_z: np.dtype[Any],
+                          dtype_x: np.dtype[Any],
+                          dtype_y: np.dtype[Any],
+                          kind_x: ArgumentKind,
+                          kind_y: ArgumentKind) -> cl.Kernel:
     if dtype_z.kind == "f":
         reduce_func = f"f{minmax}_nanprop"
     elif dtype_z.kind in "iu":
@@ -1051,8 +1147,11 @@ def get_minmaximum_kernel(context, minmax, dtype_z, dtype_x, dtype_y,
 
 
 @context_dependent_memoize
-def get_bessel_kernel(context, which_func, out_dtype=np.float64,
-                      order_dtype=np.int32, x_dtype=np.float64):
+def get_bessel_kernel(context: cl.Context,
+                      which_func: str,
+                      out_dtype: np.dtype[Any],
+                      order_dtype: np.dtype[Any],
+                      x_dtype: np.dtype[Any]) -> cl.Kernel:
     if x_dtype.kind != "c":
         return get_elwise_kernel(context, [
             VectorArg(out_dtype, "z", with_offset=True),
@@ -1100,7 +1199,9 @@ def get_bessel_kernel(context, which_func, out_dtype=np.float64,
 
 
 @context_dependent_memoize
-def get_hankel_01_kernel(context, out_dtype, x_dtype):
+def get_hankel_01_kernel(context: cl.Context,
+                         out_dtype: np.dtype[Any],
+                         x_dtype: np.dtype[Any]) -> cl.Kernel:
     if x_dtype != np.complex128:
         raise NotImplementedError("non-complex double dtype")
     if x_dtype != out_dtype:
@@ -1130,7 +1231,7 @@ def get_hankel_01_kernel(context, out_dtype, x_dtype):
 
 
 @context_dependent_memoize
-def get_diff_kernel(context, dtype):
+def get_diff_kernel(context: cl.Context, dtype: np.dtype[Any]) -> cl.Kernel:
     return get_elwise_kernel(context, [
             VectorArg(dtype, "result", with_offset=True),
             VectorArg(dtype, "array", with_offset=True),
@@ -1141,9 +1242,13 @@ def get_diff_kernel(context, dtype):
 
 @context_dependent_memoize
 def get_if_positive_kernel(
-        context, crit_dtype, then_else_dtype,
-        is_then_array, is_else_array,
-        is_then_scalar, is_else_scalar):
+        context: cl.Context,
+        crit_dtype: np.dtype[Any],
+        then_else_dtype: np.dtype[Any],
+        is_then_array: bool,
+        is_else_array: bool,
+        is_then_scalar: bool,
+        is_else_scalar: bool) -> cl.Kernel:
     if is_then_array:
         then_ = "then_[0]" if is_then_scalar else "then_[i]"
         then_arg = VectorArg(then_else_dtype, "then_", with_offset=True)
@@ -1170,7 +1275,7 @@ def get_if_positive_kernel(
 
 
 @context_dependent_memoize
-def get_logical_not_kernel(context, in_dtype):
+def get_logical_not_kernel(context: cl.Context, in_dtype: np.dtype[Any]) -> cl.Kernel:
     return get_elwise_kernel(context, [
         VectorArg(np.int8, "z", with_offset=True),
         VectorArg(in_dtype, "y", with_offset=True),
