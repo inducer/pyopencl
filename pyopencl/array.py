@@ -39,6 +39,7 @@ from typing import (
     Concatenate,
     Literal,
     ParamSpec,
+    TypeAlias,
     cast,
 )
 from warnings import warn
@@ -285,6 +286,8 @@ _ARRAY_GET_SIZES_CACHE: \
     dict[Hashable, tuple[tuple[int, ...], tuple[int, ...]]] = {}
 _BOOL_DTYPE = np.dtype(np.int8)
 _NOT_PRESENT = object()
+
+ScalarLike: TypeAlias = int | float | complex | np.number[Any]
 
 
 class Array:
@@ -896,14 +899,16 @@ class Array:
 
         return result
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         if self.queue is None:
             return (f"<cl.{type(self).__name__} {self.shape} of {self.dtype} "
                     "without queue, call with_queue()>")
 
         return str(self.get())
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         if self.queue is None:
             return (f"<cl.{type(self).__name__} {self.shape} of {self.dtype} "
                     f"at {id(self):x} without queue, call with_queue()>")
@@ -919,49 +924,69 @@ class Array:
 
         return result
 
-    def safely_stringify_for_pudb(self):
+    def safely_stringify_for_pudb(self) -> str:
         return f"cl.{type(self).__name__} {self.dtype} {self.shape}"
 
-    def __hash__(self):
+    @override
+    def __hash__(self) -> int:
         raise TypeError("pyopencl arrays are not hashable.")
 
     # {{{ kernel invocation wrappers
 
     @staticmethod
     @elwise_kernel_runner
-    def _axpbyz(out, afac, a, bfac, b, queue: cl.CommandQueue | None = None):
-        """Compute ``out = selffac * self + otherfac*other``,
+    def _axpbyz(out: Array,
+                a: ScalarLike,
+                x: Array,
+                b: ScalarLike,
+                y: Array,
+                queue: cl.CommandQueue | None = None) -> cl.Kernel:
+        """Compute ``out = a*x + b*y``,
         where *other* is an array."""
-        a_shape = a.shape
-        b_shape = b.shape
+        x_shape = x.shape
+        y_shape = y.shape
         out_shape = out.shape
-        assert (a_shape == b_shape == out_shape
-                or (a_shape == () and b_shape == out_shape)
-                or (b_shape == () and a_shape == out_shape))
+
+        assert out.context is not None
+        assert (x_shape == y_shape == out_shape
+                or (x_shape == () and y_shape == out_shape)
+                or (y_shape == () and x_shape == out_shape))
+
         return elementwise.get_axpbyz_kernel(
-                out.context, a.dtype, b.dtype, out.dtype,
-                x_is_scalar=(a_shape == ()),
-                y_is_scalar=(b_shape == ()))
+                out.context, x.dtype, y.dtype, out.dtype,
+                x_is_scalar=(x_shape == ()),
+                y_is_scalar=(y_shape == ()))
 
     @staticmethod
     @elwise_kernel_runner
-    def _axpbz(out, a, x, b, queue: cl.CommandQueue | None = None):
+    def _axpbz(out: Array,
+               a: ScalarLike,
+               x: Array,
+               b: ScalarLike,
+               queue: cl.CommandQueue | None = None) -> cl.Kernel:
         """Compute ``z = a * x + b``, where *b* is a scalar."""
-        a = np.array(a)
-        b = np.array(b)
         assert out.shape == x.shape
-        return elementwise.get_axpbz_kernel(out.context,
-                a.dtype, x.dtype, b.dtype, out.dtype)
+        assert out.context is not None
+
+        return elementwise.get_axpbz_kernel(
+                out.context,
+                np.array(a).dtype, x.dtype, np.array(b).dtype, out.dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _elwise_multiply(out, a, b, queue: cl.CommandQueue | None = None):
+    def _elwise_multiply(out: Array,
+                         a: Array,
+                         b: Array,
+                         queue: cl.CommandQueue | None = None) -> cl.Kernel:
         a_shape = a.shape
         b_shape = b.shape
         out_shape = out.shape
+
         assert (a_shape == b_shape == out_shape
                 or (a_shape == () and b_shape == out_shape)
                 or (b_shape == () and a_shape == out_shape))
+        assert a.context is not None
+
         return elementwise.get_multiply_kernel(
                 a.context, a.dtype, b.dtype, out.dtype,
                 x_is_scalar=(a_shape == ()),
@@ -970,19 +995,27 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _rdiv_scalar(out, ary, other, queue: cl.CommandQueue | None = None):
-        other = np.array(other)
+    def _rdiv_scalar(out: Array,
+                     ary: Array,
+                     other: ScalarLike,
+                     queue: cl.CommandQueue | None = None) -> cl.Kernel:
+        assert out.context is not None
         assert out.shape == ary.shape
+
         return elementwise.get_rdivide_elwise_kernel(
-                out.context, ary.dtype, other.dtype, out.dtype)
+                out.context, ary.dtype, np.array(other).dtype, out.dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _div(out, self, other, queue: cl.CommandQueue | None = None):
+    def _div(out: Array,
+             self: Array,
+             other: Array,
+             queue: cl.CommandQueue | None = None) -> cl.Kernel:
         """Divides an array by another array."""
         assert (self.shape == other.shape == out.shape
                 or (self.shape == () and other.shape == out.shape)
                 or (other.shape == () and self.shape == out.shape))
+        assert self.context is not None
 
         return elementwise.get_divide_kernel(self.context,
                 self.dtype, other.dtype, out.dtype,
@@ -991,12 +1024,15 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _fill(result, scalar):
+    def _fill(result: Array, scalar: ScalarLike) -> cl.Kernel:
+        assert result.context is not None
         return elementwise.get_fill_kernel(result.context, result.dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _abs(result, arg):
+    def _abs(result: Array, arg: Array) -> cl.Kernel:
+        assert arg.context is not None
+
         if arg.dtype.kind == "c":
             from pyopencl.elementwise import complex_dtype_to_name
             fname = "%s_abs" % complex_dtype_to_name(arg.dtype)
@@ -1012,63 +1048,83 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _real(result, arg):
+    def _real(result: Array, arg: Array) -> cl.Kernel:
         from pyopencl.elementwise import complex_dtype_to_name
+
+        assert arg.context is not None
         fname = "%s_real" % complex_dtype_to_name(arg.dtype)
+
         return elementwise.get_unary_func_kernel(
                 arg.context, fname, arg.dtype, out_dtype=result.dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _imag(result, arg):
+    def _imag(result: Array, arg: Array) -> cl.Kernel:
         from pyopencl.elementwise import complex_dtype_to_name
+
+        assert arg.context is not None
         fname = "%s_imag" % complex_dtype_to_name(arg.dtype)
+
         return elementwise.get_unary_func_kernel(
                 arg.context, fname, arg.dtype, out_dtype=result.dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _conj(result, arg):
+    def _conj(result: Array, arg: Array) -> cl.Kernel:
         from pyopencl.elementwise import complex_dtype_to_name
+
+        assert arg.context is not None
         fname = "%s_conj" % complex_dtype_to_name(arg.dtype)
+
         return elementwise.get_unary_func_kernel(
                 arg.context, fname, arg.dtype, out_dtype=result.dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _pow_scalar(result, ary, exponent):
-        exponent = np.array(exponent)
+    def _pow_scalar(result: Array,
+                    ary: Array,
+                    exponent: ScalarLike) -> cl.Kernel:
+        assert result.context is not None
         return elementwise.get_pow_kernel(result.context,
-                ary.dtype, exponent.dtype, result.dtype,
+                ary.dtype, np.array(exponent).dtype, result.dtype,
                 is_base_array=True, is_exp_array=False)
 
     @staticmethod
     @elwise_kernel_runner
-    def _rpow_scalar(result, base, exponent):
-        base = np.array(base)
+    def _rpow_scalar(result: Array,
+                     base: ScalarLike,
+                     exponent: Array) -> cl.Kernel:
+        assert result.context is not None
         return elementwise.get_pow_kernel(result.context,
-                base.dtype, exponent.dtype, result.dtype,
+                np.array(base).dtype, exponent.dtype, result.dtype,
                 is_base_array=False, is_exp_array=True)
 
     @staticmethod
     @elwise_kernel_runner
-    def _pow_array(result, base, exponent):
+    def _pow_array(result: Array,
+                   base: Array,
+                   exponent: Array) -> cl.Kernel:
+        assert result.context is not None
         return elementwise.get_pow_kernel(
                 result.context, base.dtype, exponent.dtype, result.dtype,
                 is_base_array=True, is_exp_array=True)
 
     @staticmethod
     @elwise_kernel_runner
-    def _reverse(result, ary):
+    def _reverse(result: Array, ary: Array) -> cl.Kernel:
+        assert result.context is not None
         return elementwise.get_reverse_kernel(result.context, ary.dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _copy(dest, src):
+    def _copy(dest: Array, src: Array) -> cl.Kernel:
+        assert dest.context is not None
         return elementwise.get_copy_kernel(
                 dest.context, dest.dtype, src.dtype)
 
-    def _new_like_me(self, dtype=None, queue: cl.CommandQueue | None = None):
+    def _new_like_me(self,
+                     dtype: DTypeLike = None,
+                     queue: cl.CommandQueue | None = None) -> Self:
         if dtype is None:
             dtype = self.dtype
             strides = self.strides
@@ -1092,20 +1148,28 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _scalar_binop(out, a, b, queue: cl.CommandQueue | None = None, op=None):
+    def _scalar_binop(out: Array, a: Array, b: ScalarLike,
+                      queue: cl.CommandQueue | None = None,
+                      op: str | None = None) -> cl.Kernel:
+        assert out.context is not None
         return elementwise.get_array_scalar_binop_kernel(
                 out.context, op, out.dtype, a.dtype,
                 np.array(b).dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _array_binop(out, a, b, queue: cl.CommandQueue | None = None, op=None):
+    def _array_binop(out: Array, a: Array, b: Array,
+                     queue: cl.CommandQueue | None = None,
+                     op: str | None = None) -> cl.Kernel:
         a_shape = a.shape
         b_shape = b.shape
         out_shape = out.shape
+
         assert (a_shape == b_shape == out_shape
                 or (a_shape == () and b_shape == out_shape)
                 or (b_shape == () and a_shape == out_shape))
+        assert out.context is not None
+
         return elementwise.get_array_binop_kernel(
                 out.context, op, out.dtype, a.dtype, b.dtype,
                 a_is_scalar=(a_shape == ()),
@@ -1113,9 +1177,13 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _unop(out, a, queue: cl.CommandQueue | None = None, op=None):
+    def _unop(out: Array, a: Array,
+              queue: cl.CommandQueue | None = None,
+              op: str | None = None) -> cl.Kernel:
+        assert out.context is not None
         if out.shape != a.shape:
             raise ValueError("shapes of arguments do not match")
+
         return elementwise.get_unop_kernel(
                 out.context, op, a.dtype, out.dtype)
 
@@ -1587,7 +1655,7 @@ class Array:
         result.add_event(self._reverse(result, self))
         return result
 
-    def astype(self, dtype, queue: cl.CommandQueue | None = None):
+    def astype(self, dtype: DTypeLike, queue: cl.CommandQueue | None = None):
         """Return a copy of *self*, cast to *dtype*."""
         if dtype == self.dtype:
             return self.copy()
@@ -1633,15 +1701,26 @@ class Array:
 
     @staticmethod
     @elwise_kernel_runner
-    def _scalar_comparison(out, a, b, queue: cl.CommandQueue | None = None, op=None):
+    def _scalar_comparison(out: Array,
+                           a: Array,
+                           b: ScalarLike,
+                           queue: cl.CommandQueue | None = None,
+                           op: str | None = None) -> cl.Kernel:
+        assert out.context is not None
         return elementwise.get_array_scalar_comparison_kernel(
                 out.context, op, a.dtype)
 
     @staticmethod
     @elwise_kernel_runner
-    def _array_comparison(out, a, b, queue: cl.CommandQueue | None = None, op=None):
+    def _array_comparison(out: Array,
+                          a: Array,
+                          b: Array,
+                          queue: cl.CommandQueue | None = None,
+                          op: str | None = None) -> cl.Kernel:
+        assert out.context is not None
         if a.shape != b.shape:
             raise ValueError("shapes of comparison arguments do not match")
+
         return elementwise.get_array_comparison_kernel(
                 out.context, op, a.dtype, b.dtype)
 
@@ -2653,11 +2732,15 @@ def multi_put(
         return []
 
     from pytools import single_valued
+
     a_dtype = single_valued(a.dtype for a in arrays)
     a_allocator = arrays[0].allocator
+
     context = dest_indices.context
     queue = queue or dest_indices.queue
     assert queue is not None
+    assert context is not None
+
     if wait_for is None:
         wait_for = []
     wait_for = [*wait_for, *dest_indices.events]
@@ -3101,7 +3184,11 @@ def minimum(a, b, out=None, queue: cl.CommandQueue | None = None):
 
 # {{{ logical ops
 
-def _logical_op(x1, x2, out, operator, queue: cl.CommandQueue | None = None):
+def _logical_op(x1: Array | ScalarLike,
+                x2: Array | ScalarLike,
+                out: Array | None,
+                operator: str,
+                queue: cl.CommandQueue | None = None) -> Array:
     # NOTE: Copied from pycuda.gpuarray
     assert operator in ["&&", "||"]
 
@@ -3125,6 +3212,7 @@ def _logical_op(x1, x2, out, operator, queue: cl.CommandQueue | None = None):
 
         out = out or ary_arg._new_like_me(dtype=np.int8)
 
+        assert queue is not None
         assert out.shape == ary_arg.shape and out.dtype == np.int8
 
         knl = elementwise.get_array_scalar_binop_kernel(
@@ -3149,6 +3237,7 @@ def _logical_op(x1, x2, out, operator, queue: cl.CommandQueue | None = None):
             out = empty(queue, allocator=allocator,
                         shape=x1.shape, dtype=np.int8)
 
+        assert queue is not None
         assert out.shape == x1.shape and out.dtype == np.int8
 
         knl = elementwise.get_array_binop_kernel(
