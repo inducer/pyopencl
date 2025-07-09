@@ -1555,7 +1555,10 @@ class KernelTemplateBase(ABC):
         return _TemplateRenderer(self, type_aliases, var_values)
 
     @abstractmethod
-    def build_inner(self, context: cl.Context, *args: Any, **kwargs: Any) -> Any:
+    def build_inner(self,
+                    context: cl.Context,
+                    *args: Any,
+                    **kwargs: Any) -> Callable[..., cl.Event]:
         pass
 
     def build(self, context: cl.Context, *args: Any, **kwargs: Any) -> Any:
