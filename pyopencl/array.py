@@ -478,16 +478,6 @@ class Array:
 
     __array_priority__: ClassVar[int] = 100
 
-    queue: cl.CommandQueue | None
-    shape: tuple[int, ...]
-    dtype: np.dtype[Any]
-    strides: tuple[int, ...]
-    events: list[cl.Event]
-    nbytes: int
-    size: int
-    allocator: Allocator | None
-    base_data: cl.MemoryObjectHolder | cl.SVMPointer | None
-
     def __init__(
             self,
             cq: cl.Context | cl.CommandQueue | None,
@@ -624,34 +614,37 @@ class Array:
             if alloc_nbytes < 0:
                 raise ValueError("cannot allocate CL buffer with negative size")
 
-        self.queue = queue
-        self.shape = shape
-        self.dtype = dtype
-        self.strides = strides
-        self.events = [] if events is None else events
-        self.nbytes = alloc_nbytes
-        self.size = size
-        self.allocator = allocator
-
+        base_data = None
         if data is None:
             if alloc_nbytes == 0:
-                self.base_data = None
+                base_data = None
 
             else:
-                if self.allocator is None:
+                if allocator is None:
                     if context is None and queue is not None:
                         context = queue.context
 
-                    self.base_data = cl.Buffer(
-                            context, cl.mem_flags.READ_WRITE, alloc_nbytes)
+                    assert context is not None
+                    base_data = cl.Buffer(
+                        context, cl.mem_flags.READ_WRITE, alloc_nbytes)
                 else:
-                    self.base_data = self.allocator(alloc_nbytes)
+                    base_data = allocator(alloc_nbytes)
         else:
-            self.base_data = data
+            base_data = data
 
-        self.offset = offset
-        self.context = context
-        self._flags = _flags
+        self.queue: cl.CommandQueue | None = queue
+        self.context: cl.Context | None = context
+        self.shape: tuple[int, ...] = shape
+        self.dtype: np.dtype[Any] = dtype
+        self.strides: tuple[int, ...] = strides
+        self.events: list[cl.Event] = [] if events is None else events
+        self.nbytes: int = alloc_nbytes
+        self.size: int = size
+        self.allocator: Allocator | None = allocator
+        self.base_data: cl.MemoryObjectHolder | cl.SVMPointer | None = base_data
+        self.offset: int = offset
+
+        self._flags: _ArrayFlags | None = _flags
 
         if __debug__:
             if queue is not None and isinstance(
@@ -664,11 +657,11 @@ class Array:
                          InconsistentOpenCLQueueWarning, stacklevel=2)
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         return len(self.shape)
 
     @property
-    def data(self):
+    def data(self) -> cl.MemoryObjectHolder | cl.SVMPointer | None:
         if self.offset:
             raise ArrayHasOffsetError()
         else:
@@ -679,6 +672,7 @@ class Array:
         f = self._flags
         if f is None:
             self._flags = f = _ArrayFlags(self)
+
         return f
 
     def _new_with_changes(self,
