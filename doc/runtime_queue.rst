@@ -116,9 +116,14 @@ Event
 
     |comparable|
 
-.. autoclass:: WaitList
+.. autodata:: WaitList
+    :noindex:
 
     A :class:`Sequence` of :class:`Event`\ s or *None*.
+
+.. class:: WaitList
+
+    See above.
 
 .. class:: ProfilingInfoGetter
 

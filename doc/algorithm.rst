@@ -24,6 +24,13 @@ Here's a usage example:
 :download:`examples/demo_elementwise.py <../examples/demo_elementwise.py>`
 in the PyOpenCL distribution.)
 
+References
+^^^^^^^^^^
+
+.. class:: WaitList
+
+    See :class:`pyopencl.WaitList`.
+
 .. _custom-reductions:
 
 Sums and counts ("reduce")
