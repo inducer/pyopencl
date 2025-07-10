@@ -135,9 +135,9 @@ void pyopencl_expose_part_2(py::module_ &m)
           py::arg("context"),
           py::arg("flags"),
           py::arg("format"),
-          py::arg("shape")=py::none(),
-          py::arg("pitches")=py::none(),
-          py::arg("hostbuf")=py::none()
+          py::arg("shape").none(true)=py::none(),
+          py::arg("pitches").none(true)=py::none(),
+          py::arg("hostbuf").none(true)=py::none()
           )
 #if PYOPENCL_CL_VERSION >= 0x1020
       .def_static(
@@ -161,7 +161,7 @@ void pyopencl_expose_part_2(py::module_ &m)
           py::arg("flags"),
           py::arg("format"),
           py::arg("desc"),
-          py::arg("hostbuf")=py::none()
+          py::arg("hostbuf").none(true)=py::none()
           )
 #endif
       .DEF_SIMPLE_METHOD(get_image_info)
