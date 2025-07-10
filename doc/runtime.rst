@@ -95,7 +95,7 @@ resolve them.
 
 .. class:: WaitList
 
-    A :class:`Sequence` of :class:`Event`\ s or *None*.
+    See :class:`pyopencl.WaitList`.
 
 .. class:: Context
 
