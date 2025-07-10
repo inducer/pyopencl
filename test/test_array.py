@@ -235,6 +235,9 @@ def test_zeros_large_array(ctx_factory: cl.CtxFactory):
             and platform.system() == "Windows":
         pytest.xfail("large array fail with out-of-host memory with"
                 "Intel CPU runtime as of 2022-10-05")
+    if (dev.platform.name == "Portable Computing Language"
+            and cl.get_cl_header_version() < (1, 2)):
+        pytest.xfail("does not work on pocl with CL pre 1.2")
 
     size = 2**28 + 1
     if dev.address_bits == 64 and dev.max_mem_alloc_size >= 8 * size:
@@ -1782,6 +1785,9 @@ def test_zero_size_array(ctx_factory: cl.CtxFactory, empty_shape):
 
     if queue.device.platform.name == "Intel(R) OpenCL":
         pytest.xfail("size-0 arrays fail on Intel CL")
+    if (queue.device.platform.name == "Portable Computing Language"
+            and cl.get_cl_header_version() < (1, 2)):
+        pytest.xfail("does not work on pocl with CL pre 1.2")
 
     a = cl_array.zeros(queue, empty_shape, dtype=np.float32)
     b = cl_array.zeros(queue, empty_shape, dtype=np.float32)
