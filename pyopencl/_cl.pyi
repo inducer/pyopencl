@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Hashable, Sequence
 from enum import IntEnum, auto
 from typing import TYPE_CHECKING, Generic, Literal, overload
 
@@ -836,6 +836,9 @@ class Device:
     _get_cl_version = pyopencl._monkeypatch.generic_get_cl_version
 
     __repr__ = pyopencl._monkeypatch.device_repr
+
+    @property
+    def hashable_model_and_version_identifier(self) -> Hashable: ...
 
     type: device_type
     vendor_id: int
