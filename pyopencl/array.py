@@ -45,7 +45,7 @@ from typing import (
 from warnings import warn
 
 import numpy as np
-from typing_extensions import Self, override
+from typing_extensions import Self, TypeIs, override
 
 import pyopencl as cl
 import pyopencl.elementwise as elementwise
@@ -288,6 +288,10 @@ _BOOL_DTYPE = np.dtype(np.int8)
 _NOT_PRESENT = object()
 
 ScalarLike: TypeAlias = int | float | complex | np.number[Any]
+
+
+def _is_scalar(s: object) -> TypeIs[ScalarLike]:
+    return isinstance(s, SCALAR_CLASSES)
 
 
 class Array:
@@ -3028,18 +3032,18 @@ def _if_positive(result, criterion, then_, else_):
 
 
 def if_positive(
-            criterion,
-            then_,
-            else_,
-            out=None,
+            criterion: Array | ScalarLike,
+            then_: Array | ScalarLike,
+            else_: Array | ScalarLike,
+            out: Array | None = None,
             queue: cl.CommandQueue | None = None):
     """Return an array like *then_*, which, for the element at index *i*,
     contains *then_[i]* if *criterion[i]>0*, else *else_[i]*.
     """
 
-    is_then_scalar = isinstance(then_, SCALAR_CLASSES)
-    is_else_scalar = isinstance(else_, SCALAR_CLASSES)
-    if isinstance(criterion, SCALAR_CLASSES) and is_then_scalar and is_else_scalar:
+    is_then_scalar = _is_scalar(then_)
+    is_else_scalar = _is_scalar(else_)
+    if _is_scalar(criterion) and is_then_scalar and is_else_scalar:
         result = np.where(criterion, then_, else_)
 
         if out is not None:
@@ -3049,53 +3053,60 @@ def if_positive(
         return result
 
     if is_then_scalar:
-        then_ = np.array(then_)
+        then_ary = np.array(then_)
+    else:
+        then_ary = then_
+
+    assert not _is_scalar(criterion)
 
     if is_else_scalar:
-        else_ = np.array(else_)
+        else_ary = np.array(else_)
+    else:
+        else_ary = else_
 
-    if then_.dtype != else_.dtype:
+    if then_ary.dtype != else_ary.dtype:
         raise ValueError(
-                f"dtypes do not match: then_ is '{then_.dtype}' and "
-                f"else_ is '{else_.dtype}'")
+                f"dtypes do not match: then_ary is '{then_ary.dtype}' and "
+                f"else_ary is '{else_ary.dtype}'")
 
-    if then_.shape == () and else_.shape == ():
+    if then_ary.shape == () and else_ary.shape == ():
         pass
-    elif then_.shape != () and else_.shape != ():
-        if not (criterion.shape == then_.shape == else_.shape):
+    elif then_ary.shape != () and else_ary.shape != ():
+        if not (criterion.shape == then_ary.shape == else_ary.shape):
             raise ValueError(
                     f"shapes do not match: 'criterion' has shape {criterion.shape}"
-                    f", 'then_' has shape {then_.shape} and 'else_' has shape "
-                    f"{else_.shape}")
-    elif then_.shape == ():
-        if criterion.shape != else_.shape:
+                    f", 'then_ary' has shape {then_ary.shape} and 'else_ary' has shape "
+                    f"{else_ary.shape}")
+    elif then_ary.shape == ():
+        if criterion.shape != else_ary.shape:
             raise ValueError(
                     f"shapes do not match: 'criterion' has shape {criterion.shape}"
-                    f" and 'else_' has shape {else_.shape}")
-    elif else_.shape == ():
-        if criterion.shape != then_.shape:
+                    f" and 'else_ary' has shape {else_ary.shape}")
+    elif else_ary.shape == ():
+        if criterion.shape != then_ary.shape:
             raise ValueError(
                     f"shapes do not match: 'criterion' has shape {criterion.shape}"
-                    f" and 'then_' has shape {then_.shape}")
+                    f" and 'then_ary' has shape {then_ary.shape}")
     else:
         raise AssertionError()
 
     if out is None:
-        if then_.shape != ():
+        if then_ary.shape != ():
+            assert isinstance(then_ary, Array)
             out = empty_like(
-                then_, criterion.queue, allocator=criterion.allocator)
+                then_ary, criterion.queue, allocator=criterion.allocator)
         else:
             # Use same strides as criterion
             cr_byte_strides = np.array(criterion.strides, dtype=np.int64)
             cr_item_strides = cr_byte_strides // criterion.dtype.itemsize
-            out_strides = tuple(cr_item_strides*then_.dtype.itemsize)
+            out_strides = tuple(cr_item_strides*then_ary.dtype.itemsize)
 
             out = type(criterion)(
-                        criterion.queue, criterion.shape, then_.dtype,
+                        criterion.queue, criterion.shape, then_ary.dtype,
                         allocator=criterion.allocator,
                         strides=out_strides)
 
-    event1 = _if_positive(out, criterion, then_, else_, queue=queue)
+    event1 = _if_positive(out, criterion, then_ary, else_ary, queue=queue)
     out.add_event(event1)
 
     return out
