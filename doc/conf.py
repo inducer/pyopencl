@@ -1,5 +1,7 @@
 from urllib.request import urlopen
 
+from sphinx.application import Sphinx
+
 
 _conf_url = \
         "https://raw.githubusercontent.com/inducer/sphinxconfig/main/sphinxconfig.py"
@@ -31,3 +33,11 @@ intersphinx_mapping = {
     "mako": ("https://docs.makotemplates.org/en/latest", None),
     "pytools": ("https://documen.tician.de/pytools", None),
 }
+
+sphinxconfig_missing_reference_aliases: dict[str, str] = {
+    "np.dtype": "class:numpy.dtype",
+}
+
+
+def setup(app: Sphinx) -> None:
+    app.connect("missing-reference", process_autodoc_missing_reference)  # noqa: F821
