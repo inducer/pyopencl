@@ -30790,10 +30790,26 @@
         ],
         "./test/test_array.py": [
             {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 34,
+                    "endColumn": 60,
+                    "lineCount": 1
+                }
+            },
+            {
                 "code": "reportAttributeAccessIssue",
                 "range": {
                     "startColumn": 23,
                     "endColumn": 34,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 19,
+                    "endColumn": 28,
                     "lineCount": 1
                 }
             },
@@ -30914,30 +30930,6 @@
                 "range": {
                     "startColumn": 41,
                     "endColumn": 42,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportAttributeAccessIssue",
-                "range": {
-                    "startColumn": 41,
-                    "endColumn": 44,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportAttributeAccessIssue",
-                "range": {
-                    "startColumn": 41,
-                    "endColumn": 44,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportAttributeAccessIssue",
-                "range": {
-                    "startColumn": 41,
-                    "endColumn": 44,
                     "lineCount": 1
                 }
             },
