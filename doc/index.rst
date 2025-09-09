@@ -61,8 +61,8 @@ Tutorials
   `Problem set 2 <https://tiker.net/pub/simula-pyopencl-probset2.pdf>`__
 * Ian Johnson's `PyOpenCL tutorial <https://web.archive.org/web/20170907175053/http://enja.org:80/2011/02/22/adventures-in-pyopencl-part-1-getting-started-with-python>`__.
 
-Software that works with or enhances PyOpenCL
-=============================================
+Software related to PyOpenCL
+============================
 
 * Jon Roose's `pyclblas <https://pyclblas.readthedocs.io/en/latest/index.html>`__
   (`code <https://github.com/jroose/pyclblas>`__)
@@ -96,6 +96,10 @@ Software that works with or enhances PyOpenCL
 
 * Vincent Favre-Nicolin's `pyvkfft <https://github.com/vincefn/pyvkfft/>`__
   makes `vkfft <https://github.com/DTolm/VkFFT>`__ accessible from PyOpenCL.
+
+* Want something like PyOpenCL but for Apple's `Metal <https://en.wikipedia.org/wiki/Metal_(API)>`__?
+  Sean True's `PyMetallic <https://github.com/seantrue/pymetallic/>`__ may be
+  worth considering.
 
 If you know of a piece of software you feel that should be on this list, please
 let me know, or, even better, send a patch!
