@@ -40,6 +40,7 @@ from typing import (
     Literal,
     ParamSpec,
     TypeAlias,
+    TypeVar,
     cast,
 )
 from warnings import warn
@@ -73,6 +74,9 @@ if cl.get_cl_header_version() >= (2, 0):
     _SVMPointer_or_nothing = cl.SVMPointer
 else:
     _SVMPointer_or_nothing = ()
+
+
+ArrayT = TypeVar("ArrayT", bound="Array")
 
 
 class _NoValue:
@@ -2424,7 +2428,7 @@ def empty_like(
             allocator=allocator)
 
 
-def zeros_like(ary):
+def zeros_like(ary: ArrayT) -> ArrayT:
     """Make a new, zero-initialized :class:`Array` having the same properties
     as *other_ary*.
     """
