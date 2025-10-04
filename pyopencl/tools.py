@@ -772,7 +772,7 @@ def pytest_generate_tests_for_pyopencl(metafunc: pytest.Metafunc) -> None:
     functions, and they will automatically be run for each OpenCL device/platform
     in the system, as appropriate.
 
-    The following two environment variabls is also supported to control
+    The following two environment variables is also supported to control
     device/platform choice::
 
         PYOPENCL_TEST=0:0,1;intel=i5,i7
