@@ -132,6 +132,8 @@ never directly.
 The :class:`Array` Class
 ------------------------
 
+.. autoclass:: ArrayT
+
 .. autoclass:: Array
 
 .. autoexception:: ArrayHasOffsetError
