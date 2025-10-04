@@ -462,7 +462,7 @@ def test_pow_number(ctx_factory: cl.CtxFactory):
 # {{{ test_multiply
 
 def test_multiply(ctx_factory: cl.CtxFactory):
-    """Test the muliplication of an array with a scalar. """
+    """Test the multiplication of an array with a scalar. """
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
