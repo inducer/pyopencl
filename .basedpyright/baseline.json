@@ -7604,14 +7604,6 @@
                 }
             },
             {
-                "code": "reportUnknownArgumentType",
-                "range": {
-                    "startColumn": 48,
-                    "endColumn": 64,
-                    "lineCount": 1
-                }
-            },
-            {
                 "code": "reportUnknownParameterType",
                 "range": {
                     "startColumn": 22,
@@ -7648,6 +7640,14 @@
                 "range": {
                     "startColumn": 34,
                     "endColumn": 58,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 52,
+                    "endColumn": 57,
                     "lineCount": 1
                 }
             },
@@ -7760,6 +7760,14 @@
                 "range": {
                     "startColumn": 24,
                     "endColumn": 48,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 42,
+                    "endColumn": 47,
                     "lineCount": 1
                 }
             },
@@ -7908,6 +7916,14 @@
                 }
             },
             {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 42,
+                    "endColumn": 47,
+                    "lineCount": 1
+                }
+            },
+            {
                 "code": "reportUnknownParameterType",
                 "range": {
                     "startColumn": 23,
@@ -7936,6 +7952,14 @@
                 "range": {
                     "startColumn": 24,
                     "endColumn": 48,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 42,
+                    "endColumn": 47,
                     "lineCount": 1
                 }
             },
@@ -8056,6 +8080,14 @@
                 "range": {
                     "startColumn": 51,
                     "endColumn": 71,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportCallIssue",
+                "range": {
+                    "startColumn": 69,
+                    "endColumn": 70,
                     "lineCount": 1
                 }
             },
@@ -8188,15 +8220,7 @@
                 }
             },
             {
-                "code": "reportArgumentType",
-                "range": {
-                    "startColumn": 70,
-                    "endColumn": 75,
-                    "lineCount": 1
-                }
-            },
-            {
-                "code": "reportArgumentType",
+                "code": "reportCallIssue",
                 "range": {
                     "startColumn": 70,
                     "endColumn": 75,
@@ -8292,7 +8316,7 @@
                 }
             },
             {
-                "code": "reportArgumentType",
+                "code": "reportCallIssue",
                 "range": {
                     "startColumn": 56,
                     "endColumn": 80,
@@ -8752,6 +8776,14 @@
                 "range": {
                     "startColumn": 46,
                     "endColumn": 70,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportArgumentType",
+                "range": {
+                    "startColumn": 64,
+                    "endColumn": 69,
                     "lineCount": 1
                 }
             },
@@ -24790,6 +24822,24 @@
                 "range": {
                     "startColumn": 4,
                     "endColumn": 20,
+                    "lineCount": 1
+                }
+            }
+        ],
+        "./pyopencl/cltypes.py": [
+            {
+                "code": "reportUnknownVariableType",
+                "range": {
+                    "startColumn": 16,
+                    "endColumn": 27,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportUnknownArgumentType",
+                "range": {
+                    "startColumn": 36,
+                    "endColumn": 81,
                     "lineCount": 1
                 }
             }
