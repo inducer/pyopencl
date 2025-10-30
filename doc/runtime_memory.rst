@@ -418,8 +418,8 @@ Mapping Memory into Host Address Space
     See :class:`map_flags` for possible values of *flags*.
     *strides*, if given, overrides *order*.
 
-    :return: a tuple *(array, event)*. *array* is a
-        :class:`numpy.ndarray` representing the host side
+    :return: a tuple *(array, event, row_pitch, slice_pitch)*.
+        *array* is a :class:`numpy.ndarray` representing the host side
         of the map. Its *.base* member contains a
         :class:`MemoryMap`.
 

@@ -1528,7 +1528,7 @@ def enqueue_map_image(
         strides: tuple[int, ...] | None = None,
         wait_for: WaitList = None,
         is_blocking: bool = True
-    ) -> np.ndarray[tuple[int, ...], DTypeT]: ...
+    ) -> tuple[np.ndarray[tuple[int, ...], DTypeT], Event, int, int]: ...
 
 class SVMPointer:
     @property
