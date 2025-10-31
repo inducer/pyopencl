@@ -5,7 +5,7 @@
 #
 # performs an estimation of Pi using Monte Carlo method
 # a large amount of iterations is divided and distributed to compute units
-# a lot of options are provided to perform scalabilty tests
+# a lot of options are provided to perform scalability tests
 #
 # use -h for complete set of options
 #
