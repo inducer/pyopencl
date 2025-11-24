@@ -18,7 +18,7 @@ jobs:
         name: Ruff
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v5
+        -   uses: actions/checkout@v6
             with:
                 submodules: true
         -   uses: actions/setup-python@v6
@@ -31,13 +31,13 @@ jobs:
         name: Typos
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v5
+        -   uses: actions/checkout@v6
         -   uses: crate-ci/typos@master
 
     basedpyright:
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v5
+        -   uses: actions/checkout@v6
         -   name: "Main Script"
             run: |
                 curl -L -O https://tiker.net/ci-support-v0
@@ -52,7 +52,7 @@ jobs:
         name: Pytest Linux POCL
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v5
+        -   uses: actions/checkout@v6
         -   name: "Main Script"
             run: |
                 curl -L -O https://tiker.net/ci-support-v0
@@ -65,7 +65,7 @@ jobs:
         name: Pytest Linux Intel CL
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v5
+        -   uses: actions/checkout@v6
         -   name: "Main Script"
             run: |
                 export CONDA_ENVIRONMENT=.test-conda-env-py3.yml
@@ -81,7 +81,7 @@ jobs:
         name: Pytest Windows Intel CL
         runs-on: windows-latest
         steps:
-        -   uses: actions/checkout@v5
+        -   uses: actions/checkout@v6
         -   name: "Main Script"
             shell: bash
             run: |
@@ -103,7 +103,7 @@ jobs:
         name: Pytest Mac POCL
         runs-on: macos-latest
         steps:
-        -   uses: actions/checkout@v5
+        -   uses: actions/checkout@v6
         -   name: "Main Script"
             run: |
                 export CC=gcc
@@ -119,7 +119,7 @@ jobs:
         name: Documentation
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v5
+        -   uses: actions/checkout@v6
         -
             uses: actions/setup-python@v6
             with:
@@ -138,7 +138,7 @@ jobs:
         name: Examples
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v5
+        -   uses: actions/checkout@v6
         -   name: "Main Script"
             run: |
                 EXTRA_INSTALL="pillow cgen mako imageio"
@@ -157,7 +157,7 @@ jobs:
         name: Tests for downstream project ${{ matrix.downstream_project }}
         runs-on: ubuntu-latest
         steps:
-        -   uses: actions/checkout@v5
+        -   uses: actions/checkout@v6
         -   name: "Main Script"
             env:
                 DOWNSTREAM_PROJECT: ${{ matrix.downstream_project }}
