@@ -24,11 +24,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
+import hashlib
 import logging
 import os
 import re
 import sys
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Literal
 
 import pyopencl._cl as _cl
 
@@ -36,13 +38,14 @@ import pyopencl._cl as _cl
 logger = logging.getLogger(__name__)
 
 
-import hashlib
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 new_hash = hashlib.md5
 
 
-def _erase_dir(directory):
+def _erase_dir(directory: str):
     from os import listdir, rmdir, unlink
     from os.path import join
 
@@ -343,8 +346,13 @@ class _SourceInfo:
     log: str | None
 
 
-def _create_built_program_from_source_cached(ctx, src, options_bytes,
-        devices, cache_dir, include_path):
+def _create_built_program_from_source_cached(
+            ctx: _cl.Context,
+            src: str | bytes,
+            options_bytes: bytes,
+            devices: Sequence[_cl.Device] | None,
+            cache_dir: str | None,
+            include_path: Sequence[str] | None):
     from os.path import join
 
     if cache_dir is None:
@@ -352,10 +360,11 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
 
         # Determine the cache directory in the same way as pytools.PersistentDict,
         # which PyOpenCL uses for invoker caches.
-        if sys.platform == "darwin" and os.getenv("XDG_CACHE_HOME") is not None:
+        xdg_cache_home = os.getenv("XDG_CACHE_HOME")
+        if sys.platform == "darwin" and xdg_cache_home is not None:
             # platformdirs does not handle XDG_CACHE_HOME on macOS
             # https://github.com/platformdirs/platformdirs/issues/269
-            cache_dir = join(os.getenv("XDG_CACHE_HOME"), "pyopencl")
+            cache_dir = join(xdg_cache_home, "pyopencl")
         else:
             cache_dir = platformdirs.user_cache_dir("pyopencl", "pyopencl")
 
@@ -371,7 +380,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
     cache_keys = [get_cache_key(device, options_bytes, src) for device in devices]
 
     binaries = []
-    to_be_built_indices = []
+    to_be_built_indices: list[int] = []
     logs = []
     for i, (_device, cache_key) in enumerate(zip(devices, cache_keys, strict=True)):
         cache_result = retrieve_from_cache(cache_dir, cache_key)
@@ -406,10 +415,13 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
     already_built = False
     was_cached = not to_be_built_indices
 
+    if isinstance(src, str):
+        src = src.encode()
+
     if to_be_built_indices:
         # defeat implementation caches:
         from uuid import uuid4
-        src = src + "\n\n__constant int pyopencl_defeat_cache_%s = 0;" % (
+        src = src + b"\n\n__constant int pyopencl_defeat_cache_%s = 0;" % (
                 uuid4().hex)
 
         logger.debug(
@@ -462,7 +474,7 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
                     binary_path = mod_cache_dir_m.sub("binary")
                     source_path = mod_cache_dir_m.sub("source.cl")
 
-                    with open(source_path, "w") as outf:
+                    with open(source_path, "wb") as outf:
                         outf.write(src)
 
                     with open(binary_path, "wb") as outf:
@@ -486,8 +498,14 @@ def _create_built_program_from_source_cached(ctx, src, options_bytes,
     return result, already_built, was_cached
 
 
-def create_built_program_from_source_cached(ctx, src, options_bytes, devices=None,
-        cache_dir=None, include_path=None):
+def create_built_program_from_source_cached(
+            ctx: _cl.Context,
+            src: str | bytes,
+            options_bytes: bytes,
+            devices: Sequence[_cl.Device] | None = None,
+            cache_dir: str | Literal[False] | None = None,
+            include_path: Sequence[str] | None = None
+        ):
     try:
         was_cached = False
         already_built = False
