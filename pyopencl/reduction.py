@@ -656,13 +656,16 @@ def get_sum_kernel(ctx, dtype_out, dtype_in):
             )
 
 
-def _get_dot_expr(dtype_out, dtype_a, dtype_b, conjugate_first,
-        has_double_support, index_expr="i"):
+def _get_dot_expr(
+            dtype_out: np.dtype[Any] | None,
+            dtype_a: np.dtype[Any],
+            dtype_b: np.dtype[Any] | None,
+            conjugate_first: bool,
+            has_double_support: bool,
+            index_expr: str = "i"
+        ):
     if dtype_b is None:
-        if dtype_a is None:
-            dtype_b = dtype_out
-        else:
-            dtype_b = dtype_a
+        dtype_b = dtype_a
 
     if dtype_out is None:
         from pyopencl.compyte.array import get_common_dtype
@@ -700,8 +703,13 @@ def _get_dot_expr(dtype_out, dtype_a, dtype_b, conjugate_first,
 
 
 @context_dependent_memoize
-def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None,
-        conjugate_first=False):
+def get_dot_kernel(
+            ctx: cl.Context,
+            dtype_out: np.dtype[Any] | None,
+            dtype_a: np.dtype[Any],
+            dtype_b: np.dtype[Any],
+            conjugate_first: bool = False
+        ):
     from pyopencl.characterize import has_double_support
     map_expr, dtype_out, dtype_b = _get_dot_expr(
             dtype_out, dtype_a, dtype_b, conjugate_first,
@@ -726,8 +734,14 @@ def get_dot_kernel(ctx, dtype_out, dtype_a=None, dtype_b=None,
 
 
 @context_dependent_memoize
-def get_subset_dot_kernel(ctx, dtype_out, dtype_subset, dtype_a=None, dtype_b=None,
-        conjugate_first=False):
+def get_subset_dot_kernel(
+            ctx: cl.Context,
+            dtype_out: np.dtype[Any] | None,
+            dtype_subset: np.dtype[Any],
+            dtype_a: np.dtype[Any],
+            dtype_b: np.dtype[Any],
+            conjugate_first: bool = False
+        ):
     from pyopencl.characterize import has_double_support
     map_expr, dtype_out, dtype_b = _get_dot_expr(
             dtype_out, dtype_a, dtype_b, conjugate_first,
