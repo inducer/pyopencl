@@ -139,7 +139,7 @@ def capture_kernel_call(
         cg("prg = cl.Program(ctx, CODE).build()")
         cg("knl = prg.%s" % kernel.function_name)
         if hasattr(kernel, "_scalar_arg_dtypes"):
-            def strify_dtype(d: DTypeLike):
+            def strify_dtype(d: DTypeLike | None):
                 if d is None:
                     return "None"
 

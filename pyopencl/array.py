@@ -1125,7 +1125,7 @@ class Array:
                 dest.context, dest.dtype, src.dtype)
 
     def _new_like_me(self,
-                     dtype: DTypeLike = None,
+                     dtype: DTypeLike | None = None,
                      queue: cl.CommandQueue | None = None) -> Self:
         if dtype is None:
             dtype = self.dtype
