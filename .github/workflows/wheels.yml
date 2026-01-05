@@ -18,7 +18,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-15-intel, macos-14]
+        include:
+        - os: ubuntu-latest
+          cibw_archs_linux: x86_64
+        - os: ubuntu-24.04-arm
+          cibw_archs_linux: aarch64
+        - os: windows-latest
+        - os: macos-15-intel
+        - os: macos-14
 
     steps:
       - uses: actions/checkout@v6
@@ -35,6 +42,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.0
         env:
+            CIBW_ARCHS_LINUX: ${{ matrix.cibw_archs_linux }}
             CIBW_ENVIRONMENT_WINDOWS: >
                 CL_INC_DIR='${{github.workspace}}/OpenCL-Headers/install/include'
                 CL_LIB_DIR="C:/Program Files/OpenCL-ICD-Loader/lib"
