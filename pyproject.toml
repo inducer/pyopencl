@@ -100,6 +100,9 @@ extend-ignore = [
     "C90",  # McCabe complexity
     "UP031", # use f-strings instead of %
     "UP032", # use f-strings instead of .format
+
+    # FIXME: This is a longer discussion...
+    "RUF067", # __init__ should only contain reexports
 ]
 exclude = [
     "examples/gl_interop_demo.py",
