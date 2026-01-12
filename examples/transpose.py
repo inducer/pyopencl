@@ -147,7 +147,7 @@ def check_transpose():
 
             rng = np.random.default_rng()
             source = rng.random((size, size), dtype=np.float32)
-            result = transpose_using_cl(ctx, queue, source, NaiveTranspose)
+            result = transpose_using_cl(ctx, queue, source, cls)
 
             err = source.T - result
             err_norm = la.norm(err)
