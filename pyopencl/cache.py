@@ -422,7 +422,7 @@ def _create_built_program_from_source_cached(
         # defeat implementation caches:
         from uuid import uuid4
         src = src + b"\n\n__constant int pyopencl_defeat_cache_%s = 0;" % (
-                uuid4().hex)
+                uuid4().hex.encode())
 
         logger.debug(
                 "build program: start building program from source on %s",
