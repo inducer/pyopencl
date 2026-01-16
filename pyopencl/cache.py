@@ -532,12 +532,15 @@ def create_built_program_from_source_cached(
             raise
 
         if not build_program_failure:
-            from traceback import format_exc
-            from warnings import warn
-            warn(
-                "PyOpenCL compiler caching failed with an exception:\n"
-                f"[begin exception]\n{format_exc()}[end exception]",
-                stacklevel=2)
+            if os.environ["PYOPENCL_CACHE_FAILURE_FATAL"]:
+                raise
+            else:
+                from traceback import format_exc
+                from warnings import warn
+                warn(
+                    "PyOpenCL compiler caching failed with an exception:\n"
+                    f"[begin exception]\n{format_exc()}[end exception]",
+                    stacklevel=2)
 
         prg = _cl._Program(ctx, src)
         was_cached = False
