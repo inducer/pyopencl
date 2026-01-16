@@ -11,7 +11,7 @@ requires = [
 
 [project]
 name = "pyopencl"
-version = "2026.1.1"
+version = "2026.1.2"
 description = "Python wrapper for OpenCL"
 readme = "README.rst"
 license = "MIT"
