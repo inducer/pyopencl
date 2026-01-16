@@ -169,26 +169,26 @@ class ModuleCacheDirManager(CleanupBase):
 
 # {{{ #include dependency handling
 
-C_INCLUDE_RE = re.compile(r'^\s*\#\s*include\s+[<"](.+)[">]\s*$',
+C_INCLUDE_RE = re.compile(rb'^\s*\#\s*include\s+[<"](.+)[">]\s*$',
         re.MULTILINE)
 
 
-def get_dependencies(src, include_path):
-    result = {}
+def get_dependencies(src: bytes, include_path: Sequence[str]):
+    result: dict[str, tuple[float, str] | None] = {}
 
     from os.path import join, realpath
 
-    def _inner(src):
+    def _inner(src: bytes):
         for match in C_INCLUDE_RE.finditer(src):
             included = match.group(1)
 
             found = False
             for ipath in include_path:
-                included_file_name = realpath(join(ipath, included))
+                included_file_name = realpath(join(ipath, included.decode()))
 
                 if included_file_name not in result:
                     try:
-                        src_file = open(included_file_name)
+                        src_file = open(included_file_name, "rb")
                     except OSError:
                         continue
 
@@ -218,13 +218,16 @@ def get_dependencies(src, include_path):
 
     _inner(src)
 
-    result = [(name, *vals) for name, vals in result.items()]
-    result.sort()
+    result_list = [
+            (name, *vals) for name, vals in result.items()
+            if vals is not None
+        ]
+    result_list.sort()
 
-    return result
+    return result_list
 
 
-def get_file_md5sum(fname):
+def get_file_md5sum(fname: str):
     checksum = new_hash()
     inf = open(fname)
     try:
@@ -342,7 +345,7 @@ def retrieve_from_cache(cache_dir, cache_key):
 
 @dataclass(frozen=True)
 class _SourceInfo:
-    dependencies: list[tuple[str, ...]]
+    dependencies: list[tuple[str, float, str]]
     log: str | None
 
 
@@ -483,7 +486,7 @@ def _create_built_program_from_source_cached(
                     from pickle import dump
                     info_file = open(info_path, "wb")
                     dump(_SourceInfo(
-                        dependencies=get_dependencies(src, include_path),
+                        dependencies=get_dependencies(src, include_path or []),
                         log=logs[i]), info_file)
                     info_file.close()
 

@@ -503,6 +503,14 @@ void pyopencl_expose_part_2(py::module_ &m)
           py::arg("src"))
       .def(
           "__init__",
+          [](cls *self, context &ctx, py::bytes const &src)
+          {
+            create_program_with_source(self, ctx, std::string((const char *) src.data(), src.size()));
+          },
+          py::arg("context"),
+          py::arg("src"))
+      .def(
+          "__init__",
           [](cls *self, context &ctx, py::sequence devices, py::sequence binaries)
           {
             return create_program_with_binary(self, ctx, devices, binaries);
