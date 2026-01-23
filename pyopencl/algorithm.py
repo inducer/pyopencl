@@ -31,7 +31,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from mako.template import Template
@@ -40,24 +40,39 @@ from pytools import memoize, memoize_method
 
 import pyopencl as cl
 import pyopencl.array as cl_array
-from pyopencl.scan import GenericScanKernel, ScanTemplate
-from pyopencl.tools import dtype_to_ctype, get_arg_offset_adjuster_code
+from pyopencl.scan import GenericScanKernel, GenericScanKernelBase, ScanTemplate
+from pyopencl.tools import (
+    Argument,
+    DtypedArgument,
+    OtherArg,
+    ScalarArg,
+    VectorArg,
+    dtype_to_ctype,
+    get_arg_offset_adjuster_code,
+)
 
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from numpy.typing import DTypeLike
+
+    from pyopencl.array import Array
     from pyopencl.elementwise import ElementwiseKernel
+    from pyopencl.typing import Allocator, KernelArg
 
 
 # {{{ "extra args" handling utility
 
-def _extract_extra_args_types_values(extra_args):
+def _extract_extra_args_types_values(
+        extra_args: Sequence[tuple[str, KernelArg]] | None = None,
+    ) -> tuple[tuple[Argument, ...], tuple[KernelArg, ...], tuple[cl.Event, ...]]:
     if extra_args is None:
         extra_args = []
-    from pyopencl.tools import ScalarArg, VectorArg
 
-    extra_args_types = []
-    extra_args_values = []
-    extra_wait_for = []
+    extra_args_types: list[Argument] = []
+    extra_args_values: list[KernelArg] = []
+    extra_wait_for: list[cl.Event] = []
     for name, val in extra_args:
         if isinstance(val, cl_array.Array):
             extra_args_types.append(VectorArg(val.dtype, name, with_offset=False))
@@ -67,9 +82,9 @@ def _extract_extra_args_types_values(extra_args):
             extra_args_types.append(ScalarArg(val.dtype, name))
             extra_args_values.append(val)
         else:
-            raise RuntimeError("argument '%d' not understood" % name)
+            raise RuntimeError(f"argument '{name}' not understood")
 
-    return tuple(extra_args_types), extra_args_values, extra_wait_for
+    return tuple(extra_args_types), tuple(extra_args_values), tuple(extra_wait_for)
 
 # }}}
 
@@ -87,7 +102,12 @@ _copy_if_template = ScanTemplate(
         template_processor="printf")
 
 
-def copy_if(ary, predicate, extra_args=None, preamble="", queue=None, wait_for=None):
+def copy_if(ary: Array,
+            predicate: str,
+            extra_args: Sequence[tuple[str, KernelArg]] | None = None,
+            preamble: str = "",
+            queue: cl.CommandQueue | None = None,
+            wait_for: cl.WaitList | None = None) -> tuple[Array, Array, cl.Event]:
     """Copy the elements of *ary* satisfying *predicate* to an output array.
 
     :arg predicate: a C expression evaluating to a ``bool``, represented as a string.
@@ -105,18 +125,19 @@ def copy_if(ary, predicate, extra_args=None, preamble="", queue=None, wait_for=N
 
     .. versionadded:: 2013.1
     """
-    if len(ary) > np.iinfo(np.int32).max:
-        scan_dtype = np.int64
+    if len(ary) > np.iinfo(np.uint32).max:
+        scan_dtype = np.dtype(np.uint64)
     else:
-        scan_dtype = np.int32
+        scan_dtype = np.dtype(np.uint32)
 
     if wait_for is None:
         wait_for = []
 
-    extra_args_types, extra_args_values, extra_wait_for = \
-        _extract_extra_args_types_values(extra_args)
-    wait_for = wait_for + extra_wait_for
+    extra_args_types, extra_args_values, extra_wait_for = (
+        _extract_extra_args_types_values(extra_args))
+    wait_for = (*wait_for, *extra_wait_for)
 
+    assert ary.context is not None
     knl = _copy_if_template.build(ary.context,
             type_aliases=(("scan_t", scan_dtype), ("item_t", ary.dtype)),
             var_values=(("predicate", predicate),),
@@ -135,8 +156,12 @@ def copy_if(ary, predicate, extra_args=None, preamble="", queue=None, wait_for=N
 
 # {{{ remove_if
 
-def remove_if(ary, predicate, extra_args=None, preamble="",
-        queue=None, wait_for=None):
+def remove_if(ary: Array,
+              predicate: str,
+              extra_args: Sequence[tuple[str, KernelArg]] | None = None,
+              preamble: str = "",
+              queue: cl.CommandQueue | None = None,
+              wait_for: cl.WaitList | None = None) -> tuple[Array, Array, cl.Event]:
     """Copy the elements of *ary* not satisfying *predicate* to an output array.
 
     :arg predicate: a C expression evaluating to a ``bool``, represented as a string.
@@ -152,8 +177,8 @@ def remove_if(ary, predicate, extra_args=None, preamble="",
 
     .. versionadded:: 2013.1
     """
-    return copy_if(ary, "!(%s)" % predicate, extra_args=extra_args,
-            preamble=preamble, queue=queue, wait_for=wait_for)
+    return copy_if(ary, f"!({predicate})", extra_args=extra_args,
+                   preamble=preamble, queue=queue, wait_for=wait_for)
 
 # }}}
 
@@ -176,8 +201,13 @@ _partition_template = ScanTemplate(
         template_processor="printf")
 
 
-def partition(ary, predicate, extra_args=None, preamble="",
-        queue=None, wait_for=None):
+def partition(ary: Array,
+              predicate: str,
+              extra_args: Sequence[tuple[str, KernelArg]] | None = None,
+              preamble: str = "",
+              queue: cl.CommandQueue | None = None,
+              wait_for: cl.WaitList | None = None
+              ) -> tuple[Array, Array, Array, cl.Event]:
     """Copy the elements of *ary* into one of two arrays depending on whether
     they satisfy *predicate*.
 
@@ -194,17 +224,18 @@ def partition(ary, predicate, extra_args=None, preamble="",
     .. versionadded:: 2013.1
     """
     if len(ary) > np.iinfo(np.uint32).max:
-        scan_dtype = np.uint64
+        scan_dtype = np.dtype(np.uint64)
     else:
-        scan_dtype = np.uint32
+        scan_dtype = np.dtype(np.uint32)
 
     if wait_for is None:
         wait_for = []
 
-    extra_args_types, extra_args_values, extra_wait_for = \
-            _extract_extra_args_types_values(extra_args)
-    wait_for = wait_for + extra_wait_for
+    extra_args_types, extra_args_values, extra_wait_for = (
+        _extract_extra_args_types_values(extra_args))
+    wait_for = (*wait_for, *extra_wait_for)
 
+    assert ary.context is not None
     knl = _partition_template.build(
             ary.context,
             type_aliases=(("item_t", ary.dtype), ("scan_t", scan_dtype)),
@@ -242,8 +273,12 @@ _unique_template = ScanTemplate(
         template_processor="printf")
 
 
-def unique(ary, is_equal_expr="a == b", extra_args=None, preamble="",
-        queue=None, wait_for=None):
+def unique(ary: Array,
+           is_equal_expr: str = "a == b",
+           extra_args: Sequence[tuple[str, KernelArg]] | None = None,
+           preamble: str = "",
+           queue: cl.CommandQueue | None = None,
+           wait_for: cl.WaitList | None = None) -> tuple[Array, Array, cl.Event]:
     """Copy the elements of *ary* into the output if *is_equal_expr*, applied to the
     array element and its predecessor, yields false.
 
@@ -266,17 +301,18 @@ def unique(ary, is_equal_expr="a == b", extra_args=None, preamble="",
     """
 
     if len(ary) > np.iinfo(np.uint32).max:
-        scan_dtype = np.uint64
+        scan_dtype = np.dtype(np.uint64)
     else:
-        scan_dtype = np.uint32
+        scan_dtype = np.dtype(np.uint32)
 
     if wait_for is None:
         wait_for = []
 
-    extra_args_types, extra_args_values, extra_wait_for = \
-            _extract_extra_args_types_values(extra_args)
-    wait_for = wait_for + extra_wait_for
+    extra_args_types, extra_args_values, extra_wait_for = (
+            _extract_extra_args_types_values(extra_args))
+    wait_for = (*wait_for, *extra_wait_for)
 
+    assert ary.context is not None
     knl = _unique_template.build(
             ary.context,
             type_aliases=(("item_t", ary.dtype), ("scan_t", scan_dtype)),
@@ -297,38 +333,29 @@ def unique(ary, is_equal_expr="a == b", extra_args=None, preamble="",
 
 # {{{ radix_sort
 
-def to_bin(n):
-    # Py 2.5 has no built-in bin()
-    digs = []
-    while n:
-        digs.append(str(n % 2))
-        n >>= 1
-
-    return "".join(digs[::-1])
-
-
-def _padded_bin(i, nbits):
-    s = to_bin(i)
-    while len(s) < nbits:
-        s = "0" + s
-    return s
+def _padded_bin(i: int, nbits: int) -> str:
+    s = bin(i)[2:]
+    return f"{s:>0{nbits}}"
 
 
 @memoize
-def _make_sort_scan_type(device, bits, index_dtype):
-    name = "pyopencl_sort_scan_%s_%dbits_t" % (
-            index_dtype.type.__name__, bits)
+def _make_sort_scan_type(
+        device: cl.Device,
+        bits: int,
+        index_dtype: np.dtype[np.integer[Any]]
+    ) -> tuple[str, np.dtype[Any], str]:
+    name = f"pyopencl_sort_scan_{index_dtype.type.__name__}_{bits}bits_t"
 
-    fields = []
+    fields: list[tuple[str, np.dtype[np.integer[Any]]]] = []
     for mnr in range(2**bits):
-        fields.append(("c%s" % _padded_bin(mnr, bits), index_dtype))
-
+        fields.append((f"c{_padded_bin(mnr, bits)}", index_dtype))
     dtype = np.dtype(fields)
 
     from pyopencl.tools import get_or_register_dtype, match_dtype_to_c_struct
-    dtype, c_decl = match_dtype_to_c_struct(device, name, dtype)
 
+    dtype, c_decl = match_dtype_to_c_struct(device, name, dtype)
     dtype = get_or_register_dtype(name, dtype)
+
     return name, dtype, c_decl
 
 
@@ -436,9 +463,27 @@ class RadixSort:
 
     .. versionadded:: 2013.1
     """
-    def __init__(self, context, arguments, key_expr, sort_arg_names,
-            bits_at_a_time=2, index_dtype=np.int32, key_dtype=np.uint32,
-            scan_kernel=GenericScanKernel, options=None):
+
+    arguments: Sequence[DtypedArgument]
+    sort_arg_names: Sequence[str]
+    bits: int
+    index_dtype: np.dtype[np.integer[Any]]
+    key_dtype: np.dtype[np.integer[Any]]
+    options: Any
+
+    scan_kernel: GenericScanKernelBase
+    first_array_arg_idx: int
+
+    def __init__(self,
+                 context: cl.Context,
+                 arguments: str | Sequence[DtypedArgument],
+                 key_expr: str,
+                 sort_arg_names: Sequence[str],
+                 bits_at_a_time: int = 2,
+                 index_dtype: DTypeLike = np.int32,
+                 key_dtype: DTypeLike = np.uint32,
+                 scan_kernel: type[GenericScanKernelBase] = GenericScanKernel,
+                 options: Any = None) -> None:
         """
         :arg arguments: A string of comma-separated C argument declarations.
             If *arguments* is specified, then *input_expr* must also be
@@ -455,6 +500,7 @@ class RadixSort:
         # {{{ arg processing
 
         from pyopencl.tools import parse_arg_list
+
         self.arguments = parse_arg_list(arguments)
         del arguments
 
@@ -472,14 +518,13 @@ class RadixSort:
         scan_ctype, scan_dtype, scan_t_cdecl = \
                 _make_sort_scan_type(context.devices[0], self.bits, self.index_dtype)
 
-        from pyopencl.tools import ScalarArg, VectorArg
         scan_arguments = (
                 list(self.arguments)
                 + [VectorArg(arg.dtype, "sorted_"+arg.name) for arg in self.arguments
                     if arg.name in sort_arg_names]
                 + [ScalarArg(np.int32, "base_bit")])
 
-        def get_count_branch(known_bits):
+        def get_count_branch(known_bits: str) -> str:
             if len(known_bits) == self.bits:
                 return "s.c%s" % known_bits
 
@@ -502,9 +547,12 @@ class RadixSort:
                 "get_count_branch": get_count_branch,
                 }
 
-        preamble = scan_t_cdecl+RADIX_SORT_PREAMBLE_TPL.render(**codegen_args)
-        scan_preamble = preamble \
-                + RADIX_SORT_SCAN_PREAMBLE_TPL.render(**codegen_args)
+        preamble = str(
+            scan_t_cdecl
+            + str(RADIX_SORT_PREAMBLE_TPL.render(**codegen_args)))
+        scan_preamble = str(
+            preamble
+            + str(RADIX_SORT_SCAN_PREAMBLE_TPL.render(**codegen_args)))
 
         self.scan_kernel = scan_kernel(
                 context, scan_dtype,
@@ -512,7 +560,7 @@ class RadixSort:
                 input_expr="scan_t_from_value(%s, base_bit, i)" % key_expr,
                 scan_expr="scan_t_add(a, b, across_seg_boundary)",
                 neutral="scan_t_neutral()",
-                output_statement=RADIX_SORT_OUTPUT_STMT_TPL.render(**codegen_args),
+                output_statement=str(RADIX_SORT_OUTPUT_STMT_TPL.render(**codegen_args)),
                 preamble=scan_preamble, options=self.options)
 
         for i, arg in enumerate(self.arguments):
@@ -521,7 +569,13 @@ class RadixSort:
 
         # }}}
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self,
+                 *args: object,
+                 queue: cl.CommandQueue | None = None,
+                 allocator: Allocator | None = None,
+                 key_bits: int | None = None,
+                 wait_for: cl.WaitList | None = None,
+                 **kwargs: Any) -> tuple[tuple[Array, ...], cl.Event]:
         """Run the radix sort. In addition to *args* which must match the
         *arguments* specification on the constructor, the following
         keyword arguments are supported:
@@ -532,30 +586,32 @@ class RadixSort:
         :arg queue: A :class:`pyopencl.CommandQueue`, defaulting to the
             one from the first argument array.
         :arg wait_for: |explain-waitfor|
+
         :returns: A tuple ``(sorted, event)``. *sorted* consists of sorted
             copies of the arrays named in *sorted_args*, in the order of that
             list. *event* is a :class:`pyopencl.Event` for dependency management.
         """
 
-        wait_for = kwargs.pop("wait_for", None)
+        if kwargs:
+            raise TypeError(f"invalid keyword arguments: {set(kwargs)}")
 
         # {{{ run control
 
-        key_bits = kwargs.pop("key_bits", None)
         if key_bits is None:
             key_bits = int(np.iinfo(self.key_dtype).bits)
 
-        n = len(args[self.first_array_arg_idx])
+        first_array = args[self.first_array_arg_idx]
+        assert isinstance(first_array, cl_array.Array)
 
-        allocator = kwargs.pop("allocator", None)
+        n = len(first_array)
         if allocator is None:
-            allocator = args[self.first_array_arg_idx].allocator
+            allocator = first_array.allocator
 
-        queue = kwargs.pop("queue", None)
         if queue is None:
-            queue = args[self.first_array_arg_idx].queue
+            queue = first_array.queue
 
-        args = list(args)
+        new_args = list(args)
+        last_evt = None
 
         base_bit = 0
         while base_bit < key_bits:
@@ -564,22 +620,27 @@ class RadixSort:
                     for arg_descr in self.arguments
                     if arg_descr.name in self.sort_arg_names]
 
-            scan_args = args + sorted_args + [base_bit]
-
-            last_evt = self.scan_kernel(*scan_args,
-                    queue=queue, wait_for=wait_for)
+            scan_args = (*new_args, *sorted_args, base_bit)
+            last_evt = self.scan_kernel(
+                    *scan_args,
+                    queue=queue,
+                    wait_for=wait_for)
             wait_for = [last_evt]
 
             # substitute sorted
             for i, arg_descr in enumerate(self.arguments):
                 if arg_descr.name in self.sort_arg_names:
-                    args[i] = sorted_args[self.sort_arg_names.index(arg_descr.name)]
+                    new_args[i] = sorted_args[self.sort_arg_names.index(arg_descr.name)]
 
             base_bit += self.bits
 
-        return [arg_val
-                for arg_descr, arg_val in zip(self.arguments, args, strict=True)
-                if arg_descr.name in self.sort_arg_names], last_evt
+        result = tuple(
+            arg_val
+            for arg_descr, arg_val in zip(self.arguments, new_args, strict=True)
+            if arg_descr.name in self.sort_arg_names)
+
+        assert last_evt is not None
+        return result, last_evt
 
         # }}}
 
@@ -711,7 +772,7 @@ void ${kernel_name}(
 # }}}
 
 
-def _get_arg_decl(arg_list):
+def _get_arg_decl(arg_list: Sequence[Argument]) -> str:
     result = ""
     for arg in arg_list:
         result += arg.declarator() + ", "
@@ -719,10 +780,12 @@ def _get_arg_decl(arg_list):
     return result
 
 
-def _get_arg_list(arg_list, prefix=""):
+def _get_arg_list(
+        arg_list: Sequence[DtypedArgument | OtherArg], prefix: str = ""
+    ) -> str:
     result = ""
     for arg in arg_list:
-        result += prefix + arg.name + ", "
+        result += f"{prefix}{arg.name}, "
 
     return result
 
@@ -732,7 +795,7 @@ class BuiltList:
     count: int | None
     starts: cl_array.Array | None
     lists: cl_array.Array | None = None
-    num_nonempty_lists: int | None = None
+    num_nonempty_lists: cl_array.Array | None = None
     nonempty_indices: cl_array.Array | None = None
     compressed_indices: cl_array.Array | None = None
 
@@ -775,11 +838,38 @@ class ListOfListsBuilder:
     .. automethod:: __init__
     .. automethod:: __call__
     """
-    def __init__(self, context, list_names_and_dtypes, generate_template,
-            arg_decls, count_sharing=None, devices=None,
-            name_prefix="plb_build_list", options=None, preamble="",
-            debug=False, complex_kernel=False,
-            eliminate_empty_output_lists=False):
+
+    context: cl.Context
+    devices: Sequence[cl.Device]
+
+    list_names_and_dtypes: Sequence[tuple[str, np.dtype[Any]]]
+    generate_template: str
+    arg_decls: Sequence[DtypedArgument]
+    arg_decls_no_offset: Sequence[DtypedArgument]
+
+    count_sharing: dict[str, str]
+    name_prefix: str
+    preamble: str
+
+    debug: bool
+    complex_kernel: bool
+    eliminate_empty_output_lists: Sequence[str]
+
+    options: Any
+
+    def __init__(self,
+                 context: cl.Context,
+                 list_names_and_dtypes: Sequence[tuple[str, DTypeLike]],
+                 generate_template: str,
+                 arg_decls: str | Sequence[DtypedArgument],
+                 count_sharing: dict[str, str] | None = None,
+                 devices: Sequence[cl.Device] | None = None,
+                 name_prefix: str = "plb_build_list",
+                 options: Any = None,
+                 preamble: str = "",
+                 debug: bool = False,
+                 complex_kernel: bool = False,
+                 eliminate_empty_output_lists: Sequence[str] | bool = False) -> None:
         """
         :arg context: A :class:`pyopencl.Context`.
         :arg list_names_and_dtypes: a list of ``(name, dtype)`` tuples
@@ -844,7 +934,8 @@ class ListOfListsBuilder:
         self.context = context
         self.devices = devices
 
-        self.list_names_and_dtypes = list_names_and_dtypes
+        self.list_names_and_dtypes = tuple(
+            (name, np.dtype(dtype)) for name, dtype in list_names_and_dtypes)
         self.generate_template = generate_template
 
         from pyopencl.tools import parse_arg_list
@@ -852,12 +943,13 @@ class ListOfListsBuilder:
 
         # To match with the signature of the user-supplied generate(), arguments
         # can't appear to have offsets.
-        arg_decls_no_offset = []
-        from pyopencl.tools import VectorArg
+
+        arg_decls_no_offset: list[DtypedArgument] = []
         for arg in self.arg_decls:
             if isinstance(arg, VectorArg) and arg.with_offset:
                 arg = VectorArg(arg.dtype, arg.name)
             arg_decls_no_offset.append(arg)
+
         self.arg_decls_no_offset = arg_decls_no_offset
 
         self.count_sharing = count_sharing
@@ -871,13 +963,13 @@ class ListOfListsBuilder:
         self.complex_kernel = complex_kernel
 
         if eliminate_empty_output_lists is True:
-            eliminate_empty_output_lists = \
-                    [name for name, _ in self.list_names_and_dtypes]
+            eliminate_empty_output_lists = (
+                [name for name, _ in self.list_names_and_dtypes])
 
         if eliminate_empty_output_lists is False:
             eliminate_empty_output_lists = []
 
-        self.eliminate_empty_output_lists = eliminate_empty_output_lists
+        self.eliminate_empty_output_lists = tuple(eliminate_empty_output_lists)
         for list_name in self.eliminate_empty_output_lists:
             if not any(list_name == name for name, _ in self.list_names_and_dtypes):
                 raise ValueError(
@@ -887,7 +979,9 @@ class ListOfListsBuilder:
     # {{{ kernel generators
 
     @memoize_method
-    def get_scan_kernel(self, index_dtype):
+    def get_scan_kernel(
+            self, index_dtype: np.dtype[np.integer[Any]]
+        ) -> GenericScanKernelBase:
         return GenericScanKernel(
                 self.context, index_dtype,
                 arguments="__global %s *ary" % dtype_to_ctype(index_dtype),
@@ -897,7 +991,9 @@ class ListOfListsBuilder:
                 devices=self.devices)
 
     @memoize_method
-    def get_compress_kernel(self, index_dtype):
+    def get_compress_kernel(
+            self, index_dtype: np.dtype[np.integer[Any]]
+        ) -> GenericScanKernelBase:
         arguments = """
             __global ${index_t} *count,
             __global ${index_t} *compressed_counts,
@@ -922,28 +1018,27 @@ class ListOfListsBuilder:
                     """,
                 devices=self.devices)
 
-    def do_not_vectorize(self):
+    def do_not_vectorize(self) -> bool:
         return (self.complex_kernel
-                and any(dev.type & cl.device_type.CPU
-                    for dev in self.context.devices))
+                and any(dev.type & cl.device_type.CPU for dev in self.devices))
 
     @memoize_method
-    def get_count_kernel(self, index_dtype):
+    def get_count_kernel(
+            self, index_dtype: np.dtype[np.integer[Any]]
+        ) -> cl.Kernel:
         index_ctype = dtype_to_ctype(index_dtype)
-        from pyopencl.tools import OtherArg, VectorArg
         kernel_list_args = [
                 VectorArg(index_dtype, "plb_%s_count" % name)
-                for name, dtype in self.list_names_and_dtypes
+                for name, _dtype in self.list_names_and_dtypes
                 if name not in self.count_sharing]
 
-        user_list_args = []
+        user_list_args: list[OtherArg] = []
         for name, _dtype in self.list_names_and_dtypes:
             if name in self.count_sharing:
                 continue
 
-            name = "plb_loc_%s_count" % name
-            user_list_args.append(OtherArg("{} *{}".format(
-                index_ctype, name), name))
+            name = f"plb_loc_{name}_count"
+            user_list_args.append(OtherArg(f"{index_ctype} *{name}", name))
 
         kernel_name = self.name_prefix+"_count"
 
@@ -951,8 +1046,7 @@ class ListOfListsBuilder:
         src = _LIST_BUILDER_TEMPLATE.render(
                 is_count_stage=True,
                 kernel_name=kernel_name,
-                double_support=all(has_double_support(dev) for dev in
-                    self.context.devices),
+                double_support=all(has_double_support(dev) for dev in self.devices),
                 debug=self.debug,
                 do_not_vectorize=self.do_not_vectorize(),
                 eliminate_empty_output_lists=self.eliminate_empty_output_lists,
@@ -989,22 +1083,23 @@ class ListOfListsBuilder:
         return knl
 
     @memoize_method
-    def get_write_kernel(self, index_dtype):
+    def get_write_kernel(
+            self, index_dtype: np.dtype[np.integer[Any]]
+        ) -> cl.Kernel:
         index_ctype = dtype_to_ctype(index_dtype)
-        from pyopencl.tools import OtherArg, VectorArg
-        kernel_list_args = []
+        kernel_list_args: list[VectorArg] = []
         kernel_list_arg_values = ""
-        user_list_args = []
+        user_list_args: list[VectorArg | OtherArg] = []
 
         for name, dtype in self.list_names_and_dtypes:
-            list_name = "plb_%s_list" % name
+            list_name = f"plb_{name}_list"
             list_arg = VectorArg(dtype, list_name)
 
             kernel_list_args.append(list_arg)
             user_list_args.append(list_arg)
 
             if name in self.count_sharing:
-                kernel_list_arg_values += "%s, " % list_name
+                kernel_list_arg_values += f"{list_name}, "
                 continue
 
             kernel_list_args.append(
@@ -1014,9 +1109,8 @@ class ListOfListsBuilder:
                 kernel_list_args.append(
                     VectorArg(index_dtype, "%s_compressed_indices" % name))
 
-            index_name = "plb_%s_index" % name
-            user_list_args.append(OtherArg("{} *{}".format(
-                index_ctype, index_name), index_name))
+            index_name = f"plb_{name}_index"
+            user_list_args.append(OtherArg(f"{index_ctype} *{index_name}", index_name))
 
             kernel_list_arg_values += f"{list_name}, &{index_name}, "
 
@@ -1026,8 +1120,7 @@ class ListOfListsBuilder:
         src = _LIST_BUILDER_TEMPLATE.render(
                 is_count_stage=False,
                 kernel_name=kernel_name,
-                double_support=all(has_double_support(dev) for dev in
-                    self.context.devices),
+                double_support=all(has_double_support(dev) for dev in self.devices),
                 debug=self.debug,
                 do_not_vectorize=self.do_not_vectorize(),
                 eliminate_empty_output_lists=self.eliminate_empty_output_lists,
@@ -1057,7 +1150,7 @@ class ListOfListsBuilder:
 
         from pyopencl.tools import get_arg_list_scalar_arg_dtypes
         knl.set_scalar_arg_dtypes([
-            *get_arg_list_scalar_arg_dtypes(kernel_list_args + self.arg_decls),
+            *get_arg_list_scalar_arg_dtypes((*kernel_list_args, *self.arg_decls)),
             index_dtype])
 
         return knl
@@ -1066,7 +1159,14 @@ class ListOfListsBuilder:
 
     # {{{ driver
 
-    def __call__(self, queue, n_objects, *args, **kwargs):
+    def __call__(self,
+                 queue: cl.CommandQueue,
+                 n_objects: int,
+                 *args: Any,
+                 allocator: Allocator | None = None,
+                 omit_lists: Sequence[str] | None = None,
+                 wait_for: cl.WaitList | None = None,
+                 **kwargs: Any) -> tuple[dict[str, BuiltList], cl.Event]:
         """
         :arg args: arguments corresponding to ``arg_decls`` in the constructor.
             Array-like arguments must be either 1D :class:`pyopencl.array.Array`
@@ -1111,24 +1211,23 @@ class ListOfListsBuilder:
 
             Added omit_lists.
         """
-        if n_objects >= int(np.iinfo(np.int32).max):
-            index_dtype = np.int64
-        else:
-            index_dtype = np.int32
-        index_dtype = np.dtype(index_dtype)
-
-        allocator = kwargs.pop("allocator", None)
-        omit_lists = kwargs.pop("omit_lists", [])
-        wait_for = kwargs.pop("wait_for", None)
         if kwargs:
-            raise TypeError("invalid keyword arguments: '%s'" % ", ".join(kwargs))
+            raise TypeError(f"invalid keyword arguments: {set(kwargs)}")
+
+        if n_objects >= int(np.iinfo(np.int32).max):
+            index_dtype = np.dtype(np.int64)
+        else:
+            index_dtype = np.dtype(np.int32)
+
+        if omit_lists is None:
+            omit_lists = []
 
         for oml in omit_lists:
             if not any(oml == name for name, _ in self.list_names_and_dtypes):
                 raise ValueError("invalid list name '%s' in omit_lists")
 
-        result = {}
-        count_list_args = []
+        result: dict[str, BuiltList] = {}
+        count_list_args: list[KernelArg | None] = []
 
         if wait_for is None:
             wait_for = []
@@ -1142,19 +1241,17 @@ class ListOfListsBuilder:
         if self.eliminate_empty_output_lists:
             compress_kernel = self.get_compress_kernel(index_dtype)
 
-        data_args = []
+        data_args: list[KernelArg] = []
         for i, (arg_descr, arg_val) in enumerate(
                 zip(self.arg_decls, args, strict=True)):
-            from pyopencl.tools import VectorArg
             if isinstance(arg_descr, VectorArg):
-                from pyopencl import MemoryObject
                 if arg_val is None:
                     data_args.append(arg_val)
                     if arg_descr.with_offset:
                         data_args.append(0)
                     continue
 
-                if isinstance(arg_val, MemoryObject):
+                if isinstance(arg_val, cl.MemoryObject):
                     data_args.append(arg_val)
                     if arg_descr.with_offset:
                         raise ValueError(
@@ -1173,7 +1270,6 @@ class ListOfListsBuilder:
                 data_args.append(arg_val)
 
         del args
-        data_args = tuple(data_args)
 
         # {{{ allocate memory for counts
 
@@ -1212,10 +1308,10 @@ class ListOfListsBuilder:
             gsize, lsize = _splay(queue.device, n_objects)
 
         count_event = count_kernel(queue, gsize, lsize,
-                *(tuple(count_list_args) + data_args + (n_objects,)),
+                *count_list_args, *data_args, n_objects,
                 wait_for=wait_for)
 
-        compress_events = {}
+        compress_events: dict[str, cl.Event] = {}
         for name, _dtype in self.list_names_and_dtypes:
             if name in omit_lists:
                 continue
@@ -1247,7 +1343,7 @@ class ListOfListsBuilder:
 
         # {{{ run scans
 
-        scan_events = []
+        scan_events: list[cl.Event] = []
 
         for name, _dtype in self.list_names_and_dtypes:
             if name in self.count_sharing:
@@ -1266,14 +1362,15 @@ class ListOfListsBuilder:
                 info_record.starts[-1] = 0
 
             starts_ary = info_record.starts
+            assert isinstance(starts_ary, cl_array.Array)
+
             if name in self.eliminate_empty_output_lists:
                 evt = scan_kernel(
                         starts_ary,
                         size=info_record.num_nonempty_lists,
                         wait_for=starts_ary.events)
             else:
-                evt = scan_kernel(starts_ary, wait_for=[count_event],
-                        size=n_objects)
+                evt = scan_kernel(starts_ary, wait_for=[count_event], size=n_objects)
 
             starts_ary.setitem(0, 0, queue=queue, wait_for=[evt])
             scan_events.extend(starts_ary.events)
@@ -1285,7 +1382,7 @@ class ListOfListsBuilder:
 
         # {{{ deal with count-sharing lists, allocate memory for lists
 
-        write_list_args = []
+        write_list_args: list[KernelArg | None] = []
         for name, dtype in self.list_names_and_dtypes:
             if name in omit_lists:
                 write_list_args.append(None)
@@ -1319,7 +1416,7 @@ class ListOfListsBuilder:
         # }}}
 
         evt = write_kernel(queue, gsize, lsize,
-                *(tuple(write_list_args) + data_args + (n_objects,)),
+                *write_list_args, *data_args, n_objects,
                 wait_for=scan_events)
 
         return result, evt
@@ -1338,7 +1435,7 @@ class _KernelInfo:
     bound_propagation_scan: GenericScanKernel
 
 
-def _make_cl_int_literal(value, dtype):
+def _make_cl_int_literal(value: int | str, dtype: np.dtype[Any]) -> str:
     iinfo = np.iinfo(dtype)
     result = str(int(value))
     if dtype.itemsize == 8:
@@ -1372,13 +1469,16 @@ class KeyValueSorter:
     .. versionadded:: 2013.1
     """
 
-    def __init__(self, context):
+    context: cl.Context
+
+    def __init__(self, context: cl.Context) -> None:
         self.context = context
 
     @memoize_method
-    def get_kernels(self, key_dtype, value_dtype, starts_dtype):
-        from pyopencl.tools import ScalarArg, VectorArg
-
+    def get_kernels(self,
+                    key_dtype: np.dtype[Any],
+                    value_dtype: np.dtype[Any],
+                    starts_dtype: np.dtype[np.integer[Any]]) -> _KernelInfo:
         by_target_sorter = RadixSort(
                 self.context, [
                     VectorArg(value_dtype, "values"),
@@ -1425,13 +1525,18 @@ class KeyValueSorter:
                 start_finder=start_finder,
                 bound_propagation_scan=bound_propagation_scan)
 
-    def __call__(self, queue, keys, values, nkeys,
-            starts_dtype, allocator=None, wait_for=None):
+    def __call__(self,
+                 queue: cl.CommandQueue,
+                 keys: Array,
+                 values: Array,
+                 nkeys: int,
+                 starts_dtype: np.dtype[np.integer[Any]],
+                 allocator: Allocator | None = None,
+                 wait_for: cl.WaitList | None = None) -> tuple[Array, Array, cl.Event]:
         if allocator is None:
             allocator = values.allocator
 
-        knl_info = self.get_kernels(keys.dtype, values.dtype,
-                starts_dtype)
+        knl_info = self.get_kernels(keys.dtype, values.dtype, starts_dtype)
 
         (values_sorted_by_key, keys_sorted_by_key), evt = knl_info.by_target_sorter(
                 values, keys, queue=queue, wait_for=wait_for)
