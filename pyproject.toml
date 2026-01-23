@@ -39,7 +39,7 @@ dependencies = [
     "platformdirs>=2.2",
     "pytools>=2025.1.6",
 
-    # for Buffer
+    # for Buffer, override
     "typing_extensions>=4.6",
 ]
 
