@@ -42,6 +42,7 @@ from typing import (
     TypeAlias,
     TypeVar,
     cast,
+    overload,
 )
 from warnings import warn
 
@@ -3462,8 +3463,29 @@ subset_max.__doc__ = """.. versionadded:: 2011.1"""
 
 # {{{ scans
 
-def cumsum(a, output_dtype=None, queue: cl.CommandQueue | None = None,
-        wait_for: cl.WaitList = None, return_event=False):
+@overload
+def cumsum(a: Array,
+           output_dtype: DTypeLike | None = None,
+           queue: cl.CommandQueue | None = None,
+           wait_for: cl.WaitList | None = None,
+           *,
+           return_event: Literal[True]) -> tuple[cl.Event, Array]: ...
+
+@overload
+def cumsum(a: Array,
+           output_dtype: DTypeLike | None = None,
+           queue: cl.CommandQueue | None = None,
+           wait_for: cl.WaitList | None = None,
+           *,
+           return_event: Literal[False] = False) -> Array: ...
+
+
+def cumsum(a: Array,
+           output_dtype: DTypeLike | None = None,
+           queue: cl.CommandQueue | None = None,
+           wait_for: cl.WaitList | None = None,
+           *,
+           return_event: bool = False) -> Array | tuple[cl.Event, Array]:
     # undocumented for now
 
     """
@@ -3478,11 +3500,12 @@ def cumsum(a, output_dtype=None, queue: cl.CommandQueue | None = None,
     if wait_for is None:
         wait_for = []
 
+    assert a.context is not None
     result = a._new_like_me(output_dtype)
 
     from pyopencl.scan import get_cumsum_kernel
     krnl = get_cumsum_kernel(a.context, a.dtype, output_dtype)
-    evt = krnl(a, result, queue=queue, wait_for=wait_for + a.events)
+    evt = krnl(a, result, queue=queue, wait_for=(*wait_for, *a.events))
     result.add_event(evt)
 
     if return_event:
