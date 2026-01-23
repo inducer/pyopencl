@@ -1653,7 +1653,6 @@ class _NumpyTypesKeyBuilder(KeyBuilderBase):  # pyright: ignore[reportUnusedClas
 
 __all__ = [
     "AllocatorBase",
-    "AllocatorBase",
     "Argument",
     "DeferredAllocator",
     "DtypedArgument",

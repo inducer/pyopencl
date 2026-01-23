@@ -1893,7 +1893,6 @@ __all__ = [
     "Program",
     "RuntimeError",
     "SVMAllocation",
-    "SVMAllocation",
     "SVMMap",
     "SVMPointer",
     "Sampler",
