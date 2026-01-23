@@ -60,7 +60,7 @@ Prefix Sums ("scan")
 
 .. |scan_extra_args| replace:: a list of tuples *(name, value)* specifying
     extra arguments to pass to the scan procedure. For version 2013.1,
-    *value* must be a of a :mod:`numpy` sized scalar type. As of version 2013.2,
+    *value* must be a :mod:`numpy` sized scalar type. As of version 2013.2,
     *value* may also be a :class:`pyopencl.array.Array`.
 .. |preamble| replace:: A snippet of C that is inserted into the compiled kernel
     before the actual kernel function. May be used for, e.g. type definitions
