@@ -193,6 +193,8 @@ Predicated copies ("partition", "unique", ...)
 
 .. module:: pyopencl.algorithm
 
+.. autoclass:: BuiltList
+
 .. autofunction:: copy_if
 
 .. autofunction:: remove_if
