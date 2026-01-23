@@ -29,8 +29,11 @@ import logging
 import os
 import re
 import sys
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+from typing_extensions import Buffer, override
 
 import pyopencl._cl as _cl
 
@@ -39,13 +42,14 @@ logger = logging.getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Hashable, Sequence
 
+    from pytools import Hash
 
 new_hash = hashlib.md5
 
 
-def _erase_dir(directory: str):
+def _erase_dir(directory: str) -> None:
     from os import listdir, rmdir, unlink
     from os.path import join
 
@@ -55,7 +59,7 @@ def _erase_dir(directory: str):
     rmdir(directory)
 
 
-def update_checksum(checksum, obj):
+def update_checksum(checksum: Hash, obj: str | Buffer) -> None:
     if isinstance(obj, str):
         checksum.update(obj.encode("utf8"))
     else:
@@ -64,28 +68,41 @@ def update_checksum(checksum, obj):
 
 # {{{ cleanup
 
-class CleanupBase:
-    pass
+class CleanupBase(ABC):
+    @abstractmethod
+    def clean_up(self) -> None:
+        pass
+
+    @abstractmethod
+    def error_clean_up(self) -> None:
+        pass
 
 
 class CleanupManager(CleanupBase):
-    def __init__(self):
+    cleanups: list[CleanupBase]
+
+    def __init__(self) -> None:
         self.cleanups = []
 
-    def register(self, c):
+    def register(self, c: CleanupBase) -> None:
         self.cleanups.insert(0, c)
 
-    def clean_up(self):
+    @override
+    def clean_up(self) -> None:
         for c in self.cleanups:
             c.clean_up()
 
-    def error_clean_up(self):
+    @override
+    def error_clean_up(self) -> None:
         for c in self.cleanups:
             c.error_clean_up()
 
 
 class CacheLockManager(CleanupBase):
-    def __init__(self, cleanup_m, cache_dir):
+    lock_file: str
+    fd: int
+
+    def __init__(self, cleanup_m: CleanupManager, cache_dir: str | None) -> None:
         if cache_dir is not None:
             self.lock_file = os.path.join(cache_dir, "lock")
 
@@ -130,38 +147,42 @@ class CacheLockManager(CleanupBase):
 
             cleanup_m.register(self)
 
-    def clean_up(self):
+    @override
+    def clean_up(self) -> None:
         os.close(self.fd)
         os.unlink(self.lock_file)
 
-    def error_clean_up(self):
+    @override
+    def error_clean_up(self) -> None:
         pass
 
 
 class ModuleCacheDirManager(CleanupBase):
-    def __init__(self, cleanup_m, path):
-        from os import mkdir
+    path: str
+    existed: bool
 
+    def __init__(self, cleanup_m: CleanupManager, path: str) -> None:
         self.path = path
         try:
-            mkdir(self.path)
+            os.mkdir(self.path)
             cleanup_m.register(self)
             self.existed = False
         except OSError:
             self.existed = True
 
-    def sub(self, n):
-        from os.path import join
-        return join(self.path, n)
+    def sub(self, n: str) -> str:
+        return os.path.join(self.path, n)
 
-    def reset(self):
+    def reset(self) -> None:
         _erase_dir(self.path)
         os.mkdir(self.path)
 
-    def clean_up(self):
+    @override
+    def clean_up(self) -> None:
         pass
 
-    def error_clean_up(self):
+    @override
+    def error_clean_up(self) -> None:
         _erase_dir(self.path)
 
 # }}}
@@ -169,11 +190,12 @@ class ModuleCacheDirManager(CleanupBase):
 
 # {{{ #include dependency handling
 
-C_INCLUDE_RE = re.compile(rb'^\s*\#\s*include\s+[<"](.+)[">]\s*$',
-        re.MULTILINE)
+C_INCLUDE_RE = re.compile(rb'^\s*\#\s*include\s+[<"](.+)[">]\s*$', re.MULTILINE)
 
 
-def get_dependencies(src: bytes, include_path: Sequence[str]):
+def get_dependencies(
+        src: bytes, include_path: Sequence[str]
+    ) -> Sequence[tuple[str, float, str]]:
     result: dict[str, tuple[float, str] | None] = {}
 
     from os.path import join, realpath
@@ -227,7 +249,7 @@ def get_dependencies(src: bytes, include_path: Sequence[str]):
     return result_list
 
 
-def get_file_md5sum(fname: str):
+def get_file_md5sum(fname: str) -> str:
     checksum = new_hash()
     inf = open(fname)
     try:
@@ -238,7 +260,7 @@ def get_file_md5sum(fname: str):
     return checksum.hexdigest()
 
 
-def check_dependencies(deps):
+def check_dependencies(deps: Sequence[tuple[str, float, str]]) -> bool:
     for name, date, md5sum in deps:
         try:
             possibly_updated = os.stat(name).st_mtime != date
@@ -255,7 +277,7 @@ def check_dependencies(deps):
 
 # {{{ key generation
 
-def get_device_cache_id(device):
+def get_device_cache_id(device: _cl.Device) -> Hashable:
     from pyopencl.version import VERSION
     platform = device.platform
     return (VERSION,
@@ -263,7 +285,7 @@ def get_device_cache_id(device):
             device.vendor, device.name, device.version, device.driver_version)
 
 
-def get_cache_key(device, options_bytes, src):
+def get_cache_key(device: _cl.Device, options_bytes: bytes, src: bytes | str) -> str:
     checksum = new_hash()
     update_checksum(checksum, src)
     update_checksum(checksum, options_bytes)
@@ -273,13 +295,12 @@ def get_cache_key(device, options_bytes, src):
 # }}}
 
 
-def retrieve_from_cache(cache_dir, cache_key):
+def retrieve_from_cache(cache_dir: str, cache_key: str) -> tuple[bytes, Any] | None:
     class _InvalidInfoFileError(RuntimeError):
         pass
 
-    from os.path import isdir, join
-    module_cache_dir = join(cache_dir, cache_key)
-    if not isdir(module_cache_dir):
+    module_cache_dir = os.path.join(cache_dir, cache_key)
+    if not os.path.isdir(module_cache_dir):
         return None
 
     cleanup_m = CleanupManager()
@@ -345,7 +366,7 @@ def retrieve_from_cache(cache_dir, cache_key):
 
 @dataclass(frozen=True)
 class _SourceInfo:
-    dependencies: list[tuple[str, float, str]]
+    dependencies: Sequence[tuple[str, float, str]]
     log: str | None
 
 
@@ -382,9 +403,10 @@ def _create_built_program_from_source_cached(
 
     cache_keys = [get_cache_key(device, options_bytes, src) for device in devices]
 
-    binaries = []
+    # FIXME(pyright): `binaries` can contain None, but it's then filled in later
+    binaries: list[bytes] = []
     to_be_built_indices: list[int] = []
-    logs = []
+    logs: list[Any] = []
     for i, (_device, cache_key) in enumerate(zip(devices, cache_keys, strict=True)):
         cache_result = retrieve_from_cache(cache_dir, cache_key)
 
@@ -509,9 +531,10 @@ def create_built_program_from_source_cached(
             cache_dir: str | Literal[False] | None = None,
             include_path: Sequence[str] | None = None
         ):
+    was_cached = False
+    already_built = False
+
     try:
-        was_cached = False
-        already_built = False
         if cache_dir is not False:
             prg, already_built, was_cached = \
                     _create_built_program_from_source_cached(
