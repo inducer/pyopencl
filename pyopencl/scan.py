@@ -29,7 +29,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
-from mako.template import Template
 from typing_extensions import override
 
 from pytools.persistent_dict import WriteOncePersistentDict
@@ -53,9 +52,12 @@ from pyopencl.tools import (
 if TYPE_CHECKING:
     from collections.abc import Hashable, Sequence
 
+    import mako
     from numpy.typing import DTypeLike
 
     from pyopencl.typing import Allocator, KernelArg
+else:
+    import pyopencl._mymako as mako
 
 logger = logging.getLogger(__name__)
 
@@ -853,7 +855,7 @@ _IGNORED_WORDS = set("""
         """.split())
 
 
-def _make_template(s: str) -> Template:
+def _make_template(s: str) -> mako.template.Template:
     import re
     leftovers: set[str] = set()
 
@@ -876,7 +878,7 @@ def _make_template(s: str) -> Template:
         warn("Leftover words in identifier prefixing: " + " ".join(leftovers),
              stacklevel=3)
 
-    return Template(s, strict_undefined=True)
+    return mako.template.Template(s, strict_undefined=True)
 
 
 @dataclass(frozen=True)

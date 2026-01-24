@@ -38,15 +38,19 @@ OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from functools import reduce
 from operator import mul
-from typing import ClassVar
-
-from mako.template import Template
+from typing import TYPE_CHECKING, ClassVar
 
 from pytools import memoize_method
 
 import pyopencl as cl
 import pyopencl.bitonic_sort_templates as _tmpl
 from pyopencl.tools import dtype_to_ctype
+
+
+if TYPE_CHECKING:
+    import mako
+else:
+    import pyopencl._mymako as mako
 
 
 def _is_power_of_2(n):
@@ -149,14 +153,14 @@ class BitonicSort:
 
     @memoize_method
     def get_program(self, letter, argsort, params):
-        defstpl = Template(_tmpl.defines)
+        defstpl = mako.template.Template(_tmpl.defines)
 
         defs = defstpl.render(
                 NS="\\", argsort=argsort, inc=params[0], dir=params[1],
                 dtype=params[2], idxtype=params[3],
                 dsize=params[4], nsize=params[5])
 
-        kid = Template(self.kernels_srcs[letter]).render(argsort=argsort)
+        kid = mako.template.Template(self.kernels_srcs[letter]).render(argsort=argsort)
 
         prg = cl.Program(self.context, defs + kid).build()
         return prg

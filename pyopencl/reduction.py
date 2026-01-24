@@ -48,7 +48,11 @@ from pyopencl.tools import (
 
 
 if TYPE_CHECKING:
+    import mako
+
     from pyopencl.typing import Allocator
+else:
+    import pyopencl._mymako as mako
 
 
 # {{{ kernel source
@@ -187,15 +191,13 @@ def _get_reduction_source(
 
     # }}}
 
-    from mako.template import Template
-
     from pyopencl.characterize import has_double_support
 
     arguments = ", ".join(arg.declarator() for arg in parsed_args)
     if parsed_args:
         arguments += ", "
 
-    src = str(Template(KERNEL).render(
+    src = str(mako.template.Template(KERNEL).render(
         out_type=out_type,
         group_size=group_size,
         arguments=arguments,
