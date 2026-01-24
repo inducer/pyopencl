@@ -164,9 +164,11 @@ from pyopencl.compyte.dtypes import (
 if TYPE_CHECKING:
     from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
 
+    import mako
     import pytest
-    from mako.template import Template
     from numpy.typing import DTypeLike, NDArray
+else:
+    import pyopencl._mymako as mako
 
 # Do not add a pyopencl import here: This will add an import cycle.
 
@@ -1324,12 +1326,11 @@ class _PrintfTextTemplate(_TextTemplate):
 @dataclass(frozen=True)
 class _MakoTextTemplate(_TextTemplate):
     txt: str
-    template: Template = field(init=False)
+    template: mako.template.Template = field(init=False)
 
     def __post_init__(self) -> None:
-        from mako.template import Template
-
-        object.__setattr__(self, "template", Template(self.txt, strict_undefined=True))
+        object.__setattr__(self, "template",
+                           mako.template.Template(self.txt, strict_undefined=True))
 
     @override
     def render(self, context: dict[str, Any]) -> str:

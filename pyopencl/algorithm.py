@@ -34,7 +34,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from mako.template import Template
 
 from pytools import memoize, memoize_method
 
@@ -55,11 +54,14 @@ from pyopencl.tools import (
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    import mako
     from numpy.typing import DTypeLike
 
     from pyopencl.array import Array
     from pyopencl.elementwise import ElementwiseKernel
     from pyopencl.typing import Allocator, KernelArg
+else:
+    import pyopencl._mymako as mako
 
 
 # {{{ "extra args" handling utility
@@ -361,7 +363,7 @@ def _make_sort_scan_type(
 
 # {{{ types, helpers preamble
 
-RADIX_SORT_PREAMBLE_TPL = Template(r"""//CL//
+RADIX_SORT_PREAMBLE_TPL = mako.template.Template(r"""//CL//
     typedef ${scan_ctype} scan_t;
     typedef ${key_ctype} key_t;
     typedef ${index_ctype} index_t;
@@ -386,7 +388,7 @@ RADIX_SORT_PREAMBLE_TPL = Template(r"""//CL//
 
 # {{{ scan helpers
 
-RADIX_SORT_SCAN_PREAMBLE_TPL = Template(r"""//CL//
+RADIX_SORT_SCAN_PREAMBLE_TPL = mako.template.Template(r"""//CL//
     scan_t scan_t_neutral()
     {
         scan_t result;
@@ -427,7 +429,7 @@ RADIX_SORT_SCAN_PREAMBLE_TPL = Template(r"""//CL//
     }
 """, strict_undefined=True)
 
-RADIX_SORT_OUTPUT_STMT_TPL = Template(r"""//CL//
+RADIX_SORT_OUTPUT_STMT_TPL = mako.template.Template(r"""//CL//
     {
         key_t key = ${key_expr};
         key_t my_bin_nr = BIN_NR(key);
@@ -653,7 +655,7 @@ class RadixSort:
 
 # {{{ kernel template
 
-_LIST_BUILDER_TEMPLATE = Template("""//CL//
+_LIST_BUILDER_TEMPLATE = mako.template.Template("""//CL//
 % if double_support:
     #if __OPENCL_C_VERSION__ < 120
     #pragma OPENCL EXTENSION cl_khr_fp64: enable
@@ -1001,7 +1003,7 @@ class ListOfListsBuilder:
             __global ${index_t} *compressed_indices,
             __global ${index_t} *num_non_empty_list
         """
-        arguments = Template(arguments)
+        arguments = mako.template.Template(arguments)
 
         return GenericScanKernel(
                 self.context, index_dtype,
