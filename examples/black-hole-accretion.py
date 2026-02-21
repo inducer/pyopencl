@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # TrouNoir model using PyOpenCL or PyCUDA
 #
 # CC BY-NC-SA 2019 : <emmanuel.quemener@ens-lyon.fr>
@@ -43,8 +41,7 @@ import pyopencl as cl
 
 
 def DictionariesAPI():
-    PhysicsList = {"Einstein": 0, "Newton": 1}
-    return PhysicsList
+    return {"Einstein": 0, "Newton": 1}
 
 
 #
@@ -779,7 +776,7 @@ __kernel void Original(__global float *zImage,__global float *fImage,
 
 
 def KernelCodeCuda():
-    BlobCUDA = """
+    return """
 
 #define PI (float)3.14159265359
 #define nbr 256
@@ -1493,7 +1490,6 @@ __global__ void Original(float *zImage,float *fImage,
 
 }
 """
-    return BlobCUDA
 
 
 # def ImageOutput(sigma,prefix,Colors):
@@ -1588,7 +1584,7 @@ def BlackHoleCL(zImage, fImage, InputCL):
     # Je recupere les flag possibles pour les buffers
     mf = cl.mem_flags
 
-    if Method == "TrajectoPixel" or Method == "TrajectoCircle":
+    if Method in {"TrajectoPixel", "TrajectoCircle"}:
         TrajectoriesCL = cl.Buffer(
             ctx, mf.WRITE_ONLY | mf.COPY_HOST_PTR, hostbuf=Trajectories
         )
@@ -1706,7 +1702,7 @@ def BlackHoleCL(zImage, fImage, InputCL):
 
     cl.enqueue_copy(queue, zImage, zImageCL).wait()
     cl.enqueue_copy(queue, fImage, fImageCL).wait()
-    if Method == "TrajectoPixel" or Method == "TrajectoCircle":
+    if Method in {"TrajectoPixel", "TrajectoCircle"}:
         cl.enqueue_copy(queue, Trajectories, TrajectoriesCL).wait()
         cl.enqueue_copy(queue, IdLast, IdLastCL).wait()
     elapsed = time.time() - start_time
@@ -1738,7 +1734,7 @@ def BlackHoleCL(zImage, fImage, InputCL):
     zImageCL.release()
     fImageCL.release()
 
-    if Method == "TrajectoPixel" or Method == "TrajectoCircle":
+    if Method in {"TrajectoPixel", "TrajectoCircle"}:
         if not NoImage:
             AngleStep = 4 * numpy.pi / TrackPoints
             Angles = numpy.arange(0.0, 4 * numpy.pi, AngleStep)
@@ -1936,7 +1932,7 @@ def BlackHoleCUDA(zImage, fImage, InputCL):
 
     cuda.memcpy_dtoh(zImage, zImageCU)
     cuda.memcpy_dtoh(fImage, fImageCU)
-    if Method == "TrajectoPixel" or Method == "TrajectoCircle":
+    if Method in {"TrajectoPixel", "TrajectoCircle"}:
         cuda.memcpy_dtoh(Trajectories, TrajectoriesCU)
     elapsed = time.time() - start_time
     print("\nCompute Time : %f" % compute)
@@ -1969,7 +1965,7 @@ def BlackHoleCUDA(zImage, fImage, InputCL):
 
     Context.detach()
 
-    if Method == "TrajectoPixel" or Method == "TrajectoCircle":
+    if Method in {"TrajectoPixel", "TrajectoCircle"}:
         if not NoImage:
             AngleStep = 4 * numpy.pi / TrackPoints
             Angles = numpy.arange(0.0, 4 * numpy.pi, AngleStep)
@@ -1997,7 +1993,6 @@ if __name__ == "__main__":
     Mass = 1.0
     # Internal Radius 3 times de Schwarzschild Radius
     InternalRadius = 6.0 * Mass
-    #
     ExternalRadius = 12.0
     #
     # Angle with normal to disc 10 degrees

@@ -162,8 +162,7 @@ class BitonicSort:
 
         kid = mako.template.Template(self.kernels_srcs[letter]).render(argsort=argsort)
 
-        prg = cl.Program(self.context, defs + kid).build()
-        return prg
+        return cl.Program(self.context, defs + kid).build()
 
     @memoize_method
     def sort_b_prepare_wl(self, argsort, key_dtype, idx_dtype, shape, axis):

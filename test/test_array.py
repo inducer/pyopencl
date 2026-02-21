@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 __copyright__ = "Copyright (C) 2009 Andreas Kloeckner"
 
 __license__ = """
@@ -34,8 +32,8 @@ import pytest
 import pyopencl as cl
 import pyopencl.array as cl_array
 import pyopencl.characterize as cl_characterize
-import pyopencl.cltypes as cltypes
 import pyopencl.tools as cl_tools
+from pyopencl import cltypes
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 from pyopencl.clrandom import PhiloxGenerator, ThreefryGenerator
 from pyopencl.tools import (
@@ -934,7 +932,7 @@ def test_random_int_in_range(ctx_factory: cl.CtxFactory,
 def test_numpy_integer_shape(ctx_factory: cl.CtxFactory):
     try:
         list(np.int32(17))
-    except Exception:
+    except Exception:  # noqa: S110
         pass
     else:
         from pytest import skip

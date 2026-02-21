@@ -35,7 +35,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Buffer, override
 
-import pyopencl._cl as _cl
+from pyopencl import _cl
 
 
 logger = logging.getLogger(__name__)
@@ -210,7 +210,7 @@ def get_dependencies(
 
                 if included_file_name not in result:
                     try:
-                        src_file = open(included_file_name, "rb")
+                        src_file = open(included_file_name, "rb")  # noqa: SIM115
                     except OSError:
                         continue
 
@@ -251,12 +251,8 @@ def get_dependencies(
 
 def get_file_md5sum(fname: str) -> str:
     checksum = new_hash()
-    inf = open(fname)
-    try:
-        contents = inf.read()
-    finally:
-        inf.close()
-    update_checksum(checksum, contents)
+    with open(fname) as inf:
+        update_checksum(checksum, inf.read())
     return checksum.hexdigest()
 
 
@@ -318,7 +314,7 @@ def retrieve_from_cache(cache_dir: str, cache_key: str) -> tuple[bytes, Any] | N
                 from pickle import load
 
                 try:
-                    info_file = open(info_path, "rb")
+                    info_file = open(info_path, "rb")  # noqa: SIM115
                 except OSError as err:
                     raise _InvalidInfoFileError() from err
 
@@ -342,11 +338,8 @@ def retrieve_from_cache(cache_dir: str, cache_key: str) -> tuple[bytes, Any] | N
 
             # {{{ load binary
 
-            binary_file = open(binary_path, "rb")
-            try:
+            with open(binary_path, "rb") as binary_file:
                 binary = binary_file.read()
-            finally:
-                binary_file.close()
 
             # }}}
 
@@ -506,11 +499,10 @@ def _create_built_program_from_source_cached(
                         outf.write(binary)
 
                     from pickle import dump
-                    info_file = open(info_path, "wb")
-                    dump(_SourceInfo(
-                        dependencies=get_dependencies(src, include_path or []),
-                        log=logs[i]), info_file)
-                    info_file.close()
+                    with open(info_path, "wb") as info_file:
+                        dump(_SourceInfo(
+                            dependencies=get_dependencies(src, include_path or []),
+                            log=logs[i]), info_file)
 
             except Exception:
                 cleanup_m.error_clean_up()

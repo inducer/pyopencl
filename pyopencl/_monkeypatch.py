@@ -37,7 +37,7 @@ from warnings import warn
 
 import numpy as np
 
-import pyopencl._cl as _cl
+from pyopencl import _cl
 
 
 if TYPE_CHECKING:
@@ -1063,7 +1063,7 @@ def add_get_info(
             info_class: type[InfoT],
             cacheable_attrs: Collection[str] = (),
         ) -> None:
-    for info_name, _info_value in info_class.__dict__.items():
+    for info_name in info_class.__dict__:
         if info_name == "to_string" or info_name.startswith("_"):
             continue
 

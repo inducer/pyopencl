@@ -135,16 +135,16 @@ class FortranExpressionParser(ExpressionParserBase):
     # FIXME double/single prec literals
 
     lex_table: ClassVar[list[tuple[str, str]]] = [
-        (_less_than, pytools.lex.RE(r"\.lt\.", re.I)),
-        (_greater_than, pytools.lex.RE(r"\.gt\.", re.I)),
-        (_less_equal, pytools.lex.RE(r"\.le\.", re.I)),
-        (_greater_equal, pytools.lex.RE(r"\.ge\.", re.I)),
-        (_equal, pytools.lex.RE(r"\.eq\.", re.I)),
-        (_not_equal, pytools.lex.RE(r"\.ne\.", re.I)),
+        (_less_than, pytools.lex.RE(r"\.lt\.", re.IGNORECASE)),
+        (_greater_than, pytools.lex.RE(r"\.gt\.", re.IGNORECASE)),
+        (_less_equal, pytools.lex.RE(r"\.le\.", re.IGNORECASE)),
+        (_greater_equal, pytools.lex.RE(r"\.ge\.", re.IGNORECASE)),
+        (_equal, pytools.lex.RE(r"\.eq\.", re.IGNORECASE)),
+        (_not_equal, pytools.lex.RE(r"\.ne\.", re.IGNORECASE)),
 
-        (_not, pytools.lex.RE(r"\.not\.", re.I)),
-        (_and, pytools.lex.RE(r"\.and\.", re.I)),
-        (_or, pytools.lex.RE(r"\.or\.", re.I)),
+        (_not, pytools.lex.RE(r"\.not\.", re.IGNORECASE)),
+        (_and, pytools.lex.RE(r"\.and\.", re.IGNORECASE)),
+        (_or, pytools.lex.RE(r"\.or\.", re.IGNORECASE)),
         *ExpressionParserBase.lex_table]
 
     def __init__(self, tree_walker):
@@ -221,7 +221,7 @@ class FortranExpressionParser(ExpressionParserBase):
             }
 
     def parse_prefix(self, pstate, min_precedence=0):
-        import pymbolic.primitives as primitives
+        from pymbolic import primitives
         from pymbolic.parser import _PREC_UNARY
 
         pstate.expect_not_end()
@@ -483,7 +483,7 @@ class CCodeMapper(ComplexCCodeMapper):
 
     def map_subscript(self, expr, enclosing_prec):
         idx_dtype = self.infer_type(expr.index)
-        if not "i" == idx_dtype.kind or "u" == idx_dtype.kind:
+        if "i" != idx_dtype.kind or "u" == idx_dtype.kind:
             ind_prefix = "(int) "
         else:
             ind_prefix = ""
@@ -1383,10 +1383,8 @@ def f2cl(source, free_form=False, strict=True,
     source = F2CLTranslator(addr_space_hints, force_casts,
             arg_info, use_restrict_pointers=use_restrict_pointers)(tree)
 
-    func_decls = []
-    for entry in source:
-        if isinstance(entry, cgen.FunctionBody):
-            func_decls.append(entry.fdecl)
+    func_decls = [entry.fdecl
+        for entry in source if isinstance(entry, cgen.FunctionBody)]
 
     mod = cgen.Module([*func_decls, cgen.Line(), *source])
 
@@ -1408,8 +1406,10 @@ def f2cl(source, free_form=False, strict=True,
 
 
 def f2cl_files(source_file, target_file, **kwargs):
-    mod = f2cl(open(source_file).read(), **kwargs)
-    open(target_file, "w").write(mod)
+    with open(source_file) as inf:
+        mod = f2cl(inf.read(), **kwargs)
+    with open(target_file, "w") as outf:
+        outf.write(mod)
 
 
 if __name__ == "__main__":

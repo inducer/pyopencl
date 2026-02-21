@@ -770,89 +770,62 @@ def _round_down_to_power_of_2(val: int) -> int:
     return result
 
 
-_PREFIX_WORDS = set("""
-        ldata partial_scan_buffer global scan_offset
-        segment_start_in_k_group carry
-        g_first_segment_start_in_interval IS_SEG_START tmp Z
-        val l_first_segment_start_in_subtree unit_size
-        index_type interval_begin interval_size offset_end K
-        SCAN_EXPR do_update WG_SIZE
-        first_segment_start_in_k_group scan_type
-        segment_start_in_subtree offset interval_results interval_end
-        first_segment_start_in_subtree unit_base
-        first_segment_start_in_interval k INPUT_EXPR
-        prev_group_sum prev pv value partial_val pgs
-        is_seg_start update_i scan_item_at_i seq_i read_i
-        l_ o_mod_k o_div_k l_segment_start_flags scan_value sum
-        first_seg_start_in_interval g_segment_start_flags
-        group_base seg_end my_val DEBUG ARGS
-        ints_to_store ints_per_wg scan_types_per_int linear_index
-        linear_scan_data_idx dest src store_base wrapped_scan_type
-        dummy scan_tmp tmp_aux
+_PREFIX_WORDS = {"ldata", "partial_scan_buffer", "global", "scan_offset",
+"segment_start_in_k_group", "carry", "g_first_segment_start_in_interval",
+"IS_SEG_START", "tmp", "Z", "val", "l_first_segment_start_in_subtree",
+"unit_size", "index_type", "interval_begin", "interval_size", "offset_end", "K",
+"SCAN_EXPR", "do_update", "WG_SIZE", "first_segment_start_in_k_group", "scan_type",
+"segment_start_in_subtree", "offset", "interval_results", "interval_end",
+"first_segment_start_in_subtree", "unit_base", "first_segment_start_in_interval",
+"k", "INPUT_EXPR", "prev_group_sum", "prev", "pv", "value", "partial_val", "pgs",
+"is_seg_start", "update_i", "scan_item_at_i", "seq_i", "read_i", "l_", "o_mod_k",
+"o_div_k", "l_segment_start_flags", "scan_value", "sum", "first_seg_start_in_interval",
+"g_segment_start_flags", "group_base", "seg_end", "my_val", "DEBUG", "ARGS",
+"ints_to_store", "ints_per_wg", "scan_types_per_int", "linear_index",
+"linear_scan_data_idx", "dest", "src", "store_base", "wrapped_scan_type", "dummy",
+"scan_tmp", "tmp_aux", "LID_2", "LID_1", "LID_0", "LDIM_0", "LDIM_1", "LDIM_2",
+"GDIM_0", "GDIM_1", "GDIM_2", "GID_0", "GID_1", "GID_2"}
 
-        LID_2 LID_1 LID_0
-        LDIM_0 LDIM_1 LDIM_2
-        GDIM_0 GDIM_1 GDIM_2
-        GID_0 GID_1 GID_2
-        """.split())
-
-_IGNORED_WORDS = set("""
-        4 8 32
-
-        typedef for endfor if void while endwhile endfor endif else const printf
-        None return bool n char true false ifdef pycl_printf str range assert
-        np iinfo max itemsize __packed__ struct restrict ptrdiff_t
-
-        set iteritems len setdefault
-
-        GLOBAL_MEM LOCAL_MEM_ARG WITHIN_KERNEL LOCAL_MEM KERNEL REQD_WG_SIZE
-        local_barrier
-        CLK_LOCAL_MEM_FENCE OPENCL EXTENSION
-        pragma __attribute__ __global __kernel __local
-        get_local_size get_local_id cl_khr_fp64 reqd_work_group_size
-        get_num_groups barrier get_group_id
-        CL_VERSION_1_1 __OPENCL_C_VERSION__ 120
-
-        _final_update _debug_scan kernel_name
-
-        positions all padded integer its previous write based writes 0
-        has local worth scan_expr to read cannot not X items False bank
-        four beginning follows applicable item min each indices works side
-        scanning right summed relative used id out index avoid current state
-        boundary True across be This reads groups along Otherwise undetermined
-        store of times prior s update first regardless Each number because
-        array unit from segment conflicts two parallel 2 empty define direction
-        CL padding work tree bounds values and adds
-        scan is allowed thus it an as enable at in occur sequentially end no
-        storage data 1 largest may representable uses entry Y meaningful
-        computations interval At the left dimension know d
-        A load B group perform shift tail see last OR
-        this add fetched into are directly need
-        gets them stenciled that undefined
-        there up any ones or name only relevant populated
-        even wide we Prepare int seg Note re below place take variable must
-        intra Therefore find code assumption
-        branch workgroup complicated granularity phase remainder than simpler
-        We smaller look ifs lots self behind allow barriers whole loop
-        after already Observe achieve contiguous stores hard go with by math
-        size won t way divisible bit so Avoid declare adding single type
-
-        is_tail is_first_level input_expr argument_signature preamble
-        double_support neutral output_statement
-        k_group_size name_prefix is_segmented index_dtype scan_dtype
-        wg_size is_segment_start_expr fetch_expr_offsets
-        arg_ctypes ife_offsets input_fetch_exprs def
-        ife_offset arg_name local_fetch_expr_args update_body
-        update_loop_lookbehind update_loop_plain update_loop
-        use_lookbehind_update store_segment_start_flags
-        update_loop first_seg scan_dtype dtype_to_ctype
-        is_gpu use_bank_conflict_avoidance
-
-        a b prev_item i last_item prev_value
-        N NO_SEG_BOUNDARY across_seg_boundary
-
-        arg_offset_adjustment
-        """.split())
+_IGNORED_WORDS = {"4", "8", "32", "typedef", "for", "endfor", "if", "void", "while",
+"endwhile", "endif", "else", "const", "printf", "None", "return", "bool", "n", "char",
+"true", "false", "ifdef", "pycl_printf", "str", "range", "assert", "np", "iinfo",
+"max", "itemsize", "__packed__", "struct", "restrict", "ptrdiff_t", "set", "iteritems",
+"len", "setdefault", "GLOBAL_MEM", "LOCAL_MEM_ARG", "WITHIN_KERNEL", "LOCAL_MEM",
+"KERNEL", "REQD_WG_SIZE", "local_barrier", "CLK_LOCAL_MEM_FENCE", "OPENCL", "EXTENSION",
+"pragma", "__attribute__", "__global", "__kernel", "__local", "get_local_size",
+"get_local_id", "cl_khr_fp64", "reqd_work_group_size", "get_num_groups", "barrier",
+"get_group_id", "CL_VERSION_1_1", "__OPENCL_C_VERSION__", "120", "_final_update",
+"_debug_scan", "kernel_name", "positions", "all", "padded", "integer", "its",
+"previous", "write", "based", "writes", "0", "has", "local", "worth", "scan_expr", "to",
+"read", "cannot", "not", "X", "items", "False", "bank", "four", "beginning", "follows",
+"applicable", "item", "min", "each", "indices", "works", "side", "scanning", "right",
+"summed", "relative", "used", "id", "out", "index", "avoid", "current", "state",
+"boundary", "True", "across", "be", "This", "reads", "groups", "along", "Otherwise",
+"undetermined", "store", "of", "times", "prior", "s", "update", "first", "regardless",
+"Each", "number", "because", "array", "unit", "from", "segment", "conflicts", "two",
+"parallel", "2", "empty", "define", "direction", "CL", "padding", "work", "tree",
+"bounds", "values", "and", "adds", "scan", "is", "allowed", "thus", "it", "an", "as",
+"enable", "at", "in", "occur", "sequentially", "end", "no", "storage", "data", "1",
+"largest", "may", "representable", "uses", "entry", "Y", "meaningful", "computations",
+"interval", "At", "the", "left", "dimension", "know", "d", "A", "load", "B", "group",
+"perform", "shift", "tail", "see", "last", "OR", "this", "add", "fetched", "into",
+"are", "directly", "need", "gets", "them", "stenciled", "that", "undefined", "there",
+"up", "any", "ones", "or", "name", "only", "relevant", "populated", "even", "wide",
+"we", "Prepare", "int", "seg", "Note", "re", "below", "place", "take", "variable",
+"must", "intra", "Therefore", "find", "code", "assumption", "branch", "workgroup",
+"complicated", "granularity", "phase", "remainder", "than", "simpler", "We", "smaller",
+"look", "ifs", "lots", "self", "behind", "allow", "barriers", "whole", "loop",
+"after", "already", "Observe", "achieve", "contiguous", "stores", "hard", "go",
+"with", "by", "math", "size", "won", "t", "way", "divisible", "bit", "so", "Avoid",
+"declare", "adding", "single", "type", "is_tail", "is_first_level", "input_expr",
+"argument_signature", "preamble", "double_support", "neutral", "output_statement",
+"k_group_size", "name_prefix", "is_segmented", "index_dtype", "scan_dtype",
+"wg_size", "is_segment_start_expr", "fetch_expr_offsets", "arg_ctypes", "ife_offsets",
+"input_fetch_exprs", "def", "ife_offset", "arg_name", "local_fetch_expr_args",
+"update_body", "update_loop_lookbehind", "update_loop_plain", "update_loop",
+"use_lookbehind_update", "store_segment_start_flags", "first_seg", "dtype_to_ctype",
+"is_gpu", "use_bank_conflict_avoidance", "a", "b", "prev_item", "i", "last_item",
+"prev_value", "N", "NO_SEG_BOUNDARY", "across_seg_boundary", "arg_offset_adjustment"}
 
 
 def _make_template(s: str) -> mako.template.Template:
@@ -1314,7 +1287,7 @@ class GenericScanKernel(GenericScanKernelBase):
         # division by that number.
 
         solutions: list[tuple[int, int, int]] = []
-        for k_exp in range(0, 9):
+        for k_exp in range(9):
             for wg_size in range(wg_size_multiples, max_scan_wg_size+1,
                     wg_size_multiples):
 

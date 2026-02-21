@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # this example shows how to blur, gray scale or brightness adjust the picture
 # using pyopencl and  image2d_t buffer objects
 # this python script will ask you for:

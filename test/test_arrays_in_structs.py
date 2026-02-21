@@ -23,9 +23,8 @@ THE SOFTWARE.
 import numpy as np
 
 import pyopencl as cl
-import pyopencl.cltypes as cltypes
 import pyopencl.tools as cl_tools
-from pyopencl import mem_flags
+from pyopencl import cltypes, mem_flags
 from pyopencl.tools import (
     pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
 )
@@ -60,9 +59,7 @@ def test_struct_with_array_fields(ctx_factory):
         ([57, 38], -54, [[74, 90, 38, 67], [77, 30, 99, 18], [91,  3, 63, 67]])
     ], dtype=my_struct)
 
-    expected_res = []
-    for x in my_struct_arr:
-        expected_res.append(int(np.sum(x[0]) + x[1] + np.sum(x[2])))
+    expected_res = [int(np.sum(x[0]) + x[1] + np.sum(x[2])) for x in my_struct_arr]
     expected_res = np.array(expected_res, dtype=cltypes.int)
 
     kernel_src = """%s

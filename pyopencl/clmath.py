@@ -26,7 +26,7 @@ THE SOFTWARE.
 import numpy as np
 
 import pyopencl.array as cl_array
-import pyopencl.elementwise as elementwise
+from pyopencl import elementwise
 from pyopencl.array import _get_common_dtype
 
 

@@ -348,9 +348,8 @@ def _make_sort_scan_type(
     ) -> tuple[str, np.dtype[Any], str]:
     name = f"pyopencl_sort_scan_{index_dtype.type.__name__}_{bits}bits_t"
 
-    fields: list[tuple[str, np.dtype[np.integer[Any]]]] = []
-    for mnr in range(2**bits):
-        fields.append((f"c{_padded_bin(mnr, bits)}", index_dtype))
+    fields: list[tuple[str, np.dtype[np.integer[Any]]]] = [
+        (f"c{_padded_bin(mnr, bits)}", index_dtype) for mnr in range(2**bits)]
     dtype = np.dtype(fields)
 
     from pyopencl.tools import get_or_register_dtype, match_dtype_to_c_struct

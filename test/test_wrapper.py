@@ -26,8 +26,7 @@ import pytest
 
 import pyopencl as cl
 import pyopencl.array as cl_array
-import pyopencl.clrandom as clrandom
-import pyopencl.cltypes as cltypes
+from pyopencl import clrandom, cltypes
 from pyopencl.characterize import get_pocl_version
 from pyopencl.tools import (
     DeferredAllocator,

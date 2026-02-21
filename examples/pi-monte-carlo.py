@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 #
 # Pi-by-MonteCarlo using PyCUDA/PyOpenCL
 #
@@ -138,7 +136,7 @@ def Mylq2(N, T1, s, c1, c2, p):
 
 
 def KernelCodeCuda():
-    KERNEL_CODE_CUDA = """
+    return """
 #define TCONG 0
 #define TSHR3 1
 #define TMWC 2
@@ -285,11 +283,10 @@ __global__ void MainLoopHybrid(ulong *s,ulong iterations,uint seed_w,uint seed_z
 }
 
 """
-    return KERNEL_CODE_CUDA
 
 
 def KernelCodeOpenCL():
-    KERNEL_CODE_OPENCL = """
+    return """
 #define TCONG 0
 #define TSHR3 1
 #define TMWC 2
@@ -438,7 +435,6 @@ __kernel void MainLoopHybrid(
 }
 
 """
-    return KERNEL_CODE_OPENCL
 
 
 def MetropolisCuda(InputCU):
@@ -643,13 +639,12 @@ def MetropolisOpenCL(InputCL):
 
     circleCL.release()
 
-    OutputCL = {
+    return {
         "Inside": sum(circle),
         "NewIterations": numpy.uint64(iterationsCL * jobs),
         "Duration": MyDuration,
     }
     # print(OutputCL)
-    return OutputCL
 
 
 def FitAndPrint(N, D, Curves):

@@ -34,7 +34,7 @@ from pytools.persistent_dict import WriteOncePersistentDict
 from pytools.py_codegen import Indentation, PythonCodeGenerator
 
 import pyopencl as cl
-import pyopencl._cl as _cl
+from pyopencl import _cl
 from pyopencl.tools import VectorArg, _NumpyTypesKeyBuilder
 
 
@@ -352,9 +352,7 @@ def _check_arg_size(function_name, num_cl_args, arg_types, devs):
 
         if arg_types:
             for arg_type in arg_types:
-                if arg_type is None:
-                    total_arg_size += dev_ptr_size
-                elif isinstance(arg_type, VectorArg):
+                if arg_type is None or isinstance(arg_type, VectorArg):
                     total_arg_size += dev_ptr_size
                 else:
                     total_arg_size += np.dtype(arg_type).itemsize

@@ -49,13 +49,13 @@ class Error(Exception):
     __str__ = pyopencl._monkeypatch.error_str
 
 class MemoryError(Error):
-    pass
+    ...
 
 class LogicError(Error):
-    pass
+    ...
 
 class RuntimeError(Error):
-    pass
+    ...
 
 class status_code(IntEnum):  # noqa: N801
     SUCCESS = auto()
@@ -1136,7 +1136,7 @@ class MemoryObjectHolder:
     def get_host_array(self,
             shape: tuple[int, ...],
             dtype: DTypeT,
-            order: Literal["C"] | Literal["F"] = "C"
+            order: Literal["C", "F"] = "C"
         ) -> np.ndarray[tuple[int, ...], DTypeT]: ...
 
     @overload
@@ -1510,7 +1510,7 @@ def enqueue_map_buffer(
         offset: int,
         shape: tuple[int, ...],
         dtype: DTypeT,
-        order: Literal["C"] | Literal["F"] = "C",
+        order: Literal["C", "F"] = "C",
         strides: tuple[int, ...] | None = None,
         wait_for: WaitList = None,
         is_blocking: bool = True
@@ -1524,7 +1524,7 @@ def enqueue_map_image(
         region: tuple[int, ...],
         shape: tuple[int, ...],
         dtype: DTypeT,
-        order: Literal["C"] | Literal["F"] = "C",
+        order: Literal["C", "F"] = "C",
         strides: tuple[int, ...] | None = None,
         wait_for: WaitList = None,
         is_blocking: bool = True

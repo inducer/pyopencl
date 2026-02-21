@@ -69,8 +69,7 @@ for platform in cl.get_platforms():
                             result = result.replace("UNSIGNED", "U")
                             result = result.replace("SIGNED", "S")
                             result = result.replace("NORM", "N")
-                            result = result.replace("FLOAT", "F")
-                            return result
+                            return result.replace("FLOAT", "F")
 
                         formats = ", ".join(
                                 "{}-{}".format(
