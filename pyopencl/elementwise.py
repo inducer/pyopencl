@@ -158,10 +158,9 @@ def get_elwise_kernel_and_types(
                         #define PYOPENCL_DEFINE_CDOUBLE
                         """)
                     have_double_pragma = True
-            if arg.dtype.kind == "c":
-                if not have_complex_include:
-                    includes.append("#include <pyopencl-complex.h>\n")
-                    have_complex_include = True
+            if arg.dtype.kind == "c" and not have_complex_include:
+                includes.append("#include <pyopencl-complex.h>\n")
+                have_complex_include = True
 
     if pragmas or includes:
         preamble = "\n".join(pragmas+includes) + "\n" + preamble

@@ -100,9 +100,15 @@ extend-ignore = [
     "C90",  # McCabe complexity
     "UP031", # use f-strings instead of %
     "UP032", # use f-strings instead of .format
+    "TRY004",
+    "BLE001",
+    "TRY300",
 
     # FIXME: This is a longer discussion...
     "RUF067", # __init__ should only contain reexports
+
+    # FIXME
+    "SIM102",
 ]
 exclude = [
     "examples/gl_interop_demo.py",
@@ -112,15 +118,17 @@ exclude = [
 
 [tool.ruff.lint.per-file-ignores]
 "examples/pi-monte-carlo.py" = ["N", "B", "F841"]
-"examples/black-hole-accretion.py" = ["N", "E501", "B"]
-"examples/n-body.py" = ["N", "E501"]
+"examples/black-hole-accretion.py" = ["N", "E501", "B", "SIM"]
+"examples/n-body.py" = ["N", "E501", "PLW"]
 "pyopencl/__init__.py" = ["I001"]
 "contrib/fortran-to-opencl/translate.py" = ["N802", "N815", "B"]
-"doc/*.py" = ["I002"]
+"doc/*.py" = ["I002", "S102"]
 "examples/*.py" = ["I002"]
-"test/*.py" = ["I002"]
+"test/*.py" = ["I002", "BLE001"]
+"test/test_*.py" = ["I002", "S102"]
 "contrib/**/*.py" = ["I002"]
 "*.ipynb" = ["I002"]
+"pyopencl/_cl.pyi" = ["PYI052", "PYI002"]
 
 [tool.ruff.lint.flake8-quotes]
 inline-quotes = "double"

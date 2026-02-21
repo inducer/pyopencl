@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 __copyright__ = "Copyright (C) 2016 Shane J. Latham"
 
 __license__ = """

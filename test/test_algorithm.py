@@ -1085,7 +1085,7 @@ def test_bitonic_sort(ctx_factory: cl.CtxFactory, size, dtype):
     # Requires https://github.com/intel/llvm/releases/tag/2022-WW50 or newer to pass
     # on Intel CL.
 
-    import pyopencl.clrandom as clrandom
+    from pyopencl import clrandom
     from pyopencl.bitonic_sort import BitonicSort
 
     s = clrandom.rand(queue, (2, size, 3,), dtype, luxury=None, a=0, b=239482333)
@@ -1153,7 +1153,7 @@ def test_bitonic_argsort(ctx_factory: cl.CtxFactory, size, dtype):
         from pytest import skip
         skip("double precision not supported on %s" % dev)
 
-    import pyopencl.clrandom as clrandom
+    from pyopencl import clrandom
     from pyopencl.bitonic_sort import BitonicSort
 
     index = cl_array.arange(queue, 0, size, 1, dtype=np.int32)

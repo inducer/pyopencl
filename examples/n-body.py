@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 NBody Demonstrator implemented in OpenCL, rendering OpenGL
 
@@ -525,8 +523,7 @@ def MainOpenCL(clDataX, clDataV, Step, Method):
             queue, (Number, 1), None, clDataX, clDataV, Step
         )
     CLLaunch.wait()
-    Elapsed = time.time() - time_start
-    return Elapsed
+    return time.time() - time_start
 
 
 def display(*args):

@@ -27,7 +27,7 @@ import pytest
 
 import pyopencl as cl
 import pyopencl.array as cl_array
-import pyopencl.clmath as clmath
+from pyopencl import clmath
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 from pyopencl.tools import (
     pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
@@ -282,7 +282,7 @@ def test_bessel(ctx_factory: cl.CtxFactory):
 
         a_dev = cl_array.to_device(queue, a)
 
-        for n in range(0, nterms):
+        for n in range(nterms):
             cl_bessel = cl_func(n, a_dev).get()
             scipy_bessel = scipy_func(n, a)
 
@@ -302,7 +302,7 @@ def test_bessel(ctx_factory: cl.CtxFactory):
 
             assert not np.isnan(cl_bessel).any()
 
-            if 0 and n == 15:
+            if False:
                 import matplotlib.pyplot as pt
 
                 # pt.plot(scipy_bessel)

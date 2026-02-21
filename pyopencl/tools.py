@@ -655,7 +655,7 @@ def _find_cl_obj(
         ) -> DeviceOrPlatformT:
     try:
         num = int(identifier)
-    except Exception:
+    except Exception:  # noqa: S110
         pass
     else:
         return objs[num]

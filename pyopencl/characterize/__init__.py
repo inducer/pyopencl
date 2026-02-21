@@ -56,7 +56,7 @@ def reasonable_work_group_size_multiple(
         ):
     try:
         return dev.warp_size_nv
-    except Exception:
+    except Exception:  # noqa: S110
         pass
 
     if ctx is None:
@@ -285,7 +285,7 @@ def get_simd_group_size(dev: cl.Device, type_size: int):
     """
     try:
         return dev.warp_size_nv
-    except Exception:
+    except Exception:  # noqa: S110
         pass
 
     lc_plat_vendor = dev.platform.vendor.lower()
@@ -381,7 +381,10 @@ def _check_for_pocl_arg_count_bug(
     return result
 
 
-def has_struct_arg_count_bug(dev, ctx=None):
+def has_struct_arg_count_bug(
+            dev: cl.Device,
+            ctx: cl.Context | None = None
+        ):
     """Checks whether the device is expected to have the
     `argument counting bug <https://github.com/pocl/pocl/issues/197>`__.
     """
@@ -390,9 +393,9 @@ def has_struct_arg_count_bug(dev, ctx=None):
         return "apple"
     if dev.platform.name == "Portable Computing Language":
         pocl_version = get_pocl_version(dev.platform, fallback_value=(0, 14))
-        if pocl_version <= (0, 13):
-            return "pocl"
-        elif pocl_version <= (0, 14) and _check_for_pocl_arg_count_bug(dev, ctx):
+        assert pocl_version is not None
+        if (pocl_version <= (0, 13)
+            or (pocl_version <= (0, 14) and _check_for_pocl_arg_count_bug(dev, ctx))):
             return "pocl"
 
     return False

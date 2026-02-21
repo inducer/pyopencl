@@ -50,8 +50,7 @@ import numpy as np
 from typing_extensions import Self, TypeIs, override
 
 import pyopencl as cl
-import pyopencl.elementwise as elementwise
-from pyopencl import cltypes
+from pyopencl import cltypes, elementwise
 from pyopencl.characterize import has_double_support
 from pyopencl.compyte.array import (
     ArrayFlags as _ArrayFlags,
@@ -655,15 +654,14 @@ class Array:
 
         self._flags: _ArrayFlags | None = _flags
 
-        if __debug__:
-            if queue is not None and isinstance(
-                    self.base_data, _SVMPointer_or_nothing):
-                mem_queue = getattr(self.base_data, "_queue", _NOT_PRESENT)
-                if mem_queue is not _NOT_PRESENT and mem_queue != queue:
-                    warn("Array has different queue from backing SVM memory. "
-                         "This may lead to the array getting deallocated sooner "
-                         "than expected, potentially leading to crashes.",
-                         InconsistentOpenCLQueueWarning, stacklevel=2)
+        if __debug__ and queue is not None and isinstance(
+                self.base_data, _SVMPointer_or_nothing):
+            mem_queue = getattr(self.base_data, "_queue", _NOT_PRESENT)
+            if mem_queue is not _NOT_PRESENT and mem_queue != queue:
+                warn("Array has different queue from backing SVM memory. "
+                     "This may lead to the array getting deallocated sooner "
+                     "than expected, potentially leading to crashes.",
+                     InconsistentOpenCLQueueWarning, stacklevel=2)
 
     @property
     def ndim(self) -> int:
@@ -1281,7 +1279,7 @@ class Array:
 
     def __iadd__(self, other) -> Self:
         if isinstance(other, Array):
-            if other.shape != self.shape and other.shape != ():
+            if other.shape not in (self.shape, ()):
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(
@@ -1299,7 +1297,7 @@ class Array:
 
     def __isub__(self, other) -> Self:
         if isinstance(other, Array):
-            if other.shape != self.shape and other.shape != ():
+            if other.shape not in (self.shape, ()):
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(
@@ -1349,7 +1347,7 @@ class Array:
 
     def __imul__(self, other) -> Self:
         if isinstance(other, Array):
-            if other.shape != self.shape and other.shape != ():
+            if other.shape not in (self.shape, ()):
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(
@@ -1415,7 +1413,7 @@ class Array:
                 "Cannot cast {!r} to {!r}".format(self.dtype, common_dtype))
 
         if isinstance(other, Array):
-            if other.shape != self.shape and other.shape != ():
+            if other.shape not in (self.shape, ()):
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(
@@ -1500,7 +1498,7 @@ class Array:
             raise TypeError(f"Integral types only: {common_dtype}")
 
         if isinstance(other, Array):
-            if other.shape != self.shape and other.shape != ():
+            if other.shape not in (self.shape, ()):
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(self._array_binop(self, self, other, op="&"))
@@ -1519,7 +1517,7 @@ class Array:
             raise TypeError(f"Integral types only: {common_dtype}")
 
         if isinstance(other, Array):
-            if other.shape != self.shape and other.shape != ():
+            if other.shape not in (self.shape, ()):
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(self._array_binop(self, self, other, op="|"))
@@ -1538,7 +1536,7 @@ class Array:
             raise TypeError(f"Integral types only: {common_dtype}")
 
         if isinstance(other, Array):
-            if other.shape != self.shape and other.shape != ():
+            if other.shape not in (self.shape, ()):
                 raise NotImplementedError("Broadcasting binary op with shapes:"
                                           f" {self.shape}, {other.shape}.")
             self.add_event(self._array_binop(self, self, other, op="^"))
@@ -1900,7 +1898,7 @@ class Array:
         #     raise RuntimeError("only contiguous arrays may "
         #             "be used as arguments to this operation")
 
-        if isinstance(shape[0], tuple) or isinstance(shape[0], list):
+        if isinstance(shape[0], (tuple, list)):
             shape = tuple(shape[0])
 
         if -1 in shape:
@@ -2399,7 +2397,7 @@ def zeros(
             queue: cl.CommandQueue,
             shape: int | tuple[int, ...],
             dtype: DTypeLike,
-            order: Literal["C"] | Literal["F"] = "C",
+            order: Literal["C", "F"] = "C",
             allocator: Allocator | None = None,
         ) -> Array:
     """Same as :func:`empty`, but the :class:`Array` is zero-initialized before
@@ -2765,10 +2763,9 @@ def multi_put(
     array_lengths = np.ndarray((chunk_size,), dtype=np.int64)
 
     def make_func_for_chunk_size(chunk_size):
-        knl = elementwise.get_put_kernel(
+        return elementwise.get_put_kernel(
                 context, a_dtype, dest_indices.dtype,
                 vec_count=chunk_size)
-        return knl
 
     knl = make_func_for_chunk_size(chunk_size)
 
@@ -2849,12 +2846,11 @@ def concatenate(arrays, axis=0, queue: cl.CommandQueue | None = None, allocator=
     shape = tuple(shape)
     dtype = np.result_type(*[ary.dtype for ary in arrays])
 
-    if __debug__:
-        if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
-                        for ary in arrays[1:]):
-            warn("Elements of 'arrays' not of the same type, returning "
-                 "an instance of the type of arrays[0]",
-                 stacklevel=2)
+    if __debug__ and builtins.any(type(ary) != type(arrays[0])  # noqa: E721
+                    for ary in arrays[1:]):
+        warn("Elements of 'arrays' not of the same type, returning "
+             "an instance of the type of arrays[0]",
+             stacklevel=2)
 
     result = arrays[0].__class__(queue, shape, dtype, allocator=allocator)
 
@@ -2916,12 +2912,11 @@ def hstack(arrays, queue: cl.CommandQueue | None = None):
 
     w = builtins.sum(ary.shape[-1] for ary in arrays)
 
-    if __debug__:
-        if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
-                        for ary in arrays[1:]):
-            warn("Elements of 'arrays' not of the same type, returning "
-                 "an instance of the type of arrays[0]",
-                 stacklevel=2)
+    if __debug__ and builtins.any(type(ary) != type(arrays[0])  # noqa: E721
+                    for ary in arrays[1:]):
+        warn("Elements of 'arrays' not of the same type, returning "
+             "an instance of the type of arrays[0]",
+             stacklevel=2)
 
     result = arrays[0].__class__(queue, (*lead_shape, w), arrays[0].dtype,
                                  allocator=arrays[0].allocator)
@@ -2974,12 +2969,11 @@ def stack(arrays, axis=0, queue: cl.CommandQueue | None = None):
 
     result_shape = (*input_shape[:axis], len(arrays), *input_shape[axis:])
 
-    if __debug__:
-        if builtins.any(type(ary) != type(arrays[0])  # noqa: E721
-                        for ary in arrays[1:]):
-            warn("Elements of 'arrays' not of the same type, returning "
-                 "an instance of the type of arrays[0]",
-                 stacklevel=2)
+    if __debug__ and builtins.any(type(ary) != type(arrays[0])  # noqa: E721
+                    for ary in arrays[1:]):
+        warn("Elements of 'arrays' not of the same type, returning "
+             "an instance of the type of arrays[0]",
+             stacklevel=2)
 
     result = arrays[0].__class__(queue, result_shape,
                                  np.result_type(*(ary.dtype

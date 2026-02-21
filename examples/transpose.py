@@ -189,9 +189,9 @@ def benchmark_transpose():
                 method(queue, a_t_buf, a_buf, source.shape)
 
             count = 12
-            events = []
-            for _i in range(count):
-                events.append(method(queue, a_t_buf, a_buf, source.shape))
+            events = [
+                method(queue, a_t_buf, a_buf, source.shape)
+                for _i in range(count)]
 
             events[-1].wait()
             time = sum(evt.profile.end - evt.profile.start for evt in events)

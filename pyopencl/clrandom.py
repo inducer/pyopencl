@@ -58,7 +58,7 @@ from pytools import memoize_method
 
 import pyopencl as cl
 import pyopencl.array as cl_array
-import pyopencl.cltypes as cltypes
+from pyopencl import cltypes
 from pyopencl.tools import first_arg_dependent_memoize
 
 
