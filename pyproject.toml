@@ -18,7 +18,7 @@ license = "MIT"
 authors = [
     { name = "Andreas Kloeckner", email = "inform@tiker.net" },
 ]
-requires-python = "~=3.10"
+requires-python = ">=3.10,<4"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
