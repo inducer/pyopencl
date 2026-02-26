@@ -1560,6 +1560,21 @@ def test_buffer_release(ctx_factory: cl.CtxFactory):
     b.release()
 
 
+def test_set_arg_none(ctx_factory: cl.CtxFactory):
+    # https://github.com/inducer/pyopencl/issues/897
+    ctx = ctx_factory()
+    prg = cl.Program(ctx, """
+    __kernel void sum(
+       __global const float *a_g, __global const float *b_g, __global float *res_g)
+    {
+     int gid = get_global_id(0);
+     res_g[gid] = a_g[gid] + b_g[gid];
+    }
+    """).build()
+
+    prg.sum.set_arg(0, None)
+
+
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
