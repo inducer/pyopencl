@@ -605,7 +605,10 @@ void pyopencl_expose_part_2(py::module_ &m)
                 { knl.set_arg_buf_pack(i, typechar, arg); },
                 indices_chars_and_args);
           })
-      .DEF_SIMPLE_METHOD(set_arg)
+      .def("set_arg", &cls::set_arg,
+          py::arg("arg_index"),
+          py::arg("arg").none(true)
+        )
 #if PYOPENCL_CL_VERSION >= 0x1020
       .DEF_SIMPLE_METHOD(get_arg_info)
 #endif
