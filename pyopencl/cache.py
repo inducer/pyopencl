@@ -204,7 +204,6 @@ def get_dependencies(
         for match in C_INCLUDE_RE.finditer(src):
             included = match.group(1)
 
-            found = False
             for ipath in include_path:
                 included_file_name = realpath(join(ipath, included.decode()))
 
@@ -232,11 +231,7 @@ def get_dependencies(
                             checksum.hexdigest(),
                             )
 
-                    found = True
                     break  # stop searching the include path
-
-            if not found:
-                pass
 
     _inner(src)
 
