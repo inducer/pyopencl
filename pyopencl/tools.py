@@ -562,13 +562,9 @@ def first_arg_dependent_memoize_nested(
     frame = currentframe()
     cache_context = None
     if frame:
-        try:
-            caller_frame = frame.f_back
-            if caller_frame:
-                cache_context = caller_frame.f_globals[caller_frame.f_code.co_name]
-        finally:
-            # del caller_frame
-            pass
+        caller_frame = frame.f_back
+        if caller_frame:
+            cache_context = caller_frame.f_globals[caller_frame.f_code.co_name]
 
     cache_dict: dict[Hashable, dict[Hashable, RetT]]
     try:
