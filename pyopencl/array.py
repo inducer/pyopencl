@@ -1935,7 +1935,7 @@ class Array:
         # {{{ determine reshaped strides
 
         # copied and translated from
-        # https://github.com/numpy/numpy/blob/4083883228d61a3b571dec640185b5a5d983bf59/numpy/core/src/multiarray/shape.c  # noqa: E501
+        # https://github.com/numpy/numpy/blob/4083883228d61a3b571dec640185b5a5d983bf59/numpy/core/src/multiarray/shape.c
 
         newdims = shape
         newnd = len(newdims)
