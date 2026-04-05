@@ -3673,7 +3673,7 @@ namespace pyopencl
 #ifdef PYPY_VERSION
         // FIXME: get a read-only buffer
         // Not quite honest, but Pypy doesn't consider numpy arrays
-        // created from objects with the __array_interface__ writeable.
+        // created from objects with the __array_interface__ writable.
         ward->get(holder.ptr(), PyBUF_ANY_CONTIGUOUS);
 #else
         ward->get(holder.ptr(), PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE);
