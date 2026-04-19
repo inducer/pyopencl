@@ -257,6 +257,7 @@ exclude = [
     ".conda-root",
     "pyopencl/ipython_ext.py",
     "stubgen/stubgen.py",
+    ".venv",
 ]
 
 [[tool.basedpyright.executionEnvironments]]
