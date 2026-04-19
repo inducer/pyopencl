@@ -66,6 +66,7 @@ cffi_build.py
 .cache
 .pytest_cache
 .idea
+.venv
 
 wheelhouse
 
