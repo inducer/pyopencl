@@ -199,6 +199,7 @@ MACOSX_DEPLOYMENT_TARGET = "10.14"
 skip = [
     "*-win32",
 ]
+repair-wheel-command = "delvewheel repair -w {dest_dir} --exclude ext-ms-win-dx-dxdbhelper-l1-1-0.dll {wheel}"
 test-command = ""
 before-all = "bash {package}/scripts/build-ocl-windows.sh"
 
