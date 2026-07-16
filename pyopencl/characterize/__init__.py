@@ -56,7 +56,7 @@ def reasonable_work_group_size_multiple(
         ):
     try:
         return dev.warp_size_nv
-    except Exception:  # noqa: S110
+    except Exception:  # ruff:ignore[try-except-pass]
         pass
 
     if ctx is None:
@@ -285,7 +285,7 @@ def get_simd_group_size(dev: cl.Device, type_size: int):
     """
     try:
         return dev.warp_size_nv
-    except Exception:  # noqa: S110
+    except Exception:  # ruff:ignore[try-except-pass]
         pass
 
     lc_plat_vendor = dev.platform.vendor.lower()

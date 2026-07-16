@@ -37,7 +37,7 @@ from pyopencl import cltypes
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 from pyopencl.clrandom import PhiloxGenerator, ThreefryGenerator
 from pyopencl.tools import (
-    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # ruff:ignore[unused-import]
 )
 
 
@@ -932,7 +932,7 @@ def test_random_int_in_range(ctx_factory: cl.CtxFactory,
 def test_numpy_integer_shape(ctx_factory: cl.CtxFactory):
     try:
         list(np.int32(17))
-    except Exception:  # noqa: S110
+    except Exception:  # ruff:ignore[try-except-pass]
         pass
     else:
         from pytest import skip

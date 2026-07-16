@@ -96,7 +96,7 @@ typedef ${idxtype} idx_t;
 % endif
 #define nsize ${nsize}   //Total next dimensions sizes sum. (Block size)
 #define dsize ${dsize}   //Dimension size
-"""         # noqa: E501
+"""         # ruff:ignore[line-too-long]
 
 # }}}
 
@@ -398,7 +398,7 @@ __kernel void run\\
 % endif
   for (int k=0;k<4;k++) data[i+k] = x[k];
 }
-"""         # noqa: E501
+"""         # ruff:ignore[line-too-long]
 
 # }}}
 
@@ -446,7 +446,7 @@ __kernel void run(__global const data_t * in,__global data_t * out,__local data_
   // Write output
   out[i] = aux[i];
 }
-"""         # noqa: E501
+"""         # ruff:ignore[line-too-long]
 
 # }}}
 
@@ -590,7 +590,7 @@ __kernel void run\\
   index[t*nsize] = iidx;
 % endif
 }
-"""         # noqa: E501
+"""         # ruff:ignore[line-too-long]
 
 # }}}
 

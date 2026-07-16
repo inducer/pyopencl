@@ -30,7 +30,7 @@ import pyopencl.array as cl_array
 from pyopencl import clmath
 from pyopencl.characterize import has_double_support, has_struct_arg_count_bug
 from pyopencl.tools import (
-    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # ruff:ignore[unused-import]
 )
 
 

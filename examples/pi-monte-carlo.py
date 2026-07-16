@@ -484,7 +484,7 @@ def MetropolisCuda(InputCU):
         )
         # mod = SourceModule(KernelCodeCuda(),nvcc='nvcc',keep=True)
         # Needed to set the compiler via ccbin for CUDA9 implementation
-        # mod = SourceModule(KernelCodeCuda(),options=['-ccbin','clang-3.9','--compiler-options','-DTRNG=%i' % Marsaglia[RNG],'-DTYPE=%s' % Computing[ValueType],'-DTEST=%s' % Test[TestType]],keep=True)  # noqa: E501
+        # mod = SourceModule(KernelCodeCuda(),options=['-ccbin','clang-3.9','--compiler-options','-DTRNG=%i' % Marsaglia[RNG],'-DTYPE=%s' % Computing[ValueType],'-DTEST=%s' % Test[TestType]],keep=True)  # ruff:ignore[line-too-long]
     except Exception:
         print("Compilation seems to break")
 
@@ -771,7 +771,7 @@ if __name__ == "__main__":
     # Seeds for RNG
     Seeds = 110271, 101008
 
-    HowToUse = "%s -o (Out of Core Metrology) -c (Print Curves) -k (Case On IfThen) -d <DeviceId> -g <CUDA/OpenCL> -i <Iterations> -b <BlocksBegin> -e <BlocksEnd> -s <BlocksStep> -f <ThreadsFirst> -l <ThreadsLast> -t <ThreadssTep> -r <RedoToImproveStats> -m <SHR3/CONG/MWC/KISS> -v <INT32/INT64/FP32/FP64>"  # noqa: E501
+    HowToUse = "%s -o (Out of Core Metrology) -c (Print Curves) -k (Case On IfThen) -d <DeviceId> -g <CUDA/OpenCL> -i <Iterations> -b <BlocksBegin> -e <BlocksEnd> -s <BlocksStep> -f <ThreadsFirst> -l <ThreadsLast> -t <ThreadssTep> -r <RedoToImproveStats> -m <SHR3/CONG/MWC/KISS> -v <INT32/INT64/FP32/FP64>"  # ruff:ignore[line-too-long]
 
     try:
         opts, args = getopt.getopt(
@@ -1031,7 +1031,7 @@ if __name__ == "__main__":
                     Inside = OutputCU["Inside"]
                     NewIterations = OutputCU["NewIterations"]
                     Duration = OutputCU["Duration"]
-                    pycuda.context.pop()  # noqa: F821
+                    pycuda.context.pop()  # ruff:ignore[undefined-name]
                 except Exception:
                     print(
                         "Problem with (%i,%i) // computations on Cuda"
@@ -1159,4 +1159,4 @@ if __name__ == "__main__":
 
     if Fit:
         # FIXME: undefined var 'median'
-        FitAndPrint(ExploredJobs, median, Curves)  # noqa: F821
+        FitAndPrint(ExploredJobs, median, Curves)  # ruff:ignore[undefined-name]

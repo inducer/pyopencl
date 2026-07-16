@@ -209,7 +209,7 @@ def get_dependencies(
 
                 if included_file_name not in result:
                     try:
-                        src_file = open(included_file_name, "rb")  # noqa: SIM115
+                        src_file = open(included_file_name, "rb")  # ruff:ignore[open-file-with-context-handler]
                     except OSError:
                         continue
 
@@ -309,7 +309,7 @@ def retrieve_from_cache(cache_dir: str, cache_key: str) -> tuple[bytes, Any] | N
                 from pickle import load
 
                 try:
-                    info_file = open(info_path, "rb")  # noqa: SIM115
+                    info_file = open(info_path, "rb")  # ruff:ignore[open-file-with-context-handler]
                 except OSError as err:
                     raise _InvalidInfoFileError() from err
 

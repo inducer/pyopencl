@@ -57,7 +57,7 @@ class LogicError(Error):
 class RuntimeError(Error):
     ...
 
-class status_code(IntEnum):  # noqa: N801
+class status_code(IntEnum):  # ruff:ignore[invalid-class-name]
     SUCCESS = auto()
     DEVICE_NOT_FOUND = auto()
     DEVICE_NOT_AVAILABLE = auto()
@@ -123,7 +123,7 @@ class status_code(IntEnum):  # noqa: N801
     MAX_SIZE_RESTRICTION_EXCEEDED = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class platform_info(IntEnum):  # noqa: N801
+class platform_info(IntEnum):  # ruff:ignore[invalid-class-name]
     PROFILE = auto()
     VERSION = auto()
     NAME = auto()
@@ -134,7 +134,7 @@ class platform_info(IntEnum):  # noqa: N801
     EXTENSIONS_WITH_VERSION = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_type(IntEnum):  # noqa: N801
+class device_type(IntEnum):  # ruff:ignore[invalid-class-name]
     DEFAULT = auto()
     CPU = auto()
     GPU = auto()
@@ -143,7 +143,7 @@ class device_type(IntEnum):  # noqa: N801
     ALL = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_info(IntEnum):  # noqa: N801
+class device_info(IntEnum):  # ruff:ignore[invalid-class-name]
     TYPE = auto()
     VENDOR_ID = auto()
     MAX_COMPUTE_UNITS = auto()
@@ -294,11 +294,11 @@ class device_info(IntEnum):  # noqa: N801
     NUM_SIMULTANEOUS_INTEROPS_INTEL = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_topology_type_amd(IntEnum):  # noqa: N801
+class device_topology_type_amd(IntEnum):  # ruff:ignore[invalid-class-name]
     PCIE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_fp_config(IntEnum):  # noqa: N801
+class device_fp_config(IntEnum):  # ruff:ignore[invalid-class-name]
     DENORM = auto()
     INF_NAN = auto()
     ROUND_TO_NEAREST = auto()
@@ -309,30 +309,30 @@ class device_fp_config(IntEnum):  # noqa: N801
     CORRECTLY_ROUNDED_DIVIDE_SQRT = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_mem_cache_type(IntEnum):  # noqa: N801
+class device_mem_cache_type(IntEnum):  # ruff:ignore[invalid-class-name]
     NONE = auto()
     READ_ONLY_CACHE = auto()
     READ_WRITE_CACHE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_local_mem_type(IntEnum):  # noqa: N801
+class device_local_mem_type(IntEnum):  # ruff:ignore[invalid-class-name]
     LOCAL = auto()
     GLOBAL = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_exec_capabilities(IntEnum):  # noqa: N801
+class device_exec_capabilities(IntEnum):  # ruff:ignore[invalid-class-name]
     KERNEL = auto()
     NATIVE_KERNEL = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_svm_capabilities(IntEnum):  # noqa: N801
+class device_svm_capabilities(IntEnum):  # ruff:ignore[invalid-class-name]
     COARSE_GRAIN_BUFFER = auto()
     FINE_GRAIN_BUFFER = auto()
     FINE_GRAIN_SYSTEM = auto()
     ATOMICS = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class command_queue_properties(IntEnum):  # noqa: N801
+class command_queue_properties(IntEnum):  # ruff:ignore[invalid-class-name]
     _zero = 0
     OUT_OF_ORDER_EXEC_MODE_ENABLE = auto()
     PROFILING_ENABLE = auto()
@@ -340,7 +340,7 @@ class command_queue_properties(IntEnum):  # noqa: N801
     ON_DEVICE_DEFAULT = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class context_info(IntEnum):  # noqa: N801
+class context_info(IntEnum):  # ruff:ignore[invalid-class-name]
     REFERENCE_COUNT = auto()
     DEVICES = auto()
     PROPERTIES = auto()
@@ -348,15 +348,15 @@ class context_info(IntEnum):  # noqa: N801
     INTEROP_USER_SYNC = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class gl_context_info(IntEnum):  # noqa: N801
+class gl_context_info(IntEnum):  # ruff:ignore[invalid-class-name]
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class context_properties(IntEnum):  # noqa: N801
+class context_properties(IntEnum):  # ruff:ignore[invalid-class-name]
     PLATFORM = auto()
     OFFLINE_DEVICES_AMD = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class command_queue_info(IntEnum):  # noqa: N801
+class command_queue_info(IntEnum):  # ruff:ignore[invalid-class-name]
     CONTEXT = auto()
     DEVICE = auto()
     REFERENCE_COUNT = auto()
@@ -364,13 +364,13 @@ class command_queue_info(IntEnum):  # noqa: N801
     PROPERTIES_ARRAY = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class queue_properties(IntEnum):  # noqa: N801
+class queue_properties(IntEnum):  # ruff:ignore[invalid-class-name]
     PROPERTIES = auto()
     SIZE = auto()
     DEVICE_DEFAULT = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class mem_flags(IntEnum):  # noqa: N801
+class mem_flags(IntEnum):  # ruff:ignore[invalid-class-name]
     READ_WRITE = auto()
     WRITE_ONLY = auto()
     READ_ONLY = auto()
@@ -384,7 +384,7 @@ class mem_flags(IntEnum):  # noqa: N801
     KERNEL_READ_AND_WRITE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class svm_mem_flags(IntEnum):  # noqa: N801
+class svm_mem_flags(IntEnum):  # ruff:ignore[invalid-class-name]
     READ_WRITE = auto()
     WRITE_ONLY = auto()
     READ_ONLY = auto()
@@ -392,7 +392,7 @@ class svm_mem_flags(IntEnum):  # noqa: N801
     SVM_ATOMICS = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class channel_order(IntEnum):  # noqa: N801
+class channel_order(IntEnum):  # ruff:ignore[invalid-class-name]
     R = auto()
     A = auto()
     RG = auto()
@@ -405,14 +405,14 @@ class channel_order(IntEnum):  # noqa: N801
     Rx = auto()
     RGx = auto()
     RGBx = auto()
-    sRGB = auto()  # noqa: N815
-    sRGBx = auto()  # noqa: N815
-    sRGBA = auto()  # noqa: N815
-    sBGRA = auto()  # noqa: N815
+    sRGB = auto()  # ruff:ignore[mixed-case-variable-in-class-scope]
+    sRGBx = auto()  # ruff:ignore[mixed-case-variable-in-class-scope]
+    sRGBA = auto()  # ruff:ignore[mixed-case-variable-in-class-scope]
+    sBGRA = auto()  # ruff:ignore[mixed-case-variable-in-class-scope]
     ABGR = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class channel_type(IntEnum):  # noqa: N801
+class channel_type(IntEnum):  # ruff:ignore[invalid-class-name]
     SNORM_INT8 = auto()
     SNORM_INT16 = auto()
     UNORM_INT8 = auto()
@@ -431,7 +431,7 @@ class channel_type(IntEnum):  # noqa: N801
     UNORM_INT_101010_2 = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class mem_object_type(IntEnum):  # noqa: N801
+class mem_object_type(IntEnum):  # ruff:ignore[invalid-class-name]
     BUFFER = auto()
     IMAGE2D = auto()
     IMAGE3D = auto()
@@ -442,7 +442,7 @@ class mem_object_type(IntEnum):  # noqa: N801
     PIPE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class mem_info(IntEnum):  # noqa: N801
+class mem_info(IntEnum):  # ruff:ignore[invalid-class-name]
     TYPE = auto()
     FLAGS = auto()
     SIZE = auto()
@@ -456,7 +456,7 @@ class mem_info(IntEnum):  # noqa: N801
     PROPERTIES = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class image_info(IntEnum):  # noqa: N801
+class image_info(IntEnum):  # ruff:ignore[invalid-class-name]
     FORMAT = auto()
     ELEMENT_SIZE = auto()
     ROW_PITCH = auto()
@@ -470,18 +470,18 @@ class image_info(IntEnum):  # noqa: N801
     NUM_SAMPLES = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class pipe_info(IntEnum):  # noqa: N801
+class pipe_info(IntEnum):  # ruff:ignore[invalid-class-name]
     PACKET_SIZE = auto()
     MAX_PACKETS = auto()
     PROPERTIES = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class pipe_properties(IntEnum):  # noqa: N801
+class pipe_properties(IntEnum):  # ruff:ignore[invalid-class-name]
     PACKET_SIZE = auto()
     MAX_PACKETS = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class addressing_mode(IntEnum):  # noqa: N801
+class addressing_mode(IntEnum):  # ruff:ignore[invalid-class-name]
     NONE = auto()
     CLAMP_TO_EDGE = auto()
     CLAMP = auto()
@@ -489,12 +489,12 @@ class addressing_mode(IntEnum):  # noqa: N801
     MIRRORED_REPEAT = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class filter_mode(IntEnum):  # noqa: N801
+class filter_mode(IntEnum):  # ruff:ignore[invalid-class-name]
     NEAREST = auto()
     LINEAR = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class sampler_info(IntEnum):  # noqa: N801
+class sampler_info(IntEnum):  # ruff:ignore[invalid-class-name]
     REFERENCE_COUNT = auto()
     CONTEXT = auto()
     NORMALIZED_COORDS = auto()
@@ -509,19 +509,19 @@ class sampler_info(IntEnum):  # noqa: N801
     LOD_MAX_KHR = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class sampler_properties(IntEnum):  # noqa: N801
+class sampler_properties(IntEnum):  # ruff:ignore[invalid-class-name]
     NORMALIZED_COORDS = auto()
     ADDRESSING_MODE = auto()
     FILTER_MODE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class map_flags(IntEnum):  # noqa: N801
+class map_flags(IntEnum):  # ruff:ignore[invalid-class-name]
     READ = auto()
     WRITE = auto()
     WRITE_INVALIDATE_REGION = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class program_info(IntEnum):  # noqa: N801
+class program_info(IntEnum):  # ruff:ignore[invalid-class-name]
     REFERENCE_COUNT = auto()
     CONTEXT = auto()
     NUM_DEVICES = auto()
@@ -536,7 +536,7 @@ class program_info(IntEnum):  # noqa: N801
     SCOPE_GLOBAL_DTORS_PRESENT = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class program_build_info(IntEnum):  # noqa: N801
+class program_build_info(IntEnum):  # ruff:ignore[invalid-class-name]
     STATUS = auto()
     OPTIONS = auto()
     LOG = auto()
@@ -544,14 +544,14 @@ class program_build_info(IntEnum):  # noqa: N801
     GLOBAL_VARIABLE_TOTAL_SIZE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class program_binary_type(IntEnum):  # noqa: N801
+class program_binary_type(IntEnum):  # ruff:ignore[invalid-class-name]
     NONE = auto()
     COMPILED_OBJECT = auto()
     LIBRARY = auto()
     EXECUTABLE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class kernel_info(IntEnum):  # noqa: N801
+class kernel_info(IntEnum):  # ruff:ignore[invalid-class-name]
     FUNCTION_NAME = auto()
     NUM_ARGS = auto()
     REFERENCE_COUNT = auto()
@@ -560,7 +560,7 @@ class kernel_info(IntEnum):  # noqa: N801
     ATTRIBUTES = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class kernel_arg_info(IntEnum):  # noqa: N801
+class kernel_arg_info(IntEnum):  # ruff:ignore[invalid-class-name]
     ADDRESS_QUALIFIER = auto()
     ACCESS_QUALIFIER = auto()
     TYPE_NAME = auto()
@@ -568,21 +568,21 @@ class kernel_arg_info(IntEnum):  # noqa: N801
     NAME = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class kernel_arg_address_qualifier(IntEnum):  # noqa: N801
+class kernel_arg_address_qualifier(IntEnum):  # ruff:ignore[invalid-class-name]
     GLOBAL = auto()
     LOCAL = auto()
     CONSTANT = auto()
     PRIVATE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class kernel_arg_access_qualifier(IntEnum):  # noqa: N801
+class kernel_arg_access_qualifier(IntEnum):  # ruff:ignore[invalid-class-name]
     READ_ONLY = auto()
     WRITE_ONLY = auto()
     READ_WRITE = auto()
     NONE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class kernel_arg_type_qualifier(IntEnum):  # noqa: N801
+class kernel_arg_type_qualifier(IntEnum):  # ruff:ignore[invalid-class-name]
     NONE = auto()
     CONST = auto()
     RESTRICT = auto()
@@ -590,7 +590,7 @@ class kernel_arg_type_qualifier(IntEnum):  # noqa: N801
     PIPE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class kernel_work_group_info(IntEnum):  # noqa: N801
+class kernel_work_group_info(IntEnum):  # ruff:ignore[invalid-class-name]
     WORK_GROUP_SIZE = 0x11B0
     COMPILE_WORK_GROUP_SIZE = 0x11B1
     LOCAL_MEM_SIZE = 0x11B2
@@ -599,7 +599,7 @@ class kernel_work_group_info(IntEnum):  # noqa: N801
     GLOBAL_WORK_SIZE = 0x11B5
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class kernel_sub_group_info(IntEnum):  # noqa: N801
+class kernel_sub_group_info(IntEnum):  # ruff:ignore[invalid-class-name]
     MAX_SUB_GROUP_SIZE_FOR_NDRANGE = auto()
     SUB_GROUP_COUNT_FOR_NDRANGE = auto()
     LOCAL_SIZE_FOR_SUB_GROUP_COUNT = auto()
@@ -607,7 +607,7 @@ class kernel_sub_group_info(IntEnum):  # noqa: N801
     COMPILE_NUM_SUB_GROUPS = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class event_info(IntEnum):  # noqa: N801
+class event_info(IntEnum):  # ruff:ignore[invalid-class-name]
     COMMAND_QUEUE = auto()
     COMMAND_TYPE = auto()
     REFERENCE_COUNT = auto()
@@ -615,7 +615,7 @@ class event_info(IntEnum):  # noqa: N801
     CONTEXT = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class command_type(IntEnum):  # noqa: N801
+class command_type(IntEnum):  # ruff:ignore[invalid-class-name]
     NDRANGE_KERNEL = auto()
     TASK = auto()
     NATIVE_KERNEL = auto()
@@ -649,14 +649,14 @@ class command_type(IntEnum):  # noqa: N801
     SVM_MIGRATE_MEM = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class command_execution_status(IntEnum):  # noqa: N801
+class command_execution_status(IntEnum):  # ruff:ignore[invalid-class-name]
     COMPLETE = auto()
     RUNNING = auto()
     SUBMITTED = auto()
     QUEUED = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class profiling_info(IntEnum):  # noqa: N801
+class profiling_info(IntEnum):  # ruff:ignore[invalid-class-name]
     QUEUED = auto()
     SUBMIT = auto()
     START = auto()
@@ -664,19 +664,19 @@ class profiling_info(IntEnum):  # noqa: N801
     COMPLETE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class mem_migration_flags(IntEnum):  # noqa: N801
+class mem_migration_flags(IntEnum):  # ruff:ignore[invalid-class-name]
     HOST = auto()
     CONTENT_UNDEFINED = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_partition_property(IntEnum):  # noqa: N801
+class device_partition_property(IntEnum):  # ruff:ignore[invalid-class-name]
     EQUALLY = auto()
     BY_COUNTS = auto()
     BY_COUNTS_LIST_END = auto()
     BY_AFFINITY_DOMAIN = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_affinity_domain(IntEnum):  # noqa: N801
+class device_affinity_domain(IntEnum):  # ruff:ignore[invalid-class-name]
     NUMA = auto()
     L4_CACHE = auto()
     L3_CACHE = auto()
@@ -685,7 +685,7 @@ class device_affinity_domain(IntEnum):  # noqa: N801
     NEXT_PARTITIONABLE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_atomic_capabilities(IntEnum):  # noqa: N801
+class device_atomic_capabilities(IntEnum):  # ruff:ignore[invalid-class-name]
     ORDER_RELAXED = auto()
     ORDER_ACQ_REL = auto()
     ORDER_SEQ_CST = auto()
@@ -695,12 +695,12 @@ class device_atomic_capabilities(IntEnum):  # noqa: N801
     SCOPE_ALL_DEVICES = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class device_device_enqueue_capabilities(IntEnum):  # noqa: N801
+class device_device_enqueue_capabilities(IntEnum):  # ruff:ignore[invalid-class-name]
     SUPPORTED = auto()
     REPLACEABLE_DEFAULT = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class version_bits(IntEnum):  # noqa: N801
+class version_bits(IntEnum):  # ruff:ignore[invalid-class-name]
     MAJOR_BITS = auto()
     MINOR_BITS = auto()
     PATCH_BITS = auto()
@@ -709,12 +709,12 @@ class version_bits(IntEnum):  # noqa: N801
     PATCH_MASK = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class khronos_vendor_id(IntEnum):  # noqa: N801
+class khronos_vendor_id(IntEnum):  # ruff:ignore[invalid-class-name]
     CODEPLAY = auto()
 
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
-class gl_object_type(IntEnum):  # noqa: N801
+class gl_object_type(IntEnum):  # ruff:ignore[invalid-class-name]
     BUFFER = auto()
     TEXTURE2D = auto()
     TEXTURE3D = auto()
@@ -722,7 +722,7 @@ class gl_object_type(IntEnum):  # noqa: N801
 
     to_string = pyopencl._monkeypatch.to_string
 
-class gl_texture_info(IntEnum):  # noqa: N801
+class gl_texture_info(IntEnum):  # ruff:ignore[invalid-class-name]
     TEXTURE_TARGET = auto()
     MIPMAP_LEVEL = auto()
 
@@ -1672,7 +1672,7 @@ class Sampler:
     lod_min_khr: float
     lod_max_khr: float
 
-class program_kind(IntEnum):  # noqa: N801
+class program_kind(IntEnum):  # ruff:ignore[invalid-class-name]
     UNKNOWN = auto()
     SOURCE = auto()
     BINARY = auto()

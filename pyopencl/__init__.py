@@ -72,7 +72,7 @@ from pyopencl.typing import (
         SVMInnerT,
         WaitList,
         )
-from pyopencl._cl import (  # noqa: F401
+from pyopencl._cl import (  # ruff:ignore[unused-import]
         get_cl_header_version,
         program_kind,
         status_code,
@@ -219,7 +219,7 @@ else:
         from pyopencl._cl import UserEvent
     if get_cl_header_version() >= (1, 2):
         from pyopencl._cl import ImageDescriptor
-        from pyopencl._cl import (  # noqa: F401
+        from pyopencl._cl import (  # ruff:ignore[unused-import]
             _enqueue_barrier_with_wait_list, _enqueue_fill_buffer,
             _enqueue_marker_with_wait_list, enqueue_fill_image,
             enqueue_migrate_mem_objects, unload_platform_compiler)
@@ -473,7 +473,7 @@ class Program:
             knl = Kernel(self, attr)
             # Nvidia does not raise errors even for invalid names,
             # but this will give an error if the kernel is invalid.
-            knl.num_args  # noqa: B018
+            knl.num_args  # ruff:ignore[useless-expression]
 
             count = self._knl_retrieval_count[attr] = (
                 self._knl_retrieval_count.get(attr, 0) + 1)
@@ -1490,8 +1490,8 @@ DTYPE_TO_CHANNEL_TYPE = {
     np.dtype(np.uint8): channel_type.UNSIGNED_INT8,
     }
 try:
-    np.float16  # noqa: B018
-except Exception:  # noqa: S110
+    np.float16  # ruff:ignore[useless-expression]
+except Exception:  # ruff:ignore[try-except-pass]
     pass
 else:
     DTYPE_TO_CHANNEL_TYPE[np.dtype(np.float16)] = channel_type.HALF_FLOAT
