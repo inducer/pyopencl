@@ -651,7 +651,7 @@ def _find_cl_obj(
         ) -> DeviceOrPlatformT:
     try:
         num = int(identifier)
-    except Exception:  # noqa: S110
+    except Exception:  # ruff:ignore[try-except-pass]
         pass
     else:
         return objs[num]
@@ -1632,7 +1632,7 @@ def is_spirv(s: str | bytes) -> TypeIs[bytes]:
 # {{{ numpy key types builder
 
 class _NumpyTypesKeyBuilder(KeyBuilderBase):  # pyright: ignore[reportUnusedClass]
-    def update_for_VectorArg(self, key_hash: Hash, key: VectorArg) -> None:  # noqa: N802
+    def update_for_VectorArg(self, key_hash: Hash, key: VectorArg) -> None:  # ruff:ignore[invalid-function-name]
         self.rec(key_hash, key.dtype)
         self.update_for_str(key_hash, key.name)
         self.rec(key_hash, key.with_offset)

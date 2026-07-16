@@ -26,7 +26,7 @@ import pyopencl as cl
 import pyopencl.tools as cl_tools
 from pyopencl import cltypes, mem_flags
 from pyopencl.tools import (
-    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # ruff:ignore[unused-import]
 )
 
 

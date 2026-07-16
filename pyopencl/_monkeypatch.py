@@ -491,7 +491,7 @@ def image_shape(self: _cl.Image) -> tuple[int, int] | tuple[int, int, int]:
 def error_str(self: _cl.Error) -> str:
     val = self.what
     try:
-        val.routine  # noqa: B018
+        val.routine  # ruff:ignore[useless-expression]
     except AttributeError:
         return str(val)
     else:

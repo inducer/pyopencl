@@ -27,7 +27,7 @@ import pyopencl as cl
 from pyopencl import clrandom, cltypes
 from pyopencl.characterize import has_double_support
 from pyopencl.tools import (
-    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # noqa: F401
+    pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # ruff:ignore[unused-import]
 )
 
 

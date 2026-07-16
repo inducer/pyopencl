@@ -282,7 +282,7 @@ class ArrayHasOffsetError(ValueError):
         ValueError.__init__(self, val)
 
 
-class _copy_queue:  # noqa: N801
+class _copy_queue:  # ruff:ignore[invalid-class-name]
     pass
 
 
@@ -613,7 +613,7 @@ class Array:
             # }}}
 
             assert dtype != object, \
-                    "object arrays on the compute device are not allowed"  # noqa: E721
+                    "object arrays on the compute device are not allowed"  # ruff:ignore[type-comparison]
             assert isinstance(shape, tuple)
             assert isinstance(strides, tuple)
 
@@ -2097,7 +2097,7 @@ class Array:
                 strides=tuple(new_strides))
 
     @property
-    def T(self):  # noqa: N802
+    def T(self):  # ruff:ignore[invalid-function-name]
         """
         .. versionadded:: 2015.2
         """
@@ -2351,7 +2351,7 @@ def as_strided(ary, shape=None, strides=None):
             data=ary.data, strides=strides)
 
 
-class _same_as_transfer:  # noqa: N801
+class _same_as_transfer:  # ruff:ignore[invalid-class-name]
     pass
 
 
@@ -2846,7 +2846,7 @@ def concatenate(arrays, axis=0, queue: cl.CommandQueue | None = None, allocator=
     shape = tuple(shape)
     dtype = np.result_type(*[ary.dtype for ary in arrays])
 
-    if __debug__ and builtins.any(type(ary) != type(arrays[0])  # noqa: E721
+    if __debug__ and builtins.any(type(ary) != type(arrays[0])  # ruff:ignore[type-comparison]
                     for ary in arrays[1:]):
         warn("Elements of 'arrays' not of the same type, returning "
              "an instance of the type of arrays[0]",
@@ -2912,7 +2912,7 @@ def hstack(arrays, queue: cl.CommandQueue | None = None):
 
     w = builtins.sum(ary.shape[-1] for ary in arrays)
 
-    if __debug__ and builtins.any(type(ary) != type(arrays[0])  # noqa: E721
+    if __debug__ and builtins.any(type(ary) != type(arrays[0])  # ruff:ignore[type-comparison]
                     for ary in arrays[1:]):
         warn("Elements of 'arrays' not of the same type, returning "
              "an instance of the type of arrays[0]",
@@ -2969,7 +2969,7 @@ def stack(arrays, axis=0, queue: cl.CommandQueue | None = None):
 
     result_shape = (*input_shape[:axis], len(arrays), *input_shape[axis:])
 
-    if __debug__ and builtins.any(type(ary) != type(arrays[0])  # noqa: E721
+    if __debug__ and builtins.any(type(ary) != type(arrays[0])  # ruff:ignore[type-comparison]
                     for ary in arrays[1:]):
         warn("Elements of 'arrays' not of the same type, returning "
              "an instance of the type of arrays[0]",
