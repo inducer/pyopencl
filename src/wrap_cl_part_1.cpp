@@ -146,7 +146,11 @@ void pyopencl_expose_part_1(py::module_ &m)
   // {{{ events/synchronization
   {
     typedef event cls;
-    py::class_<cls>(m, "Event")
+    py::class_<cls>(m, "Event"
+      #if NB_VERSION_MAJOR > 3 || (NB_VERSION_MAJOR >= 2 && NB_VERSION_MINOR >= 13)
+      , py::pooled(256)
+      #endif
+    )
       .DEF_SIMPLE_METHOD(get_info)
       .DEF_SIMPLE_METHOD(get_profiling_info)
       .DEF_SIMPLE_METHOD(wait)
