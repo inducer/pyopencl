@@ -702,7 +702,7 @@ void pyopencl_expose_mempool(py::module_ &m)
           /* py::kw_only(), */
           py::arg("alignment")=0,
           py::arg("flags")=CL_MEM_READ_WRITE,
-          py::arg("queue").none(true)=nullptr
+          py::arg("queue").none()=nullptr
           )
       .def("__call__", pyopencl::svm_allocator_call, py::arg("size"))
       ;
