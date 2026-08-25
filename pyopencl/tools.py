@@ -167,8 +167,6 @@ if TYPE_CHECKING:
     import mako
     import pytest
     from numpy.typing import DTypeLike, NDArray
-else:
-    import pyopencl._mymako as mako
 
 # Do not add a pyopencl import here: This will add an import cycle.
 
@@ -1325,6 +1323,8 @@ class _MakoTextTemplate(_TextTemplate):
     template: mako.template.Template = field(init=False)
 
     def __post_init__(self) -> None:
+        import pyopencl._mymako as mako
+
         object.__setattr__(self, "template",
                            mako.template.Template(self.txt, strict_undefined=True))
 
