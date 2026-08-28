@@ -207,7 +207,7 @@ def test_get_info(ctx_factory: cl.CtxFactory):
     if profiling:
         evt.wait()
         do_test(evt, cl.profiling_info,
-                lambda info: evt.get_profiling_info(info),
+                evt.get_profiling_info,
                 try_attr_form=False)
 
     # crashes on intel...
@@ -230,7 +230,7 @@ def test_get_info(ctx_factory: cl.CtxFactory):
         img.depth  # ruff:ignore[useless-expression]
         img.image.depth  # ruff:ignore[useless-expression]
         do_test(img, cl.image_info,
-                lambda info: img.get_image_info(info))
+                img.get_image_info)
 
 # }}}
 

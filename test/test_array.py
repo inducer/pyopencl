@@ -1610,7 +1610,7 @@ def test_multi_put(ctx_factory: cl.CtxFactory):
     ]
 
     out_compare = [np.zeros((10,), np.float32) for i in range(9)]
-    for _i, ary in enumerate(out_compare):
+    for ary in out_compare:
         ary[idx.get()] = np.arange(0, 6, dtype=np.float32)
 
     cl_array.multi_put(cl_arrays, idx, out=out_arrays)

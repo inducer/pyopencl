@@ -1263,7 +1263,7 @@ class F2CLTranslator(FTreeWalkerBase):
                             (current_cond, cgen.block_if_necessary(
                                 self.map_statement_list(current_body))))
 
-            del current_body[:]
+            current_body.clear()
 
         from fparser.statements import Else, ElseIf
         i = 0

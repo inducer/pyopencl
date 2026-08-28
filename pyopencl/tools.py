@@ -964,18 +964,12 @@ def get_gl_sharing_context_properties() -> list[tuple[cl.context_properties, Any
     import sys
     if sys.platform in ["linux", "linux2"]:
         from OpenGL import GLX
-        props.append(
-            (ctx_props.GL_CONTEXT_KHR, GLX.glXGetCurrentContext()))
-        props.append(
-                (ctx_props.GLX_DISPLAY_KHR,
-                    GLX.glXGetCurrentDisplay()))
+        props.extend(((ctx_props.GL_CONTEXT_KHR, GLX.glXGetCurrentContext()),
+            (ctx_props.GLX_DISPLAY_KHR, GLX.glXGetCurrentDisplay())))
     elif sys.platform == "win32":
         from OpenGL import WGL
-        props.append(
-            (ctx_props.GL_CONTEXT_KHR, gl_platform.GetCurrentContext()))
-        props.append(
-                (ctx_props.WGL_HDC_KHR,
-                    WGL.wglGetCurrentDC()))
+        props.extend(((ctx_props.GL_CONTEXT_KHR, gl_platform.GetCurrentContext()),
+            (ctx_props.WGL_HDC_KHR, WGL.wglGetCurrentDC())))
     elif sys.platform == "darwin":
         props.append(
             (ctx_props.CONTEXT_PROPERTY_USE_CGL_SHAREGROUP_APPLE,

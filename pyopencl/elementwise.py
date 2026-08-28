@@ -341,8 +341,7 @@ class ElementwiseKernel:
             start = range.start
             if start is None:
                 start = 0
-            invocation_args.append(start)
-            invocation_args.append(range.stop)
+            invocation_args.extend((start, range.stop))
             if range.step is None:
                 step = 1
             else:
