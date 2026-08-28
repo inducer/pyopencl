@@ -35,19 +35,13 @@ class CLCharacterizationWarning(UserWarning):
 
 @memoize
 def has_double_support(dev: cl.Device):
-    for ext in dev.extensions.split(" "):
-        if ext == "cl_khr_fp64":
-            return True
-    return False
+    return any(ext == "cl_khr_fp64" for ext in dev.extensions.split(" "))
 
 
 def has_amd_double_support(dev: cl.Device):
     """"Fix to allow incomplete amd double support in low end boards"""
 
-    for ext in dev.extensions.split(" "):
-        if ext == "cl_amd_fp64":
-            return True
-    return False
+    return any(ext == "cl_amd_fp64" for ext in dev.extensions.split(" "))
 
 
 def reasonable_work_group_size_multiple(

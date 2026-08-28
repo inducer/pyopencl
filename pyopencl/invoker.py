@@ -65,8 +65,7 @@ def generate_generic_arg_handling_body(num_args):
     else:
         gen_indices_and_args = []
         for i in range(num_args):
-            gen_indices_and_args.append(i)
-            gen_indices_and_args.append(f"arg{i}")
+            gen_indices_and_args.extend((i, f"arg{i}"))
 
         gen(f"self._set_arg_multi("
                 f"({', '.join(str(i) for i in gen_indices_and_args)},), "
@@ -116,8 +115,7 @@ def generate_specific_arg_handling_body(function_name, num_cl_args, arg_types, *
         arg_var = "arg%d" % arg_idx
 
         if arg_type is None:
-            gen_indices_and_args.append(cl_arg_idx)
-            gen_indices_and_args.append(arg_var)
+            gen_indices_and_args.extend((cl_arg_idx, arg_var))
             cl_arg_idx += 1
             gen("")
             continue
@@ -135,8 +133,7 @@ def generate_specific_arg_handling_body(function_name, num_cl_args, arg_types, *
                     "'queues for all arrays must match the queue supplied "
                     "to enqueue'")
 
-            gen_indices_and_args.append(cl_arg_idx)
-            gen_indices_and_args.append(f"{arg_var}.base_data")
+            gen_indices_and_args.extend((cl_arg_idx, f"{arg_var}.base_data"))
             cl_arg_idx += 1
 
             if arg_type.with_offset:
@@ -151,8 +148,7 @@ def generate_specific_arg_handling_body(function_name, num_cl_args, arg_types, *
         arg_dtype = np.dtype(arg_type)
 
         if arg_dtype.char == "V":
-            buf_indices_and_args.append(cl_arg_idx)
-            buf_indices_and_args.append(arg_var)
+            buf_indices_and_args.extend((cl_arg_idx, arg_var))
             cl_arg_idx += 1
 
         elif arg_dtype.kind == "c":
@@ -187,9 +183,10 @@ def generate_specific_arg_handling_body(function_name, num_cl_args, arg_types, *
                         "Cannot pass complex numbers to kernels.")
 
             else:
-                buf_indices_and_args.append(cl_arg_idx)
-                buf_indices_and_args.append(
-                    f"pack('{arg_char}{arg_char}', {arg_var}.real, {arg_var}.imag)")
+                buf_indices_and_args.extend(
+                    (cl_arg_idx,
+                        f"pack('{arg_char}{arg_char}', {arg_var}.real, {arg_var}.imag)")
+                )
                 cl_arg_idx += 1
 
             fp_arg_count += 2

@@ -103,6 +103,7 @@ extend-ignore = [
     "type-check-without-type-error",
     "blind-except",
     "try-consider-else",
+    "pytest-parameter-with-default-argument",
 
     # FIXME: This is a longer discussion...
     "non-empty-init-module",
