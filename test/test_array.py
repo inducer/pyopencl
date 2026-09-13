@@ -2346,8 +2346,8 @@ def test_logical_not(ctx_factory: cl.CtxFactory):
                     reason="XDG_CACHE_HOME is not used on Windows")
 def test_xdg_cache_home(ctx_factory: cl.CtxFactory):
     import os
+    import pathlib
     import shutil
-    from os.path import join
 
     context = ctx_factory()
     queue = cl.CommandQueue(context)
@@ -2355,13 +2355,13 @@ def test_xdg_cache_home(ctx_factory: cl.CtxFactory):
     a = np.array([1, 2, 3, 4, 5]).astype(np.float32)
     a_gpu = cl_array.to_device(queue, a)
 
-    xdg_dir = "tmpdir_pyopencl_xdg_test"
+    xdg_dir = pathlib.Path("tmpdir_pyopencl_xdg_test").resolve()
 
     # PyOpenCL uses pytools.PersistentDict for invoker caches,
     # which is why xdg_dir will always exist. Therefore, check
     # whether xdg_pyopencl_dir exists.
-    xdg_pyopencl_dir = join(xdg_dir, "pyopencl")
-    assert not os.path.exists(xdg_dir)
+    xdg_pyopencl_dir = xdg_dir / "pyopencl"
+    assert not xdg_dir.exists()
 
     old_xdg_cache_home = None
     old_characterize_has_src_build_cache = None
@@ -2373,12 +2373,12 @@ def test_xdg_cache_home(ctx_factory: cl.CtxFactory):
         cl_characterize.has_src_build_cache = lambda dev: False
 
         old_xdg_cache_home = os.getenv("XDG_CACHE_HOME")
-        os.environ["XDG_CACHE_HOME"] = xdg_dir
+        os.environ["XDG_CACHE_HOME"] = str(xdg_dir)
 
         result = pow(a_gpu, a_gpu).get()
         assert (np.abs(a ** a - result) < 3e-3).all()
 
-        assert os.path.exists(xdg_pyopencl_dir)
+        assert xdg_pyopencl_dir.exists()
     finally:
         cl_characterize.has_src_build_cache = \
             old_characterize_has_src_build_cache
