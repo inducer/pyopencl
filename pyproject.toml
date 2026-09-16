@@ -36,7 +36,8 @@ classifiers = [
 dependencies = [
     "importlib-resources; python_version<'3.9'",
     "numpy",
-    "platformdirs>=2.2",
+    # version that added support for XDG_* vars on macos
+    "platformdirs>=4.6",
     "pytools>=2025.1.6",
 
     # for Buffer, override
