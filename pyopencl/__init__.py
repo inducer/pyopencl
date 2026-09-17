@@ -1508,7 +1508,7 @@ def image_from_array(
             ctx: Context,
             ary: NDArray[Any],
             num_channels: int | None = None,
-            mode: Literal["r", "w"] = "r",
+            mode: Literal["r", "w", "rw"] = "r",
             norm_int: bool = False
         ) -> Image:
     if not ary.flags.c_contiguous:
@@ -1541,6 +1541,8 @@ def image_from_array(
         mode_flags = mem_flags.READ_ONLY
     elif mode == "w":
         mode_flags = mem_flags.WRITE_ONLY
+    elif mode == "rw":
+        mode_flags = mem_flags.READ_WRITE
     else:
         raise ValueError("invalid value '%s' for 'mode'" % mode)
 
