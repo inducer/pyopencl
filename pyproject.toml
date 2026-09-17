@@ -34,12 +34,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 dependencies = [
-    "importlib-resources; python_version<'3.9'",
     "numpy",
     # version that added support for XDG_* vars on macos
     "platformdirs>=4.6",
     "pytools>=2025.1.6",
-
     # for Buffer, override
     "typing_extensions>=4.6",
 ]
