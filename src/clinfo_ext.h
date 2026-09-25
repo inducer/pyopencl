@@ -54,6 +54,31 @@
 /* cl_ext_atomic_counters_{32,64} */
 #define CL_DEVICE_MAX_ATOMIC_COUNTERS_EXT		0x4032
 
+/* cl_ext_buffer_device_address */
+#define cl_ext_buffer_device_address 1
+#define CL_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME \
+    "cl_ext_buffer_device_address"
+#define CL_MEM_DEVICE_PRIVATE_ADDRESS_EXT                   0x5000
+#define CL_MEM_DEVICE_ADDRESS_EXT                           0x5001
+#define CL_KERNEL_EXEC_INFO_DEVICE_PTRS_EXT                 0x5002
+
+typedef cl_ulong cl_mem_device_address_ext;
+
+typedef cl_int CL_API_CALL
+clSetKernelArgDevicePointerEXT_t(
+    cl_kernel kernel,
+    cl_uint arg_index,
+    cl_mem_device_address_ext arg_value);
+
+typedef clSetKernelArgDevicePointerEXT_t *
+clSetKernelArgDevicePointerEXT_fn;
+
+extern CL_API_ENTRY cl_int CL_API_CALL
+clSetKernelArgDevicePointerEXT(
+    cl_kernel kernel,
+    cl_uint arg_index,
+    cl_mem_device_address_ext arg_value);
+
 /* cl_amd_device_attribute_query */
 #define CL_DEVICE_PROFILING_TIMER_OFFSET_AMD		0x4036
 #define CL_DEVICE_TOPOLOGY_AMD				0x4037

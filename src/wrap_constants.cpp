@@ -53,6 +53,7 @@ namespace
   class command_queue_info { };
   class queue_properties { };
   class mem_flags { };
+  class mem_properties { };
   class svm_mem_flags { };
   class channel_order { };
   class channel_type { };
@@ -697,6 +698,15 @@ void pyopencl_expose_constants(py::module_ &m)
 #endif
   }
 
+#if PYOPENCL_CL_VERSION >= 0x3000
+  {
+    py::class_<mem_properties> cls(m, "mem_properties");
+#ifdef cl_ext_buffer_device_address
+    ADD_ATTR(MEM_, DEVICE_PRIVATE_ADDRESS_EXT);
+#endif
+  }
+#endif
+
   {
     py::class_<svm_mem_flags> cls(m, "svm_mem_flags");
 #if PYOPENCL_CL_VERSION >= 0x2000
@@ -792,6 +802,9 @@ void pyopencl_expose_constants(py::module_ &m)
 #endif
 #if PYOPENCL_CL_VERSION >= 0x3000
     ADD_ATTR(MEM_, PROPERTIES);
+#endif
+#ifdef cl_ext_buffer_device_address
+    ADD_ATTR(MEM_, DEVICE_ADDRESS_EXT);
 #endif
   }
 

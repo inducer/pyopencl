@@ -442,6 +442,10 @@ class mem_object_type(IntEnum):  # ruff:ignore[invalid-class-name]
     PIPE = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
+class mem_properties(IntEnum):  # ruff:ignore[invalid-class-name]
+    DEVICE_PRIVATE_ADDRESS_EXT = auto()
+    to_string = classmethod(pyopencl._monkeypatch.to_string)
+
 class mem_info(IntEnum):  # ruff:ignore[invalid-class-name]
     TYPE = auto()
     FLAGS = auto()
@@ -454,6 +458,7 @@ class mem_info(IntEnum):  # ruff:ignore[invalid-class-name]
     OFFSET = auto()
     USES_SVM_POINTER = auto()
     PROPERTIES = auto()
+    DEVICE_ADDRESS_EXT = auto()
     to_string = classmethod(pyopencl._monkeypatch.to_string)
 
 class image_info(IntEnum):  # ruff:ignore[invalid-class-name]
@@ -1186,7 +1191,8 @@ class Buffer(MemoryObject):
              context: Context,
              flags: int,
              size: int = 0,
-             hostbuf: HasBufferInterface | None = None
+             hostbuf: HasBufferInterface | None = None,
+             properties: Sequence[mem_properties | int] | None = None
          ) -> None: ...
 
     def get_sub_region(self, origin: int, size: int, flags: int = 0) -> Buffer: ...
@@ -1747,6 +1753,12 @@ class LocalMemory:
 
     @property
     def size(self) -> int: ...
+
+class DevicePointerEXT:
+    def __init__(self, address: int, /) -> None: ...
+
+    @property
+    def address(self) -> int: ...
 
 def enqueue_nd_range_kernel(
         queue: CommandQueue,
