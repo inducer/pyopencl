@@ -53,6 +53,7 @@ namespace
   class command_queue_info { };
   class queue_properties { };
   class mem_flags { };
+  class mem_properties { };
   class svm_mem_flags { };
   class channel_order { };
   class channel_type { };
@@ -695,6 +696,10 @@ void pyopencl_expose_constants(py::module_ &m)
 #if PYOPENCL_CL_VERSION >= 0x2000
     ADD_ATTR(MEM_, KERNEL_READ_AND_WRITE);
 #endif
+  }
+
+  {
+    py::class_<mem_properties> cls(m, "mem_properties");
   }
 
   {
