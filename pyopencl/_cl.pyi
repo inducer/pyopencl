@@ -1186,7 +1186,8 @@ class Buffer(MemoryObject):
              context: Context,
              flags: int,
              size: int = 0,
-             hostbuf: HasBufferInterface | None = None
+             hostbuf: HasBufferInterface | None = None,
+             properties: Sequence[mem_properties | int] | None = None
          ) -> None: ...
 
     def get_sub_region(self, origin: int, size: int, flags: int = 0) -> Buffer: ...

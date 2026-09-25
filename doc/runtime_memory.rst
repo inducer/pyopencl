@@ -51,7 +51,7 @@ Memory Migration
 Buffer
 ------
 
-.. class:: Buffer(context, flags, size=0, hostbuf=None)
+.. class:: Buffer(context, flags, size=0, hostbuf=None, properties=None)
 
     Create a :class:`Buffer`.
     See :class:`mem_flags` for values of *flags*.
@@ -59,6 +59,15 @@ Buffer
     the specified buffer if it is passed as zero.
 
     :class:`Buffer` inherits from :class:`MemoryObject`.
+
+    :arg properties: a flat sequence of ``cl_mem_properties`` keys and values.
+        Its terminating zero is added automatically.
+
+    .. versionchanged::
+
+        Passing non-empty *properties* is only supported if
+        :mod:`pyopencl` is compiled against OpenCL 3.0 or newer.
+        Support was added in 2026.1.5.
 
     .. note::
 

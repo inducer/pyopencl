@@ -2288,17 +2288,35 @@ namespace pyopencl
   // {{{ buffer
 
   inline cl_mem create_buffer(
-      cl_context ctx,
+      cl_context context,
+      const cl_mem_properties *properties,
       cl_mem_flags flags,
       size_t size,
       void *host_ptr)
   {
-    cl_int status_code;
-    PYOPENCL_PRINT_CALL_TRACE("clCreateBuffer");
-    cl_mem mem = clCreateBuffer(ctx, flags, size, host_ptr, &status_code);
+    cl_mem mem;
 
-    if (status_code != CL_SUCCESS)
-      throw pyopencl::error("create_buffer", status_code);
+    cl_int status_code;
+    if (properties)
+    {
+#if PYOPENCL_CL_VERSION >= 0x3000
+      PYOPENCL_PRINT_CALL_TRACE("clCreateBufferWithProperties");
+      mem = clCreateBufferWithProperties(
+          context, properties, flags, size, host_ptr, &status_code);
+      if (status_code != CL_SUCCESS)
+        throw pyopencl::error("clCreateBufferWithProperties", status_code);
+#else
+      throw pyopencl::error("Buffer", CL_INVALID_VALUE,
+        "Passing properties not supported before OpenCL 3.0");
+#endif
+    }
+    else {
+      PYOPENCL_PRINT_CALL_TRACE("clCreateBuffer");
+      mem = clCreateBuffer(
+          context, flags, size, host_ptr, &status_code);
+      if (status_code != CL_SUCCESS)
+        throw pyopencl::error("clCreateBuffer", status_code);
+    }
 
     return mem;
   }
@@ -2307,13 +2325,15 @@ namespace pyopencl
 
 
   inline cl_mem create_buffer_gc(
-      cl_context ctx,
+      cl_context context,
+      const cl_mem_properties *properties,
       cl_mem_flags flags,
       size_t size,
       void *host_ptr)
   {
     PYOPENCL_RETRY_RETURN_IF_MEM_ERROR(
-      return create_buffer(ctx, flags, size, host_ptr);
+      return create_buffer(
+          context, properties, flags, size, host_ptr);
     );
   }
 
@@ -2419,7 +2439,8 @@ namespace pyopencl
       context &ctx,
       cl_mem_flags flags,
       size_t size,
-      py::object py_hostbuf
+      py::object py_hostbuf,
+      py::object py_properties
       )
   {
     if (py_hostbuf.ptr() != Py_None &&
@@ -2451,7 +2472,19 @@ namespace pyopencl
         size = retained_buf_obj->m_buf.len;
     }
 
-    cl_mem mem = create_buffer_gc(ctx.data(), flags, size, buf);
+    cl_mem mem;
+    if (py_properties.ptr() == Py_None || !py::len(py_properties))
+      mem = create_buffer_gc(ctx.data(), nullptr, flags, size, buf);
+    else
+    {
+      std::vector<cl_mem_properties> properties;
+      for (py::handle prop: py_properties)
+        properties.push_back(py::cast<cl_mem_properties>(prop));
+      properties.push_back(0);
+
+      mem = create_buffer_gc(
+          ctx.data(), properties.data(), flags, size, buf);
+    }
 
     if (!(flags & CL_MEM_USE_HOST_PTR))
       retained_buf_obj.reset();
