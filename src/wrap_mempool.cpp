@@ -144,7 +144,7 @@ namespace pyopencl {
         if (s == 0)
           return nullptr;
 
-        return pyopencl::create_buffer(m_context->data(), m_flags, s, 0);
+        return pyopencl::create_buffer(m_context->data(), nullptr, m_flags, s, 0);
       }
   };
 
@@ -175,7 +175,7 @@ namespace pyopencl {
           return nullptr;
 
         pointer_type ptr =  pyopencl::create_buffer(
-            m_context->data(), m_flags, s, 0);
+            m_context->data(), nullptr, m_flags, s, 0);
 
         // Make sure the buffer gets allocated right here and right now.
         // This looks (and is) expensive. But immediate allocators

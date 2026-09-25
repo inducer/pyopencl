@@ -265,12 +265,19 @@ void pyopencl_expose_part_1(py::module_ &m)
     py::class_<cls, memory_object>(m, "Buffer", py::dynamic_attr())
       .def(
           "__init__",
-          [](cls *self, context &ctx, cl_mem_flags flags, size_t size, py::object py_hostbuf)
-          { create_buffer_py(self, ctx, flags, size, py_hostbuf); },
+          [](cls *self, context &ctx, cl_mem_flags flags, size_t size,
+              py::object py_hostbuf,
+              py::object py_properties
+              )
+          {
+            create_buffer_py(self, ctx, flags, size, py_hostbuf, py_properties);
+          },
           py::arg("context"),
           py::arg("flags"),
           py::arg("size")=0,
-          py::arg("hostbuf").none()=py::none()
+          py::arg("hostbuf").none()=py::none(),
+          py::kw_only(),
+          py::arg("properties").none()=py::none()
           )
 #if PYOPENCL_CL_VERSION >= 0x1010
       .def("get_sub_region", &cls::get_sub_region,

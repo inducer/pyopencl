@@ -94,6 +94,7 @@ from pyopencl._cl import (  # ruff:ignore[unused-import]
         queue_properties,
 
         mem_flags,
+        mem_properties,
         svm_mem_flags,
 
         channel_order,
@@ -1969,6 +1970,7 @@ __all__ = [
     "mem_info",
     "mem_migration_flags",
     "mem_object_type",
+    "mem_properties",
     "pipe_info",
     "pipe_properties",
     "platform_info",
