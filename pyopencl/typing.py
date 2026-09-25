@@ -51,6 +51,7 @@ KernelArg: TypeAlias = """
     | _cl.Image
     | _cl.Sampler
     | _cl.SVMPointer
+    | _cl.DevicePointerEXT
     | _cl_array.Array
     | None"""
 
