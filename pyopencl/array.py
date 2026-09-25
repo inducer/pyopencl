@@ -291,7 +291,7 @@ _ARRAY_GET_SIZES_CACHE: \
 _BOOL_DTYPE = np.dtype(np.int8)
 _NOT_PRESENT = object()
 
-ScalarLike: TypeAlias = int | float | complex | np.number[Any]
+ScalarLike: TypeAlias = int | float | complex | np.bool_ | np.number[Any]
 
 
 def _is_scalar(s: object) -> TypeIs[ScalarLike]:
@@ -3202,6 +3202,7 @@ def _logical_op(x1: Array | ScalarLike,
     elif np.isscalar(x1) or np.isscalar(x2):
         scalar_arg, = (x for x in (x1, x2) if np.isscalar(x))
         ary_arg, = (x for x in (x1, x2) if not np.isscalar(x))
+        ary_arg = cast("Array", ary_arg)
         queue = queue or ary_arg.queue
         allocator = ary_arg.allocator
 

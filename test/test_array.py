@@ -1879,6 +1879,17 @@ def test_branch_operations_on_pure_scalars():
     np.testing.assert_allclose(np.where(cond, x, y),
                                cl_array.if_positive(cond, x, y))
 
+
+def test_branch_operations_on_numpy_boolean_scalars() -> None:
+    cond: cl_array.ScalarLike = np.bool_(True)
+    then: cl_array.ScalarLike = np.bool_(False)
+    else_: cl_array.ScalarLike = np.bool_(True)
+
+    np.testing.assert_array_equal(
+        cl_array.if_positive(cond, then, else_),
+        np.where(cond, then, else_),
+    )
+
 # }}}
 
 
