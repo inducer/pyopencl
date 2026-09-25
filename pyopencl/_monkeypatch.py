@@ -714,6 +714,10 @@ def to_string(
         return default_format % value
 
 
+def name_version_repr(self: _cl.NameVersion) -> str:
+    return f"NameVersion(name={self.name!r}, version=0x{self.version:x})"
+
+
 def _add_functionality():
     # {{{ Platform
 
@@ -1014,6 +1018,9 @@ def _add_functionality():
     for cls in CONSTANT_CLASSES:
         cls._is_bitfield = cls in BITFIELD_CONSTANT_CLASSES
         cls.to_string = classmethod(to_string)
+
+    # NameVersion
+    _cl.NameVersion.__repr__ = name_version_repr
 
 
 _add_functionality()
