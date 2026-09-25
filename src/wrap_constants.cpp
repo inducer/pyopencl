@@ -701,6 +701,9 @@ void pyopencl_expose_constants(py::module_ &m)
 #if PYOPENCL_CL_VERSION >= 0x3000
   {
     py::class_<mem_properties> cls(m, "mem_properties");
+#ifdef cl_ext_buffer_device_address
+    ADD_ATTR(MEM_, DEVICE_PRIVATE_ADDRESS_EXT);
+#endif
   }
 #endif
 
@@ -799,6 +802,9 @@ void pyopencl_expose_constants(py::module_ &m)
 #endif
 #if PYOPENCL_CL_VERSION >= 0x3000
     ADD_ATTR(MEM_, PROPERTIES);
+#endif
+#ifdef cl_ext_buffer_device_address
+    ADD_ATTR(MEM_, DEVICE_ADDRESS_EXT);
 #endif
   }
 

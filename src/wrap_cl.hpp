@@ -4806,6 +4806,22 @@ namespace pyopencl
       { return m_size; }
   };
 
+#ifdef cl_ext_buffer_device_address
+  class device_pointer_ext
+  {
+    private:
+      cl_mem_device_address_ext m_address;
+
+    public:
+      device_pointer_ext(cl_mem_device_address_ext address)
+        : m_address(address)
+      { }
+
+      cl_mem_device_address_ext address() const
+      { return m_address; }
+  };
+#endif
+
 
 
 
@@ -5007,6 +5023,27 @@ namespace pyopencl
       }
 #endif
 
+#ifdef cl_ext_buffer_device_address
+      void set_arg_device_pointer(cl_uint arg_index, device_pointer_ext const &ptr)
+      {
+        cl_context context;
+        PYOPENCL_CALL_GUARDED(clGetKernelInfo,
+            (m_kernel, CL_KERNEL_CONTEXT, sizeof(context), &context, 0));
+
+        cl_device_id device;
+        PYOPENCL_CALL_GUARDED(clGetContextInfo,
+            (context, CL_CONTEXT_DEVICES, sizeof(device), &device, 0));
+
+        cl_platform_id platform;
+        PYOPENCL_CALL_GUARDED(clGetDeviceInfo,
+            (device, CL_DEVICE_PLATFORM, sizeof(platform), &platform, 0));
+
+        PYOPENCL_GET_EXT_FUN(platform, clSetKernelArgDevicePointerEXT, set_arg_fn);
+        PYOPENCL_CALL_GUARDED(set_arg_fn,
+            (m_kernel, arg_index, ptr.address()));
+      }
+#endif
+
       void set_arg(cl_uint arg_index, py::handle arg)
       {
         if (arg.ptr() == Py_None)
@@ -5063,6 +5100,15 @@ namespace pyopencl
           return;
         }
         catch (py::cast_error &) { }
+
+#ifdef cl_ext_buffer_device_address
+        try
+        {
+          set_arg_device_pointer(arg_index, py::cast<device_pointer_ext const &>(arg));
+          return;
+        }
+        catch (py::cast_error &) { }
+#endif
 
         try
         {
@@ -5883,6 +5929,15 @@ namespace pyopencl
               PYOPENCL_GET_VEC_INFO(MemObject, data(), param_name, result);
               PYOPENCL_RETURN_VECTOR(cl_mem_properties, result);
             }
+#endif
+#ifdef cl_ext_buffer_device_address
+      case CL_MEM_DEVICE_ADDRESS_EXT:
+        {
+          cl_mem_device_address_ext address;
+          PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
+              (data(), param_name, sizeof(address), &address, 0));
+          return py::cast(device_pointer_ext(address));
+        }
 #endif
 
       default:

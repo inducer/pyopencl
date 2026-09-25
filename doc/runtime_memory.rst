@@ -48,6 +48,27 @@ Memory Migration
 
     Only available with CL 1.2.
 
+Device pointers
+---------------
+
+.. class:: DevicePointerEXT(address)
+
+    Identifies an integer *address* as a device pointer for a kernel argument.
+    Instances are returned by :attr:`mem_info.DEVICE_ADDRESS_EXT`.
+    Pass an instance to :meth:`Kernel.set_arg`, :meth:`Kernel.set_args`, or a
+    :class:`Kernel` invocation to call
+    ``clSetKernelArgDevicePointerEXT``. The address may be obtained with
+    :meth:`MemoryObjectHolder.get_info` and
+    :attr:`mem_info.DEVICE_ADDRESS_EXT`.
+
+    This class is available only when PyOpenCL is built with headers defining
+    ``cl_ext_buffer_device_address``; using it also requires the target
+    device to advertise that extension.
+
+    .. attribute:: address
+
+        The device address as an integer.
+
 Buffer
 ------
 
