@@ -235,6 +235,8 @@ Kernel
         * An instance of :class:`MemoryObject`. (e.g. :class:`Buffer`,
           :class:`Image`, etc.)
         * An instance of :class:`LocalMemory`.
+        * An instance of :class:`DevicePointerEXT`, when
+          ``cl_ext_buffer_device_address`` is available.
         * An instance of :class:`Sampler`.
         * An instance of :class:`CommandQueue`. (CL 2.0 and higher only)
 

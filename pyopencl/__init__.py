@@ -147,6 +147,7 @@ from pyopencl._cl import (  # ruff:ignore[unused-import]
         MemoryObject,
         MemoryMap,
         Buffer,
+        DevicePointerEXT,
 
         _Program,
         Kernel,
@@ -1871,6 +1872,7 @@ __all__ = [
     "Context",
     "CtxFactory",
     "Device",
+    "DevicePointerEXT",
     "DeviceTopologyAmd",
     "Error",
     "Event",

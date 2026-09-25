@@ -65,6 +65,8 @@ namespace pyopencl {
   }
 
 #endif
+
+  struct device_pointer_dummy { };
 }
 
 
@@ -637,6 +639,22 @@ void pyopencl_expose_part_2(py::module_ &m)
       .def_prop_ro("size", &cls::size)
       ;
   }
+
+#ifdef cl_ext_buffer_device_address
+  {
+    typedef device_pointer_ext cls;
+    py::class_<cls>(m, "DevicePointerEXT", py::dynamic_attr())
+      .def(py::init<cl_mem_device_address_ext>(), py::arg("address"))
+      .def_prop_ro("address", &cls::address)
+      ;
+  }
+#else
+  {
+    typedef device_pointer_dummy cls;
+    py::class_<cls>(m, "DevicePointerEXT", py::dynamic_attr())
+      ;
+  }
+#endif
 
   m.def("enqueue_nd_range_kernel", enqueue_nd_range_kernel,
       py::arg("queue"),
