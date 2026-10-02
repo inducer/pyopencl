@@ -185,13 +185,13 @@ namespace PYGPU_PACKAGE
         bin_nr_t exponent = bin >> m_leading_bits_in_bin_id;
         bin_nr_t mantissa = bin & mantissa_mask();
 
-        size_type ones = signed_left_shift((size_type) 1,
+        size_type ones = signed_left_shift(static_cast<size_type>(1),
             signed(exponent)-signed(m_leading_bits_in_bin_id)
             );
         if (ones) ones -= 1;
 
         size_type head = signed_left_shift(
-           (size_type) ((1<<m_leading_bits_in_bin_id) | mantissa),
+           static_cast<size_type>((1<<m_leading_bits_in_bin_id) | mantissa),
             signed(exponent)-signed(m_leading_bits_in_bin_id));
         if (ones & head)
           throw std::runtime_error("memory_pool::alloc_size: bit-counting fault");
