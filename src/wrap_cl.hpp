@@ -1565,7 +1565,7 @@ namespace pyopencl
             (m_queue));
       }
 
-      const cl_command_queue data() const
+      cl_command_queue data() const
       {
         if (m_finalized)
         {
@@ -1817,7 +1817,7 @@ namespace pyopencl
             (m_event));
       }
 
-      const cl_event data() const
+      cl_event data() const
       { return m_event; }
 
       PYOPENCL_EQUALITY_TESTS(event);
@@ -2170,7 +2170,7 @@ namespace pyopencl
   class memory_object_holder
   {
     public:
-      virtual const cl_mem data() const = 0;
+      virtual cl_mem data() const = 0;
 
       PYOPENCL_EQUALITY_TESTS(memory_object_holder);
 
@@ -2250,7 +2250,7 @@ namespace pyopencl
           return py::none();
       }
 
-      const cl_mem data() const
+      cl_mem data() const
       { return m_mem; }
 
   };
@@ -4875,7 +4875,7 @@ namespace pyopencl
         {
           prg = py::cast<program const *>(prg_py);
         }
-        catch (py::cast_error) {
+        catch (py::cast_error &) {
           prg = py::cast<program const *>(prg_py.attr("_get_prg")());
         }
 

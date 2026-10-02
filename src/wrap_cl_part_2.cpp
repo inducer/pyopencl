@@ -35,7 +35,7 @@
 
 namespace pyopencl {
 #if PYOPENCL_CL_VERSION >= 0x1020
-  py::object image_desc_dummy_getter(cl_image_desc &desc)
+  py::object image_desc_dummy_getter([[maybe_unused]] cl_image_desc &desc)
   {
     return py::none();
   }
