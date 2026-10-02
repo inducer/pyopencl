@@ -28,7 +28,7 @@
 #include "bitlog.hpp"
 
 
-const char pyopencl::log_table_8[] =
+const unsigned char pyopencl::log_table_8[] =
 {
   0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
   4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
