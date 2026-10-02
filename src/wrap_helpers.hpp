@@ -206,7 +206,7 @@ namespace
 #define PYOPENCL_EXPOSE_EQUALITY_TESTS \
     /* this relies on nanobind overload resolution going in order of registration */ \
     .def("__eq__", [](cls const &self, cls const &other) { return self == other; }) \
-    .def("__eq__", [](cls const &self, py::object obj) { return false; }, py::arg("obj").none())
+    .def("__eq__", []([[maybe_unused]] cls const &self, [[maybe_unused]] py::object obj) { return false; }, py::arg("obj").none())
 
 
 #endif
