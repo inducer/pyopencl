@@ -289,54 +289,54 @@
 #define PYOPENCL_CALL_GUARDED_THREADED_WITH_TRACE_INFO(NAME, ARGLIST, TRACE_INFO) \
   { \
     PYOPENCL_PRINT_CALL_TRACE_INFO(#NAME, TRACE_INFO); \
-    cl_int status_code; \
+    cl_int _cl_status_code; \
     { \
       py::gil_scoped_release release; \
-      status_code = NAME ARGLIST; \
+      _cl_status_code = NAME ARGLIST; \
     } \
-    if (status_code != CL_SUCCESS) \
-      throw pyopencl::error(#NAME, status_code);\
+    if (_cl_status_code != CL_SUCCESS) \
+      throw pyopencl::error(#NAME, _cl_status_code);\
   }
 
 #define PYOPENCL_CALL_GUARDED_WITH_TRACE_INFO(NAME, ARGLIST, TRACE_INFO) \
   { \
     PYOPENCL_PRINT_CALL_TRACE_INFO(#NAME, TRACE_INFO); \
-    cl_int status_code; \
-    status_code = NAME ARGLIST; \
-    if (status_code != CL_SUCCESS) \
-      throw pyopencl::error(#NAME, status_code);\
+    cl_int _cl_status_code; \
+    _cl_status_code = NAME ARGLIST; \
+    if (_cl_status_code != CL_SUCCESS) \
+      throw pyopencl::error(#NAME, _cl_status_code);\
   }
 
 #define PYOPENCL_CALL_GUARDED_THREADED(NAME, ARGLIST) \
   { \
     PYOPENCL_PRINT_CALL_TRACE(#NAME); \
-    cl_int status_code; \
+    cl_int _cl_status_code; \
     { \
       py::gil_scoped_release release; \
-      status_code = NAME ARGLIST; \
+      _cl_status_code = NAME ARGLIST; \
     } \
-    if (status_code != CL_SUCCESS) \
-      throw pyopencl::error(#NAME, status_code);\
+    if (_cl_status_code != CL_SUCCESS) \
+      throw pyopencl::error(#NAME, _cl_status_code);\
   }
 
 #define PYOPENCL_CALL_GUARDED(NAME, ARGLIST) \
   { \
     PYOPENCL_PRINT_CALL_TRACE(#NAME); \
-    cl_int status_code; \
-    status_code = NAME ARGLIST; \
-    if (status_code != CL_SUCCESS) \
-      throw pyopencl::error(#NAME, status_code);\
+    cl_int _cl_status_code; \
+    _cl_status_code = NAME ARGLIST; \
+    if (_cl_status_code != CL_SUCCESS) \
+      throw pyopencl::error(#NAME, _cl_status_code);\
   }
 #define PYOPENCL_CALL_GUARDED_CLEANUP(NAME, ARGLIST) \
   { \
     PYOPENCL_PRINT_CALL_TRACE(#NAME); \
-    cl_int status_code; \
-    status_code = NAME ARGLIST; \
-    if (status_code != CL_SUCCESS) \
+    cl_int _cl_status_code; \
+    _cl_status_code = NAME ARGLIST; \
+    if (_cl_status_code != CL_SUCCESS) \
       std::cerr \
         << "PyOpenCL WARNING: a clean-up operation failed (dead context maybe?)" \
         << std::endl \
-        << #NAME " failed with code " << status_code \
+        << #NAME " failed with code " << _cl_status_code \
         << std::endl; \
   }
 
@@ -346,12 +346,12 @@
 // {{{ get_info helpers
 #define PYOPENCL_GET_OPAQUE_INFO(WHAT, FIRST_ARG, SECOND_ARG, CL_TYPE, TYPE) \
   { \
-    CL_TYPE param_value; \
+    CL_TYPE _cl_param_value; \
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info, \
-          (FIRST_ARG, SECOND_ARG, sizeof(param_value), &param_value, 0)); \
-    if (param_value) \
+          (FIRST_ARG, SECOND_ARG, sizeof(_cl_param_value), &_cl_param_value, 0)); \
+    if (_cl_param_value) \
       return py::object(handle_from_new_ptr( \
-            new TYPE(param_value, /*retain*/ true))); \
+            new TYPE(_cl_param_value, /*retain*/ true))); \
     else \
       return py::none(); \
   }
@@ -371,17 +371,17 @@
 
 #define PYOPENCL_GET_STR_INFO(WHAT, FIRST_ARG, SECOND_ARG) \
   { \
-    size_t param_value_size; \
+    size_t _cl_param_value_size; \
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info, \
-        (FIRST_ARG, SECOND_ARG, 0, 0, &param_value_size)); \
+        (FIRST_ARG, SECOND_ARG, 0, 0, &_cl_param_value_size)); \
     \
-    std::vector<char> param_value(param_value_size); \
+    std::vector<char> _cl_param_value(_cl_param_value_size); \
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info, \
-        (FIRST_ARG, SECOND_ARG, param_value_size,  \
-         param_value.empty( ) ? nullptr : &param_value.front(), &param_value_size)); \
+        (FIRST_ARG, SECOND_ARG, _cl_param_value_size,  \
+         _cl_param_value.empty( ) ? nullptr : &_cl_param_value.front(), &_cl_param_value_size)); \
     \
     return py::cast( \
-        param_value.empty( ) ? "" : std::string(&param_value.front(), param_value_size-1)); \
+        _cl_param_value.empty( ) ? "" : std::string(&_cl_param_value.front(), _cl_param_value_size-1)); \
   }
 
 
@@ -389,10 +389,10 @@
 
 #define PYOPENCL_GET_TYPED_INFO(WHAT, FIRST_ARG, SECOND_ARG, TYPE) \
   { \
-    TYPE param_value; \
+    TYPE _cl_param_value; \
     PYOPENCL_CALL_GUARDED(clGet##WHAT##Info, \
-        (FIRST_ARG, SECOND_ARG, sizeof(param_value), &param_value, 0)); \
-    return py::cast(param_value); \
+        (FIRST_ARG, SECOND_ARG, sizeof(_cl_param_value), &_cl_param_value, 0)); \
+    return py::cast(_cl_param_value); \
   }
 
 // }}}
@@ -1800,11 +1800,11 @@ namespace pyopencl
       cl_event m_event;
 
     public:
-      event(cl_event event, bool retain)
-        : m_event(event)
+      event(cl_event evt, bool retain)
+        : m_event(evt)
       {
         if (retain)
-          PYOPENCL_CALL_GUARDED(clRetainEvent, (event));
+          PYOPENCL_CALL_GUARDED(clRetainEvent, (evt));
       }
 
       event(event const &src)
