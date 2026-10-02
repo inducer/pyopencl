@@ -161,8 +161,6 @@ execute_process(
 # }}}
 
 link_directories(${CL_LIB_DIR})
-include_directories(${CL_INC_DIR} ${Python_NumPy_INCLUDE_DIRS})
-
 find_package(nanobind CONFIG REQUIRED)
 
 set(OpenCL_ROOT ${CL_LIB_DIR})
@@ -173,6 +171,7 @@ find_package(OpenCL REQUIRED)
 nanobind_add_module(
   _cl
   NB_STATIC # Build static libnanobind (the extension module itself remains a shared library)
+  NB_SUPPRESS_WARNINGS
   LTO
   NOMINSIZE
   src/wrap_constants.cpp
@@ -186,6 +185,7 @@ target_compile_features(_cl PRIVATE cxx_std_17)
 
 target_link_libraries(_cl PRIVATE ${OpenCL_LIBRARY})
 target_include_directories(_cl SYSTEM PRIVATE
+  ${CL_INC_DIR}
   ${NANOBIND_INCLUDE_DIR}
   ${Python_NumPy_INCLUDE_DIRS})
 
@@ -202,6 +202,7 @@ target_compile_definitions(_cl
      # NOTE: VLAs are used by PYOPENCL_STACK_CONTAINER for dubious reasons
      -Wpedantic -Wno-vla
      -Wshadow
+     -Wold-style-cast
    )
  endif()
 

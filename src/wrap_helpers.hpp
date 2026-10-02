@@ -173,14 +173,14 @@ namespace
   template <typename T, typename ClType>
   inline T *from_int_ptr(intptr_t obj_ref, bool retain)
   {
-    ClType clobj = (ClType) obj_ref;
+    ClType clobj = reinterpret_cast<ClType>(obj_ref);
     return new T(clobj, retain);
   }
 
   template <typename T>
   inline intptr_t to_int_ptr(T const &obj)
   {
-    return (intptr_t) obj.data();
+    return reinterpret_cast<intptr_t>(obj.data());
   }
 }
 

@@ -715,7 +715,7 @@ void pyopencl_expose_mempool(py::module_ &m)
       .def("enqueue_release", &cls::free)
       .def("__eq__", [](const cls &self, const cls &other)
           { return self.svm_ptr() == other.svm_ptr(); })
-      .def("__hash__", [](cls &self) { return (intptr_t) self.svm_ptr(); })
+      .def("__hash__", [](cls &self) { return reinterpret_cast<intptr_t>(self.svm_ptr()); })
       .DEF_SIMPLE_METHOD(bind_to_queue)
       .DEF_SIMPLE_METHOD(unbind_from_queue)
 
