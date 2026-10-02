@@ -203,6 +203,16 @@ target_compile_definitions(_cl
      -Wpedantic -Wno-vla
      -Wshadow
      -Wold-style-cast
+     -Wcast-align
+     -Wconversion -Wsign-conversion
+     -Wnon-virtual-dtor
+     -Woverloaded-virtual
+     -Wformat=2
+     -Wimplicit-fallthrough
+     -Wdouble-promotion
+     -Wnull-dereference
+     # NOTE: mostly calls to deprecated CL functions that we support
+     -Wno-deprecated-declarations
    )
  endif()
 
