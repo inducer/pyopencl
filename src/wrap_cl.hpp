@@ -196,7 +196,7 @@
       for (py::handle py_dev: py_devices) \
         devices_vec.push_back( \
             py::cast<device &>(py_dev).data()); \
-      num_devices = devices_vec.size(); \
+      num_devices = static_cast<cl_uint>(devices_vec.size()); \
       devices = devices_vec.empty( ) ? nullptr : &devices_vec.front(); \
     } \
 
@@ -1375,7 +1375,7 @@ namespace pyopencl
       PYOPENCL_PRINT_CALL_TRACE("clCreateContext");
       ctx = clCreateContext(
           props_ptr,
-          devices.size(),
+          static_cast<cl_uint>(devices.size()),
           devices.empty( ) ? nullptr : &devices.front(),
           0, 0, &status_code);
     }
@@ -2265,7 +2265,7 @@ namespace pyopencl
     PYOPENCL_RETRY_IF_MEM_ERROR(
       PYOPENCL_CALL_GUARDED(clEnqueueMigrateMemObjects, (
             cq.data(),
-            mem_objects.size(), mem_objects.empty( ) ? nullptr : &mem_objects.front(),
+            static_cast<cl_uint>(mem_objects.size()), mem_objects.empty( ) ? nullptr : &mem_objects.front(),
             flags,
             PYOPENCL_WAITLIST_ARGS, &evt
             ));
@@ -2410,7 +2410,7 @@ namespace pyopencl
             (data(), CL_MEM_SIZE, sizeof(my_length), &my_length, 0));
 
         if (PySlice_GetIndicesEx(slc.ptr(),
-              my_length, &start, &end, &stride, &length) != 0)
+              static_cast<Py_ssize_t>(my_length), &start, &end, &stride, &length) != 0)
           throw py::python_error();
 
         if (stride != 1)
@@ -2421,13 +2421,13 @@ namespace pyopencl
         PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
             (data(), CL_MEM_FLAGS, sizeof(my_flags), &my_flags, 0));
 
-        my_flags &= ~CL_MEM_COPY_HOST_PTR;
+        my_flags &= ~static_cast<cl_mem_flags>(CL_MEM_COPY_HOST_PTR);
 
         if (end <= start)
           throw pyopencl::error("Buffer.__getitem__", CL_INVALID_VALUE,
               "Buffer slice have end > start");
 
-        return get_sub_region(start, end-start, my_flags);
+        return get_sub_region(static_cast<size_t>(start), static_cast<size_t>(end-start), my_flags);
       }
 #endif
   };
@@ -2469,7 +2469,7 @@ namespace pyopencl
         throw pyopencl::error("Buffer", CL_INVALID_VALUE,
             "specified size is greater than host buffer size");
       if (size == 0)
-        size = retained_buf_obj->m_buf.len;
+        size = static_cast<size_t>(retained_buf_obj->m_buf.len);
     }
 
     cl_mem mem;
@@ -2540,7 +2540,7 @@ namespace pyopencl
             queue,
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
-            src_offset, len, buf,
+            src_offset, static_cast<size_t>(len), buf,
             PYOPENCL_WAITLIST_ARGS, &evt
             ))
       );
@@ -2579,7 +2579,7 @@ namespace pyopencl
             queue,
             mem.data(),
             PYOPENCL_CAST_BOOL(is_blocking),
-            dst_offset, len, buf,
+            dst_offset, static_cast<size_t>(len), buf,
             PYOPENCL_WAITLIST_ARGS, &evt
             ))
       );
@@ -2609,7 +2609,7 @@ namespace pyopencl
           (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_src, 0));
       PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
           (dst.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_dst, 0));
-      byte_count = std::min(byte_count_src, byte_count_dst);
+      byte_count = static_cast<ptrdiff_t>(std::min(byte_count_src, byte_count_dst));
     }
 
     cl_event evt;
@@ -2618,7 +2618,7 @@ namespace pyopencl
             cq.data(),
             src.data(), dst.data(),
             src_offset, dst_offset,
-            byte_count,
+            static_cast<size_t>(byte_count),
             PYOPENCL_WAITLIST_ARGS,
             &evt
             ))
@@ -2648,7 +2648,7 @@ namespace pyopencl
           (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_src, 0));
       PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
           (dst.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_dst, 0));
-      byte_count = std::min(byte_count_src, byte_count_dst);
+      byte_count = static_cast<ptrdiff_t>(std::min(byte_count_src, byte_count_dst));
     }
     else
     {
@@ -2668,7 +2668,7 @@ namespace pyopencl
         cq.data(),
         src.data(), dst.data(),
         0, 0,
-        byte_count,
+        static_cast<size_t>(byte_count),
         PYOPENCL_WAITLIST_ARGS,
         &evt
         ))
@@ -2851,7 +2851,7 @@ namespace pyopencl
       PYOPENCL_CALL_GUARDED(clEnqueueFillBuffer, (
             cq.data(),
             mem.data(),
-            pattern_buf, pattern_len, offset, size,
+            pattern_buf, static_cast<size_t>(pattern_len), offset, size,
             PYOPENCL_WAITLIST_ARGS, &evt
             ))
       );
@@ -2941,7 +2941,7 @@ namespace pyopencl
     std::vector<cl_image_format> formats(num_image_formats);
     PYOPENCL_CALL_GUARDED(clGetSupportedImageFormats, (
           ctx.data(), flags, image_type,
-          formats.size(), formats.empty( ) ? nullptr : &formats.front(), nullptr));
+          static_cast<cl_uint>(formats.size()), formats.empty( ) ? nullptr : &formats.front(), nullptr));
 
     PYOPENCL_RETURN_VECTOR(cl_image_format, formats);
   }
@@ -3039,7 +3039,7 @@ namespace pyopencl
       len = retained_buf_obj->m_buf.len;
     }
 
-    unsigned dims = py::len(shape);
+    unsigned dims = static_cast<unsigned>(py::len(shape));
     cl_int status_code;
     cl_mem mem;
     if (dims == 2)
@@ -3057,7 +3057,7 @@ namespace pyopencl
       }
 
       // check buffer size
-      cl_int itemsize = get_image_format_item_size(fmt);
+      cl_uint itemsize = get_image_format_item_size(fmt);
       if (buf && std::max(pitch, width*itemsize)*height > cl_uint(len))
           throw pyopencl::error("Image", CL_INVALID_VALUE,
               "buffer too small");
@@ -3092,7 +3092,7 @@ namespace pyopencl
       }
 
       // check buffer size
-      cl_int itemsize = get_image_format_item_size(fmt);
+      cl_uint itemsize = get_image_format_item_size(fmt);
       if (buf &&
           std::max(std::max(pitch_x, width*itemsize)*height, pitch_y)
           * depth > cl_uint(len))
@@ -3533,9 +3533,9 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
     PYOPENCL_PARSE_NUMPY_ARRAY_SPEC;
 
-    npy_uintp size_in_bytes = PyDataType_ELSIZE(tp_descr);
+    npy_uintp size_in_bytes = static_cast<npy_uintp>(PyDataType_ELSIZE(tp_descr));
     for (npy_intp sdim: shape)
-      size_in_bytes *= sdim;
+      size_in_bytes *= static_cast<npy_uintp>(sdim);
 
     py::object result;
     PyArrayObject *result_arr;
@@ -3568,7 +3568,7 @@ namespace pyopencl
     {
       result = py::object(py::steal<py::object>(PyArray_NewFromDescr(
           &PyArray_Type, tp_descr,
-          shape.size(),
+          static_cast<int>(shape.size()),
           shape.empty() ? nullptr : &shape.front(),
           strides.empty() ? nullptr : &strides.front(),
           mapped, ary_flags, /*obj*/nullptr)));
@@ -3656,7 +3656,7 @@ namespace pyopencl
 
     py::object result = py::steal<py::object>(PyArray_NewFromDescr(
         &PyArray_Type, tp_descr,
-        shape.size(),
+        static_cast<int>(shape.size()),
         shape.empty() ? nullptr : &shape.front(),
         strides.empty() ? nullptr : &strides.front(),
         mapped, ary_flags, /*obj*/nullptr));
@@ -3728,7 +3728,7 @@ namespace pyopencl
       }
       size_t size() const
       {
-        return m_size;
+        return static_cast<size_t>(m_size);
       }
 
       py::object mem() const
@@ -4069,7 +4069,7 @@ namespace pyopencl
         (
           cq.data(),
           dst.svm_ptr(), pattern_ptr,
-          pattern_len,
+          static_cast<size_t>(pattern_len),
           size,
           PYOPENCL_WAITLIST_ARGS,
           &evt
@@ -4185,7 +4185,7 @@ namespace pyopencl
         clEnqueueSVMMigrateMem,
         (
          cq.data(),
-         svm_pointers.size(),
+         static_cast<cl_uint>(svm_pointers.size()),
          svm_pointers.empty() ? nullptr : &svm_pointers.front(),
          sizes.empty() ? nullptr : &sizes.front(),
          flags,
@@ -4430,7 +4430,7 @@ namespace pyopencl
               std::vector<size_t> sizes;
               PYOPENCL_GET_VEC_INFO(Program, m_program, CL_PROGRAM_BINARY_SIZES, sizes);
 
-              size_t total_size = std::accumulate(sizes.begin(), sizes.end(), 0);
+              size_t total_size = std::accumulate(sizes.begin(), sizes.end(), size_t{0});
 
               std::unique_ptr<unsigned char []> result(
                   new unsigned char[total_size]);
@@ -4455,10 +4455,10 @@ namespace pyopencl
                     py::steal<py::object>(
 #if PY_VERSION_HEX >= 0x03000000
                     PyBytes_FromStringAndSize(
-                      reinterpret_cast<char *>(ptr), sizes[i])
+                      reinterpret_cast<char *>(ptr), static_cast<Py_ssize_t>(sizes[i]))
 #else
                     PyString_FromStringAndSize(
-                      reinterpret_cast<char *>(ptr), sizes[i])
+                      reinterpret_cast<char *>(ptr), static_cast<Py_ssize_t>(sizes[i]))
 #endif
                     ));
                 py_result.append(binary_pyobj);
@@ -4564,7 +4564,7 @@ namespace pyopencl
 
         PYOPENCL_CALL_GUARDED_THREADED(clCompileProgram,
             (m_program, num_devices, devices,
-             options.c_str(), header_names.size(),
+             options.c_str(), static_cast<cl_uint>(header_names.size()),
              programs.empty() ? nullptr : &programs.front(),
              header_name_ptrs.empty() ? nullptr : &header_name_ptrs.front(),
              0, 0));
@@ -4577,7 +4577,7 @@ namespace pyopencl
         py_buffer_wrapper bufwrap;
         bufwrap.get(py_buffer.ptr(), PyBUF_ANY_CONTIGUOUS);
         PYOPENCL_CALL_GUARDED(clSetProgramSpecializationConstant,
-            (m_program, spec_id, bufwrap.m_buf.len, bufwrap.m_buf.buf));
+            (m_program, spec_id, static_cast<size_t>(bufwrap.m_buf.len), bufwrap.m_buf.buf));
       }
 #endif
   };
@@ -4646,7 +4646,7 @@ namespace pyopencl
       len = buf_wrapper.m_buf.len;
 
       binaries.push_back(reinterpret_cast<const unsigned char *>(buf));
-      sizes.push_back(len);
+      sizes.push_back(static_cast<size_t>(len));
     }
 
     PYOPENCL_STACK_CONTAINER(cl_int, binary_statuses, num_devices);
@@ -4654,7 +4654,7 @@ namespace pyopencl
     cl_int status_code;
     PYOPENCL_PRINT_CALL_TRACE("clCreateProgramWithBinary");
     cl_program result = clCreateProgramWithBinary(
-        ctx.data(), num_devices,
+        ctx.data(), static_cast<cl_uint>(num_devices),
         devices.empty( ) ? nullptr : &devices.front(),
         sizes.empty( ) ? nullptr : &sizes.front(),
         binaries.empty( ) ? nullptr : &binaries.front(),
@@ -4765,7 +4765,7 @@ namespace pyopencl
     cl_program result = clLinkProgram(
         ctx.data(), num_devices, devices,
         options.c_str(),
-        programs.size(),
+        static_cast<cl_uint>(programs.size()),
         programs.empty() ? nullptr : &programs.front(),
         0, 0,
         &status_code);
@@ -5019,7 +5019,7 @@ namespace pyopencl
         len = buf_wrapper.m_buf.len;
 
         PYOPENCL_CALL_GUARDED(clSetKernelArg,
-            (m_kernel, arg_index, len, buf));
+            (m_kernel, arg_index, static_cast<size_t>(len), buf));
       }
 
 #if PYOPENCL_CL_VERSION >= 0x2000
@@ -6006,7 +6006,7 @@ namespace pyopencl
 
     py::object result = py::steal<py::object>(PyArray_NewFromDescr(
         &PyArray_Type, tp_descr,
-        dims.size(), &dims.front(), /*strides*/ nullptr,
+        static_cast<int>(dims.size()), &dims.front(), /*strides*/ nullptr,
         host_ptr, ary_flags, /*obj*/nullptr));
     PyArrayObject *result_arr = reinterpret_cast<PyArrayObject *>(result.ptr());
 
