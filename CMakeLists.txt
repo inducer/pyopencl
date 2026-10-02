@@ -150,7 +150,13 @@ execute_process(
   "${PYTHON_EXECUTABLE}" -c "import nanobind; print(nanobind.cmake_dir())"
   OUTPUT_VARIABLE NANOBIND_DIR
   OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
-  list(APPEND CMAKE_PREFIX_PATH "${NANOBIND_DIR}")
+list(APPEND CMAKE_PREFIX_PATH "${NANOBIND_DIR}")
+
+execute_process(
+  COMMAND
+  "${PYTHON_EXECUTABLE}" -c "import nanobind; print(nanobind.include_dir())"
+  OUTPUT_VARIABLE NANOBIND_INCLUDE_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
 
 # }}}
 
@@ -176,14 +182,25 @@ nanobind_add_module(
   src/wrap_mempool.cpp
   src/bitlog.cpp
 )
+target_compile_features(_cl PRIVATE cxx_std_17)
 
 target_link_libraries(_cl PRIVATE ${OpenCL_LIBRARY})
+target_include_directories(_cl SYSTEM PRIVATE
+  ${NANOBIND_INCLUDE_DIR}
+  ${Python_NumPy_INCLUDE_DIRS})
 
 target_compile_definitions(_cl
   PRIVATE
   PYGPU_PACKAGE=pyopencl
   PYGPU_PYOPENCL
 )
+
+ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+   target_compile_options(_cl PRIVATE
+     -Wall
+     -Wextra
+   )
+ endif()
 
 if (PYOPENCL_PRETEND_CL_VERSION)
   target_compile_definitions(
