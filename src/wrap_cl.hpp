@@ -2616,7 +2616,7 @@ namespace pyopencl
       PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
           (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_src, 0));
       PYOPENCL_CALL_GUARDED(clGetMemObjectInfo,
-          (src.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_dst, 0));
+          (dst.data(), CL_MEM_SIZE, sizeof(byte_count), &byte_count_dst, 0));
       byte_count = std::min(byte_count_src, byte_count_dst);
     }
 
