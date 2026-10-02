@@ -199,9 +199,9 @@ target_compile_definitions(_cl
    target_compile_options(_cl PRIVATE
      -Wall
      -Wextra
-     -Wpedantic
      # NOTE: VLAs are used by PYOPENCL_STACK_CONTAINER for dubious reasons
-     -Wno-vla
+     -Wpedantic -Wno-vla
+     -Wshadow
    )
  endif()
 
