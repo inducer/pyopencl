@@ -167,24 +167,16 @@
 #if PYOPENCL_CL_VERSION >= 0x1020
 
 #define PYOPENCL_GET_EXT_FUN(PLATFORM, NAME, VAR) \
-    NAME##_fn VAR \
-      = (NAME##_fn) \
-      clGetExtensionFunctionAddressForPlatform(PLATFORM, #NAME); \
-    \
-    if (!VAR) \
-      throw error(#NAME, CL_INVALID_VALUE, #NAME \
-          "not available");
+    NAME##_fn VAR = reinterpret_cast<NAME##_fn>( \
+      clGetExtensionFunctionAddressForPlatform(PLATFORM, #NAME)); \
+    if (!VAR) throw error(#NAME, CL_INVALID_VALUE, #NAME "not available");
 
 #else
 
 #define PYOPENCL_GET_EXT_FUN(PLATFORM, NAME, VAR) \
-    NAME##_fn VAR \
-      = (NAME##_fn) \
-      clGetExtensionFunctionAddress(#NAME); \
-    \
-    if (!VAR) \
-      throw error(#NAME, CL_INVALID_VALUE, #NAME \
-          "not available");
+    NAME##_fn VAR = reinterpret_cast<NAME##_fn>( \
+      clGetExtensionFunctionAddress(#NAME)); \
+    if (!VAR) throw error(#NAME, CL_INVALID_VALUE, #NAME "not available");
 
 #endif
 
@@ -448,7 +440,7 @@
     bool operator!=(cls const &other) const \
     { return data() != other.data(); } \
     long hash() const \
-    { return (long) (intptr_t) data(); }
+    { return static_cast<long>(reinterpret_cast<intptr_t>(data())); }
 
 // }}}
 
@@ -2663,7 +2655,9 @@ namespace pyopencl
       byte_count = py::cast<ptrdiff_t>(py_byte_count);
     }
 
-    clEnqueueCopyBufferP2PAMD_fn fn = (clEnqueueCopyBufferP2PAMD_fn)clGetExtensionFunctionAddressForPlatform(plat.data(), "clEnqueueCopyBufferP2PAMD");
+    clEnqueueCopyBufferP2PAMD_fn fn = reinterpret_cast<clEnqueueCopyBufferP2PAMD_fn>(
+      clGetExtensionFunctionAddressForPlatform(plat.data(), "clEnqueueCopyBufferP2PAMD")
+    );
     if (!fn)
       throw pyopencl::error("clGetExtensionFunctionAddressForPlatform", CL_INVALID_VALUE,
           "clEnqueueCopyBufferP2PAMD is not available");
@@ -3579,8 +3573,8 @@ namespace pyopencl
           strides.empty() ? nullptr : &strides.front(),
           mapped, ary_flags, /*obj*/nullptr)));
 
-      result_arr = (PyArrayObject *) result.ptr();
-      if (size_in_bytes != (npy_uintp) PyArray_NBYTES(result_arr))
+      result_arr = reinterpret_cast<PyArrayObject *>(result.ptr());
+      if (size_in_bytes != static_cast<npy_uintp>(PyArray_NBYTES(result_arr)))
         throw pyopencl::error("enqueue_map_buffer", CL_INVALID_VALUE,
             "miscalculated numpy array size (not contiguous?)");
 
@@ -3666,7 +3660,7 @@ namespace pyopencl
         shape.empty() ? nullptr : &shape.front(),
         strides.empty() ? nullptr : &strides.front(),
         mapped, ary_flags, /*obj*/nullptr));
-    PyArrayObject *result_arr = (PyArrayObject *) result.ptr();
+    PyArrayObject *result_arr = reinterpret_cast<PyArrayObject *>(result.ptr());
 
     py::object map_py(handle_from_new_ptr(map.release()));
     PyArray_SetBaseObject(result_arr, map_py.ptr());
@@ -4976,7 +4970,7 @@ namespace pyopencl
 #define PYOPENCL_KERNEL_PACK_AND_SET_ARG(TYPECH_VAL, TYPE, CAST_TYPE) \
         case TYPECH_VAL: \
           { \
-            TYPE val = (TYPE) py::cast<CAST_TYPE>(obj); \
+            TYPE val = static_cast<TYPE>(py::cast<CAST_TYPE>(obj)); \
             PYOPENCL_CALL_GUARDED(clSetKernelArg, (m_kernel, arg_index, sizeof(val), &val)); \
             break; \
           }
@@ -5881,7 +5875,7 @@ namespace pyopencl
   inline
   py::object memory_object_from_int(intptr_t cl_mem_as_int, bool retain)
   {
-    return create_mem_object_wrapper((cl_mem) cl_mem_as_int, retain);
+    return create_mem_object_wrapper(reinterpret_cast<cl_mem>(cl_mem_as_int), retain);
   }
 
 
@@ -6014,9 +6008,9 @@ namespace pyopencl
         &PyArray_Type, tp_descr,
         dims.size(), &dims.front(), /*strides*/ nullptr,
         host_ptr, ary_flags, /*obj*/nullptr));
-    PyArrayObject *result_arr = (PyArrayObject *) result.ptr();
+    PyArrayObject *result_arr = reinterpret_cast<PyArrayObject *>(result.ptr());
 
-    if ((size_t) PyArray_NBYTES(result_arr) > mem_obj_size)
+    if (static_cast<size_t>(PyArray_NBYTES(result_arr)) > mem_obj_size)
       throw pyopencl::error("MemoryObject.get_host_array",
           CL_INVALID_VALUE,
           "Resulting array is larger than memory object.");
