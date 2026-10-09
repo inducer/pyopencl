@@ -1247,9 +1247,9 @@ void pyopencl_expose_constants(py::module_ &m)
           [](cls *self, cl_int bus, cl_int device, cl_int function)
           {
             self->pcie.type = CL_DEVICE_TOPOLOGY_TYPE_PCIE_AMD;
-            self->pcie.bus = (cl_char) bus;
-            self->pcie.device = (cl_char) device;
-            self->pcie.function = (cl_char) function;
+            self->pcie.bus = static_cast<cl_char>(bus);
+            self->pcie.device = static_cast<cl_char>(device);
+            self->pcie.function = static_cast<cl_char>(function);
           },
           py::arg("bus")=0,
           py::arg("device")=0,
@@ -1262,15 +1262,15 @@ void pyopencl_expose_constants(py::module_ &m)
       .def_prop_rw("bus",
           [](cls &t) { return t.pcie.bus; },
           // FIXME: Revert to cl_char when possible
-          [](cls &t, cl_int val) { t.pcie.bus = (cl_char) val; })
+          [](cls &t, cl_int val) { t.pcie.bus = static_cast<cl_char>(val); })
       .def_prop_rw("device",
           [](cls &t) { return t.pcie.device; },
           // FIXME: Revert to cl_char when possible
-          [](cls &t, cl_int val) { t.pcie.device = (cl_char) val; })
+          [](cls &t, cl_int val) { t.pcie.device = static_cast<cl_char>(val); })
       .def_prop_rw("function",
           [](cls &t) { return t.pcie.function; },
           // FIXME: Revert to cl_char when possible
-          [](cls &t, cl_int val) { t.pcie.function = (cl_char) val; })
+          [](cls &t, cl_int val) { t.pcie.function = static_cast<cl_char>(val); })
       ;
   }
 #endif

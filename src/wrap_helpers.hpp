@@ -173,14 +173,14 @@ namespace
   template <typename T, typename ClType>
   inline T *from_int_ptr(intptr_t obj_ref, bool retain)
   {
-    ClType clobj = (ClType) obj_ref;
+    ClType clobj = reinterpret_cast<ClType>(obj_ref);
     return new T(clobj, retain);
   }
 
   template <typename T>
   inline intptr_t to_int_ptr(T const &obj)
   {
-    return (intptr_t) obj.data();
+    return reinterpret_cast<intptr_t>(obj.data());
   }
 }
 
@@ -206,7 +206,7 @@ namespace
 #define PYOPENCL_EXPOSE_EQUALITY_TESTS \
     /* this relies on nanobind overload resolution going in order of registration */ \
     .def("__eq__", [](cls const &self, cls const &other) { return self == other; }) \
-    .def("__eq__", [](cls const &self, py::object obj) { return false; }, py::arg("obj").none())
+    .def("__eq__", []([[maybe_unused]] cls const &self, [[maybe_unused]] py::object obj) { return false; }, py::arg("obj").none())
 
 
 #endif
