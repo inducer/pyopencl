@@ -36,6 +36,8 @@ intersphinx_mapping = {
 
 sphinxconfig_missing_reference_aliases: dict[str, str] = {
     "np.dtype": "class:numpy.dtype",
+    "numpy._typing._array_like.NDArray": "obj:numpy.typing.NDArray",
+    "numpy._typing._dtype_like.DTypeLike": "obj:numpy.typing.DTypeLike",
 }
 
 
