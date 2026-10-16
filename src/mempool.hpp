@@ -158,18 +158,18 @@ namespace PYGPU_PACKAGE
     private:
       unsigned mantissa_mask() const
       {
-        return (1 << m_leading_bits_in_bin_id) - 1;
+        return (1u << m_leading_bits_in_bin_id) - 1;
       }
 
     public:
       bin_nr_t bin_number(size_type size)
       {
-        signed l = bitlog2(size);
+        signed l = static_cast<signed>(bitlog2(size));
         size_type shifted = signed_right_shift(size, l-signed(m_leading_bits_in_bin_id));
         if (size && (shifted & (1 << m_leading_bits_in_bin_id)) == 0)
           throw std::runtime_error("memory_pool::bin_number: bitlog2 fault");
         size_type chopped = shifted & mantissa_mask();
-        return l << m_leading_bits_in_bin_id | chopped;
+        return static_cast<bin_nr_t>(static_cast<size_type>(l) << m_leading_bits_in_bin_id | chopped);
       }
 
       void set_trace(bool flag)
@@ -185,13 +185,13 @@ namespace PYGPU_PACKAGE
         bin_nr_t exponent = bin >> m_leading_bits_in_bin_id;
         bin_nr_t mantissa = bin & mantissa_mask();
 
-        size_type ones = signed_left_shift((size_type) 1,
+        size_type ones = signed_left_shift(static_cast<size_type>(1),
             signed(exponent)-signed(m_leading_bits_in_bin_id)
             );
         if (ones) ones -= 1;
 
         size_type head = signed_left_shift(
-           (size_type) ((1<<m_leading_bits_in_bin_id) | mantissa),
+           static_cast<size_type>((1<<m_leading_bits_in_bin_id) | mantissa),
             signed(exponent)-signed(m_leading_bits_in_bin_id));
         if (ones & head)
           throw std::runtime_error("memory_pool::alloc_size: bit-counting fault");

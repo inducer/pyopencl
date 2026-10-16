@@ -54,7 +54,7 @@ namespace pyopencl {
         return false;
       }
 
-      pointer_type allocate(size_type s)
+      pointer_type allocate([[maybe_unused]] size_type s)
       {
         return nullptr;
       }
@@ -67,7 +67,7 @@ namespace pyopencl {
       ~test_allocator()
       { }
 
-      void free(pointer_type &&p)
+      void free([[maybe_unused]] pointer_type &&p)
       { }
 
       void try_release_blocks()
@@ -236,7 +236,7 @@ namespace pyopencl {
       virtual ~pooled_buffer()
       { }
 
-      const super::pointer_type data() const
+      super::pointer_type data() const
       { return m_ptr; }
 
       size_t size() const
@@ -611,7 +611,7 @@ void pyopencl_expose_mempool(py::module_ &m)
     py::class_<cls> wrapper(
         m, "_TestMemoryPool",
         py::intrusive_ptr<cls>(
-            [](cls *o, PyObject *po) noexcept { o->set_self_py(po); }) 
+            [](cls *o, PyObject *po) noexcept { o->set_self_py(po); })
         );
     wrapper
       .def("__init__",
@@ -663,8 +663,8 @@ void pyopencl_expose_mempool(py::module_ &m)
     py::class_<cls, pyopencl::memory_object_holder>(m, "PooledBuffer")
       .def("release", &cls::free)
 
-      .def("bind_to_queue", [](cls &self, pyopencl::command_queue &queue) { /* no-op */ })
-      .def("unbind_from_queue", [](cls &self) { /* no-op */ })
+      .def("bind_to_queue", []([[maybe_unused]] cls &self, [[maybe_unused]] pyopencl::command_queue &queue) { /* no-op */ })
+      .def("unbind_from_queue", []([[maybe_unused]] cls &self) { /* no-op */ })
       ;
   }
 
@@ -674,7 +674,7 @@ void pyopencl_expose_mempool(py::module_ &m)
     py::class_<cls> wrapper(
           m, "MemoryPool",
           py::intrusive_ptr<cls>(
-              [](cls *o, PyObject *po) noexcept { o->set_self_py(po); }) 
+              [](cls *o, PyObject *po) noexcept { o->set_self_py(po); })
           );
     wrapper
       .def(py::init<py::ref<pyopencl::buffer_allocator_base>, unsigned>(),
@@ -694,7 +694,7 @@ void pyopencl_expose_mempool(py::module_ &m)
     py::class_<cls> wrapper(
           m, "SVMAllocator",
           py::intrusive_ptr<cls>(
-               [](cls *o, PyObject *po) noexcept { o->set_self_py(po); }) 
+               [](cls *o, PyObject *po) noexcept { o->set_self_py(po); })
           );
     wrapper
       .def(py::init<py::ref<pyopencl::context>  const &, cl_uint, cl_uint, pyopencl::command_queue *>(),
@@ -715,7 +715,7 @@ void pyopencl_expose_mempool(py::module_ &m)
       .def("enqueue_release", &cls::free)
       .def("__eq__", [](const cls &self, const cls &other)
           { return self.svm_ptr() == other.svm_ptr(); })
-      .def("__hash__", [](cls &self) { return (intptr_t) self.svm_ptr(); })
+      .def("__hash__", [](cls &self) { return reinterpret_cast<intptr_t>(self.svm_ptr()); })
       .DEF_SIMPLE_METHOD(bind_to_queue)
       .DEF_SIMPLE_METHOD(unbind_from_queue)
 
