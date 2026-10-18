@@ -96,4 +96,4 @@ result = np.empty_like(img)
 cl.enqueue_copy(queue, result, result_g)
 
 # Show the blurred image
-imsave("medianFilter-OpenCL.jpg", result, mode="RGB")
+imsave("medianFilter-OpenCL.jpg", result.astype(np.uint8), mode="L")
