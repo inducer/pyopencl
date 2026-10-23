@@ -5406,6 +5406,14 @@
             {
                 "code": "reportUnknownArgumentType",
                 "range": {
+                    "startColumn": 36,
+                    "endColumn": 41,
+                    "lineCount": 1
+                }
+            },
+            {
+                "code": "reportUnknownArgumentType",
+                "range": {
                     "startColumn": 39,
                     "endColumn": 44,
                     "lineCount": 1
@@ -5556,10 +5564,10 @@
                 }
             },
             {
-                "code": "reportUnknownArgumentType",
+                "code": "reportUnknownVariableType",
                 "range": {
-                    "startColumn": 44,
-                    "endColumn": 49,
+                    "startColumn": 26,
+                    "endColumn": 31,
                     "lineCount": 1
                 }
             },
