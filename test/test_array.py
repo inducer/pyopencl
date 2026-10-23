@@ -1518,6 +1518,29 @@ def test_newaxis(ctx_factory: cl.CtxFactory):
 # }}}
 
 
+# {{{ test_ellipsis_newaxis
+
+@pytest.mark.parametrize(
+    ("shape", "index"),
+    [
+        ((), (Ellipsis, None)),
+        ((0,), (Ellipsis, None)),
+        ((2, 3), (Ellipsis, None)),
+        ((2, 3), (0, Ellipsis, None)),
+    ],
+)
+def test_ellipsis_newaxis(ctx_factory: cl.CtxFactory, shape, index):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a_host = np.zeros(shape, dtype=np.float32)
+    a = cl_array.to_device(queue, a_host)
+
+    assert a[index].shape == a_host[index].shape
+
+# }}}
+
+
 # {{{ test_squeeze
 
 def test_squeeze(ctx_factory: cl.CtxFactory):
