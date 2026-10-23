@@ -2217,7 +2217,9 @@ class Array:
             elif index_entry is Ellipsis:
                 index_axis += 1
 
-                remaining_index_count = len(index) - index_axis
+                remaining_index_count = builtins.sum(
+                    1 for entry in index[index_axis:] if entry is not None
+                )
                 new_array_axis = len(self.shape) - remaining_index_count
                 if new_array_axis < array_axis:
                     raise IndexError("invalid use of ellipsis in index")
