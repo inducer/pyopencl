@@ -2033,6 +2033,17 @@ class Array:
         old_itemsize = self.dtype.itemsize
         itemsize = np.dtype(dtype).itemsize
 
+        if self.ndim == 0:
+            if old_itemsize != itemsize:
+                raise ValueError(
+                    "changing the dtype of a 0d array is only supported if the "
+                    "itemsize is unchanged"
+                )
+
+            return self._new_with_changes(
+                    self.base_data, self.offset,
+                    shape=(), dtype=dtype, strides=())
+
         from pytools import argmin2
         min_stride_axis = argmin2(
                 (axis, abs(stride))

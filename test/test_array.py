@@ -1077,6 +1077,29 @@ def test_view(ctx_factory: cl.CtxFactory):
 # }}}
 
 
+# {{{ test_view_0d
+
+def test_view_0d(ctx_factory: cl.CtxFactory):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    a = cl_array.to_device(queue, np.array(42, dtype=np.int8))
+
+    # same dtype
+    view = a.view()
+    assert view.shape == () and view.dtype == np.int8
+
+    # same itemsize
+    view = a.view(np.bool_)
+    assert view.shape == () and view.dtype == np.bool_
+
+    # changing the itemsize of a 0-d array is not allowed
+    with pytest.raises(ValueError):
+        a.view(np.int16)
+
+# }}}
+
+
 # {{{ test_diff
 
 def test_diff(ctx_factory: cl.CtxFactory):
