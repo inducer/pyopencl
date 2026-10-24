@@ -1100,6 +1100,56 @@ def test_view_0d(ctx_factory: cl.CtxFactory):
 # }}}
 
 
+# {{{ scalar conversions
+
+@pytest.mark.parametrize(
+    ("dtype", "value"),
+    [
+        (np.uint8, 42),
+        (np.int8, -7),
+        (np.float32, -1.75),
+        (np.complex64, 1.5 - 2.5j),
+    ],
+)
+def test_scalar_conversions(ctx_factory: cl.CtxFactory, dtype, value):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    host = np.array(value, dtype=dtype)
+    ary = cl_array.to_device(queue, host)
+
+    assert complex(ary) == complex(host)  # ruff: ignore[float-equality-comparison]
+
+    if host.dtype.kind == "c":
+        with pytest.raises(TypeError):
+            int(ary)
+        with pytest.raises(TypeError):
+            float(ary)
+    else:
+        assert int(ary) == int(host)
+        assert float(ary) == float(host)  # ruff: ignore[float-equality-comparison]
+
+    if host.dtype.kind in "iu":
+        assert operator.index(ary) == operator.index(host)
+    else:
+        with pytest.raises(TypeError):
+            operator.index(ary)
+
+
+@pytest.mark.parametrize("dtype", [np.int32, np.float32, np.complex64])
+def test_scalar_conversions_reject_non_0d(ctx_factory: cl.CtxFactory, dtype):
+    context = ctx_factory()
+    queue = cl.CommandQueue(context)
+
+    ary = cl_array.to_device(queue, np.array([1], dtype=dtype))
+
+    for converter in (int, float, complex, operator.index):
+        with pytest.raises(TypeError):
+            converter(ary)
+
+# }}}
+
+
 # {{{ test_diff
 
 def test_diff(ctx_factory: cl.CtxFactory):
