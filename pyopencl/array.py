@@ -1662,14 +1662,48 @@ class Array:
         result.add_event(self._copy(result, self, queue=queue))
         return result
 
-    # {{{ rich comparisons, any, all
+    # {{{ scalar conversions
 
     def __bool__(self) -> bool:
-        if self.shape == ():
-            return bool(self.get())
-        else:
-            raise ValueError("The truth value of an array with "
-                    "more than one element is ambiguous. Use a.any() or a.all()")
+        if self.shape != ():
+            raise ValueError(
+                "The truth value of an array with more than one element is ambiguous. "
+                "Use a.any() or a.all()"
+            )
+
+        return bool(self.get())
+
+    def __int__(self) -> int:
+        if self.shape != ():
+            raise TypeError(
+                "only 0-dimensional arrays can be converted to Python scalars"
+            )
+        return int(self.get())
+
+    def __index__(self) -> int:
+        if self.shape != () or self.dtype.kind not in "iu":
+            raise TypeError(
+                "only integer scalar arrays can be converted to a scalar index"
+            )
+        return int(self.get())
+
+    def __float__(self) -> float:
+        if self.shape != ():
+            raise TypeError(
+                "only 0-dimensional arrays can be converted to Python scalars"
+            )
+        return float(self.get())
+
+    def __complex__(self) -> complex:
+        if self.shape != ():
+            raise TypeError(
+                "only 0-dimensional arrays can be converted to Python scalars"
+            )
+        return complex(self.get())
+
+    # }}}
+
+    # {{{ rich comparisons, any, all
 
     def any(self,
                 queue: cl.CommandQueue | None = None,
