@@ -150,13 +150,17 @@ execute_process(
   "${PYTHON_EXECUTABLE}" -c "import nanobind; print(nanobind.cmake_dir())"
   OUTPUT_VARIABLE NANOBIND_DIR
   OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
-  list(APPEND CMAKE_PREFIX_PATH "${NANOBIND_DIR}")
+list(APPEND CMAKE_PREFIX_PATH "${NANOBIND_DIR}")
+
+execute_process(
+  COMMAND
+  "${PYTHON_EXECUTABLE}" -c "import nanobind; print(nanobind.include_dir())"
+  OUTPUT_VARIABLE NANOBIND_INCLUDE_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
 
 # }}}
 
 link_directories(${CL_LIB_DIR})
-include_directories(${CL_INC_DIR} ${Python_NumPy_INCLUDE_DIRS})
-
 find_package(nanobind CONFIG REQUIRED)
 
 set(OpenCL_ROOT ${CL_LIB_DIR})
@@ -167,6 +171,7 @@ find_package(OpenCL REQUIRED)
 nanobind_add_module(
   _cl
   NB_STATIC # Build static libnanobind (the extension module itself remains a shared library)
+  NB_SUPPRESS_WARNINGS
   LTO
   NOMINSIZE
   src/wrap_constants.cpp
@@ -176,14 +181,40 @@ nanobind_add_module(
   src/wrap_mempool.cpp
   src/bitlog.cpp
 )
+target_compile_features(_cl PRIVATE cxx_std_17)
 
 target_link_libraries(_cl PRIVATE ${OpenCL_LIBRARY})
+target_include_directories(_cl SYSTEM PRIVATE
+  ${CL_INC_DIR}
+  ${NANOBIND_INCLUDE_DIR}
+  ${Python_NumPy_INCLUDE_DIRS})
 
 target_compile_definitions(_cl
   PRIVATE
   PYGPU_PACKAGE=pyopencl
   PYGPU_PYOPENCL
 )
+
+ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+   target_compile_options(_cl PRIVATE
+     -Wall
+     -Wextra
+     # NOTE: VLAs are used by PYOPENCL_STACK_CONTAINER for dubious reasons
+     -Wpedantic -Wno-vla
+     -Wshadow
+     -Wold-style-cast
+     -Wcast-align
+     -Wconversion -Wsign-conversion
+     -Wnon-virtual-dtor
+     -Woverloaded-virtual
+     -Wformat=2
+     -Wimplicit-fallthrough
+     -Wdouble-promotion
+     -Wnull-dereference
+     # NOTE: mostly calls to deprecated CL functions that we support
+     -Wno-deprecated-declarations
+   )
+ endif()
 
 if (PYOPENCL_PRETEND_CL_VERSION)
   target_compile_definitions(
