@@ -238,6 +238,9 @@ def test_get_info(ctx_factory: cl.CtxFactory):
 # {{{ test_buffer_device_address_ext
 
 def test_buffer_device_address_ext(ctx_factory: cl.CtxFactory):
+    if cl.get_cl_header_version() < (3, 0):
+        pytest.skip("buffer properties require PyOpenCL built for OpenCL 3.0")
+
     if not hasattr(cl.mem_info, "DEVICE_ADDRESS_EXT"):
         pytest.skip("PyOpenCL was built without cl_ext_buffer_device_address")
 
