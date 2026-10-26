@@ -452,10 +452,6 @@ class Array:
     Boolean arrays are stored as :class:`numpy.int8` because ``bool``
     has an unspecified size in the OpenCL spec.
 
-    .. automethod :: __bool__
-
-        Only works for device scalars. (i.e. "arrays" with ``shape == ()``)
-
     .. automethod :: any
     .. automethod :: all
 
@@ -1662,7 +1658,10 @@ class Array:
         result.add_event(self._copy(result, self, queue=queue))
         return result
 
-    # {{{ rich comparisons, any, all
+    # {{{ scalar conversions
+
+    # NOTE: These are intentionally not implemented. They generally lead to
+    # unexpected device-to-host transfers that should be made explicit.
 
     @deprecated("Call .get() explicitly. This will stop working in 2028.x.")
     def __bool__(self) -> bool:
@@ -1671,6 +1670,15 @@ class Array:
         else:
             raise ValueError("The truth value of an array with "
                     "more than one element is ambiguous. Use a.any() or a.all()")
+
+    # def __int__(self) -> int: ...
+    # def __index__(self) -> int: ...
+    # def __float__(self) -> float: ...
+    # def __complex__(self) -> complex: ...
+
+    # }}}
+
+    # {{{ rich comparisons, any, all
 
     def any(self,
                 queue: cl.CommandQueue | None = None,
