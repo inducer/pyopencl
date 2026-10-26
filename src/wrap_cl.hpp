@@ -5444,8 +5444,23 @@ namespace pyopencl
           kernels.empty( ) ? nullptr : &kernels.front(), &num_kernels));
 
     py::list result;
-    for (cl_kernel knl: kernels)
-      result.append(handle_from_new_ptr(new kernel(knl, true)));
+    size_t i = 0;
+    try
+    {
+      for (; i < kernels.size(); ++i)
+      {
+        py::object knl = handle_from_new_ptr(new kernel(kernels[i], false));
+        kernels[i] = nullptr;   // now owned by the wrapper
+        result.append(knl);
+      }
+    }
+    catch (...)
+    {
+      for (cl_kernel knl: kernels)
+        if (knl)
+          clReleaseKernel(knl);
+      throw;
+    }
 
     return result;
   }
