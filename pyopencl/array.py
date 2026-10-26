@@ -47,7 +47,7 @@ from typing import (
 from warnings import warn
 
 import numpy as np
-from typing_extensions import Self, TypeIs, override
+from typing_extensions import Self, TypeIs, deprecated, override
 
 import pyopencl as cl
 from pyopencl import cltypes, elementwise
@@ -1664,6 +1664,7 @@ class Array:
 
     # {{{ rich comparisons, any, all
 
+    @deprecated("Call .get() explicitly. This will stop working in 2028.x.")
     def __bool__(self) -> bool:
         if self.shape == ():
             return bool(self.get())
