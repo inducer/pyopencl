@@ -151,7 +151,8 @@ To check available versions please visit `PyPI page for PyOpenCL
 
 On Linux, the wheels come with `OCL-ICD <https://github.com/OCL-dev/ocl-icd>`__
 bundled and configured to use any OpenCL implementation supporting the ICD
-interface and listed in :file:`/etc/OpenCL/vendors`.
+interface and listed in :file:`/etc/OpenCL/vendors`. The bundled loader is
+ocl-icd 2.3.5 or newer and also honors ``OCL_ICD_FILENAMES``.
 Wheels for Windows and MacOS are built using the ICD Loader from the Khronos Group.
 
 To install, type::
