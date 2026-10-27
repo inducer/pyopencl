@@ -5,7 +5,7 @@ Python 3 Intel CPU:
   script: |
     source /opt/enable-intel-cl.sh
     export PYOPENCL_CACHE_FAILURE_FATAL=1
-    export PYOPENCL_TEST="intel(r):pu"
+    export PYOPENCL_TEST="intel(r):0"
     export EXTRA_INSTALL="numpy mako"
 
     curl -L -O https://tiker.net/ci-support-v0
