@@ -144,17 +144,7 @@
   #define PyDataType_ELSIZE(descr) ((descr)->elsize)
 #endif
 
-#if PY_VERSION_HEX >= 0x02050000
-  typedef Py_ssize_t PYOPENCL_BUFFER_SIZE_T;
-#else
-  typedef int PYOPENCL_BUFFER_SIZE_T;
-#endif
-
 #define PYOPENCL_CAST_BOOL(B) ((B) ? CL_TRUE : CL_FALSE)
-
-
-
-
 
 #define PYOPENCL_DEPRECATED(WHAT, KILL_VERSION, EXTRA_MSG) \
   { \
@@ -2399,7 +2389,7 @@ namespace pyopencl
 
       buffer *getitem(py::object slc) const
       {
-        PYOPENCL_BUFFER_SIZE_T start, end, stride, length;
+        Py_ssize_t start, end, stride, length;
 
         if (!PySlice_Check(slc.ptr()))
           throw pyopencl::error("Buffer.__getitem__", CL_INVALID_VALUE,
@@ -2523,7 +2513,7 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
 
     void *buf;
-    PYOPENCL_BUFFER_SIZE_T len;
+    Py_ssize_t len;
 
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
@@ -2562,7 +2552,7 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
 
     const void *buf;
-    PYOPENCL_BUFFER_SIZE_T len;
+    Py_ssize_t len;
 
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
@@ -2837,7 +2827,7 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
 
     const void *pattern_buf;
-    PYOPENCL_BUFFER_SIZE_T pattern_len;
+    Py_ssize_t pattern_len;
 
     std::unique_ptr<py_buffer_wrapper> ward(new py_buffer_wrapper);
 
@@ -3020,7 +3010,7 @@ namespace pyopencl
           "'shape' must be given");
 
     void *buf = 0;
-    PYOPENCL_BUFFER_SIZE_T len = 0;
+    Py_ssize_t len = 0;
 
     std::unique_ptr<py_buffer_wrapper> retained_buf_obj;
     if (buffer.ptr() != Py_None)
@@ -3701,7 +3691,7 @@ namespace pyopencl
   {
     private:
       void *m_ptr;
-      PYOPENCL_BUFFER_SIZE_T m_size;
+      Py_ssize_t m_size;
       std::unique_ptr<py_buffer_wrapper> ward;
       py::object m_mem;
 
@@ -4027,7 +4017,7 @@ namespace pyopencl
     PYOPENCL_PARSE_WAIT_FOR;
 
     const void *pattern_ptr;
-    PYOPENCL_BUFFER_SIZE_T pattern_len;
+    Py_ssize_t pattern_len;
 
     std::unique_ptr<py_buffer_wrapper> pattern_ward(new py_buffer_wrapper);
 
@@ -4452,15 +4442,10 @@ namespace pyopencl
               for (unsigned i = 0; i < sizes.size(); ++i)
               {
                 py::object binary_pyobj(
-                    py::steal<py::object>(
-#if PY_VERSION_HEX >= 0x03000000
+                  py::steal<py::object>(
                     PyBytes_FromStringAndSize(
                       reinterpret_cast<char *>(ptr), static_cast<Py_ssize_t>(sizes[i]))
-#else
-                    PyString_FromStringAndSize(
-                      reinterpret_cast<char *>(ptr), static_cast<Py_ssize_t>(sizes[i]))
-#endif
-                    ));
+                  ));
                 py_result.append(binary_pyobj);
                 ptr += sizes[i];
               }
@@ -4636,7 +4621,7 @@ namespace pyopencl
     {
       devices.push_back(py::cast<device const &>(py_devices[i]).data());
       const void *buf;
-      PYOPENCL_BUFFER_SIZE_T len;
+      Py_ssize_t len;
 
       py_buffer_wrapper buf_wrapper;
 
@@ -5000,7 +4985,7 @@ namespace pyopencl
       void set_arg_buf(cl_uint arg_index, py::handle py_buffer)
       {
         const void *buf;
-        PYOPENCL_BUFFER_SIZE_T len;
+        Py_ssize_t len;
 
         py_buffer_wrapper buf_wrapper;
 
