@@ -1587,7 +1587,7 @@ class Array:
         if len(self.shape):
             return self.shape[0]
         else:
-            return TypeError("len() of unsized object")
+            raise TypeError("len() of unsized object")
 
     def __abs__(self) -> Self:
         """Return an ``Array`` of the absolute values of the elements
