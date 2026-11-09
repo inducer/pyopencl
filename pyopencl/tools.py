@@ -649,10 +649,11 @@ def _find_cl_obj(
         ) -> DeviceOrPlatformT:
     try:
         num = int(identifier)
-    except Exception:  # ruff:ignore[try-except-pass]
+    except ValueError:
         pass
     else:
-        return objs[num]
+        if -len(objs) <= num < len(objs):
+            return objs[num]
 
     for obj in objs:
         if identifier.lower() in (obj.name + " " + obj.vendor).lower():
