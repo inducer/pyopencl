@@ -27,7 +27,8 @@ Vector Types
     just like their OpenCL counterparts. They will work both for parameter passing
     to kernels as well as for passing data back and forth between kernels and
     Python code. For each type, a ``make_type`` function is also provided (e.g.
-    ``make_float3(x, y, z)``).
+    ``make_float3(x, y, z)``). See the :ref:`cltypes-vector-example` example
+    for passing a vector array and a single vector to a kernel.
 
     If you want to construct a pre-initialized vector type you have three new
     functions to choose from:

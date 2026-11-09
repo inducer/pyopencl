@@ -28,15 +28,46 @@ unsigned integer. Use the module as follows:
     defined here, because OpenCL does not specify the in-memory representation
     (or even the storage size) for this type.
 
+.. _cltypes-vector-example:
+
 Vector Types
 ------------
 
-The corresponding vector types are also made available in the same package,
-allowing you to easily create :mod:`numpy` arrays with the appropriate memory
-layout.
+Use a vector dtype such as ``cltypes.float4`` for an array of OpenCL vectors.
+The matching factory, ``cltypes.make_float4(x, y, z, w)``, constructs one vector.
+You can read a component across the whole array by its field name:
 
 .. doctest::
 
     >>> import numpy as np
-    >>> array_of_float16 = np.empty((128,), dtype=cl.cltypes.float16) # array of float16
+    >>> import pyopencl as cl
+    >>> from pyopencl import cltypes
+    >>> points = np.zeros(2, dtype=cltypes.float4)
+    >>> points[0] = cltypes.make_float4(1, 2, 3, 4)
+    >>> points["y"].tolist()
+    [2.0, 0.0]
+
+The same factory works for a kernel argument passed by value. Here the buffer
+contains two ``float4`` elements, and both receive the same offset:
+
+.. doctest::
+
+    >>> ctx = cl.create_some_context(interactive=False)
+    >>> queue = cl.CommandQueue(ctx)
+    >>> flags = cl.mem_flags
+    >>> buf = cl.Buffer(ctx, flags.READ_WRITE | flags.COPY_HOST_PTR, hostbuf=points)
+    >>> program = cl.Program(ctx, """
+    ...     __kernel void translate(__global float4 *points, float4 offset) {
+    ...         points[get_global_id(0)] += offset;
+    ...     }
+    ... """).build()
+    >>> offset = cltypes.make_float4(0, 10, 0, 0)
+    >>> _ = program.translate(queue, points.shape, None, buf, offset)
+    >>> cl.enqueue_copy(queue, points, buf).wait()
+    >>> points["y"].tolist()
+    [12.0, 10.0]
+
+For a buffer of ``float3`` elements, use ``dtype=cltypes.float3``:
+OpenCL gives each element the storage of four floats. A packed NumPy
+array of shape ``(n, 3)`` has a different stride.
 
