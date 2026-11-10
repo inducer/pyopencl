@@ -32,8 +32,25 @@ from pyopencl.tools import (
     DeferredAllocator,
     ImmediateAllocator,
     MemoryPool,
+    get_test_platforms_and_devices,
     pytest_generate_tests_for_pyopencl as pytest_generate_tests,  # ruff:ignore[unused-import]
 )
+
+
+def test_numeric_platform_and_device_names(monkeypatch):
+    from types import SimpleNamespace
+
+    first = SimpleNamespace(name="GPU 1", vendor="AMD")
+    second = SimpleNamespace(name="gfx90a", vendor="AMD")
+    platform = SimpleNamespace(name="AMD", vendor="Vendor42",
+                               get_devices=lambda: [first, second])
+    monkeypatch.setattr(cl, "get_platforms", lambda: [platform])
+
+    assert get_test_platforms_and_devices("42:90") == [(platform, [second])]
+    assert get_test_platforms_and_devices("0:1,0,-1") == [
+        (platform, [second, first, second])]
+    with pytest.raises(RuntimeError, match="object '99' not found"):
+        get_test_platforms_and_devices("AMD:99")
 
 
 def _xfail_if_pocl(plat, up_to_version, msg="unsupported by PoCL"):
